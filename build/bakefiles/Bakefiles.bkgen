@@ -1,0 +1,49 @@
+<?xml version="1.0" ?>
+<bakefile-gen>
+	<!-- ================================================================== -->
+	<!-- Input bakefiles                                                    -->
+	<!-- ================================================================== -->
+
+	<input>
+		./muhkuh.bkl
+	</input>
+
+	<!-- we want to use our local copy of wxWidgets presets; since we will
+	     include the presets using the "presets/wx.bkl" syntax, then we
+	     need to add current path to the list of paths to search for.
+	     
+	     NOTE: in reality, this is not needed as bakefile_gen has current
+	           path in include search paths automatically.
+	-->
+	<add-flags>-I.</add-flags>
+
+
+	<!-- ================================================================== -->
+	<!-- Formats to (not) generate                                          -->
+	<!-- ================================================================== -->
+
+	<disable-formats>dmars,cbx_unix,cbuilderx</disable-formats>
+
+	<!-- List of output formats to generate: -->
+	<add-formats>
+		msvc6prj,msvs2005prj,autoconf,borland,dmars,mingw,msvc,watcom,cbuilderx,cbx_unix,gnu
+	</add-formats>
+
+
+
+	<!-- ================================================================== -->
+	<!-- Output directories                                                 -->
+	<!-- ================================================================== -->
+
+	<!-- Directories where msw makefiles should go: -->
+	<add-flags formats="borland">-o$(INPUT_FILE_DIR)/../../makefile.bcc -DSRCDIR=.</add-flags>
+	<add-flags formats="mingw">-o$(INPUT_FILE_DIR)/../../makefile.gcc -DSRCDIR=.</add-flags>
+	<add-flags formats="msvc">-o$(INPUT_FILE_DIR)/../../makefile.vc -DSRCDIR=.</add-flags>
+	<add-flags formats="watcom">-o$(INPUT_FILE_DIR)/../../makefile.wat -DSRCDIR=.</add-flags>
+	<add-flags formats="msvc6prj">-o$(INPUT_FILE_DIR)/../msvc6/muhkuh.sln -DSRCDIR=../..</add-flags>
+	<add-flags formats="msvs2005prj">-o$(INPUT_FILE_DIR)/../msvc8/muhkuh.sln -DSRCDIR=../..</add-flags>
+
+	<!-- Directories where unix makefiles should go: -->
+	<add-flags formats="gnu">-o$(INPUT_FILE_DIR)/../../makefile.unx -DSRCDIR=.</add-flags>
+	<add-flags formats="autoconf">-o$(INPUT_FILE_DIR)/../../Makefile.in -DAUTOCONF_MACROS_FILE=../autoconf/autoconf_inc.m4 -DSRCDIR=..</add-flags>
+</bakefile-gen>

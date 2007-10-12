@@ -1,0 +1,197 @@
+<?xml version="1.0" ?>
+<makefile>
+	<using module="pkgconfig"/>
+
+	<!-- This is required because it contains the definitions of a lot of utils -->
+	<include file="wxluabase.bkl"/>
+
+	<set var="WXLUA_BASEDIR">$(SRCDIR)</set>
+
+	<!-- ================================================================== -->
+	<!--                     The muhkuh application                         -->
+	<!-- ================================================================== -->
+
+	<option name="BUILD_PLUGIN_ROMLOADER_USB">
+		<values>0,1</values>
+		<default-value>1</default-value>
+		<description>Compile the Romloader USB plugin?</description>
+	</option>
+
+
+	<option name="BUILD_PLUGIN_ROMLOADER_BAKA">
+		<values>0,1</values>
+		<default-value>1</default-value>
+		<description>Compile the Romloader dummy plugin?</description>
+	</option>
+
+
+	<option name="BUILD_PLUGIN_ROMLOADER_OPENOCD">
+		<values>0,1</values>
+		<default-value>1</default-value>
+		<description>Compile the Romloader OpenOCD plugin?</description>
+	</option>
+
+
+	<exe id="muhkuh" template="wxlua">
+		<app-type>gui</app-type>
+		<threading>multi</threading>
+		<include>application</include>
+		<dirname>bin</dirname>
+		<sources>
+			application/license.cpp
+			application/growbuffer.cpp
+			application/muhkuh_aboutDialog.cpp
+			application/muhkuh_app.cpp
+			application/muhkuh_configDialog.cpp
+			application/muhkuh_config_reposEntryDialog.cpp
+			application/muhkuh_mainFrame.cpp
+			application/muhkuh_plugin.cpp
+			application/muhkuh_plugin_manager.cpp
+			application/muhkuh_repository.cpp
+			application/muhkuh_repository_manager.cpp
+			application/muhkuh_wrap_xml.cpp
+			application/readFsFile.cpp
+			plugins/_luaif/muhkuh_lua.cpp
+			plugins/_luaif/muhkuh_lua_bind.cpp
+		</sources>
+		<win32-res>application/muhkuh.rc</win32-res>
+
+		<wxlua-lib>wxluasocket</wxlua-lib>
+		<wxlua-lib>wxluadebug</wxlua-lib>
+		<wxlua-lib>wxbindxrc</wxlua-lib>
+		<wxlua-lib>wxbindhtml</wxlua-lib>
+		<wxlua-lib>wxbindadv</wxlua-lib>
+		<wxlua-lib>wxbindaui</wxlua-lib>
+		<wxlua-lib>wxbindnet</wxlua-lib>
+		<wxlua-lib>wxbindxml</wxlua-lib>
+		<wxlua-lib>wxbindcore</wxlua-lib>
+		<wxlua-lib>wxbindbase</wxlua-lib>
+		<wxlua-lib>wxlua</wxlua-lib>
+		<wxlua-lib>lua</wxlua-lib>
+
+		<wx-lib>xrc</wx-lib>
+		<wx-lib>html</wx-lib>
+		<wx-lib>adv</wx-lib>
+		<wx-lib>aui</wx-lib>
+		<wx-lib>net</wx-lib>
+		<wx-lib>xml</wx-lib>
+		<wx-lib>core</wx-lib>
+		<wx-lib>base</wx-lib>
+	</exe>
+
+	<module id="plugin_romloader_usb" template="wxlua-lib" cond="BUILD_PLUGIN_ROMLOADER_USB=='1'">
+		<dllname>bootloader_usb</dllname>
+		<threading>multi</threading>
+		<dirname>bin</dirname>
+		<include>plugins/romloader/usb</include>
+		<sources>
+			plugins/romloader/romloader.cpp
+			plugins/romloader/usb/romloader_usb_main.cpp
+			plugins/romloader/usb/_luaif/romloader_usb_lua.cpp
+			plugins/romloader/usb/_luaif/romloader_usb_lua_bind.cpp
+		</sources>
+		<if cond="TARGETING_WIN32=='1'">
+			<include>plugins/romloader/usb/win/include</include>
+			<lib-path>plugins/romloader/usb/win/lib/msvc</lib-path>
+			<sys-lib>libusb</sys-lib>
+			<sys-lib>setupapi</sys-lib>
+		</if>
+		<if cond="TARGETING_UNIX=='1'">
+			<sys-lib>usb</sys-lib>
+		</if>
+
+		<wxlua-lib>wxluasocket</wxlua-lib>
+		<wxlua-lib>wxluadebug</wxlua-lib>
+		<wxlua-lib>wxbindxrc</wxlua-lib>
+		<wxlua-lib>wxbindhtml</wxlua-lib>
+		<wxlua-lib>wxbindadv</wxlua-lib>
+		<wxlua-lib>wxbindaui</wxlua-lib>
+		<wxlua-lib>wxbindnet</wxlua-lib>
+		<wxlua-lib>wxbindxml</wxlua-lib>
+		<wxlua-lib>wxbindcore</wxlua-lib>
+		<wxlua-lib>wxbindbase</wxlua-lib>
+		<wxlua-lib>wxlua</wxlua-lib>
+		<wxlua-lib>lua</wxlua-lib>
+
+		<wx-lib>xrc</wx-lib>
+		<wx-lib>html</wx-lib>
+		<wx-lib>adv</wx-lib>
+		<wx-lib>aui</wx-lib>
+		<wx-lib>net</wx-lib>
+		<wx-lib>xml</wx-lib>
+		<wx-lib>core</wx-lib>
+		<wx-lib>base</wx-lib>
+	</module>
+
+	<module id="plugin_romloader_baka" template="wxlua-lib" cond="BUILD_PLUGIN_ROMLOADER_BAKA=='1'">
+		<dllname>baka</dllname>
+		<threading>multi</threading>
+		<dirname>bin</dirname>
+		<include>plugins/romloader/baka</include>
+		<sources>
+			plugins/romloader/romloader.cpp
+			plugins/romloader/baka/romloader_baka_main.cpp
+			plugins/romloader/baka/_luaif/romloader_baka_lua.cpp
+			plugins/romloader/baka/_luaif/romloader_baka_lua_bind.cpp
+		</sources>
+
+		<wxlua-lib>wxluasocket</wxlua-lib>
+		<wxlua-lib>wxluadebug</wxlua-lib>
+		<wxlua-lib>wxbindxrc</wxlua-lib>
+		<wxlua-lib>wxbindhtml</wxlua-lib>
+		<wxlua-lib>wxbindadv</wxlua-lib>
+		<wxlua-lib>wxbindaui</wxlua-lib>
+		<wxlua-lib>wxbindnet</wxlua-lib>
+		<wxlua-lib>wxbindxml</wxlua-lib>
+		<wxlua-lib>wxbindcore</wxlua-lib>
+		<wxlua-lib>wxbindbase</wxlua-lib>
+		<wxlua-lib>wxlua</wxlua-lib>
+		<wxlua-lib>lua</wxlua-lib>
+
+		<wx-lib>xrc</wx-lib>
+		<wx-lib>html</wx-lib>
+		<wx-lib>adv</wx-lib>
+		<wx-lib>aui</wx-lib>
+		<wx-lib>net</wx-lib>
+		<wx-lib>xml</wx-lib>
+		<wx-lib>core</wx-lib>
+		<wx-lib>base</wx-lib>
+	</module>
+
+<!-- Not yet...
+	<module id="plugin_romloader_openocd" template="wxlua-lib" cond="BUILD_PLUGIN_ROMLOADER_OPENOCD=='1'">
+		<dllname>baka</dllname>
+		<threading>multi</threading>
+		<dirname>$(SRCDIR)/bin</dirname>
+		<include>$(SRCDIR)/plugins/romloader/openocd</include>
+		<sources>
+			plugins/romloader/romloader.cpp
+			plugins/romloader/openocd/romloader_openocd_main.cpp
+			plugins/romloader/openocd/_luaif/romloader_openocd_lua.cpp
+			plugins/romloader/openocd/_luaif/romloader_openocd_lua_bind.cpp
+		</sources>
+
+		<wxlua-lib>wxluasocket</wxlua-lib>
+		<wxlua-lib>wxluadebug</wxlua-lib>
+		<wxlua-lib>wxbindxrc</wxlua-lib>
+		<wxlua-lib>wxbindhtml</wxlua-lib>
+		<wxlua-lib>wxbindadv</wxlua-lib>
+		<wxlua-lib>wxbindaui</wxlua-lib>
+		<wxlua-lib>wxbindnet</wxlua-lib>
+		<wxlua-lib>wxbindxml</wxlua-lib>
+		<wxlua-lib>wxbindcore</wxlua-lib>
+		<wxlua-lib>wxbindbase</wxlua-lib>
+		<wxlua-lib>wxlua</wxlua-lib>
+		<wxlua-lib>lua</wxlua-lib>
+
+		<wx-lib>xrc</wx-lib>
+		<wx-lib>html</wx-lib>
+		<wx-lib>adv</wx-lib>
+		<wx-lib>aui</wx-lib>
+		<wx-lib>net</wx-lib>
+		<wx-lib>xml</wx-lib>
+		<wx-lib>core</wx-lib>
+		<wx-lib>base</wx-lib>
+	</module>
+-->
+</makefile>

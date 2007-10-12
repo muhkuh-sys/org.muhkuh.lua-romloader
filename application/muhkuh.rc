@@ -1,0 +1,9 @@
+
+// explorer icon, must be first in order and sorting
+aaaaaaaa ICON "muhkuh.ico"
+// this icon is used with wxFrame::SetIcon()
+muhkuh ICON "muhkuh.ico"
+// use visual styles on xp
+#define wxUSE_NO_MANIFEST 0
+// include wxwidgets ressources
+#include "wx/msw/wx.rc"
