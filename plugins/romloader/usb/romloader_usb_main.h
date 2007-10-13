@@ -45,7 +45,7 @@ typedef enum
 /*-----------------------------------*/
 
 int fn_init(wxLog *ptLogTarget);
-int fn_init(wxLuaState *ptLuaState);
+int fn_init_lua(wxLuaState *ptLuaState);
 int fn_leave(void);
 const muhkuh_plugin_desc *fn_get_desc(void);
 int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList);

@@ -26,8 +26,10 @@
 #include <usb.h>
 typedef usb_dev_handle *netx_device_handle;
 
-//#include "../libnetxusbmon/libnetxusbmon.h"
-
+#ifdef __WXMSW__
+#define ETIMEDOUT WSAETIMEDOUT
+#define snprintf _snprintf
+#endif
 
 /*-------------------------------------*/
 /* some local prototypes */

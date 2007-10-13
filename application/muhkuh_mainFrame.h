@@ -216,7 +216,7 @@ private:
 	bool m_fShowStartupTips;
 	size_t m_sizStartupTipsIdx;
 
-	bool fSaveRelativePaths;
+//	bool fSaveRelativePaths;
 
 	// finish flag for tests
 	volatile bool fTestHasFinished;

@@ -33,8 +33,8 @@
 #include <wxlua/include/wxlstate.h>
 #include <wxbind/include/wxbinddefs.h>
 
-extern int s_wxluatag_wxXmlDocument;
-extern int s_wxluatag_wxPanel;
+WXIMPORT int s_wxluatag_wxXmlDocument;
+WXIMPORT int s_wxluatag_wxPanel;
 
 WXLUA_DECLARE_BIND_WXLUA
 WXLUA_DECLARE_BIND_WXLUASOCKET
@@ -719,6 +719,7 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	bool fExecutedSuccessfully;
 	wxString strLuaSystemModulePath;
 	wxString strDebug;
+	wxFileName cfgName;
 
 
 	m_strRunningTestName = ptTestData->testDescription_getName();
@@ -801,7 +802,12 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 
 
 	// set the package path
-	strLuaSystemModulePath = wxT("/home/Benten/Coding/netx/nebotos/muhkuh_new/lua_snipplets/?.lua");
+	// TODO: use a config option here
+	cfgName.Assign(m_strApplicationPath, wxT("?.lua"));
+	cfgName.AppendDir(wxT("lua"));
+	strLuaSystemModulePath = cfgName.GetFullPath();
+	wxLogMessage(wxT("Lua path:") + strLuaSystemModulePath);
+
 	m_ptLuaState->lua_GetGlobal(wxT("package"));
 	if( m_ptLuaState->lua_IsNoneOrNil(-1)==true )
 	{

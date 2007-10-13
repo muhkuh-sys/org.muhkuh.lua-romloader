@@ -272,7 +272,7 @@ int muhkuh_plugin::fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pv
 	return iResult;
 }
 
-
+#if defined(__GNU__) | defined(__GNUWIN32__) | defined(__MINGW32__)
 const muhkuh_plugin::muhkuh_plugin_symbol_offset_t muhkuh_plugin::atPluginSymbolOffsets[] =
 {
 	{
@@ -297,6 +297,36 @@ const muhkuh_plugin::muhkuh_plugin_symbol_offset_t muhkuh_plugin::atPluginSymbol
 	}
 };
 
+#else
+#if defined(__VISUALC__)
+// this is for MSVC
+const muhkuh_plugin::muhkuh_plugin_symbol_offset_t muhkuh_plugin::atPluginSymbolOffsets[] =
+{
+	{
+		wxT("?fn_init@@YAHPAVwxLog@@@Z"),
+		offsetof(muhkuh_plugin_function_interface_t, fn_init) / sizeof(void*)
+	},
+	{
+		wxT("?fn_init_lua@@YAHPAVwxLuaState@@@Z"),
+		offsetof(muhkuh_plugin_function_interface_t, fn_init_lua) / sizeof(void*)
+	},
+	{
+		wxT("?fn_leave@@YAHXZ"),
+		offsetof(muhkuh_plugin_function_interface_t, fn_leave) / sizeof(void*)
+	},
+	{
+		wxT("?fn_get_desc@@YAPBUmuhkuh_plugin_desc@@XZ"),
+		offsetof(muhkuh_plugin_function_interface_t, fn_get_desc) / sizeof(void*)
+	},
+	{
+		wxT("?fn_detect_interfaces@@YAHPAV?$vector@PAVmuhkuh_plugin_instance@@V?$allocator@PAVmuhkuh_plugin_instance@@@std@@@std@@@Z"),
+		offsetof(muhkuh_plugin_function_interface_t, fn_detect_interfaces) / sizeof(void*)
+	}
+};
+#else
+#error "unknown compiler, please add the symbol names!"
+#endif
+#endif
 
 bool muhkuh_plugin::open(wxString strPluginPath)
 {
