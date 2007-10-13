@@ -39,14 +39,14 @@ bool IsDeviceNetx(struct usb_device *ptDevice);
 bool fn_connect(void *pvHandle);
 void fn_disconnect(void *pvHandle);
 bool fn_is_connected(void *pvHandle);
-int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pbData);
+int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pucData);
 int fn_read_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short *pusData);
 int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *pulData);
-int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pbData, unsigned long ulSize);
-int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char bData);
+int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pcData, unsigned long ulSize);
+int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char ucData);
 int fn_write_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short usData);
 int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulData);
-int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const unsigned char *pbData, unsigned long ulSize);
+int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize);
 int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0);
 
 /*-------------------------------------*/
@@ -568,6 +568,7 @@ romloader *romloader_usb_create(void *pvHandle)
 
 /*-------------------------------------*/
 
+
 /* open the connection to the device */
 bool fn_connect(void *pvHandle)
 {
@@ -589,12 +590,12 @@ bool fn_is_connected(void *pvHandle)
 
 
 /* read a byte (8bit) from the netx to the pc */
-int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pbData)
+int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pucData)
 {
 	netx_device_handle tHandle;
 	tNetxUsbState tResult;
 	wxString strCommand;
-	unsigned char *pucData;
+	unsigned char *pucTmpData;
 	unsigned int uiDataLen;
 	int iMatches;
 	unsigned long ulResultAddress;
@@ -608,7 +609,7 @@ int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *p
 	strCommand.Printf(wxT("DUMP %08lX BYTE"), ulNetxAddress);
 
 	// send the command
-	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucData, &uiDataLen);
+	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucTmpData, &uiDataLen);
 	if( tResult!=netxUsbState_Ok )
 	{
 		wxLogError(wxT("failed to send command!"));
@@ -616,8 +617,8 @@ int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *p
 	}
 
 	// parse the result
-	iMatches = sscanf((char*)pucData, "%8lX: %2X ", &ulResultAddress, &uiResultData);
-	free(pucData);
+	iMatches = sscanf((char*)pucTmpData, "%8lX: %2X ", &ulResultAddress, &uiResultData);
+	free(pucTmpData);
 	if( iMatches!=2 )
 	{
 		wxLogError(wxT("strange response from netx!"));
@@ -629,7 +630,7 @@ int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *p
 		return -1;
 	}
 
-	*pbData = (unsigned char)uiResultData;
+	*pucData = (unsigned char)uiResultData;
 	return 0;
 }
 
@@ -727,13 +728,14 @@ int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *p
 
 
 /* read a byte array from the netx to the pc */
-int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pbData, unsigned long ulSize)
+int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pcData, unsigned long ulSize)
 {
 	return -1;
 }
 
+
 /* write a byte (8bit) from the pc to the netx */
-int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char bData)
+int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char ucData)
 {
 	netx_device_handle tHandle;
 	tNetxUsbState tResult;
@@ -750,7 +752,7 @@ int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char b
 	tHandle = (netx_device_handle)pvHandle;
 
 	// construct the command
-	strCommand.Printf(wxT("FILL %08lX %02X BYTE"), ulNetxAddress, bData);
+	strCommand.Printf(wxT("FILL %08lX %02X BYTE"), ulNetxAddress, ucData);
 
 	// send the command
 	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucData, &uiDataLen);
@@ -775,6 +777,7 @@ int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char b
 
 	return iResult;
 }
+
 
 /* write a word (16bit) from the pc to the netx */
 int fn_write_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short usData)
@@ -820,6 +823,7 @@ int fn_write_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short 
 	return iResult;
 }
 
+
 /* write a long (32bit) from the pc to the netx */
 int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulData)
 {
@@ -864,17 +868,20 @@ int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long u
 	return iResult;
 }
 
+
 /* write a byte array from the pc to the netx */
-int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const unsigned char *pbData, unsigned long ulSize)
+int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize)
 {
 	return -1;
 }
+
 
 /* call routine */
 int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0)
 {
 	return -1;
 }
+
 
 /*-------------------------------------*/
 

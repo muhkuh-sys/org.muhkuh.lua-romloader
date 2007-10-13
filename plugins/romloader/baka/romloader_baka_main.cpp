@@ -35,14 +35,14 @@ static const unsigned int uiInstances = 4;
 bool fn_connect(void *pvHandle);
 void fn_disconnect(void *pvHandle);
 bool fn_is_connected(void *pvHandle);
-int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pbData);
+int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pucData);
 int fn_read_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short *pusData);
 int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *pulData);
-int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pbData, unsigned long ulSize);
-int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char bData);
+int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pbData, unsigned long ulSize);
+int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char ucData);
 int fn_write_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short usData);
 int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulData);
-int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const unsigned char *pbData, unsigned long ulSize);
+int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pucData, unsigned long ulSize);
 int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0);
 
 /*-------------------------------------*/
@@ -370,7 +370,7 @@ bool fn_is_connected(void *pvHandle)
 }
 
 /* read a byte (8bit) from the netx to the pc */
-int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pbData)
+int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pucData)
 {
 	unsigned int uiIdx;
 	wxString strMsg;
@@ -388,9 +388,9 @@ int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *p
 	{
 		strMsg.Printf(wxT("baka %d: read08 from 0x%08lx"), uiIdx, ulNetxAddress);
 		wxLogMessage(strMsg);
-		if( pbData!=NULL )
+		if( pucData!=NULL )
 		{
-			*pbData = 0x00;
+			*pucData = 0x00;
 		}
 		return 0;
 	}
@@ -450,8 +450,9 @@ int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *p
 	}
 }
 
+
 /* read a byte array from the netx to the pc */
-int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pbData, unsigned long ulSize)
+int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pcData, unsigned long ulSize)
 {
 	unsigned int uiIdx;
 	wxString strMsg;
@@ -469,16 +470,17 @@ int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pb
 	{
 		strMsg.Printf(wxT("baka %d: read_image from 0x%08lx with %ld bytes"), uiIdx, ulNetxAddress, ulSize);
 		wxLogMessage(strMsg);
-		if( pbData!=NULL )
+		if( pcData!=NULL )
 		{
-			memset(pbData, 0, ulSize);
+			memset(pcData, 0, ulSize);
 		}
 		return 0;
 	}
 }
 
+
 /* write a byte (8bit) from the pc to the netx */
-int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char bData)
+int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char ucData)
 {
 	unsigned int uiIdx;
 	wxString strMsg;
@@ -494,11 +496,12 @@ int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char b
 	}
 	else
 	{
-		strMsg.Printf(wxT("baka %d: write08 from 0x%08lx with 0x%02x"), uiIdx, ulNetxAddress, bData);
+		strMsg.Printf(wxT("baka %d: write08 from 0x%08lx with 0x%02x"), uiIdx, ulNetxAddress, ucData);
 		wxLogMessage(strMsg);
 		return 0;
 	}
 }
+
 
 /* write a word (16bit) from the pc to the netx */
 int fn_write_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short usData)
@@ -523,6 +526,7 @@ int fn_write_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short 
 	}
 }
 
+
 /* write a long (32bit) from the pc to the netx */
 int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulData)
 {
@@ -546,8 +550,9 @@ int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long u
 	}
 }
 
+
 /* write a byte array from the pc to the netx */
-int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const unsigned char *WXUNUSED(pbData), unsigned long ulSize)
+int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *WXUNUSED(pcData), unsigned long ulSize)
 {
 	unsigned int uiIdx;
 	wxString strMsg;
@@ -568,6 +573,7 @@ int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const unsigned c
 		return 0;
 	}
 }
+
 
 /* call routine */
 int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0)
@@ -591,5 +597,6 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 		return 0;
 	}
 }
+
 
 /*-------------------------------------*/

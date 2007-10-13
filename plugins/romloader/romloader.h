@@ -47,22 +47,22 @@ typedef void (*romloader_fn_disconnect)(void *pvHandle);
 typedef bool (*romloader_fn_is_connected)(void *pvHandle);
 
 /* read a byte (8bit) from the netx to the pc */
-typedef int (*romloader_fn_read_data08)(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pbData);
+typedef int (*romloader_fn_read_data08)(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pucData);
 /* read a word (16bit) from the netx to the pc */
 typedef int (*romloader_fn_read_data16)(void *pvHandle, unsigned long ulNetxAddress, unsigned short *pusData);
 /* read a long (32bit) from the netx to the pc */
 typedef int (*romloader_fn_read_data32)(void *pvHandle, unsigned long ulNetxAddress, unsigned long *pulData);
 /* read a byte array from the netx to the pc */
-typedef int (*romloader_fn_read_image)(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pbData, unsigned long ulSize);
+typedef int (*romloader_fn_read_image)(void *pvHandle, unsigned long ulNetxAddress, char *pcData, unsigned long ulSize);
 
 /* write a byte (8bit) from the pc to the netx */
-typedef int (*romloader_fn_write_data08)(void *pvHandle, unsigned long ulNetxAddress, unsigned char bData);
+typedef int (*romloader_fn_write_data08)(void *pvHandle, unsigned long ulNetxAddress, unsigned char ucData);
 /* write a word (16bit) from the pc to the netx */
 typedef int (*romloader_fn_write_data16)(void *pvHandle, unsigned long ulNetxAddress, unsigned short usData);
 /* write a long (32bit) from the pc to the netx */
 typedef int (*romloader_fn_write_data32)(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulData);
 /* write a byte array from the pc to the netx */
-typedef int (*romloader_fn_write_image)(void *pvHandle, unsigned long ulNetxAddress, const unsigned char *pbData, unsigned long ulSize);
+typedef int (*romloader_fn_write_image)(void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize);
 
 /* call routine */
 typedef int (*romloader_fn_call)(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0);
@@ -114,16 +114,16 @@ public:
 	// read a long (32bit) from the netx to the pc
 	unsigned long read_data32(unsigned long ulNetxAddress);
 	// read a byte array from the netx to the pc
-	// unsigned char *read_image(unsigned long ulNetxAddress, unsigned long ulSize);
+	wxString read_image(unsigned long ulNetxAddress, unsigned long ulSize);
 
 	// write a byte (8bit) from the pc to the netx
-	void write_data08(unsigned long ulNetxAddress, unsigned char bData);
+	void write_data08(unsigned long ulNetxAddress, unsigned char ucData);
 	// write a word (16bit) from the pc to the netx
 	void write_data16(unsigned long ulNetxAddress, unsigned short usData);
 	// write a long (32bit) from the pc to the netx
 	void write_data32(unsigned long ulNetxAddress, unsigned long ulData);
 	// write a byte array from the pc to the netx
-	void write_image(unsigned long ulNetxAddress, const unsigned char *pbData, unsigned long ulSize);
+	void write_image(unsigned long ulNetxAddress, wxString strData);
 
 	// call routine
 	void call(unsigned long ulNetxAddress, unsigned long ulParameterR0);

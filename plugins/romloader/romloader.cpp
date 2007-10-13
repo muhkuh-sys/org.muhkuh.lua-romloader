@@ -150,16 +150,50 @@ unsigned long romloader::read_data32(unsigned long ulNetxAddress)
 
 
 // read a byte array from the netx to the pc
-// unsigned char *netx::read_image(unsigned long ulNetxAddress, unsigned long ulSize);
+wxString romloader::read_image(unsigned long ulNetxAddress, unsigned long ulSize)
+{
+	wxString strMsg;
+	wxString strData;
+	char *pcBuffer;
+	int iResult;
+
+
+	// check parameter
+	if( ulSize!=0 )
+	{
+		// get memory for the buffer
+		pcBuffer = new char[ulSize];
+		iResult = m_tFunctionInterface.fn_read_image(m_pvHandle, ulNetxAddress, pcBuffer, ulSize);
+		if( iResult!=0 )
+		{
+			strMsg.Printf(wxT("read_image failed with error %d"), iResult);
+			// free the memory as terror does not return
+			delete[] pcBuffer;
+			m_ptLuaState->terror(strMsg);
+		}
+		else
+		{
+			// convert the binary data to wxString
+			strData = wxString::From8BitData(pcBuffer, ulSize);
+			delete[] pcBuffer;
+		}
+	}
+	else
+	{
+		wxLogDebug(wxT("ignoring read_image request with size 0"));
+	}
+
+	return strData;
+}
 
 // write a byte (8bit) from the pc to the netx
-void romloader::write_data08(unsigned long ulNetxAddress, unsigned char bData)
+void romloader::write_data08(unsigned long ulNetxAddress, unsigned char ucData)
 {
 	wxString strMsg;
 	int iResult;
 
 
-	iResult = m_tFunctionInterface.fn_write_data08(m_pvHandle, ulNetxAddress, bData);
+	iResult = m_tFunctionInterface.fn_write_data08(m_pvHandle, ulNetxAddress, ucData);
 	if( iResult!=0 )
 	{
 		strMsg.Printf(wxT("write_data08 failed with error %d"), iResult);
@@ -201,13 +235,13 @@ void romloader::write_data32(unsigned long ulNetxAddress, unsigned long ulData)
 
 
 // write a byte array from the pc to the netx
-void romloader::write_image(unsigned long ulNetxAddress, const unsigned char *pbData, unsigned long ulSize)
+void romloader::write_image(unsigned long ulNetxAddress, wxString strData)
 {
 	wxString strMsg;
 	int iResult;
 
 
-	iResult = m_tFunctionInterface.fn_write_image(m_pvHandle, ulNetxAddress, pbData, ulSize);
+	iResult = m_tFunctionInterface.fn_write_image(m_pvHandle, ulNetxAddress, strData.To8BitData(), strData.Len());
 	if( iResult!=0 )
 	{
 		strMsg.Printf(wxT("write_image failed with error %d"), iResult);
