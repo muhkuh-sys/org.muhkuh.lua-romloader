@@ -455,6 +455,8 @@ tNetxUsbState libnetxusbmon_getNetxData(netx_device_handle hNetxUsbMon, unsigned
 	*ppcData = pcData;
 	*pulDataLen = ulDataLen;
 
+	wxLogMessage(wxT("usb: received response '") + wxString::From8BitData((const char*)pcData, ulDataLen) + wxT("'"));
+
 	return netxUsbState_Ok;
 }
 
@@ -478,10 +480,12 @@ tNetxUsbState libnetxusbmon_executeCommand(netx_device_handle tHandle, wxString 
 		return netxUsbState_CommandTooLong;
 	}
 
+	wxLogMessage(wxT("usb: send command '") + strCommand + wxT("'"));
+
 	// construct the command
 	memcpy(abSend+1, strCommand.To8BitData(), sizCmdLen);
 	abSend[0] = sizCmdLen+2;
-	abSend[sizCmdLen] = 0x0a;
+	abSend[sizCmdLen+1] = 0x0a;
 
 	// send the command
 	tResult = libnetxusbmon_exchange(tHandle, abSend, abRec);
@@ -594,7 +598,7 @@ int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *p
 	unsigned int uiDataLen;
 	int iMatches;
 	unsigned long ulResultAddress;
-	unsigned char ucResultData;
+	unsigned int uiResultData;
 
 
 	// get handle
@@ -612,22 +616,20 @@ int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *p
 	}
 
 	// parse the result
-	iMatches = sscanf((char*)pucData, "%8lX: %2X ", &ulResultAddress, &ucResultData);
+	iMatches = sscanf((char*)pucData, "%8lX: %2X ", &ulResultAddress, &uiResultData);
 	free(pucData);
 	if( iMatches!=2 )
 	{
 		wxLogError(wxT("strange response from netx!"));
-		wxLogError(wxString::From8BitData((const char*)pucData, uiDataLen));
 		return -1;
 	}
 	if( ulResultAddress!=ulNetxAddress )
 	{
 		wxLogError(wxT("response does not match request!"));
-		wxLogError(wxString::From8BitData((const char*)pucData, uiDataLen));
 		return -1;
 	}
 
-	*pbData = ucResultData;
+	*pbData = (unsigned char)uiResultData;
 	return 0;
 }
 
@@ -642,7 +644,7 @@ int fn_read_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short *
 	unsigned int uiDataLen;
 	int iMatches;
 	unsigned long ulResultAddress;
-	unsigned short usResultData;
+	unsigned int uiResultData;
 
 
 	// get handle
@@ -660,22 +662,20 @@ int fn_read_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short *
 	}
 
 	// parse the result
-	iMatches = sscanf((char*)pucData, "%8lX: %4X ", &ulResultAddress, &usResultData);
+	iMatches = sscanf((char*)pucData, "%8lX: %4X ", &ulResultAddress, &uiResultData);
 	free(pucData);
 	if( iMatches!=2 )
 	{
 		wxLogError(wxT("strange response from netx!"));
-		wxLogError(wxString::From8BitData((const char*)pucData, uiDataLen));
 		return -1;
 	}
 	if( ulResultAddress!=ulNetxAddress )
 	{
 		wxLogError(wxT("response does not match request!"));
-		wxLogError(wxString::From8BitData((const char*)pucData, uiDataLen));
 		return -1;
 	}
 
-	*pusData = usResultData;
+	*pusData = (unsigned short)uiResultData;
 	return 0;
 }
 
@@ -713,13 +713,11 @@ int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *p
 	if( iMatches!=2 )
 	{
 		wxLogError(wxT("strange response from netx!"));
-		wxLogError(wxString::From8BitData((const char*)pucData, uiDataLen));
 		return -1;
 	}
 	if( ulResultAddress!=ulNetxAddress )
 	{
 		wxLogError(wxT("response does not match request!"));
-		wxLogError(wxString::From8BitData((const char*)pucData, uiDataLen));
 		return -1;
 	}
 
