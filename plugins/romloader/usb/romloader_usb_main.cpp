@@ -730,7 +730,121 @@ int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *p
 /* read a byte array from the netx to the pc */
 int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pcData, unsigned long ulSize)
 {
-	return -1;
+	netx_device_handle tHandle;
+	tNetxUsbState tResult;
+	wxString strCommand;
+	unsigned char *pucData;
+	unsigned int uiDataLen;
+	int iMatches;
+	unsigned long ulResultAddress;
+	unsigned long ulResultData;
+	unsigned long ulBytesLeft;
+	unsigned long ulChunkSize;
+	unsigned long ulChunkCnt;
+	unsigned long ulExpectedAddress;
+	char *pcParsePtr;
+	char *pcEndPtr;
+	unsigned int uiByte;
+	int iResult;
+	char cEol;
+
+
+	// expect error
+	iResult = -1;
+
+	// get handle
+	tHandle = (netx_device_handle)pvHandle;
+
+	// construct the command
+	strCommand.Printf(wxT("DUMP %08lX %08lX BYTE"), ulNetxAddress, ulSize);
+
+	// send the command
+	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucData, &uiDataLen);
+	if( tResult!=netxUsbState_Ok )
+	{
+		wxLogError(wxT("failed to send command!"));
+	}
+	else
+	{
+		// parse the result
+		ulBytesLeft = ulSize;
+		ulExpectedAddress = ulNetxAddress;
+		pcParsePtr = (char*)pucData;
+		pcEndPtr = pcParsePtr + uiDataLen;
+		while( pcParsePtr<pcEndPtr && ulBytesLeft!=0 )
+		{
+			// get the number of expected bytes in the next row
+			ulChunkSize = 16;
+			if( ulChunkSize>ulBytesLeft )
+			{
+				ulChunkSize = ulBytesLeft;
+			}
+			// is enough input data left?
+			if( (pcParsePtr+10+ulChunkSize*3)>=pcEndPtr )
+			{
+				wxLogError(wxT("strange response from netx!"));
+				break;
+			}
+			// get the address
+			iMatches = sscanf(pcParsePtr, "%8lX: ", &ulResultAddress);
+			if( iMatches!=1 )
+			{
+				wxLogError(wxT("strange response from netx!"));
+				break;
+			}
+			if( ulResultAddress!=ulExpectedAddress )
+			{
+				wxLogError(wxT("response does not match request!"));
+				break;
+			}
+			// advance parse ptr to data part of the line
+			pcParsePtr += 10;
+			// get all bytes
+			ulChunkCnt = ulChunkSize;
+			while( ulChunkCnt!=0 )
+			{
+				// get one hex digit
+				iMatches = sscanf(pcParsePtr, "%2X ", &uiByte);
+				if( iMatches!=1 )
+				{
+					wxLogError(wxT("strange response from netx!"));
+					break;
+				}
+				// advance parse ptr to data part of the line
+				pcParsePtr += 3;
+				*(pcData++) = (char)uiByte;
+				// one number processed
+				--ulChunkCnt;
+			}
+			ulBytesLeft -= ulChunkSize;
+			// inc address
+			ulExpectedAddress += ulChunkSize;
+			// were all bytes processed?
+			if( ulChunkCnt!=0 )
+			{
+				// no -> stop processing
+				break;
+			}
+			// skip over the rest of the line
+			while( pcParsePtr<pcEndPtr )
+			{
+				cEol = *(pcParsePtr++);
+				if( cEol==0x00 || cEol==0x0a )
+				{
+					break;
+				}
+			}
+		}
+		free(pucData);
+		// all bytes received?
+		if( ulBytesLeft==0 )
+		{
+			// ok!
+			iResult = 0;
+		}
+	}
+
+	return iResult;
 }
 
 
