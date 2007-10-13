@@ -272,7 +272,7 @@ int muhkuh_plugin::fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pv
 	return iResult;
 }
 
-#if defined(__GNU__) | defined(__GNUWIN32__) | defined(__MINGW32__)
+#if defined(__GNUG__) | defined(__GNUWIN32__) | defined(__MINGW32__)
 const muhkuh_plugin::muhkuh_plugin_symbol_offset_t muhkuh_plugin::atPluginSymbolOffsets[] =
 {
 	{
