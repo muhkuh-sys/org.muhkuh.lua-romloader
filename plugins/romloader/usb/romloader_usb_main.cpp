@@ -735,19 +735,133 @@ int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pb
 /* write a byte (8bit) from the pc to the netx */
 int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char bData)
 {
-	return -1;
+	netx_device_handle tHandle;
+	tNetxUsbState tResult;
+	wxString strCommand;
+	unsigned char *pucData;
+	unsigned int uiDataLen;
+	int iResult;
+
+
+	// assume failure
+	iResult = -1;
+
+	// get handle
+	tHandle = (netx_device_handle)pvHandle;
+
+	// construct the command
+	strCommand.Printf(wxT("FILL %08lX %02X BYTE"), ulNetxAddress, bData);
+
+	// send the command
+	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucData, &uiDataLen);
+	if( tResult!=netxUsbState_Ok )
+	{
+		wxLogError(wxT("failed to send command!"));
+	}
+	else
+	{
+		// check the response
+		if( uiDataLen==2 && pucData[0]==0x0a && pucData[1]=='>' )
+		{
+			// ok!
+			iResult = 0;
+		}
+		else
+		{
+			wxLogError(wxT("strange response from netx!"));
+		}
+		free(pucData);
+	}
+
+	return iResult;
 }
 
 /* write a word (16bit) from the pc to the netx */
 int fn_write_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short usData)
 {
-	return -1;
+	netx_device_handle tHandle;
+	tNetxUsbState tResult;
+	wxString strCommand;
+	unsigned char *pucData;
+	unsigned int uiDataLen;
+	int iResult;
+
+
+	// assume failure
+	iResult = -1;
+
+	// get handle
+	tHandle = (netx_device_handle)pvHandle;
+
+	// construct the command
+	strCommand.Printf(wxT("FILL %08lX %04X WORD"), ulNetxAddress, usData);
+
+	// send the command
+	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucData, &uiDataLen);
+	if( tResult!=netxUsbState_Ok )
+	{
+		wxLogError(wxT("failed to send command!"));
+	}
+	else
+	{
+		// check the response
+		if( uiDataLen==2 && pucData[0]==0x0a && pucData[1]=='>' )
+		{
+			// ok!
+			iResult = 0;
+		}
+		else
+		{
+			wxLogError(wxT("strange response from netx!"));
+		}
+		free(pucData);
+	}
+
+	return iResult;
 }
 
 /* write a long (32bit) from the pc to the netx */
 int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulData)
 {
-	return -1;
+	netx_device_handle tHandle;
+	tNetxUsbState tResult;
+	wxString strCommand;
+	unsigned char *pucData;
+	unsigned int uiDataLen;
+	int iResult;
+
+
+	// assume failure
+	iResult = -1;
+
+	// get handle
+	tHandle = (netx_device_handle)pvHandle;
+
+	// construct the command
+	strCommand.Printf(wxT("FILL %08lX %08lX LONG"), ulNetxAddress, ulData);
+
+	// send the command
+	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucData, &uiDataLen);
+	if( tResult!=netxUsbState_Ok )
+	{
+		wxLogError(wxT("failed to send command!"));
+	}
+	else
+	{
+		// check the response
+		if( uiDataLen==2 && pucData[0]==0x0a && pucData[1]=='>' )
+		{
+			// ok!
+			iResult = 0;
+		}
+		else
+		{
+			wxLogError(wxT("strange response from netx!"));
+		}
+		free(pucData);
+	}
+
+	return iResult;
 }
 
 /* write a byte array from the pc to the netx */
