@@ -68,7 +68,7 @@ muhkuh_config_reposEntryDialog::muhkuh_config_reposEntryDialog(wxWindow *parent,
 		break;
 
 	case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
-		m_textFilelistLocation->SetValue( m_ptRepos->GetLocation() );
+		m_textSingleXmlLocation->SetValue( m_ptRepos->GetLocation() );
 		m_radioDirscan->SetValue(false);
 		m_radioFilelist->SetValue(false);
 		m_radioSingleXml->SetValue(true);
