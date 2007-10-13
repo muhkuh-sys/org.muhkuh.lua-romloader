@@ -45,13 +45,13 @@ typedef enum
 
 /*-----------------------------------*/
 
-int fn_init(wxLog *ptLogTarget);
-int fn_init_lua(wxLuaState *ptLuaState);
-int fn_leave(void);
-const muhkuh_plugin_desc *fn_get_desc(void);
-int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList);
+WXEXPORT int fn_init(wxLog *ptLogTarget);
+WXEXPORT int fn_init_lua(wxLuaState *ptLuaState);
+WXEXPORT int fn_leave(void);
+WXEXPORT const muhkuh_plugin_desc *fn_get_desc(void);
+WXEXPORT int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList);
 
-romloader *romloader_usb_create(void *pvHandle);
+WXEXPORT romloader *romloader_usb_create(void *pvHandle);
 
 /*-----------------------------------*/
 
