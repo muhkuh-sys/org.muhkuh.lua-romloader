@@ -756,8 +756,8 @@ local function runTest(iBoardIdx, iTestIdx)
 		-- the report update set the page back to the top, move to the board result again
 		moveToTest(iBoardIdx, iTestIdx)
 
-		-- don't continue for single tests
-		if eMODE_BOARD_TEST==eMODE_SINGLE_TEST then
+		-- don't continue for fatal errors or single tests
+		if result==TEST_STATUS_FatalError or eMODE_BOARD_TEST==eMODE_SINGLE_TEST then
 			break
 		end
 
