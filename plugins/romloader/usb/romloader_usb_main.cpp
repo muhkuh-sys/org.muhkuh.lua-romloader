@@ -51,6 +51,10 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 
 /*-------------------------------------*/
 
+tNetxUsbState libnetxusbmon_executeCommand(netx_device_handle tHandle, wxString strCommand, unsigned char **ppucData, unsigned int *puiDataLen);
+
+/*-------------------------------------*/
+
 const muhkuh_plugin_desc plugin_desc =
 {
 	"netX500 USB Bootloader",
@@ -455,6 +459,48 @@ tNetxUsbState libnetxusbmon_getNetxData(netx_device_handle hNetxUsbMon, unsigned
 }
 
 
+tNetxUsbState libnetxusbmon_executeCommand(netx_device_handle tHandle, wxString strCommand, unsigned char **ppucData, unsigned int *puiDataLen)
+{
+	tNetxUsbState tResult;
+	size_t sizCmdLen;
+	unsigned char abSend[64];
+	unsigned char abRec[64];
+	int iCmdLen;
+
+
+	// check the command size
+	// Commands must fit into one usb packet of 64 bytes, the first byte
+	// is the length and the last byte must be 0x0a. This means the max
+	// command size is 62 bytes.
+	sizCmdLen = strCommand.Len();
+	if( sizCmdLen>62 )
+	{
+		return netxUsbState_CommandTooLong;
+	}
+
+	// construct the command
+	memcpy(abSend+1, strCommand.To8BitData(), sizCmdLen);
+	abSend[0] = sizCmdLen+2;
+	abSend[sizCmdLen] = 0x0a;
+
+	// send the command
+	tResult = libnetxusbmon_exchange(tHandle, abSend, abRec);
+	if( tResult==netxUsbState_Ok )
+	{
+		// terminate command
+		abSend[0] = 0x00;
+		tResult = libnetxusbmon_exchange(tHandle, abSend, abRec);
+		if( tResult==netxUsbState_Ok )
+		{
+			// get the response
+			tResult = libnetxusbmon_getNetxData(tHandle, ppucData, puiDataLen);
+		}
+	}
+
+	return tResult;
+}
+
+
 /*-------------------------------------*/
 
 static void romloader_usb_close_instance(void *pvHandle)
@@ -541,14 +587,96 @@ bool fn_is_connected(void *pvHandle)
 /* read a byte (8bit) from the netx to the pc */
 int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pbData)
 {
-	return -1;
+	netx_device_handle tHandle;
+	tNetxUsbState tResult;
+	wxString strCommand;
+	unsigned char *pucData;
+	unsigned int uiDataLen;
+	int iMatches;
+	unsigned long ulResultAddress;
+	unsigned char ucResultData;
+
+
+	// get handle
+	tHandle = (netx_device_handle)pvHandle;
+
+	// construct the command
+	strCommand.Printf(wxT("DUMP %08lX BYTE"), ulNetxAddress);
+
+	// send the command
+	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucData, &uiDataLen);
+	if( tResult!=netxUsbState_Ok )
+	{
+		wxLogError(wxT("failed to send command!"));
+		return -1;
+	}
+
+	// parse the result
+	iMatches = sscanf((char*)pucData, "%8lX: %2X ", &ulResultAddress, &ucResultData);
+	free(pucData);
+	if( iMatches!=2 )
+	{
+		wxLogError(wxT("strange response from netx!"));
+		wxLogError(wxString::From8BitData((const char*)pucData, uiDataLen));
+		return -1;
+	}
+	if( ulResultAddress!=ulNetxAddress )
+	{
+		wxLogError(wxT("response does not match request!"));
+		wxLogError(wxString::From8BitData((const char*)pucData, uiDataLen));
+		return -1;
+	}
+
+	*pbData = ucResultData;
+	return 0;
 }
 
 
 /* read a word (16bit) from the netx to the pc */
 int fn_read_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short *pusData)
 {
-	return -1;
+	netx_device_handle tHandle;
+	tNetxUsbState tResult;
+	wxString strCommand;
+	unsigned char *pucData;
+	unsigned int uiDataLen;
+	int iMatches;
+	unsigned long ulResultAddress;
+	unsigned short usResultData;
+
+
+	// get handle
+	tHandle = (netx_device_handle)pvHandle;
+
+	// construct the command
+	strCommand.Printf(wxT("DUMP %08lX WORD"), ulNetxAddress);
+
+	// send the command
+	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucData, &uiDataLen);
+	if( tResult!=netxUsbState_Ok )
+	{
+		wxLogError(wxT("failed to send command!"));
+		return -1;
+	}
+
+	// parse the result
+	iMatches = sscanf((char*)pucData, "%8lX: %4X ", &ulResultAddress, &usResultData);
+	free(pucData);
+	if( iMatches!=2 )
+	{
+		wxLogError(wxT("strange response from netx!"));
+		wxLogError(wxString::From8BitData((const char*)pucData, uiDataLen));
+		return -1;
+	}
+	if( ulResultAddress!=ulNetxAddress )
+	{
+		wxLogError(wxT("response does not match request!"));
+		wxLogError(wxString::From8BitData((const char*)pucData, uiDataLen));
+		return -1;
+	}
+
+	*pusData = usResultData;
+	return 0;
 }
 
 
@@ -557,9 +685,7 @@ int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *p
 {
 	netx_device_handle tHandle;
 	tNetxUsbState tResult;
-	unsigned char abSend[64];
-	unsigned char abRec[64];
-	int iCmdLen;
+	wxString strCommand;
 	unsigned char *pucData;
 	unsigned int uiDataLen;
 	int iMatches;
@@ -571,31 +697,13 @@ int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *p
 	tHandle = (netx_device_handle)pvHandle;
 
 	// construct the command
-	iCmdLen = snprintf((char*)(abSend+1), 63, "DUMP %08lX LONG%c", ulNetxAddress, 0x0a);
-	abSend[0] = iCmdLen + 1;
+	strCommand.Printf(wxT("DUMP %08lX LONG"), ulNetxAddress);
 
 	// send the command
-	tResult = libnetxusbmon_exchange(tHandle, abSend, abRec);
+	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucData, &uiDataLen);
 	if( tResult!=netxUsbState_Ok )
 	{
 		wxLogError(wxT("failed to send command!"));
-		return -1;
-	}
-
-	// terminate command
-	abSend[0] = 0x00;
-	tResult = libnetxusbmon_exchange(tHandle, abSend, abRec);
-	if( tResult!=netxUsbState_Ok )
-	{
-		wxLogError(wxT("failed to terminate command!"));
-		return -1;
-	}
-
-	// get the response
-	tResult = libnetxusbmon_getNetxData(tHandle, &pucData, &uiDataLen);
-	if( tResult!=netxUsbState_Ok )
-	{
-		wxLogError(wxT("failed to receive netx response!"));
 		return -1;
 	}
 

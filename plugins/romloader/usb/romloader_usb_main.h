@@ -37,6 +37,7 @@ typedef enum
 	netxUsbState_ReadError,
 	netxUsbState_WriteError,
 	netxUsbState_BlockSizeError,
+	netxUsbState_CommandTooLong,
 	netxUsbState_Timeout,
 	netxUsbState_Cancel,
 	netxUsbState_Error
