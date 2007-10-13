@@ -48,8 +48,11 @@ enum
 	muhkuh_configDialog_RepositoryList,
 	muhkuh_configReposEntryDialog_radioDirscan,
 	muhkuh_configReposEntryDialog_radioFilelist,
+	muhkuh_configReposEntryDialog_radioSingleXml,
 	muhkuh_configReposEntryDialog_ButtonDirscanLocationBrowse,
-	muhkuh_configReposEntryDialog_CheckboxRelPaths,
+	muhkuh_configReposEntryDialog_ButtonSingleXmlLocationBrowse,
+	muhkuh_configReposEntryDialog_CheckboxDirscanRelPaths,
+	muhkuh_configReposEntryDialog_CheckboxSingleXmlRelPaths,
 
 	muhkuh_scanner_thread_event,
 	muhkuh_tester_thread_event,

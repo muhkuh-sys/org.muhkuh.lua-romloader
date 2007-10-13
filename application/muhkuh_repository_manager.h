@@ -55,7 +55,12 @@ public:
 	void read_config(wxConfigBase *pConfig);
 	void write_config(wxConfigBase *pConfig);
 
-	bool createTestlist(size_t sizIdx, wxArrayString *ptTestList, wxProgressDialog *ptScannerProgress);
+	bool createTestlist(size_t sizIdx, wxProgressDialog *ptScannerProgress);
+	size_t getTestlistCount(size_t sizIdx) const;
+	wxString getTestlistPrintUrl(size_t sizRepositoryIdx, size_t sizTestIdx) const;
+	wxString getTestlistBaseUrl(size_t sizRepositoryIdx, size_t sizTestIdx) const;
+	wxString getTestlistXmlUrl(size_t sizRepositoryIdx, size_t sizTestIdx) const;
+
 private:
 	void clearAllRepositories(void);
 

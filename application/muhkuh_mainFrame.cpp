@@ -1101,7 +1101,6 @@ void muhkuh_mainFrame::scanTests(int iActiveRepositoryIdx)
 {
 	bool bRes;
 	size_t sizTestCnt;
-	wxArrayString astrTestList;
 
 
 	// set new state
@@ -1117,7 +1116,7 @@ void muhkuh_mainFrame::scanTests(int iActiveRepositoryIdx)
 	);
 
 	// create the testlist
-	bRes = m_ptRepositoryManager->createTestlist(iActiveRepositoryIdx, &astrTestList, m_scannerProgress);
+	bRes = m_ptRepositoryManager->createTestlist(iActiveRepositoryIdx, m_scannerProgress);
 
 	// destroy the progress dialog, it's not possible to update the max count
 	m_scannerProgress->Destroy();
@@ -1135,24 +1134,23 @@ void muhkuh_mainFrame::scanTests(int iActiveRepositoryIdx)
 		m_ptRepositoryManager->SetActiveRepository(iActiveRepositoryIdx);
 
 		// create a new progress dialog with the correct max count
-		sizTestCnt = astrTestList.GetCount();
-
-		// show process dialog
-		m_scannerProgress = new wxProgressDialog(
-			wxT("Scanning available test descriptions"),
-			wxT("Please wait..."),
-			sizTestCnt,
-			this,
-			wxPD_CAN_ABORT | wxPD_APP_MODAL | wxPD_ELAPSED_TIME | wxPD_ESTIMATED_TIME | wxPD_REMAINING_TIME
-		);
-
+		sizTestCnt = m_ptRepositoryManager->getTestlistCount(iActiveRepositoryIdx);
 		if( sizTestCnt>0 )
 		{
-			addAllTests(&astrTestList);
-		}
+			// show process dialog
+			m_scannerProgress = new wxProgressDialog(
+				wxT("Scanning available test descriptions"),
+				wxT("Please wait..."),
+				sizTestCnt,
+				this,
+				wxPD_CAN_ABORT | wxPD_APP_MODAL | wxPD_ELAPSED_TIME | wxPD_ESTIMATED_TIME | wxPD_REMAINING_TIME
+			);
 
-		// destroy the scanner progress dialog
-		m_scannerProgress->Destroy();
+			addAllTests(iActiveRepositoryIdx);
+
+			// destroy the scanner progress dialog
+			m_scannerProgress->Destroy();
+		}
 	}
 	else
 	{
@@ -1165,10 +1163,9 @@ void muhkuh_mainFrame::scanTests(int iActiveRepositoryIdx)
 }
 
 
-void muhkuh_mainFrame::addAllTests(wxArrayString *ptTestList)
+void muhkuh_mainFrame::addAllTests(int iActiveRepositoryIdx)
 {
 	size_t sizMax, sizCnt;
-	wxString strUrl;
 	wxString strMessage;
 	bool fResult;
 	bool fScannerIsRunning;
@@ -1178,23 +1175,21 @@ void muhkuh_mainFrame::addAllTests(wxArrayString *ptTestList)
 	fScannerIsRunning = true;
 
 	// loop over all tests
-	sizMax = ptTestList->Count();
+	sizMax = m_ptRepositoryManager->getTestlistCount(iActiveRepositoryIdx);
 	sizCnt = 0;
 	while( sizCnt<sizMax && fScannerIsRunning==true )
 	{
-		// get the url
-		strUrl = ptTestList->Item(sizCnt);
-
 		// check for cancel button
 		strMessage  = wxT("scanning '");
-		strMessage += strUrl;
+		strMessage += m_ptRepositoryManager->getTestlistPrintUrl(iActiveRepositoryIdx, sizCnt);
 		strMessage += wxT("' ...");
 		fScannerIsRunning = m_scannerProgress->Update(sizCnt, strMessage, NULL);
+
+		fResult = scanFileXml(iActiveRepositoryIdx, sizCnt);
 
 		// next item
 		++sizCnt;
 
-		fResult = scanFileXml(strUrl);
 		if( fResult==false )
 		{
 			continue;
@@ -1206,10 +1201,9 @@ void muhkuh_mainFrame::addAllTests(wxArrayString *ptTestList)
 }
 
 
-bool muhkuh_mainFrame::scanFileXml(wxString &strMtdFilename)
+bool muhkuh_mainFrame::scanFileXml(size_t sizRepositoryIdx, size_t sizTestIdx)
 {
-	wxString strMtdPath;
-	wxString strXmlFile;
+	wxString strXmlUrl;
 	wxFileSystem fileSystem;
 	wxFSFile *ptFsFile;
 	wxInputStream *ptInputStream;
@@ -1223,18 +1217,15 @@ bool muhkuh_mainFrame::scanFileXml(wxString &strMtdFilename)
 	wxTreeItemId testId;
 
 
-	// path to the root of the test description
-	strMtdPath = strMtdFilename + wxT("#zip:");
-
-	// open xml file
-	strXmlFile = strMtdPath + wxT("test_description.xml");
+	// get the url for the xml file
+	strXmlUrl = m_ptRepositoryManager->getTestlistXmlUrl(sizRepositoryIdx, sizTestIdx);
 
 	// test if file exists
-	wxLogVerbose(wxT("Reading testdescription ") + strMtdFilename);
-	ptFsFile = fileSystem.OpenFile(strXmlFile);
+	wxLogVerbose(wxT("Reading testdescription ") + strXmlUrl);
+	ptFsFile = fileSystem.OpenFile(strXmlUrl);
 	if( ptFsFile==NULL )
 	{
-		wxLogError(wxT("could not read xml file '") + strXmlFile + wxT("'"));
+		wxLogError(wxT("could not read xml file '") + strXmlUrl + wxT("'"));
 		return false;
 	}
 
@@ -1247,9 +1238,9 @@ bool muhkuh_mainFrame::scanFileXml(wxString &strMtdFilename)
 		return false;
 	}
 
-	if( ptWrapXml->initialize(ptInputStream, strMtdPath)==false )
+	if( ptWrapXml->initialize(ptInputStream, sizRepositoryIdx, sizTestIdx)==false )
 	{
-		wxLogError(wxT("Failed to read the xml file for testdescription ") + strXmlFile);
+		wxLogError(wxT("Failed to read the xml file for testdescription ") + strXmlUrl);
 		return false;
 	}
 

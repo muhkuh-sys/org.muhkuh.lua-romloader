@@ -40,7 +40,8 @@ public:
 	{
 		REPOSITORY_TYP_UNDEFINED		= -1,			// unconfigured repository object
 		REPOSITORY_TYP_DIRSCAN			= 0,			// scan a complete directory for one extension
-		REPOSITORY_TYP_FILELIST			= 1			// get the tests from a file
+		REPOSITORY_TYP_FILELIST			= 1,			// get the testlist from a file
+		REPOSITORY_TYP_SINGLEXML		= 2			// use one single unpacked test
 	} REPOSITORY_TYP_E;
 
 
@@ -52,6 +53,7 @@ public:
 	void SetName(wxString strName);
 	void SetDirscan(wxString strLocation, wxString strExtension);
 	void SetFilelist(wxString strLocation);
+	void SetSingleXml(wxString strLocation);
 	void SetSelected(bool fSelected);
 
 	wxString GetName(void) const;
@@ -70,11 +72,16 @@ public:
 	static muhkuh_repository *CreateFromConfig(wxConfigBase *pConfig, int iIndex);
 	void write_config(wxConfigBase *pConfig) const;
 
-	bool createTestlist(wxArrayString *ptTestList, wxProgressDialog *ptScannerProgress) const;
+	bool createTestlist(wxProgressDialog *ptScannerProgress);
+	size_t getTestlistCount(void) const;
+	wxString getTestlistPrintUrl(size_t sizTestIdx) const;
+	wxString getTestlistBaseUrl(size_t sizTestIdx) const;
+	wxString getTestlistXmlUrl(size_t sizTestIdx) const;
 
 private:
-	bool createTestlist_local(wxArrayString *ptTestList, wxProgressDialog *ptScannerProgress) const;
-	bool createTestlist_url(wxArrayString *ptTestList, wxProgressDialog *ptScannerProgress) const;
+	bool createTestlist_local(wxProgressDialog *ptScannerProgress);
+	bool createTestlist_url(wxProgressDialog *ptScannerProgress);
+	bool createTestlist_singlexml(wxProgressDialog *ptScannerProgress);
 
 	wxString m_strName;			// user defined name
 	REPOSITORY_TYP_E m_eTyp;		// typ of this repository
@@ -82,6 +89,9 @@ private:
 	wxString m_strExtension;		// dirscan only, that's the extension to look for
 
 	bool m_fSelected;			// flag for 'selected in the combo box, used to keep an item selected over a change of configration
+
+	// the tests found in this repository
+	wxArrayString astrTestList;
 };
 
 

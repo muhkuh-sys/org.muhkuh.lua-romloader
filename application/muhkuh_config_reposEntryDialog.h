@@ -35,29 +35,35 @@
 class muhkuh_config_reposEntryDialog : public wxDialog
 {
 public:
-	muhkuh_config_reposEntryDialog(wxWindow *parent, const wxString sApplicationPath, muhkuh_repository *ptRepos);
+	muhkuh_config_reposEntryDialog(wxWindow *parent, const wxString strApplicationPath, muhkuh_repository *ptRepos);
 
 	void OnOkButton(wxCommandEvent &event);
 	void OnBrowseDirscanLocationButton(wxCommandEvent &event);
-	void OnUseRelPaths(wxCommandEvent &event);
+	void OnBrowseSingleXmlLocationButton(wxCommandEvent &event);
+	void OnDirscanUseRelPaths(wxCommandEvent &event);
+	void OnSingleXmlUseRelPaths(wxCommandEvent &event);
 	void OnRadioDirscan(wxCommandEvent &event);
 	void OnRadioFilelist(wxCommandEvent &event);
+	void OnRadioSingleXml(wxCommandEvent &event);
 
 private:
 	void createControls(void);
-	bool adaptDirscanLocation(wxString sFileName);
+	bool adaptDirscanLocation(wxString strFileName);
+	bool adaptSingleXmlLocation(wxString strFileName);
 	void SwitchInputs(void);
 
 	muhkuh_repository *m_ptRepos;
 	muhkuh_repository::REPOSITORY_TYP_E m_eTyp;
 	wxString m_strApplicationPath;
 
-	bool m_fUseRelativePaths;
+	bool m_fDirscanUseRelativePaths;
+	bool m_fSingleXmlUseRelativePaths;
 
 	// the controls
 	wxBoxSizer *m_mainSizer;
 	wxRadioButton *m_radioDirscan;
 	wxRadioButton *m_radioFilelist;
+	wxRadioButton *m_radioSingleXml;
 
 	wxFlexGridSizer *m_repoNameGrid;
 	wxStaticText *m_labelRepoName;
@@ -71,11 +77,17 @@ private:
 	wxTextCtrl *m_textTestExtension;
 	wxStaticText *m_labelAppPath;
 	wxTextCtrl *m_textAppPath;
-	wxCheckBox *m_checkUseRelativePaths;
+	wxCheckBox *m_checkDirscanUseRelativePaths;
+	wxCheckBox *m_checkSingleXmlUseRelativePaths;
 
 	wxFlexGridSizer *m_filelistGrid;
 	wxStaticText *m_labelFilelistLocation;
 	wxTextCtrl *m_textFilelistLocation;
+
+	wxFlexGridSizer *m_singleXmlGrid;
+	wxStaticText *m_labelSingleXmlLocation;
+	wxTextCtrl *m_textSingleXmlLocation;
+	wxBitmapButton *m_buttonSingleXmlLocation;
 
 	wxBoxSizer *m_buttonSizer;
 	wxButton *m_buttonOk;

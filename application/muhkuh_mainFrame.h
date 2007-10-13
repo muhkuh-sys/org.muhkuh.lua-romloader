@@ -154,8 +154,8 @@ private:
 	void setState(muhkuh_mainFrame_state tNewState);
 
 	void scanTests(int iActiveRepositoryIdx);
-	void addAllTests(wxArrayString *ptTestList);
-	bool scanFileXml(wxString &strMtdFilename);
+	void addAllTests(int iActiveRepositoryIdx);
+	bool scanFileXml(size_t sizRepositoryIdx, size_t sizTestIdx);
 
 	void updateRepositoryCombo(void);
 
@@ -215,8 +215,6 @@ private:
 	wxTipProvider *m_tipProvider;
 	bool m_fShowStartupTips;
 	size_t m_sizStartupTipsIdx;
-
-//	bool fSaveRelativePaths;
 
 	// finish flag for tests
 	volatile bool fTestHasFinished;

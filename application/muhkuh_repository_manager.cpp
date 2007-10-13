@@ -344,52 +344,6 @@ muhkuh_repository *muhkuh_repository_manager::GetRepository(size_t sizIdx)
 }
 
 
-
-/*
-
-		tRepoBitmapSize.Set(16,16);
-		m_repositoryCombo->Clear();
-		iNewSelection = wxNOT_FOUND;
-		iter = m_ptRepositories->begin();
-		iCnt = 0;
-		while( iter!=m_ptRepositories->end() )
-		{
-			ptRepos = *iter;
-
-			// get string representation of the new entry
-			strMessage = ptRepos->GetStringRepresentation();
-			// get bitmap for the entry
-			tRepoBitmap = ptRepos->GetBitmap(tRepoBitmapSize);
-			// add to combo box
-			m_repositoryCombo->Append(strMessage, tRepoBitmap);
-
-			// restore selection
-			if( ptRepos->GetSelected()==true )
-			{
-				iNewSelection = iCnt;
-			}
-
-			// next item
-			++iter;
-			++iCnt;
-		}
-		// get new test list
-		m_repositoryCombo->Select(iNewSelection);
-		m_iActiveRepositoryIdx = iNewSelection;
-		if( iNewSelection!=wxNOT_FOUND )
-		{
-			scanTests(iNewSelection);
-		}
-
-*/
-
-
-
-
-
-
-
-
 void muhkuh_repository_manager::clearAllRepositories(void)
 {
 	std::vector<muhkuh_repository*>::const_iterator iter;
@@ -410,11 +364,11 @@ void muhkuh_repository_manager::clearAllRepositories(void)
 }
 
 
-bool muhkuh_repository_manager::createTestlist(size_t sizIdx, wxArrayString *ptTestList, wxProgressDialog *ptScannerProgress)
+bool muhkuh_repository_manager::createTestlist(size_t sizIdx, wxProgressDialog *ptScannerProgress)
 {
 	bool fResult;
-	const muhkuh_repository *ptRepoCfg;
-	std::vector<muhkuh_repository*>::const_iterator iter;
+	muhkuh_repository *ptRepoCfg;
+	std::vector<muhkuh_repository*>::iterator iter;
 
 
 	// default result is 'error'
@@ -428,9 +382,109 @@ bool muhkuh_repository_manager::createTestlist(size_t sizIdx, wxArrayString *ptT
 		ptRepoCfg = *iter;
 
 		// call the scan routine
-		fResult = ptRepoCfg->createTestlist(ptTestList, ptScannerProgress);
+		fResult = ptRepoCfg->createTestlist(ptScannerProgress);
 	}
 
 	return fResult;
+}
+
+
+size_t muhkuh_repository_manager::getTestlistCount(size_t sizIdx) const
+{
+	size_t sizResult;
+	const muhkuh_repository *ptRepoCfg;
+	std::vector<muhkuh_repository*>::const_iterator iter;
+
+
+	// default result is 'error'
+	sizResult = -1;
+
+	// validate the new index
+	if( sizIdx>=0 && (unsigned int)sizIdx<m_ptRepositories->size() )
+	{
+		// the index is valid -> get the config
+		iter = m_ptRepositories->begin() + sizIdx;
+		ptRepoCfg = *iter;
+
+		// call the scan routine
+		sizResult = ptRepoCfg->getTestlistCount();
+	}
+
+	return sizResult;
+}
+
+
+wxString muhkuh_repository_manager::getTestlistPrintUrl(size_t sizRepositoryIdx, size_t sizTestIdx) const
+{
+	wxString strResult;
+	const muhkuh_repository *ptRepoCfg;
+	std::vector<muhkuh_repository*>::const_iterator iter;
+
+
+	// default result is 'error'
+	strResult = wxEmptyString;
+
+	// validate the new index
+	if( sizRepositoryIdx>=0 && (unsigned int)sizRepositoryIdx<m_ptRepositories->size() )
+	{
+		// the index is valid -> get the config
+		iter = m_ptRepositories->begin() + sizRepositoryIdx;
+		ptRepoCfg = *iter;
+
+		// call the scan routine
+		strResult = ptRepoCfg->getTestlistPrintUrl(sizTestIdx);
+	}
+
+	return strResult;
+}
+
+
+wxString muhkuh_repository_manager::getTestlistBaseUrl(size_t sizRepositoryIdx, size_t sizTestIdx) const
+{
+	wxString strResult;
+	const muhkuh_repository *ptRepoCfg;
+	std::vector<muhkuh_repository*>::const_iterator iter;
+
+
+	// default result is 'error'
+	strResult = wxEmptyString;
+
+	// validate the new index
+	if( sizRepositoryIdx>=0 && (unsigned int)sizRepositoryIdx<m_ptRepositories->size() )
+	{
+		// the index is valid -> get the config
+		iter = m_ptRepositories->begin() + sizRepositoryIdx;
+		ptRepoCfg = *iter;
+
+		// call the scan routine
+		strResult = ptRepoCfg->getTestlistBaseUrl(sizTestIdx);
+	}
+
+	return strResult;
+}
+
+
+wxString muhkuh_repository_manager::getTestlistXmlUrl(size_t sizRepositoryIdx, size_t sizTestIdx) const
+{
+	wxString strResult;
+	const muhkuh_repository *ptRepoCfg;
+	std::vector<muhkuh_repository*>::const_iterator iter;
+
+
+	// default result is 'error'
+	strResult = wxEmptyString;
+
+	// validate the new index
+	if( sizRepositoryIdx>=0 && (unsigned int)sizRepositoryIdx<m_ptRepositories->size() )
+	{
+		// the index is valid -> get the config
+		iter = m_ptRepositories->begin() + sizRepositoryIdx;
+		ptRepoCfg = *iter;
+
+		// call the scan routine
+		strResult = ptRepoCfg->getTestlistXmlUrl(sizTestIdx);
+	}
+
+	return strResult;
 }
 

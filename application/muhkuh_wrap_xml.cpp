@@ -55,14 +55,15 @@ muhkuh_wrap_xml::~muhkuh_wrap_xml(void)
 }
 
 
-bool muhkuh_wrap_xml::initialize(wxInputStream *pStream, wxString strMtdPath)
+bool muhkuh_wrap_xml::initialize(wxInputStream *pStream, size_t sizRepositoryIdx, size_t sizTestIdx)
 {
 	bool fOk;
 	wxXmlDocument *xmldoc;
 
 
-	// set the path to the mtd
-	m_strMtdPath = strMtdPath;
+	// set the test ids
+        m_sizRepositoryIdx = sizRepositoryIdx;
+	m_sizTestIdx = sizTestIdx;
 
 	// assume failure
 	fOk = false;
@@ -105,9 +106,15 @@ bool muhkuh_wrap_xml::initialize(wxInputStream *pStream, wxString strMtdPath)
 }
 
 
-wxString muhkuh_wrap_xml::getMtdPath(void) const
+size_t muhkuh_wrap_xml::getRepositoryIndex(void) const
 {
-	return m_strMtdPath;
+	return m_sizRepositoryIdx;
+}
+
+
+size_t muhkuh_wrap_xml::getTestIndex(void) const
+{
+	return m_sizTestIdx;
 }
 
 

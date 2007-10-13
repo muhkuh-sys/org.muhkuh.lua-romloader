@@ -84,6 +84,17 @@ void muhkuh_repository::SetFilelist(wxString strLocation)
 }
 
 
+void muhkuh_repository::SetSingleXml(wxString strLocation)
+{
+	// set repository typ
+	m_eTyp = REPOSITORY_TYP_SINGLEXML;
+	// set location
+	m_strLocation = strLocation;
+	// no extension in this configuration
+	m_strExtension.Clear();
+}
+
+
 void muhkuh_repository::SetSelected(bool fSelected)
 {
 	m_fSelected = fSelected;
@@ -144,6 +155,10 @@ wxString muhkuh_repository::GetStringRepresentation(void) const
 		strName += wxT("filelist from ");
 		strName += m_strLocation;
 		break;
+	case REPOSITORY_TYP_SINGLEXML:
+		strName += wxT("single xml file from ");
+		strName += m_strLocation;
+		break;
 	default:
 		strName += wxT("unknown typ");
 		break;
@@ -175,6 +190,9 @@ wxBitmap muhkuh_repository::GetBitmap(REPOSITORY_TYP_E eTyp, wxSize tBitmapSize)
 	case REPOSITORY_TYP_FILELIST:
 		tArtId = wxART_HELP_BOOK;
 		break;
+	case REPOSITORY_TYP_SINGLEXML:
+		tArtId = wxART_NORMAL_FILE;
+		break;
 	default:
 		tArtId = wxART_ERROR;
 		break;
@@ -190,8 +208,8 @@ wxImageList *muhkuh_repository::CreateNewImageList(wxSize tBitmapSize)
 	wxBitmap bitmap;
 
 
-	// create the new empty list and reserve space for 3 icons
-	ptImageList = new wxImageList(tBitmapSize.GetWidth(), tBitmapSize.GetHeight(), true, 3);
+	// create the new empty list and reserve space for 4 icons
+	ptImageList = new wxImageList(tBitmapSize.GetWidth(), tBitmapSize.GetHeight(), true, 4);
 
 	// NOTE: if you change the order or amount of icons here, you must also change the GetImageListIndex function
 	// add 'undefined' bitmap
@@ -202,6 +220,9 @@ wxImageList *muhkuh_repository::CreateNewImageList(wxSize tBitmapSize)
 	ptImageList->Add(bitmap);
 	// add 'filelist' bitmap
 	bitmap = muhkuh_repository::GetBitmap(muhkuh_repository::REPOSITORY_TYP_FILELIST, tBitmapSize);
+	ptImageList->Add(bitmap);
+	// add 'singlexml' bitmap
+	bitmap = muhkuh_repository::GetBitmap(muhkuh_repository::REPOSITORY_TYP_SINGLEXML, tBitmapSize);
 	ptImageList->Add(bitmap);
 
 	// return the new imagelist
@@ -221,6 +242,9 @@ int muhkuh_repository::GetImageListIndex(REPOSITORY_TYP_E eTyp)
 		break;
 	case REPOSITORY_TYP_FILELIST:
 		iIdx = 2;
+		break;
+	case REPOSITORY_TYP_SINGLEXML:
+		iIdx = 3;
 		break;
 	case REPOSITORY_TYP_UNDEFINED:
 	default:
@@ -307,6 +331,21 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 			}
 			break;
 
+		case REPOSITORY_TYP_SINGLEXML:
+			// the filelist typ must have a location
+			if( strLocation.IsEmpty() )
+			{
+				strMessage.Printf(wxT("repository entry %d has no location, ignore entry"), iIndex);
+				wxLogWarning(strMessage);
+			}
+			else
+			{
+				// the settings are ok, create a new item
+				ptRepoCfg = new muhkuh_repository(strName);
+				ptRepoCfg->SetSingleXml(strLocation);
+			}
+			break;
+
 		default:
 			// here end up all unknown types, show an errormessage
 			strMessage.Printf(wxT("repository entry %d has invalid typ, ignore entry"), iIndex);
@@ -333,7 +372,7 @@ void muhkuh_repository::write_config(wxConfigBase *pConfig) const
 }
 
 
-bool muhkuh_repository::createTestlist(wxArrayString *ptTestList, wxProgressDialog *ptScannerProgress) const
+bool muhkuh_repository::createTestlist(wxProgressDialog *ptScannerProgress)
 {
 	bool fResult;
 
@@ -345,7 +384,7 @@ bool muhkuh_repository::createTestlist(wxArrayString *ptTestList, wxProgressDial
 	switch( m_eTyp )
 	{
 	case muhkuh_repository::REPOSITORY_TYP_DIRSCAN:
-		fResult = createTestlist_local(ptTestList, ptScannerProgress);
+		fResult = createTestlist_local(ptScannerProgress);
 		if( fResult==false )
 		{
 			wxLogError(wxT("failed to scan the test directory"));
@@ -353,7 +392,15 @@ bool muhkuh_repository::createTestlist(wxArrayString *ptTestList, wxProgressDial
 		break;
 
 	case muhkuh_repository::REPOSITORY_TYP_FILELIST:
-		fResult = createTestlist_url(ptTestList, ptScannerProgress);
+		fResult = createTestlist_url(ptScannerProgress);
+		if( fResult==false )
+		{
+			wxLogError(wxT("failed to open the repository"));
+		}
+		break;
+
+	case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
+		fResult = createTestlist_singlexml(ptScannerProgress);
 		if( fResult==false )
 		{
 			wxLogError(wxT("failed to open the repository"));
@@ -369,7 +416,92 @@ bool muhkuh_repository::createTestlist(wxArrayString *ptTestList, wxProgressDial
 }
 
 
-bool muhkuh_repository::createTestlist_local(wxArrayString *ptTestList, wxProgressDialog *ptScannerProgress) const
+size_t muhkuh_repository::getTestlistCount(void) const
+{
+	return astrTestList.GetCount();
+}
+
+
+wxString muhkuh_repository::getTestlistPrintUrl(size_t sizTestIdx) const
+{
+	wxString strResult;
+
+
+	// check test index
+	if( sizTestIdx>=0 && sizTestIdx<astrTestList.GetCount() )
+	{
+		strResult  = astrTestList.Item(sizTestIdx);
+	}
+
+	return strResult;
+}
+
+
+wxString muhkuh_repository::getTestlistBaseUrl(size_t sizTestIdx) const
+{
+	wxString strResult;
+	wxFileName filename;
+
+
+	// check test index
+	if( sizTestIdx>=0 && sizTestIdx<astrTestList.GetCount() )
+	{
+		switch( m_eTyp )
+		{
+		case muhkuh_repository::REPOSITORY_TYP_DIRSCAN:
+		case muhkuh_repository::REPOSITORY_TYP_FILELIST:
+			// dirscan and filelist tests are packed mtd's
+			strResult  = astrTestList.Item(sizTestIdx);
+			strResult += wxT("#zip:");
+			break;
+
+		case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
+			// single xml points directly to the xml file
+			filename.Assign(astrTestList.Item(sizTestIdx));
+			strResult = filename.GetPath();
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return strResult;
+}
+
+
+wxString muhkuh_repository::getTestlistXmlUrl(size_t sizTestIdx) const
+{
+	wxString strResult;
+
+
+	if( sizTestIdx>=0 && sizTestIdx<astrTestList.GetCount() )
+	{
+		switch( m_eTyp )
+		{
+		case muhkuh_repository::REPOSITORY_TYP_DIRSCAN:
+		case muhkuh_repository::REPOSITORY_TYP_FILELIST:
+			// dirscan and filelist tests are packed mtd's
+			strResult  = astrTestList.Item(sizTestIdx);
+			strResult += wxT("#zip:");
+			strResult += wxT("test_description.xml");
+			break;
+
+		case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
+			// single xml points directly to the xml file
+			strResult = astrTestList.Item(sizTestIdx);
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return strResult;
+}
+
+
+bool muhkuh_repository::createTestlist_local(wxProgressDialog *ptScannerProgress)
 {
 	wxString strProgressMessage;
 	wxFileName fileName;
@@ -437,7 +569,7 @@ bool muhkuh_repository::createTestlist_local(wxArrayString *ptTestList, wxProgre
 			// convert to url
 			strUrl = wxFileSystem::FileNameToURL(strFilename);
 			wxLogDebug(wxT("found ") + strUrl);
-			ptTestList->Add(strUrl);
+			astrTestList.Add(strUrl);
 			strFilename = fileSystem.FindNext();
 		}
 	}
@@ -447,7 +579,7 @@ bool muhkuh_repository::createTestlist_local(wxArrayString *ptTestList, wxProgre
 }
 
 
-bool muhkuh_repository::createTestlist_url(wxArrayString *ptTestList, wxProgressDialog *ptScannerProgress) const
+bool muhkuh_repository::createTestlist_url(wxProgressDialog *ptScannerProgress)
 {
 	wxString strLocation;
 	wxURL filelistUrl;
@@ -586,7 +718,7 @@ bool muhkuh_repository::createTestlist_url(wxArrayString *ptTestList, wxProgress
 					{
 						strUrl = ptFsFile->GetLocation();
 						wxLogMessage(wxT("found ") + strUrl);
-						ptTestList->Add(strUrl);
+						astrTestList.Add(strUrl);
 						// delete the fsfile
 						delete ptFsFile;
 					}
@@ -599,3 +731,63 @@ bool muhkuh_repository::createTestlist_url(wxArrayString *ptTestList, wxProgress
 	return fScannerIsRunning;
 }
 
+
+bool muhkuh_repository::createTestlist_singlexml(wxProgressDialog *ptScannerProgress)
+{
+	wxString strProgressMessage;
+	wxFileName fileName;
+	wxString strFilename;
+	wxString strCompletePath;
+	wxString strUrl;
+	wxFileSystem fileSystem;
+	bool fScannerIsRunning;
+
+
+	// no idea how long the scanning will take -> set to pulse (that's 'unknown time remaining)
+	strProgressMessage  = wxT("scanning single xml file '");
+	strProgressMessage += m_strLocation;
+	strProgressMessage += wxT("'...");
+	fScannerIsRunning = ptScannerProgress->Pulse(strProgressMessage, NULL);
+	// update gui for new scanner message
+	wxTheApp->Yield();
+	if( fScannerIsRunning==true )
+	{
+		// move to the folder where muhkuh is stored
+		// NOTE: this is important for relative paths
+		fileName.SetCwd(wxStandardPaths::Get().GetExecutablePath());
+		// change to the file
+		fileName.Assign(m_strLocation);
+
+		// check the path
+		if( fileName.IsOk()!=true )
+		{
+			// path is not correct
+			wxLogError(wxT("failed to set path, IsOK returned false"));
+			return false;
+		}
+		// does the path point to a file (i.e. not a directory)?
+		if( fileName.IsDir()!=false )
+		{
+			// no, the path points to a directory
+			wxLogError(wxT("the path does not point to a file"));
+			return false;
+		}
+		// is the file readable?
+		if( fileName.IsFileReadable()!=true )
+		{
+			// no, the file is not readable
+			wxLogError(wxT("the file is not readable"));
+			return false;
+		}
+
+		// the path seems to be ok
+		strCompletePath = fileName.GetFullPath(wxPATH_NATIVE);
+		// convert path to url
+		strUrl = wxFileSystem::FileNameToURL(strCompletePath);
+		wxLogDebug(wxT("found ") + strUrl);
+		astrTestList.Add(strUrl);
+	}
+
+	// completed the list if the scanner was not canceled
+	return fScannerIsRunning;
+}

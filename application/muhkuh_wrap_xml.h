@@ -46,9 +46,10 @@ public:
 	muhkuh_wrap_xml(void);
 	~muhkuh_wrap_xml(void);
 
-	bool initialize(wxInputStream *pStream, wxString strMtdPath);
+	bool initialize(wxInputStream *pStream, size_t sizRepositoryIdx, size_t sizTestIdx);
 
-	wxString getMtdPath(void) const;
+	size_t getRepositoryIndex(void) const;
+	size_t getTestIndex(void) const;
 	wxXmlDocument *getXmlDocument(void);
 
 	wxString testDescription_getName(void) const;
@@ -68,8 +69,8 @@ private:
 	tTesterXml_TestDescription *m_ptTestDescription;
 	tTesterXml_Test *m_ptTest;
 
-	// path to the mtd directory, includes any vfs prefixes like "#zip:"
-	wxString m_strMtdPath;
+	size_t m_sizRepositoryIdx;
+	size_t m_sizTestIdx;
 };
 
 

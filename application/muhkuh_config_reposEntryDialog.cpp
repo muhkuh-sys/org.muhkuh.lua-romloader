@@ -24,11 +24,14 @@
 
 
 BEGIN_EVENT_TABLE(muhkuh_config_reposEntryDialog, wxDialog)
-	EVT_BUTTON(wxID_OK,						muhkuh_config_reposEntryDialog::OnOkButton)
+	EVT_BUTTON(wxID_OK,							muhkuh_config_reposEntryDialog::OnOkButton)
 	EVT_BUTTON(muhkuh_configReposEntryDialog_ButtonDirscanLocationBrowse,	muhkuh_config_reposEntryDialog::OnBrowseDirscanLocationButton)
-	EVT_CHECKBOX(muhkuh_configReposEntryDialog_CheckboxRelPaths,	muhkuh_config_reposEntryDialog::OnUseRelPaths)
-	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioDirscan,	muhkuh_config_reposEntryDialog::OnRadioDirscan)
-	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioFilelist,	muhkuh_config_reposEntryDialog::OnRadioFilelist)
+	EVT_BUTTON(muhkuh_configReposEntryDialog_ButtonSingleXmlLocationBrowse,	muhkuh_config_reposEntryDialog::OnBrowseSingleXmlLocationButton)
+	EVT_CHECKBOX(muhkuh_configReposEntryDialog_CheckboxDirscanRelPaths,	muhkuh_config_reposEntryDialog::OnDirscanUseRelPaths)
+	EVT_CHECKBOX(muhkuh_configReposEntryDialog_CheckboxSingleXmlRelPaths,	muhkuh_config_reposEntryDialog::OnSingleXmlUseRelPaths)
+	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioDirscan,		muhkuh_config_reposEntryDialog::OnRadioDirscan)
+	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioFilelist,		muhkuh_config_reposEntryDialog::OnRadioFilelist)
+	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioSingleXml,		muhkuh_config_reposEntryDialog::OnRadioSingleXml)
 END_EVENT_TABLE()
 
 
@@ -41,7 +44,8 @@ muhkuh_config_reposEntryDialog::muhkuh_config_reposEntryDialog(wxWindow *parent,
 	// create the controls
 	createControls();
 
-	m_fUseRelativePaths = false;
+	m_fDirscanUseRelativePaths = false;
+	m_fSingleXmlUseRelativePaths = false;
 
 	m_textRepoName->SetValue( m_ptRepos->GetName() );
 
@@ -53,24 +57,35 @@ muhkuh_config_reposEntryDialog::muhkuh_config_reposEntryDialog(wxWindow *parent,
 		m_textTestExtension->SetValue( m_ptRepos->GetExtension() );
 		m_radioDirscan->SetValue(true);
 		m_radioFilelist->SetValue(false);
+		m_radioSingleXml->SetValue(false);
 		break;
 
 	case muhkuh_repository::REPOSITORY_TYP_FILELIST:
 		m_textFilelistLocation->SetValue( m_ptRepos->GetLocation() );
 		m_radioDirscan->SetValue(false);
 		m_radioFilelist->SetValue(true);
+		m_radioSingleXml->SetValue(false);
+		break;
+
+	case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
+		m_textFilelistLocation->SetValue( m_ptRepos->GetLocation() );
+		m_radioDirscan->SetValue(false);
+		m_radioFilelist->SetValue(false);
+		m_radioSingleXml->SetValue(true);
 		break;
 
 	default:
 		m_eTyp = muhkuh_repository::REPOSITORY_TYP_DIRSCAN;
 		m_radioDirscan->SetValue(true);
 		m_radioFilelist->SetValue(false);
+		m_radioSingleXml->SetValue(false);
 		m_textTestExtension->SetValue(wxT("*.mtd"));
 	};
 	SwitchInputs();
 
 	// set the checkbox, this must be after the filenames
-	m_checkUseRelativePaths->SetValue(m_fUseRelativePaths);
+	m_checkDirscanUseRelativePaths->SetValue(m_fDirscanUseRelativePaths);
+	m_checkSingleXmlUseRelativePaths->SetValue(m_fSingleXmlUseRelativePaths);
 }
 
 
@@ -127,10 +142,10 @@ void muhkuh_config_reposEntryDialog::createControls(void)
 	m_dirscanGrid->Add(m_textAppPath, 0, wxEXPAND);
 	m_dirscanGrid->AddSpacer(4);
 
-	m_checkUseRelativePaths = new wxCheckBox(this, muhkuh_configReposEntryDialog_CheckboxRelPaths, _("Use relative paths :"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
+	m_checkDirscanUseRelativePaths = new wxCheckBox(this, muhkuh_configReposEntryDialog_CheckboxDirscanRelPaths, _("Use relative paths :"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
 	m_dirscanGrid->AddSpacer(4);
 	m_dirscanGrid->AddSpacer(4);
-	m_dirscanGrid->Add(m_checkUseRelativePaths, 0, wxEXPAND);
+	m_dirscanGrid->Add(m_checkDirscanUseRelativePaths, 0, wxEXPAND);
 	m_dirscanGrid->AddSpacer(4);
 
 
@@ -147,6 +162,30 @@ void muhkuh_config_reposEntryDialog::createControls(void)
 	m_filelistGrid->Add(m_labelFilelistLocation, 0, wxALIGN_CENTER_VERTICAL);
 	m_filelistGrid->AddSpacer(4);
 	m_filelistGrid->Add(m_textFilelistLocation, 0, wxEXPAND);
+
+
+	m_radioSingleXml = new wxRadioButton(this, muhkuh_configReposEntryDialog_radioSingleXml, _("Single Xml"), wxDefaultPosition, wxDefaultSize, 0);
+	m_mainSizer->Add(m_radioSingleXml, 0, 0);
+
+	m_singleXmlGrid = new wxFlexGridSizer(1, 4, 0, 0);
+	m_singleXmlGrid->AddGrowableCol(2, 1);
+	m_mainSizer->Add(m_singleXmlGrid, 0, wxEXPAND|wxLEFT, 32);
+	m_buttonSingleXmlLocation = new wxBitmapButton(this, muhkuh_configReposEntryDialog_ButtonSingleXmlLocationBrowse, wxArtProvider::GetBitmap(wxART_FILE_OPEN));
+
+	// fill the input grid
+	m_labelSingleXmlLocation = new wxStaticText(this, wxID_ANY, _("Path to the xml test description :"));
+	m_textSingleXmlLocation = new wxTextCtrl(this, wxID_ANY);
+	m_singleXmlGrid->Add(m_labelSingleXmlLocation, 0, wxALIGN_CENTER_VERTICAL);
+	m_singleXmlGrid->AddSpacer(4);
+	m_singleXmlGrid->Add(m_textSingleXmlLocation, 0, wxEXPAND);
+	m_singleXmlGrid->Add(m_buttonSingleXmlLocation);
+
+	m_checkSingleXmlUseRelativePaths = new wxCheckBox(this, muhkuh_configReposEntryDialog_CheckboxSingleXmlRelPaths, _("Use relative paths :"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
+	m_singleXmlGrid->AddSpacer(4);
+	m_singleXmlGrid->AddSpacer(4);
+	m_singleXmlGrid->Add(m_checkSingleXmlUseRelativePaths, 0, wxEXPAND);
+	m_singleXmlGrid->AddSpacer(4);
+
 
 	// create the button sizer
 	m_buttonSizer = new wxBoxSizer(wxHORIZONTAL);
@@ -173,6 +212,7 @@ void muhkuh_config_reposEntryDialog::SwitchInputs(void)
 {
 	bool fDirscanEndable;
 	bool fFilelistEndable;
+	bool fSingleXmlEnable;
 
 
 	switch( m_eTyp )
@@ -180,26 +220,38 @@ void muhkuh_config_reposEntryDialog::SwitchInputs(void)
 	case muhkuh_repository::REPOSITORY_TYP_DIRSCAN:
 		fDirscanEndable = true;
 		fFilelistEndable = false;
+		fSingleXmlEnable = false;
 		break;
 
 	case muhkuh_repository::REPOSITORY_TYP_FILELIST:
 		fDirscanEndable = false;
 		fFilelistEndable = true;
+		fSingleXmlEnable = false;
+		break;
+
+	case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
+		fDirscanEndable = false;
+		fFilelistEndable = false;
+		fSingleXmlEnable = true;
 		break;
 
 	default:
 		fDirscanEndable = false;
 		fFilelistEndable = false;
+		fSingleXmlEnable = false;
 		break;
 	};
 	
 	m_textDirscanLocation->Enable(fDirscanEndable);
 	m_buttonDirscanLocation->Enable(fDirscanEndable);
 	m_textTestExtension->Enable(fDirscanEndable);
-	m_checkUseRelativePaths->Enable(fDirscanEndable);
+	m_checkDirscanUseRelativePaths->Enable(fDirscanEndable);
 
 	m_textFilelistLocation->Enable(fFilelistEndable);
 
+	m_textSingleXmlLocation->Enable(fSingleXmlEnable);
+	m_buttonSingleXmlLocation->Enable(fSingleXmlEnable);
+	m_checkSingleXmlUseRelativePaths->Enable(fSingleXmlEnable);
 }
 
 
@@ -277,6 +329,23 @@ void muhkuh_config_reposEntryDialog::OnOkButton(wxCommandEvent &WXUNUSED(event))
 			}
 			break;
 
+		case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
+			// get values
+			strLocation = m_textSingleXmlLocation->GetValue();
+
+			// the location must not be empty
+			if( strLocation.IsEmpty() )
+			{
+				wxMessageBox(wxT("Please enter the location!"), wxT("Input error"), wxOK|wxICON_ERROR);
+			}
+			else
+			{
+				// accept the values
+				m_ptRepos->SetSingleXml(strLocation);
+				fAllValuesOk = true;
+			}
+			break;
+
 		default:
 			break;
 		};
@@ -298,7 +367,7 @@ void muhkuh_config_reposEntryDialog::OnBrowseDirscanLocationButton(wxCommandEven
 
 
 	strDialogInitPath = m_textDirscanLocation->GetValue();
-	if( m_fUseRelativePaths==true )
+	if( m_fDirscanUseRelativePaths==true )
 	{
 		fileName.Assign(strDialogInitPath);
 		if(fileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE))
@@ -318,20 +387,47 @@ void muhkuh_config_reposEntryDialog::OnBrowseDirscanLocationButton(wxCommandEven
 }
 
 
-void muhkuh_config_reposEntryDialog::OnUseRelPaths(wxCommandEvent &event)
+void muhkuh_config_reposEntryDialog::OnBrowseSingleXmlLocationButton(wxCommandEvent &WXUNUSED(event))
 {
-	m_fUseRelativePaths = event.IsChecked();
+	wxFileDialog *testPathDialog;
+	wxFileName fileName;
+	wxString strDialogInitPath;
+
+
+	strDialogInitPath = m_textSingleXmlLocation->GetValue();
+	if( m_fSingleXmlUseRelativePaths==true )
+	{
+		fileName.Assign(strDialogInitPath);
+		if(fileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE))
+		{
+			strDialogInitPath = fileName.GetFullPath();
+		}
+	}
+
+	testPathDialog = new wxFileDialog(this, wxT("Choose the path to the test description"), strDialogInitPath, wxEmptyString, wxT("*.xml"));
+
+	if( testPathDialog->ShowModal()==wxID_OK )
+	{
+		adaptSingleXmlLocation(testPathDialog->GetPath());
+	}
+	testPathDialog->Destroy();
+}
+
+
+void muhkuh_config_reposEntryDialog::OnDirscanUseRelPaths(wxCommandEvent &event)
+{
+	m_fDirscanUseRelativePaths = event.IsChecked();
 	adaptDirscanLocation(m_textDirscanLocation->GetValue());
 }
 
 
-bool muhkuh_config_reposEntryDialog::adaptDirscanLocation(wxString sFileName)
+bool muhkuh_config_reposEntryDialog::adaptDirscanLocation(wxString strFileName)
 {
 	wxFileName fileName;
 
-	fileName.AssignDir(sFileName);
+	fileName.AssignDir(strFileName);
 	fileName.SetCwd(m_strApplicationPath);
-	if( m_fUseRelativePaths==true )
+	if( m_fDirscanUseRelativePaths==true )
 	{
 		fileName.MakeRelativeTo(m_strApplicationPath);
 	}
@@ -356,4 +452,38 @@ void muhkuh_config_reposEntryDialog::OnRadioFilelist(wxCommandEvent &WXUNUSED(ev
 {
 	m_eTyp = muhkuh_repository::REPOSITORY_TYP_FILELIST;
 	SwitchInputs();
+}
+
+
+void muhkuh_config_reposEntryDialog::OnSingleXmlUseRelPaths(wxCommandEvent &event)
+{
+	m_fSingleXmlUseRelativePaths = event.IsChecked();
+	adaptDirscanLocation(m_textDirscanLocation->GetValue());
+}
+
+
+void muhkuh_config_reposEntryDialog::OnRadioSingleXml(wxCommandEvent &WXUNUSED(event))
+{
+	m_eTyp = muhkuh_repository::REPOSITORY_TYP_SINGLEXML;
+	SwitchInputs();
+}
+
+
+bool muhkuh_config_reposEntryDialog::adaptSingleXmlLocation(wxString strFileName)
+{
+	wxFileName fileName;
+
+	fileName.Assign(strFileName);
+	fileName.SetCwd(m_strApplicationPath);
+	if( m_fSingleXmlUseRelativePaths==true )
+	{
+		fileName.MakeRelativeTo(m_strApplicationPath);
+	}
+	else
+	{
+		fileName.MakeAbsolute();
+	}
+
+	m_textSingleXmlLocation->SetValue( fileName.GetFullPath() );
+	return true;
 }
