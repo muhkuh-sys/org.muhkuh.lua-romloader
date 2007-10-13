@@ -512,6 +512,9 @@ bool muhkuh_repository::createTestlist_local(wxProgressDialog *ptScannerProgress
 	bool fScannerIsRunning;
 
 
+	// clear any old tests
+	astrTestList.Clear();
+
 	// no idea how long the scanning will take -> set to pulse (that's 'unknown time remaining)
 	strProgressMessage  = wxT("scanning local folder '");
 	strProgressMessage += m_strLocation;
@@ -596,6 +599,9 @@ bool muhkuh_repository::createTestlist_url(wxProgressDialog *ptScannerProgress)
 	wxArrayString astrTmpPathNames;
 	size_t sizCnt;
 
+
+	// clear any old tests
+	astrTestList.Clear();
 
 	// get the repository location
 	strLocation = m_strLocation;
@@ -742,6 +748,9 @@ bool muhkuh_repository::createTestlist_singlexml(wxProgressDialog *ptScannerProg
 	wxFileSystem fileSystem;
 	bool fScannerIsRunning;
 
+
+	// clear any old tests
+	astrTestList.Clear();
 
 	// no idea how long the scanning will take -> set to pulse (that's 'unknown time remaining)
 	strProgressMessage  = wxT("scanning single xml file '");
