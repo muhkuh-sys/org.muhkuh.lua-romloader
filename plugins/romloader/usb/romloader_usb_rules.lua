@@ -85,14 +85,17 @@ interface_filepath = "."
 --   The files are loaded from the interface_filepath.
 interface_fileTable =
 {
-    "romloader_usb_lua.i",
+	"romloader_usb_lua.i"
 }
 
 -------------------------------------------------------------------------------
 -- A list of files that contain bindings that need to be overridden or empty
 --   table {} for none.
 --   The files are loaded from the interface_filepath.
-override_fileTable = {}
+override_fileTable =
+{
+	"../romloader_lua_override.h"
+}
 
 --=============================================================================
 -- A table containing filenames of XXX_datatype.lua from other wrappers to
