@@ -104,7 +104,7 @@ static int LUACALL wxLua_romloader_get_name(lua_State *L)
     // call get_name
     returns = (self->get_name());
     // push the result string
-    wxlState.lua_PushString(returns);
+    wxlState.lua_PushLString(returns,returns.Len());
 
     return 1;
 }
@@ -122,7 +122,7 @@ static int LUACALL wxLua_romloader_get_typ(lua_State *L)
     // call get_typ
     returns = (self->get_typ());
     // push the result string
-    wxlState.lua_PushString(returns);
+    wxlState.lua_PushLString(returns,returns.Len());
 
     return 1;
 }
@@ -222,7 +222,7 @@ static int LUACALL wxLua_romloader_read_image(lua_State *L)
     // call read_image
     returns = (self->read_image(ulNetxAddress, ulSize));
     // push the result string
-    wxlState.lua_PushString(returns);
+    wxlState.lua_PushLString(returns,returns.Len());
 
     return 1;
 }

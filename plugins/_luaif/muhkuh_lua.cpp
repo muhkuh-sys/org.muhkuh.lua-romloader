@@ -39,7 +39,7 @@ static int LUACALL wxLua_muhkuh_binfile_GetErrorMessage(lua_State *L)
     // call GetErrorMessage
     returns = (self->GetErrorMessage());
     // push the result string
-    wxlState.lua_PushString(returns);
+    wxlState.lua_PushLString(returns,returns.Len());
 
     return 1;
 }
@@ -57,7 +57,7 @@ static int LUACALL wxLua_muhkuh_binfile_GetFileName(lua_State *L)
     // call GetFileName
     returns = (self->GetFileName());
     // push the result string
-    wxlState.lua_PushString(returns);
+    wxlState.lua_PushLString(returns,returns.Len());
 
     return 1;
 }
@@ -93,7 +93,7 @@ static int LUACALL wxLua_muhkuh_binfile_GetText(lua_State *L)
     // call GetText
     returns = (self->GetText());
     // push the result string
-    wxlState.lua_PushString(returns);
+    wxlState.lua_PushLString(returns,returns.Len());
 
     return 1;
 }
@@ -169,7 +169,7 @@ static int LUACALL wxLua_muhkuh_plugin_instance_GetLuaCreateFn(lua_State *L)
     // call GetLuaCreateFn
     returns = (self->GetLuaCreateFn());
     // push the result string
-    wxlState.lua_PushString(returns);
+    wxlState.lua_PushLString(returns,returns.Len());
 
     return 1;
 }
@@ -187,7 +187,7 @@ static int LUACALL wxLua_muhkuh_plugin_instance_GetName(lua_State *L)
     // call GetName
     returns = (self->GetName());
     // push the result string
-    wxlState.lua_PushString(returns);
+    wxlState.lua_PushLString(returns,returns.Len());
 
     return 1;
 }
@@ -205,7 +205,7 @@ static int LUACALL wxLua_muhkuh_plugin_instance_GetTyp(lua_State *L)
     // call GetTyp
     returns = (self->GetTyp());
     // push the result string
-    wxlState.lua_PushString(returns);
+    wxlState.lua_PushLString(returns,returns.Len());
 
     return 1;
 }

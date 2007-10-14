@@ -3674,7 +3674,7 @@ function GenerateLuaLanguageBinding(interface)
                         -- bind return value
                         if memberType == "wxString" then
                             CommentBindingTable(codeList, "    // push the result string\n")
-                            table.insert(codeList, "    wxlState.lua_PushString("..returnPtr.."returns);\n")
+                            table.insert(codeList, "    wxlState.lua_PushLString("..returnPtr.."returns,"..returnPtr.."returns.Len());\n")
                         elseif not numeric then
                             CommentBindingTable(codeList, "    // push the result datatype\n")
                             table.insert(codeList, "    wxlState.PushUserDataType(s_wxluatag_"..MakeClassVar(memberType)..", returns);\n")
