@@ -585,7 +585,7 @@ int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcDa
 			// get number of bytes for the next line
 			sizChunkSize = 16;
 			sizBytesLeft = pcDumpEnd-pcDumpCnt;
-			if( sizChunkSize<sizBytesLeft )
+			if( sizChunkSize>sizBytesLeft )
 			{
 				sizChunkSize = sizBytesLeft;
 			}
