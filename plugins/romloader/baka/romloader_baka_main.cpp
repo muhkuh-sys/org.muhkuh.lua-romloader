@@ -552,10 +552,16 @@ int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long u
 
 
 /* write a byte array from the pc to the netx */
-int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *WXUNUSED(pcData), unsigned long ulSize)
+int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize)
 {
 	unsigned int uiIdx;
 	wxString strMsg;
+	wxString strDumpByte;
+	const char *pcDumpCnt, *pcDumpEnd;
+	unsigned long ulAddressCnt;
+	size_t sizBytesLeft;
+	size_t sizChunkSize;
+	size_t sizChunkCnt;
 
 
 	/* check the handle */
@@ -568,8 +574,36 @@ int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *WXUN
 	}
 	else
 	{
-		strMsg.Printf(wxT("baka %d: write_image from 0x%08lx with %ld bytes"), uiIdx, ulNetxAddress, ulSize);
+		strMsg.Printf(wxT("baka %d: write_image from 0x%08lx with %ld bytes:"), uiIdx, ulNetxAddress, ulSize);
 		wxLogMessage(strMsg);
+		// show a hexdump of the data
+		pcDumpCnt = pcData;
+		pcDumpEnd = pcData + ulSize;
+		ulAddressCnt = ulNetxAddress;
+		while( pcDumpCnt<pcDumpEnd )
+		{
+			// get number of bytes for the next line
+			sizChunkSize = 16;
+			sizBytesLeft = pcDumpEnd-pcDumpCnt;
+			if( sizChunkSize<sizBytesLeft )
+			{
+				sizChunkSize = sizBytesLeft;
+			}
+
+			// start a line in the dump with the address
+			strMsg.Printf(wxT("%08X: "), ulAddressCnt);
+			// append the data bytes
+			sizChunkCnt = sizChunkSize;
+			while( sizChunkCnt!=0 )
+			{
+				strDumpByte.Printf(wxT("%02X "), *(pcDumpCnt++));
+				strMsg += strDumpByte;
+				--sizChunkCnt;
+			}
+			// show line
+			wxLogMessage(strMsg);
+			ulAddressCnt += sizChunkSize;
+		}
 		return 0;
 	}
 }
