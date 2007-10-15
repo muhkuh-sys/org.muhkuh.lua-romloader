@@ -263,20 +263,46 @@ romloader *romloader_usb_create(void *pvHandle)
 		tResult = romloader_usb_getNetxData(tHandle, &pucData, &uiDataLen, NULL, 0, NULL);
 		if( tResult!=netxUsbState_Ok )
 		{
-			wxLogError(wxT("failed to receive netx response!"));
-			wxLogError( romloader_usb_getErrorString(tResult) );
+			wxLogMessage(wxT("failed to receive netx response, trying to reset netx!"));
+			wxLogMessage( romloader_usb_getErrorString(tResult) );
+			// try to reset the device and try again
+			tResult = romloader_usb_resetDevice(tHandle);
+			if( tResult!=netxUsbState_Ok )
+			{
+				wxLogError(wxT("failed to reset the netx, giving up!"));
+			}
+			// open device and provide cancel function with this class as parameter
+			wxLogMessage(wxT("reset ok!"));
+			tResult = romloader_usb_openByDevice(&tHandle, ptNetxDev);
+			if( tResult!=netxUsbState_Ok )
+			{
+				wxLogError(wxT("failed to open the usb connection to the netx"));
+				wxLogError( romloader_usb_getErrorString(tResult) );
+			}
+			else
+			{
+				// get netx welcome message
+				tResult = romloader_usb_getNetxData(tHandle, &pucData, &uiDataLen, NULL, 0, NULL);
+				if( tResult!=netxUsbState_Ok )
+				{
+					wxLogError(wxT("failed to receive netx response, trying to reset netx!"));
+					wxLogError( romloader_usb_getErrorString(tResult) );
+					romloader_usb_close(pvHandle);
+				}
+			}
 		}
-		else
-		{
-			wxLogInfo(wxString::From8BitData((const char*)pucData, uiDataLen));
-			free(pucData);
+	}
 
-			/* create the new instance */
-			strTyp = wxString::FromAscii(plugin_desc.pcPluginId);
-			strName.Printf("romloader_usb_%08x_%02x", ptNetxDev->bus->location, ptNetxDev->devnum);
-			ptInstance = new romloader(strName, strTyp, &tFunctionInterface, tHandle, romloader_usb_close_instance, m_ptLuaState);
-//			atInstanceCfg[uiIdx].fIsUsed = true;
-		}
+	if( tResult==netxUsbState_Ok )
+	{
+		wxLogInfo(wxString::From8BitData((const char*)pucData, uiDataLen));
+		free(pucData);
+
+		/* create the new instance */
+		strTyp = wxString::FromAscii(plugin_desc.pcPluginId);
+		strName.Printf("romloader_usb_%08x_%02x", ptNetxDev->bus->location, ptNetxDev->devnum);
+		ptInstance = new romloader(strName, strTyp, &tFunctionInterface, tHandle, romloader_usb_close_instance, m_ptLuaState);
+//		atInstanceCfg[uiIdx].fIsUsed = true;
 	}
 
 	return ptInstance;

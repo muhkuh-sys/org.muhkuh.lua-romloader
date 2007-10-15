@@ -67,7 +67,8 @@ tNetxUsbState romloader_usb_close(void *pvHandle);
 wxString romloader_usb_getErrorString(tNetxUsbState tResult);
 
 tNetxUsbState romloader_usb_sendCommand(netx_device_handle tHandle, wxString strCommand);
-tNetxUsbState romloader_usb_getNetxData(netx_device_handle hNetxUsbMon, unsigned char **ppcData, unsigned int *pulDataLen, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+tNetxUsbState romloader_usb_getNetxData(netx_device_handle tHandle, unsigned char **ppcData, unsigned int *pulDataLen, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+tNetxUsbState romloader_usb_resetDevice(netx_device_handle tHandle);
 
 //-------------------------------------
 

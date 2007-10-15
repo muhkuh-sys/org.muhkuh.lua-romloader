@@ -481,6 +481,30 @@ tNetxUsbState romloader_usb_close(void *pvHandle)
 }
 
 
+tNetxUsbState romloader_usb_resetDevice(netx_device_handle tHandle)
+{
+	int iRet;
+
+
+	iRet = usb_reset(tHandle);
+	if( iRet==0 )
+	{
+		usb_close(tHandle);
+		return netxUsbState_Ok;
+	}
+	else if( iRet==-ENODEV )
+	{
+		// the old device is already gone -> that's good, ignore the error
+		usb_close(tHandle);
+		return netxUsbState_Ok;
+	}
+	else
+	{
+		return netxUsbState_Error;
+	}
+}
+
+
 wxString romloader_usb_getErrorString(tNetxUsbState tResult)
 {
 	wxString strMessage;
