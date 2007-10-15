@@ -4,7 +4,6 @@ module("tester", package.seeall)
 require("select_plugin")
 
 -- prevent images from being gcd
---collectgarbage("stop")
 m_iconList = nil
 
 
@@ -254,6 +253,103 @@ function closeCommonPlugin()
 		commonPlugin:delete()
 		commonPlugin = false
 	end
+end
+
+---------------------------------------
+
+function getPanel()
+	return m_panel
+end
+
+
+local m_stdWriteMax = 0
+m_stdWriteProgressDialog = nil
+
+function stdWriteCallback(ulProgress, ulCallbackId)
+	local fIsRunning
+
+
+	print("stdWrite callback", ulProgress, type(ulProgress), ulCallbackId, type(ulCallbackId))
+	print("m_stdWriteProgressDialog:", m_stdWriteProgressDialog, type(m_stdWriteProgressDialog))
+	if m_stdWriteProgressDialog==nil then
+		fIsRunning = false
+	else
+		fIsRunning = m_stdWriteProgressDialog:Update(ulProgress, "writing...")
+	end
+
+	print("fIsRunning:", fIsRunning, type(fIsRunning))
+	return fIsRunning
+end
+
+local function stdWriteCloseProgress()
+	if m_stdWriteProgressDialog~=nil then
+		m_stdWriteProgressDialog:Close()
+		m_stdWriteProgressDialog:Destroy()
+		m_stdWriteProgressDialog = nil
+	end
+end
+
+function stdWrite(parent, plugin, ulNetxAddress, strData)
+	m_stdWriteMax = string.len(strData)
+
+	m_stdWriteProgressDialog = wx.wxProgressDialog(	"Downloading...",
+							"",
+							m_stdWriteMax,
+							parent,
+							wx.wxPD_AUTO_HIDE+wx.wxPD_CAN_ABORT+wx.wxPD_ESTIMATED_TIME+wx.wxPD_REMAINING_TIME+wx.wxPD_ELAPSED_TIME)
+
+	plugin:write_image(ulNetxAddress, strData, tester.stdWriteCallback, 0)
+
+	stdWriteCloseProgress()
+end
+
+
+local m_stdReadMax = 0
+m_stdReadProgressDialog = nil
+
+function stdReadCallback(ulProgress, ulCallbackId)
+	local fIsRunning
+
+
+	print("stdRead callback", ulProgress, type(ulProgress), ulCallbackId, type(ulCallbackId))
+	print("m_stdReadProgressDialog:", m_stdReadProgressDialog, type(m_stdReadProgressDialog))
+	if m_stdReadProgressDialog==nil then
+		fIsRunning = false
+	else
+		fIsRunning = m_stdReadProgressDialog:Update(ulProgress, "reading...")
+	end
+
+	print("fIsRunning:", fIsRunning, type(fIsRunning))
+	return fIsRunning
+end
+
+local function stdReadCloseProgress()
+	if m_stdReadProgressDialog~=nil then
+		m_stdReadProgressDialog:Close()
+		m_stdReadProgressDialog:Destroy()
+		m_stdReadProgressDialog = nil
+	end
+end
+
+function stdRead(parent, plugin, ulNetxAddress, ulLength)
+	local strData
+	m_stdReadMax = ulLength
+
+	print("1")
+	m_stdReadProgressDialog = wx.wxProgressDialog(	"Uploading...",
+							"",
+							m_stdReadMax,
+							parent,
+							wx.wxPD_AUTO_HIDE+wx.wxPD_CAN_ABORT+wx.wxPD_ESTIMATED_TIME+wx.wxPD_REMAINING_TIME+wx.wxPD_ELAPSED_TIME)
+
+	print("2")
+	strData = plugin:read_image(ulNetxAddress, ulLength, tester.stdReadCallback, 0)
+
+	print("3")
+	stdReadCloseProgress()
+
+	print("4")
+	return strData
 end
 
 ---------------------------------------
@@ -720,6 +816,10 @@ local function runTest(iBoardIdx, iTestIdx)
 			end
 		end
 		print("finished test '"..test.name.."'")
+
+		-- close any stray progress dialogs
+		stdWriteCloseProgress()
+		stdReadCloseProgress()
 
 		-- set the test result
 		if testresult==__MUHKUH_TEST_RESULT_OK then

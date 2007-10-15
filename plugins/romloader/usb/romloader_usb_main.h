@@ -28,23 +28,6 @@
 
 /*-----------------------------------*/
 
-typedef enum
-{
-	netxUsbState_Ok = 0,
-	netxUsbState_OutOfMemory,
-	netxUsbState_DeviceNotFound,
-	netxUsbState_DeviceBusy,
-	netxUsbState_ReadError,
-	netxUsbState_WriteError,
-	netxUsbState_BlockSizeError,
-	netxUsbState_CommandTooLong,
-	netxUsbState_Timeout,
-	netxUsbState_Cancel,
-	netxUsbState_Error
-} tNetxUsbState;
-
-/*-----------------------------------*/
-
 WXEXPORT int fn_init(wxLog *ptLogTarget);
 WXEXPORT int fn_init_lua(wxLuaState *ptLuaState);
 WXEXPORT int fn_leave(void);

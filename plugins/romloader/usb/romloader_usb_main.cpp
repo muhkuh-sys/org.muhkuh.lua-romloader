@@ -19,22 +19,12 @@
  ***************************************************************************/
 
 
+#include "romloader_usb_io.h"
 #include "romloader_usb_main.h"
 #include "_luaif/romloader_usb_wxlua_bindings.h"
 
-
-#include <usb.h>
-typedef usb_dev_handle *netx_device_handle;
-
-#ifdef __WXMSW__
-#define ETIMEDOUT WSAETIMEDOUT
-#define snprintf _snprintf
-#endif
-
 /*-------------------------------------*/
 /* some local prototypes */
-
-bool IsDeviceNetx(struct usb_device *ptDevice);
 
 bool fn_connect(void *pvHandle);
 void fn_disconnect(void *pvHandle);
@@ -42,16 +32,12 @@ bool fn_is_connected(void *pvHandle);
 int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pucData);
 int fn_read_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short *pusData);
 int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *pulData);
-int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pcData, unsigned long ulSize);
+int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pcData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char ucData);
 int fn_write_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short usData);
 int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulData);
-int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize);
+int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0);
-
-/*-------------------------------------*/
-
-tNetxUsbState libnetxusbmon_executeCommand(netx_device_handle tHandle, wxString strCommand, unsigned char **ppucData, unsigned int *puiDataLen);
 
 /*-------------------------------------*/
 
@@ -152,6 +138,7 @@ const muhkuh_plugin_desc *fn_get_desc(void)
 
 int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList)
 {
+	std::vector<struct usb_device *> tDeviceList;
 	struct usb_bus *ptBusses;
 	struct usb_bus *ptBus;
 	struct usb_device *ptDev;
@@ -198,7 +185,7 @@ int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList)
 		{
 			// is this device a netx bootmonitor?
 			// class==0, vendor==0x0cc4, product==0x0815, revision==1.00
-			fDeviceIsNetx = IsDeviceNetx(ptDev);
+			fDeviceIsNetx = romloader_usb_isDeviceNetx(ptDev);
 			if( fDeviceIsNetx==true )
 			{
 				/* construct the name */
@@ -225,296 +212,24 @@ int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList)
 
 /*-------------------------------------*/
 
-static tNetxUsbState libnetxusbmon_openByDevice(netx_device_handle *phNetxUsbMon, struct usb_device *ptNetxDev)
-{
-	netx_device_handle tDevHandle;
-	int iRet;
-
-
-	// open the netx device
-	tDevHandle = usb_open(ptNetxDev);
-	if( tDevHandle==NULL )
-	{
-		// can't open handle
-		wxLogError(wxT("failed to open handle! was the device unplugged after the last scan?"));
-		return netxUsbState_DeviceNotFound;
-	}
-
-	// set the configuration
-	iRet = usb_set_configuration(tDevHandle, 1);
-	if( iRet!=0 )
-	{
-		// close the device
-		usb_close(tDevHandle);
-		// failed to claim interface, assume busy
-		wxLogError(wxT("failed to configure the usb interface! is the device in use?"));
-		return netxUsbState_DeviceBusy;
-	}
-
-	// try to claim the interface
-	iRet = usb_claim_interface(tDevHandle, 0);
-	if( iRet!=0 )
-	{
-		// close the device
-		usb_close(tDevHandle);
-		// failed to claim interface, assume busy
-		wxLogError(wxT("failed to claim the usb interface! is the device in use?"));
-		return netxUsbState_DeviceBusy;
-	}
-
-	// fill the device structure
-	*phNetxUsbMon = tDevHandle;
-
-	return netxUsbState_Ok;
-}
-
-
-tNetxUsbState libnetxusbmon_close(netx_device_handle hNetxUsbMon)
-{
-	int iRet;
-
-
-	// release the interface
-	iRet = usb_release_interface(hNetxUsbMon, 0);
-	if( iRet!=0 )
-	{
-		// failed to release interface
-		wxLogError(wxT("failed to release the usb interface"));
-		return netxUsbState_Error;
-	}
-
-	// close the netx device
-	iRet = usb_close(hNetxUsbMon);
-	if( iRet!=0 )
-	{
-		// failed to close handle
-		wxLogError(wxT("failed to release the usb handle"));
-		return netxUsbState_Error;
-	}
-
-	return netxUsbState_Ok;
-}
-
-
-tNetxUsbState libnetxusbmon_readBlock(netx_device_handle hNetxUsbMon, unsigned char *pcReceiveBuffer, unsigned int uiSize, int iTimeoutMs)
-{
-	int iRet;
-	int iSize;
-
-
-	// check blocksize
-	if( uiSize>64 )
-	{
-		return netxUsbState_BlockSizeError;
-	}
-	iSize = (int)uiSize;
-
-	iRet = usb_bulk_read(hNetxUsbMon, 0x81, (char*)pcReceiveBuffer, iSize, iTimeoutMs);
-	if( iRet==-ETIMEDOUT )
-	{
-		return netxUsbState_Timeout;
-	}
-	else if( iRet!=iSize )
-	{
-		return netxUsbState_ReadError;
-	}
-	else
-	{
-		return netxUsbState_Ok;
-	}
-}
-
-
-tNetxUsbState libnetxusbmon_writeBlock(netx_device_handle hNetxUsbMon, const unsigned char *pcSendBuffer, unsigned int uiSize, int iTimeoutMs)
-{
-	int iRet;
-	int iSize;
-
-
-	// check blocksize
-	if( uiSize>64 )
-	{
-		return netxUsbState_BlockSizeError;
-	}
-	iSize = (int)uiSize;
-
-	iRet = usb_bulk_write(hNetxUsbMon, 0x01, (char*)pcSendBuffer, iSize, iTimeoutMs);
-	if( iRet==-ETIMEDOUT )
-	{
-		return netxUsbState_Timeout;
-	}
-	else if( iRet!=iSize )
-	{
-		return netxUsbState_WriteError;
-	}
-	else
-	{
-		return netxUsbState_Ok;
-	}
-}
-
-
-tNetxUsbState libnetxusbmon_exchange(netx_device_handle hNetxUsbMon, const unsigned char *pcSendBuffer, unsigned char *pcReceiveBuffer)
-{
-	tNetxUsbState tResult;
-
-
-	do
-	{
-		tResult = libnetxusbmon_writeBlock(hNetxUsbMon, pcSendBuffer, 64, 100);
-		if( tResult==netxUsbState_Timeout )
-		{
-			wxYield();
-		}
-	} while( tResult==netxUsbState_Timeout );
-
-	if( tResult!=netxUsbState_Ok )
-	{
-		return tResult;
-	}
-
-
-	do
-	{
-		tResult = libnetxusbmon_readBlock(hNetxUsbMon, pcReceiveBuffer, 64, 100);
-		if( tResult==netxUsbState_Timeout )
-		{
-			wxYield();
-		}
-	} while( tResult==netxUsbState_Timeout );
-
-        return tResult;
-}
-
-
-tNetxUsbState libnetxusbmon_getNetxData(netx_device_handle hNetxUsbMon, unsigned char **ppcData, unsigned int *pulDataLen)
-{
-	tNetxUsbState tResult;
-	unsigned char buf_send[65];
-	unsigned char buf_rec[65];
-	unsigned int ulLinelen;
-	unsigned char *pcData;
-	unsigned char *pcDataNew;
-	unsigned int ulDataLen;
-	unsigned int ulDataLenNew;
-	unsigned int ulDataLenAlloc;
-
-
-	// alloc initial buffer
-	ulDataLen = 0;
-	ulDataLenAlloc = 4096;
-	pcData = (unsigned char*)malloc(ulDataLenAlloc);
-	if( pcData==NULL )
-	{
-		return netxUsbState_OutOfMemory;
-	}
-
-	// receive netx data
-	do
-	{
-		buf_send[0] = 0x00;
-		tResult = libnetxusbmon_exchange(hNetxUsbMon, buf_send, buf_rec);
-		if( tResult!=netxUsbState_Ok )
-		{
-			return tResult;
-		}
-
-		ulLinelen = buf_rec[0];
-
-		if( ulLinelen!=0 )
-		{
-			// get new size of databuffer
-			ulDataLenNew = ulDataLen + ulLinelen - 1;
-
-			// is enough space left?
-			if( ulDataLenNew>ulDataLenAlloc )
-			{
-				ulDataLenAlloc <<= 2;
-				// test for overflow
-				if( ulDataLenNew>ulDataLenAlloc )
-				{
-					free(pcData);
-					return netxUsbState_OutOfMemory;
-				}
-				pcDataNew = (unsigned char*)realloc(pcData, ulDataLenAlloc);
-				if( pcDataNew==NULL )
-				{
-					free(pcData);
-					return netxUsbState_OutOfMemory;
-				}
-				pcData = pcDataNew;
-			}
-
-			// copy data
-			memcpy(pcData+ulDataLen, buf_rec+1, ulLinelen);
-
-			ulDataLen = ulDataLenNew;
-		}
-	} while( ulLinelen!=0 );
-
-	*ppcData = pcData;
-	*pulDataLen = ulDataLen;
-
-	wxLogMessage(wxT("usb: received response '") + wxString::From8BitData((const char*)pcData, ulDataLen) + wxT("'"));
-
-	return netxUsbState_Ok;
-}
-
-
-tNetxUsbState libnetxusbmon_executeCommand(netx_device_handle tHandle, wxString strCommand, unsigned char **ppucData, unsigned int *puiDataLen)
-{
-	tNetxUsbState tResult;
-	size_t sizCmdLen;
-	unsigned char abSend[64];
-	unsigned char abRec[64];
-	int iCmdLen;
-
-
-	// check the command size
-	// Commands must fit into one usb packet of 64 bytes, the first byte
-	// is the length and the last byte must be 0x0a. This means the max
-	// command size is 62 bytes.
-	sizCmdLen = strCommand.Len();
-	if( sizCmdLen>62 )
-	{
-		return netxUsbState_CommandTooLong;
-	}
-
-	wxLogMessage(wxT("usb: send command '") + strCommand + wxT("'"));
-
-	// construct the command
-	memcpy(abSend+1, strCommand.To8BitData(), sizCmdLen);
-	abSend[0] = sizCmdLen+2;
-	abSend[sizCmdLen+1] = 0x0a;
-
-	// send the command
-	tResult = libnetxusbmon_exchange(tHandle, abSend, abRec);
-	if( tResult==netxUsbState_Ok )
-	{
-		// terminate command
-		abSend[0] = 0x00;
-		tResult = libnetxusbmon_exchange(tHandle, abSend, abRec);
-		if( tResult==netxUsbState_Ok )
-		{
-			// get the response
-			tResult = libnetxusbmon_getNetxData(tHandle, ppucData, puiDataLen);
-		}
-	}
-
-	return tResult;
-}
-
-
-/*-------------------------------------*/
 
 static void romloader_usb_close_instance(void *pvHandle)
 {
 	netx_device_handle tHandle;
+	tNetxUsbState tResult;
+	wxString strMsg;
 
 
 	// get handle
 	tHandle = (netx_device_handle)pvHandle;
-	libnetxusbmon_close(tHandle);
+	strMsg.Printf(wxT("closing romloader usb at %p"), tHandle);
+	wxLogMessage(strMsg);
+	tResult = romloader_usb_close(tHandle);
+	if( tResult!=netxUsbState_Ok )
+	{
+		wxLogError(wxT("failed to close the usb connection to the netx"));
+		wxLogError( romloader_usb_getErrorString(tResult) );
+	}
 }
 
 
@@ -536,18 +251,20 @@ romloader *romloader_usb_create(void *pvHandle)
 	ptNetxDev = (struct usb_device *)pvHandle;
 
 	// open device and provide cancel function with this class as parameter
-	tResult = libnetxusbmon_openByDevice(&tHandle, ptNetxDev);
+	tResult = romloader_usb_openByDevice(&tHandle, ptNetxDev);
 	if( tResult!=netxUsbState_Ok )
 	{
 		wxLogError(wxT("failed to open the usb connection to the netx"));
+		wxLogError( romloader_usb_getErrorString(tResult) );
 	}
 	else
 	{
 		// get netx welcome message
-		tResult = libnetxusbmon_getNetxData(tHandle, &pucData, &uiDataLen);
+		tResult = romloader_usb_getNetxData(tHandle, &pucData, &uiDataLen, NULL, 0, NULL);
 		if( tResult!=netxUsbState_Ok )
 		{
 			wxLogError(wxT("failed to receive netx response!"));
+			wxLogError( romloader_usb_getErrorString(tResult) );
 		}
 		else
 		{
@@ -592,7 +309,6 @@ bool fn_is_connected(void *pvHandle)
 /* read a byte (8bit) from the netx to the pc */
 int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pucData)
 {
-	netx_device_handle tHandle;
 	tNetxUsbState tResult;
 	wxString strCommand;
 	unsigned char *pucTmpData;
@@ -602,17 +318,15 @@ int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *p
 	unsigned int uiResultData;
 
 
-	// get handle
-	tHandle = (netx_device_handle)pvHandle;
-
 	// construct the command
 	strCommand.Printf(wxT("DUMP %08lX BYTE"), ulNetxAddress);
 
 	// send the command
-	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucTmpData, &uiDataLen);
+	tResult = romloader_usb_executeCommand(pvHandle, strCommand, &pucTmpData, &uiDataLen);
 	if( tResult!=netxUsbState_Ok )
 	{
 		wxLogError(wxT("failed to send command!"));
+		wxLogError( romloader_usb_getErrorString(tResult) );
 		return -1;
 	}
 
@@ -638,7 +352,6 @@ int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *p
 /* read a word (16bit) from the netx to the pc */
 int fn_read_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short *pusData)
 {
-	netx_device_handle tHandle;
 	tNetxUsbState tResult;
 	wxString strCommand;
 	unsigned char *pucData;
@@ -648,17 +361,15 @@ int fn_read_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short *
 	unsigned int uiResultData;
 
 
-	// get handle
-	tHandle = (netx_device_handle)pvHandle;
-
 	// construct the command
 	strCommand.Printf(wxT("DUMP %08lX WORD"), ulNetxAddress);
 
 	// send the command
-	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucData, &uiDataLen);
+	tResult = romloader_usb_executeCommand(pvHandle, strCommand, &pucData, &uiDataLen);
 	if( tResult!=netxUsbState_Ok )
 	{
 		wxLogError(wxT("failed to send command!"));
+		wxLogError( romloader_usb_getErrorString(tResult) );
 		return -1;
 	}
 
@@ -684,7 +395,6 @@ int fn_read_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short *
 /* read a long (32bit) from the netx to the pc */
 int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *pulData)
 {
-	netx_device_handle tHandle;
 	tNetxUsbState tResult;
 	wxString strCommand;
 	unsigned char *pucData;
@@ -694,17 +404,15 @@ int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *p
 	unsigned long ulResultData;
 
 
-	// get handle
-	tHandle = (netx_device_handle)pvHandle;
-
 	// construct the command
 	strCommand.Printf(wxT("DUMP %08lX LONG"), ulNetxAddress);
 
 	// send the command
-	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucData, &uiDataLen);
+	tResult = romloader_usb_executeCommand(pvHandle, strCommand, &pucData, &uiDataLen);
 	if( tResult!=netxUsbState_Ok )
 	{
 		wxLogError(wxT("failed to send command!"));
+		wxLogError( romloader_usb_getErrorString(tResult) );
 		return -1;
 	}
 
@@ -728,7 +436,7 @@ int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *p
 
 
 /* read a byte array from the netx to the pc */
-int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pcData, unsigned long ulSize)
+int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pcData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	netx_device_handle tHandle;
 	tNetxUsbState tResult;
@@ -759,88 +467,99 @@ int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pcData, uns
 	strCommand.Printf(wxT("DUMP %08lX %08lX BYTE"), ulNetxAddress, ulSize);
 
 	// send the command
-	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucData, &uiDataLen);
+	tResult = romloader_usb_sendCommand(tHandle, strCommand);
 	if( tResult!=netxUsbState_Ok )
 	{
 		wxLogError(wxT("failed to send command!"));
+		wxLogError( romloader_usb_getErrorString(tResult) );
 	}
 	else
 	{
-		// parse the result
-		ulBytesLeft = ulSize;
-		ulExpectedAddress = ulNetxAddress;
-		pcParsePtr = (char*)pucData;
-		pcEndPtr = pcParsePtr + uiDataLen;
-		while( pcParsePtr<pcEndPtr && ulBytesLeft!=0 )
+		// get the response
+		tResult = romloader_usb_getNetxData(tHandle, &pucData, &uiDataLen, L, iLuaCallbackTag, pvCallbackUserData);
+		if( tResult!=netxUsbState_Ok )
 		{
-			// get the number of expected bytes in the next row
-			ulChunkSize = 16;
-			if( ulChunkSize>ulBytesLeft )
+			wxLogError(wxT("failed to receive command response!"));
+			wxLogError( romloader_usb_getErrorString(tResult) );
+		}
+		else
+		{
+			// parse the result
+			ulBytesLeft = ulSize;
+			ulExpectedAddress = ulNetxAddress;
+			pcParsePtr = (char*)pucData;
+			pcEndPtr = pcParsePtr + uiDataLen;
+			while( pcParsePtr<pcEndPtr && ulBytesLeft!=0 )
 			{
-				ulChunkSize = ulBytesLeft;
-			}
-			// is enough input data left?
-			if( (pcParsePtr+10+ulChunkSize*3)>=pcEndPtr )
-			{
-				wxLogError(wxT("strange response from netx!"));
-				break;
-			}
-			// get the address
-			iMatches = sscanf(pcParsePtr, "%8lX: ", &ulResultAddress);
-			if( iMatches!=1 )
-			{
-				wxLogError(wxT("strange response from netx!"));
-				break;
-			}
-			if( ulResultAddress!=ulExpectedAddress )
-			{
-				wxLogError(wxT("response does not match request!"));
-				break;
-			}
-			// advance parse ptr to data part of the line
-			pcParsePtr += 10;
-			// get all bytes
-			ulChunkCnt = ulChunkSize;
-			while( ulChunkCnt!=0 )
-			{
-				// get one hex digit
-				iMatches = sscanf(pcParsePtr, "%2X ", &uiByte);
+				// get the number of expected bytes in the next row
+				ulChunkSize = 16;
+				if( ulChunkSize>ulBytesLeft )
+				{
+					ulChunkSize = ulBytesLeft;
+				}
+				// is enough input data left?
+				if( (pcParsePtr+10+ulChunkSize*3)>=pcEndPtr )
+				{
+					wxLogError(wxT("strange response from netx!"));
+					break;
+				}
+				// get the address
+				iMatches = sscanf(pcParsePtr, "%8lX: ", &ulResultAddress);
 				if( iMatches!=1 )
 				{
 					wxLogError(wxT("strange response from netx!"));
 					break;
 				}
-				// advance parse ptr to data part of the line
-				pcParsePtr += 3;
-				*(pcData++) = (char)uiByte;
-				// one number processed
-				--ulChunkCnt;
-			}
-			ulBytesLeft -= ulChunkSize;
-			// inc address
-			ulExpectedAddress += ulChunkSize;
-			// were all bytes processed?
-			if( ulChunkCnt!=0 )
-			{
-				// no -> stop processing
-				break;
-			}
-			// skip over the rest of the line
-			while( pcParsePtr<pcEndPtr )
-			{
-				cEol = *(pcParsePtr++);
-				if( cEol==0x00 || cEol==0x0a )
+				if( ulResultAddress!=ulExpectedAddress )
 				{
+					wxLogError(wxT("response does not match request!"));
 					break;
 				}
+				// advance parse ptr to data part of the line
+				pcParsePtr += 10;
+				// get all bytes
+				ulChunkCnt = ulChunkSize;
+				while( ulChunkCnt!=0 )
+				{
+					// get one hex digit
+					iMatches = sscanf(pcParsePtr, "%2X ", &uiByte);
+					if( iMatches!=1 )
+					{
+						wxLogError(wxT("strange response from netx!"));
+						break;
+					}
+					// advance parse ptr to data part of the line
+					pcParsePtr += 3;
+					*(pcData++) = (char)uiByte;
+					// one number processed
+					--ulChunkCnt;
+				}
+				ulBytesLeft -= ulChunkSize;
+				// inc address
+				ulExpectedAddress += ulChunkSize;
+				// were all bytes processed?
+				if( ulChunkCnt!=0 )
+				{
+					// no -> stop processing
+					break;
+				}
+				// skip over the rest of the line
+				while( pcParsePtr<pcEndPtr )
+				{
+					cEol = *(pcParsePtr++);
+					if( cEol==0x00 || cEol==0x0a )
+					{
+						break;
+					}
+				}
 			}
-		}
-		free(pucData);
-		// all bytes received?
-		if( ulBytesLeft==0 )
-		{
-			// ok!
-			iResult = 0;
+			free(pucData);
+			// all bytes received?
+			if( ulBytesLeft==0 )
+			{
+				// ok!
+				iResult = 0;
+			}
 		}
 	}
 
@@ -851,7 +570,6 @@ int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pcData, uns
 /* write a byte (8bit) from the pc to the netx */
 int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char ucData)
 {
-	netx_device_handle tHandle;
 	tNetxUsbState tResult;
 	wxString strCommand;
 	unsigned char *pucData;
@@ -862,17 +580,15 @@ int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char u
 	// assume failure
 	iResult = -1;
 
-	// get handle
-	tHandle = (netx_device_handle)pvHandle;
-
 	// construct the command
 	strCommand.Printf(wxT("FILL %08lX %02X BYTE"), ulNetxAddress, ucData);
 
 	// send the command
-	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucData, &uiDataLen);
+	tResult = romloader_usb_executeCommand(pvHandle, strCommand, &pucData, &uiDataLen);
 	if( tResult!=netxUsbState_Ok )
 	{
 		wxLogError(wxT("failed to send command!"));
+		wxLogError( romloader_usb_getErrorString(tResult) );
 	}
 	else
 	{
@@ -896,7 +612,6 @@ int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char u
 /* write a word (16bit) from the pc to the netx */
 int fn_write_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short usData)
 {
-	netx_device_handle tHandle;
 	tNetxUsbState tResult;
 	wxString strCommand;
 	unsigned char *pucData;
@@ -907,17 +622,15 @@ int fn_write_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short 
 	// assume failure
 	iResult = -1;
 
-	// get handle
-	tHandle = (netx_device_handle)pvHandle;
-
 	// construct the command
 	strCommand.Printf(wxT("FILL %08lX %04X WORD"), ulNetxAddress, usData);
 
 	// send the command
-	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucData, &uiDataLen);
+	tResult = romloader_usb_executeCommand(pvHandle, strCommand, &pucData, &uiDataLen);
 	if( tResult!=netxUsbState_Ok )
 	{
 		wxLogError(wxT("failed to send command!"));
+		wxLogError( romloader_usb_getErrorString(tResult) );
 	}
 	else
 	{
@@ -952,17 +665,15 @@ int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long u
 	// assume failure
 	iResult = -1;
 
-	// get handle
-	tHandle = (netx_device_handle)pvHandle;
-
 	// construct the command
 	strCommand.Printf(wxT("FILL %08lX %08lX LONG"), ulNetxAddress, ulData);
 
 	// send the command
-	tResult = libnetxusbmon_executeCommand(tHandle, strCommand, &pucData, &uiDataLen);
+	tResult = romloader_usb_executeCommand(pvHandle, strCommand, &pucData, &uiDataLen);
 	if( tResult!=netxUsbState_Ok )
 	{
 		wxLogError(wxT("failed to send command!"));
+		wxLogError( romloader_usb_getErrorString(tResult) );
 	}
 	else
 	{
@@ -984,9 +695,54 @@ int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long u
 
 
 /* write a byte array from the pc to the netx */
-int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize)
+int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
-	return -1;
+	netx_device_handle tHandle;
+	tNetxUsbState tResult;
+	int iResult;
+	unsigned char *pucData;
+	unsigned int uiDataLen;
+
+
+	// expect error
+	iResult = -1;
+
+	// send the command
+	tResult = romloader_usb_load(pvHandle, (unsigned char*)pcData, ulSize, ulNetxAddress, L, iLuaCallbackTag, pvCallbackUserData);
+	if( tResult!=netxUsbState_Ok )
+	{
+		wxLogError(wxT("failed to send command!"));
+		wxLogError( romloader_usb_getErrorString(tResult) );
+	}
+	else
+	{
+		// get handle
+		tHandle = (netx_device_handle)pvHandle;
+
+		// get the response
+		tResult = romloader_usb_getNetxData(tHandle, &pucData, &uiDataLen, NULL, 0, NULL);
+		if( tResult!=netxUsbState_Ok )
+		{
+			wxLogError(wxT("failed to get command response!"));
+			wxLogError( romloader_usb_getErrorString(tResult) );
+		}
+		else
+		{
+			// check the response
+			if( uiDataLen==2 && pucData[0]==0x0a && pucData[1]=='>' )
+			{
+				// ok!
+				iResult = 0;
+			}
+			else
+			{
+				wxLogError(wxT("strange response from netx!"));
+			}
+			free(pucData);
+		}
+	}
+
+	return iResult;
 }
 
 
@@ -999,29 +755,3 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 
 /*-------------------------------------*/
 
-bool IsDeviceNetx(struct usb_device *ptDevice)
-{
-	bool fDeviceIsNetx;
-
-
-	if( ptDevice==NULL )
-	{
-		return false;
-	}
-/*
-	// show devices
-	printf("found 0x%04x/0x%04x\n", ptDevice->descriptor.idVendor, ptDevice->descriptor.idProduct);
-	return false;
-*/
-	fDeviceIsNetx  = true;
-	fDeviceIsNetx &= ( ptDevice->descriptor.bDeviceClass==0x00 );
-	fDeviceIsNetx &= ( ptDevice->descriptor.bDeviceSubClass==0x00 );
-	fDeviceIsNetx &= ( ptDevice->descriptor.bDeviceProtocol==0x00 );
-	fDeviceIsNetx &= ( ptDevice->descriptor.idVendor==0x0cc4 );
-	fDeviceIsNetx &= ( ptDevice->descriptor.idProduct==0x0815 );
-	fDeviceIsNetx &= ( ptDevice->descriptor.bcdDevice==0x0100 );
-
-	return fDeviceIsNetx;
-}
-
-/*-------------------------------------*/

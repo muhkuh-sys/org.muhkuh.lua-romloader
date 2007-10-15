@@ -150,7 +150,7 @@ unsigned long romloader::read_data32(unsigned long ulNetxAddress)
 
 
 // read a byte array from the netx to the pc
-wxString romloader::read_image(unsigned long ulNetxAddress, unsigned long ulSize)
+wxString romloader::read_image(unsigned long ulNetxAddress, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	wxString strMsg;
 	wxString strData;
@@ -163,7 +163,7 @@ wxString romloader::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 	{
 		// get memory for the buffer
 		pcBuffer = new char[ulSize];
-		iResult = m_tFunctionInterface.fn_read_image(m_pvHandle, ulNetxAddress, pcBuffer, ulSize);
+		iResult = m_tFunctionInterface.fn_read_image(m_pvHandle, ulNetxAddress, pcBuffer, ulSize, L, iLuaCallbackTag, pvCallbackUserData);
 		if( iResult!=0 )
 		{
 			strMsg.Printf(wxT("read_image failed with error %d"), iResult);
@@ -235,13 +235,13 @@ void romloader::write_data32(unsigned long ulNetxAddress, unsigned long ulData)
 
 
 // write a byte array from the pc to the netx
-void romloader::write_image(unsigned long ulNetxAddress, wxString strData)
+void romloader::write_image(unsigned long ulNetxAddress, wxString strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	wxString strMsg;
 	int iResult;
 
 
-	iResult = m_tFunctionInterface.fn_write_image(m_pvHandle, ulNetxAddress, strData.To8BitData(), strData.Len());
+	iResult = m_tFunctionInterface.fn_write_image(m_pvHandle, ulNetxAddress, strData.To8BitData(), strData.Len(), L, iLuaCallbackTag, pvCallbackUserData);
 	if( iResult!=0 )
 	{
 		strMsg.Printf(wxT("write_image failed with error %d"), iResult);

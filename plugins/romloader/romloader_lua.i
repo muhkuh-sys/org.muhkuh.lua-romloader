@@ -22,7 +22,7 @@
 	// read a long (32bit) from the netx to the pc
 	unsigned long read_data32(unsigned long ulNetxAddress)
 	// read a byte array from the netx to the pc
-	wxString read_image(unsigned long ulNetxAddress, unsigned long ulSize)
+	wxString read_image(unsigned long ulNetxAddress, unsigned long ulSize, LuaFunction fnCallback, voidptr_long vplCallbackUserData)
 
 	// write a byte (8bit) from the pc to the netx
 	void write_data08(unsigned long ulNetxAddress, unsigned char bData)
@@ -31,7 +31,7 @@
 	// write a long (32bit) from the pc to the netx
 	void write_data32(unsigned long ulNetxAddress, unsigned long ulData)
 	// write a byte array from the pc to the netx
-	void write_image(unsigned long ulNetxAddress, wxString strData)
+	void write_image(unsigned long ulNetxAddress, wxString strData, LuaFunction fnCallback, voidptr_long vplCallbackUserData)
 
 	// call routine
 	void call(unsigned long ulNetxAddress, unsigned long ulParameterR0)

@@ -38,11 +38,11 @@ bool fn_is_connected(void *pvHandle);
 int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pucData);
 int fn_read_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short *pusData);
 int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *pulData);
-int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pbData, unsigned long ulSize);
+int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pbData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char ucData);
 int fn_write_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short usData);
 int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulData);
-int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pucData, unsigned long ulSize);
+int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pucData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0);
 
 /*-------------------------------------*/
@@ -452,7 +452,7 @@ int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *p
 
 
 /* read a byte array from the netx to the pc */
-int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pcData, unsigned long ulSize)
+int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pcData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	unsigned int uiIdx;
 	wxString strMsg;
@@ -552,7 +552,7 @@ int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long u
 
 
 /* write a byte array from the pc to the netx */
-int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize)
+int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	unsigned int uiIdx;
 	wxString strMsg;
@@ -562,6 +562,9 @@ int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcDa
 	size_t sizBytesLeft;
 	size_t sizChunkSize;
 	size_t sizChunkCnt;
+	int iOldTopOfStack;
+	unsigned long ulBytesProcessed;
+	bool fStillRunning;
 
 
 	/* check the handle */
@@ -604,6 +607,54 @@ int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcDa
 			wxLogMessage(strMsg);
 			ulAddressCnt += sizChunkSize;
 		}
+		
+		
+		
+	// DEBUG: test cancel function :)
+
+	ulBytesProcessed = 0;
+	do
+	{
+		int iCurrentStack;
+		int iResult;
+		wxString strMsg;
+
+
+		wxTheApp->Yield();
+		wxMilliSleep(1000);
+
+		// execute the callback function
+		iOldTopOfStack = lua_gettop(L);
+		// push the function tag on the stack
+		lua_rawgeti(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
+		// push the arguments on the stack
+		lua_pushnumber(L, ulBytesProcessed);
+		lua_pushnumber(L, (long)pvCallbackUserData);
+		// call the function
+		iResult = m_ptLuaState->LuaPCall(2, 1);
+		strMsg.Printf(wxT("LuaPCall returned %d"), iResult);
+		wxLogMessage(strMsg);
+		if( iResult!=0 )
+		{
+			strMsg = m_ptLuaState->GetStringType(0);
+			wxLogMessage(strMsg);
+			fStillRunning = false;
+		}
+		else
+		{
+			// get the function's return value
+			fStillRunning = m_ptLuaState->GetBooleanType(0);
+		}
+
+		// TODO: is settop really necessary?
+		iCurrentStack = lua_gettop(L);
+		strMsg.Printf(wxT("old stack: %d, new stack: %d"), iOldTopOfStack, iCurrentStack);
+		lua_settop(L, iOldTopOfStack);
+
+		// some movement
+		++ulBytesProcessed;
+	} while( fStillRunning==true );
+
 		return 0;
 	}
 }

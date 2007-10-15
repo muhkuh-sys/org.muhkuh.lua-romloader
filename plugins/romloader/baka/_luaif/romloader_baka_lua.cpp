@@ -205,14 +205,31 @@ static int LUACALL wxLua_romloader_read_data32(lua_State *L)
     return 1;
 }
 
-static wxLuaArgTag s_wxluatagArray_wxLua_romloader_read_image[] = { &s_wxluatag_romloader, &s_wxluaarg_Number, &s_wxluaarg_Number, NULL };
+static wxLuaArgTag s_wxluatagArray_wxLua_romloader_read_image[] = { &s_wxluatag_romloader, &s_wxluaarg_Number, &s_wxluaarg_Number, &s_wxluaarg_Function, &s_wxluaarg_Number, NULL };
 static int LUACALL wxLua_romloader_read_image(lua_State *L);
-static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_read_image[1] = {{ wxLua_romloader_read_image, WXLUAMETHOD_METHOD, 3, 3, s_wxluatagArray_wxLua_romloader_read_image }};
-//  wxString read_image(unsigned long ulNetxAddress, unsigned long ulSize)
+static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_read_image[1] = {{ wxLua_romloader_read_image, WXLUAMETHOD_METHOD, 5, 5, s_wxluatagArray_wxLua_romloader_read_image }};
+// %override wxLua_romloader_read_image
 static int LUACALL wxLua_romloader_read_image(lua_State *L)
 {
+    int iLuaCallbackTag;
     wxLuaState wxlState(L);
     wxString returns;
+    // voidptr_long vplCallbackUserData
+    long vplCallbackUserData = (long)wxlua_getnumbertype(L, 5);
+    // LuaFunction fnCallback
+    if( lua_isfunction(L, 4) )
+    {
+        // push function to top of stack
+        lua_pushvalue(L, 4);
+        // ref function and pop it from stack
+        iLuaCallbackTag = luaL_ref(L, LUA_REGISTRYINDEX);
+    }
+    else
+    {
+        // no callback function provided
+        wxlState.terror(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
+                                        4, wxlState.lua_TypeNameIndex(4).c_str()));
+    }
     // unsigned long ulSize
     unsigned long ulSize = (long)wxlua_getnumbertype(L, 3);
     // unsigned long ulNetxAddress
@@ -220,12 +237,17 @@ static int LUACALL wxLua_romloader_read_image(lua_State *L)
     // get this
     romloader * self = (romloader *)wxlState.GetUserDataType(1, s_wxluatag_romloader);
     // call read_image
-    returns = (self->read_image(ulNetxAddress, ulSize));
+    returns = (self->read_image(ulNetxAddress, ulSize, L, iLuaCallbackTag, (void*)vplCallbackUserData));
+
+    // remove ref to function
+    luaL_unref(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
+
     // push the result string
     wxlState.lua_PushLString(returns,returns.Len());
 
     return 1;
 }
+
 
 static wxLuaArgTag s_wxluatagArray_wxLua_romloader_write_data08[] = { &s_wxluatag_romloader, &s_wxluaarg_Number, &s_wxluaarg_Number, NULL };
 static int LUACALL wxLua_romloader_write_data08(lua_State *L);
@@ -284,13 +306,30 @@ static int LUACALL wxLua_romloader_write_data32(lua_State *L)
     return 0;
 }
 
-static wxLuaArgTag s_wxluatagArray_wxLua_romloader_write_image[] = { &s_wxluatag_romloader, &s_wxluaarg_Number, &s_wxluaarg_String, NULL };
+static wxLuaArgTag s_wxluatagArray_wxLua_romloader_write_image[] = { &s_wxluatag_romloader, &s_wxluaarg_Number, &s_wxluaarg_String, &s_wxluaarg_Function, &s_wxluaarg_Number, NULL };
 static int LUACALL wxLua_romloader_write_image(lua_State *L);
-static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_write_image[1] = {{ wxLua_romloader_write_image, WXLUAMETHOD_METHOD, 3, 3, s_wxluatagArray_wxLua_romloader_write_image }};
+static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_write_image[1] = {{ wxLua_romloader_write_image, WXLUAMETHOD_METHOD, 5, 5, s_wxluatagArray_wxLua_romloader_write_image }};
 // %override wxLua_romloader_write_image
 static int LUACALL wxLua_romloader_write_image(lua_State *L)
 {
+    int iLuaCallbackTag;
     wxLuaState wxlState(L);
+    // voidptr_long vplCallbackUserData
+    long vplCallbackUserData = (long)wxlua_getnumbertype(L, 5);
+    // LuaFunction fnCallback
+    if( lua_isfunction(L, 4) )
+    {
+        // push function to top of stack
+        lua_pushvalue(L, 4);
+        // ref function and pop it from stack
+        iLuaCallbackTag = luaL_ref(L, LUA_REGISTRYINDEX);
+    }
+    else
+    {
+        // no callback function provided
+        wxlState.terror(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
+                                        4, wxlState.lua_TypeNameIndex(4).c_str()));
+    }
     // wxString strData
     wxString strData;
     size_t sizLen;
@@ -309,7 +348,10 @@ static int LUACALL wxLua_romloader_write_image(lua_State *L)
     // get this
     romloader * self = (romloader *)wxlState.GetUserDataType(1, s_wxluatag_romloader);
     // call write_image
-    self->write_image(ulNetxAddress, strData);
+    self->write_image(ulNetxAddress, strData, L, iLuaCallbackTag, (void*)vplCallbackUserData);
+
+    // remove ref to function
+    luaL_unref(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
 
     return 0;
 }

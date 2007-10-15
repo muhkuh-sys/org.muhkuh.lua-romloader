@@ -53,7 +53,7 @@ typedef int (*romloader_fn_read_data16)(void *pvHandle, unsigned long ulNetxAddr
 /* read a long (32bit) from the netx to the pc */
 typedef int (*romloader_fn_read_data32)(void *pvHandle, unsigned long ulNetxAddress, unsigned long *pulData);
 /* read a byte array from the netx to the pc */
-typedef int (*romloader_fn_read_image)(void *pvHandle, unsigned long ulNetxAddress, char *pcData, unsigned long ulSize);
+typedef int (*romloader_fn_read_image)(void *pvHandle, unsigned long ulNetxAddress, char *pcData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 
 /* write a byte (8bit) from the pc to the netx */
 typedef int (*romloader_fn_write_data08)(void *pvHandle, unsigned long ulNetxAddress, unsigned char ucData);
@@ -62,7 +62,7 @@ typedef int (*romloader_fn_write_data16)(void *pvHandle, unsigned long ulNetxAdd
 /* write a long (32bit) from the pc to the netx */
 typedef int (*romloader_fn_write_data32)(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulData);
 /* write a byte array from the pc to the netx */
-typedef int (*romloader_fn_write_image)(void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize);
+typedef int (*romloader_fn_write_image)(void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 
 /* call routine */
 typedef int (*romloader_fn_call)(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0);
@@ -114,7 +114,7 @@ public:
 	// read a long (32bit) from the netx to the pc
 	unsigned long read_data32(unsigned long ulNetxAddress);
 	// read a byte array from the netx to the pc
-	wxString read_image(unsigned long ulNetxAddress, unsigned long ulSize);
+	wxString read_image(unsigned long ulNetxAddress, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 
 	// write a byte (8bit) from the pc to the netx
 	void write_data08(unsigned long ulNetxAddress, unsigned char ucData);
@@ -123,7 +123,7 @@ public:
 	// write a long (32bit) from the pc to the netx
 	void write_data32(unsigned long ulNetxAddress, unsigned long ulData);
 	// write a byte array from the pc to the netx
-	void write_image(unsigned long ulNetxAddress, wxString strData);
+	void write_image(unsigned long ulNetxAddress, wxString strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 
 	// call routine
 	void call(unsigned long ulNetxAddress, unsigned long ulParameterR0);
