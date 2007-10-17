@@ -26,7 +26,7 @@
 
 	<!-- List of output formats to generate: -->
 	<add-formats>
-		msvc6prj,msvs2005prj,autoconf,borland,dmars,mingw,msvc,watcom,cbuilderx,cbx_unix,gnu
+		msvc6prj,msvs2003prj,msvs2005prj,autoconf,borland,dmars,mingw,msvc,watcom,cbuilderx,cbx_unix,gnu
 	</add-formats>
 
 
@@ -41,6 +41,7 @@
 	<add-flags formats="msvc">-o$(INPUT_FILE_DIR)/../../makefile.vc -DSRCDIR=.</add-flags>
 	<add-flags formats="watcom">-o$(INPUT_FILE_DIR)/../../makefile.wat -DSRCDIR=.</add-flags>
 	<add-flags formats="msvc6prj">-o$(INPUT_FILE_DIR)/../msvc6/muhkuh.sln -DSRCDIR=../..</add-flags>
+	<add-flags formats="msvs2003prj">-o$(INPUT_FILE_DIR)/../msvc7/muhkuh.sln -DSRCDIR=../..</add-flags>
 	<add-flags formats="msvs2005prj">-o$(INPUT_FILE_DIR)/../msvc8/muhkuh.sln -DSRCDIR=../..</add-flags>
 
 	<!-- Directories where unix makefiles should go: -->
