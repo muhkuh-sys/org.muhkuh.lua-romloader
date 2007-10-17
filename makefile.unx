@@ -10,6 +10,9 @@
 # These are configurable options:
 # -------------------------------------------------------------------------
 
+# Compiler flags to link loadable module 
+LINK_MODULE_FLAGS := -shared
+
 # C++ compiler 
 CXX := g++
 
@@ -67,7 +70,7 @@ WX_CONFIG_FLAGS = $(WX_CONFIG_DEBUG_FLAG) $(WX_CONFIG_UNICODE_FLAG) \
 	$(WX_CONFIG_SHARED_FLAG) --toolkit=$(WX_PORT) \
 	--version=$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR)
 MUHKUH_CXXFLAGS = $(VAR) $(VAR_3) -I./modules -I./. -I$(LUA_DIR)/include \
-	-D_THREAD_SAFE -pthread -Iapplication `$(WX_CONFIG) --cxxflags \
+	-D_THREAD_SAFE -pthread -I./application `$(WX_CONFIG) --cxxflags \
 	$(WX_CONFIG_FLAGS)` $(CPPFLAGS) $(CXXFLAGS)
 MUHKUH_OBJECTS =  \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_license.o \
@@ -86,16 +89,18 @@ MUHKUH_OBJECTS =  \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_muhkuh_lua.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_muhkuh_lua_bind.o
 PLUGIN_ROMLOADER_USB_CXXFLAGS = $(VAR) $(VAR_3) -I./modules -I./. \
-	-I$(LUA_DIR)/include -D_THREAD_SAFE -pthread -Iplugins/romloader/usb -fPIC \
+	-I$(LUA_DIR)/include -D_THREAD_SAFE -pthread -I./plugins/romloader/usb -fPIC \
 	-DPIC `$(WX_CONFIG) --cxxflags $(WX_CONFIG_FLAGS)` $(CPPFLAGS) $(CXXFLAGS)
 PLUGIN_ROMLOADER_USB_OBJECTS =  \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_usb_romloader.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_usb_romloader_usb_io.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_usb_romloader_usb_main.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_usb_romloader_usb_lua.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_usb_romloader_usb_lua_bind.o
 PLUGIN_ROMLOADER_BAKA_CXXFLAGS = $(VAR) $(VAR_3) -I./modules -I./. \
-	-I$(LUA_DIR)/include -D_THREAD_SAFE -pthread -Iplugins/romloader/baka -fPIC \
-	-DPIC `$(WX_CONFIG) --cxxflags $(WX_CONFIG_FLAGS)` $(CPPFLAGS) $(CXXFLAGS)
+	-I$(LUA_DIR)/include -D_THREAD_SAFE -pthread -I./plugins/romloader/baka \
+	-fPIC -DPIC `$(WX_CONFIG) --cxxflags $(WX_CONFIG_FLAGS)` $(CPPFLAGS) \
+	$(CXXFLAGS)
 PLUGIN_ROMLOADER_BAKA_OBJECTS =  \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_baka_romloader.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_baka_romloader_baka_main.o \
@@ -135,10 +140,10 @@ ifeq ($(SHARED),1)
 __muhkuh__DIRNAME_SHARED_SUFFIX = dll
 endif
 ifeq ($(BUILD_PLUGIN_ROMLOADER_USB),1)
-__plugin_romloader_usb___depname = bin/bootloader_usb.so
+__plugin_romloader_usb___depname = ./bin/bootloader_usb.so
 endif
 ifeq ($(BUILD_PLUGIN_ROMLOADER_BAKA),1)
-__plugin_romloader_baka___depname = bin/baka.so
+__plugin_romloader_baka___depname = ./bin/baka.so
 endif
 ifeq ($(WX_DEBUG),0)
 VAR = -O2
@@ -160,7 +165,7 @@ gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX):
 
 ### Targets: ###
 
-all: test_for_selected_wxbuild bin/muhkuh $(__plugin_romloader_usb___depname) $(__plugin_romloader_baka___depname)
+all: test_for_selected_wxbuild ./bin/muhkuh $(__plugin_romloader_usb___depname) $(__plugin_romloader_baka___depname)
 
 install: all
 
@@ -169,24 +174,24 @@ uninstall:
 clean: 
 	rm -f gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/*.o
 	rm -f gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/*.d
-	rm -f bin/muhkuh
-	rm -f bin/bootloader_usb.so
-	rm -f bin/baka.so
+	rm -f ./bin/muhkuh
+	rm -f ./bin/bootloader_usb.so
+	rm -f ./bin/baka.so
 
 test_for_selected_wxbuild: 
 	@$(WX_CONFIG) $(WX_CONFIG_FLAGS)
 
-bin/muhkuh: $(MUHKUH_OBJECTS)
+./bin/muhkuh: $(MUHKUH_OBJECTS)
 	$(CXX) -o $@ $(MUHKUH_OBJECTS) $(LDFLAGS) $(VAR_3) -L./lib/gcc_$(__muhkuh__DIRNAME_SHARED_SUFFIX) -L$(LUA_DIR)/lib  -pthread  -lwxlua_$(WX_PORT)_wxluasocket-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxluadebug-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxrc-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindhtml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindadv-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindaui-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindnet-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindcore-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindbase-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxlua-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -llua5.1 `$(WX_CONFIG) $(WX_CONFIG_FLAGS) --libs xrc,html,adv,aui,net,xml,core,base`
 
 ifeq ($(BUILD_PLUGIN_ROMLOADER_USB),1)
-bin/bootloader_usb.so: $(PLUGIN_ROMLOADER_USB_OBJECTS)
-	$(CXX) -shared -fPIC -o $@ $(PLUGIN_ROMLOADER_USB_OBJECTS) $(LDFLAGS) $(VAR_3) -pthread  -lusb -lwxlua_$(WX_PORT)_wxluasocket-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxluadebug-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxrc-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindhtml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindadv-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindaui-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindnet-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindcore-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindbase-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxlua-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -llua5.1 `$(WX_CONFIG) $(WX_CONFIG_FLAGS) --libs xrc,html,adv,aui,net,xml,core,base`
+./bin/bootloader_usb.so: $(PLUGIN_ROMLOADER_USB_OBJECTS)
+	$(CXX) $(LINK_MODULE_FLAGS) -fPIC -o $@ $(PLUGIN_ROMLOADER_USB_OBJECTS) $(LDFLAGS) $(VAR_3) -pthread  -lusb -lwxlua_$(WX_PORT)_wxluasocket-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxluadebug-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxrc-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindhtml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindadv-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindaui-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindnet-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindcore-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindbase-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxlua-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -llua5.1 `$(WX_CONFIG) $(WX_CONFIG_FLAGS) --libs xrc,html,adv,aui,net,xml,core,base`
 endif
 
 ifeq ($(BUILD_PLUGIN_ROMLOADER_BAKA),1)
-bin/baka.so: $(PLUGIN_ROMLOADER_BAKA_OBJECTS)
-	$(CXX) -shared -fPIC -o $@ $(PLUGIN_ROMLOADER_BAKA_OBJECTS) $(LDFLAGS) $(VAR_3) -pthread  -lwxlua_$(WX_PORT)_wxluasocket-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxluadebug-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxrc-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindhtml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindadv-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindaui-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindnet-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindcore-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindbase-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxlua-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -llua5.1 `$(WX_CONFIG) $(WX_CONFIG_FLAGS) --libs xrc,html,adv,aui,net,xml,core,base`
+./bin/baka.so: $(PLUGIN_ROMLOADER_BAKA_OBJECTS)
+	$(CXX) $(LINK_MODULE_FLAGS) -fPIC -o $@ $(PLUGIN_ROMLOADER_BAKA_OBJECTS) $(LDFLAGS) $(VAR_3) -pthread  -lwxlua_$(WX_PORT)_wxluasocket-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxluadebug-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxrc-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindhtml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindadv-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindaui-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindnet-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindcore-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindbase-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxlua-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -llua5.1 `$(WX_CONFIG) $(WX_CONFIG_FLAGS) --libs xrc,html,adv,aui,net,xml,core,base`
 endif
 
 gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_license.o: ./application/license.cpp
@@ -235,6 +240,9 @@ gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_muhkuh_lua_bind.o: ./plugins/_lua
 	$(CXX) -c -o $@ $(MUHKUH_CXXFLAGS) $(CPPDEPS) $<
 
 gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_usb_romloader.o: ./plugins/romloader/romloader.cpp
+	$(CXX) -c -o $@ $(PLUGIN_ROMLOADER_USB_CXXFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_usb_romloader_usb_io.o: ./plugins/romloader/usb/romloader_usb_io.cpp
 	$(CXX) -c -o $@ $(PLUGIN_ROMLOADER_USB_CXXFLAGS) $(CPPDEPS) $<
 
 gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_usb_romloader_usb_main.o: ./plugins/romloader/usb/romloader_usb_main.cpp

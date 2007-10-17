@@ -28,6 +28,6 @@
 #ifndef __READFSFILE_H__
 #define __READFSFILE_H__
 
-bool readFsFile(growbuffer *ptGrowBuffer, wxString &sBinFile);
+bool readFsFile(growbuffer *ptGrowBuffer, wxString strBinFile);
 
 #endif  // __READFSFILE_H__

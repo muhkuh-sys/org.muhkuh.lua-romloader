@@ -1,14 +1,5 @@
 
-%include "application/muhkuh_mainFrame.h"
-
-
-%class %noclassinfo muhkuh_binfile
-	wxString GetFileName()
-	bool IsOk()
-	wxString GetErrorMessage()
-	wxString GetText()
-	int GetSize()
-%endclass
+%include "application/muhkuh_lua_interface.h"
 
 
 %class %noclassinfo muhkuh_plugin_instance
@@ -23,7 +14,7 @@
 
 %function void TestHasFinished()
 
-%function %gc muhkuh_binfile *LoadBinFile(wxString strFileName)
+%function wxString load(wxString strFileName)
 %function void include(wxString strFileName, wxString strChunkName)
 
 

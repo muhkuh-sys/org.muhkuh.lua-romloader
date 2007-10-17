@@ -75,8 +75,8 @@ BUILD_PLUGIN_ROMLOADER_BAKA = 1
 MUHKUH_CXXFLAGS = /M$(__RUNTIME_LIBS)$(VAR_5) /DWIN32 $(____WX_SHARED) \
 	$(__WXUNICODE_DEFINE_p) $(__WXDEBUG_DEFINE_p) /D__WXMSW__ \
 	/I$(WX_DIR)$(WXLIBPATH)\msw$(WXLIBPOSTFIX) /I$(WX_DIR)\include $(VAR) \
-	$(VAR_3) $(p) /Fdbin\muhkuh.pdb /I.\modules /I.\. /I$(LUA_DIR)\include \
-	/D_WINDOWS /Iapplication /GR /EHsc $(CPPFLAGS) $(CXXFLAGS)
+	$(VAR_3) $(p) /Fd.\bin\muhkuh.pdb /I.\modules /I.\. /I$(LUA_DIR)\include \
+	/D_WINDOWS /I.\application /GR /EHsc $(CPPFLAGS) $(CXXFLAGS)
 MUHKUH_OBJECTS =  \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_license.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_growbuffer.obj \
@@ -97,19 +97,20 @@ MUHKUH_OBJECTS =  \
 PLUGIN_ROMLOADER_USB_CXXFLAGS = /M$(__RUNTIME_LIBS)$(VAR_5) /DWIN32 \
 	$(____WX_SHARED) $(__WXUNICODE_DEFINE_p) $(__WXDEBUG_DEFINE_p) /D__WXMSW__ \
 	/I$(WX_DIR)$(WXLIBPATH)\msw$(WXLIBPOSTFIX) /I$(WX_DIR)\include $(VAR) \
-	$(VAR_3) $(p) /Fdbin\bootloader_usb.pdb /I.\modules /I.\. \
-	/I$(LUA_DIR)\include /Iplugins\romloader\usb \
-	/Iplugins\romloader\usb\win\include /GR /EHsc $(CPPFLAGS) $(CXXFLAGS)
+	$(VAR_3) $(p) /Fd.\bin\bootloader_usb.pdb /I.\modules /I.\. \
+	/I$(LUA_DIR)\include /I.\plugins\romloader\usb \
+	/I.\plugins\romloader\usb\win\include /GR /EHsc $(CPPFLAGS) $(CXXFLAGS)
 PLUGIN_ROMLOADER_USB_OBJECTS =  \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_usb_romloader.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_usb_romloader_usb_io.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_usb_romloader_usb_main.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_usb_romloader_usb_lua.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_usb_romloader_usb_lua_bind.obj
 PLUGIN_ROMLOADER_BAKA_CXXFLAGS = /M$(__RUNTIME_LIBS)$(VAR_5) /DWIN32 \
 	$(____WX_SHARED) $(__WXUNICODE_DEFINE_p) $(__WXDEBUG_DEFINE_p) /D__WXMSW__ \
 	/I$(WX_DIR)$(WXLIBPATH)\msw$(WXLIBPOSTFIX) /I$(WX_DIR)\include $(VAR) \
-	$(VAR_3) $(p) /Fdbin\baka.pdb /I.\modules /I.\. /I$(LUA_DIR)\include \
-	/Iplugins\romloader\baka /GR /EHsc $(CPPFLAGS) $(CXXFLAGS)
+	$(VAR_3) $(p) /Fd.\bin\baka.pdb /I.\modules /I.\. /I$(LUA_DIR)\include \
+	/I.\plugins\romloader\baka /GR /EHsc $(CPPFLAGS) $(CXXFLAGS)
 PLUGIN_ROMLOADER_BAKA_OBJECTS =  \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_baka_romloader.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_baka_romloader_baka_main.obj \
@@ -152,10 +153,10 @@ ____muhkuh__DIRNAME_SHARED_SUFFIX_FILENAMES = lib
 ____muhkuh__DIRNAME_SHARED_SUFFIX_FILENAMES = dll
 !endif
 !if "$(BUILD_PLUGIN_ROMLOADER_USB)" == "1"
-__plugin_romloader_usb___depname = bin\bootloader_usb.dll
+__plugin_romloader_usb___depname = .\bin\bootloader_usb.dll
 !endif
 !if "$(BUILD_PLUGIN_ROMLOADER_BAKA)" == "1"
-__plugin_romloader_baka___depname = bin\baka.dll
+__plugin_romloader_baka___depname = .\bin\baka.dll
 !endif
 !if "$(WX_SHARED)" == "0"
 ____WX_SHARED = 
@@ -220,112 +221,112 @@ __RUNTIME_LIBS = D
 !if "$(RUNTIME_LIBS)" == "static"
 __RUNTIME_LIBS = T
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_XRC_NAME_p = wxmsw$(WX_VERSION)d_xrc.lib
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "1"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_XRC_NAME_p = wxmsw$(WX_VERSION)ud_xrc.lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_XRC_NAME_p = wxmsw$(WX_VERSION)_xrc.lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "1"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_XRC_NAME_p = wxmsw$(WX_VERSION)u_xrc.lib
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_HTML_NAME_p = wxmsw$(WX_VERSION)d_html.lib
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "1"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_HTML_NAME_p = wxmsw$(WX_VERSION)ud_html.lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_HTML_NAME_p = wxmsw$(WX_VERSION)_html.lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "1"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_HTML_NAME_p = wxmsw$(WX_VERSION)u_html.lib
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_ADV_NAME_p = wxmsw$(WX_VERSION)d_adv.lib
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "1"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_ADV_NAME_p = wxmsw$(WX_VERSION)ud_adv.lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_ADV_NAME_p = wxmsw$(WX_VERSION)_adv.lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "1"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_ADV_NAME_p = wxmsw$(WX_VERSION)u_adv.lib
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_AUI_NAME_p = wxmsw$(WX_VERSION)d_aui.lib
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "1"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_AUI_NAME_p = wxmsw$(WX_VERSION)ud_aui.lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_AUI_NAME_p = wxmsw$(WX_VERSION)_aui.lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "1"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_AUI_NAME_p = wxmsw$(WX_VERSION)u_aui.lib
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_NET_NAME_p = wxbase$(WX_VERSION)d_net.lib
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "1"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_NET_NAME_p = wxbase$(WX_VERSION)ud_net.lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_NET_NAME_p = wxbase$(WX_VERSION)_net.lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "1"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_NET_NAME_p = wxbase$(WX_VERSION)u_net.lib
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_XML_NAME_p = wxbase$(WX_VERSION)d_xml.lib
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "1"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_XML_NAME_p = wxbase$(WX_VERSION)ud_xml.lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_XML_NAME_p = wxbase$(WX_VERSION)_xml.lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "1"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_XML_NAME_p = wxbase$(WX_VERSION)u_xml.lib
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_CORE_NAME_p = wxmsw$(WX_VERSION)d_core.lib
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "1"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_CORE_NAME_p = wxmsw$(WX_VERSION)ud_core.lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_CORE_NAME_p = wxmsw$(WX_VERSION)_core.lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "1"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_CORE_NAME_p = wxmsw$(WX_VERSION)u_core.lib
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_BASE_NAME_p = wxbase$(WX_VERSION)d.lib
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "1"
-__WXLIB_BASE_NAME_p = wxbase$(WX_VERSION)ud.lib
-!endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "1" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "1"
 __WXLIB_BASE_NAME_p = wxmsw$(WX_VERSION)d.lib
 !endif
-!if "$(BUILD)" == "debug" && "$(WX_MONOLITHIC)" == "1" && "$(UNICODE)" == "1"
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "0"
+__WXLIB_BASE_NAME_p = wxbase$(WX_VERSION)ud.lib
+!endif
+!if "$(BUILD)" == "debug" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "1"
 __WXLIB_BASE_NAME_p = wxmsw$(WX_VERSION)ud.lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "0"
 __WXLIB_BASE_NAME_p = wxbase$(WX_VERSION).lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "0" && "$(UNICODE)" == "1"
-__WXLIB_BASE_NAME_p = wxbase$(WX_VERSION)u.lib
-!endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "1" && "$(UNICODE)" == "0"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "0" && "$(WX_MONOLITHIC)" == "1"
 __WXLIB_BASE_NAME_p = wxmsw$(WX_VERSION).lib
 !endif
-!if "$(BUILD)" == "release" && "$(WX_MONOLITHIC)" == "1" && "$(UNICODE)" == "1"
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "0"
+__WXLIB_BASE_NAME_p = wxbase$(WX_VERSION)u.lib
+!endif
+!if "$(BUILD)" == "release" && "$(UNICODE)" == "1" && "$(WX_MONOLITHIC)" == "1"
 __WXLIB_BASE_NAME_p = wxmsw$(WX_VERSION)u.lib
 !endif
 
@@ -336,21 +337,21 @@ vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX):
 
 ### Targets: ###
 
-all: test_for_selected_wxbuild bin\muhkuh.exe $(__plugin_romloader_usb___depname) $(__plugin_romloader_baka___depname)
+all: test_for_selected_wxbuild .\bin\muhkuh.exe $(__plugin_romloader_usb___depname) $(__plugin_romloader_baka___depname)
 
 clean: 
 	-if exist vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\*.obj del vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\*.obj
 	-if exist vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\*.res del vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\*.res
 	-if exist vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\*.pch del vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\*.pch
-	-if exist bin\muhkuh.exe del bin\muhkuh.exe
-	-if exist bin\muhkuh.ilk del bin\muhkuh.ilk
-	-if exist bin\muhkuh.pdb del bin\muhkuh.pdb
-	-if exist bin\bootloader_usb.dll del bin\bootloader_usb.dll
-	-if exist bin\bootloader_usb.ilk del bin\bootloader_usb.ilk
-	-if exist bin\bootloader_usb.pdb del bin\bootloader_usb.pdb
-	-if exist bin\baka.dll del bin\baka.dll
-	-if exist bin\baka.ilk del bin\baka.ilk
-	-if exist bin\baka.pdb del bin\baka.pdb
+	-if exist .\bin\muhkuh.exe del .\bin\muhkuh.exe
+	-if exist .\bin\muhkuh.ilk del .\bin\muhkuh.ilk
+	-if exist .\bin\muhkuh.pdb del .\bin\muhkuh.pdb
+	-if exist .\bin\bootloader_usb.dll del .\bin\bootloader_usb.dll
+	-if exist .\bin\bootloader_usb.ilk del .\bin\bootloader_usb.ilk
+	-if exist .\bin\bootloader_usb.pdb del .\bin\bootloader_usb.pdb
+	-if exist .\bin\baka.dll del .\bin\baka.dll
+	-if exist .\bin\baka.ilk del .\bin\baka.ilk
+	-if exist .\bin\baka.pdb del .\bin\baka.pdb
 
 test_for_selected_wxbuild: 
 	@if not exist $(WX_DIR)$(WXLIBPATH)\msw$(WXLIBPOSTFIX)\wx\setup.h \
@@ -364,94 +365,97 @@ test_for_selected_wxbuild:
 	@if not exist $(WX_DIR)$(WXLIBPATH)\msw$(WXLIBPOSTFIX)\wx\setup.h \
 	exit 1
 
-bin\muhkuh.exe: $(MUHKUH_OBJECTS) vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh.res
-	link /NOLOGO /OUT:$@ $(LDFLAGS) /LIBPATH:$(WX_DIR)$(WXLIBPATH) $(VAR_4) /LIBPATH:.\lib\vc_$(____muhkuh__DIRNAME_SHARED_SUFFIX_FILENAMES) /LIBPATH:$(LUA_DIR)\lib /SUBSYSTEM:WINDOWS  @<<
+.\bin\muhkuh.exe: $(MUHKUH_OBJECTS) vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh.res
+	link /NOLOGO /OUT:$@ $(LDFLAGS) /LIBPATH:$(WX_DIR)$(WXLIBPATH) $(VAR_4) /pdb:".\bin\muhkuh.pdb" /LIBPATH:.\lib\vc_$(____muhkuh__DIRNAME_SHARED_SUFFIX_FILENAMES) /LIBPATH:$(LUA_DIR)\lib /SUBSYSTEM:WINDOWS  @<<
 	$(MUHKUH_OBJECTS)  wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxluasocket.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxluadebug.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindxrc.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindhtml.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindadv.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindaui.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindnet.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindxml.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindcore.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindbase.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxlua.lib lua5.1.lib $(__WXLIB_XRC_NAME_p) $(__WXLIB_HTML_NAME_p) $(__WXLIB_ADV_NAME_p) $(__WXLIB_AUI_NAME_p) $(__WXLIB_NET_NAME_p) $(__WXLIB_XML_NAME_p) $(__WXLIB_CORE_NAME_p) $(__WXLIB_BASE_NAME_p) wxtiff$(WX3RDPARTYLIBPOSTFIX).lib wxjpeg$(WX3RDPARTYLIBPOSTFIX).lib wxpng$(WX3RDPARTYLIBPOSTFIX).lib wxzlib$(WX3RDPARTYLIBPOSTFIX).lib wxregex$(WXLIBPOSTFIX).lib wxexpat$(WX3RDPARTYLIBPOSTFIX).lib kernel32.lib user32.lib gdi32.lib comdlg32.lib winspool.lib winmm.lib shell32.lib comctl32.lib ole32.lib oleaut32.lib uuid.lib rpcrt4.lib advapi32.lib wsock32.lib odbc32.lib oleacc.lib
 <<
 
 !if "$(BUILD_PLUGIN_ROMLOADER_USB)" == "1"
-bin\bootloader_usb.dll: $(PLUGIN_ROMLOADER_USB_OBJECTS)
-	link /DLL /NOLOGO /OUT:$@ $(LDFLAGS) $(VAR_4)  /LIBPATH:plugins\romloader\usb\win\lib\msvc @<<
+.\bin\bootloader_usb.dll: $(PLUGIN_ROMLOADER_USB_OBJECTS)
+	link /DLL /NOLOGO /OUT:$@ $(LDFLAGS) $(VAR_4) /pdb:".\bin\bootloader_usb.pdb"  /LIBPATH:.\plugins\romloader\usb\win\lib\msvc @<<
 	$(PLUGIN_ROMLOADER_USB_OBJECTS)  libusb.lib setupapi.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxluasocket.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxluadebug.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindxrc.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindhtml.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindadv.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindaui.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindnet.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindxml.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindcore.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindbase.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxlua.lib lua5.1.lib $(__WXLIB_XRC_NAME_p) $(__WXLIB_HTML_NAME_p) $(__WXLIB_ADV_NAME_p) $(__WXLIB_AUI_NAME_p) $(__WXLIB_NET_NAME_p) $(__WXLIB_XML_NAME_p) $(__WXLIB_CORE_NAME_p) $(__WXLIB_BASE_NAME_p)
 <<
 !endif
 
 !if "$(BUILD_PLUGIN_ROMLOADER_BAKA)" == "1"
-bin\baka.dll: $(PLUGIN_ROMLOADER_BAKA_OBJECTS)
-	link /DLL /NOLOGO /OUT:$@ $(LDFLAGS) $(VAR_4)  @<<
+.\bin\baka.dll: $(PLUGIN_ROMLOADER_BAKA_OBJECTS)
+	link /DLL /NOLOGO /OUT:$@ $(LDFLAGS) $(VAR_4) /pdb:".\bin\baka.pdb"  @<<
 	$(PLUGIN_ROMLOADER_BAKA_OBJECTS)  wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxluasocket.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxluadebug.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindxrc.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindhtml.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindadv.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindaui.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindnet.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindxml.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindcore.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindbase.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxlua.lib lua5.1.lib $(__WXLIB_XRC_NAME_p) $(__WXLIB_HTML_NAME_p) $(__WXLIB_ADV_NAME_p) $(__WXLIB_AUI_NAME_p) $(__WXLIB_NET_NAME_p) $(__WXLIB_XML_NAME_p) $(__WXLIB_CORE_NAME_p) $(__WXLIB_BASE_NAME_p)
 <<
 !endif
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_license.obj: .\application\license.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\license.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_growbuffer.obj: .\application\growbuffer.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\growbuffer.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_aboutDialog.obj: .\application\muhkuh_aboutDialog.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\muhkuh_aboutDialog.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_app.obj: .\application\muhkuh_app.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\muhkuh_app.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_configDialog.obj: .\application\muhkuh_configDialog.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\muhkuh_configDialog.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_config_reposEntryDialog.obj: .\application\muhkuh_config_reposEntryDialog.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\muhkuh_config_reposEntryDialog.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_mainFrame.obj: .\application\muhkuh_mainFrame.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\muhkuh_mainFrame.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_plugin.obj: .\application\muhkuh_plugin.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\muhkuh_plugin.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_plugin_manager.obj: .\application\muhkuh_plugin_manager.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\muhkuh_plugin_manager.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_repository.obj: .\application\muhkuh_repository.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\muhkuh_repository.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_repository_manager.obj: .\application\muhkuh_repository_manager.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\muhkuh_repository_manager.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_wrap_xml.obj: .\application\muhkuh_wrap_xml.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\muhkuh_wrap_xml.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_readFsFile.obj: .\application\readFsFile.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\readFsFile.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_lua.obj: .\plugins\_luaif\muhkuh_lua.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\plugins\_luaif\muhkuh_lua.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_lua_bind.obj: .\plugins\_luaif\muhkuh_lua_bind.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\plugins\_luaif\muhkuh_lua_bind.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh.res: .\application\muhkuh.rc
-	rc /fo$@  /d WIN32 $(____WX_SHARED_2_p_1) $(__WXUNICODE_DEFINE_p_1) $(__WXDEBUG_DEFINE_p_1) /d __WXMSW__ /i $(WX_DIR)$(WXLIBPATH)\msw$(WXLIBPOSTFIX) /i $(WX_DIR)\include $(______muhkuh__DEBUGINFO_6_p_1) /i .\modules /i .\. /i $(LUA_DIR)\include /d _WINDOWS /i application $**
+	rc /fo$@  /d WIN32 $(____WX_SHARED_2_p_1) $(__WXUNICODE_DEFINE_p_1) $(__WXDEBUG_DEFINE_p_1) /d __WXMSW__ /i $(WX_DIR)$(WXLIBPATH)\msw$(WXLIBPOSTFIX) /i $(WX_DIR)\include $(______muhkuh__DEBUGINFO_6_p_1) /i .\modules /i .\. /i $(LUA_DIR)\include /d _WINDOWS /i .\application .\application\muhkuh.rc
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_usb_romloader.obj: .\plugins\romloader\romloader.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_USB_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_USB_CXXFLAGS) .\plugins\romloader\romloader.cpp
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_usb_romloader_usb_io.obj: .\plugins\romloader\usb\romloader_usb_io.cpp
+	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_USB_CXXFLAGS) .\plugins\romloader\usb\romloader_usb_io.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_usb_romloader_usb_main.obj: .\plugins\romloader\usb\romloader_usb_main.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_USB_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_USB_CXXFLAGS) .\plugins\romloader\usb\romloader_usb_main.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_usb_romloader_usb_lua.obj: .\plugins\romloader\usb\_luaif\romloader_usb_lua.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_USB_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_USB_CXXFLAGS) .\plugins\romloader\usb\_luaif\romloader_usb_lua.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_usb_romloader_usb_lua_bind.obj: .\plugins\romloader\usb\_luaif\romloader_usb_lua_bind.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_USB_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_USB_CXXFLAGS) .\plugins\romloader\usb\_luaif\romloader_usb_lua_bind.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_baka_romloader.obj: .\plugins\romloader\romloader.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_BAKA_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_BAKA_CXXFLAGS) .\plugins\romloader\romloader.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_baka_romloader_baka_main.obj: .\plugins\romloader\baka\romloader_baka_main.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_BAKA_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_BAKA_CXXFLAGS) .\plugins\romloader\baka\romloader_baka_main.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_baka_romloader_baka_lua.obj: .\plugins\romloader\baka\_luaif\romloader_baka_lua.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_BAKA_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_BAKA_CXXFLAGS) .\plugins\romloader\baka\_luaif\romloader_baka_lua.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_baka_romloader_baka_lua_bind.obj: .\plugins\romloader\baka\_luaif\romloader_baka_lua_bind.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_BAKA_CXXFLAGS) $**
+	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_BAKA_CXXFLAGS) .\plugins\romloader\baka\_luaif\romloader_baka_lua_bind.cpp
 

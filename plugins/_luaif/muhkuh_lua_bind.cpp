@@ -99,24 +99,6 @@ static int LUACALL wxLua_function_GetNextPlugin(lua_State *L)
 }
 static wxLuaBindCFunc s_wxluafunc_wxLua_function_GetNextPlugin[1] = {{ wxLua_function_GetNextPlugin, WXLUAMETHOD_CFUNCTION, 0, 0, s_wxluaargArray_None }};
 
-static wxLuaArgTag s_wxluatagArray_wxLua_function_LoadBinFile[] = { &s_wxluaarg_String, NULL };
-// %function %gc muhkuh_binfile *LoadBinFile(wxString strFileName)
-static int LUACALL wxLua_function_LoadBinFile(lua_State *L)
-{
-    wxLuaState wxlState(L);
-    muhkuh_binfile *returns;
-    // wxString strFileName
-    wxString strFileName = wxlState.GetwxStringType(1);
-    // call LoadBinFile
-    returns = (muhkuh_binfile *)LoadBinFile(strFileName);
-    if (!wxlState.IsTrackedObject(returns)) wxlState.AddTrackedObject(returns);
-    // push the result datatype
-    wxlState.PushUserDataType(s_wxluatag_muhkuh_binfile, returns);
-
-    return 1;
-}
-static wxLuaBindCFunc s_wxluafunc_wxLua_function_LoadBinFile[1] = {{ wxLua_function_LoadBinFile, WXLUAMETHOD_CFUNCTION, 1, 1, s_wxluatagArray_wxLua_function_LoadBinFile }};
-
 static wxLuaArgTag s_wxluatagArray_wxLua_function_ScanPlugins[] = { &s_wxluaarg_String, NULL };
 // %function void ScanPlugins(wxString strPattern)
 static int LUACALL wxLua_function_ScanPlugins(lua_State *L)
@@ -157,6 +139,23 @@ static int LUACALL wxLua_function_include(lua_State *L)
 }
 static wxLuaBindCFunc s_wxluafunc_wxLua_function_include[1] = {{ wxLua_function_include, WXLUAMETHOD_CFUNCTION, 2, 2, s_wxluatagArray_wxLua_function_include }};
 
+static wxLuaArgTag s_wxluatagArray_wxLua_function_load[] = { &s_wxluaarg_String, NULL };
+// %function wxString load(wxString strFileName)
+static int LUACALL wxLua_function_load(lua_State *L)
+{
+    wxLuaState wxlState(L);
+    wxString returns;
+    // wxString strFileName
+    wxString strFileName = wxlState.GetwxStringType(1);
+    // call load
+    returns = (load(strFileName));
+    // push the result string
+    wxlState.lua_PushLString(returns,returns.Len());
+
+    return 1;
+}
+static wxLuaBindCFunc s_wxluafunc_wxLua_function_load[1] = {{ wxLua_function_load, WXLUAMETHOD_CFUNCTION, 1, 1, s_wxluatagArray_wxLua_function_load }};
+
 // ---------------------------------------------------------------------------
 // wxLuaGetFunctionList_muhkuh_lua() is called to register global functions
 // ---------------------------------------------------------------------------
@@ -166,10 +165,10 @@ wxLuaBindMethod* wxLuaGetFunctionList_muhkuh_lua(size_t &count)
     static wxLuaBindMethod functionList[] =
     {
         { "GetNextPlugin", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_GetNextPlugin, 1, NULL },
-        { "LoadBinFile", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_LoadBinFile, 1, NULL },
         { "ScanPlugins", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_ScanPlugins, 1, NULL },
         { "TestHasFinished", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_TestHasFinished, 1, NULL },
         { "include", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_include, 1, NULL },
+        { "load", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_load, 1, NULL },
 
         { 0, 0, 0, 0 }, 
     };
@@ -187,7 +186,6 @@ wxLuaBindClass* wxLuaGetClassList_muhkuh_lua(size_t &count)
 {
     static wxLuaBindClass classList[] =
     {
-        { "muhkuh_binfile", muhkuh_binfile_methods, muhkuh_binfile_methodCount, NULL, &s_wxluatag_muhkuh_binfile, NULL, NULL ,s_wxluadefineArray_None, 0, }, 
         { "muhkuh_plugin_instance", muhkuh_plugin_instance_methods, muhkuh_plugin_instance_methodCount, NULL, &s_wxluatag_muhkuh_plugin_instance, NULL, NULL ,s_wxluadefineArray_None, 0, }, 
 
         { 0, 0, 0, 0, 0, 0, 0 }, 

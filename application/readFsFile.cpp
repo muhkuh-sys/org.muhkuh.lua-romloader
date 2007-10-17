@@ -21,31 +21,34 @@
 
 #include "readFsFile.h"
 
-bool readFsFile(growbuffer *ptGrowBuffer, wxString &sBinFile)
+bool readFsFile(growbuffer *ptGrowBuffer, wxString strBinFile)
 {
-	const unsigned int cuReadBufferSize = 512;
-	unsigned char aucReadBuffer[cuReadBufferSize];
+	const unsigned int uiReadBufferSize = 512;
+	unsigned char aucReadBuffer[uiReadBufferSize];
 	wxFileSystem fileSystem;
 	wxFSFile *ptFsFile;
 	wxInputStream *ptInputStream;
-	size_t sLastRead;
+	size_t sizLastRead;
 
 
 	// test if file exists
-	ptFsFile = fileSystem.OpenFile(sBinFile);
-	if( ptFsFile==NULL ) {
+	ptFsFile = fileSystem.OpenFile(strBinFile);
+	if( ptFsFile==NULL )
+	{
 		return false;
 	}
 
 	// ok, file exists. read all data into a string
 	ptInputStream = ptFsFile->GetStream();
-	while( !ptInputStream->Eof() ) {
-		ptInputStream->Read(aucReadBuffer, cuReadBufferSize);
-		sLastRead = ptInputStream->LastRead();
-		if( sLastRead==0 ) {
+	while( ptInputStream->Eof()==false )
+	{
+		ptInputStream->Read(aucReadBuffer, uiReadBufferSize);
+		sizLastRead = ptInputStream->LastRead();
+		if( sizLastRead==0 )
+		{
 			break;
 		}
-		ptGrowBuffer->add(aucReadBuffer, sLastRead);
+		ptGrowBuffer->add(aucReadBuffer, sizLastRead);
 	}
 
 	delete ptFsFile;

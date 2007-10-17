@@ -127,11 +127,6 @@ muhkuh_lua_dataTypeTable =
     IsNumber = false,
     Name = "lua_State",
   },
-  muhkuh_binfile = {
-    DefType = "class",
-    IsNumber = false,
-    Name = "muhkuh_binfile",
-  },
   muhkuh_plugin_instance = {
     DefType = "class",
     IsNumber = false,

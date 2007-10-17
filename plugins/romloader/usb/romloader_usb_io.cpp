@@ -279,8 +279,8 @@ tNetxUsbState romloader_usb_sendCommand(netx_device_handle tHandle, wxString str
 tNetxUsbState romloader_usb_getNetxData(netx_device_handle hNetxUsbMon, unsigned char **ppcData, unsigned int *pulDataLen, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	tNetxUsbState tResult;
-	unsigned char buf_send[65];
-	unsigned char buf_rec[65];
+	unsigned char buf_send[64];
+	unsigned char buf_rec[64];
 	unsigned int ulLinelen;
 	unsigned char *pcData;
 	unsigned char *pcDataNew;
@@ -298,6 +298,10 @@ tNetxUsbState romloader_usb_getNetxData(netx_device_handle hNetxUsbMon, unsigned
 		return netxUsbState_OutOfMemory;
 	}
 
+	// init results
+	*ppcData = NULL;
+	*pulDataLen = 0;
+
 	// receive netx data
 	do
 	{
@@ -305,33 +309,35 @@ tNetxUsbState romloader_usb_getNetxData(netx_device_handle hNetxUsbMon, unsigned
 		tResult = exchange(hNetxUsbMon, buf_send, buf_rec);
 		if( tResult!=netxUsbState_Ok )
 		{
-			return tResult;
+			break;
 		}
-
-		ulLinelen = buf_rec[0];
-
-		if( ulLinelen!=0 )
+		else
 		{
-			// get new size of databuffer
-			ulDataLenNew = ulDataLen + ulLinelen - 1;
+			ulLinelen = buf_rec[0];
 
-			// is enough space left?
-			if( ulDataLenNew>ulDataLenAlloc )
+			if( ulLinelen!=0 )
 			{
-				ulDataLenAlloc <<= 2;
-				// test for overflow
+				// get new size of databuffer
+				ulDataLenNew = ulDataLen + ulLinelen - 1;
+
+				// is enough space left?
 				if( ulDataLenNew>ulDataLenAlloc )
 				{
-					free(pcData);
-					return netxUsbState_OutOfMemory;
+					ulDataLenAlloc <<= 2;
+					// test for overflow
+					if( ulDataLenNew>ulDataLenAlloc )
+					{
+						tResult = netxUsbState_OutOfMemory;
+						break;
+					}
+					pcDataNew = (unsigned char*)realloc(pcData, ulDataLenAlloc);
+					if( pcDataNew==NULL )
+					{
+						tResult = netxUsbState_OutOfMemory;
+						break;
+					}
+					pcData = pcDataNew;
 				}
-				pcDataNew = (unsigned char*)realloc(pcData, ulDataLenAlloc);
-				if( pcDataNew==NULL )
-				{
-					free(pcData);
-					return netxUsbState_OutOfMemory;
-				}
-				pcData = pcDataNew;
 			}
 
 			// copy data
@@ -341,12 +347,19 @@ tNetxUsbState romloader_usb_getNetxData(netx_device_handle hNetxUsbMon, unsigned
 		}
 	} while( ulLinelen!=0 );
 
-	*ppcData = pcData;
-	*pulDataLen = ulDataLen;
+	if( tResult!=netxUsbState_Ok )
+	{
+		free(pcData);
+	}
+	else
+	{
+		*ppcData = pcData;
+		*pulDataLen = ulDataLen;
 
-	wxLogMessage(wxT("usb: received response '") + wxString::From8BitData((const char*)pcData, ulDataLen) + wxT("'"));
+		wxLogMessage(wxT("usb: received response '") + wxString::From8BitData((const char*)pcData, ulDataLen) + wxT("'"));
+	}
 
-	return netxUsbState_Ok;
+	return tResult;
 }
 
 
@@ -444,6 +457,136 @@ tNetxUsbState romloader_usb_load(void *pvHandle, const unsigned char *pucData, s
 	if( pucDataCnt==pucDataEnd )
 	{
 		tResult = netxUsbState_Ok;
+	}
+
+	return tResult;
+}
+
+
+tNetxUsbState romloader_usb_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0, unsigned char **ppucData, unsigned int *puiDataLen, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
+{
+	netx_device_handle tHandle;
+	tNetxUsbState tResult;
+	unsigned int uiCrc;
+	wxString strCommand;
+	unsigned char aucSend[64];
+	unsigned char aucRec[64];
+	unsigned int uiLinelen;
+	unsigned char *pucData;
+	unsigned char *pucDataNew;
+	unsigned int uiDataLen;
+	unsigned int uiDataLenNew;
+	unsigned int uiDataLenAlloc;
+	bool fIsRunning;
+
+
+	// init results
+	*ppucData = NULL;
+	*puiDataLen = 0;
+
+	// get handle
+	tHandle = (netx_device_handle)pvHandle;
+
+	// construct the "call" command
+	strCommand.Printf(wxT("CALL %08lX %08X"), ulNetxAddress, ulParameterR0);
+	// send the command
+	tResult = romloader_usb_sendCommand(tHandle, strCommand);
+	if( tResult!=netxUsbState_Ok )
+	{
+		wxLogError(wxT("failed to send command!"));
+		wxLogError(romloader_usb_getErrorString(tResult));
+		return tResult;
+	}
+
+	// wait for the call to finish
+	do
+	{
+		// look for data from netx
+		aucSend[0] = 0x00;
+		tResult = exchange(tHandle, aucSend, aucRec);
+		if( tResult!=netxUsbState_Timeout )
+		{
+			// execute callback
+			wxTheApp->Yield();
+			fIsRunning = callback(L, iLuaCallbackTag, 0, pvCallbackUserData);
+			if( fIsRunning!=true )
+			{
+				tResult = netxUsbState_Cancel;
+			}
+			else
+			{
+				tResult = netxUsbState_Ok;
+			}
+		}
+	} while( tResult!=netxUsbState_Ok );
+
+	// ok, call finished. collect all data from the netx
+
+	if( tResult==netxUsbState_Ok )
+	{
+		// alloc initial buffer
+		uiDataLen = 0;
+		uiDataLenAlloc = 4096;
+		pucData = (unsigned char*)malloc(uiDataLenAlloc);
+		if( pucData==NULL )
+		{
+			return netxUsbState_OutOfMemory;
+		}
+
+		// receive rest of netx data
+		do
+		{
+			uiLinelen = aucRec[0];
+			if( uiLinelen!=0 )
+			{
+				// get new size of databuffer
+				uiDataLenNew = uiDataLen + uiLinelen - 1;
+
+				// is enough space left?
+				if( uiDataLenNew>uiDataLenAlloc )
+				{
+					uiDataLenAlloc <<= 2;
+					// test for overflow
+					if( uiDataLenNew>uiDataLenAlloc )
+					{
+						tResult = netxUsbState_OutOfMemory;
+						break;
+					}
+					pucDataNew = (unsigned char*)realloc(pucData, uiDataLenAlloc);
+					if( pucDataNew==NULL )
+					{
+						tResult = netxUsbState_OutOfMemory;
+						break;
+					}
+					pucData = pucDataNew;
+				}
+
+				// copy data
+				memcpy(pucData+uiDataLen, aucRec+1, uiLinelen);
+
+				uiDataLen = uiDataLenNew;
+
+				// get next packet
+				aucSend[0] = 0x00;
+				tResult = exchange(tHandle, aucSend, aucRec);
+				if( tResult!=netxUsbState_Ok )
+				{
+					break;
+				}
+			}
+		} while( uiLinelen!=0 );
+
+		if( tResult!=netxUsbState_Ok )
+		{
+			free(pucData);
+		}
+		else
+		{
+			*ppucData = pucData;
+			*puiDataLen = uiDataLen;
+
+			wxLogMessage(wxT("usb: received response '") + wxString::From8BitData((const char*)pucData, uiDataLen) + wxT("'"));
+		}
 	}
 
 	return tResult;

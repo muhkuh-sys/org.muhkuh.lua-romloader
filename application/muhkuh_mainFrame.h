@@ -56,32 +56,6 @@ extern "C"
 }
 
 //-------------------------------------
-// the fsfile class to exchange file contents with the lua script
-// TODO: this class should hold the binary info (so we can load
-// the netx flasher executable with this). The array should be
-// converted to unicode only on request.
-class muhkuh_binfile : public wxObject
-{
-public:
-	muhkuh_binfile(const wxString strFileName, wxFileSystem *ptFileSystem);
-	~muhkuh_binfile(void);
-
-	wxString GetFileName(void) const;
-	bool IsOk(void) const;
-	wxString GetErrorMessage(void) const;
-	wxString GetText(void) const;
-	int GetSize(void) const;
-
-private:
-	wxString m_strFileName;
-	wxFileSystem *m_ptFileSystem;
-	bool m_fIsOk;
-	wxString m_strErrorMessage;
-	wxString m_strFileContents;
-};
-
-
-//-------------------------------------
 // Define the main frame
 
 class muhkuh_mainFrame: public wxFrame
@@ -119,7 +93,7 @@ public:
 
 	// the lua functions
 	void luaTestHasFinished(void);
-	muhkuh_binfile *luaLoadBinFile(wxString strFileName);
+	wxString luaLoad(wxString strFileName);
 	void luaInclude(wxString strFileName, wxString strChunkName);
 	void luaScanPlugins(wxString strPattern);
 	muhkuh_plugin_instance *luaGetNextPlugin(void);
@@ -194,8 +168,11 @@ private:
 
 	// main frame state
 	muhkuh_mainFrame_state m_state;
+	// TODO: replace the test name and idx with the xml wrapper object
 	// name of the running test
 	wxString m_strRunningTestName;
+	size_t m_sizRunningTest_RepositoryIdx;
+	size_t m_sizRunningTest_TestIdx;
 
 	// scanner progress dialog
 	wxProgressDialog *m_scannerProgress;
@@ -228,13 +205,6 @@ private:
 
 extern muhkuh_mainFrame *g_ptMainFrame;
 
-void TestHasFinished(void);
-
-muhkuh_binfile *LoadBinFile(wxString strFileName);
-void include(wxString strFileName, wxString strChunkName);
-
-void ScanPlugins(wxString strPattern);
-muhkuh_plugin_instance *GetNextPlugin(void);
 
 #endif	// __MUHKUH_MAINFRAME_H__
 

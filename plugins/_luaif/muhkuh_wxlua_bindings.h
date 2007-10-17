@@ -45,16 +45,13 @@ extern WXLUA_NO_DLLIMPEXP bool wxLuaBinding_muhkuh_lua_init();
 // Includes
 // ---------------------------------------------------------------------------
 
-#include "application/muhkuh_mainFrame.h"
+#include "application/muhkuh_lua_interface.h"
 
 
 // ---------------------------------------------------------------------------
 // Lua Tag Method Values and Tables for each Class
 // ---------------------------------------------------------------------------
 
-extern WXLUA_NO_DLLIMPEXP_DATA(int) s_wxluatag_muhkuh_binfile;
-extern WXLUA_NO_DLLIMPEXP wxLuaBindMethod muhkuh_binfile_methods[];
-extern WXLUA_NO_DLLIMPEXP_DATA(int) muhkuh_binfile_methodCount;
 extern WXLUA_NO_DLLIMPEXP_DATA(int) s_wxluatag_muhkuh_plugin_instance;
 extern WXLUA_NO_DLLIMPEXP wxLuaBindMethod muhkuh_plugin_instance_methods[];
 extern WXLUA_NO_DLLIMPEXP_DATA(int) muhkuh_plugin_instance_methodCount;

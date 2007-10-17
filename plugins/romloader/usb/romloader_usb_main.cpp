@@ -37,7 +37,7 @@ int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char u
 int fn_write_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short usData);
 int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulData);
 int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
-int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0);
+int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 
 /*-------------------------------------*/
 
@@ -773,9 +773,40 @@ int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcDa
 
 
 /* call routine */
-int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0)
+int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
-	return -1;
+	tNetxUsbState tResult;
+	int iResult;
+	unsigned char *pucData;
+	unsigned int uiDataLen;
+
+
+	// expect error
+	iResult = -1;
+
+	// send the command
+	tResult = romloader_usb_call(pvHandle, ulNetxAddress, ulParameterR0, &pucData, &uiDataLen, L, iLuaCallbackTag, pvCallbackUserData);
+	if( tResult!=netxUsbState_Ok )
+	{
+		wxLogError(wxT("failed to send command!"));
+		wxLogError( romloader_usb_getErrorString(tResult) );
+	}
+	else
+	{
+		// check the response
+		if( uiDataLen==2 && pucData[0]==0x0a && pucData[1]=='>' )
+		{
+			// ok!
+			iResult = 0;
+		}
+		else
+		{
+			wxLogError(wxT("strange response from netx!"));
+		}
+		free(pucData);
+	}
+
+	return iResult;
 }
 
 

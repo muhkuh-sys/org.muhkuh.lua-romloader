@@ -20,12 +20,16 @@
 
 
 #include <wx/stdpaths.h>
+#include <wx/url.h>
 
+#include "growbuffer.h"
 #include "muhkuh_version.h"
 #include "muhkuh_aboutDialog.h"
+#include "muhkuh_lua_interface.h"
 #include "muhkuh_mainFrame.h"
 #include "muhkuh_configDialog.h"
 #include "muhkuh_testTreeItemData.h"
+#include "readFsFile.h"
 
 //-------------------------------------
 // the wxLua entries
@@ -364,18 +368,14 @@ void muhkuh_mainFrame::read_config(void)
 		return;
 	}
 
-	// get some defaults
-	iDetailsCol0Size = m_testDetailsList->GetColumnWidth(0);
-	iDetailsCol1Size = m_testDetailsList->GetColumnWidth(1);
-
 	// get mainframe position and size
 	pConfig->SetPath(wxT("/MainFrame"));
 	iMainFrameX = pConfig->Read(wxT("x"), 50);
 	iMainFrameY = pConfig->Read(wxT("y"), 50);
 	iMainFrameW = pConfig->Read(wxT("w"), 640);
 	iMainFrameH = pConfig->Read(wxT("h"), 480);
-	iDetailsCol0Size = pConfig->Read(wxT("detailscol0"), iDetailsCol0Size);
-	iDetailsCol1Size = pConfig->Read(wxT("detailscol1"), iDetailsCol1Size);
+	iDetailsCol0Size = pConfig->Read(wxT("detailscol0"), wxLIST_AUTOSIZE);
+	iDetailsCol1Size = pConfig->Read(wxT("detailscol1"), wxLIST_AUTOSIZE);
 	strPerspective = pConfig->Read(wxT("perspective"), wxEmptyString);
 	m_fShowStartupTips = pConfig->Read(wxT("showtips"), true);
 	m_sizStartupTipsIdx = pConfig->Read(wxT("tipidx"), (long)0);
@@ -723,6 +723,8 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 
 
 	m_strRunningTestName = ptTestData->testDescription_getName();
+	m_sizRunningTest_RepositoryIdx = ptTestData->getRepositoryIndex();
+	m_sizRunningTest_TestIdx = ptTestData->getTestIndex();
 
 	strDebug.Printf(wxT("execute test '") + m_strRunningTestName + wxT("', index %d"), uiIndex);
 	wxLogMessage(strDebug);
@@ -800,6 +802,8 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 		return;
 	}
 
+	// TODO: overwrite the package.preload index metatable to
+	// return one function for all module names.
 
 	// set the package path
 	// TODO: use a config option here
@@ -1321,151 +1325,202 @@ void muhkuh_mainFrame::luaTestHasFinished(void)
 }
 
 
-muhkuh_binfile *muhkuh_mainFrame::luaLoadBinFile(wxString strFileName)
+wxString muhkuh_mainFrame::luaLoad(wxString strFileName)
 {
-	// TODO: Get the filesystem object which was used to start the lua script
+	wxString strMsg;
+	wxString strFileUrl;
+	wxURL filelistUrl;
+	wxURLError urlError;
+	wxString strFileContents;
+	growbuffer *ptGrowBuffer;
+	unsigned char *pucData;
+	size_t sizDataSize;
+	bool fResult;
+	wxString strData;
 
-	wxFileSystem fileSystem;
-	muhkuh_binfile *ptMuhkuhBinFile;
 
+	if( strFileName.IsEmpty()==true )
+	{
+		// the filename parameter is invalid
+		strMsg = _("lua load failed: empty filename");
+		m_ptLuaState->terror(strMsg);
+	}
+	else
+	{
+		strFileUrl = m_ptRepositoryManager->getTestlistBaseUrl(m_sizRunningTest_RepositoryIdx, m_sizRunningTest_TestIdx) + wxT("/") + strFileName;
+		wxLogMessage(wxT("lua load: searching '") + strFileUrl + wxT("'"));
+		urlError = filelistUrl.SetURL(strFileUrl);
+		if( urlError!=wxURL_NOERR )
+		{
+			// this was no valid url
+			strMsg  = wxT("lua load: invalid URL '");
+			strMsg += strFileUrl;
+			strMsg += wxT("'\n");
+			// try to show some details
+			switch( urlError )
+			{
+			case wxURL_SNTXERR:
+				strMsg += wxT("Syntax error in the URL string.");
+				break;
+			case wxURL_NOPROTO:
+				strMsg += wxT("Found no protocol which can get this URL.");
+				break;
+			case wxURL_NOHOST:
+				strMsg += wxT("An host name is required for this protocol.");
+				break;
+			case wxURL_NOPATH:
+				strMsg += wxT("A path is required for this protocol.");
+				break;
+			case wxURL_CONNERR:
+				strMsg += wxT("Connection error. (did anybody press connect? should never happen!)");
+				break;
+			case wxURL_PROTOERR:
+				strMsg += wxT("An error occurred during negotiation. (should never happen!)");
+				break;
+			default:
+				strMsg += wxT("unknown errorcode");
+				break;
+			}
 
-	ptMuhkuhBinFile = new muhkuh_binfile(strFileName, &fileSystem);
+			// show the error message
+			wxLogError(strMsg);
+		}
+		else
+		{
+			ptGrowBuffer = new growbuffer(65536);
+			fResult = readFsFile(ptGrowBuffer, strFileUrl);
+			if( fResult==true )
+			{
+				sizDataSize = ptGrowBuffer->getSize();
+				pucData = ptGrowBuffer->getData();
+				strData = wxString::From8BitData((const char*)pucData, sizDataSize);
+			}
+			else
+			{
+				wxLogError(wxT("lua load: failed to read file"));
+			}
+			delete ptGrowBuffer;
+		}
+	}
 
-	// TODO: add the object to a list, this must be deleted after the script finished
-
-	return ptMuhkuhBinFile;
+	return strData;
 }
 
 
 void muhkuh_mainFrame::luaInclude(wxString strFileName, wxString strChunkName)
 {
-	wxString strErrorMessage;
+	wxString strMsg;
+	wxString strFileUrl;
+	wxURL filelistUrl;
+	wxURLError urlError;
 	wxString strFileContents;
-	wxFSFile *ptFsFile;
-	wxInputStream *ptInputStream;
-	char c;
-	bool fOk;
-	wxStreamError tStreamError;
-	wxFileSystem fileSystem;
-	wxFileSystem *ptFileSystem;
+	growbuffer *ptGrowBuffer;
+	unsigned char *pucData;
+	size_t sizDataSize;
+	bool fResult;
 	int iResult;
 	int iGetTop;
+	int iLineNr;
 
-
-	// TODO: get the filesystem from the mtd start (current path points into the mtd)
-	ptFileSystem = &fileSystem;
 
 	if( m_ptLuaState!=NULL )
 	{
 		if( strFileName.IsEmpty()==true )
 		{
 			// the filename parameter is invalid
-			strErrorMessage = _("lua include failed: empty filename");
-			m_ptLuaState->terror(strErrorMessage);
+			strMsg = _("lua include failed: empty filename");
+			m_ptLuaState->terror(strMsg);
 		}
 		else
 		{
 			if( strChunkName.IsEmpty()==true )
 			{
 				// the chunkname parameter is invalid
-				strErrorMessage = _("lua include failed: empty chunkname");
-				m_ptLuaState->terror(strErrorMessage);
+				strMsg = _("lua include failed: empty chunkname");
+				m_ptLuaState->terror(strMsg);
 			}
 			else
 			{
-				// test if the file exists
-				ptFsFile = ptFileSystem->OpenFile(strFileName);
-				if( ptFsFile==NULL )
+				strFileUrl = m_ptRepositoryManager->getTestlistBaseUrl(m_sizRunningTest_RepositoryIdx, m_sizRunningTest_TestIdx) + strFileName;
+				wxLogMessage(wxT("lua include: searching '") + strFileUrl + wxT("'"));
+				urlError = filelistUrl.SetURL(strFileUrl);
+				if( urlError!=wxURL_NOERR )
 				{
-					// the file does not exist
-					strErrorMessage = _("lua include file not found: ") + strFileName;
-					m_ptLuaState->terror(strErrorMessage);
+					// this was no valid url
+					strMsg  = wxT("lua include: invalid URL '");
+					strMsg += strFileUrl;
+					strMsg += wxT("'\n");
+					// try to show some details
+					switch( urlError )
+					{
+					case wxURL_SNTXERR:
+						strMsg += wxT("Syntax error in the URL string.");
+						break;
+					case wxURL_NOPROTO:
+						strMsg += wxT("Found no protocol which can get this URL.");
+						break;
+					case wxURL_NOHOST:
+						strMsg += wxT("An host name is required for this protocol.");
+						break;
+					case wxURL_NOPATH:
+						strMsg += wxT("A path is required for this protocol.");
+						break;
+					case wxURL_CONNERR:
+						strMsg += wxT("Connection error. (did anybody press connect? should never happen!)");
+						break;
+					case wxURL_PROTOERR:
+						strMsg += wxT("An error occurred during negotiation. (should never happen!)");
+						break;
+					default:
+						strMsg += wxT("unknown errorcode");
+						break;
+					}
+
+					// show the error message
+					wxLogError(strMsg);
 				}
 				else
 				{
-					// ok, file exists -> get the input stream
-					ptInputStream = ptFsFile->GetStream();
-					if( ptInputStream==NULL )
+					ptGrowBuffer = new growbuffer(65536);
+					fResult = readFsFile(ptGrowBuffer, strFileUrl);
+					if( fResult==true )
 					{
-						strErrorMessage = _("lua include failed: could not get input stream for file");
-						m_ptLuaState->terror(strErrorMessage);
-					}
-					else
-					{
-						// read all data into a string
-						while( (fOk=ptInputStream->IsOk())==true )
-						{
-							c = ptInputStream->GetC();
-							if( ptInputStream->Eof()==true )
-							{
-								break;
-							}
-							strFileContents += c;
-						};
-					}
-					delete ptFsFile;
+						sizDataSize = ptGrowBuffer->getSize();
+						pucData = ptGrowBuffer->getData();
 
-					if( fOk!=true )
-					{
-						// get the errormessage
-						tStreamError = ptInputStream->GetLastError();
-						switch(tStreamError)
-						{
-						case wxSTREAM_NO_ERROR:
-							strErrorMessage = _("Read operation failed");
-							m_ptLuaState->terror(strErrorMessage);
-							break;
-						case wxSTREAM_EOF:
-							strErrorMessage = _("An End-Of-File occurred");
-							m_ptLuaState->terror(strErrorMessage);
-							break;
-						case wxSTREAM_WRITE_ERROR:
-							strErrorMessage = _("A generic error occurred on the last write call");
-							m_ptLuaState->terror(strErrorMessage);
-							break;
-						case wxSTREAM_READ_ERROR:
-							strErrorMessage = _("A generic error occurred on the last read call");
-							m_ptLuaState->terror(strErrorMessage);
-							break;
-						default:
-							strErrorMessage.Printf(_("Unknown error message from InputStream: 0x%x"), tStreamError);
-							m_ptLuaState->terror(strErrorMessage);
-							break;
-						}
-					}
-					else
-					{
 						iGetTop = m_ptLuaState->lua_GetTop();
-						iResult = m_ptLuaState->luaL_LoadBuffer(strFileContents.ToAscii(), strFileContents.Len(), strChunkName.ToAscii());
+						iResult = m_ptLuaState->luaL_LoadBuffer((const char*)pucData, sizDataSize, strChunkName.ToAscii());
 						switch( iResult )
 						{
 						case 0:
 							// ok, the function is on the stack -> execute the new code with no arguments and no return values
 							m_ptLuaState->lua_Call(0,0);
 							break;
-						case LUA_ERRSYNTAX:
-						{
-							int iLineNr;
-							wxString strMsg;
 
+						case LUA_ERRSYNTAX:
 							iResult = m_ptLuaState->LuaError(iResult, iGetTop, NULL, &strMsg, &iLineNr);
-							strErrorMessage.Printf(wxT("error %d in line %d"), iResult, iLineNr);
-							wxLogError(strErrorMessage);
+							strMsg.Printf(wxT("error %d in line %d"), iResult, iLineNr);
 							wxLogError(strMsg);
-							strErrorMessage = _("syntax error during pre-compilation");
-							m_ptLuaState->terror(strErrorMessage);
-						}
+							strMsg = _("syntax error during pre-compilation");
+							m_ptLuaState->terror(strMsg);
 							break;
+
 						case LUA_ERRMEM:
-							strErrorMessage = _("memory allocation error");
-							m_ptLuaState->terror(strErrorMessage);
+							strMsg = _("memory allocation error");
+							m_ptLuaState->terror(strMsg);
 							break;
+
 						default:
-							strErrorMessage.Printf(_("Unknown error message from luaL_LoadBuffer: 0x%x"), iResult);
-							m_ptLuaState->terror(strErrorMessage);
+							strMsg.Printf(_("Unknown error message from luaL_LoadBuffer: 0x%x"), iResult);
+							m_ptLuaState->terror(strMsg);
 							break;
 						}
 					}
+					else
+					{
+						wxLogError(wxT("lua include: failed to read file"));
+					}
+					delete ptGrowBuffer;
 				}
 			}
 		}
@@ -1534,22 +1589,18 @@ void TestHasFinished(void)
 }
 
 
-muhkuh_binfile *LoadBinFile(wxString strFileName)
+wxString load(wxString strFileName)
 {
-	muhkuh_binfile *ptMuhkuhBinFile;
+	wxString strData;
 
-
-	// assume error
-	ptMuhkuhBinFile = NULL;
 
 	// does the mainframe exist?
 	if( g_ptMainFrame!=NULL )
 	{
 		// yes, the mainframe exists -> call the luaLoadFile function there
-		ptMuhkuhBinFile = g_ptMainFrame->luaLoadBinFile(strFileName);
+		strData = g_ptMainFrame->luaLoad(strFileName);
 	}
-
-	return ptMuhkuhBinFile;
+	return strData;
 }
 
 
@@ -1586,136 +1637,5 @@ muhkuh_plugin_instance *GetNextPlugin(void)
 	}
 
 	return ptInstance;
-}
-
-
-
-
-
-
-
-
-muhkuh_binfile::muhkuh_binfile(const wxString strFileName, wxFileSystem *ptFileSystem)
- : m_strFileName(strFileName)
- , m_ptFileSystem(ptFileSystem)
- , m_fIsOk(false)
-{
-	wxFSFile *ptFsFile;
-	wxInputStream *ptInputStream;
-	bool fOk;
-	wxStreamError tStreamError;
-	const size_t sizBufferSize = 16384;
-	char buffer[sizBufferSize];
-	size_t sizBytesRead;
-
-
-	// check the parameters
-	if( m_ptFileSystem==NULL )
-	{
-		// the filesystem parameter is invalid
-		m_strErrorMessage = _("no filesystem provided");
-	}
-	else if( m_strFileName.IsEmpty()==true )
-	{
-		// the filename parameter is invalid
-		m_strErrorMessage = _("no filename provided");
-	}
-	else
-	{
-		// test if the file exists
-		ptFsFile = ptFileSystem->OpenFile(m_strFileName);
-		if( ptFsFile==NULL )
-		{
-			// the file does not exist
-			m_strErrorMessage = _("failed to open the file");
-		}
-		else
-		{
-			// ok, file exists -> get the input stream
-			ptInputStream = ptFsFile->GetStream();
-			if( ptInputStream==NULL )
-			{
-				m_strErrorMessage = _("failed to get the file stream");
-			}
-			else
-			{
-				// read all data into a string
-				// while( (fOk=ptInputStream->IsOk())==true )
-				do
-				{
-					sizBytesRead = ptInputStream->Read(buffer, sizBufferSize).LastRead();
-					fOk = ptInputStream->IsOk();
-					if( fOk==true )
-					{
-						// add sizBytesRead bytes to the result buffer
-						m_strFileContents += wxString::From8BitData(buffer, sizBytesRead);
-					}
-				} while( fOk==true && ptInputStream->Eof()==false );
-				m_fIsOk = fOk;
-			}
-			delete ptFsFile;
-
-			// get the errormessage
-			tStreamError = ptInputStream->GetLastError();
-			switch(tStreamError)
-			{
-			case wxSTREAM_NO_ERROR:
-				m_strErrorMessage = _("Ok");
-				break;
-			case wxSTREAM_EOF:
-				m_strErrorMessage = _("An End-Of-File occurred");
-				break;
-			case wxSTREAM_WRITE_ERROR:
-				m_strErrorMessage = _("A generic error occurred on the last write call");
-				break;
-			case wxSTREAM_READ_ERROR:
-				m_strErrorMessage = _("A generic error occurred on the last read call");
-				break;
-			default:
-				m_strErrorMessage.Printf(_("Unknown error message from InputStream: 0x%x"), tStreamError);
-				break;
-			}
-		}
-	}
-}
-
-
-muhkuh_binfile::~muhkuh_binfile(void)
-{
-	wxString strDebug;
-
-
-	strDebug.Printf(wxT("deleted muhkuh_binfile at %p"), this);
-	wxLogMessage(strDebug);
-}
-
-
-wxString muhkuh_binfile::GetFileName(void) const
-{
-	return m_strFileName;
-}
-
-
-bool muhkuh_binfile::IsOk(void) const
-{
-	return m_fIsOk;
-}
-
-
-wxString muhkuh_binfile::GetErrorMessage(void) const
-{
-	return m_strErrorMessage;
-}
-
-
-wxString muhkuh_binfile::GetText(void) const
-{
-	return m_strFileContents;
-}
-
-
-int muhkuh_binfile::GetSize(void) const
-{
-	return m_strFileContents.Len();
 }
 

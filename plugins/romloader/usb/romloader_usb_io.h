@@ -62,12 +62,13 @@ bool romloader_usb_isDeviceNetx(struct usb_device *ptDevice);
 tNetxUsbState romloader_usb_openByDevice(netx_device_handle *phNetxUsbMon, struct usb_device *ptNetxDev);
 tNetxUsbState romloader_usb_executeCommand(void *pvHandle, wxString strCommand, unsigned char **ppucData, unsigned int *puiDataLen);
 tNetxUsbState romloader_usb_load(void *pvHandle, const unsigned char *pucData, size_t sizDataLen, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+tNetxUsbState romloader_usb_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0, unsigned char **ppucData, unsigned int *puiDataLen, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 tNetxUsbState romloader_usb_close(void *pvHandle);
 
 wxString romloader_usb_getErrorString(tNetxUsbState tResult);
 
 tNetxUsbState romloader_usb_sendCommand(netx_device_handle tHandle, wxString strCommand);
-tNetxUsbState romloader_usb_getNetxData(netx_device_handle tHandle, unsigned char **ppcData, unsigned int *pulDataLen, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+tNetxUsbState romloader_usb_getNetxData(netx_device_handle tHandle, unsigned char **ppcData, unsigned int *puiDataLen, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 tNetxUsbState romloader_usb_resetDevice(netx_device_handle tHandle);
 
 //-------------------------------------

@@ -19,24 +19,23 @@
  ***************************************************************************/
 
 
-#include <vector>
+#include <wx/wx.h>
 
-#include "../romloader.h"
+#include "muhkuh_plugin_manager.h"
 
-#ifndef __ROMLOADER_OPENOCD_MAIN_H__
-#define __ROMLOADER_OPENOCD_MAIN_H__
 
-/*-----------------------------------*/
+#ifndef __MUHKUH_LUA_INTERFACE_H__
+#define __MUHKUH_LUA_INTERFACE_H__
 
-WXEXPORT extern "C" { int fn_init(wxLog *ptLogTarget); }
-WXEXPORT extern "C" { int fn_init_lua(wxLuaState *ptLuaState); }
-WXEXPORT extern "C" { int fn_leave(void); }
-WXEXPORT extern "C" { const muhkuh_plugin_desc *fn_get_desc(void); }
-WXEXPORT extern "C" { int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList); }
 
-WXEXPORT extern "C" { romloader *romloader_openocd_create(void *pvHandle); }
+void TestHasFinished(void);
 
-/*-----------------------------------*/
+wxString load(wxString strFileName);
+void include(wxString strFileName, wxString strChunkName);
 
-#endif	/* __ROMLOADER_OPENOCD_MAIN_H__ */
+void ScanPlugins(wxString strPattern);
+muhkuh_plugin_instance *GetNextPlugin(void);
+
+
+#endif	// __MUHKUH_LUA_INTERFACE_H__
 

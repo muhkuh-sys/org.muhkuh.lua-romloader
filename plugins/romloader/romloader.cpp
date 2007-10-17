@@ -251,13 +251,13 @@ void romloader::write_image(unsigned long ulNetxAddress, wxString strData, lua_S
 
 
 // call routine
-void romloader::call(unsigned long ulNetxAddress, unsigned long ulParameterR0)
+void romloader::call(unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	wxString strMsg;
 	int iResult;
 
 
-	iResult = m_tFunctionInterface.fn_call(m_pvHandle, ulNetxAddress, ulParameterR0);
+	iResult = m_tFunctionInterface.fn_call(m_pvHandle, ulNetxAddress, ulParameterR0, L, iLuaCallbackTag, pvCallbackUserData);
 	if( iResult!=0 )
 	{
 		strMsg.Printf(wxT("call failed with error %d"), iResult);

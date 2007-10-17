@@ -43,7 +43,7 @@ int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char u
 int fn_write_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short usData);
 int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulData);
 int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pucData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
-int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0);
+int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 
 /*-------------------------------------*/
 
@@ -661,7 +661,7 @@ int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcDa
 
 
 /* call routine */
-int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0)
+int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	unsigned int uiIdx;
 	wxString strMsg;

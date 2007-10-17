@@ -65,7 +65,7 @@ typedef int (*romloader_fn_write_data32)(void *pvHandle, unsigned long ulNetxAdd
 typedef int (*romloader_fn_write_image)(void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 
 /* call routine */
-typedef int (*romloader_fn_call)(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0);
+typedef int (*romloader_fn_call)(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 
 /*-----------------------------------*/
 
@@ -126,7 +126,7 @@ public:
 	void write_image(unsigned long ulNetxAddress, wxString strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 
 	// call routine
-	void call(unsigned long ulNetxAddress, unsigned long ulParameterR0);
+	void call(unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 // *** lua interface end ***
 
 private:

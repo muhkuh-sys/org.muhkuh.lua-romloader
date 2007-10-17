@@ -34,6 +34,6 @@
 	void write_image(unsigned long ulNetxAddress, wxString strData, LuaFunction fnCallback, voidptr_long vplCallbackUserData)
 
 	// call routine
-	void call(unsigned long ulNetxAddress, unsigned long ulParameterR0)
+	void call(unsigned long ulNetxAddress, unsigned long ulParameterR0, LuaFunction fnCallback, voidptr_long vplCallbackUserData)
 %endclass
 

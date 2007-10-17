@@ -26,13 +26,30 @@
 // Lua MetaTable Tag for Class 'romloader'
 int s_wxluatag_romloader = -1;
 
-static wxLuaArgTag s_wxluatagArray_wxLua_romloader_call[] = { &s_wxluatag_romloader, &s_wxluaarg_Number, &s_wxluaarg_Number, NULL };
+static wxLuaArgTag s_wxluatagArray_wxLua_romloader_call[] = { &s_wxluatag_romloader, &s_wxluaarg_Number, &s_wxluaarg_Number, &s_wxluaarg_Function, &s_wxluaarg_Number, NULL };
 static int LUACALL wxLua_romloader_call(lua_State *L);
-static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_call[1] = {{ wxLua_romloader_call, WXLUAMETHOD_METHOD, 3, 3, s_wxluatagArray_wxLua_romloader_call }};
-//  void call(unsigned long ulNetxAddress, unsigned long ulParameterR0)
+static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_call[1] = {{ wxLua_romloader_call, WXLUAMETHOD_METHOD, 5, 5, s_wxluatagArray_wxLua_romloader_call }};
+// %override wxLua_romloader_call
 static int LUACALL wxLua_romloader_call(lua_State *L)
 {
+    int iLuaCallbackTag;
     wxLuaState wxlState(L);
+    // voidptr_long vplCallbackUserData
+    long vplCallbackUserData = (long)wxlua_getnumbertype(L, 5);
+    // LuaFunction fnCallback
+    if( lua_isfunction(L, 4) )
+    {
+        // push function to top of stack
+        lua_pushvalue(L, 4);
+        // ref function and pop it from stack
+        iLuaCallbackTag = luaL_ref(L, LUA_REGISTRYINDEX);
+    }
+    else
+    {
+        // no callback function provided
+        wxlState.terror(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
+                                        4, wxlState.lua_TypeNameIndex(4).c_str()));
+    }
     // unsigned long ulParameterR0
     unsigned long ulParameterR0 = (long)wxlua_getnumbertype(L, 3);
     // unsigned long ulNetxAddress
@@ -40,10 +57,11 @@ static int LUACALL wxLua_romloader_call(lua_State *L)
     // get this
     romloader * self = (romloader *)wxlState.GetUserDataType(1, s_wxluatag_romloader);
     // call call
-    self->call(ulNetxAddress, ulParameterR0);
+    self->call(ulNetxAddress, ulParameterR0, L, iLuaCallbackTag, (void*)vplCallbackUserData);
 
     return 0;
 }
+
 
 static wxLuaArgTag s_wxluatagArray_wxLua_romloader_connect[] = { &s_wxluatag_romloader, NULL };
 static int LUACALL wxLua_romloader_connect(lua_State *L);

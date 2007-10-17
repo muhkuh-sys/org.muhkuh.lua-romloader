@@ -272,61 +272,31 @@ int muhkuh_plugin::fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pv
 	return iResult;
 }
 
-#if defined(__GNUG__) | defined(__GNUWIN32__) | defined(__MINGW32__)
+
 const muhkuh_plugin::muhkuh_plugin_symbol_offset_t muhkuh_plugin::atPluginSymbolOffsets[] =
 {
 	{
-		wxT("_Z7fn_initP5wxLog"),
+		wxT("fn_init"),
 		offsetof(muhkuh_plugin_function_interface_t, fn_init) / sizeof(void*)
 	},
 	{
-		wxT("_Z11fn_init_luaP10wxLuaState"),
+		wxT("fn_init_lua"),
 		offsetof(muhkuh_plugin_function_interface_t, fn_init_lua) / sizeof(void*)
 	},
 	{
-		wxT("_Z8fn_leavev"),
+		wxT("fn_leave"),
 		offsetof(muhkuh_plugin_function_interface_t, fn_leave) / sizeof(void*)
 	},
 	{
-		wxT("_Z11fn_get_descv"),
+		wxT("fn_get_desc"),
 		offsetof(muhkuh_plugin_function_interface_t, fn_get_desc) / sizeof(void*)
 	},
 	{
-		wxT("_Z20fn_detect_interfacesPSt6vectorIP22muhkuh_plugin_instanceSaIS1_EE"),
+		wxT("fn_detect_interfaces"),
 		offsetof(muhkuh_plugin_function_interface_t, fn_detect_interfaces) / sizeof(void*)
 	}
 };
 
-#else
-#if defined(__VISUALC__)
-// this is for MSVC
-const muhkuh_plugin::muhkuh_plugin_symbol_offset_t muhkuh_plugin::atPluginSymbolOffsets[] =
-{
-	{
-		wxT("?fn_init@@YAHPAVwxLog@@@Z"),
-		offsetof(muhkuh_plugin_function_interface_t, fn_init) / sizeof(void*)
-	},
-	{
-		wxT("?fn_init_lua@@YAHPAVwxLuaState@@@Z"),
-		offsetof(muhkuh_plugin_function_interface_t, fn_init_lua) / sizeof(void*)
-	},
-	{
-		wxT("?fn_leave@@YAHXZ"),
-		offsetof(muhkuh_plugin_function_interface_t, fn_leave) / sizeof(void*)
-	},
-	{
-		wxT("?fn_get_desc@@YAPBUmuhkuh_plugin_desc@@XZ"),
-		offsetof(muhkuh_plugin_function_interface_t, fn_get_desc) / sizeof(void*)
-	},
-	{
-		wxT("?fn_detect_interfaces@@YAHPAV?$vector@PAVmuhkuh_plugin_instance@@V?$allocator@PAVmuhkuh_plugin_instance@@@std@@@std@@@Z"),
-		offsetof(muhkuh_plugin_function_interface_t, fn_detect_interfaces) / sizeof(void*)
-	}
-};
-#else
-#error "unknown compiler, please add the symbol names!"
-#endif
-#endif
 
 bool muhkuh_plugin::open(wxString strPluginPath)
 {
