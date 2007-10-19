@@ -123,6 +123,20 @@ static int LUACALL wxLua_function_TestHasFinished(lua_State *L)
 }
 static wxLuaBindCFunc s_wxluafunc_wxLua_function_TestHasFinished[1] = {{ wxLua_function_TestHasFinished, WXLUAMETHOD_CFUNCTION, 0, 0, s_wxluaargArray_None }};
 
+// %function wxString getMarkedLog()
+static int LUACALL wxLua_function_getMarkedLog(lua_State *L)
+{
+    wxLuaState wxlState(L);
+    wxString returns;
+    // call getMarkedLog
+    returns = (getMarkedLog());
+    // push the result string
+    wxlState.lua_PushLString(returns,returns.Len());
+
+    return 1;
+}
+static wxLuaBindCFunc s_wxluafunc_wxLua_function_getMarkedLog[1] = {{ wxLua_function_getMarkedLog, WXLUAMETHOD_CFUNCTION, 0, 0, s_wxluaargArray_None }};
+
 static wxLuaArgTag s_wxluatagArray_wxLua_function_include[] = { &s_wxluaarg_String, &s_wxluaarg_String, NULL };
 // %function void include(wxString strFileName, wxString strChunkName)
 static int LUACALL wxLua_function_include(lua_State *L)
@@ -156,6 +170,16 @@ static int LUACALL wxLua_function_load(lua_State *L)
 }
 static wxLuaBindCFunc s_wxluafunc_wxLua_function_load[1] = {{ wxLua_function_load, WXLUAMETHOD_CFUNCTION, 1, 1, s_wxluatagArray_wxLua_function_load }};
 
+// %function void setLogMarker()
+static int LUACALL wxLua_function_setLogMarker(lua_State *L)
+{
+    // call setLogMarker
+    setLogMarker();
+
+    return 0;
+}
+static wxLuaBindCFunc s_wxluafunc_wxLua_function_setLogMarker[1] = {{ wxLua_function_setLogMarker, WXLUAMETHOD_CFUNCTION, 0, 0, s_wxluaargArray_None }};
+
 // ---------------------------------------------------------------------------
 // wxLuaGetFunctionList_muhkuh_lua() is called to register global functions
 // ---------------------------------------------------------------------------
@@ -167,8 +191,10 @@ wxLuaBindMethod* wxLuaGetFunctionList_muhkuh_lua(size_t &count)
         { "GetNextPlugin", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_GetNextPlugin, 1, NULL },
         { "ScanPlugins", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_ScanPlugins, 1, NULL },
         { "TestHasFinished", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_TestHasFinished, 1, NULL },
+        { "getMarkedLog", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_getMarkedLog, 1, NULL },
         { "include", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_include, 1, NULL },
         { "load", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_load, 1, NULL },
+        { "setLogMarker", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_setLogMarker, 1, NULL },
 
         { 0, 0, 0, 0 }, 
     };

@@ -269,15 +269,12 @@ function stdWriteCallback(ulProgress, ulCallbackId)
 	local fIsRunning
 
 
-	print("stdWrite callback", ulProgress, type(ulProgress), ulCallbackId, type(ulCallbackId))
-	print("m_stdWriteProgressDialog:", m_stdWriteProgressDialog, type(m_stdWriteProgressDialog))
 	if m_stdWriteProgressDialog==nil then
 		fIsRunning = false
 	else
 		fIsRunning = m_stdWriteProgressDialog:Update(ulProgress, "writing...")
 	end
 
-	print("fIsRunning:", fIsRunning, type(fIsRunning))
 	return fIsRunning
 end
 
@@ -311,15 +308,12 @@ function stdReadCallback(ulProgress, ulCallbackId)
 	local fIsRunning
 
 
-	print("stdRead callback", ulProgress, type(ulProgress), ulCallbackId, type(ulCallbackId))
-	print("m_stdReadProgressDialog:", m_stdReadProgressDialog, type(m_stdReadProgressDialog))
 	if m_stdReadProgressDialog==nil then
 		fIsRunning = false
 	else
 		fIsRunning = m_stdReadProgressDialog:Update(ulProgress, "reading...")
 	end
 
-	print("fIsRunning:", fIsRunning, type(fIsRunning))
 	return fIsRunning
 end
 
@@ -335,21 +329,58 @@ function stdRead(parent, plugin, ulNetxAddress, ulLength)
 	local strData
 	m_stdReadMax = ulLength
 
-	print("1")
 	m_stdReadProgressDialog = wx.wxProgressDialog(	"Uploading...",
 							"",
 							m_stdReadMax,
 							parent,
 							wx.wxPD_AUTO_HIDE+wx.wxPD_CAN_ABORT+wx.wxPD_ESTIMATED_TIME+wx.wxPD_REMAINING_TIME+wx.wxPD_ELAPSED_TIME)
 
-	print("2")
 	strData = plugin:read_image(ulNetxAddress, ulLength, tester.stdReadCallback, 0)
 
-	print("3")
 	stdReadCloseProgress()
 
-	print("4")
 	return strData
+end
+
+
+m_stdCallProgressDialog = nil
+
+function stdCallCallback(ulProgress, ulCallbackId)
+	local fIsRunning
+	local strMsg
+
+
+	if m_stdCallProgressDialog==nil then
+		fIsRunning = false
+	else
+		if ulProgress==0 then
+			strMsg = "executing function..."
+		else
+			strMsg = string.format("read %d bytes", ulProgress)
+		end
+		-- NOTE: wxLua does not bind the "Pulse" method yet :(
+		fIsRunning = m_stdCallProgressDialog:Update(0,strMsg)
+	end
+
+	return fIsRunning
+end
+
+local function stdCallCloseProgress()
+	if m_stdCallProgressDialog~=nil then
+		m_stdCallProgressDialog:Close()
+		m_stdCallProgressDialog:Destroy()
+		m_stdCallProgressDialog = nil
+	end
+end
+
+function stdCall(parent, plugin, ulNetxAddress, ulParameterR0)
+	m_stdCallProgressDialog = wx.wxProgressDialog(	"Executing function...",
+							"",
+							100,
+							parent,
+							wx.wxPD_AUTO_HIDE+wx.wxPD_CAN_ABORT)
+	plugin:call(ulNetxAddress, ulParameterR0, tester.stdCallCallback, 0)
+	stdCallCloseProgress()
 end
 
 ---------------------------------------
@@ -779,9 +810,6 @@ local function runTest(iBoardIdx, iTestIdx)
 	local testresult
 	local result
 	local results
-	local oldLogTarget
-	local tmpTextCtrl
-	local tmpLogTarget
 	local strLogCapture
 
 
@@ -797,10 +825,7 @@ local function runTest(iBoardIdx, iTestIdx)
 		-- TODO: merge the parameters
 
 		-- capture the log
-		tmpTextCtrl = wx.wxTextCtrl(m_panel, wx.wxID_ANY)
-		tmpTextCtrl:Show(false)
-		tmpLogTarget = wx.wxLogTextCtrl(tmpTextCtrl)
-		oldLogTarget = wx.wxLog.SetActiveTarget(tmpLogTarget)
+		muhkuh:setLogMarker()
 
 		-- execute the testcode
 		print("running test '"..test.name.."'")
@@ -820,6 +845,7 @@ local function runTest(iBoardIdx, iTestIdx)
 		-- close any stray progress dialogs
 		stdWriteCloseProgress()
 		stdReadCloseProgress()
+		stdCallCloseProgress()
 
 		-- set the test result
 		if testresult==__MUHKUH_TEST_RESULT_OK then
@@ -842,10 +868,7 @@ local function runTest(iBoardIdx, iTestIdx)
 			closeCommonPlugin()
 		end
 
-		strLogCapture = tmpTextCtrl:GetValue()
-
-		-- stop capturing the log
-		wx.wxLog.SetActiveTarget(oldLogTarget)
+		strLogCapture = muhkuh:getMarkedLog()
 
 		-- escape all special chars for html
 		results.logs[iTestIdx] = html_escape(strLogCapture)

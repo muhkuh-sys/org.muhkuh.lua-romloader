@@ -95,6 +95,8 @@ public:
 	void luaTestHasFinished(void);
 	wxString luaLoad(wxString strFileName);
 	void luaInclude(wxString strFileName, wxString strChunkName);
+	void luaSetLogMarker(void);
+	wxString luaGetMarkedLog(void);
 	void luaScanPlugins(wxString strPattern);
 	muhkuh_plugin_instance *luaGetNextPlugin(void);
 
@@ -165,6 +167,8 @@ private:
 	wxLuaState *m_ptLuaState;
 	// the test panel
 	wxPanel *m_testPanel;
+	// the log marker for the scripts
+	wxTextPos m_tLogMarker;
 
 	// main frame state
 	muhkuh_mainFrame_state m_state;

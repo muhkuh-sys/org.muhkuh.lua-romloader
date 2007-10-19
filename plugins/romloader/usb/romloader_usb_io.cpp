@@ -120,8 +120,8 @@ static bool callback(lua_State *L, int iLuaCallbackTag, unsigned long ulProgress
 {
 	bool fStillRunning;
 	int iOldTopOfStack;
-	int iCurrentStack;
 	int iResult;
+	int iLuaType;
 	wxString strMsg;
 
 
@@ -137,25 +137,49 @@ static bool callback(lua_State *L, int iLuaCallbackTag, unsigned long ulProgress
 		lua_pushnumber(L, (long)pvCallbackUserData);
 		// call the function
 		iResult = lua_pcall(L, 2, 1, 0);
-		strMsg.Printf(wxT("LuaPCall returned %d"), iResult);
-		wxLogMessage(strMsg);
 		if( iResult!=0 )
 		{
-			strMsg = wxlua_getstringtype(L, 0);
-			wxLogMessage(strMsg);
+			switch( iResult )
+			{
+			case LUA_ERRRUN:
+				strMsg = wxT("runtime error");
+				break;
+			case LUA_ERRMEM:
+				strMsg = wxT("memory allocation error");
+				break;
+			default:
+				strMsg.Printf(wxT("unknown errorcode: %d"), iResult);
+				break;
+			}
+			wxLogError(wxT("callback function failed: ") + strMsg);
+			strMsg = wxlua_getstringtype(L, -1);
+			wxLogError(strMsg);
+			wxLogError(wxT("cancel operation"));
 			fStillRunning = false;
 		}
 		else
 		{
 			// get the function's return value
-			fStillRunning = wxlua_getbooleantype(L, -1);
-			strMsg.Printf(wxT("got 0x%08X from callback function"), fStillRunning);
-			wxLogMessage(strMsg);
+			iLuaType = lua_type(L, -1);
+			if( wxlua_iswxluatype(iLuaType, WXLUAARG_Boolean)==false )
+			{
+				wxLogError(wxT("callback function returned a non-boolean type!"));
+				fStillRunning = false;
+			}
+			else
+			{
+				if( iLuaType==LUA_TNUMBER )
+				{
+					iResult = lua_tonumber(L, -1);
+				}
+				else
+				{
+					iResult = lua_toboolean(L, -1);
+				}
+				fStillRunning = (iResult!=0);
+			}
 		}
-	
-		// TODO: is settop really necessary?
-		iCurrentStack = lua_gettop(L);
-		strMsg.Printf(wxT("old stack: %d, new stack: %d"), iOldTopOfStack, iCurrentStack);
+		// return old stack top
 		lua_settop(L, iOldTopOfStack);
 	}
 	else
@@ -436,7 +460,6 @@ tNetxUsbState romloader_usb_load(void *pvHandle, const unsigned char *pucData, s
 		memcpy(aucBufSend+1, pucDataCnt, sizChunkSize);
 		aucBufSend[0] = sizChunkSize+1;
 
-		wxTheApp->Yield();
 		fIsRunning = callback(L, iLuaCallbackTag, ulBytesProcessed, pvCallbackUserData);
 		if( fIsRunning!=true )
 		{
@@ -506,7 +529,6 @@ tNetxUsbState romloader_usb_call(void *pvHandle, unsigned long ulNetxAddress, un
 		if( tResult!=netxUsbState_Timeout )
 		{
 			// execute callback
-			wxTheApp->Yield();
 			fIsRunning = callback(L, iLuaCallbackTag, 0, pvCallbackUserData);
 			if( fIsRunning!=true )
 			{
@@ -572,6 +594,16 @@ tNetxUsbState romloader_usb_call(void *pvHandle, unsigned long ulNetxAddress, un
 				{
 					break;
 				}
+			}
+			// execute callback
+			fIsRunning = callback(L, iLuaCallbackTag, uiDataLen, pvCallbackUserData);
+			if( fIsRunning!=true )
+			{
+				tResult = netxUsbState_Cancel;
+			}
+			else
+			{
+				tResult = netxUsbState_Ok;
 			}
 		} while( uiLinelen!=0 );
 

@@ -33,6 +33,9 @@ void TestHasFinished(void);
 wxString load(wxString strFileName);
 void include(wxString strFileName, wxString strChunkName);
 
+void setLogMarker(void);
+wxString getMarkedLog(void);
+
 void ScanPlugins(wxString strPattern);
 muhkuh_plugin_instance *GetNextPlugin(void);
 

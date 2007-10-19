@@ -845,6 +845,9 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	// NOTE: this must be done before the call to 'RunString', or the state will not change before the first idle event
 	setState(muhkuh_mainFrame_state_testing);
 
+	// set the log marker
+	luaSetLogMarker();
+
 	iResult = m_ptLuaState->RunString(strLuaCode, wxT("system boot"));
 
 	fExecutedSuccessfully = wxLuaState::CheckRunError(iResult, &strErrorMessage);
@@ -1394,6 +1397,7 @@ wxString muhkuh_mainFrame::luaLoad(wxString strFileName)
 				sizDataSize = ptGrowBuffer->getSize();
 				pucData = ptGrowBuffer->getData();
 				strData = wxString::From8BitData((const char*)pucData, sizDataSize);
+				strMsg.Printf(wxT("Read 0x%08X bytes"), strData.Len());
 			}
 			else
 			{
@@ -1528,6 +1532,26 @@ void muhkuh_mainFrame::luaInclude(wxString strFileName, wxString strChunkName)
 }
 
 
+void muhkuh_mainFrame::luaSetLogMarker(void)
+{
+	m_tLogMarker = m_textCtrl->GetLastPosition();
+}
+
+
+wxString muhkuh_mainFrame::luaGetMarkedLog(void)
+{
+	wxTextPos tEndPos;
+	wxString strLogData;
+
+
+	tEndPos = m_textCtrl->GetLastPosition();
+	strLogData = m_textCtrl->GetRange(m_tLogMarker, tEndPos);
+	m_tLogMarker = tEndPos;
+
+	return strLogData;
+}
+
+
 void muhkuh_mainFrame::luaScanPlugins(wxString strPattern)
 {
 	wxString strMsg;
@@ -1612,6 +1636,32 @@ void include(wxString strFileName, wxString strChunkName)
 		// yes, the mainframe exists -> call the luaLoadFile function there
 		g_ptMainFrame->luaInclude(strFileName, strChunkName);
 	}
+}
+
+
+void setLogMarker(void)
+{
+	// does the mainframe exist?
+	if( g_ptMainFrame!=NULL )
+	{
+		// yes, the mainframe exists -> call the luaLoadFile function there
+		g_ptMainFrame->luaSetLogMarker();
+	}
+}
+
+
+wxString getMarkedLog(void)
+{
+	wxString strData;
+
+
+	// does the mainframe exist?
+	if( g_ptMainFrame!=NULL )
+	{
+		// yes, the mainframe exists -> call the luaLoadFile function there
+		strData = g_ptMainFrame->luaGetMarkedLog();
+	}
+	return strData;
 }
 
 
