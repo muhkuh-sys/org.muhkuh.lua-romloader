@@ -559,6 +559,7 @@ int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcDa
 	wxString strDumpByte;
 	const char *pcDumpCnt, *pcDumpEnd;
 	unsigned long ulAddressCnt;
+	unsigned long ulSkipOffset;
 	size_t sizBytesLeft;
 	size_t sizChunkSize;
 	size_t sizChunkCnt;
@@ -599,62 +600,25 @@ int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcDa
 			sizChunkCnt = sizChunkSize;
 			while( sizChunkCnt!=0 )
 			{
-				strDumpByte.Printf(wxT("%02X "), *(pcDumpCnt++));
+				strDumpByte.Printf(wxT("%02X "), (unsigned char)(*(pcDumpCnt++)));
 				strMsg += strDumpByte;
 				--sizChunkCnt;
 			}
 			// show line
 			wxLogMessage(strMsg);
 			ulAddressCnt += sizChunkSize;
+			// only show first and last 3 lines for very long files
+			if( (pcDumpCnt-pcData)==0x30 && (pcDumpEnd-pcData)>0x100 )
+			{
+				ulSkipOffset  = ulSize + 0xf;
+				ulSkipOffset &= ~0xf;
+				ulSkipOffset -= 0x30;
+				pcDumpCnt = pcData + ulSkipOffset;
+				ulAddressCnt = ulNetxAddress + ulSkipOffset;
+				strMsg.Printf(wxT("... (skipping 0x%08X bytes)"), ulSkipOffset-0x30);
+				wxLogMessage(strMsg);
+			}
 		}
-		
-		
-		
-	// DEBUG: test cancel function :)
-
-	ulBytesProcessed = 0;
-	do
-	{
-		int iCurrentStack;
-		int iResult;
-		wxString strMsg;
-
-
-		wxTheApp->Yield();
-		wxMilliSleep(1000);
-
-		// execute the callback function
-		iOldTopOfStack = lua_gettop(L);
-		// push the function tag on the stack
-		lua_rawgeti(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
-		// push the arguments on the stack
-		lua_pushnumber(L, ulBytesProcessed);
-		lua_pushnumber(L, (long)pvCallbackUserData);
-		// call the function
-		iResult = m_ptLuaState->LuaPCall(2, 1);
-		strMsg.Printf(wxT("LuaPCall returned %d"), iResult);
-		wxLogMessage(strMsg);
-		if( iResult!=0 )
-		{
-			strMsg = m_ptLuaState->GetStringType(0);
-			wxLogMessage(strMsg);
-			fStillRunning = false;
-		}
-		else
-		{
-			// get the function's return value
-			fStillRunning = m_ptLuaState->GetBooleanType(0);
-		}
-
-		// TODO: is settop really necessary?
-		iCurrentStack = lua_gettop(L);
-		strMsg.Printf(wxT("old stack: %d, new stack: %d"), iOldTopOfStack, iCurrentStack);
-		lua_settop(L, iOldTopOfStack);
-
-		// some movement
-		++ulBytesProcessed;
-	} while( fStillRunning==true );
-
 		return 0;
 	}
 }
