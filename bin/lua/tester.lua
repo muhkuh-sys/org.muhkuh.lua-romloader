@@ -19,6 +19,7 @@ local m_testNames = nil
 local m_testIconView = nil
 local m_spinBoardNr = nil
 local m_testCombo = nil
+local m_saveReportDlg = nil
 
 local m_testResults = nil
 
@@ -438,6 +439,9 @@ local function createControls()
 	local buttonSaveReport = nil
 	local buttonQuit = nil
 
+
+	-- the save report dialog
+	m_saveReportDlg = wx.wxFileDialog(m_panel, "Choose a file", "", "report.html", "Html Files (*.htm;*.html)|*.htm;*.html|All Files (*.*)|*.*", wx.wxFD_SAVE+wx.wxFD_OVERWRITE_PROMPT)
 
 	-- the main sizer
 	mainSizer = wx.wxBoxSizer(wx.wxVERTICAL)
@@ -966,7 +970,19 @@ end
 
 
 local function OnButtonSaveReport()
-	print(m_strTestReport)
+	local iResult
+	local strFileName
+	local outputFile
+
+
+	iResult = m_saveReportDlg:ShowModal()
+	if iResult==wx.wxID_OK then
+		strFileName = m_saveReportDlg:GetPath()
+		print("saving report to file "..strFileName)
+		outputFile = wx.wxFile(strFileName, wx.wxFile.write)
+		outputFile:Write(m_strTestReport)
+		outputFile:Close()
+	end
 end
 
 
