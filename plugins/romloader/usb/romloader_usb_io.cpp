@@ -338,12 +338,11 @@ tNetxUsbState romloader_usb_getNetxData(netx_device_handle hNetxUsbMon, unsigned
 					}
 					pcData = pcDataNew;
 				}
+				// copy data
+				memcpy(pcData+ulDataLen, buf_rec+1, ulLinelen);
+
+				ulDataLen = ulDataLenNew;
 			}
-
-			// copy data
-			memcpy(pcData+ulDataLen, buf_rec+1, ulLinelen);
-
-			ulDataLen = ulDataLenNew;
 		}
 	} while( ulLinelen!=0 );
 
