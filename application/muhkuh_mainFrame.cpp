@@ -78,6 +78,10 @@ BEGIN_EVENT_TABLE(muhkuh_mainFrame, wxFrame)
 	EVT_MENU(muhkuh_mainFrame_menuRestoreDefaultPerspective,	muhkuh_mainFrame::OnRestoreDefaultPerspective)
 	EVT_MENU(muhkuh_mainFrame_menuTestCancel,			muhkuh_mainFrame::OnTestCancel)
 	EVT_MENU(muhkuh_mainFrame_menuTestRescan,			muhkuh_mainFrame::OnTestRescan)
+	EVT_MENU(muhkuh_mainFrame_menuViewRepositoryPane,		muhkuh_mainFrame::OnViewRepositoryPane)
+	EVT_MENU(muhkuh_mainFrame_menuViewPanicButton,			muhkuh_mainFrame::OnViewPanicButton)
+	EVT_MENU(muhkuh_mainFrame_menuViewTestTree,			muhkuh_mainFrame::OnViewTestTree)
+	EVT_MENU(muhkuh_mainFrame_menuViewMessageLog,			muhkuh_mainFrame::OnViewMessageLog)
 
 	EVT_COMBOBOX(muhkuh_mainFrame_RepositoryCombo_id,		muhkuh_mainFrame::OnRepositoryCombo)
 
@@ -90,6 +94,7 @@ BEGIN_EVENT_TABLE(muhkuh_mainFrame, wxFrame)
 
 	EVT_BUTTON(muhkuh_mainFrame_cancelTestButton_id,		muhkuh_mainFrame::OnTestCancel)
 	EVT_AUINOTEBOOK_PAGE_CLOSE(muhkuh_mainFrame_Notebook_id,	muhkuh_mainFrame::OnNotebookPageClose)
+	EVT_AUI_PANE_CLOSE(muhkuh_mainFrame::OnPaneClose)
 END_EVENT_TABLE()
 
 /*
@@ -359,6 +364,7 @@ void muhkuh_mainFrame::read_config(void)
 	int iDetailsCol0Size;
 	int iDetailsCol1Size;
 	wxString strPerspective;
+	bool fPaneIsVisible;
 
 
 	// get the config
@@ -398,6 +404,15 @@ void muhkuh_mainFrame::read_config(void)
 	if( strPerspective.IsEmpty()==false )
 	{
 		m_auiMgr.LoadPerspective(strPerspective,true);
+		// set the "view" buttons according to the new perspective
+		fPaneIsVisible = m_auiMgr.GetPane(m_repositoryCombo).IsShown();
+		m_menuBar->Check(muhkuh_mainFrame_menuViewRepositoryPane, fPaneIsVisible);
+		fPaneIsVisible = m_auiMgr.GetPane(m_buttonCancelTest).IsShown();
+		m_menuBar->Check(muhkuh_mainFrame_menuViewPanicButton, fPaneIsVisible);
+		fPaneIsVisible = m_auiMgr.GetPane(m_treeCtrl).IsShown();
+		m_menuBar->Check(muhkuh_mainFrame_menuViewTestTree, fPaneIsVisible);
+		fPaneIsVisible = m_auiMgr.GetPane(m_textCtrl).IsShown();
+		m_menuBar->Check(muhkuh_mainFrame_menuViewMessageLog, fPaneIsVisible);
 	}
 }
 
@@ -949,6 +964,34 @@ void muhkuh_mainFrame::OnTestRescan(wxCommandEvent& WXUNUSED(event))
 }
 
 
+void muhkuh_mainFrame::OnViewRepositoryPane(wxCommandEvent &event)
+{
+	m_auiMgr.GetPane(m_repositoryCombo).Show(event.IsChecked());
+	m_auiMgr.Update();
+}
+
+
+void muhkuh_mainFrame::OnViewPanicButton(wxCommandEvent &event)
+{
+	m_auiMgr.GetPane(m_buttonCancelTest).Show(event.IsChecked());
+	m_auiMgr.Update();
+}
+
+
+void muhkuh_mainFrame::OnViewTestTree(wxCommandEvent &event)
+{
+	m_auiMgr.GetPane(m_treeCtrl).Show(event.IsChecked());
+	m_auiMgr.Update();
+}
+
+
+void muhkuh_mainFrame::OnViewMessageLog(wxCommandEvent &event)
+{
+	m_auiMgr.GetPane(m_textCtrl).Show(event.IsChecked());
+	m_auiMgr.Update();
+}
+
+
 void muhkuh_mainFrame::OnShowTip(wxCommandEvent &event)
 {
 	if( m_tipProvider!=NULL )
@@ -1306,6 +1349,31 @@ void muhkuh_mainFrame::OnNotebookPageClose(wxAuiNotebookEvent &event)
 			// test done -> go back to idle state
 			setState(muhkuh_mainFrame_state_idle);
 		}
+	}
+}
+
+
+void muhkuh_mainFrame::OnPaneClose(wxAuiManagerEvent &event)
+{
+	wxWindow *ptWindow;
+
+
+	ptWindow = event.pane->window;
+	if( ptWindow==m_repositoryCombo )
+	{
+		m_menuBar->Check(muhkuh_mainFrame_menuViewRepositoryPane, false);
+	}
+	else if( ptWindow==m_buttonCancelTest )
+	{
+		m_menuBar->Check(muhkuh_mainFrame_menuViewPanicButton, false);
+	}
+	else if( ptWindow==m_treeCtrl )
+	{
+		m_menuBar->Check(muhkuh_mainFrame_menuViewTestTree, false);
+	}
+	else if( ptWindow==m_textCtrl )
+	{
+		m_menuBar->Check(muhkuh_mainFrame_menuViewMessageLog, false);
 	}
 }
 

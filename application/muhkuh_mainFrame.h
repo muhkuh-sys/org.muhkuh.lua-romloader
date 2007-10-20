@@ -78,6 +78,10 @@ public:
 	void OnTestHelp(wxCommandEvent &event);
 	void OnTestRescan(wxCommandEvent &event);
 	void OnTestCancel(wxCommandEvent &event);
+	void OnViewRepositoryPane(wxCommandEvent &event);
+	void OnViewPanicButton(wxCommandEvent &event);
+	void OnViewTestTree(wxCommandEvent &event);
+	void OnViewMessageLog(wxCommandEvent &event);
 
 	void OnRepositoryCombo(wxCommandEvent &event);
 
@@ -90,6 +94,7 @@ public:
 	void OnLuaError(wxLuaEvent &event);
 
 	void OnNotebookPageClose(wxAuiNotebookEvent &event);
+	void OnPaneClose(wxAuiManagerEvent &event);
 
 	// the lua functions
 	void luaTestHasFinished(void);
