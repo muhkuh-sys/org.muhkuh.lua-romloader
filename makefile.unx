@@ -13,8 +13,14 @@
 # Compiler flags to link loadable module 
 LINK_MODULE_FLAGS := -shared
 
+# C compiler 
+CC := gcc
+
 # C++ compiler 
 CXX := g++
+
+# Standard flags for CC 
+CFLAGS := 
 
 # Standard flags for C++ 
 CXXFLAGS := 
@@ -55,6 +61,9 @@ BUILD_PLUGIN_ROMLOADER_USB := 1
 # Compile the Romloader dummy plugin? [0,1]
 BUILD_PLUGIN_ROMLOADER_BAKA := 1
 
+# Compile the Romloader OpenOCD plugin? [0,1]
+BUILD_PLUGIN_ROMLOADER_OPENOCD := 1
+
 
 
 # -------------------------------------------------------------------------
@@ -69,7 +78,7 @@ WX_VERSION_MINOR = $(shell echo $(WX_VERSION) | cut -c2,2)
 WX_CONFIG_FLAGS = $(WX_CONFIG_DEBUG_FLAG) $(WX_CONFIG_UNICODE_FLAG) \
 	$(WX_CONFIG_SHARED_FLAG) --toolkit=$(WX_PORT) \
 	--version=$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR)
-MUHKUH_CXXFLAGS = $(VAR) $(VAR_3) -I./modules -I./. -I$(LUA_DIR)/include \
+MUHKUH_CXXFLAGS = $(VAR) $(VAR_5) -I./modules -I./. -I$(LUA_DIR)/include \
 	-D_THREAD_SAFE -pthread -I./application `$(WX_CONFIG) --cxxflags \
 	$(WX_CONFIG_FLAGS)` $(CPPFLAGS) $(CXXFLAGS)
 MUHKUH_OBJECTS =  \
@@ -88,7 +97,7 @@ MUHKUH_OBJECTS =  \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_readFsFile.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_muhkuh_lua.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_muhkuh_lua_bind.o
-PLUGIN_ROMLOADER_USB_CXXFLAGS = $(VAR) $(VAR_3) -I./modules -I./. \
+PLUGIN_ROMLOADER_USB_CXXFLAGS = $(VAR) $(VAR_5) -I./modules -I./. \
 	-I$(LUA_DIR)/include -D_THREAD_SAFE -pthread -I./plugins/romloader/usb -fPIC \
 	-DPIC `$(WX_CONFIG) --cxxflags $(WX_CONFIG_FLAGS)` $(CPPFLAGS) $(CXXFLAGS)
 PLUGIN_ROMLOADER_USB_OBJECTS =  \
@@ -97,7 +106,7 @@ PLUGIN_ROMLOADER_USB_OBJECTS =  \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_usb_romloader_usb_main.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_usb_romloader_usb_lua.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_usb_romloader_usb_lua_bind.o
-PLUGIN_ROMLOADER_BAKA_CXXFLAGS = $(VAR) $(VAR_3) -I./modules -I./. \
+PLUGIN_ROMLOADER_BAKA_CXXFLAGS = $(VAR) $(VAR_5) -I./modules -I./. \
 	-I$(LUA_DIR)/include -D_THREAD_SAFE -pthread -I./plugins/romloader/baka \
 	-fPIC -DPIC `$(WX_CONFIG) --cxxflags $(WX_CONFIG_FLAGS)` $(CPPFLAGS) \
 	$(CXXFLAGS)
@@ -106,6 +115,64 @@ PLUGIN_ROMLOADER_BAKA_OBJECTS =  \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_baka_romloader_baka_main.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_baka_romloader_baka_lua.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_baka_romloader_baka_lua_bind.o
+PLUGIN_ROMLOADER_OPENOCD_CFLAGS = $(VAR) $(VAR_5) -I./modules -I./. \
+	-I$(LUA_DIR)/include -D_THREAD_SAFE -pthread -I./plugins/romloader/openocd \
+	-I./plugins/romloader/openocd/openocd \
+	-I./plugins/romloader/openocd/openocd/helper \
+	-I./plugins/romloader/openocd/openocd/jtag \
+	-I./plugins/romloader/openocd/openocd/target \
+	-I./plugins/romloader/openocd/openocd/xsvf -DHAVE_CONFIG_H -fPIC -DPIC \
+	`$(WX_CONFIG) --cflags $(WX_CONFIG_FLAGS)` $(CPPFLAGS) $(CFLAGS)
+PLUGIN_ROMLOADER_OPENOCD_CXXFLAGS = $(VAR) $(VAR_5) -I./modules -I./. \
+	-I$(LUA_DIR)/include -D_THREAD_SAFE -pthread -I./plugins/romloader/openocd \
+	-I./plugins/romloader/openocd/openocd \
+	-I./plugins/romloader/openocd/openocd/helper \
+	-I./plugins/romloader/openocd/openocd/jtag \
+	-I./plugins/romloader/openocd/openocd/target \
+	-I./plugins/romloader/openocd/openocd/xsvf -DHAVE_CONFIG_H -fPIC -DPIC \
+	`$(WX_CONFIG) --cxxflags $(WX_CONFIG_FLAGS)` $(CPPFLAGS) $(CXXFLAGS)
+PLUGIN_ROMLOADER_OPENOCD_OBJECTS =  \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_romloader.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_romloader_openocd_main.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_romloader_openocd_lua.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_romloader_openocd_lua_bind.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_binarybuffer.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_command.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_configuration.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_fileio.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_interpreter.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_log.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_replacements.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_time_support.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_ft2232.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_jtag.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_algorithm.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm720t.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm7_9_common.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm7tdmi.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm920t.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm926ejs.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm966e.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm9tdmi.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm_disassembler.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm_jtag.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm_simulator.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_armv4_5.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_armv4_5_cache.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_armv4_5_mmu.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_armv7m.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_breakpoints.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_cortex_m3.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_cortex_swjdp.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_embeddedice.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_etb.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_etm.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_etm_dummy.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_image.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_register.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_target.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_xscale.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_xsvf.o
 
 ### Conditionally set variables: ###
 
@@ -145,6 +212,9 @@ endif
 ifeq ($(BUILD_PLUGIN_ROMLOADER_BAKA),1)
 __plugin_romloader_baka___depname = ./bin/baka.so
 endif
+ifeq ($(BUILD_PLUGIN_ROMLOADER_OPENOCD),1)
+__plugin_romloader_openocd___depname = ./bin/openocd.so
+endif
 ifeq ($(WX_DEBUG),0)
 VAR = -O2
 endif
@@ -152,10 +222,10 @@ ifeq ($(WX_DEBUG),1)
 VAR = -O0
 endif
 ifeq ($(WX_DEBUG),0)
-VAR_3 = 
+VAR_5 = 
 endif
 ifeq ($(WX_DEBUG),1)
-VAR_3 = -g
+VAR_5 = -g
 endif
 
 
@@ -165,7 +235,7 @@ gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX):
 
 ### Targets: ###
 
-all: test_for_selected_wxbuild ./bin/muhkuh $(__plugin_romloader_usb___depname) $(__plugin_romloader_baka___depname)
+all: test_for_selected_wxbuild ./bin/muhkuh $(__plugin_romloader_usb___depname) $(__plugin_romloader_baka___depname) $(__plugin_romloader_openocd___depname)
 
 install: all
 
@@ -177,21 +247,27 @@ clean:
 	rm -f ./bin/muhkuh
 	rm -f ./bin/bootloader_usb.so
 	rm -f ./bin/baka.so
+	rm -f ./bin/openocd.so
 
 test_for_selected_wxbuild: 
 	@$(WX_CONFIG) $(WX_CONFIG_FLAGS)
 
 ./bin/muhkuh: $(MUHKUH_OBJECTS)
-	$(CXX) -o $@ $(MUHKUH_OBJECTS) $(LDFLAGS) $(VAR_3) -L./lib/gcc_$(__muhkuh__DIRNAME_SHARED_SUFFIX) -L$(LUA_DIR)/lib  -pthread  -lwxlua_$(WX_PORT)_wxluasocket-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxluadebug-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxrc-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindhtml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindadv-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindaui-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindnet-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindcore-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindbase-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxlua-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -llua5.1 `$(WX_CONFIG) $(WX_CONFIG_FLAGS) --libs xrc,html,adv,aui,net,xml,core,base`
+	$(CXX) -o $@ $(MUHKUH_OBJECTS) $(LDFLAGS) $(VAR_5) -L./lib/gcc_$(__muhkuh__DIRNAME_SHARED_SUFFIX) -L$(LUA_DIR)/lib  -pthread  -lwxlua_$(WX_PORT)_wxluasocket-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxluadebug-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxrc-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindhtml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindadv-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindaui-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindnet-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindcore-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindbase-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxlua-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -llua5.1 `$(WX_CONFIG) $(WX_CONFIG_FLAGS) --libs xrc,html,adv,aui,net,xml,core,base`
 
 ifeq ($(BUILD_PLUGIN_ROMLOADER_USB),1)
 ./bin/bootloader_usb.so: $(PLUGIN_ROMLOADER_USB_OBJECTS)
-	$(CXX) $(LINK_MODULE_FLAGS) -fPIC -o $@ $(PLUGIN_ROMLOADER_USB_OBJECTS) $(LDFLAGS) $(VAR_3) -pthread  -lusb -lwxlua_$(WX_PORT)_wxluasocket-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxluadebug-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxrc-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindhtml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindadv-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindaui-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindnet-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindcore-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindbase-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxlua-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -llua5.1 `$(WX_CONFIG) $(WX_CONFIG_FLAGS) --libs xrc,html,adv,aui,net,xml,core,base`
+	$(CXX) $(LINK_MODULE_FLAGS) -fPIC -o $@ $(PLUGIN_ROMLOADER_USB_OBJECTS) $(LDFLAGS) $(VAR_5) -pthread  -lusb -lwxlua_$(WX_PORT)_wxluasocket-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxluadebug-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxrc-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindhtml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindadv-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindaui-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindnet-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindcore-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindbase-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxlua-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -llua5.1 `$(WX_CONFIG) $(WX_CONFIG_FLAGS) --libs xrc,html,adv,aui,net,xml,core,base`
 endif
 
 ifeq ($(BUILD_PLUGIN_ROMLOADER_BAKA),1)
 ./bin/baka.so: $(PLUGIN_ROMLOADER_BAKA_OBJECTS)
-	$(CXX) $(LINK_MODULE_FLAGS) -fPIC -o $@ $(PLUGIN_ROMLOADER_BAKA_OBJECTS) $(LDFLAGS) $(VAR_3) -pthread  -lwxlua_$(WX_PORT)_wxluasocket-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxluadebug-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxrc-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindhtml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindadv-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindaui-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindnet-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindcore-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindbase-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxlua-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -llua5.1 `$(WX_CONFIG) $(WX_CONFIG_FLAGS) --libs xrc,html,adv,aui,net,xml,core,base`
+	$(CXX) $(LINK_MODULE_FLAGS) -fPIC -o $@ $(PLUGIN_ROMLOADER_BAKA_OBJECTS) $(LDFLAGS) $(VAR_5) -pthread  -lwxlua_$(WX_PORT)_wxluasocket-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxluadebug-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxrc-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindhtml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindadv-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindaui-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindnet-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindcore-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindbase-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxlua-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -llua5.1 `$(WX_CONFIG) $(WX_CONFIG_FLAGS) --libs xrc,html,adv,aui,net,xml,core,base`
+endif
+
+ifeq ($(BUILD_PLUGIN_ROMLOADER_OPENOCD),1)
+./bin/openocd.so: $(PLUGIN_ROMLOADER_OPENOCD_OBJECTS)
+	$(CXX) $(LINK_MODULE_FLAGS) -fPIC -o $@ $(PLUGIN_ROMLOADER_OPENOCD_OBJECTS) $(LDFLAGS) $(VAR_5) -pthread  -lftdi -lwxlua_$(WX_PORT)_wxluasocket-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxluadebug-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxrc-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindhtml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindadv-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindaui-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindnet-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindcore-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindbase-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxlua-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -llua5.1 `$(WX_CONFIG) $(WX_CONFIG_FLAGS) --libs xrc,html,adv,aui,net,xml,core,base`
 endif
 
 gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_license.o: ./application/license.cpp
@@ -265,6 +341,129 @@ gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_baka_romloader_baka_lua
 
 gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_baka_romloader_baka_lua_bind.o: ./plugins/romloader/baka/_luaif/romloader_baka_lua_bind.cpp
 	$(CXX) -c -o $@ $(PLUGIN_ROMLOADER_BAKA_CXXFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_romloader.o: ./plugins/romloader/romloader.cpp
+	$(CXX) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CXXFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_romloader_openocd_main.o: ./plugins/romloader/openocd/romloader_openocd_main.cpp
+	$(CXX) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CXXFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_romloader_openocd_lua.o: ./plugins/romloader/openocd/_luaif/romloader_openocd_lua.cpp
+	$(CXX) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CXXFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_romloader_openocd_lua_bind.o: ./plugins/romloader/openocd/_luaif/romloader_openocd_lua_bind.cpp
+	$(CXX) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CXXFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_binarybuffer.o: ./plugins/romloader/openocd/openocd/helper/binarybuffer.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_command.o: ./plugins/romloader/openocd/openocd/helper/command.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_configuration.o: ./plugins/romloader/openocd/openocd/helper/configuration.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_fileio.o: ./plugins/romloader/openocd/openocd/helper/fileio.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_interpreter.o: ./plugins/romloader/openocd/openocd/helper/interpreter.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_log.o: ./plugins/romloader/openocd/openocd/helper/log.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_replacements.o: ./plugins/romloader/openocd/openocd/helper/replacements.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_time_support.o: ./plugins/romloader/openocd/openocd/helper/time_support.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_ft2232.o: ./plugins/romloader/openocd/openocd/jtag/ft2232.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_jtag.o: ./plugins/romloader/openocd/openocd/jtag/jtag.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_algorithm.o: ./plugins/romloader/openocd/openocd/target/algorithm.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm720t.o: ./plugins/romloader/openocd/openocd/target/arm720t.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm7_9_common.o: ./plugins/romloader/openocd/openocd/target/arm7_9_common.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm7tdmi.o: ./plugins/romloader/openocd/openocd/target/arm7tdmi.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm920t.o: ./plugins/romloader/openocd/openocd/target/arm920t.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm926ejs.o: ./plugins/romloader/openocd/openocd/target/arm926ejs.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm966e.o: ./plugins/romloader/openocd/openocd/target/arm966e.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm9tdmi.o: ./plugins/romloader/openocd/openocd/target/arm9tdmi.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm_disassembler.o: ./plugins/romloader/openocd/openocd/target/arm_disassembler.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm_jtag.o: ./plugins/romloader/openocd/openocd/target/arm_jtag.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_arm_simulator.o: ./plugins/romloader/openocd/openocd/target/arm_simulator.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_armv4_5.o: ./plugins/romloader/openocd/openocd/target/armv4_5.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_armv4_5_cache.o: ./plugins/romloader/openocd/openocd/target/armv4_5_cache.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_armv4_5_mmu.o: ./plugins/romloader/openocd/openocd/target/armv4_5_mmu.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_armv7m.o: ./plugins/romloader/openocd/openocd/target/armv7m.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_breakpoints.o: ./plugins/romloader/openocd/openocd/target/breakpoints.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_cortex_m3.o: ./plugins/romloader/openocd/openocd/target/cortex_m3.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_cortex_swjdp.o: ./plugins/romloader/openocd/openocd/target/cortex_swjdp.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_embeddedice.o: ./plugins/romloader/openocd/openocd/target/embeddedice.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_etb.o: ./plugins/romloader/openocd/openocd/target/etb.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_etm.o: ./plugins/romloader/openocd/openocd/target/etm.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_etm_dummy.o: ./plugins/romloader/openocd/openocd/target/etm_dummy.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_image.o: ./plugins/romloader/openocd/openocd/target/image.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_register.o: ./plugins/romloader/openocd/openocd/target/register.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_target.o: ./plugins/romloader/openocd/openocd/target/target.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_xscale.o: ./plugins/romloader/openocd/openocd/target/xscale.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/plugin_romloader_openocd_xsvf.o: ./plugins/romloader/openocd/openocd/xsvf/xsvf.c
+	$(CC) -c -o $@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) $(CPPDEPS) $<
 
 .PHONY: all install uninstall clean
 

@@ -10,8 +10,14 @@
 # These are configurable options:
 # -------------------------------------------------------------------------
 
+# C compiler 
+CC = cl
+
 # C++ compiler 
 CXX = cl
+
+# Standard flags for CC 
+CFLAGS = 
 
 # Standard flags for C++ 
 CXXFLAGS = 
@@ -64,6 +70,9 @@ BUILD_PLUGIN_ROMLOADER_USB = 1
 # Compile the Romloader dummy plugin? [0,1]
 BUILD_PLUGIN_ROMLOADER_BAKA = 1
 
+# Compile the Romloader OpenOCD plugin? [0,1]
+BUILD_PLUGIN_ROMLOADER_OPENOCD = 1
+
 
 
 # -------------------------------------------------------------------------
@@ -72,10 +81,10 @@ BUILD_PLUGIN_ROMLOADER_BAKA = 1
 
 ### Variables: ###
 
-MUHKUH_CXXFLAGS = /M$(__RUNTIME_LIBS)$(VAR_5) /DWIN32 $(____WX_SHARED) \
+MUHKUH_CXXFLAGS = /M$(__RUNTIME_LIBS)$(VAR_8) /DWIN32 $(____WX_SHARED) \
 	$(__WXUNICODE_DEFINE_p) $(__WXDEBUG_DEFINE_p) /D__WXMSW__ \
 	/I$(WX_DIR)$(WXLIBPATH)\msw$(WXLIBPOSTFIX) /I$(WX_DIR)\include $(VAR) \
-	$(VAR_3) $(p) /Fd.\bin\muhkuh.pdb /I.\modules /I.\. /I$(LUA_DIR)\include \
+	$(VAR_6) $(p) /Fd.\bin\muhkuh.pdb /I.\modules /I.\. /I$(LUA_DIR)\include \
 	/D_WINDOWS /I.\application /GR /EHsc $(CPPFLAGS) $(CXXFLAGS)
 MUHKUH_OBJECTS =  \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_license.obj \
@@ -94,10 +103,10 @@ MUHKUH_OBJECTS =  \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_lua.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_lua_bind.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh.res
-PLUGIN_ROMLOADER_USB_CXXFLAGS = /M$(__RUNTIME_LIBS)$(VAR_5) /DWIN32 \
+PLUGIN_ROMLOADER_USB_CXXFLAGS = /M$(__RUNTIME_LIBS)$(VAR_8) /DWIN32 \
 	$(____WX_SHARED) $(__WXUNICODE_DEFINE_p) $(__WXDEBUG_DEFINE_p) /D__WXMSW__ \
 	/I$(WX_DIR)$(WXLIBPATH)\msw$(WXLIBPOSTFIX) /I$(WX_DIR)\include $(VAR) \
-	$(VAR_3) $(p) /Fd.\bin\bootloader_usb.pdb /I.\modules /I.\. \
+	$(VAR_6) $(p) /Fd.\bin\bootloader_usb.pdb /I.\modules /I.\. \
 	/I$(LUA_DIR)\include /I.\plugins\romloader\usb \
 	/I.\plugins\romloader\usb\win\include /GR /EHsc $(CPPFLAGS) $(CXXFLAGS)
 PLUGIN_ROMLOADER_USB_OBJECTS =  \
@@ -106,16 +115,78 @@ PLUGIN_ROMLOADER_USB_OBJECTS =  \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_usb_romloader_usb_main.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_usb_romloader_usb_lua.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_usb_romloader_usb_lua_bind.obj
-PLUGIN_ROMLOADER_BAKA_CXXFLAGS = /M$(__RUNTIME_LIBS)$(VAR_5) /DWIN32 \
+PLUGIN_ROMLOADER_BAKA_CXXFLAGS = /M$(__RUNTIME_LIBS)$(VAR_8) /DWIN32 \
 	$(____WX_SHARED) $(__WXUNICODE_DEFINE_p) $(__WXDEBUG_DEFINE_p) /D__WXMSW__ \
 	/I$(WX_DIR)$(WXLIBPATH)\msw$(WXLIBPOSTFIX) /I$(WX_DIR)\include $(VAR) \
-	$(VAR_3) $(p) /Fd.\bin\baka.pdb /I.\modules /I.\. /I$(LUA_DIR)\include \
+	$(VAR_6) $(p) /Fd.\bin\baka.pdb /I.\modules /I.\. /I$(LUA_DIR)\include \
 	/I.\plugins\romloader\baka /GR /EHsc $(CPPFLAGS) $(CXXFLAGS)
 PLUGIN_ROMLOADER_BAKA_OBJECTS =  \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_baka_romloader.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_baka_romloader_baka_main.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_baka_romloader_baka_lua.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_baka_romloader_baka_lua_bind.obj
+PLUGIN_ROMLOADER_OPENOCD_CFLAGS = /M$(__RUNTIME_LIBS)$(VAR_8) /DWIN32 \
+	$(____WX_SHARED) $(__WXUNICODE_DEFINE_p) $(__WXDEBUG_DEFINE_p) /D__WXMSW__ \
+	/I$(WX_DIR)$(WXLIBPATH)\msw$(WXLIBPOSTFIX) /I$(WX_DIR)\include $(VAR) \
+	$(VAR_6) $(p) /Fd.\bin\openocd.pdb /I.\modules /I.\. /I$(LUA_DIR)\include \
+	/I.\plugins\romloader\openocd /I.\plugins\romloader\openocd\openocd \
+	/I.\plugins\romloader\openocd\openocd\helper \
+	/I.\plugins\romloader\openocd\openocd\jtag \
+	/I.\plugins\romloader\openocd\openocd\target \
+	/I.\plugins\romloader\openocd\openocd\xsvf /DHAVE_CONFIG_H \
+	/I.\plugins\romloader\openocd\win\include $(CPPFLAGS) $(CFLAGS)
+PLUGIN_ROMLOADER_OPENOCD_CXXFLAGS = /M$(__RUNTIME_LIBS)$(VAR_8) /DWIN32 \
+	$(____WX_SHARED) $(__WXUNICODE_DEFINE_p) $(__WXDEBUG_DEFINE_p) /D__WXMSW__ \
+	/I$(WX_DIR)$(WXLIBPATH)\msw$(WXLIBPOSTFIX) /I$(WX_DIR)\include $(VAR) \
+	$(VAR_6) $(p) /Fd.\bin\openocd.pdb /I.\modules /I.\. /I$(LUA_DIR)\include \
+	/I.\plugins\romloader\openocd /I.\plugins\romloader\openocd\openocd \
+	/I.\plugins\romloader\openocd\openocd\helper \
+	/I.\plugins\romloader\openocd\openocd\jtag \
+	/I.\plugins\romloader\openocd\openocd\target \
+	/I.\plugins\romloader\openocd\openocd\xsvf /DHAVE_CONFIG_H \
+	/I.\plugins\romloader\openocd\win\include /GR /EHsc $(CPPFLAGS) $(CXXFLAGS)
+PLUGIN_ROMLOADER_OPENOCD_OBJECTS =  \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_romloader.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_romloader_openocd_main.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_romloader_openocd_lua.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_romloader_openocd_lua_bind.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_binarybuffer.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_command.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_configuration.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_fileio.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_interpreter.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_log.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_replacements.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_time_support.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_ft2232.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_jtag.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_algorithm.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm720t.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm7_9_common.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm7tdmi.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm920t.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm926ejs.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm966e.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm9tdmi.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm_disassembler.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm_jtag.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm_simulator.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_armv4_5.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_armv4_5_cache.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_armv4_5_mmu.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_armv7m.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_breakpoints.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_cortex_m3.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_cortex_swjdp.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_embeddedice.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_etb.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_etm.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_etm_dummy.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_image.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_register.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_target.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_xscale.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_xsvf.obj
 
 ### Conditionally set variables: ###
 
@@ -158,6 +229,9 @@ __plugin_romloader_usb___depname = .\bin\bootloader_usb.dll
 !if "$(BUILD_PLUGIN_ROMLOADER_BAKA)" == "1"
 __plugin_romloader_baka___depname = .\bin\baka.dll
 !endif
+!if "$(BUILD_PLUGIN_ROMLOADER_OPENOCD)" == "1"
+__plugin_romloader_openocd___depname = .\bin\openocd.dll
+!endif
 !if "$(WX_SHARED)" == "0"
 ____WX_SHARED = 
 !endif
@@ -192,16 +266,16 @@ VAR = /Od
 VAR = /O2
 !endif
 !if "$(BUILD)" == "debug"
-VAR_3 = /Zi
+VAR_6 = /Zi
 !endif
 !if "$(BUILD)" == "release"
-VAR_3 = 
+VAR_6 = 
 !endif
 !if "$(BUILD)" == "debug"
-VAR_4 = /DEBUG
+VAR_7 = /DEBUG
 !endif
 !if "$(BUILD)" == "release"
-VAR_4 = 
+VAR_7 = 
 !endif
 !if "$(BUILD)" == "debug"
 p = /D_DEBUG
@@ -210,10 +284,10 @@ p = /D_DEBUG
 p = 
 !endif
 !if "$(BUILD)" == "debug"
-VAR_5 = d
+VAR_8 = d
 !endif
 !if "$(BUILD)" == "release"
-VAR_5 = 
+VAR_8 = 
 !endif
 !if "$(RUNTIME_LIBS)" == "dynamic"
 __RUNTIME_LIBS = D
@@ -337,7 +411,7 @@ vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX):
 
 ### Targets: ###
 
-all: test_for_selected_wxbuild .\bin\muhkuh.exe $(__plugin_romloader_usb___depname) $(__plugin_romloader_baka___depname)
+all: test_for_selected_wxbuild .\bin\muhkuh.exe $(__plugin_romloader_usb___depname) $(__plugin_romloader_baka___depname) $(__plugin_romloader_openocd___depname)
 
 clean: 
 	-if exist vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\*.obj del vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\*.obj
@@ -352,6 +426,9 @@ clean:
 	-if exist .\bin\baka.dll del .\bin\baka.dll
 	-if exist .\bin\baka.ilk del .\bin\baka.ilk
 	-if exist .\bin\baka.pdb del .\bin\baka.pdb
+	-if exist .\bin\openocd.dll del .\bin\openocd.dll
+	-if exist .\bin\openocd.ilk del .\bin\openocd.ilk
+	-if exist .\bin\openocd.pdb del .\bin\openocd.pdb
 
 test_for_selected_wxbuild: 
 	@if not exist $(WX_DIR)$(WXLIBPATH)\msw$(WXLIBPOSTFIX)\wx\setup.h \
@@ -366,21 +443,28 @@ test_for_selected_wxbuild:
 	exit 1
 
 .\bin\muhkuh.exe: $(MUHKUH_OBJECTS) vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh.res
-	link /NOLOGO /OUT:$@ $(LDFLAGS) /LIBPATH:$(WX_DIR)$(WXLIBPATH) $(VAR_4) /pdb:".\bin\muhkuh.pdb" /LIBPATH:.\lib\vc_$(____muhkuh__DIRNAME_SHARED_SUFFIX_FILENAMES) /LIBPATH:$(LUA_DIR)\lib /SUBSYSTEM:WINDOWS  @<<
+	link /NOLOGO /OUT:$@ $(LDFLAGS) /LIBPATH:$(WX_DIR)$(WXLIBPATH) $(VAR_7) /pdb:".\bin\muhkuh.pdb" /LIBPATH:.\lib\vc_$(____muhkuh__DIRNAME_SHARED_SUFFIX_FILENAMES) /LIBPATH:$(LUA_DIR)\lib /SUBSYSTEM:WINDOWS  @<<
 	$(MUHKUH_OBJECTS)  wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxluasocket.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxluadebug.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindxrc.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindhtml.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindadv.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindaui.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindnet.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindxml.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindcore.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindbase.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxlua.lib lua5.1.lib $(__WXLIB_XRC_NAME_p) $(__WXLIB_HTML_NAME_p) $(__WXLIB_ADV_NAME_p) $(__WXLIB_AUI_NAME_p) $(__WXLIB_NET_NAME_p) $(__WXLIB_XML_NAME_p) $(__WXLIB_CORE_NAME_p) $(__WXLIB_BASE_NAME_p) wxtiff$(WX3RDPARTYLIBPOSTFIX).lib wxjpeg$(WX3RDPARTYLIBPOSTFIX).lib wxpng$(WX3RDPARTYLIBPOSTFIX).lib wxzlib$(WX3RDPARTYLIBPOSTFIX).lib wxregex$(WXLIBPOSTFIX).lib wxexpat$(WX3RDPARTYLIBPOSTFIX).lib kernel32.lib user32.lib gdi32.lib comdlg32.lib winspool.lib winmm.lib shell32.lib comctl32.lib ole32.lib oleaut32.lib uuid.lib rpcrt4.lib advapi32.lib wsock32.lib odbc32.lib oleacc.lib
 <<
 
 !if "$(BUILD_PLUGIN_ROMLOADER_USB)" == "1"
 .\bin\bootloader_usb.dll: $(PLUGIN_ROMLOADER_USB_OBJECTS)
-	link /DLL /NOLOGO /OUT:$@ $(LDFLAGS) $(VAR_4) /pdb:".\bin\bootloader_usb.pdb"  /LIBPATH:.\plugins\romloader\usb\win\lib\msvc @<<
+	link /DLL /NOLOGO /OUT:$@ $(LDFLAGS) $(VAR_7) /pdb:".\bin\bootloader_usb.pdb"  /LIBPATH:.\plugins\romloader\usb\win\lib\msvc @<<
 	$(PLUGIN_ROMLOADER_USB_OBJECTS)  libusb.lib setupapi.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxluasocket.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxluadebug.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindxrc.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindhtml.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindadv.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindaui.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindnet.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindxml.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindcore.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindbase.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxlua.lib lua5.1.lib $(__WXLIB_XRC_NAME_p) $(__WXLIB_HTML_NAME_p) $(__WXLIB_ADV_NAME_p) $(__WXLIB_AUI_NAME_p) $(__WXLIB_NET_NAME_p) $(__WXLIB_XML_NAME_p) $(__WXLIB_CORE_NAME_p) $(__WXLIB_BASE_NAME_p)
 <<
 !endif
 
 !if "$(BUILD_PLUGIN_ROMLOADER_BAKA)" == "1"
 .\bin\baka.dll: $(PLUGIN_ROMLOADER_BAKA_OBJECTS)
-	link /DLL /NOLOGO /OUT:$@ $(LDFLAGS) $(VAR_4) /pdb:".\bin\baka.pdb"  @<<
+	link /DLL /NOLOGO /OUT:$@ $(LDFLAGS) $(VAR_7) /pdb:".\bin\baka.pdb"  @<<
 	$(PLUGIN_ROMLOADER_BAKA_OBJECTS)  wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxluasocket.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxluadebug.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindxrc.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindhtml.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindadv.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindaui.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindnet.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindxml.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindcore.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindbase.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxlua.lib lua5.1.lib $(__WXLIB_XRC_NAME_p) $(__WXLIB_HTML_NAME_p) $(__WXLIB_ADV_NAME_p) $(__WXLIB_AUI_NAME_p) $(__WXLIB_NET_NAME_p) $(__WXLIB_XML_NAME_p) $(__WXLIB_CORE_NAME_p) $(__WXLIB_BASE_NAME_p)
+<<
+!endif
+
+!if "$(BUILD_PLUGIN_ROMLOADER_OPENOCD)" == "1"
+.\bin\openocd.dll: $(PLUGIN_ROMLOADER_OPENOCD_OBJECTS)
+	link /DLL /NOLOGO /OUT:$@ $(LDFLAGS) $(VAR_7) /pdb:".\bin\openocd.pdb"  /LIBPATH:.\plugins\romloader\openocd\win\lib\msvc @<<
+	$(PLUGIN_ROMLOADER_OPENOCD_OBJECTS)  libftdi.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxluasocket.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxluadebug.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindxrc.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindhtml.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindadv.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindaui.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindnet.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindxml.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindcore.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxbindbase.lib wxlua_msw$(WX_VERSION)$(WXLIBPOSTFIX)_wxlua.lib lua5.1.lib $(__WXLIB_XRC_NAME_p) $(__WXLIB_HTML_NAME_p) $(__WXLIB_ADV_NAME_p) $(__WXLIB_AUI_NAME_p) $(__WXLIB_NET_NAME_p) $(__WXLIB_XML_NAME_p) $(__WXLIB_CORE_NAME_p) $(__WXLIB_BASE_NAME_p)
 <<
 !endif
 
@@ -458,4 +542,127 @@ vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_baka_romloader_b
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_baka_romloader_baka_lua_bind.obj: .\plugins\romloader\baka\_luaif\romloader_baka_lua_bind.cpp
 	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_BAKA_CXXFLAGS) .\plugins\romloader\baka\_luaif\romloader_baka_lua_bind.cpp
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_romloader.obj: .\plugins\romloader\romloader.cpp
+	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CXXFLAGS) .\plugins\romloader\romloader.cpp
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_romloader_openocd_main.obj: .\plugins\romloader\openocd\romloader_openocd_main.cpp
+	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CXXFLAGS) .\plugins\romloader\openocd\romloader_openocd_main.cpp
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_romloader_openocd_lua.obj: .\plugins\romloader\openocd\_luaif\romloader_openocd_lua.cpp
+	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CXXFLAGS) .\plugins\romloader\openocd\_luaif\romloader_openocd_lua.cpp
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_romloader_openocd_lua_bind.obj: .\plugins\romloader\openocd\_luaif\romloader_openocd_lua_bind.cpp
+	$(CXX) /c /nologo /TP /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CXXFLAGS) .\plugins\romloader\openocd\_luaif\romloader_openocd_lua_bind.cpp
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_binarybuffer.obj: .\plugins\romloader\openocd\openocd\helper\binarybuffer.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\helper\binarybuffer.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_command.obj: .\plugins\romloader\openocd\openocd\helper\command.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\helper\command.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_configuration.obj: .\plugins\romloader\openocd\openocd\helper\configuration.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\helper\configuration.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_fileio.obj: .\plugins\romloader\openocd\openocd\helper\fileio.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\helper\fileio.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_interpreter.obj: .\plugins\romloader\openocd\openocd\helper\interpreter.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\helper\interpreter.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_log.obj: .\plugins\romloader\openocd\openocd\helper\log.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\helper\log.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_replacements.obj: .\plugins\romloader\openocd\openocd\helper\replacements.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\helper\replacements.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_time_support.obj: .\plugins\romloader\openocd\openocd\helper\time_support.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\helper\time_support.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_ft2232.obj: .\plugins\romloader\openocd\openocd\jtag\ft2232.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\jtag\ft2232.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_jtag.obj: .\plugins\romloader\openocd\openocd\jtag\jtag.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\jtag\jtag.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_algorithm.obj: .\plugins\romloader\openocd\openocd\target\algorithm.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\algorithm.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm720t.obj: .\plugins\romloader\openocd\openocd\target\arm720t.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\arm720t.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm7_9_common.obj: .\plugins\romloader\openocd\openocd\target\arm7_9_common.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\arm7_9_common.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm7tdmi.obj: .\plugins\romloader\openocd\openocd\target\arm7tdmi.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\arm7tdmi.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm920t.obj: .\plugins\romloader\openocd\openocd\target\arm920t.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\arm920t.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm926ejs.obj: .\plugins\romloader\openocd\openocd\target\arm926ejs.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\arm926ejs.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm966e.obj: .\plugins\romloader\openocd\openocd\target\arm966e.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\arm966e.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm9tdmi.obj: .\plugins\romloader\openocd\openocd\target\arm9tdmi.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\arm9tdmi.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm_disassembler.obj: .\plugins\romloader\openocd\openocd\target\arm_disassembler.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\arm_disassembler.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm_jtag.obj: .\plugins\romloader\openocd\openocd\target\arm_jtag.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\arm_jtag.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_arm_simulator.obj: .\plugins\romloader\openocd\openocd\target\arm_simulator.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\arm_simulator.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_armv4_5.obj: .\plugins\romloader\openocd\openocd\target\armv4_5.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\armv4_5.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_armv4_5_cache.obj: .\plugins\romloader\openocd\openocd\target\armv4_5_cache.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\armv4_5_cache.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_armv4_5_mmu.obj: .\plugins\romloader\openocd\openocd\target\armv4_5_mmu.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\armv4_5_mmu.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_armv7m.obj: .\plugins\romloader\openocd\openocd\target\armv7m.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\armv7m.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_breakpoints.obj: .\plugins\romloader\openocd\openocd\target\breakpoints.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\breakpoints.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_cortex_m3.obj: .\plugins\romloader\openocd\openocd\target\cortex_m3.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\cortex_m3.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_cortex_swjdp.obj: .\plugins\romloader\openocd\openocd\target\cortex_swjdp.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\cortex_swjdp.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_embeddedice.obj: .\plugins\romloader\openocd\openocd\target\embeddedice.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\embeddedice.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_etb.obj: .\plugins\romloader\openocd\openocd\target\etb.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\etb.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_etm.obj: .\plugins\romloader\openocd\openocd\target\etm.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\etm.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_etm_dummy.obj: .\plugins\romloader\openocd\openocd\target\etm_dummy.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\etm_dummy.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_image.obj: .\plugins\romloader\openocd\openocd\target\image.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\image.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_register.obj: .\plugins\romloader\openocd\openocd\target\register.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\register.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_target.obj: .\plugins\romloader\openocd\openocd\target\target.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\target.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_xscale.obj: .\plugins\romloader\openocd\openocd\target\xscale.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\target\xscale.c
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\plugin_romloader_openocd_xsvf.obj: .\plugins\romloader\openocd\openocd\xsvf\xsvf.c
+	$(CC) /c /nologo /TC /Fo$@ $(PLUGIN_ROMLOADER_OPENOCD_CFLAGS) .\plugins\romloader\openocd\openocd\xsvf\xsvf.c
 
