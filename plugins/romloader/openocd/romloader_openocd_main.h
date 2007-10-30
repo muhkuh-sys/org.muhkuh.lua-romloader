@@ -28,13 +28,16 @@
 
 /*-----------------------------------*/
 
-WXEXPORT extern "C" { int fn_init(wxLog *ptLogTarget); }
-WXEXPORT extern "C" { int fn_init_lua(wxLuaState *ptLuaState); }
-WXEXPORT extern "C" { int fn_leave(void); }
-WXEXPORT extern "C" { const muhkuh_plugin_desc *fn_get_desc(void); }
-WXEXPORT extern "C" { int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList); }
+extern "C"
+{
+	WXEXPORT int fn_init(wxLog *ptLogTarget);
+	WXEXPORT int fn_init_lua(wxLuaState *ptLuaState);
+	WXEXPORT int fn_leave(void);
+	WXEXPORT const muhkuh_plugin_desc *fn_get_desc(void);
+	WXEXPORT int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList);
 
-WXEXPORT extern "C" { romloader *romloader_openocd_create(void *pvHandle); }
+	WXEXPORT romloader *romloader_openocd_create(void *pvHandle);
+}
 
 /*-----------------------------------*/
 
