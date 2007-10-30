@@ -458,7 +458,11 @@ local function createControls()
 	-- device number
 	devNoLabel = wx.wxStaticText(m_panel, wx.wxID_ANY, "Device Nr")
 	infoSizer:Add(devNoLabel, 0, wx.wxALIGN_CENTER_VERTICAL)
-	devNoText  = wx.wxStaticText(m_panel, wx.wxID_ANY, m_deviceNr)
+	if m_deviceNr==nil then
+		devNoText  = wx.wxStaticText(m_panel, wx.wxID_ANY, "none")
+	else
+		devNoText  = wx.wxStaticText(m_panel, wx.wxID_ANY, m_deviceNr)
+	end
 	infoSizer:Add(devNoText, 0, wx.wxALIGN_CENTER_VERTICAL)
 	-- board number
 	boardLabel = wx.wxStaticText(m_panel, wx.wxID_ANY, "Board")
@@ -995,11 +999,14 @@ function run()
 	-- get the number of tests
 	m_testCnt = #__MUHKUH_ALL_TESTS - 1
 
-	-- TODO: get the next values from parameters
 	-- get the device number
-	m_deviceNr = "123456"
+	m_deviceNr = __MUHKUH_PARAMETERS.DeviceNumber
 	-- get the number of boards to test
-	m_boardCnt = 15
+	if __MUHKUH_PARAMETERS.BoardCount==nil then
+		m_boardCnt = 1
+	else
+		m_boardCnt = __MUHKUH_PARAMETERS.BoardCount
+	end
 
 	-- get all test names
 	m_testNames = wx.wxArrayString()
