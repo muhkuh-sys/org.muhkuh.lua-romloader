@@ -1418,7 +1418,7 @@ wxString muhkuh_mainFrame::luaLoad(wxString strFileName)
 	}
 	else
 	{
-		strFileUrl = m_ptRepositoryManager->getTestlistBaseUrl(m_sizRunningTest_RepositoryIdx, m_sizRunningTest_TestIdx) + wxT("/") + strFileName;
+		strFileUrl = m_ptRepositoryManager->getTestlistBaseUrl(m_sizRunningTest_RepositoryIdx, m_sizRunningTest_TestIdx) + wxFileName::GetPathSeparator() + strFileName;
 		wxLogMessage(wxT("lua load: searching '") + strFileUrl + wxT("'"));
 		urlError = filelistUrl.SetURL(strFileUrl);
 		if( urlError!=wxURL_NOERR )
