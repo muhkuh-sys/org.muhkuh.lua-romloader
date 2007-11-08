@@ -441,6 +441,7 @@ wxString muhkuh_repository::getTestlistBaseUrl(size_t sizTestIdx) const
 {
 	wxString strResult;
 	wxFileName filename;
+	int iLastSlash;
 
 
 	// check test index
@@ -457,8 +458,14 @@ wxString muhkuh_repository::getTestlistBaseUrl(size_t sizTestIdx) const
 
 		case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
 			// single xml points directly to the xml file
-			filename.Assign(astrTestList.Item(sizTestIdx));
-			strResult = filename.GetPath();
+			strResult = astrTestList.Item(sizTestIdx);
+			// get position of last slash
+			iLastSlash = strResult.Find(wxT('/'), true);
+			if( iLastSlash!=wxNOT_FOUND )
+			{
+				// cut off lastt path element (that's the xml description)
+				strResult.Truncate(iLastSlash);
+			}
 			break;
 
 		default:
@@ -695,8 +702,8 @@ bool muhkuh_repository::createTestlist_url(wxProgressDialog *ptScannerProgress)
 					// update gui for new scanner message
 					wxTheApp->Yield();
 				}
-				delete ptFsFile;
 				delete ptTextInputStream;
+				delete ptFsFile;
 
 				// normalize the paths and convert to url
 				sizCnt = 0;
