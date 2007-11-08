@@ -24,7 +24,7 @@
 
 
 #ifdef __WXMSW__
-#define ETIMEDOUT WSAETIMEDOUT
+#define ETIMEDOUT 116
 #endif
 
 
@@ -520,26 +520,30 @@ tNetxUsbState romloader_usb_call(void *pvHandle, unsigned long ulNetxAddress, un
 		return tResult;
 	}
 
-	// wait for the call to finish
-	do
+	aucSend[0] = 0x00;
+	tResult = writeBlock(tHandle, aucSend, 64, 200);
+	if( tResult==netxUsbState_Ok )
 	{
-		// look for data from netx
-		aucSend[0] = 0x00;
-		tResult = exchange(tHandle, aucSend, aucRec);
-		if( tResult!=netxUsbState_Timeout )
+		// wait for the call to finish
+		do
 		{
-			// execute callback
-			fIsRunning = callback(L, iLuaCallbackTag, 0, pvCallbackUserData);
-			if( fIsRunning!=true )
+			// look for data from netx
+			tResult = readBlock(tHandle, aucRec, 64, 200);
+			if( tResult==netxUsbState_Timeout )
 			{
-				tResult = netxUsbState_Cancel;
+				// execute callback
+				fIsRunning = callback(L, iLuaCallbackTag, 0, pvCallbackUserData);
+				if( fIsRunning!=true )
+				{
+					tResult = netxUsbState_Cancel;
+				}
+				else
+				{
+					tResult = netxUsbState_Timeout;
+				}
 			}
-			else
-			{
-				tResult = netxUsbState_Ok;
-			}
-		}
-	} while( tResult!=netxUsbState_Ok );
+		} while( tResult==netxUsbState_Timeout );
+	}
 
 	// ok, call finished. collect all data from the netx
 
