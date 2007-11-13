@@ -794,6 +794,14 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 		wxLogError(wxT("failed to init the muhkuh_lua bindings"));
 	}
 
+	// init the bit lua bindings
+	fCreated = wxLuaBinding_bit_lua_init();
+	if( fCreated!=true )
+	{
+		// failed to init the bit lua bindings
+		wxLogError(wxT("failed to init the bit_lua bindings"));
+	}
+
 	// init the lua bindings for all plugins
 	iResult = m_ptPluginManager->initLuaBindings(m_ptLuaState);
 	if( iResult!=0 )

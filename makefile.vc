@@ -87,8 +87,9 @@ MUHKUH_CXXFLAGS = /M$(__RUNTIME_LIBS)$(VAR_8) /DWIN32 $(____WX_SHARED) \
 	$(VAR_6) $(p) /Fd.\bin\muhkuh.pdb /I.\modules /I.\. /I$(LUA_DIR)\include \
 	/D_WINDOWS /I.\application /GR /EHsc $(CPPFLAGS) $(CXXFLAGS)
 MUHKUH_OBJECTS =  \
-	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_license.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_bit_lua_interface.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_growbuffer.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_license.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_aboutDialog.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_app.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_configDialog.obj \
@@ -100,6 +101,8 @@ MUHKUH_OBJECTS =  \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_repository_manager.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_wrap_xml.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_readFsFile.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_bit_lua.obj \
+	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_bit_lua_bind.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_lua.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_lua_bind.obj \
 	vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh.res
@@ -468,11 +471,14 @@ test_for_selected_wxbuild:
 <<
 !endif
 
-vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_license.obj: .\application\license.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\license.cpp
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_bit_lua_interface.obj: .\application\bit_lua_interface.cpp
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\bit_lua_interface.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_growbuffer.obj: .\application\growbuffer.cpp
 	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\growbuffer.cpp
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_license.obj: .\application\license.cpp
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\license.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_aboutDialog.obj: .\application\muhkuh_aboutDialog.cpp
 	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\muhkuh_aboutDialog.cpp
@@ -506,6 +512,12 @@ vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_wrap_xml.obj: .\app
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_readFsFile.obj: .\application\readFsFile.cpp
 	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\readFsFile.cpp
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_bit_lua.obj: .\plugins\_luaif\bit_lua.cpp
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\plugins\_luaif\bit_lua.cpp
+
+vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_bit_lua_bind.obj: .\plugins\_luaif\bit_lua_bind.cpp
+	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\plugins\_luaif\bit_lua_bind.cpp
 
 vcmsw$(WXLIBPOSTFIX)$(_BUILDDIR_SHARED_SUFFIX)\muhkuh_muhkuh_lua.obj: .\plugins\_luaif\muhkuh_lua.cpp
 	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\plugins\_luaif\muhkuh_lua.cpp

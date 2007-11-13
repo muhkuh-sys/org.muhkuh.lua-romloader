@@ -82,8 +82,9 @@ MUHKUH_CXXFLAGS = $(VAR) $(VAR_5) -I./modules -I./. -I$(LUA_DIR)/include \
 	-D_THREAD_SAFE -pthread -I./application `$(WX_CONFIG) --cxxflags \
 	$(WX_CONFIG_FLAGS)` $(CPPFLAGS) $(CXXFLAGS)
 MUHKUH_OBJECTS =  \
-	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_license.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_bit_lua_interface.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_growbuffer.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_license.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_muhkuh_aboutDialog.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_muhkuh_app.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_muhkuh_configDialog.o \
@@ -95,6 +96,8 @@ MUHKUH_OBJECTS =  \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_muhkuh_repository_manager.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_muhkuh_wrap_xml.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_readFsFile.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_bit_lua.o \
+	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_bit_lua_bind.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_muhkuh_lua.o \
 	gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_muhkuh_lua_bind.o
 PLUGIN_ROMLOADER_USB_CXXFLAGS = $(VAR) $(VAR_5) -I./modules -I./. \
@@ -270,10 +273,13 @@ ifeq ($(BUILD_PLUGIN_ROMLOADER_OPENOCD),1)
 	$(CXX) $(LINK_MODULE_FLAGS) -fPIC -o $@ $(PLUGIN_ROMLOADER_OPENOCD_OBJECTS) $(LDFLAGS) $(VAR_5) -pthread  -lftdi -lwxlua_$(WX_PORT)_wxluasocket-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxluadebug-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxrc-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindhtml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindadv-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindaui-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindnet-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindxml-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindcore-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxbindbase-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -lwxlua_$(WX_PORT)_wxlua-$(WX_VERSION_MAJOR).$(WX_VERSION_MINOR) -llua5.1 `$(WX_CONFIG) $(WX_CONFIG_FLAGS) --libs xrc,html,adv,aui,net,xml,core,base`
 endif
 
-gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_license.o: ./application/license.cpp
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_bit_lua_interface.o: ./application/bit_lua_interface.cpp
 	$(CXX) -c -o $@ $(MUHKUH_CXXFLAGS) $(CPPDEPS) $<
 
 gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_growbuffer.o: ./application/growbuffer.cpp
+	$(CXX) -c -o $@ $(MUHKUH_CXXFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_license.o: ./application/license.cpp
 	$(CXX) -c -o $@ $(MUHKUH_CXXFLAGS) $(CPPDEPS) $<
 
 gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_muhkuh_aboutDialog.o: ./application/muhkuh_aboutDialog.cpp
@@ -307,6 +313,12 @@ gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_muhkuh_wrap_xml.o: ./application/
 	$(CXX) -c -o $@ $(MUHKUH_CXXFLAGS) $(CPPDEPS) $<
 
 gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_readFsFile.o: ./application/readFsFile.cpp
+	$(CXX) -c -o $@ $(MUHKUH_CXXFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_bit_lua.o: ./plugins/_luaif/bit_lua.cpp
+	$(CXX) -c -o $@ $(MUHKUH_CXXFLAGS) $(CPPDEPS) $<
+
+gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_bit_lua_bind.o: ./plugins/_luaif/bit_lua_bind.cpp
 	$(CXX) -c -o $@ $(MUHKUH_CXXFLAGS) $(CPPDEPS) $<
 
 gcc$(WX_PORT)$(_BUILDDIR_SHARED_SUFFIX)/muhkuh_muhkuh_lua.o: ./plugins/_luaif/muhkuh_lua.cpp
