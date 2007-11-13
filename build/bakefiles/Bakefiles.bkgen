@@ -26,7 +26,7 @@
 
 	<!-- List of output formats to generate: -->
 	<add-formats>
-		msvc6prj,<!-- msvs2003prj, -->msvs2005prj,autoconf,borland,dmars,mingw,msvc,watcom,cbuilderx,cbx_unix,gnu
+		msvc6prj,msvs2003prj,msvs2005prj,autoconf,borland,dmars,mingw,msvc,watcom,cbuilderx,cbx_unix,gnu
 	</add-formats>
 
 
