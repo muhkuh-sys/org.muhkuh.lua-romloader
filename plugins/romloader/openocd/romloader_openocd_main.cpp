@@ -36,6 +36,7 @@ extern "C"
 	#include "xsvf.h"
 	#include "target.h"
 	#include "command.h"
+	#include "replacements.h"
 }
 
 /*-------------------------------------*/
@@ -214,7 +215,11 @@ romloader *romloader_openocd_create(void *pvHandle)
 
 	// fill demo config
 	astrCfg.Add(wxT("interface ft2232"));
+#ifdef __WXMSW__
+	astrCfg.Add(wxT("ft2232_device_desc \"Amontec JTAGkey A\""));
+#else
 	astrCfg.Add(wxT("ft2232_device_desc \"Amontec JTAGkey\""));
+#endif
 	astrCfg.Add(wxT("ft2232_layout \"jtagkey\""));
 	astrCfg.Add(wxT("ft2232_vid_pid 0x0403 0xcff8"));
 	astrCfg.Add(wxT("jtag_speed 1"));
