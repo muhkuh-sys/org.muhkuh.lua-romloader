@@ -82,6 +82,9 @@ const romloader_functioninterface tFunctionInterface =
 
 static wxLuaState *m_ptLuaState;
 
+static wxArrayString astrInitCfg;
+static wxArrayString astrRunCfg;
+
 /*-------------------------------------*/
 
 int fn_init(wxLog *ptLogTarget)
@@ -102,6 +105,52 @@ int fn_init(wxLog *ptLogTarget)
 
 	/* say hi */
 	wxLogMessage(wxT("bootloader openocd plugin init"));
+
+	/* TODO: read this from the config file */
+
+	/* netX500 init config */
+	astrInitCfg.Add(wxT("interface ft2232"));
+#ifdef __WXMSW__
+	astrInitCfg.Add(wxT("ft2232_device_desc \"Amontec JTAGkey A\""));
+#else
+	astrInitCfg.Add(wxT("ft2232_device_desc \"Amontec JTAGkey\""));
+#endif
+	astrInitCfg.Add(wxT("ft2232_layout \"jtagkey\""));
+	astrInitCfg.Add(wxT("ft2232_vid_pid 0x0403 0xcff8"));
+	astrInitCfg.Add(wxT("jtag_speed 1"));
+	astrInitCfg.Add(wxT("reset_config trst_and_srst"));
+	astrInitCfg.Add(wxT("jtag_device 4 0x1 0xf 0xe"));
+	astrInitCfg.Add(wxT("daemon_startup reset"));
+	astrInitCfg.Add(wxT("target arm9tdmi little reset_halt 0 arm920t"));
+	astrInitCfg.Add(wxT("working_area 0 0x00018000 0x8000 backup"));
+	astrInitCfg.Add(wxT("run_and_halt_time 0 5000"));
+	/* netX500 run config */
+	astrRunCfg.Add(wxT("bp 0x200000 4 hw"));
+	astrRunCfg.Add(wxT("reg cpsr 0xd3"));
+	astrRunCfg.Add(wxT("reg spsr_svc 0xd3"));
+	astrRunCfg.Add(wxT("reg r13_svc 0x7ffc"));
+	astrRunCfg.Add(wxT("reg lr_svc 0x200000"));
+#if 0
+	/* netX50 init config */
+	astrInitCfg.Add(wxT("interface ft2232"));
+	astrInitCfg.Add(wxT("ft2232_device_desc \"NXHX board\""));
+	astrInitCfg.Add(wxT("ft2232_layout \"comstick\""));
+	astrInitCfg.Add(wxT("ft2232_vid_pid 0x0640 0x0028"));
+	astrInitCfg.Add(wxT("jtag_speed 1"));
+	astrInitCfg.Add(wxT("reset_config trst_and_srst"));
+	astrInitCfg.Add(wxT("jtag_device 4 0x1 0xf 0xe"));
+	astrInitCfg.Add(wxT("daemon_startup reset"));
+	astrInitCfg.Add(wxT("target arm966e little reset_halt 0"));
+	astrInitCfg.Add(wxT("working_area 0 0x00010000 0x8000 backup"));
+	astrInitCfg.Add(wxT("run_and_halt_time 0 5000"));
+	/* netX50 run config */
+	astrRunCfg.Add(wxT("bp 0x200000 4 hw"));
+	astrRunCfg.Add(wxT("reg cpsr 0xd3"));
+	astrRunCfg.Add(wxT("reg spsr_svc 0xd3"));
+	astrRunCfg.Add(wxT("reg r13_svc 0x7ffc"));
+	astrRunCfg.Add(wxT("reg lr_svc 0x200000"));
+#endif
+
 
 	/* init the lua state */
 	m_ptLuaState = NULL;
@@ -205,30 +254,11 @@ romloader *romloader_openocd_create(void *pvHandle)
 	command_context_t *cmd_ctx;
 	target_t *target;
 	wxString strMsg;
-	wxArrayString astrCfg;
 	size_t sizCfgCnt;
 	size_t sizCfgMax;
 	romloader *ptInstance = NULL;
 	wxString strName;
 	wxString strTyp;
-
-
-	// fill demo config
-	astrCfg.Add(wxT("interface ft2232"));
-#ifdef __WXMSW__
-	astrCfg.Add(wxT("ft2232_device_desc \"Amontec JTAGkey A\""));
-#else
-	astrCfg.Add(wxT("ft2232_device_desc \"Amontec JTAGkey\""));
-#endif
-	astrCfg.Add(wxT("ft2232_layout \"jtagkey\""));
-	astrCfg.Add(wxT("ft2232_vid_pid 0x0403 0xcff8"));
-	astrCfg.Add(wxT("jtag_speed 1"));
-	astrCfg.Add(wxT("reset_config trst_and_srst"));
-	astrCfg.Add(wxT("jtag_device 4 0x1 0xf 0xe"));
-	astrCfg.Add(wxT("daemon_startup reset"));
-	astrCfg.Add(wxT("target arm9tdmi little reset_halt 0 arm920t"));
-	astrCfg.Add(wxT("working_area 0 0x00018000 0x8000 backup"));
-	astrCfg.Add(wxT("run_and_halt_time 0 5000"));
 
 
 	cmd_ctx = command_init();
@@ -254,15 +284,15 @@ romloader *romloader_openocd_create(void *pvHandle)
 
 		// set config
 		sizCfgCnt = 0;
-		sizCfgMax = astrCfg.GetCount();
+		sizCfgMax = astrInitCfg.GetCount();
 		while( sizCfgCnt<sizCfgMax )
 		{
-			iResult = command_run_line(cmd_ctx, astrCfg.Item(sizCfgCnt).ToAscii());
+			iResult = command_run_line(cmd_ctx, astrInitCfg.Item(sizCfgCnt).ToAscii());
 			if( iResult!=ERROR_OK )
 			{
 				strMsg.Printf(wxT("failed to set config: %d"), iResult);
 				wxLogError(strMsg);
-				strMsg = wxT("error line was: '") + astrCfg.Item(sizCfgCnt) + wxT("'");
+				strMsg = wxT("error line was: '") + astrInitCfg.Item(sizCfgCnt) + wxT("'");
 				wxLogError(strMsg);
 				break;
 			}
@@ -604,125 +634,83 @@ int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcDa
 /* call routine */
 int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
-/*
-	tNetxUsbState tResult;
-	int iResult;
-	unsigned char *pucData;
-	unsigned int uiDataLen;
-
-
-	// expect error
-	iResult = -1;
-
-	// send the command
-	tResult = romloader_usb_call(pvHandle, ulNetxAddress, ulParameterR0, &pucData, &uiDataLen, L, iLuaCallbackTag, pvCallbackUserData);
-	if( tResult!=netxUsbState_Ok )
-	{
-		wxLogError(wxT("failed to send command!"));
-		wxLogError( romloader_usb_getErrorString(tResult) );
-	}
-	else
-	{
-		// check the response
-		if( uiDataLen==2 && pucData[0]==0x0a && pucData[1]=='>' )
-		{
-			// ok!
-			iResult = 0;
-		}
-		else
-		{
-			wxLogError(wxT("strange response from netx!"));
-		}
-		free(pucData);
-	}
-
-	return iResult;
-*/
 	command_context_t *cmd_ctx;
+	int iOocdResult;
 	int iResult;
+	size_t sizCfgCnt;
+	size_t sizCfgMax;
+	wxString strCmd;
+	wxString strMsg;
 
 
 	/* cast the handle to the command context */
 	cmd_ctx = (command_context_t*)pvHandle;
 
-	// reg r0 0x00018000
-	iResult = command_run_line(cmd_ctx, "reg r0 0x00018000");
-	if( iResult!=ERROR_OK )
+	// set config
+	sizCfgCnt = 0;
+	sizCfgMax = astrRunCfg.GetCount();
+	while( sizCfgCnt<sizCfgMax )
 	{
-		fprintf(stderr, "config failed!\n");
-		return 1;
+		iOocdResult = command_run_line(cmd_ctx, astrRunCfg.Item(sizCfgCnt).ToAscii());
+		if( iOocdResult!=ERROR_OK )
+		{
+			strMsg.Printf(wxT("failed to run command: %d"), iResult);
+			wxLogError(strMsg);
+			strMsg = wxT("error line was: '") + astrRunCfg.Item(sizCfgCnt) + wxT("'");
+			wxLogError(strMsg);
+			break;
+		}
+		++sizCfgCnt;
 	}
-
-	// bp 0x200000 4 hw
-	iResult = command_run_line(cmd_ctx, "bp 0x200000 4 hw");
-	if( iResult!=ERROR_OK )
+	if( iOocdResult!=ERROR_OK )
 	{
-		fprintf(stderr, "config failed!\n");
-		return 1;
+		wxLogError("config failed!");
+		iResult = 1;
 	}
-
-	// reg pc 0x8000
-	iResult = command_run_line(cmd_ctx, "reg pc 0x8000");
-	if( iResult!=ERROR_OK )
+	else
 	{
-		fprintf(stderr, "config failed!\n");
-		return 1;
-	}
-
-	// reg cpsr 0xd3
-	iResult = command_run_line(cmd_ctx, "reg cpsr 0xd3");
-	if( iResult!=ERROR_OK )
-	{
-		fprintf(stderr, "config failed!\n");
-		return 1;
-	}
-
-	// reg spsr_svc 0xd3
-	iResult = command_run_line(cmd_ctx, "reg spsr_svc 0xd3");
-	if( iResult!=ERROR_OK )
-	{
-		fprintf(stderr, "config failed!\n");
-		return 1;
-	}
-
-	// reg r13_svc 0x7ffc
-	iResult = command_run_line(cmd_ctx, "reg r13_svc 0x7ffc");
-	if( iResult!=ERROR_OK )
-	{
-		fprintf(stderr, "config failed!\n");
-		return 1;
-	}
-
-	// reg lr_svc 0x200000
-	iResult = command_run_line(cmd_ctx, "reg lr_svc 0x200000");
-	if( iResult!=ERROR_OK )
-	{
-		fprintf(stderr, "config failed!\n");
-		return 1;
-	}
-
-	// resume
-	iResult = command_run_line(cmd_ctx, "resume");
-	if( iResult!=ERROR_OK )
-	{
-		fprintf(stderr, "config failed!\n");
-		return 1;
-	}
-
-	// grab messages here
+		// set R0 parameter
+		strCmd.Printf(wxT("reg r0 0x%08X"), ulParameterR0);
+		iOocdResult = command_run_line(cmd_ctx, strCmd.ToAscii());
+		if( iOocdResult!=ERROR_OK )
+		{
+			wxLogError("config failed!");
+			iResult = 1;
+		}
+		else
+		{
+			// resume <ulNetxAddress>
+			strCmd.Printf(wxT("resume 0x%08X"), ulNetxAddress);
+			iOocdResult = command_run_line(cmd_ctx, strCmd.ToAscii());
+			if( iOocdResult!=ERROR_OK )
+			{
+				wxLogError("config failed!");
+				iResult = 1;
+			}
+			else
+			{
+				// grab messages here
+// something like this
 //	embeddedice_write_reg(&arm7_9->eice_cache->reg_list[EICE_COMMS_DATA], target_buffer_get_u32(target, buffer));
 
-	// wait_halt 10
-	iResult = command_run_line(cmd_ctx, "wait_halt 10");
-	if( iResult!=ERROR_OK )
-	{
-		fprintf(stderr, "config failed!\n");
-		return 1;
+				// wait_halt 10
+				iOocdResult = command_run_line(cmd_ctx, "wait_halt 10");
+				if( iOocdResult!=ERROR_OK )
+				{
+					fprintf(stderr, "config failed!\n");
+					iResult = 1;
+				}
+				else
+				{
+					// usb cmd delay
+					usleep(1000);
+					iResult = 0;
+				}
+			}
+		}
 	}
 
-	usleep(1000);
-
-	return 0;
+	return iResult;
 }
 
 
