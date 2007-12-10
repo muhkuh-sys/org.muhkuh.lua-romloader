@@ -47,7 +47,7 @@ static int LUACALL wxLua_romloader_call(lua_State *L)
     else
     {
         // no callback function provided
-        wxlState.terror(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
+        wxlState.wxlua_Error(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
                                         4, wxlState.lua_TypeNameIndex(4).c_str()));
     }
     // unsigned long ulParameterR0
@@ -122,7 +122,7 @@ static int LUACALL wxLua_romloader_get_name(lua_State *L)
     // call get_name
     returns = (self->get_name());
     // push the result string
-    wxlState.lua_PushLString(returns,returns.Len());
+    wxlState.lua_PushString(returns);
 
     return 1;
 }
@@ -140,7 +140,7 @@ static int LUACALL wxLua_romloader_get_typ(lua_State *L)
     // call get_typ
     returns = (self->get_typ());
     // push the result string
-    wxlState.lua_PushLString(returns,returns.Len());
+    wxlState.lua_PushString(returns);
 
     return 1;
 }
@@ -245,7 +245,7 @@ static int LUACALL wxLua_romloader_read_image(lua_State *L)
     else
     {
         // no callback function provided
-        wxlState.terror(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
+        wxlState.wxlua_Error(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
                                         4, wxlState.lua_TypeNameIndex(4).c_str()));
     }
     // unsigned long ulSize
@@ -345,7 +345,7 @@ static int LUACALL wxLua_romloader_write_image(lua_State *L)
     else
     {
         // no callback function provided
-        wxlState.terror(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
+        wxlState.wxlua_Error(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
                                         4, wxlState.lua_TypeNameIndex(4).c_str()));
     }
     // wxString strData

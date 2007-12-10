@@ -104,7 +104,7 @@ unsigned char romloader::read_data08(unsigned long ulNetxAddress)
 	if( iResult!=0 )
 	{
 		strMsg.Printf(wxT("read_data08 failed with error %d"), iResult);
-		m_ptLuaState->terror(strMsg);
+		m_ptLuaState->wxlua_Error(strMsg);
 	}
 
 	return ucData;
@@ -123,7 +123,7 @@ unsigned short romloader::read_data16(unsigned long ulNetxAddress)
 	if( iResult!=0 )
 	{
 		strMsg.Printf(wxT("read_data16 failed with error %d"), iResult);
-		m_ptLuaState->terror(strMsg);
+		m_ptLuaState->wxlua_Error(strMsg);
 	}
 
 	return usData;
@@ -142,7 +142,7 @@ unsigned long romloader::read_data32(unsigned long ulNetxAddress)
 	if( iResult!=0 )
 	{
 		strMsg.Printf(wxT("read_data32 failed with error %d"), iResult);
-		m_ptLuaState->terror(strMsg);
+		m_ptLuaState->wxlua_Error(strMsg);
 	}
 
 	return ulData;
@@ -169,7 +169,7 @@ wxString romloader::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 			strMsg.Printf(wxT("read_image failed with error %d"), iResult);
 			// free the memory as terror does not return
 			delete[] pcBuffer;
-			m_ptLuaState->terror(strMsg);
+			m_ptLuaState->wxlua_Error(strMsg);
 		}
 		else
 		{
@@ -197,7 +197,7 @@ void romloader::write_data08(unsigned long ulNetxAddress, unsigned char ucData)
 	if( iResult!=0 )
 	{
 		strMsg.Printf(wxT("write_data08 failed with error %d"), iResult);
-		m_ptLuaState->terror(strMsg);
+		m_ptLuaState->wxlua_Error(strMsg);
 	}
 }
 
@@ -213,7 +213,7 @@ void romloader::write_data16(unsigned long ulNetxAddress, unsigned short usData)
 	if( iResult!=0 )
 	{
 		strMsg.Printf(wxT("write_data16 failed with error %d"), iResult);
-		m_ptLuaState->terror(strMsg);
+		m_ptLuaState->wxlua_Error(strMsg);
 	}
 }
 
@@ -229,7 +229,7 @@ void romloader::write_data32(unsigned long ulNetxAddress, unsigned long ulData)
 	if( iResult!=0 )
 	{
 		strMsg.Printf(wxT("write_data32 failed with error %d"), iResult);
-		m_ptLuaState->terror(strMsg);
+		m_ptLuaState->wxlua_Error(strMsg);
 	}
 }
 
@@ -245,7 +245,7 @@ void romloader::write_image(unsigned long ulNetxAddress, wxString strData, lua_S
 	if( iResult!=0 )
 	{
 		strMsg.Printf(wxT("write_image failed with error %d"), iResult);
-		m_ptLuaState->terror(strMsg);
+		m_ptLuaState->wxlua_Error(strMsg);
 	}
 }
 
@@ -261,7 +261,7 @@ void romloader::call(unsigned long ulNetxAddress, unsigned long ulParameterR0, l
 	if( iResult!=0 )
 	{
 		strMsg.Printf(wxT("call failed with error %d"), iResult);
-		m_ptLuaState->terror(strMsg);
+		m_ptLuaState->wxlua_Error(strMsg);
 	}
 }
 

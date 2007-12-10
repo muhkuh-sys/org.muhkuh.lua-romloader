@@ -166,10 +166,10 @@ wxLuaBinding_romloader_openocd_lua::wxLuaBinding_romloader_openocd_lua() : wxLua
     InitBinding();
 }
 
-void wxLuaBinding_romloader_openocd_lua::PreRegister(const wxLuaState& , bool , int )
+void wxLuaBinding_romloader_openocd_lua::PreRegister(const wxLuaState& , int )
 {
 }
-void wxLuaBinding_romloader_openocd_lua::PostRegister(const wxLuaState& , bool , int )
+void wxLuaBinding_romloader_openocd_lua::PostRegister(const wxLuaState&, int )
 {
 }
 

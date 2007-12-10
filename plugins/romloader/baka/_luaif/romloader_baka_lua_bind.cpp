@@ -166,10 +166,10 @@ wxLuaBinding_romloader_baka_lua::wxLuaBinding_romloader_baka_lua() : wxLuaBindin
     InitBinding();
 }
 
-void wxLuaBinding_romloader_baka_lua::PreRegister(const wxLuaState& , bool , int )
+void wxLuaBinding_romloader_baka_lua::PreRegister(const wxLuaState& , int )
 {
 }
-void wxLuaBinding_romloader_baka_lua::PostRegister(const wxLuaState& , bool , int )
+void wxLuaBinding_romloader_baka_lua::PostRegister(const wxLuaState&, int )
 {
 }
 

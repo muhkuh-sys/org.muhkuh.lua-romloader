@@ -166,10 +166,10 @@ wxLuaBinding_romloader_usb_lua::wxLuaBinding_romloader_usb_lua() : wxLuaBinding(
     InitBinding();
 }
 
-void wxLuaBinding_romloader_usb_lua::PreRegister(const wxLuaState& , bool , int )
+void wxLuaBinding_romloader_usb_lua::PreRegister(const wxLuaState& , int )
 {
 }
-void wxLuaBinding_romloader_usb_lua::PostRegister(const wxLuaState& , bool , int )
+void wxLuaBinding_romloader_usb_lua::PostRegister(const wxLuaState&, int )
 {
 }
 

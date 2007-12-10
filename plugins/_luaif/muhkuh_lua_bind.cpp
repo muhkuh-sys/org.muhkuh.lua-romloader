@@ -131,7 +131,7 @@ static int LUACALL wxLua_function_getMarkedLog(lua_State *L)
     // call getMarkedLog
     returns = (getMarkedLog());
     // push the result string
-    wxlState.lua_PushLString(returns,returns.Len());
+    wxlState.lua_PushString(returns);
 
     return 1;
 }
@@ -164,7 +164,7 @@ static int LUACALL wxLua_function_load(lua_State *L)
     // call load
     returns = (load(strFileName));
     // push the result string
-    wxlState.lua_PushLString(returns,returns.Len());
+    wxlState.lua_PushString(returns);
 
     return 1;
 }
@@ -250,10 +250,10 @@ wxLuaBinding_muhkuh_lua::wxLuaBinding_muhkuh_lua() : wxLuaBinding()
     InitBinding();
 }
 
-void wxLuaBinding_muhkuh_lua::PreRegister(const wxLuaState& , bool , int )
+void wxLuaBinding_muhkuh_lua::PreRegister(const wxLuaState& , int )
 {
 }
-void wxLuaBinding_muhkuh_lua::PostRegister(const wxLuaState& , bool , int )
+void wxLuaBinding_muhkuh_lua::PostRegister(const wxLuaState&, int )
 {
 }
 

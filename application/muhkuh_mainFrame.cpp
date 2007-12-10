@@ -1422,7 +1422,7 @@ wxString muhkuh_mainFrame::luaLoad(wxString strFileName)
 	{
 		// the filename parameter is invalid
 		strMsg = _("lua load failed: empty filename");
-		m_ptLuaState->terror(strMsg);
+		m_ptLuaState->wxlua_Error(strMsg);
 	}
 	else
 	{
@@ -1509,7 +1509,7 @@ void muhkuh_mainFrame::luaInclude(wxString strFileName, wxString strChunkName)
 		{
 			// the filename parameter is invalid
 			strMsg = _("lua include failed: empty filename");
-			m_ptLuaState->terror(strMsg);
+			m_ptLuaState->wxlua_Error(strMsg);
 		}
 		else
 		{
@@ -1517,7 +1517,7 @@ void muhkuh_mainFrame::luaInclude(wxString strFileName, wxString strChunkName)
 			{
 				// the chunkname parameter is invalid
 				strMsg = _("lua include failed: empty chunkname");
-				m_ptLuaState->terror(strMsg);
+				m_ptLuaState->wxlua_Error(strMsg);
 			}
 			else
 			{
@@ -1582,17 +1582,17 @@ void muhkuh_mainFrame::luaInclude(wxString strFileName, wxString strChunkName)
 							strMsg.Printf(wxT("error %d in line %d"), iResult, iLineNr);
 							wxLogError(strMsg);
 							strMsg = _("syntax error during pre-compilation");
-							m_ptLuaState->terror(strMsg);
+							m_ptLuaState->wxlua_Error(strMsg);
 							break;
 
 						case LUA_ERRMEM:
 							strMsg = _("memory allocation error");
-							m_ptLuaState->terror(strMsg);
+							m_ptLuaState->wxlua_Error(strMsg);
 							break;
 
 						default:
 							strMsg.Printf(_("Unknown error message from luaL_LoadBuffer: 0x%x"), iResult);
-							m_ptLuaState->terror(strMsg);
+							m_ptLuaState->wxlua_Error(strMsg);
 							break;
 						}
 					}
@@ -1642,12 +1642,12 @@ void muhkuh_mainFrame::luaScanPlugins(wxString strPattern)
 		if( fResult!=true )
 		{
 			strMsg = wxT("failed to compile the regex pattern: ") + strPattern;
-			m_ptLuaState->terror(strMsg);
+			m_ptLuaState->wxlua_Error(strMsg);
 		}
 	}
 	else
 	{
-		m_ptLuaState->terror(wxT("no plugin manager exists in main application"));
+		m_ptLuaState->wxlua_Error(wxT("no plugin manager exists in main application"));
 	}
 }
 

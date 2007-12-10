@@ -258,10 +258,10 @@ wxLuaBinding_bit_lua::wxLuaBinding_bit_lua() : wxLuaBinding()
     InitBinding();
 }
 
-void wxLuaBinding_bit_lua::PreRegister(const wxLuaState& , bool , int )
+void wxLuaBinding_bit_lua::PreRegister(const wxLuaState& , int )
 {
 }
-void wxLuaBinding_bit_lua::PostRegister(const wxLuaState& , bool , int )
+void wxLuaBinding_bit_lua::PostRegister(const wxLuaState&, int )
 {
 }
 

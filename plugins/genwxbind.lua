@@ -17,7 +17,7 @@
 -- Globals
 -- ---------------------------------------------------------------------------
 
-WXLUA_BINDING_VERSION = 17 -- Used to verify that the bindings are updated
+WXLUA_BINDING_VERSION = 18 -- Used to verify that the bindings are updated
                            -- This must match modules/wxlua/include/wxldefs.h
                            -- otherwise a compile time error will be generated.
 
@@ -184,17 +184,17 @@ end
 -- ---------------------------------------------------------------------------
 -- Allocate a data type description table (int, double, class...) to dataTypeTable
 -- ---------------------------------------------------------------------------
-function AllocDataType(name, deftype, is_number, abstract)
+function AllocDataType(name, value_type, is_number, abstract)
     dataTypeTable[name] =
     {
-        DefType   = deftype,    -- number, enum, class, special (special handling)
-                                -- determines how to handle the data type
         Name      = name,       -- typename, eg. void, bool, wxInt32
+        ValueType = value_type, -- "number", "enum", "class", "special" (special handling)
+                                -- determines how to handle the data type
         BaseClass = nil,        -- the BaseClass of this, if this is a class
         IsNumber  = is_number,  -- can this data type be stored as a double (lua's number type)
         Abstract  = abstract,
         Condition = nil,        -- conditions for this data type, eg. wxLUA_USE_xxx
-        Encapsulate = nil,      -- Non wxObject derived class
+        ["%encapsulate"] = nil, -- Non wxObject derived class
     }
 end
 
@@ -226,7 +226,6 @@ function InitDataTypes()
 
     -- wxWidgets defined data types
     --AllocDataType("wxString",           "special", true) -- treat as wxString
-    --AllocDataType("wxString",           "special", true)
     AllocDataType("wxByte",             "number", true)
     AllocDataType("wxChar",             "number", true)
     AllocDataType("wxWord",             "number", true)
@@ -333,11 +332,7 @@ end
 --  For "const wxDateTime &" returns {"const"}, "wxDateTime", {"&"}
 -- ---------------------------------------------------------------------------
 function DecodeDataType(decl)
-    local attribs = {}
-    local data_type = nil
-    local ptrs = {}
-
-    attribs, data_type, ptrs = DecodeDecl(decl)
+    local attribs, data_type, ptrs = DecodeDecl(decl)
 
     -- merge typeDef declaration
     if typedefTable[data_type] then
@@ -360,14 +355,10 @@ end
 -- Translate the data type from a typedef
 -- ---------------------------------------------------------------------------
 function TranslateDataType(param)
-    local attribs = {}
-    local data_type = nil
-    local ptrs = {}
-
     -- build datatype
     local datatype = param.DataTypeWithAttrib.." "..table.concat(param.DataTypePointer)
 
-    attribs, data_type, ptrs = DecodeDataType(datatype)
+    local attribs, data_type, ptrs = DecodeDataType(datatype)
 
     -- build new datatype
     local tlstype = nil
@@ -377,9 +368,9 @@ function TranslateDataType(param)
 
     tlstype = SpaceSeparateStrings(tlstype, data_type)
 
-    param.TypedDataType = data_type
+    param.TypedDataType           = data_type
     param.TypedDataTypeWithAttrib = tlstype
-    param.TypedDataTypePointer = ptrs
+    param.TypedDataTypePointer    = ptrs
 end
 
 -- ---------------------------------------------------------------------------
@@ -477,7 +468,7 @@ end
 function IsDataTypeEnum(datatype)
     local dtype = GetDataTypeBase(datatype)
     if dtype then
-        return (dtype.DefType == "enum")
+        return (dtype.ValueType == "enum")
     else
         print("ERROR: Missing data type '"..tostring(datatype).."' in IsDataTypeEnum.")
     end
@@ -1278,20 +1269,13 @@ function SplitString(str, delimTable, keepTable, stringliterals, lineTable)
 end
 
 -- ---------------------------------------------------------------------------
--- Read all the override files
+-- Load Override Functions from the override file
 -- ---------------------------------------------------------------------------
-function ReadOverrideFileTable(override_fileTable)
-    for i = 1, #override_fileTable do
-        ReadOverrideFile(override_fileTable[i])
-    end
-end
-
--- Load Override Functions
 function ReadOverrideFile(override_file)
     local inOverride   = false
     local inComment    = false
     local filename     = interface_filepath.."/"..override_file
-    local LineNumber   = 0
+    local linenumber   = 0
     local OverrideFunc = nil
     local delimiters   = {" ", "\t"}
 
@@ -1305,7 +1289,7 @@ function ReadOverrideFile(override_file)
         local isOverride = false
         local isEnd = false
 
-        LineNumber = LineNumber + 1
+        linenumber = linenumber + 1
 
         -- %override or %end
         for i = 1, #lineData do
@@ -1315,6 +1299,8 @@ function ReadOverrideFile(override_file)
                 inComment = true
             elseif (not inOverride) and (tag == "*/") then
                 inComment = false
+            elseif tag == "//" then
+                break
             elseif tag == "%override" then
                 isOverride = true
             elseif tag == "%end" then
@@ -1327,12 +1313,12 @@ function ReadOverrideFile(override_file)
 
         if isOverride and (not inComment) then
             if inOverride then
-                print("ERROR: Expected %end. File: "..filename.." (Line: "..LineNumber..")")
+                print("ERROR: Expected %end. File: "..filename.." (Line: "..linenumber..")")
             elseif not OverrideFunc then
-                print("ERROR: Expected Override Function Name. File: "..filename.." (Line: "..LineNumber..")")
+                print("ERROR: Expected Override Function Name. File: "..filename.." (Line: "..linenumber..")")
             end
         elseif isEnd and (not inOverride) and (not inComment) then
-            print("ERROR: Expected %override. File: "..filename.." (Line: "..LineNumber..")")
+            print("ERROR: Expected %override. File: "..filename.." (Line: "..linenumber..")")
         end
 
         if isOverride and (not inComment) then
@@ -1379,17 +1365,24 @@ end
 -- Load an interface file creating a table {FileName, LineNumber, Tags, Line}
 -- ---------------------------------------------------------------------------
 function ReadInterfaceFile(filename)
-    local filedata = {}
+    local fileData   = {}
     local linenumber = 0
 
     for line in io.lines(filename) do
         linenumber = linenumber + 1
-        local lineTable = { FileName=filename, LineNumber=linenumber, Tags=nil, LineText=line }
-        lineTable.Tags = SplitString(line, bindingDelimiters, bindingDelimsToKeep, true, lineTable)
-        table.insert(filedata, lineTable)
+
+        local lineTable =
+        {
+            FileName   = filename,
+            LineNumber = linenumber,
+            LineText   = line,
+            Tags       = SplitString(line, bindingDelimiters, bindingDelimsToKeep, true, lineTable)
+        }
+
+        table.insert(fileData, lineTable)
     end
 
-    return filedata
+    return fileData
 end
 
 -- ---------------------------------------------------------------------------
@@ -1397,7 +1390,7 @@ end
 --   from ReadInterfaceFile
 -- ---------------------------------------------------------------------------
 function LineTableErrString(lineTable)
-    if lineTable then
+    if type(lineTable) == "table" then
         return "File: '"..lineTable.FileName.."':(line "..lineTable.LineNumber..")\n    '"..lineTable.LineText.."'"
     else
         return ""
@@ -1434,20 +1427,17 @@ function GenerateInterfaceData()
     time1 = time2
 
     for i = 1, #interfaceFileDataList do
-        local filename = interfaceFileDataList[i].FileName
-        local interfaceFileData = interfaceFileDataList[i].Data
-
         -- Parse interface file data into a structured object list
-        local objectList = ParseData(interfaceFileData)
+        local objectList = ParseData(interfaceFileDataList[i].Data)
 
         if objectList then
             local interface =
             {
-                filename            = GetCPPFileName(filename),
+                CPPFileName         = GetCPPFileName(interfaceFileDataList[i].FileName),
                 includeBindingTable = {},
                 includeFiles        = {},
                 objectData          = objectList,
-                lineData            = interfaceFileData
+                lineData            = interfaceFileDataList[i].Data
             }
 
             table.insert(interfaceList, interface)
@@ -1476,7 +1466,7 @@ function WriteWrapperFiles(interfaceList)
 
         -- create c/c++ file
         local fileData = GenerateBindingFileTable(interface)
-        WriteTableToFile(interface.filename, fileData, false)
+        WriteTableToFile(interface.CPPFileName, fileData, false)
     end
 
     local fileData = GenerateHookHeaderFileTable()
@@ -1499,16 +1489,16 @@ end
 function AllocParseObject(obj_type)
     local parseObject =
     {
-        Name           = "<"..obj_type..">",
-        DefType        = obj_type,
-        TagDeclaration = nil,
-        BindTable      = {},
-        BaseClasses    = {},
-        Members        = {},
-        DeleteRequired = false,
-        HasClassInfo   = true,
-        Encapsulate    = false,
-        Condition      = nil,
+        Name             = "<"..obj_type..">",
+        ObjType          = obj_type,
+        TagDeclaration   = nil,
+        BindTable        = {},
+        BaseClasses      = {},
+        Members          = {},
+        ["%delete"]      = false,
+        ["%noclassinfo"] = false,
+        ["%encapsulate"] = false,
+        Condition        = nil,
     }
 
     return parseObject
@@ -1525,11 +1515,11 @@ function AllocMember(lineState, extraCondition)
         TypedDataTypeWithAttrib = lineState.DataTypeWithAttrib,
         TypedDataTypePointer    = lineState.DataTypePointer,
         Name                    = lineState.Name,
-        AltName                 = lineState.AltName,
+        ["%rename"]             = lineState["%rename"],
         Value                   = lineState.Value,
-        IsCFunction             = lineState.IsCFunction,
+        ["%function"]           = lineState["%function"],
         IsConstructor           = lineState.IsConstructor,
-        IsOperator              = lineState.IsOperator,
+        ["%operator"]           = lineState["%operator"],
         IsFunction              = lineState.IsFunction,
         IsConstFunction         = lineState.IsConstFunction,
         IsStaticFunction        = lineState.IsStaticFunction,
@@ -1543,8 +1533,8 @@ function AllocMember(lineState, extraCondition)
         FileName                = lineState.FileName,
         LineNumber              = lineState.LineNumber,
         LineText                = lineState.LineText,
-        GCThis                  = lineState.GCThis,
-        UnGCThis                = lineState.UnGCThis,
+        ["%gc_this"]            = lineState["%gc_this"],
+        ["%ungc_this"]          = lineState["%ungc_this"],
     }
 
     return member
@@ -1578,11 +1568,8 @@ function BuildDataTypeTable(interfaceData)
         local lineTable = interfaceData[l]
         local lineTags  = lineTable.Tags
 
-        local lineState =
-        {
-            ClassName = nil,
-            Action    = nil
-        }
+        local classname = nil -- current classname if any
+        local action    = nil -- what to look for next
 
         for t = 1, #lineTags do
             local tag = lineTags[t]
@@ -1605,52 +1592,52 @@ function BuildDataTypeTable(interfaceData)
                         break
 
                     elseif tag == "%class" then
-                        lineState.Action = "classname"
+                        action = "find_classname"
                     elseif tag == "%struct" then
-                        lineState.Action = "structname"
+                        action = "find_structname"
                     elseif tag == "%enum" then
-                        lineState.Action = "enumname"
+                        action = "find_enumname"
                     end
                 end
-            elseif (in_block_comment == 0) and lineState.Action and
+            elseif (in_block_comment == 0) and action and
                    (not preprocOperatorTable[tag]) and (not FindOrCreateCondition(tag)) and
                    (not skipBindingKeywordTable[tag]) then
 
-                if lineState.Action == "classname" then
+                if action == "find_classname" then
                     if not dataTypeTable[tag] then
                         AllocDataType(tag, "class", false)
                     end
 
-                    lineState.ClassName = tag
-                    lineState.Action = "classcomma"
-                elseif lineState.Action == "classcomma" then
+                    classname = tag
+                    action = "find_classcomma"
+                elseif action == "find_classcomma" then
                     if tag ~= "," then
-                        print("WARNING: Expected comma (',') after class name : '"..lineState.ClassName.."' in "..LineTableErrString(lineTable))
+                        print("WARNING: Expected comma (',') after class name : '"..classname.."' in "..LineTableErrString(lineTable))
                     end
-                    lineState.Action = "classbase"
-                elseif lineState.Action == "classbase" then
+                    action = "find_classbase"
+                elseif action == "find_classbase" then
                     if not dataTypeTable[tag] then
                         AllocDataType(tag, "class", false)
                     end
 
                     -- set class's BaseClass
-                    if not dataTypeTable[lineState.ClassName].BaseClass then
-                        dataTypeTable[lineState.ClassName].BaseClass = tag
+                    if not dataTypeTable[classname].BaseClass then
+                        dataTypeTable[classname].BaseClass = tag
                     end
 
-                    lineState.Action = "classcomma"
-                elseif lineState.Action == "structname" then
+                    action = "find_classcomma"
+                elseif action == "find_structname" then
                     if not dataTypeTable[tag] then
                         AllocDataType(tag, "struct", false)
                     end
 
-                    lineState.Action = nil
-                elseif lineState.Action == "enumname" then
+                    action = nil
+                elseif action == "find_enumname" then
                     if not dataTypeTable[tag] then
                         AllocDataType(tag, "enum", true)
                     end
 
-                    lineState.Action = nil
+                    action = nil
                 end
             end
         end
@@ -1669,10 +1656,10 @@ function ParseData(interfaceData)
     {
         ObjectStack    = {},
         ConditionStack = {}, -- stack of conditions
-        IsBlockComment = 0,
+        IsBlockComment = 0,  -- /* then +1 else */ then -1, 0 == not in comment
     }
 
-    local globals = AllocParseObject("globals") -- Global Objects
+    local globals = AllocParseObject("objtype_globals") -- Global Objects
     globals.Name = "globals"
 
     table.insert(parseState.ObjectStack, 1, globals)
@@ -1688,9 +1675,8 @@ function ParseData(interfaceData)
 
         local lineState =
         {
-            Skip                  = false,
-            InLineConditionIf     = false,
-            InLineConditionEndIf  = false,
+            Skip                  = false, -- skip rest of line
+            InlineConditionIf     = false, -- single line condition
             Action                = nil,
             ActionAttributes      = {},
             ActionMandatory       = false,
@@ -1704,13 +1690,13 @@ function ParseData(interfaceData)
             DataTypeWithAttrib    = nil,
             DataTypePointer       = {},
             Name                  = nil,
-            AltName               = nil,
+            ["%rename"]           = nil,
             Value                 = nil,
-            GCThis                = nil,
-            UnGCThis              = nil,
-            IsCFunction           = nil,
+            ["%gc_this"]          = nil,
+            ["%ungc_this"]        = nil,
+            ["%function"]         = nil,
             IsConstructor         = nil,
-            IsOperator            = nil,
+            ["%operator"]         = nil,
             IsFunction            = nil,
             IsConstFunction       = nil,
             IsStaticFunction      = nil,
@@ -1734,6 +1720,9 @@ function ParseData(interfaceData)
                 break
             end
 
+            -- ---------------------------------------------------------------
+            -- Is this tag a binding keyword, e.g. %XXX
+            -- ---------------------------------------------------------------
             if bindingKeywordTable[tag] then
                 -- block comment (start)
                 if tag == "/*" then
@@ -1746,14 +1735,14 @@ function ParseData(interfaceData)
                 -- ignore until end of block comment
                 elseif parseState.IsBlockComment == 0 then
 
+                    -- warn if we're expecting something and it's not there
                     if not lineState.ActionAttributes[tag] and lineState.ActionMandatory then
                         print("ERROR: Expected Line Action '"..lineState.Action.."', got '"..tag.."'. "..LineTableErrString(lineTable))
                     end
 
-                    -- end inline conditionals
-                    if lineState.InLineConditionIf and not lineState.InLineConditionEndIf then
-                        lineState.InLineConditionIf = false
-                        lineState.IsLineConditionEndIf = true
+                    -- end inline conditionals since we should have handled it already
+                    if lineState.InlineConditionIf then
+                        lineState.InlineConditionIf = false
                     end
 
                     -- rest of line comment
@@ -1762,41 +1751,41 @@ function ParseData(interfaceData)
 
                     -- %if wxLUA_USE_xxx ... %endif
                     elseif tag == "%if" then
-                        lineState.DefType = "blockcondition"
+                        lineState.DefType = "deftype_%if"
 
                     elseif tag == "%endif" then
                         table.remove(parseState.ConditionStack, #parseState.ConditionStack) -- pop last %if
                         break -- we can stop processing line
 
                     elseif tag == "%rename" then
-                        lineState.Action = "rename"
+                        lineState.Action = "action_rename"
                         lineState.ActionMandatory = true
 
                     elseif tag == "%function" then
-                        lineState.IsCFunction = true
+                        lineState["%function"] = true
 
                     elseif tag == "%gc_this" then
-                        lineState.GCThis = true
+                        lineState["%gc_this"] = true
 
-                        if parseState.ObjectStack[1].DefType ~= "class" then
+                        if parseState.ObjectStack[1].ObjType ~= "objtype_%class" then
                             print("ERROR: %gc_this is not used for a %class member function. "..LineTableErrString(lineTable))
                         end
 
                     elseif tag == "%ungc_this" then
-                        lineState.UnGCThis= true
+                        lineState["%ungc_this"] = true
 
-                        if parseState.ObjectStack[1].DefType ~= "class" then
+                        if parseState.ObjectStack[1].ObjType ~= "objtype_%class" then
                             print("ERROR: %ungc_this is not used for a %class member function. "..LineTableErrString(lineTable))
                         end
 
                     -- -------------------------------------------------------
                     elseif tag == "%class" then
-                        local parseObject = AllocParseObject("class")
+                        local parseObject = AllocParseObject("objtype_%class")
                         table.insert(parseState.ObjectStack, 1, parseObject)
                         lineState.ParseObjectDeclaration = true
 
-                        lineState.DefType = "class"
-                        lineState.Action = "classname"
+                        lineState.DefType = "deftype_%class"
+                        lineState.Action = "action_classname"
                         lineState.ActionMandatory = true
                         lineState.ActionAttributes["%delete"] = true
                         lineState.ActionAttributes["%noclassinfo"] = true
@@ -1804,7 +1793,7 @@ function ParseData(interfaceData)
                         lineState.ActionAttributes["%encapsulate"] = true
 
                     elseif tag == "%endclass" then
-                        if parseState.ObjectStack[1].DefType ~= "class" then
+                        if parseState.ObjectStack[1].ObjType ~= "objtype_%class" then
                             print("ERROR: %endclass does not have matching %class. "..LineTableErrString(lineTable))
                         end
 
@@ -1815,35 +1804,35 @@ function ParseData(interfaceData)
                             print("ERROR: parseState.ObjectStack is unexpectedly empty on %endclass. "..LineTableErrString(lineTable))
                         end
 
-                        lineState.Action = "keyword"
+                        lineState.Action = "action_keyword"
                         lineState.ActionMandatory = true
                         break -- we can stop processing line
 
                     elseif tag == "%delete" then -- tag for %class
-                        parseState.ObjectStack[1].DeleteRequired = true
+                        parseState.ObjectStack[1]["%delete"] = true
 
-                        if (parseState.ObjectStack[1].DefType ~= "class") and (parseState.ObjectStack[1].DefType ~= "struct") then
+                        if (parseState.ObjectStack[1].ObjType ~= "objtype_%class") and (parseState.ObjectStack[1].ObjType ~= "objtype_%struct") then
                             print("ERROR: %delete is not used for a %class. "..LineTableErrString(lineTable))
                         end
 
                     elseif tag == "%noclassinfo" then -- tag for %class
-                        parseState.ObjectStack[1].HasClassInfo = false
+                        parseState.ObjectStack[1]["%noclassinfo"] = true
 
-                        if (parseState.ObjectStack[1].DefType ~= "class") and (parseState.ObjectStack[1].DefType ~= "struct") then
+                        if (parseState.ObjectStack[1].ObjType ~= "objtype_%class") and (parseState.ObjectStack[1].ObjType ~= "objtype_%struct") then
                             print("ERROR: %noclassinfo is not used for a %class. "..LineTableErrString(lineTable))
                         end
 
                     elseif tag == "%abstract" then -- tag for %class
-                        parseState.ObjectStack[1].IsAbstract = true
+                        parseState.ObjectStack[1]["%abstract"] = true
 
-                        if parseState.ObjectStack[1].DefType ~= "class" then
+                        if parseState.ObjectStack[1].ObjType ~= "objtype_%class" then
                             print("ERROR: %abstract is not used for a %class. "..LineTableErrString(lineTable))
                         end
 
                     elseif tag == "%encapsulate" then -- tag for %class
-                        parseState.ObjectStack[1].Encapsulate = true
+                        parseState.ObjectStack[1]["%encapsulate"] = true
 
-                        if (parseState.ObjectStack[1].DefType ~= "class") and (parseState.ObjectStack[1].DefType ~= "struct") then
+                        if (parseState.ObjectStack[1].ObjType ~= "objtype_%class") and (parseState.ObjectStack[1].ObjType ~= "objtype_%struct") then
                             print("ERROR: %encapsulate is not used for a %class. "..LineTableErrString(lineTable))
                         end
 
@@ -1862,46 +1851,47 @@ function ParseData(interfaceData)
                         break
 
                     elseif tag == "%member" then
-                        lineState.DefType = "member"
-                        lineState.Action = "member"
+                        lineState.DefType = "deftype_%member"
+                        lineState.Action = "action_member"
                         lineState.ActionMandatory = true
 
-                        if (parseState.ObjectStack[1].DefType ~= "class") and (parseState.ObjectStack[1].DefType ~= "struct") then
+                        if (parseState.ObjectStack[1].ObjType ~= "objtype_%class") and (parseState.ObjectStack[1].ObjType ~= "objtype_%struct") then
                             print("ERROR: %member is not used for a %class or %struct. "..LineTableErrString(lineTable))
                         end
 
                     elseif tag == "%member_func" then
-                        lineState.DefType = "member_func"
-                        lineState.Action = "member"
+                        lineState.DefType = "deftype_%member_func"
+                        lineState.Action = "action_member"
                         lineState.ActionMandatory = true
 
-                        if (parseState.ObjectStack[1].DefType ~= "class") and (parseState.ObjectStack[1].DefType ~= "struct") then
+                        if (parseState.ObjectStack[1].ObjType ~= "objtype_%class") and (parseState.ObjectStack[1].ObjType ~= "objtype_%struct") then
                             print("ERROR: %member_func is not used for a %class or %struct. "..LineTableErrString(lineTable))
                         end
 
                     elseif tag == "%constructor" then
                         lineState.IsConstructor = true
 
-                        if parseState.ObjectStack[1].DefType ~= "class" then
+                        if parseState.ObjectStack[1].ObjType ~= "objtype_%class" then
                             print("ERROR: %constructor is not used for a %class. "..LineTableErrString(lineTable))
                         end
 
                     elseif tag == "%operator" then
-                        lineState.IsOperator = true
+                        lineState["%operator"] = true
 
-                        if parseState.ObjectStack[1].DefType ~= "class" then
+                        if parseState.ObjectStack[1].ObjType ~= "objtype_%class" then
                             print("ERROR: %operator is not used for a %class. "..LineTableErrString(lineTable))
                         end
 
                     -- -------------------------------------------------------
                     elseif tag == "%struct" then
-                        local parseObject = AllocParseObject("struct")
+                        local parseObject = AllocParseObject("objtype_%struct")
                         table.insert(parseState.ObjectStack, 1, parseObject)
                         lineState.ParseObjectDeclaration = true
-                        parseState.ObjectStack[1].HasClassInfo = false
+                        parseState.ObjectStack[1]["%noclassinfo"] = true
+                        parseState.ObjectStack[1]["%encapsulate"] = true
 
-                        lineState.DefType = "struct"
-                        lineState.Action = "structname"
+                        lineState.DefType = "deftype_%struct"
+                        lineState.Action = "action_structname"
                         lineState.ActionMandatory = true
                         lineState.ActionAttributes["%delete"] = true
                         lineState.ActionAttributes["%noclassinfo"] = true
@@ -1909,7 +1899,7 @@ function ParseData(interfaceData)
                         lineState.ActionAttributes["%encapsulate"] = true
 
                     elseif tag == "%endstruct" then
-                        if parseState.ObjectStack[1].DefType ~= "struct" then
+                        if parseState.ObjectStack[1].ObjType ~= "objtype_%struct" then
                             print("ERROR: %endstruct does not have matching %struct. "..LineTableErrString(lineTable))
                         end
 
@@ -1923,16 +1913,16 @@ function ParseData(interfaceData)
 
                     -- -------------------------------------------------------
                     elseif tag == "%enum" then
-                        local parseObject = AllocParseObject("enum")
+                        local parseObject = AllocParseObject("objtype_%enum")
                         table.insert(parseState.ObjectStack, 1, parseObject)
                         lineState.ParseObjectDeclaration = true
 
-                        lineState.DefType = "enum"
-                        lineState.Action = "enumname"
+                        lineState.DefType = "deftype_%enum"
+                        lineState.Action = "action_enumname"
                         lineState.ActionMandatory = false -- not all enums have a name
 
                     elseif tag == "%endenum" then
-                        if parseState.ObjectStack[1].DefType ~= "enum" then
+                        if parseState.ObjectStack[1].ObjType ~= "objtype_%enum" then
                             print("ERROR: %endenum does not have matching %enum. "..LineTableErrString(lineTable))
                         end
 
@@ -1948,35 +1938,35 @@ function ParseData(interfaceData)
 
                     -- -------------------------------------------------------
                     elseif tag == "%include" then
-                        local parseObject = AllocParseObject("include")
+                        local parseObject = AllocParseObject("objtype_%include")
                         table.insert(parseState.ObjectStack, 1, parseObject)
                         lineState.ParseObjectDeclaration = true
 
                         lineState.PopParseObject = true -- pop parseObject off stack at end of line
 
-                        lineState.DefType = "include"
-                        lineState.Action = "include"
+                        lineState.DefType = "deftype_%include"
+                        lineState.Action = "action_include"
                         lineState.ActionMandatory = true
 
                     elseif tag == "%includefile" then
-                        local parseObject = AllocParseObject("includefile")
+                        local parseObject = AllocParseObject("objtype_%includefile")
                         table.insert(parseState.ObjectStack, 1, parseObject)
                         lineState.ParseObjectDeclaration = true
 
                         lineState.PopParseObject = true -- pop parseObject off stack at end of line
 
-                        lineState.DefType = "includefile"
-                        lineState.Action = "includefile"
+                        lineState.DefType = "deftype_%includefile"
+                        lineState.Action = "action_includefile"
                         lineState.ActionMandatory = true
 
                     -- -------------------------------------------------------
                     elseif tag == "%typedef" then
-                        lineState.DefType = "typedef"
-                        lineState.Action = "typedef"
+                        lineState.DefType = "deftype_%typedef"
+                        lineState.Action = "action_typedef"
                         lineState.ActionMandatory = true
 
                     elseif tag == "%override_name" then
-                        lineState.Action = "override_name"
+                        lineState.Action = "action_override_name"
                         lineState.ActionMandatory = true
 
                     elseif tag == "%not_overload" then
@@ -1984,28 +1974,28 @@ function ParseData(interfaceData)
 
                     -- -------------------------------------------------------
                     elseif tag == "%define" then
-                        lineState.DefType = "define"
-                        lineState.Action = "define"
+                        lineState.DefType = "deftype_%define"
+                        lineState.Action = "action_define"
                         lineState.ActionMandatory = true
 
                     elseif tag == "%define_string" then
-                        lineState.DefType = "define_string"
-                        lineState.Action = "define"
+                        lineState.DefType = "deftype_%define_string"
+                        lineState.Action = "action_define"
                         lineState.ActionMandatory = true
 
                     elseif tag == "%define_event" then
-                        lineState.DefType = "define_event"
-                        lineState.Action = "define"
+                        lineState.DefType = "deftype_%define_event"
+                        lineState.Action = "action_define"
                         lineState.ActionMandatory = true
 
                     elseif tag == "%define_object" then
-                        lineState.DefType = "define_object"
-                        lineState.Action = "define"
+                        lineState.DefType = "deftype_%define_object"
+                        lineState.Action = "action_define"
                         lineState.ActionMandatory = true
 
                     elseif tag == "%define_pointer" then
-                        lineState.DefType = "define_pointer"
-                        lineState.Action = "define"
+                        lineState.DefType = "deftype_%define_pointer"
+                        lineState.Action = "action_define"
                         lineState.ActionMandatory = true
 
                     else
@@ -2017,7 +2007,7 @@ function ParseData(interfaceData)
             -- ---------------------------------------------------------------
             elseif parseState.IsBlockComment == 0 then
                 -- handle condition operators, note can have leading ! for not
-                if (tag == "!") or ((((lineState.DefType == "blockcondition") or lineState.InLineConditionIf) and preprocOperatorTable[tag])) then
+                if (tag == "!") or (((lineState.DefType == "deftype_%if") or lineState.InlineConditionIf) and preprocOperatorTable[tag]) then
                     if lineState.Condition or (preprocOperatorTable[tag] == "!") or (preprocOperatorTable[tag] == "(") then
                         if not lineState.Condition then
                             lineState.Condition = preprocOperatorTable[tag]
@@ -2036,8 +2026,8 @@ function ParseData(interfaceData)
                     end
 
                 elseif FindOrCreateCondition(tag) then
-                    if (lineState.DefType ~= "blockcondition") and not lineState.InLineConditionIf then
-                        lineState.InLineConditionIf = true
+                    if (lineState.DefType ~= "deftype_%if") and not lineState.InlineConditionIf then
+                        lineState.InlineConditionIf = true
                     end
 
                     if not lineState.Condition then
@@ -2059,14 +2049,14 @@ function ParseData(interfaceData)
                     -- -------------------------------------------------------
                     --  Process Interface Data
                     -- -------------------------------------------------------
-                    if (lineState.Action == "keyword") and lineState.ActionMandatory then
+                    if (lineState.Action == "action_keyword") and lineState.ActionMandatory then
                         print("ERROR: Invalid Token '"..tag.."'. "..LineTableErrString(lineTable))
                     end
 
                     -- -------------------------------------------------------
                     -- add block condition
                     -- -------------------------------------------------------
-                    if lineState.DefType == "blockcondition" then
+                    if lineState.DefType == "deftype_%if" then
                         if not lineState.Condition then
                             lineState.Condition = ""
                         else
@@ -2087,9 +2077,8 @@ function ParseData(interfaceData)
                     -- -------------------------------------------------------
                     else
                         -- end inline conditionals
-                        if lineState.InLineConditionIf and not lineState.InLineConditionEndIf then
-                            lineState.InLineConditionIf = false
-                            lineState.IsLineConditionEndIf = true
+                        if lineState.InlineConditionIf then
+                            lineState.InlineConditionIf = false
                         end
 
                         if not lineState.Action then
@@ -2097,11 +2086,11 @@ function ParseData(interfaceData)
 
                             -- -----------------------------------------------
                             -- enum parseObject
-                            if parseState.ObjectStack[1].DefType == "enum" then
+                            if parseState.ObjectStack[1].ObjType == "objtype_%enum" then
                                 if IsDataType(tag) or dataTypeAttribTable[tag] or (tag == "*") or (tag == "&") or (tag == "[]") then
                                     print("ERROR: Invalid Enum Token '"..tag.."'. "..LineTableErrString(lineTable))
                                 elseif tag ~= "," then -- ignore trailing commas
-                                    lineState.DefType = "enum"
+                                    lineState.DefType = "deftype_%enum"
                                     lineState.Name = tag
                                     lineState.DataType = enumType
 
@@ -2111,116 +2100,114 @@ function ParseData(interfaceData)
 
                             -- -----------------------------------------------
                             -- class or function parseObject
-                            elseif (parseState.ObjectStack[1].DefType == "class") or
-                                   (parseState.ObjectStack[1].DefType == "struct") or
-                                   (parseState.ObjectStack[1].DefType == "globals") then
+                            elseif (parseState.ObjectStack[1].ObjType == "objtype_%class") or
+                                   (parseState.ObjectStack[1].ObjType == "objtype_%struct") or
+                                   (parseState.ObjectStack[1].ObjType == "objtype_globals") then
                                 if IsDataType(tag) then
                                     lineState.DataType = SpaceSeparateStrings(lineState.DataType, tag)
                                     lineState.DataTypeWithAttrib = SpaceSeparateStrings(lineState.DataTypeWithAttrib, tag)
 
-                                    lineState.DefType = "method"
-                                    lineState.Action = "method"
+                                    lineState.DefType = "deftype_method"
+                                    lineState.Action = "action_method"
                                     lineState.ActionMandatory = true
 
                                 elseif dataTypeAttribTable[tag] then
                                     lineState.DataTypeWithAttrib = SpaceSeparateStrings(lineState.DataTypeWithAttrib, tag)
 
-                                    lineState.DefType = "method"
-                                    lineState.Action = "method"
+                                    lineState.DefType = "deftype_method"
+                                    lineState.Action = "action_method"
                                     lineState.ActionMandatory = true
 
                                 elseif tag == "virtual" then
                                     lineState.IsVirtualFunction = true
-                                    lineState.DefType = "method"
-                                    lineState.Action = "method"
+                                    lineState.DefType = "deftype_method"
+                                    lineState.Action = "action_method"
                                     lineState.ActionMandatory = true
 
                                 elseif tag == "static" then
                                     lineState.IsStaticFunction = true
-                                    lineState.DefType = "method"
-                                    lineState.Action = "method"
+                                    lineState.DefType = "deftype_method"
+                                    lineState.Action = "action_method"
                                     lineState.ActionMandatory = true
 
                                 elseif tag == "inline" then
-                                    lineState.DefType = "method"
-                                    lineState.Action = "method"
+                                    lineState.DefType = "deftype_method"
+                                    lineState.Action = "action_method"
                                     lineState.ActionMandatory = true
 
-                                else
-                                    if lineState.IsConstructor then
-                                        lineState.Name = tag
-                                        lineState.DataType = parseState.ObjectStack[1].Name
-                                        lineState.DataTypeWithAttrib = lineState.DataType
-                                        lineState.DefType = "method"
-                                        lineState.Action = "method"
+                                elseif lineState.IsConstructor then
+                                    lineState.Name = tag
+                                    lineState.DataType = parseState.ObjectStack[1].Name
+                                    lineState.DataTypeWithAttrib = lineState.DataType
+                                    lineState.DefType = "deftype_method"
+                                    lineState.Action = "action_method"
 
-                                    else
-                                        print("ERROR: Expected DataType, got '"..tag.."'. "..LineTableErrString(lineTable))
-                                    end
+                                else
+                                    print("ERROR: Expected DataType, got '"..tag.."'. "..LineTableErrString(lineTable))
                                 end
                             else
-                                print("ERROR: Unexpected parseObject :"..parseState.ObjectStack[1].DefType.." "..parseState.ObjectStack[1].Name..". "..LineTableErrString(lineTable))
+                                print("ERROR: Unexpected parseObject :"..parseState.ObjectStack[1].ObjType.." "..parseState.ObjectStack[1].Name..". "..LineTableErrString(lineTable))
                             end
-                        elseif lineState.Action == "classname" then
+                        elseif lineState.Action == "action_classname" then
                             parseState.ObjectStack[1].Name = tag
-                            lineState.Action = "classcomma"
+                            lineState.Action = "action_classcomma"
                             lineState.ActionMandatory = false
-                        elseif lineState.Action == "classcomma" then
+                        elseif lineState.Action == "action_classcomma" then
                             if tag ~= "," then
                                 print("ERROR: %class tag expected ','. "..LineTableErrString(lineTable))
                             end
 
-                            lineState.Action = "classbase"
+                            lineState.Action = "action_classbase"
                             lineState.ActionMandatory = true
-                        elseif lineState.Action == "classbase" then
+                        elseif lineState.Action == "action_classbase" then
                             table.insert(parseState.ObjectStack[1].BaseClasses, tag)
 
-                            lineState.Action = "classcomma"
+                            lineState.Action = "action_classcomma"
                             lineState.ActionMandatory = false
-                        elseif lineState.Action == "structname" then
+                        elseif lineState.Action == "action_structname" then
                             parseState.ObjectStack[1].Name = tag
 
                             lineState.Action = nil
                             lineState.ActionMandatory = false
-                        elseif lineState.Action == "enumname" then
+                        elseif lineState.Action == "action_enumname" then
                             parseState.ObjectStack[1].Name = tag
 
                             enumType = tag
                             lineState.DataType = tag
                             lineState.Action = nil
                             lineState.ActionMandatory = false
-                        elseif lineState.Action == "include" then
+                        elseif lineState.Action == "action_include" then
                             parseState.ObjectStack[1].Name = tag
 
                             lineState.Action = nil
                             lineState.ActionMandatory = false
-                        elseif lineState.Action == "includefile" then
+                        elseif lineState.Action == "action_includefile" then
                             parseState.ObjectStack[1].Name = tag
 
                             lineState.Action = nil
                             lineState.ActionMandatory = false
-                        elseif lineState.Action == "override_name" then
+                        elseif lineState.Action == "action_override_name" then
                             lineState.override_name = tag
 
                             lineState.Action = nil
                             lineState.ActionMandatory = false
-                        elseif lineState.Action == "typedef" then
+                        elseif lineState.Action == "action_typedef" then
                             lineState.Name = tag
 
-                            lineState.Action = "typedefvalue"
+                            lineState.Action = "action_typedefvalue"
                             lineState.ActionMandatory = true
-                        elseif lineState.Action == "typedefvalue" then
+                        elseif lineState.Action == "action_typedefvalue" then
                             lineState.RValue = SpaceSeparateStrings(lineState.RValue, tag)
 
-                            lineState.Action = "typedefvalue"
+                            lineState.Action = "action_typedefvalue" -- allow more than one word
                             lineState.ActionMandatory = false
 
-                        elseif lineState.Action == "rename" then
-                            lineState.AltName = tag
+                        elseif lineState.Action == "action_rename" then
+                            lineState["%rename"] = tag
                             lineState.Action = nil
                             lineState.ActionMandatory = false
 
-                        elseif lineState.Action == "define" then
+                        elseif lineState.Action == "action_define" then
                             lineState.Name = tag
                             -- if they specify a value after the tag use it, unless a keyword
                             while (lineTags[t+1] ~= nil) and (bindingKeywordTable[lineTags[t+1]] == nil) do
@@ -2231,24 +2218,24 @@ function ParseData(interfaceData)
                             lineState.Action = nil
                             lineState.ActionMandatory = false
 
-                        elseif lineState.Action == "member" then
+                        elseif lineState.Action == "action_member" then
                             if IsDataType(tag) then
                                 lineState.DataType = SpaceSeparateStrings(lineState.DataType, tag)
                                 lineState.DataTypeWithAttrib = SpaceSeparateStrings(lineState.DataTypeWithAttrib, tag)
 
-                                lineState.Action = "member"
+                                lineState.Action = "action_member"
                                 lineState.ActionMandatory = true
 
                             elseif dataTypeAttribTable[tag] then
                                 lineState.DataTypeWithAttrib = SpaceSeparateStrings(lineState.DataTypeWithAttrib, tag)
 
-                                lineState.Action = "member"
+                                lineState.Action = "action_member"
                                 lineState.ActionMandatory = true
 
                             elseif (tag == "*") or (tag == "&") or (tag == "[]") then
                                 table.insert(lineState.DataTypePointer, tag)
 
-                                lineState.Action = "member"
+                                lineState.Action = "action_member"
                                 lineState.ActionMandatory = true
 
                             elseif IsDelimiter(tag) or functionAttribTable[tag] then
@@ -2264,24 +2251,24 @@ function ParseData(interfaceData)
                                 lineState.ActionMandatory = false
                             end
 
-                        elseif lineState.Action == "method" then
+                        elseif lineState.Action == "action_method" then
                             if IsDataType(tag) then
                                 lineState.DataType = SpaceSeparateStrings(lineState.DataType, tag)
                                 lineState.DataTypeWithAttrib = SpaceSeparateStrings(lineState.DataTypeWithAttrib, tag)
 
-                                lineState.Action = "method"
+                                lineState.Action = "action_method"
                                 lineState.ActionMandatory = true
 
                             elseif dataTypeAttribTable[tag] then
                                 lineState.DataTypeWithAttrib = SpaceSeparateStrings(lineState.DataTypeWithAttrib, tag)
 
-                                lineState.Action = "method"
+                                lineState.Action = "action_method"
                                 lineState.ActionMandatory = true
 
                             elseif (tag == "*") or (tag == "&") or (tag == "[]") then
                                 table.insert(lineState.DataTypePointer, tag)
 
-                                lineState.Action = "method"
+                                lineState.Action = "action_method"
                                 lineState.ActionMandatory = true
 
                             elseif tag == "virtual" then
@@ -2290,7 +2277,7 @@ function ParseData(interfaceData)
                             elseif tag == "static" then
                                 lineState.IsStaticFunction = true
 
-                            elseif lineState.IsOperator and string.find(tag, "operator", 1, 1) then
+                            elseif lineState["%operator"] and string.find(tag, "operator", 1, 1) then
                                 -- eat the rest of the "operator+=(...)" symbols which may be split before (
                                 while lineTags[t+1] and (not string.find(lineTags[t+1], "(", 1, 1)) do
                                     tag = tag..lineTags[t+1]
@@ -2299,9 +2286,9 @@ function ParseData(interfaceData)
 
                                 local a, b = string.find(tag, "operator", 1, 1)
                                 local op = string.sub(tag, b+1)
-                                lineState.IsOperator = op
+                                lineState["%operator"] = op
 
-                                lineState.Action = "methodbracket" -- next char should be (
+                                lineState.Action = "action_methodbracket" -- next char should be (
                                 lineState.Name = bindingOperatorTable[op]
 
                             elseif tag == "(" then
@@ -2327,7 +2314,7 @@ function ParseData(interfaceData)
                                     print("ERROR: Expected Method Name, got Tag='"..tag.."'. "..LineTableErrString(lineTable))
                                 end
 
-                                lineState.Action = "methodparam"
+                                lineState.Action = "action_methodparam"
                                 lineState.ActionMandatory = true
 
                             elseif IsDelimiter(tag) then
@@ -2344,40 +2331,40 @@ function ParseData(interfaceData)
                                     print("ERROR: Method requires DataType to be assigned. Tag='"..tag.."'. "..LineTableErrString(lineTable))
                                 end
 
-                                lineState.Action = "methodbracket"
+                                lineState.Action = "action_methodbracket"
                                 lineState.ActionMandatory = true
                             end
 
-                        elseif lineState.Action == "methodbracket" then
+                        elseif lineState.Action == "action_methodbracket" then
                                 if tag ~= '(' then
                                     local msg = "(Name="..tostring(lineState.Name).."; DataType="..tostring(lineState.DataType)..")"
                                     print("ERROR: Expected Method Tag '(', got Tag='"..tag.."'. "..msg.." "..LineTableErrString(lineTable))
                                 end
 
                                 lineState.IsFunction = true
-                                lineState.Action = "methodparam"
+                                lineState.Action = "action_methodparam"
                                 lineState.ActionMandatory = true
 
-                        elseif lineState.Action == "methodparam" then
+                        elseif lineState.Action == "action_methodparam" then
                             lineState.IsFunction = true
 
                             if IsDataType(tag) then
                                 lineState.ParamState.DataType = SpaceSeparateStrings(lineState.ParamState.DataType, tag)
                                 lineState.ParamState.DataTypeWithAttrib = SpaceSeparateStrings(lineState.ParamState.DataTypeWithAttrib, tag)
 
-                                lineState.Action = "methodparam"
+                                lineState.Action = "action_methodparam"
                                 lineState.ActionMandatory = true
 
                             elseif dataTypeAttribTable[tag] then
                                 lineState.ParamState.DataTypeWithAttrib = SpaceSeparateStrings(lineState.ParamState.DataTypeWithAttrib, tag)
 
-                                lineState.Action = "methodparam"
+                                lineState.Action = "action_methodparam"
                                 lineState.ActionMandatory = true
 
                             elseif (tag == "*") or (tag == "&") or (tag == "[]") then
                                 table.insert(lineState.ParamState.DataTypePointer, tag)
 
-                                lineState.Action = "methodparam"
+                                lineState.Action = "action_methodparam"
                                 lineState.ActionMandatory = true
 
                             elseif tag == "," then
@@ -2388,7 +2375,7 @@ function ParseData(interfaceData)
                                 table.insert(lineState.Params, lineState.ParamState)
                                 lineState.ParamState = AllocParam()
 
-                                lineState.Action = "methodparam"
+                                lineState.Action = "action_methodparam"
                                 lineState.ActionMandatory = true
 
                             elseif tag == ")" then
@@ -2397,12 +2384,12 @@ function ParseData(interfaceData)
                                     lineState.ParamState = AllocParam()
                                 end
 
-                                lineState.Action = "method_body"
+                                lineState.Action = "action_method_body"
                                 lineState.ActionMandatory = false
 
                             elseif tag == "=" then
 
-                                lineState.Action = "methodparam_defaultvalue"
+                                lineState.Action = "action_methodparam_defaultvalue"
                                 lineState.ActionMandatory = true
 
                             elseif IsDelimiter(tag) or functionAttribTable[tag] then
@@ -2410,11 +2397,11 @@ function ParseData(interfaceData)
                             else
                                 lineState.ParamState.Name = tag
 
-                                lineState.Action = "methodparam_paramdelimiter"
+                                lineState.Action = "action_methodparam_paramdelimiter"
                                 lineState.ActionMandatory = true
                             end
 
-                        elseif lineState.Action == "methodparam_defaultvalue" then
+                        elseif lineState.Action == "action_methodparam_defaultvalue" then
                             if tag == "," then
                                 if not lineState.ParamState.DefaultValue then
                                     print("ERROR: Method Parameter requires DefaultValue to be assigned. "..LineTableErrString(lineTable))
@@ -2427,7 +2414,7 @@ function ParseData(interfaceData)
                                 table.insert(lineState.Params, lineState.ParamState)
                                 lineState.ParamState = AllocParam()
 
-                                lineState.Action = "methodparam"
+                                lineState.Action = "action_methodparam"
                                 lineState.ActionMandatory = true
 
                             elseif tag == ")" then
@@ -2440,18 +2427,18 @@ function ParseData(interfaceData)
                                     lineState.ParamState = AllocParam()
                                 end
 
-                                lineState.Action = "method_body"
+                                lineState.Action = "action_method_body"
                                 lineState.ActionMandatory = false
                             elseif IsDataType(tag) or dataTypeAttribTable[tag] or functionAttribTable[tag] or (tag == "*") or (tag == "&") or (tag == "[]") or IsDelimiter(tag) and (tag ~= "|") and (tag ~= "&") then
                                 print("ERROR: Expected Parameter Default Value, got Tag='"..tag.."'. "..LineTableErrString(lineTable))
                             else
                                 lineState.ParamState.DefaultValue = SpaceSeparateStrings(lineState.ParamState.DefaultValue, tag)
 
-                                lineState.Action = "methodparam_defaultvalue"
+                                lineState.Action = "action_methodparam_defaultvalue"
                                 lineState.ActionMandatory = true
                             end
 
-                        elseif lineState.Action == "methodparam_paramdelimiter" then
+                        elseif lineState.Action == "action_methodparam_paramdelimiter" then
                             if tag == "," then
                                 if not lineState.ParamState.DataType then
                                     print("ERROR: Method Parameter requires DataType to be assigned. "..LineTableErrString(lineTable))
@@ -2460,7 +2447,7 @@ function ParseData(interfaceData)
                                 table.insert(lineState.Params, lineState.ParamState)
                                 lineState.ParamState = AllocParam()
 
-                                lineState.Action = "methodparam"
+                                lineState.Action = "action_methodparam"
                                 lineState.ActionMandatory = true
                             elseif tag == ")" then
                                 if lineState.ParamState.DataType then
@@ -2468,17 +2455,17 @@ function ParseData(interfaceData)
                                     lineState.ParamState = AllocParam()
                                 end
 
-                                lineState.Action = "method_body"
+                                lineState.Action = "action_method_body"
                                 lineState.ActionMandatory = false
 
                             elseif tag == "=" then
-                                lineState.Action = "methodparam_defaultvalue"
+                                lineState.Action = "action_methodparam_defaultvalue"
                                 lineState.ActionMandatory = true
 
                             elseif tag == "[]" then
                                 table.insert(lineState.ParamState.DataTypePointer, tag)
 
-                                lineState.Action = "methodparam_paramdelimiter"
+                                lineState.Action = "action_methodparam_paramdelimiter"
                                 lineState.ActionMandatory = true
 
                             else
@@ -2487,16 +2474,16 @@ function ParseData(interfaceData)
                                 print("ERROR: Expected Parameter '=', ')', or ',' got Tag='"..tag.."'. "..msg.." "..LineTableErrString(lineTable))
                             end
 
-                        elseif lineState.Action == "method_body" then
+                        elseif lineState.Action == "action_method_body" then
                             if tag == "const" then
                                 lineState.IsConstFunction = true
 
-                                lineState.Action = "method_body"
+                                lineState.Action = "action_method_body"
                                 lineState.ActionMandatory = false
 
                             elseif tag == "=" then
                                 lineState.IsPureVirtualFunction = true
-                                parseState.ObjectStack[1].IsAbstract = true
+                                parseState.ObjectStack[1]["%abstract"] = true
 
                                 -- junk rest of line
                                 lineState.Action = nil
@@ -2521,33 +2508,33 @@ function ParseData(interfaceData)
         end
 
         -- set line definition data
-        if lineState.DefType == "typedef" then
+        if lineState.DefType == "deftype_%typedef" then
             -- line is a typedef
             typedefTable[lineState.Name] = lineState.RValue
 
-        elseif lineState.DefType == "blockcondition" then
+        elseif lineState.DefType == "deftype_%if" then
             -- line is a block condition, push onto condition stack
             table.insert(parseState.ConditionStack, lineState.Condition)
 
-        elseif (lineState.DefType == "member") or (lineState.DefType == "member_func") then
+        elseif (lineState.DefType == "deftype_%member") or (lineState.DefType == "deftype_%member_func") then
             table.insert(parseState.ObjectStack[1].Members, AllocMember(lineState, BuildCondition(parseState.ConditionStack)))
 
-        elseif lineState.DefType == "define" then
+        elseif lineState.DefType == "deftype_%define" then
             table.insert(parseState.ObjectStack[1].Members, AllocMember(lineState, BuildCondition(parseState.ConditionStack)))
 
-        elseif lineState.DefType == "define_string" then
+        elseif lineState.DefType == "deftype_%define_string" then
             table.insert(parseState.ObjectStack[1].Members, AllocMember(lineState, BuildCondition(parseState.ConditionStack)))
 
-        elseif lineState.DefType == "define_event" then
+        elseif lineState.DefType == "deftype_%define_event" then
             table.insert(parseState.ObjectStack[1].Members, AllocMember(lineState, BuildCondition(parseState.ConditionStack)))
 
-        elseif lineState.DefType == "define_object" then
+        elseif lineState.DefType == "deftype_%define_object" then
             table.insert(parseState.ObjectStack[1].Members, AllocMember(lineState, BuildCondition(parseState.ConditionStack)))
 
-        elseif lineState.DefType == "define_pointer" then
+        elseif lineState.DefType == "deftype_%define_pointer" then
             table.insert(parseState.ObjectStack[1].Members, AllocMember(lineState, BuildCondition(parseState.ConditionStack)))
 
-        elseif lineState.DefType == "method" then
+        elseif lineState.DefType == "deftype_method" then
             table.insert(parseState.ObjectStack[1].Members, AllocMember(lineState, BuildCondition(parseState.ConditionStack)))
         end
 
@@ -2566,9 +2553,9 @@ function ParseData(interfaceData)
                 dataTypeTable[parseState.ObjectStack[1].Name].Condition = parseState.ObjectStack[1].Condition
             end
 
-            -- Set if this data type shoulntpdate pool.ntp.orgd be Encapsulated
-            if dataTypeTable[parseState.ObjectStack[1].Name] and parseState.ObjectStack[1].Encapsulate then
-                dataTypeTable[parseState.ObjectStack[1].Name].Encapsulate = parseState.ObjectStack[1].Encapsulate
+            -- Set if this data type should be Encapsulated
+            if dataTypeTable[parseState.ObjectStack[1].Name] and parseState.ObjectStack[1]["%encapsulate"] then
+                dataTypeTable[parseState.ObjectStack[1].Name]["%encapsulate"] = parseState.ObjectStack[1]["%encapsulate"]
             end
 
             -- pop inline condition onto condition stack
@@ -2647,21 +2634,19 @@ end
 -- Create Language Binding - This generates c-binding to Lua interpreter
 -- ---------------------------------------------------------------------------
 function GenerateLuaLanguageBinding(interface)
-    local codeList = {}
-    local methodBinding = {}
     local overloadCount = {} -- overloadCount[methodName] = count #
 
     for o = 1, #interface.objectData do
         local parseObject = interface.objectData[o]
 
         -- -------------------------------------------------------------------
-        -- de-duplicates include references, must generate them first
-        if parseObject.DefType == "include" then
+        -- de-duplicates include references, must generate them first, no .Members
+        if parseObject.ObjType == "objtype_%include" then
 
             local includecondition = FixCondition(parseObject.Condition)
             local includeBinding =
             {
-                Include = "#include ".. parseObject.Name.."\n",
+                Include   = "#include ".. parseObject.Name.."\n",
                 Condition = includecondition
             }
 
@@ -2670,24 +2655,20 @@ function GenerateLuaLanguageBinding(interface)
             end
 
             interface.includeBindingTable[includecondition][parseObject.Name] = includeBinding
-        elseif parseObject.DefType == "includefile" then
+        elseif parseObject.ObjType == "objtype_%includefile" then
             table.insert(interface.includeFiles, parseObject.Name)
         end
-    end
-
-    for o = 1, #interface.objectData do
-        local parseObject = interface.objectData[o]
 
         -- -------------------------------------------------------------------
         -- encapsulate non-wxObject objects with a tracked wxObject
-        if parseObject.Encapsulate then
+        if parseObject["%encapsulate"] then
 
             local encapcondition = FixCondition(parseObject.Condition)
             local encapsulationBinding =
             {
-                Declaration = "wxLUA_DECLARE_ENCAPSULATION("..output_cpp_impexpsymbol..", "..parseObject.Name..", "..MakeVar(parseObject.Name)..")\n",
+                Declaration    = "wxLUA_DECLARE_ENCAPSULATION("..output_cpp_impexpsymbol..", "..parseObject.Name..", "..MakeVar(parseObject.Name)..")\n",
                 Implementation = "wxLUA_IMPLEMENT_ENCAPSULATION("..parseObject.Name..", "..MakeVar(parseObject.Name)..")\n",
-                Condition = encapcondition
+                Condition      = encapcondition
             }
 
             if not encapsulationBindingTable[encapcondition] then
@@ -2706,13 +2687,13 @@ function GenerateLuaLanguageBinding(interface)
             -- ---------------------------------------------------------------
             -- member binding
             -- ---------------------------------------------------------------
-            if (member.DefType == "member") or (member.DefType == "member_func") then
+            if (member.DefType == "deftype_%member") or (member.DefType == "deftype_%member_func") then
                 local memberType = GetTypeDef(member.DataType)
                 local memberGetFunc = "Get_"..member.Name
                 local memberSetFunc = "Set_"..member.Name
-                if member.AltName then
-                    memberGetFunc = "Get"..member.AltName
-                    memberSetFunc = "Set"..member.AltName
+                if member["%rename"] then
+                    memberGetFunc = "Get"..member["%rename"]
+                    memberSetFunc = "Set"..member["%rename"]
                 end
 
                 local memberPtr = member.DataTypePointer[1]
@@ -2762,11 +2743,12 @@ function GenerateLuaLanguageBinding(interface)
 --                    end
                 elseif not numeric then
                     CommentBindingTable(codeList, "    // push the result datatype\n")
-
                     table.insert(codeList, "    wxlState.PushUserDataType(s_wxluatag_"..MakeClassVar(memberType)..", self->"..member.Name..");\n")
-                elseif (type == "BOOL") or (type == "bool") then
+
+                elseif (memberType == "BOOL") or (memberType == "bool") then
                     CommentBindingTable(codeList, "    // push the result flag\n")
                     table.insert(codeList, "    lua_pushboolean(L, self->"..member.Name..");\n")
+
                 else
                     CommentBindingTable(codeList, "    // push the result number\n")
                     table.insert(codeList, "    lua_pushnumber(L, self->"..member.Name..");\n")
@@ -2776,7 +2758,7 @@ function GenerateLuaLanguageBinding(interface)
                 table.insert(codeList, "    return 1;\n")
                 table.insert(codeList, "}\n")
 
-                local overload_argListName = "s_wxluatagArray_".. funcName
+                local overload_argListName = "s_wxluatagArray_"..funcName
                 if overload_argList == "" then
                     overload_argListName = "s_wxluaargArray_None"
                 else
@@ -2788,24 +2770,24 @@ function GenerateLuaLanguageBinding(interface)
                 -- bind method
                 local methodBinding =
                 {
-                    LuaName = memberGetFunc,
+                    LuaName       = memberGetFunc,
                     CFunctionName = funcName,
-                    Method = codeList,
-                    ArgArray = overload_argList,
-                    ArgArrayName = overload_argListName,
-                    FuncType = "WXLUAMETHOD_METHOD",
-                    FuncMap = "{ "..funcName..", WXLUAMETHOD_METHOD, 1, 1, "..overload_argListName.." }",
-                    FuncMapName = funcMapName,
-                    Map = "    { \""..memberGetFunc.."\", WXLUAMETHOD_METHOD, "..funcMapName..", 1, NULL },\n",
-                    Condition = membercondition
+                    Method        = codeList,
+                    ArgArray      = overload_argList,
+                    ArgArrayName  = overload_argListName,
+                    FuncType      = "WXLUAMETHOD_METHOD",
+                    FuncMap       = "{ "..funcName..", WXLUAMETHOD_METHOD, 1, 1, "..overload_argListName.." }",
+                    FuncMapName   = funcMapName,
+                    Map           = "    { \""..memberGetFunc.."\", WXLUAMETHOD_METHOD, "..funcMapName..", 1, NULL },\n",
+                    Condition     = membercondition
                 }
 
                 -- bind property
                 local propertyBinding =
                 {
-                    LuaName = member.Name,
-                    FuncType = "WXLUAMETHOD_GETPROP",
-                    Map = "    { \""..member.Name.."\", WXLUAMETHOD_GETPROP, "..funcMapName..", 1, NULL },\n",
+                    LuaName   = member.Name,
+                    FuncType  = "WXLUAMETHOD_GETPROP",
+                    Map       = "    { \""..member.Name.."\", WXLUAMETHOD_GETPROP, "..funcMapName..", 1, NULL },\n",
                     Condition = membercondition
                 }
 
@@ -2815,8 +2797,8 @@ function GenerateLuaLanguageBinding(interface)
                     overrideTableUsed[methodBinding.CFunctionName] = true
                 end
 
-                -- rem out the Get function, but we need the code for the property
-                if member.DefType == "member" then
+                -- rem out the Get function if not %member_func, but we need the code for the property
+                if member.DefType == "deftype_%member" then
                     methodBinding.Map = "    // %member"..methodBinding.Map
                 end
 
@@ -2858,6 +2840,7 @@ function GenerateLuaLanguageBinding(interface)
                     CommentBindingTable(codeList, "    // get the number value\n")
                     table.insert(codeList, "    "..memberType.." val = ("..memberType..")wxlua_getnumbertype(L, 2);\n")
                 end
+
                 CommentBindingTable(codeList, "    // get this\n")
                 table.insert(codeList, "    "..parseObject.Name.." *self = ("..parseObject.Name.." *)wxlState.GetUserDataType(1, s_wxluatag_"..MakeClassVar(parseObject.Name)..");\n")
                 overload_argList = "&s_wxluatag_"..MakeClassVar(parseObject.Name)..", "..overload_argList
@@ -2882,26 +2865,26 @@ function GenerateLuaLanguageBinding(interface)
                 local funcMapName = "s_wxluafunc_"..funcName
 
                 -- bind method
-                methodBinding =
+                local methodBinding =
                 {
-                    LuaName = memberSetFunc,
+                    LuaName       = memberSetFunc,
                     CFunctionName = funcName,
-                    Method = codeList,
-                    ArgArray = overload_argList,
-                    ArgArrayName = overload_argListName,
-                    FuncType = "WXLUAMETHOD_METHOD",
-                    FuncMap = "{ "..funcName..", WXLUAMETHOD_METHOD, 2, 2, "..overload_argListName.." }", -- FIXME make sure this is right
-                    FuncMapName = funcMapName,
-                    Map = "    { \""..memberSetFunc.."\", WXLUAMETHOD_METHOD, "..funcMapName..", 1, NULL },\n",
-                    Condition = membercondition
+                    Method        = codeList,
+                    ArgArray      = overload_argList,
+                    ArgArrayName  = overload_argListName,
+                    FuncType      = "WXLUAMETHOD_METHOD",
+                    FuncMap       = "{ "..funcName..", WXLUAMETHOD_METHOD, 2, 2, "..overload_argListName.." }", -- FIXME make sure this is right
+                    FuncMapName   = funcMapName,
+                    Map           = "    { \""..memberSetFunc.."\", WXLUAMETHOD_METHOD, "..funcMapName..", 1, NULL },\n",
+                    Condition     = membercondition
                 }
 
                 -- bind property
-                propertyBinding =
+                local propertyBinding =
                 {
-                    LuaName = member.Name,
-                    FuncType = "WXLUAMETHOD_SETPROP",
-                    Map = "    { \""..member.Name.."\", WXLUAMETHOD_SETPROP, "..funcMapName..", 1, NULL },\n",
+                    LuaName   = member.Name,
+                    FuncType  = "WXLUAMETHOD_SETPROP",
+                    Map       = "    { \""..member.Name.."\", WXLUAMETHOD_SETPROP, "..funcMapName..", 1, NULL },\n",
                     Condition = membercondition
                 }
 
@@ -2911,8 +2894,8 @@ function GenerateLuaLanguageBinding(interface)
                     overrideTableUsed[methodBinding.CFunctionName] = true
                 end
 
-                -- rem out the Set function, but we need the code for the property
-                if member.DefType == "member" then
+                -- rem out the Set function if not %member_func, but we need the code for the property
+                if member.DefType == "deftype_%member" then
                     methodBinding.Map = "    // %member"..methodBinding.Map
                 end
 
@@ -2923,11 +2906,11 @@ function GenerateLuaLanguageBinding(interface)
             -- ---------------------------------------------------------------
             -- enum binding
             -- ---------------------------------------------------------------
-            elseif member.DefType == "enum" then
+            elseif member.DefType == "deftype_%enum" then
                 -- if we have wxDateTime::TZ, only take the wxDateTime part
                 local dataType = member.DataType or ""
                 local namespace = ""
-                local luaname = member.AltName or member.Name -- for %rename
+                local luaname = member["%rename"] or member.Name -- for %rename
                 local classname = ""
                 local enumname = luaname
 
@@ -2941,7 +2924,7 @@ function GenerateLuaLanguageBinding(interface)
                     end
 
                     namespace = string.sub(dataType, 0, pos - 1)
-                    if not member.AltName then
+                    if not member["%rename"] then
                         luaname = MakeVar(namespace).."_"..luaname -- wxFile::read -> wxFile_read
                     end
 
@@ -2955,8 +2938,8 @@ function GenerateLuaLanguageBinding(interface)
 
                     local enumBinding =
                     {
-                        LuaName = enumname,
-                        Map = "        { \""..enumname.."\", "..namespace..member.Name.." },\n",
+                        LuaName   = enumname,
+                        Map       = "        { \""..enumname.."\", "..namespace..member.Name.." },\n",
                         Condition = fullcondition
                     }
 
@@ -2964,8 +2947,8 @@ function GenerateLuaLanguageBinding(interface)
                 else
                     local enumBinding =
                     {
-                        LuaName = luaname,
-                        Map = "        { \""..luaname.."\", "..namespace..member.Name.." },\n",
+                        LuaName   = luaname,
+                        Map       = "        { \""..luaname.."\", "..namespace..member.Name.." },\n",
                         Condition = fullcondition
                     }
 
@@ -2975,13 +2958,14 @@ function GenerateLuaLanguageBinding(interface)
             -- ---------------------------------------------------------------
             -- define binding
             -- ---------------------------------------------------------------
-            elseif member.DefType == "define" then
+            elseif member.DefType == "deftype_%define" then
+                local luaname = member["%rename"] or member.Name -- for %rename
                 local value = member.Value or member.Name
 
                 local defineBinding =
                 {
-                    LuaName = member.Name,
-                    Map = "        { \""..member.Name.."\", "..value.." },\n",
+                    LuaName   = luaname,
+                    Map       = "        { \""..luaname.."\", "..value.." },\n",
                     Condition = fullcondition
                 }
 
@@ -2990,14 +2974,14 @@ function GenerateLuaLanguageBinding(interface)
             -- ---------------------------------------------------------------
             -- define_string binding
             -- ---------------------------------------------------------------
-            elseif member.DefType == "define_string" then
-                local luaname = member.AltName or member.Name -- for %rename
+            elseif member.DefType == "deftype_%define_string" then
+                local luaname = member["%rename"] or member.Name -- for %rename
                 local value = member.Value or member.Name
 
                 local stringBinding =
                 {
-                    LuaName = member.Name,
-                    Map = "        { \""..member.Name.."\", "..value.." },\n",
+                    LuaName   = luaname,
+                    Map       = "        { \""..luaname.."\", "..value.." },\n",
                     Condition = fullcondition
                 }
 
@@ -3006,13 +2990,13 @@ function GenerateLuaLanguageBinding(interface)
             -- ---------------------------------------------------------------
             -- define_object binding
             -- ---------------------------------------------------------------
-            elseif member.DefType == "define_object" then
-                local luaname = member.AltName or member.Name -- for %rename
+            elseif member.DefType == "deftype_%define_object" then
+                local luaname = member["%rename"] or member.Name -- for %rename
 
                 local objectBinding =
                 {
-                    LuaName = luaname,
-                    Map = "        { \""..luaname.."\", &s_wxluatag_"..MakeClassVar(parseObject.Name)..", &"..member.Name..", NULL },\n",
+                    LuaName   = luaname,
+                    Map       = "        { \""..luaname.."\", &s_wxluatag_"..MakeClassVar(parseObject.Name)..", &"..member.Name..", NULL },\n",
                     Condition = fullcondition
                 }
 
@@ -3021,13 +3005,13 @@ function GenerateLuaLanguageBinding(interface)
             -- ---------------------------------------------------------------
             -- define_pointer binding
             -- ---------------------------------------------------------------
-            elseif member.DefType == "define_pointer" then
-                local luaname = member.AltName or member.Name -- for %rename
+            elseif member.DefType == "deftype_%define_pointer" then
+                local luaname = member["%rename"] or member.Name -- for %rename
 
                 local pointerBinding =
                 {
-                    LuaName = luaname,
-                    Map = "        { \""..luaname.."\", &s_wxluatag_"..MakeClassVar(parseObject.Name)..", NULL, (const void **) &"..member.Name.." },\n",
+                    LuaName   = luaname,
+                    Map       = "        { \""..luaname.."\", &s_wxluatag_"..MakeClassVar(parseObject.Name)..", NULL, (const void **) &"..member.Name.." },\n",
                     Condition = fullcondition
                 }
 
@@ -3036,13 +3020,13 @@ function GenerateLuaLanguageBinding(interface)
             -- ---------------------------------------------------------------
             -- define_event binding
             -- ---------------------------------------------------------------
-            elseif member.DefType == "define_event" then
-                local luaname = member.AltName or member.Name -- for %rename
+            elseif member.DefType == "deftype_%define_event" then
+                local luaname = member["%rename"] or member.Name -- for %rename
 
                 local eventBinding =
                 {
-                    LuaName = luaname,
-                    Map = "        { \""..luaname.."\", &"..member.Name..", &s_wxluatag_"..MakeClassVar(parseObject.Name).." },\n",
+                    LuaName   = luaname,
+                    Map       = "        { \""..luaname.."\", &"..member.Name..", &s_wxluatag_"..MakeClassVar(parseObject.Name).." },\n",
                     Condition = fullcondition
                 }
 
@@ -3051,7 +3035,7 @@ function GenerateLuaLanguageBinding(interface)
             -- ---------------------------------------------------------------
             -- method binding
             -- ---------------------------------------------------------------
-            elseif member.DefType == "method" then
+            elseif member.DefType == "deftype_method" then
                 local argList = ""
                 local overload_argList = ""
                 local gcList = {}
@@ -3082,7 +3066,7 @@ function GenerateLuaLanguageBinding(interface)
                     local opt = param.DefaultValue
                     local numeric = IsDataTypeNumeric(param.DataType)
 
-                    if member.IsConstructor or member.IsCFunction or member.IsStaticFunction then
+                    if member.IsConstructor or member["%function"] or member.IsStaticFunction then
                         argNum = arg -- don't have self
                     else
                         argNum = arg + 1
@@ -3194,7 +3178,7 @@ function GenerateLuaLanguageBinding(interface)
                         elseif not numeric then
                             argItem = "("..argTypeWithAttrib..") wxlState.GetUserDataType("..argNum..", s_wxluatag_"..MakeClassVar(argType)..")"
                         else
-                            argItem = "("..argTypeWithAttrib..") wxlState.ttouserdata("..argNum..")"
+                            argItem = "("..argTypeWithAttrib..") wxlState.wxlua_ToUserdata("..argNum..")"
                         end
                     elseif (indirectionCount == 1) and (argPtr == "*") then
                         if (argType == "wxString") or (argType == "wxChar") then
@@ -3235,11 +3219,11 @@ function GenerateLuaLanguageBinding(interface)
                                 argItem = "("..argTypeWithAttrib..")wxlState.GetUserDataType("..argNum..", s_wxluatag_"..MakeClassVar(argType)..")"
                             else
                                 overload_argList = overload_argList.."&s_wxluaarg_LightUserData, "
-                                argItem = "("..argTypeWithAttrib..")wxlState.ttouserdata("..argNum..")"
+                                argItem = "("..argTypeWithAttrib..")wxlState.wxlua_ToUserdata("..argNum..")"
                             end
 
                             if param.GC then
-                                if dataTypeTable[argType].Encapsulate then
+                                if dataTypeTable[argType]["%encapsulate"] then
                                     table.insert(gcList, "    if (!wxlState.IsTrackedObject("..argName..")) wxlState.AddTrackedObject((long)"..argName..", new wxLua_wxObject_"..MakeVar(argType).."("..argName.."));\n")
                                 else
                                     table.insert(gcList, "    if (!wxlState.IsTrackedObject("..argName..")) wxlState.AddTrackedObject("..argName..");\n")
@@ -3257,7 +3241,7 @@ function GenerateLuaLanguageBinding(interface)
                         else
                             overload_argList = overload_argList.."&s_wxluaarg_LightUserData, "
                             argTypeWithAttrib = argTypeWithAttrib.." *"
-                            argItem = "("..argTypeWithAttrib..")wxlState.ttouserdata("..argNum..")"
+                            argItem = "("..argTypeWithAttrib..")wxlState.wxlua_ToUserdata("..argNum..")"
                         end
                     elseif (indirectionCount == 1) and (argPtr == "&") then
                         if argType == "wxString" then
@@ -3281,7 +3265,7 @@ function GenerateLuaLanguageBinding(interface)
                                 argItem = "("..argTypeWithAttrib..")wxlState.GetUserDataType("..argNum..", s_wxluatag_"..MakeClassVar(argType)..")"
                             else
                                 overload_argList = overload_argList.."&s_wxluaarg_LightUserData, "
-                                argItem = "("..argTypeWithAttrib..")wxlState.ttouserdata("..argNum..")"
+                                argItem = "("..argTypeWithAttrib..")wxlState.wxlua_ToUserdata("..argNum..")"
                             end
 
                             -- Default Value
@@ -3376,38 +3360,38 @@ function GenerateLuaLanguageBinding(interface)
                 local funcLuaCall = nil
                 if member.IsConstructor or (member.Name == parseObject.Name) then
                     member.IsConstructor = true
-                    funcName = "wxLua_"..MakeVar(member.AltName or member.Name).."_constructor"
+                    funcName = "wxLua_"..MakeVar(member["%rename"] or member.Name).."_constructor"
                     funcNameBase = funcName
 
                     funcType = "WXLUAMETHOD_CONSTRUCTOR"
-                    funcLuaCall = MakeVar(member.AltName or member.Name)
+                    funcLuaCall = MakeVar(member["%rename"] or member.Name)
                 elseif member.Name == "~"..parseObject.Name then
                     print("WARNING: Unhandled ~ destructor ", member.Name, parseObject.Name);
                 elseif member.IsStaticFunction then
-                    funcName = "wxLua_"..MakeVar(parseObject.Name).."_"..MakeVar(member.AltName or member.Name)
+                    funcName = "wxLua_"..MakeVar(parseObject.Name).."_"..MakeVar(member["%rename"] or member.Name)
                     funcType = "WXLUAMETHOD_METHOD|WXLUAMETHOD_STATIC"
-                    funcLuaCall = MakeVar(member.AltName or member.Name)
-                elseif (parseObject.Name == "globals") or member.IsCFunction then
-                    funcName = "wxLua_function_"..MakeVar(member.AltName or member.Name)
+                    funcLuaCall = MakeVar(member["%rename"] or member.Name)
+                elseif (parseObject.Name == "globals") or member["%function"] then
+                    funcName = "wxLua_function_"..MakeVar(member["%rename"] or member.Name)
                     funcType = "WXLUAMETHOD_CFUNCTION"
-                    funcLuaCall = MakeVar(member.AltName or member.Name)
+                    funcLuaCall = MakeVar(member["%rename"] or member.Name)
                 else
                     if not parseObject.Name then
                         print("ERROR: parseObject.Name = nil "..LineTableErrString(member))
                     end
 
                     -- special case for unary -, convert from op_sub to op_neg if necessary
-                    if member.IsOperator and (#member.Params == 0) and (member.Name == "op_sub") then
+                    if member["%operator"] and (#member.Params == 0) and (member.Name == "op_sub") then
                         member.Name = "op_neg"
-                        if member.AltName == "op_sub" then -- maybe they renamed it?
-                            member.AltName = "op_neg"
+                        if member["%rename"] == "op_sub" then -- maybe they renamed it?
+                            member["%rename"] = "op_neg"
                         end
                     end
 
-                    funcName = "wxLua_"..MakeVar(parseObject.Name).."_"..MakeVar(member.AltName or member.Name)
+                    funcName = "wxLua_"..MakeVar(parseObject.Name).."_"..MakeVar(member["%rename"] or member.Name)
 
                     funcType = "WXLUAMETHOD_METHOD"
-                    funcLuaCall = MakeVar(member.AltName or member.Name)
+                    funcLuaCall = MakeVar(member["%rename"] or member.Name)
                 end
 
                 if not funcNameBase then funcNameBase = funcName end
@@ -3547,7 +3531,7 @@ function GenerateLuaLanguageBinding(interface)
                     CommentBindingTable(codeList, "    // call constructor\n")
                     table.insert(codeList, "    returns = new "..parseObject.Name.."("..argList..");\n")
 
-                    if parseObject.GCThis or (parseObject.DeleteRequired and (not parseObject.UnGCThis)) then
+                    if parseObject["%gc_this"] or (parseObject["%delete"] and (not parseObject["%ungc_this"])) then
                         CommentBindingTable(codeList, "    // add to tracked memory list\n")
 
                         -- Un 'const' AddTrackedObject
@@ -3556,12 +3540,12 @@ function GenerateLuaLanguageBinding(interface)
                             returnCast = string.sub(returnCast, 7)
                         end
 
-                        if parseObject.Encapsulate then
+                        if parseObject["%encapsulate"] then
                             table.insert(codeList, "    wxlState.AddTrackedObject((long)returns, new wxLua_wxObject_"..MakeVar(parseObject.Name).."(("..returnCast..")returns));\n")
                         else
                             table.insert(codeList, "    wxlState.AddTrackedObject(returns);\n")
                         end
-                    elseif parseObject.HasClassInfo then
+                    elseif not parseObject["%noclassinfo"] then
                         CommentBindingTable(codeList, "    // add to tracked window list, it will check validity\n")
                         table.insert(codeList, "    wxlState.AddTrackedWindow(returns);\n")
                     end
@@ -3583,10 +3567,10 @@ function GenerateLuaLanguageBinding(interface)
                         table.insert(codeList, "    "..parseObject.Name.." * self = ("..parseObject.Name.." *)wxlState.GetUserDataType(1, s_wxluatag_"..MakeClassVar(parseObject.Name)..");\n")
                         overload_argList = "&s_wxluatag_"..MakeClassVar(parseObject.Name)..", "..overload_argList
 
-                        if parseObject.UnGCThis then
+                        if parseObject["%ungc_this"] then
                             table.insert(codeList, "    wxlState.RemoveTrackedObject(self, wxLuaState::UNDELETE_OBJECT);\n")
-                        elseif parseObject.GCThis then
-                            if parseObject.Encapsulate then
+                        elseif parseObject["%gc_this"] then
+                            if parseObject["%encapsulate"] then
                                 table.insert(codeList, "    if (!wxlState.IsTrackedObject(self)) wxlState.AddTrackedObject((long)self, new wxLua_wxObject_"..MakeClassVar(parseObject.Name).."(self));\n")
                             else
                                 table.insert(codeList, "    wxlState.AddTrackedObject(self);\n")
@@ -3596,12 +3580,12 @@ function GenerateLuaLanguageBinding(interface)
                         requiredParamCount = requiredParamCount + 1
                         paramCount = paramCount + 1
 
-                        if member.IsOperator then
+                        if member["%operator"] then
                             memberPtr = false
                             if paramCount > 1 then
-                                functor = "(*self)"..member.IsOperator
+                                functor = "(*self)"..member["%operator"]
                             else
-                                functor = member.IsOperator.."(*self)"
+                                functor = member["%operator"].."(*self)"
                             end
                         -- static member function?
                         elseif string.find(member.Name, "::") then
@@ -3616,7 +3600,7 @@ function GenerateLuaLanguageBinding(interface)
                         functor  = "("..memberCast..")"..functor
                     end
 
-                    local is_func = iff(not member.IsOperator and member.IsFunction, true, false)
+                    local is_func = iff(not member["%operator"] and member.IsFunction, true, false)
 
                     -- Add Function Argument List
                     if (argList ~= "") or is_func then
@@ -3632,7 +3616,7 @@ function GenerateLuaLanguageBinding(interface)
                         table.insert(codeList, "}\n")
                     else
                         -- call function, get return value
-                        if member.IsOperator and origMemberPtr and string.find(origMemberPtr, "&", 1, 1) then
+                        if member["%operator"] and origMemberPtr and string.find(origMemberPtr, "&", 1, 1) then
                             table.insert(codeList, "    returns = self;\n")
                             table.insert(codeList, "    *returns = ("..functor..");\n")
                         elseif (not numeric) and (not memberPtr) then
@@ -3646,19 +3630,19 @@ function GenerateLuaLanguageBinding(interface)
                                 returnCast = string.sub(returnCast, 7)
                             end
 
-                            if dataTypeTable[memberType].Encapsulate then
+                            if dataTypeTable[memberType]["%encapsulate"] then
                                 table.insert(codeList, "    wxlState.AddTrackedObject((long)returns, new wxLua_wxObject_"..MakeVar(memberType).."(("..returnCast..")returns));\n")
                             else
                                 table.insert(codeList, "    wxlState.AddTrackedObject(("..returnCast..")returns);\n")
                             end
 
-                        elseif (not member.IsOperator) and (memberPtr == "&") and (memberType ~= "wxString") then
+                        elseif (not member["%operator"]) and (memberPtr == "&") and (memberType ~= "wxString") then
                             table.insert(codeList, "    returns = &"..functor..";\n")
                         elseif (memberPtr == "*") or (memberType == "voidptr_long") then
                             table.insert(codeList, "    returns = ("..memberTypeWithAttrib..")"..functor..";\n")
 
                             if member.GC then
-                                if dataTypeTable[memberType].Encapsulate then
+                                if dataTypeTable[memberType]["%encapsulate"] then
                                     table.insert(codeList, "    if (!wxlState.IsTrackedObject(returns)) wxlState.AddTrackedObject((long)returns, new wxLua_wxObject_"..MakeVar(memberType).."(returns));\n")
                                 else
                                     table.insert(codeList, "    if (!wxlState.IsTrackedObject(returns)) wxlState.AddTrackedObject(returns);\n")
@@ -3674,7 +3658,7 @@ function GenerateLuaLanguageBinding(interface)
                         -- bind return value
                         if memberType == "wxString" then
                             CommentBindingTable(codeList, "    // push the result string\n")
-                            table.insert(codeList, "    wxlState.lua_PushLString("..returnPtr.."returns,"..returnPtr.."returns.Len());\n")
+                            table.insert(codeList, "    wxlState.lua_PushString("..returnPtr.."returns);\n")
                         elseif not numeric then
                             CommentBindingTable(codeList, "    // push the result datatype\n")
                             table.insert(codeList, "    wxlState.PushUserDataType(s_wxluatag_"..MakeClassVar(memberType)..", returns);\n")
@@ -3731,22 +3715,22 @@ function GenerateLuaLanguageBinding(interface)
                 -- bind method
                 methodBinding =
                 {
-                    ClassName = parseObject.Name,
-                    FuncType = funcType,
-                    LuaName = funcLuaCall,
-                    CFunctionName = funcName,
-                    CFunctionNameBase = funcNameBase,
-                    Method = codeList,
-                    ArgArray = overload_argList,
-                    ArgArrayName = overload_argListName,
-                    ParamCount = paramCount,
+                    ClassName          = parseObject.Name,
+                    FuncType           = funcType,
+                    LuaName            = funcLuaCall,
+                    CFunctionName      = funcName,
+                    CFunctionNameBase  = funcNameBase,
+                    Method             = codeList,
+                    ArgArray           = overload_argList,
+                    ArgArrayName       = overload_argListName,
+                    ParamCount         = paramCount,
                     RequiredParamCount = requiredParamCount,
-                    FuncMap = funcMap,
-                    FuncMapName = funcMapName,
-                    Map = methodMap,
-                    NotOverload = member.NotOverload,
-                    Condition = methodcondition,
-                    PreDefineCode = nil, -- set later if necessary
+                    FuncMap            = funcMap,
+                    FuncMapName        = funcMapName,
+                    Map                = methodMap,
+                    NotOverload        = member.NotOverload,
+                    Condition          = methodcondition,
+                    PreDefineCode      = nil, -- set later if necessary
                 }
 
                 -- Override Generated Method Code
@@ -3759,15 +3743,15 @@ function GenerateLuaLanguageBinding(interface)
                     overrideTableUsed[methodBinding.CFunctionName] = true
                 end
 
-                if member.IsCFunction then
+                if member["%function"] then
                     table.insert(functionBindingTable, methodBinding)
-                elseif not (member.IsConstructor and parseObject.IsAbstract) then
+                elseif not (member.IsConstructor and parseObject["%abstract"]) then
                     table.insert(interface.objectData[o].BindTable, methodBinding)
                 end
             end
         end
 
-        if (parseObject.DefType == "class") or (parseObject.DefType == "struct") then
+        if (parseObject.ObjType == "objtype_%class") or (parseObject.ObjType == "objtype_%struct") then
             -- Class Includes
             for condition, includeBindingList in pairs(interface.includeBindingTable) do
                 if not classIncludeBindingTable[condition] then classIncludeBindingTable[condition] = {} end
@@ -3795,12 +3779,12 @@ function GenerateLuaLanguageBinding(interface)
             local tagcondition = FixCondition(parseObject.Condition)
             local classTagBinding =
             {
-                ExternDeclaration = "extern "..MakeImpExpData("int").." s_wxluatag_"..MakeClassVar(parseObject.Name)..";\n",
-                ExternMethodDeclaration = "extern "..output_cpp_impexpsymbol.." wxLuaBindMethod "..MakeVar(parseObject.Name).."_methods[];\n",
+                ExternDeclaration            = "extern "..MakeImpExpData("int").." s_wxluatag_"..MakeClassVar(parseObject.Name)..";\n",
+                ExternMethodDeclaration      = "extern "..output_cpp_impexpsymbol.." wxLuaBindMethod "..MakeVar(parseObject.Name).."_methods[];\n",
                 ExternMethodCountDeclaration = "extern "..MakeImpExpData("int").." "..MakeVar(parseObject.Name).."_methodCount;\n",
-                ExternEnumDeclaration = ExternEnumDeclaration,
-                ExternEnumCountDeclaration = ExternEnumCountDeclaration,
-                Condition = tagcondition
+                ExternEnumDeclaration        = ExternEnumDeclaration,
+                ExternEnumCountDeclaration   = ExternEnumCountDeclaration,
+                Condition                    = tagcondition
             }
 
             if not classTagBindingTable[tagcondition] then classTagBindingTable[tagcondition] = {} end
@@ -3822,12 +3806,12 @@ function GenerateLuaLanguageBinding(interface)
             end
 
             local classinfo = "NULL"
-            if parseObject.HasClassInfo then
+            if not parseObject["%noclassinfo"] then
                 classinfo = "CLASSINFO("..parseObject.Name..")"
             end
 
             -- Class Functions
-            if parseObject.DeleteRequired then
+            if parseObject["%delete"] then
                 -- delete routine
                 codeList = {}
                 local funcName = "wxLua_"..MakeVar(parseObject.Name).."_delete"
@@ -3852,18 +3836,18 @@ function GenerateLuaLanguageBinding(interface)
 
                 local delMethodBinding =
                 {
-                    LuaName = "delete",
-                    CFunctionName = funcName,
-                    Method = codeList,
-                    FuncType = "WXLUAMETHOD_METHOD",
-                    FuncMap = "{ "..funcName..", WXLUAMETHOD_METHOD|WXLUAMETHOD_DELETE, 1, 1, "..overload_argListName.." }",
-                    FuncMapName = funcMapName,
-                    ArgArray = overload_argList,
-                    ArgArrayName = overload_argListName,
-                    ParamCount = 1,
+                    LuaName         = "delete",
+                    CFunctionName   = funcName,
+                    Method          = codeList,
+                    FuncType        = "WXLUAMETHOD_METHOD",
+                    FuncMap         = "{ "..funcName..", WXLUAMETHOD_METHOD|WXLUAMETHOD_DELETE, 1, 1, "..overload_argListName.." }",
+                    FuncMapName     = funcMapName,
+                    ArgArray        = overload_argList,
+                    ArgArrayName    = overload_argListName,
+                    ParamCount      = 1,
                     RequiredParamCount = 1,
-                    Map = "    { \"delete\", WXLUAMETHOD_METHOD|WXLUAMETHOD_DELETE, "..funcMapName..", 1, NULL },\n",
-                    Condition = condition
+                    Map             = "    { \"delete\", WXLUAMETHOD_METHOD|WXLUAMETHOD_DELETE, "..funcMapName..", 1, NULL },\n",
+                    Condition       = condition
                 }
 
                 -- Override Generated Method Code
@@ -4024,8 +4008,8 @@ function GenerateHookHeaderFileTable()
     table.insert(fileData, "    virtual wxLuaBinding* Clone() const { return new "..hook_cpp_binding_classname.."; }\n")
     table.insert(fileData, "\n")
     table.insert(fileData, "protected:\n")
-    table.insert(fileData, "    virtual void PreRegister(const wxLuaState& wxlState, bool registerTypes, int luaTable);\n")
-    table.insert(fileData, "    virtual void PostRegister(const wxLuaState& wxlState, bool registerTypes, int luaTable);\n")
+    table.insert(fileData, "    virtual void PreRegister(const wxLuaState& wxlState, int luaTable);\n")
+    table.insert(fileData, "    virtual void PostRegister(const wxLuaState& wxlState, int luaTable);\n")
     table.insert(fileData, "\n")
     table.insert(fileData, "    DECLARE_DYNAMIC_CLASS("..hook_cpp_binding_classname..")\n")
     table.insert(fileData, "};\n")
@@ -4241,18 +4225,18 @@ function GenerateHookClassFileTable(fileData)
 
     -- load preregister fn from rules file
     if wxLuaBinding_PreRegister and string.len(wxLuaBinding_PreRegister) then
-        table.insert(fileData, "void "..hook_cpp_binding_classname.."::PreRegister(const wxLuaState& wxlState, bool registerTypes, int luaTable)\n")
+        table.insert(fileData, "void "..hook_cpp_binding_classname.."::PreRegister(const wxLuaState& wxlState, int luaTable)\n")
     else
-        table.insert(fileData, "void "..hook_cpp_binding_classname.."::PreRegister(const wxLuaState& , bool , int )\n")
+        table.insert(fileData, "void "..hook_cpp_binding_classname.."::PreRegister(const wxLuaState& , int )\n")
     end
     table.insert(fileData, "{\n")
     table.insert(fileData, wxLuaBinding_PreRegister or "")
     table.insert(fileData, "}\n")
     -- load postregister fn from rules file
     if wxLuaBinding_PostRegister and string.len(wxLuaBinding_PostRegister) then
-        table.insert(fileData, "void "..hook_cpp_binding_classname.."::PostRegister(const wxLuaState& wxlState, bool registerTypes, int luaTable)\n")
+        table.insert(fileData, "void "..hook_cpp_binding_classname.."::PostRegister(const wxLuaState& wxlState, int luaTable)\n")
     else
-        table.insert(fileData, "void "..hook_cpp_binding_classname.."::PostRegister(const wxLuaState& , bool , int )\n")
+        table.insert(fileData, "void "..hook_cpp_binding_classname.."::PostRegister(const wxLuaState&, int )\n")
     end
     table.insert(fileData, "{\n")
     table.insert(fileData, wxLuaBinding_PostRegister or "")
@@ -4630,9 +4614,9 @@ function GenerateBindingFileTable(interface)
     for o = 1, #interface.objectData do
         local object = interface.objectData[o]
 
-        --print("Output ", object.DefType, object.Name)
+        --print("Output ", object.ObjType, object.Name)
 
-        if (object.DefType == "class") or (object.DefType == "struct") then
+        if (object.ObjType == "objtype_%class") or (object.ObjType == "objtype_%struct") then
             local ObjectName = object.Name
             local BindTable = object.BindTable
             local OverloadTable = object.OverloadTable
@@ -4643,7 +4627,7 @@ function GenerateBindingFileTable(interface)
 
             -- Output Parsed Object
             table.insert(fileData, "// ---------------------------------------------------------------------------\n")
-            table.insert(fileData, "// Bind "..object.DefType.." "..object.Name.."\n")
+            table.insert(fileData, "// Bind "..string.sub(object.ObjType, 10).." "..object.Name.."\n")
             table.insert(fileData, "// ---------------------------------------------------------------------------\n\n")
 
             -- Class Tag Declaration
@@ -4892,7 +4876,9 @@ function main()
     InitDataTypes()
 
     if override_fileTable then
-        ReadOverrideFileTable(override_fileTable)
+        for i = 1, #override_fileTable do
+            ReadOverrideFile(override_fileTable[i])
+        end
     end
 
     if #interface_fileTable > 0 then
