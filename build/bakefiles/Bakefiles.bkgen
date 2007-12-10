@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<bakefile-gen>
+<bakefile-gen xmlns="http://www.bakefile.org/schema/bakefile-gen">
 	<!-- ================================================================== -->
 	<!-- Input bakefiles                                                    -->
 	<!-- ================================================================== -->
