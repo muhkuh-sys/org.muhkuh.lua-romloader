@@ -70,12 +70,12 @@
         <if cond="FORMAT!='autoconf' and FORMAT!='gnu'">0</if>
     </set>
     <set var="TARGETING_IDE">
-        <if cond="FORMAT in [ 'msvc6prj', 'cbuilderx', 'kdevelop', 'msvs2005prj' ]">1</if>
-        <if cond="FORMAT not in [ 'msvc6prj', 'cbuilderx', 'kdevelop', 'msvs2005prj' ]">0</if>
+        <if cond="FORMAT in [ 'msvc6prj', 'cbuilderx', 'kdevelop', 'msvs2003prj', 'msvs2005prj' ]">1</if>
+        <if cond="FORMAT not in [ 'msvc6prj', 'cbuilderx', 'kdevelop', 'msvs2003prj', 'msvs2005prj' ]">0</if>
     </set>
     <set var="TARGETING_MAKEFILE">
-        <if cond="FORMAT in [ 'msvc6prj', 'cbuilderx', 'kdevelop', 'msvs2005prj' ]">0</if>
-        <if cond="FORMAT not in [ 'msvc6prj', 'cbuilderx', 'kdevelop', 'msvs2005prj' ]">1</if>
+        <if cond="FORMAT in [ 'msvc6prj', 'cbuilderx', 'kdevelop', 'msvs2003prj', 'msvs2005prj' ]">0</if>
+        <if cond="FORMAT not in [ 'msvc6prj', 'cbuilderx', 'kdevelop', 'msvs2003prj', 'msvs2005prj' ]">1</if>
     </set>
 
     <if cond="TARGETING_WIN32=='1'">
