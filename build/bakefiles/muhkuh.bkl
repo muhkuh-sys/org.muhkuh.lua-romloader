@@ -11,27 +11,6 @@
 	<!--                     The muhkuh application                         -->
 	<!-- ================================================================== -->
 
-	<option name="BUILD_PLUGIN_ROMLOADER_USB">
-		<values>0,1</values>
-		<default-value>1</default-value>
-		<description>Compile the Romloader USB plugin?</description>
-	</option>
-
-
-	<option name="BUILD_PLUGIN_ROMLOADER_BAKA">
-		<values>0,1</values>
-		<default-value>1</default-value>
-		<description>Compile the Romloader dummy plugin?</description>
-	</option>
-
-
-	<option name="BUILD_PLUGIN_ROMLOADER_OPENOCD">
-		<values>0,1</values>
-		<default-value>1</default-value>
-		<description>Compile the Romloader OpenOCD plugin?</description>
-	</option>
-
-
 	<exe id="muhkuh" template="wxlua">
 		<app-type>gui</app-type>
 		<threading>multi</threading>
@@ -82,7 +61,7 @@
 		<wx-lib>base</wx-lib>
 	</exe>
 
-	<module id="plugin_romloader_usb" template="wxlua-lib" cond="BUILD_PLUGIN_ROMLOADER_USB=='1'">
+	<module id="plugin_romloader_usb" template="wxlua-lib">
 		<dllname>bootloader_usb</dllname>
 		<threading>multi</threading>
 		<dirname>$(SRCDIR)/bin</dirname>
@@ -127,7 +106,7 @@
 		<wx-lib>base</wx-lib>
 	</module>
 
-	<module id="plugin_romloader_baka" template="wxlua-lib" cond="BUILD_PLUGIN_ROMLOADER_BAKA=='1'">
+	<module id="plugin_romloader_baka" template="wxlua-lib">
 		<dllname>baka</dllname>
 		<threading>multi</threading>
 		<dirname>$(SRCDIR)/bin</dirname>
@@ -163,7 +142,7 @@
 	</module>
 
 
-	<module id="plugin_romloader_openocd" template="wxlua-lib" cond="BUILD_PLUGIN_ROMLOADER_OPENOCD=='1'">
+	<module id="plugin_romloader_openocd" template="wxlua-lib">
 		<dllname>openocd</dllname>
 		<threading>multi</threading>
 		<dirname>$(SRCDIR)/bin</dirname>
@@ -235,8 +214,11 @@
 			plugins/romloader/openocd/openocd/target/etm.c
 			plugins/romloader/openocd/openocd/target/etm_dummy.c
 			plugins/romloader/openocd/openocd/target/image.c
+			plugins/romloader/openocd/openocd/target/oocd_trace.c
 			plugins/romloader/openocd/openocd/target/register.c
 			plugins/romloader/openocd/openocd/target/target.c
+			plugins/romloader/openocd/openocd/target/target_request.c
+			plugins/romloader/openocd/openocd/target/trace.c
 			plugins/romloader/openocd/openocd/target/xscale.c
 		</sources>
 		<headers>
