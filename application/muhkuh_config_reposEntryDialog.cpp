@@ -39,13 +39,17 @@ muhkuh_config_reposEntryDialog::muhkuh_config_reposEntryDialog(wxWindow *parent,
  : wxDialog(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER)
  , m_ptRepos(ptRepos)
 {
+	wxFileName tFileName;
+	wxString strLocation;
+
+
 	m_strApplicationPath = sApplicationPath;
 
 	// create the controls
 	createControls();
 
-	m_fDirscanUseRelativePaths = false;
-	m_fSingleXmlUseRelativePaths = false;
+	strLocation = m_ptRepos->GetLocation();
+	tFileName.Assign(strLocation);
 
 	m_textRepoName->SetValue( m_ptRepos->GetName() );
 
@@ -53,25 +57,31 @@ muhkuh_config_reposEntryDialog::muhkuh_config_reposEntryDialog(wxWindow *parent,
 	switch( m_eTyp )
 	{
 	case muhkuh_repository::REPOSITORY_TYP_DIRSCAN:
-		m_textDirscanLocation->SetValue( m_ptRepos->GetLocation() );
+		m_textDirscanLocation->SetValue( strLocation );
 		m_textTestExtension->SetValue( m_ptRepos->GetExtension() );
 		m_radioDirscan->SetValue(true);
 		m_radioFilelist->SetValue(false);
 		m_radioSingleXml->SetValue(false);
+		m_fDirscanUseRelativePaths = tFileName.IsRelative(wxPATH_NATIVE);
+		m_fSingleXmlUseRelativePaths = false;
 		break;
 
 	case muhkuh_repository::REPOSITORY_TYP_FILELIST:
-		m_textFilelistLocation->SetValue( m_ptRepos->GetLocation() );
+		m_textFilelistLocation->SetValue( strLocation );
 		m_radioDirscan->SetValue(false);
 		m_radioFilelist->SetValue(true);
 		m_radioSingleXml->SetValue(false);
+		m_fDirscanUseRelativePaths = false;
+		m_fSingleXmlUseRelativePaths = false;
 		break;
 
 	case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
-		m_textSingleXmlLocation->SetValue( m_ptRepos->GetLocation() );
+		m_textSingleXmlLocation->SetValue( strLocation );
 		m_radioDirscan->SetValue(false);
 		m_radioFilelist->SetValue(false);
 		m_radioSingleXml->SetValue(true);
+		m_fDirscanUseRelativePaths = false;
+		m_fSingleXmlUseRelativePaths = tFileName.IsRelative(wxPATH_NATIVE);
 		break;
 
 	default:
@@ -80,6 +90,8 @@ muhkuh_config_reposEntryDialog::muhkuh_config_reposEntryDialog(wxWindow *parent,
 		m_radioFilelist->SetValue(false);
 		m_radioSingleXml->SetValue(false);
 		m_textTestExtension->SetValue(wxT("*.mtd"));
+		m_fDirscanUseRelativePaths = false;
+		m_fSingleXmlUseRelativePaths = false;
 	};
 	SwitchInputs();
 
@@ -142,8 +154,9 @@ void muhkuh_config_reposEntryDialog::createControls(void)
 	m_dirscanGrid->Add(m_textAppPath, 0, wxEXPAND);
 	m_dirscanGrid->AddSpacer(4);
 
-	m_checkDirscanUseRelativePaths = new wxCheckBox(this, muhkuh_configReposEntryDialog_CheckboxDirscanRelPaths, _("Use relative paths :"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
-	m_dirscanGrid->AddSpacer(4);
+	m_labelDirscanUseRelativePaths = new wxStaticText(this, wxID_ANY, _("Use relative paths :"));
+	m_checkDirscanUseRelativePaths = new wxCheckBox(this, muhkuh_configReposEntryDialog_CheckboxDirscanRelPaths, wxT(""), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
+	m_dirscanGrid->Add(m_labelDirscanUseRelativePaths);
 	m_dirscanGrid->AddSpacer(4);
 	m_dirscanGrid->Add(m_checkDirscanUseRelativePaths, 0, wxEXPAND);
 	m_dirscanGrid->AddSpacer(4);
@@ -180,8 +193,9 @@ void muhkuh_config_reposEntryDialog::createControls(void)
 	m_singleXmlGrid->Add(m_textSingleXmlLocation, 0, wxEXPAND);
 	m_singleXmlGrid->Add(m_buttonSingleXmlLocation);
 
-	m_checkSingleXmlUseRelativePaths = new wxCheckBox(this, muhkuh_configReposEntryDialog_CheckboxSingleXmlRelPaths, _("Use relative paths :"), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
-	m_singleXmlGrid->AddSpacer(4);
+	m_labelSingleXmlUseRelativePaths = new wxStaticText(this, wxID_ANY, _("Use relative paths :"));
+	m_checkSingleXmlUseRelativePaths = new wxCheckBox(this, muhkuh_configReposEntryDialog_CheckboxSingleXmlRelPaths, wxT(""), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
+	m_singleXmlGrid->Add(m_labelSingleXmlUseRelativePaths);
 	m_singleXmlGrid->AddSpacer(4);
 	m_singleXmlGrid->Add(m_checkSingleXmlUseRelativePaths, 0, wxEXPAND);
 	m_singleXmlGrid->AddSpacer(4);
@@ -260,7 +274,6 @@ void muhkuh_config_reposEntryDialog::OnOkButton(wxCommandEvent &WXUNUSED(event))
 	wxString strName;
 	wxString strLocation;
 	wxString strExtension;
-//	bool fUseRelativePaths;
 	wxFileName fileName;
 	bool fAllValuesOk;
 
@@ -283,7 +296,6 @@ void muhkuh_config_reposEntryDialog::OnOkButton(wxCommandEvent &WXUNUSED(event))
 			// get values
 			strLocation = m_textDirscanLocation->GetValue();
 			strExtension = m_textTestExtension->GetValue();
-//			fUseRelativePaths = m_checkUseRelativePaths->GetValue();
 
 			// test the values
 			fileName.SetCwd(m_strApplicationPath);
@@ -398,7 +410,7 @@ void muhkuh_config_reposEntryDialog::OnBrowseSingleXmlLocationButton(wxCommandEv
 	if( m_fSingleXmlUseRelativePaths==true )
 	{
 		fileName.Assign(strDialogInitPath);
-		if(fileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE))
+		if( fileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE)==true )
 		{
 			strDialogInitPath = fileName.GetFullPath();
 		}
@@ -426,14 +438,13 @@ bool muhkuh_config_reposEntryDialog::adaptDirscanLocation(wxString strFileName)
 	wxFileName fileName;
 
 	fileName.AssignDir(strFileName);
-	fileName.SetCwd(m_strApplicationPath);
 	if( m_fDirscanUseRelativePaths==true )
 	{
 		fileName.MakeRelativeTo(m_strApplicationPath);
 	}
 	else
 	{
-		fileName.MakeAbsolute();
+		fileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE);
 	}
 
 	m_textDirscanLocation->SetValue( fileName.GetFullPath() );
@@ -458,7 +469,7 @@ void muhkuh_config_reposEntryDialog::OnRadioFilelist(wxCommandEvent &WXUNUSED(ev
 void muhkuh_config_reposEntryDialog::OnSingleXmlUseRelPaths(wxCommandEvent &event)
 {
 	m_fSingleXmlUseRelativePaths = event.IsChecked();
-	adaptDirscanLocation(m_textDirscanLocation->GetValue());
+	adaptSingleXmlLocation(m_textSingleXmlLocation->GetValue());
 }
 
 
@@ -474,16 +485,16 @@ bool muhkuh_config_reposEntryDialog::adaptSingleXmlLocation(wxString strFileName
 	wxFileName fileName;
 
 	fileName.Assign(strFileName);
-	fileName.SetCwd(m_strApplicationPath);
 	if( m_fSingleXmlUseRelativePaths==true )
 	{
 		fileName.MakeRelativeTo(m_strApplicationPath);
 	}
 	else
 	{
-		fileName.MakeAbsolute();
+		fileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE);
 	}
 
 	m_textSingleXmlLocation->SetValue( fileName.GetFullPath() );
 	return true;
 }
+

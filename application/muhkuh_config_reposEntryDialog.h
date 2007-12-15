@@ -77,7 +77,9 @@ private:
 	wxTextCtrl *m_textTestExtension;
 	wxStaticText *m_labelAppPath;
 	wxTextCtrl *m_textAppPath;
+	wxStaticText *m_labelDirscanUseRelativePaths;
 	wxCheckBox *m_checkDirscanUseRelativePaths;
+	wxStaticText *m_labelSingleXmlUseRelativePaths;
 	wxCheckBox *m_checkSingleXmlUseRelativePaths;
 
 	wxFlexGridSizer *m_filelistGrid;
