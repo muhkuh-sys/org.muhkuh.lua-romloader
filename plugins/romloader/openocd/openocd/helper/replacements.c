@@ -24,7 +24,7 @@
 /* DANGER!!!! These must be defined *BEFORE* replacements.h and the malloc() macro!!!! */
 
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 /* 
  * clear_malloc
  *
