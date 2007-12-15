@@ -106,11 +106,11 @@ int etm_dummy_stop_capture(etm_context_t *etm_ctx)
 
 etm_capture_driver_t etm_dummy_capture_driver =
 {
-	.name = "dummy",
-	.register_commands = etm_dummy_register_commands,
-	.init = etm_dummy_init,
-	.status = etm_dummy_status,
-	.start_capture = etm_dummy_start_capture,
-	.stop_capture = etm_dummy_stop_capture,
-	.read_trace = etm_dummy_read_trace,
+	/* .name = */              "dummy",
+	/* .register_commands = */ etm_dummy_register_commands,
+	/* .init = */              etm_dummy_init,
+	/* .status = */            etm_dummy_status,
+	/* .read_trace = */        etm_dummy_read_trace,
+	/* .start_capture = */     etm_dummy_start_capture,
+	/* .stop_capture = */      etm_dummy_stop_capture,
 };

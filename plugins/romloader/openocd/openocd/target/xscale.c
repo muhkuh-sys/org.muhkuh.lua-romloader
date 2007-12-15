@@ -88,40 +88,40 @@ int xscale_read_trace(target_t *target);
 
 target_type_t xscale_target =
 {
-	.name = "xscale",
+	/* .name = */                "xscale",
 
-	.poll = xscale_poll,
-	.arch_state = xscale_arch_state,
+	/* .poll = */                xscale_poll,
+	/* .arch_state = */          xscale_arch_state,
 
-	.target_request_data = NULL,
+	/* .target_request_data = */ NULL,
 
-	.halt = xscale_halt,
-	.resume = xscale_resume,
-	.step = xscale_step,
+	/* .halt = */                xscale_halt,
+	/* .resume = */              xscale_resume,
+	/* .step = */                xscale_step,
 
-	.assert_reset = xscale_assert_reset,
-	.deassert_reset = xscale_deassert_reset,
-	.soft_reset_halt = xscale_soft_reset_halt,
-	.prepare_reset_halt = xscale_prepare_reset_halt,
+	/* .assert_reset = */        xscale_assert_reset,
+	/* .deassert_reset = */      xscale_deassert_reset,
+	/* .soft_reset_halt = */     xscale_soft_reset_halt,
+	/* .prepare_reset_halt = */  xscale_prepare_reset_halt,
 
-	.get_gdb_reg_list = armv4_5_get_gdb_reg_list,
+	/* .get_gdb_reg_list = */    armv4_5_get_gdb_reg_list,
 
-	.read_memory = xscale_read_memory,
-	.write_memory = xscale_write_memory,
-	.bulk_write_memory = xscale_bulk_write_memory,
-	.checksum_memory = xscale_checksum_memory,
+	/* .read_memory = */         xscale_read_memory,
+	/* .write_memory = */        xscale_write_memory,
+	/* .bulk_write_memory = */   xscale_bulk_write_memory,
+	/* .checksum_memory = */     xscale_checksum_memory,
 
-	.run_algorithm = armv4_5_run_algorithm,
+	/* .add_breakpoint = */      xscale_add_breakpoint,
+	/* .remove_breakpoint = */   xscale_remove_breakpoint,
+	/* .add_watchpoint = */      xscale_add_watchpoint,
+	/* .remove_watchpoint = */   xscale_remove_watchpoint,
 
-	.add_breakpoint = xscale_add_breakpoint,
-	.remove_breakpoint = xscale_remove_breakpoint,
-	.add_watchpoint = xscale_add_watchpoint,
-	.remove_watchpoint = xscale_remove_watchpoint,
+	/* .run_algorithm = */       armv4_5_run_algorithm,
 
-	.register_commands = xscale_register_commands,
-	.target_command = xscale_target_command,
-	.init_target = xscale_init_target,
-	.quit = xscale_quit
+	/* .register_commands = */   xscale_register_commands,
+	/* .target_command = */      xscale_target_command,
+	/* .init_target = */         xscale_init_target,
+	/* .quit = */                xscale_quit
 };
 
 char* xscale_reg_list[] =

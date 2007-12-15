@@ -43,7 +43,7 @@ int arm720t_handle_mw_phys_command(struct command_context_s *cmd_ctx, char *cmd,
 /* forward declarations */
 int arm720t_target_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc, struct target_s *target);
 int arm720t_init_target(struct command_context_s *cmd_ctx, struct target_s *target);
-int arm720t_quit();
+int arm720t_quit(void);
 int arm720t_arch_state(struct target_s *target, char *buf, int buf_size);
 int arm720t_read_memory(struct target_s *target, u32 address, u32 size, u32 count, u8 *buffer);
 int arm720t_write_memory(struct target_s *target, u32 address, u32 size, u32 count, u8 *buffer);
@@ -51,38 +51,40 @@ int arm720t_soft_reset_halt(struct target_s *target);
 
 target_type_t arm720t_target =
 {
-	.name = "arm720t",
+	/* .name = */                "arm720t",
 
-	.poll = arm7_9_poll,
-	.arch_state = arm720t_arch_state,
+	/* .poll = */                arm7_9_poll,
+	/* .arch_state = */          arm720t_arch_state,
 
-	.halt = arm7_9_halt,
-	.resume = arm7_9_resume,
-	.step = arm7_9_step,
+	/* .target_request_data = */ NULL,
 
-	.assert_reset = arm7_9_assert_reset,
-	.deassert_reset = arm7_9_deassert_reset,
-	.soft_reset_halt = arm720t_soft_reset_halt,
-	.prepare_reset_halt = arm7_9_prepare_reset_halt,
+	/* .halt = */                arm7_9_halt,
+	/* .resume = */              arm7_9_resume,
+	/* .step = */                arm7_9_step,
+
+	/* .assert_reset = */        arm7_9_assert_reset,
+	/* .deassert_reset = */      arm7_9_deassert_reset,
+	/* .soft_reset_halt = */     arm720t_soft_reset_halt,
+	/* .prepare_reset_halt = */  arm7_9_prepare_reset_halt,
 	
-	.get_gdb_reg_list = armv4_5_get_gdb_reg_list,
+	/* .get_gdb_reg_list = */    armv4_5_get_gdb_reg_list,
 
-	.read_memory = arm720t_read_memory,
-	.write_memory = arm720t_write_memory,
-	.bulk_write_memory = arm7_9_bulk_write_memory,
-	.checksum_memory = arm7_9_checksum_memory,
+	/* .read_memory = */         arm720t_read_memory,
+	/* .write_memory = */        arm720t_write_memory,
+	/* .bulk_write_memory = */   arm7_9_bulk_write_memory,
+	/* .checksum_memory = */     arm7_9_checksum_memory,
 	
-	.run_algorithm = armv4_5_run_algorithm,
+	/* .add_breakpoint = */      arm7_9_add_breakpoint,
+	/* .remove_breakpoint = */   arm7_9_remove_breakpoint,
+	/* .add_watchpoint = */      arm7_9_add_watchpoint,
+	/* .remove_watchpoint = */   arm7_9_remove_watchpoint,
 
-	.add_breakpoint = arm7_9_add_breakpoint,
-	.remove_breakpoint = arm7_9_remove_breakpoint,
-	.add_watchpoint = arm7_9_add_watchpoint,
-	.remove_watchpoint = arm7_9_remove_watchpoint,
+	/* .run_algorithm = */       armv4_5_run_algorithm,
 
-	.register_commands = arm720t_register_commands,
-	.target_command = arm720t_target_command,
-	.init_target = arm720t_init_target,
-	.quit = arm720t_quit
+	/* .register_commands = */   arm720t_register_commands,
+	/* .target_command = */      arm720t_target_command,
+	/* .init_target = */         arm720t_init_target,
+	/* .quit = */                arm720t_quit
 };
 
 int arm720t_scan_cp15(target_t *target, u32 out, u32 *in, int instruction, int clock)

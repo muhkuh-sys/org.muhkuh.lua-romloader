@@ -49,40 +49,40 @@ int arm966e_quit(void);
 
 target_type_t arm966e_target =
 {
-	.name = "arm966e",
+	/* .name = */                "arm966e",
 
-	.poll = arm7_9_poll,
-	.arch_state = armv4_5_arch_state,
+	/* .poll = */                arm7_9_poll,
+	/* .arch_state = */          armv4_5_arch_state,
 
-	.target_request_data = arm7_9_target_request_data,
+	/* .target_request_data = */ arm7_9_target_request_data,
 
-	.halt = arm7_9_halt,
-	.resume = arm7_9_resume,
-	.step = arm7_9_step,
+	/* .halt = */                arm7_9_halt,
+	/* .resume = */              arm7_9_resume,
+	/* .step = */                arm7_9_step,
 
-	.assert_reset = arm7_9_assert_reset,
-	.deassert_reset = arm7_9_deassert_reset,
-	.soft_reset_halt = arm7_9_soft_reset_halt,
-	.prepare_reset_halt = arm7_9_prepare_reset_halt,
+	/* .assert_reset = */        arm7_9_assert_reset,
+	/* .deassert_reset = */      arm7_9_deassert_reset,
+	/* .soft_reset_halt = */     arm7_9_soft_reset_halt,
+	/* .prepare_reset_halt = */  arm7_9_prepare_reset_halt,
 
-	.get_gdb_reg_list = armv4_5_get_gdb_reg_list,
+	/* .get_gdb_reg_list = */    armv4_5_get_gdb_reg_list,
 
-	.read_memory = arm7_9_read_memory,
-	.write_memory = arm7_9_write_memory,
-	.bulk_write_memory = arm7_9_bulk_write_memory,
-	.checksum_memory = arm7_9_checksum_memory,
+	/* .read_memory = */         arm7_9_read_memory,
+	/* .write_memory = */        arm7_9_write_memory,
+	/* .bulk_write_memory = */   arm7_9_bulk_write_memory,
+	/* .checksum_memory = */     arm7_9_checksum_memory,
 	
-	.run_algorithm = armv4_5_run_algorithm,
-	
-	.add_breakpoint = arm7_9_add_breakpoint,
-	.remove_breakpoint = arm7_9_remove_breakpoint,
-	.add_watchpoint = arm7_9_add_watchpoint,
-	.remove_watchpoint = arm7_9_remove_watchpoint,
+	/* .add_breakpoint = */      arm7_9_add_breakpoint,
+	/* .remove_breakpoint = */   arm7_9_remove_breakpoint,
+	/* .add_watchpoint = */      arm7_9_add_watchpoint,
+	/* .remove_watchpoint = */   arm7_9_remove_watchpoint,
 
-	.register_commands = arm966e_register_commands,
-	.target_command = arm966e_target_command,
-	.init_target = arm966e_init_target,
-	.quit = arm966e_quit,
+	/* .run_algorithm = */       armv4_5_run_algorithm,
+	
+	/* .register_commands = */   arm966e_register_commands,
+	/* .target_command = */      arm966e_target_command,
+	/* .init_target = */         arm966e_init_target,
+	/* .quit = */                arm966e_quit
 };
 
 int arm966e_init_target(struct command_context_s *cmd_ctx, struct target_s *target)

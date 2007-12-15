@@ -53,40 +53,40 @@ int cortex_m3_store_core_reg_u32(target_t *target, enum armv7m_regtype type, u32
 		
 target_type_t cortexm3_target =
 {
-	.name = "cortex_m3",
+	/* .name = */                "cortex_m3",
 
-	.poll = cortex_m3_poll,
-	.arch_state = armv7m_arch_state,
+	/* .poll = */                cortex_m3_poll,
+	/* .arch_state = */          armv7m_arch_state,
 
-	.target_request_data = NULL,
+	/* .target_request_data = */ NULL,
 
-	.halt = cortex_m3_halt,
-	.resume = cortex_m3_resume,
-	.step = cortex_m3_step,
+	/* .halt = */                cortex_m3_halt,
+	/* .resume = */              cortex_m3_resume,
+	/* .step = */                cortex_m3_step,
 
-	.assert_reset = cortex_m3_assert_reset,
-	.deassert_reset = cortex_m3_deassert_reset,
-	.soft_reset_halt = cortex_m3_soft_reset_halt,
-	.prepare_reset_halt = cortex_m3_prepare_reset_halt,
+	/* .assert_reset = */        cortex_m3_assert_reset,
+	/* .deassert_reset = */      cortex_m3_deassert_reset,
+	/* .soft_reset_halt = */     cortex_m3_soft_reset_halt,
+	/* .prepare_reset_halt = */  cortex_m3_prepare_reset_halt,
 	
-	.get_gdb_reg_list = armv7m_get_gdb_reg_list,
+	/* .get_gdb_reg_list = */    armv7m_get_gdb_reg_list,
 
-	.read_memory = cortex_m3_read_memory,
-	.write_memory = cortex_m3_write_memory,
-	.bulk_write_memory = cortex_m3_bulk_write_memory,
-	.checksum_memory = armv7m_checksum_memory,
+	/* .read_memory = */         cortex_m3_read_memory,
+	/* .write_memory = */        cortex_m3_write_memory,
+	/* .bulk_write_memory = */   cortex_m3_bulk_write_memory,
+	/* .checksum_memory = */     armv7m_checksum_memory,
 	
-	.run_algorithm = armv7m_run_algorithm,
-	
-	.add_breakpoint = cortex_m3_add_breakpoint,
-	.remove_breakpoint = cortex_m3_remove_breakpoint,
-	.add_watchpoint = cortex_m3_add_watchpoint,
-	.remove_watchpoint = cortex_m3_remove_watchpoint,
+	/* .add_breakpoint = */      cortex_m3_add_breakpoint,
+	/* .remove_breakpoint = */   cortex_m3_remove_breakpoint,
+	/* .add_watchpoint = */      cortex_m3_add_watchpoint,
+	/* .remove_watchpoint = */   cortex_m3_remove_watchpoint,
 
-	.register_commands = cortex_m3_register_commands,
-	.target_command = cortex_m3_target_command,
-	.init_target = cortex_m3_init_target,
-	.quit = cortex_m3_quit
+	/* .run_algorithm = */       armv7m_run_algorithm,
+	
+	/* .register_commands = */   cortex_m3_register_commands,
+	/* .target_command = */      cortex_m3_target_command,
+	/* .init_target = */         cortex_m3_init_target,
+	/* .quit = */                cortex_m3_quit
 };
 
 int cortex_m3_clear_halt(target_t *target)

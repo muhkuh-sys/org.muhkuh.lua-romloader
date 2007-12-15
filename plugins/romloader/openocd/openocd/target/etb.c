@@ -731,11 +731,11 @@ int etb_stop_capture(etm_context_t *etm_ctx)
 
 etm_capture_driver_t etb_capture_driver =
 {
-	.name = "etb",
-	.register_commands = etb_register_commands,
-	.init = etb_init,
-	.status = etb_status,
-	.start_capture = etb_start_capture,
-	.stop_capture = etb_stop_capture,
-	.read_trace = etb_read_trace,
+	/* .name = */              "etb",
+	/* .register_commands = */ etb_register_commands,
+	/* .init = */              etb_init,
+	/* .status = */            etb_status,
+	/* .read_trace = */        etb_read_trace,
+	/* .start_capture = */     etb_start_capture,
+	/* .stop_capture = */      etb_stop_capture,
 };

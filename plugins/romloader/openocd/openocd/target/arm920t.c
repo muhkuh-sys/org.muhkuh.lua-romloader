@@ -48,7 +48,7 @@ int arm920t_handle_read_mmu_command(struct command_context_s *cmd_ctx, char *cmd
 /* forward declarations */
 int arm920t_target_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc, struct target_s *target);
 int arm920t_init_target(struct command_context_s *cmd_ctx, struct target_s *target);
-int arm920t_quit();
+int arm920t_quit(void);
 int arm920t_arch_state(struct target_s *target, char *buf, int buf_size);
 int arm920t_read_memory(struct target_s *target, u32 address, u32 size, u32 count, u8 *buffer);
 int arm920t_write_memory(struct target_s *target, u32 address, u32 size, u32 count, u8 *buffer);
@@ -58,40 +58,40 @@ int arm920t_soft_reset_halt(struct target_s *target);
 
 target_type_t arm920t_target =
 {
-	.name = "arm920t",
+	/* .name = */                "arm920t",
 
-	.poll = arm7_9_poll,
-	.arch_state = arm920t_arch_state,
+	/* .poll = */                arm7_9_poll,
+	/* .arch_state = */          arm920t_arch_state,
 
-	.target_request_data = arm7_9_target_request_data,
+	/* .target_request_data = */ arm7_9_target_request_data,
 
-	.halt = arm7_9_halt,
-	.resume = arm7_9_resume,
-	.step = arm7_9_step,
+	/* .halt = */                arm7_9_halt,
+	/* .resume = */              arm7_9_resume,
+	/* .step = */                arm7_9_step,
 
-	.assert_reset = arm7_9_assert_reset,
-	.deassert_reset = arm7_9_deassert_reset,
-	.soft_reset_halt = arm920t_soft_reset_halt,
-	.prepare_reset_halt = arm7_9_prepare_reset_halt,
+	/* .assert_reset = */        arm7_9_assert_reset,
+	/* .deassert_reset = */      arm7_9_deassert_reset,
+	/* .soft_reset_halt = */     arm920t_soft_reset_halt,
+	/* .prepare_reset_halt = */  arm7_9_prepare_reset_halt,
 	
-	.get_gdb_reg_list = armv4_5_get_gdb_reg_list,
+	/* .get_gdb_reg_list = */    armv4_5_get_gdb_reg_list,
 
-	.read_memory = arm920t_read_memory,
-	.write_memory = arm920t_write_memory,
-	.bulk_write_memory = arm7_9_bulk_write_memory,
-	.checksum_memory = arm7_9_checksum_memory,
+	/* .read_memory = */         arm920t_read_memory,
+	/* .write_memory = */        arm920t_write_memory,
+	/* .bulk_write_memory = */   arm7_9_bulk_write_memory,
+	/* .checksum_memory = */     arm7_9_checksum_memory,
 	
-	.run_algorithm = armv4_5_run_algorithm,
+	/* .add_breakpoint = */      arm7_9_add_breakpoint,
+	/* .remove_breakpoint = */   arm7_9_remove_breakpoint,
+	/* .add_watchpoint = */      arm7_9_add_watchpoint,
+	/* .remove_watchpoint = */   arm7_9_remove_watchpoint,
 
-	.add_breakpoint = arm7_9_add_breakpoint,
-	.remove_breakpoint = arm7_9_remove_breakpoint,
-	.add_watchpoint = arm7_9_add_watchpoint,
-	.remove_watchpoint = arm7_9_remove_watchpoint,
+	/* .run_algorithm = */       armv4_5_run_algorithm,
 
-	.register_commands = arm920t_register_commands,
-	.target_command = arm920t_target_command,
-	.init_target = arm920t_init_target,
-	.quit = arm920t_quit
+	/* .register_commands = */   arm920t_register_commands,
+	/* .target_command = */      arm920t_target_command,
+	/* .init_target = */         arm920t_init_target,
+	/* .quit = */                arm920t_quit
 };
 
 int arm920t_read_cp15_physical(target_t *target, int reg_addr, u32 *value)

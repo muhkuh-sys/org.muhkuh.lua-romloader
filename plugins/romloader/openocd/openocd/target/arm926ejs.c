@@ -48,7 +48,7 @@ int arm926ejs_handle_read_mmu_command(struct command_context_s *cmd_ctx, char *c
 /* forward declarations */
 int arm926ejs_target_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc, struct target_s *target);
 int arm926ejs_init_target(struct command_context_s *cmd_ctx, struct target_s *target);
-int arm926ejs_quit();
+int arm926ejs_quit(void);
 int arm926ejs_arch_state(struct target_s *target, char *buf, int buf_size);
 int arm926ejs_read_memory(struct target_s *target, u32 address, u32 size, u32 count, u8 *buffer);
 int arm926ejs_write_memory(struct target_s *target, u32 address, u32 size, u32 count, u8 *buffer);
@@ -58,40 +58,40 @@ int arm926ejs_soft_reset_halt(struct target_s *target);
 
 target_type_t arm926ejs_target =
 {
-	.name = "arm926ejs",
+	/* .name = */                "arm926ejs",
 
-	.poll = arm7_9_poll,
-	.arch_state = arm926ejs_arch_state,
+	/* .poll = */                arm7_9_poll,
+	/* .arch_state = */          arm926ejs_arch_state,
 
-	.target_request_data = arm7_9_target_request_data,
+	/* .target_request_data = */ arm7_9_target_request_data,
 
-	.halt = arm7_9_halt,
-	.resume = arm7_9_resume,
-	.step = arm7_9_step,
+	/* .halt = */                arm7_9_halt,
+	/* .resume = */              arm7_9_resume,
+	/* .step = */                arm7_9_step,
 
-	.assert_reset = arm7_9_assert_reset,
-	.deassert_reset = arm7_9_deassert_reset,
-	.soft_reset_halt = arm926ejs_soft_reset_halt,
-	.prepare_reset_halt = arm7_9_prepare_reset_halt,
+	/* .assert_reset = */        arm7_9_assert_reset,
+	/* .deassert_reset = */      arm7_9_deassert_reset,
+	/* .soft_reset_halt = */     arm926ejs_soft_reset_halt,
+	/* .prepare_reset_halt = */  arm7_9_prepare_reset_halt,
 	
-	.get_gdb_reg_list = armv4_5_get_gdb_reg_list,
+	/* .get_gdb_reg_list = */    armv4_5_get_gdb_reg_list,
 
-	.read_memory = arm7_9_read_memory,
-	.write_memory = arm926ejs_write_memory,
-	.bulk_write_memory = arm7_9_bulk_write_memory,
-	.checksum_memory = arm7_9_checksum_memory,
+	/* .read_memory = */         arm7_9_read_memory,
+	/* .write_memory = */        arm926ejs_write_memory,
+	/* .bulk_write_memory = */   arm7_9_bulk_write_memory,
+	/* .checksum_memory = */     arm7_9_checksum_memory,
 	
-	.run_algorithm = armv4_5_run_algorithm,
+	/* .add_breakpoint = */      arm7_9_add_breakpoint,
+	/* .remove_breakpoint = */   arm7_9_remove_breakpoint,
+	/* .add_watchpoint = */      arm7_9_add_watchpoint,
+	/* .remove_watchpoint = */   arm7_9_remove_watchpoint,
 
-	.add_breakpoint = arm7_9_add_breakpoint,
-	.remove_breakpoint = arm7_9_remove_breakpoint,
-	.add_watchpoint = arm7_9_add_watchpoint,
-	.remove_watchpoint = arm7_9_remove_watchpoint,
+	/* .run_algorithm = */       armv4_5_run_algorithm,
 
-	.register_commands = arm926ejs_register_commands,
-	.target_command = arm926ejs_target_command,
-	.init_target = arm926ejs_init_target,
-	.quit = arm926ejs_quit
+	/* .register_commands = */   arm926ejs_register_commands,
+	/* .target_command = */      arm926ejs_target_command,
+	/* .init_target = */         arm926ejs_init_target,
+	/* .quit = */                arm926ejs_quit
 };
 
 int arm926ejs_catch_broken_irscan(u8 *in_value, void *priv)
