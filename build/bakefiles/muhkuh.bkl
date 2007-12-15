@@ -153,6 +153,7 @@
 		<include>$(SRCDIR)/plugins/romloader/openocd/openocd/target</include>
 		<include>$(SRCDIR)/plugins/romloader/openocd/openocd/xsvf</include>
 		<define>HAVE_CONFIG_H</define>
+		<define>PKGLIBDIR="."</define>
 		<sources>
 			plugins/romloader/romloader.cpp
 			plugins/romloader/openocd/romloader_openocd_main.cpp
