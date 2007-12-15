@@ -29,6 +29,7 @@
 /* include necessary headers for socket functionality */
 #ifdef _WIN32
 #include <winsock2.h>
+#define _TIMEVAL_DEFINED
 #else
 #include <sys/socket.h>
 #include <sys/poll.h>
