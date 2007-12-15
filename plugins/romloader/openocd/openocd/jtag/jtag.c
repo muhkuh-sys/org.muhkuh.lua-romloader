@@ -31,9 +31,6 @@
 
 #include "stdlib.h"
 #include "string.h"
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif	/* HAVE_UNISTD_H */
 
 char* tap_state_strings[16] =
 {

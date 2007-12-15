@@ -28,16 +28,10 @@
 #include "log.h"
 
 #include <stdlib.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif	/* HAVE_UNISTD_H */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
-
-#include <sys/time.h>
-#include <time.h>
 
 #define XSTATE_MAX_PATH (12)
 

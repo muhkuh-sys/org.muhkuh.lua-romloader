@@ -35,9 +35,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif	/* HAVE_UNISTD_H */
 
 bitfield_desc_t armv4_5_psr_bitfield_desc[] = 
 {

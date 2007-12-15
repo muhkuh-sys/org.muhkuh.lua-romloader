@@ -28,8 +28,7 @@
 #include "command.h"
 #include "types.h"
 
-#include <sys/time.h>
-#include <time.h>
+#include "replacements.h"
 
 struct reg_s;
 struct command_context_s;

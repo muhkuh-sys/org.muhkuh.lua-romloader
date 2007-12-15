@@ -36,13 +36,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif	/* HAVE_UNISTD_H */
 #include <errno.h>
-
-#include <sys/time.h>
-#include <time.h>
 
 #include <time_support.h>
 

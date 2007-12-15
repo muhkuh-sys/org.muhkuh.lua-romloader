@@ -35,9 +35,6 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif	/* HAVE_UNISTD_H */
 
 int handle_sleep_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc);
 

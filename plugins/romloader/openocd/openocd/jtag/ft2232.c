@@ -38,9 +38,6 @@
 /* system includes */
 #include <string.h>
 #include <stdlib.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif	/* HAVE_UNISTD_H */
 
 /* FT2232 access library includes */
 #if BUILD_FT2232_FTD2XX == 1
@@ -48,9 +45,6 @@
 #elif BUILD_FT2232_LIBFTDI == 1
 #include <ftdi.h>
 #endif
-
-#include <sys/time.h>
-#include <time.h>
 
 /* enable this to debug io latency
  */
