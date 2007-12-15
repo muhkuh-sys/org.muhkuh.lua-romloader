@@ -274,7 +274,7 @@ void muhkuh_configDialog::OnAddPluginButton(wxCommandEvent &WXUNUSED(event))
 		}
 	}
 */
-	pluginDialog = new wxFileDialog(this, wxT("Select the new plugin"), strDialogInitPath, wxEmptyString, wxT("*.*"), wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+	pluginDialog = new wxFileDialog(this, wxT("Select the new plugin"), strDialogInitPath, wxEmptyString, wxT("*.xml"), wxFD_OPEN|wxFD_FILE_MUST_EXIST);
 
 	if( pluginDialog->ShowModal()==wxID_OK )
 	{
@@ -397,7 +397,6 @@ void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 	wxListItem listItem;
 	const muhkuh_plugin_desc *ptPluginDesc;
 	wxString strName;
-	const char *pcName;
 	long lItemIdx;
 
 
@@ -409,15 +408,7 @@ void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 	}
 	else
 	{
-		pcName = ptPluginDesc->pcPluginName;
-		if( pcName==NULL )
-		{
-			strName = wxT("missing name");
-		}
-		else
-		{
-			strName = wxString::FromAscii(pcName);
-		}
+		strName = m_ptPluginManager->GetConfigName(lIdx);
 		listItem.Clear();
 		listItem.SetId(lIdx);
 		listItem.SetText( strName );
@@ -426,15 +417,7 @@ void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 
 		ShowPluginImage(lIdx);
 
-		pcName = ptPluginDesc->pcPluginId;
-		if( pcName==NULL )
-		{
-			strName = wxT("missing id");
-		}
-		else
-		{
-			strName = wxString::FromAscii(pcName);
-		}
+		strName = ptPluginDesc->strPluginId;
 		m_pluginList->SetItem(lItemIdx, 1, strName);
 
 		strName.Printf(wxT("%d.%d.%d"), ptPluginDesc->tVersion.uiVersionMajor, ptPluginDesc->tVersion.uiVersionMinor, ptPluginDesc->tVersion.uiVersionSub);

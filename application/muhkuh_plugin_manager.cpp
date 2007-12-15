@@ -95,7 +95,7 @@ muhkuh_plugin_manager::~muhkuh_plugin_manager(void)
 }
 
 
-long muhkuh_plugin_manager::addPlugin(wxString strPluginName)
+long muhkuh_plugin_manager::addPlugin(wxString strPluginCfgName)
 {
 	muhkuh_plugin *ptPlugin;
 	long lPluginIdx;
@@ -105,11 +105,11 @@ long muhkuh_plugin_manager::addPlugin(wxString strPluginName)
 	lPluginIdx = -1;
 
 	/* try to create the plugin */
-	ptPlugin = new muhkuh_plugin(strPluginName);
+	ptPlugin = new muhkuh_plugin(strPluginCfgName);
 	/* check if the plugin was loaded */
 	if( ptPlugin==NULL )
 	{
-		wxLogError(wxT("failed to create plugin ") + strPluginName);
+		wxLogError(wxT("failed to create plugin ") + strPluginCfgName);
 	}
 	else
 	{
@@ -187,6 +187,32 @@ const muhkuh_plugin_desc *muhkuh_plugin_manager::getPluginDescription(unsigned l
 	}
 
 	return ptDesc;
+}
+
+
+wxString muhkuh_plugin_manager::GetConfigName(unsigned long ulIdx) const
+{
+	std::vector<muhkuh_plugin*>::const_iterator iter;
+	muhkuh_plugin *ptPluginIf;
+	wxString strMsg;
+	wxString strResult;
+
+
+	/* check input parameter */
+	if( ulIdx>=m_ptOpenPlugins->size() )
+	{
+		strMsg.Printf(wxT("muhkuh_plugin_manager::SetEnable : idx %ld is out of range, ignoring request"), ulIdx);
+		wxLogError(strMsg);
+	}
+	else
+	{
+		iter = m_ptOpenPlugins->begin();
+		iter += ulIdx;
+		ptPluginIf = *iter;
+		strResult = ptPluginIf->GetConfigName();
+	}
+
+	return strResult;
 }
 
 
@@ -346,7 +372,7 @@ int muhkuh_plugin_manager::initLuaBindings(wxLuaState *ptLuaState)
 		{
 			/* get the plugin name for messages */
 			ptDesc = ptPlugin->fn_get_desc();
-			strPluginName = wxString::FromAscii(ptDesc->pcPluginName);
+			strPluginName = ptDesc->strPluginName;
 
 			fResult = ptPlugin->IsOk();
 			if( fResult!=true )
@@ -426,9 +452,9 @@ bool muhkuh_plugin_manager::ScanPlugins(wxString strPattern)
 		{
 			// get the plugin name for messages
 			ptDesc = ptPlugin->fn_get_desc();
-			strPluginName = wxString::FromAscii(ptDesc->pcPluginName);
+			strPluginName = ptDesc->strPluginName;
 			// get the plugin id for the match
-			strPluginId = wxString::FromAscii(ptDesc->pcPluginId);
+			strPluginId = ptDesc->strPluginId;
 
 			fResult = ptPlugin->IsOk();
 			if( fResult!=true )

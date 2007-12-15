@@ -47,10 +47,10 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 
 /*-------------------------------------*/
 
-const muhkuh_plugin_desc plugin_desc =
+static muhkuh_plugin_desc plugin_desc =
 {
-	"Dummy Plugin",
-	"romloader_baka",
+	wxT("Dummy Plugin"),
+	wxT(""),
 	{ 0, 0, 1 }
 };
 
@@ -85,7 +85,7 @@ baka_instance_cfg_t atInstanceCfg[uiInstances];
 
 /*-------------------------------------*/
 
-int fn_init(wxLog *ptLogTarget)
+int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId)
 {
 	wxLog *pOldLogTarget;
 	baka_instance_cfg_t *ptC, *ptE;
@@ -106,6 +106,9 @@ int fn_init(wxLog *ptLogTarget)
 	/* say hi */
 	strMsg.Printf(wxT("baka plugin init, preparing %d instances"), uiInstances);
 	wxLogMessage(strMsg);
+
+	/* remember id */
+	plugin_desc.strPluginId = strPluginId;
 
 	/* init the lua state */
 	m_ptLuaState = NULL;
@@ -198,7 +201,7 @@ int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList)
 	bool fIsUsed;
 
 
-	strTyp = wxString::FromAscii(plugin_desc.pcPluginId);
+	strTyp = plugin_desc.strPluginId;
 	strLuaCreateFn = wxT("muhkuh.romloader_baka_create");
 
 	// detect all interfaces
@@ -285,7 +288,7 @@ romloader *romloader_baka_create(void *pvHandle)
 		else
 		{
 			/* create the new instance */
-			strTyp = wxString::FromAscii(plugin_desc.pcPluginId);
+			strTyp = plugin_desc.strPluginId;
 			strName.Printf("baka_%d", uiIdx);
 			ptInstance = new romloader(strName, strTyp, &tFunctionInterface, pvHandle, romloader_baka_close_instance, m_ptLuaState);
 			atInstanceCfg[uiIdx].fIsUsed = true;

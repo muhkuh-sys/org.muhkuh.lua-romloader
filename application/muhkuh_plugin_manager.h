@@ -40,11 +40,13 @@ public:
 	muhkuh_plugin_manager(const muhkuh_plugin_manager *ptClone);
 	~muhkuh_plugin_manager(void);
 
-	long addPlugin(wxString strPluginName);
+	long addPlugin(wxString strPluginCfgName);
 	void removePlugin(unsigned long ulIdx);
 
 	size_t getPluginCount(void) const;
 	const muhkuh_plugin_desc *getPluginDescription(unsigned long ulIdx) const;
+
+	wxString GetConfigName(unsigned long ulIdx) const;
 
 	void SetEnable(unsigned long ulIdx, bool fPluginIsEnabled);
 	bool GetEnable(unsigned long ulIdx) const;

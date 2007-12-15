@@ -38,16 +38,18 @@ class muhkuh_plugin
 {
 public:
 	muhkuh_plugin(void);
-	muhkuh_plugin(wxString strPluginPath);
+	muhkuh_plugin(wxString strPluginCfgPath);
 	muhkuh_plugin(const muhkuh_plugin *ptCloneMe);
 	muhkuh_plugin(wxConfigBase *pConfig);
 	~muhkuh_plugin(void);
 
-	bool Load(wxString strPluginPath);
+	wxString GetConfigName(void) const;
+
+	bool Load(wxString strPluginCfgPath);
 	bool IsOk(void);
 
 	void SetEnable(bool fPluginIsEnabled);
-	bool GetEnable(void);
+	bool GetEnable(void) const;
 
 	void write_config(wxConfigBase *pConfig);
 
@@ -62,19 +64,29 @@ public:
 	} muhkuh_plugin_symbol_offset_t;
 
 private:
+	bool openXml(wxString strXmlPath);
 	bool open(wxString strPluginPath);
 	void close(void);
 
-	int fn_init(wxLog *ptLogTarget);
+	int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId);
 	int fn_leave(void);
 
 	static const muhkuh_plugin_symbol_offset_t atPluginSymbolOffsets[];
 
-	wxString m_strPluginPath;
+	muhkuh_plugin_desc tPluginDesc;
+
+	wxString m_strPluginCfgPath;
 	bool m_fPluginIsEnabled;
 	muhkuh_plugin_interface m_tPluginIf;
 
 	wxLuaState *m_ptLuaState;
+
+	wxXmlDocument m_xmldoc;
+	wxString m_strCfgName;
+	wxXmlNode *m_ptCfgNode;
+	wxString m_strSoName;
+	wxString m_strPluginId;
+	wxString m_strXmlCfgPath;
 };
 
 

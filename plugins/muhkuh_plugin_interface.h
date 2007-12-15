@@ -23,6 +23,7 @@
 
 #include <wx/wx.h>
 #include <wx/dynlib.h>
+#include <wx/xml/xml.h>
 
 #include <wxlua/include/wxlua.h>
 #include <wxluasocket/include/wxldserv.h>
@@ -115,13 +116,13 @@ typedef struct
 	unsigned int	uiVersionMajor;
 	unsigned int	uiVersionMinor;
 	unsigned int	uiVersionSub;
-} muhkuh_plugin_version;
+} muhkuh_plugin_so_version;
 
 typedef struct
 {
-	const char		*pcPluginName;
-	const char		*pcPluginId;
-	muhkuh_plugin_version	tVersion;
+	wxString			strPluginName;
+	wxString			strPluginId;
+	muhkuh_plugin_so_version	tVersion;
 } muhkuh_plugin_desc;
 
 /*-----------------------------------*/
@@ -130,7 +131,7 @@ typedef struct
   This is the required plugin interface which has to be present in every
   plugin. All function symbols are resolved when the plugin is opened.
 */
-typedef int (*muhkuh_plugin_fn_init)(wxLog *ptLogTarget);
+typedef int (*muhkuh_plugin_fn_init)(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId);
 typedef int (*muhkuh_plugin_fn_init_lua)(wxLuaState *ptLuaState);
 typedef int (*muhkuh_plugin_fn_leave)(void);
 typedef const muhkuh_plugin_desc *(*muhkuh_plugin_fn_get_desc)(void);

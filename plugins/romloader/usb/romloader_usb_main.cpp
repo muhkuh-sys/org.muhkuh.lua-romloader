@@ -41,10 +41,10 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 
 /*-------------------------------------*/
 
-const muhkuh_plugin_desc plugin_desc =
+static muhkuh_plugin_desc plugin_desc =
 {
-	"netX500 USB Bootloader",
-	"romloader_usb_netx500",
+	wxT("USB Bootloader"),
+	wxT(""),
 	{ 0, 0, 1 }
 };
 
@@ -68,7 +68,7 @@ static wxLuaState *m_ptLuaState;
 
 /*-------------------------------------*/
 
-int fn_init(wxLog *ptLogTarget)
+int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId)
 {
 	wxLog *pOldLogTarget;
 
@@ -86,6 +86,9 @@ int fn_init(wxLog *ptLogTarget)
 
 	/* say hi */
 	wxLogMessage(wxT("bootloader usb plugin init"));
+
+	/* remember id */
+	plugin_desc.strPluginId = strPluginId;
 
 	/* init the lua state */
 	m_ptLuaState = NULL;
@@ -167,7 +170,7 @@ int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList)
 		return -1;
 	}
 
-	strTyp = wxString::FromAscii(plugin_desc.pcPluginId);
+	strTyp = plugin_desc.strPluginId;
 	strLuaCreateFn = wxT("muhkuh.romloader_usb_create");
 
 	iInterfaces = 0;
@@ -299,7 +302,7 @@ romloader *romloader_usb_create(void *pvHandle)
 		free(pucData);
 
 		/* create the new instance */
-		strTyp = wxString::FromAscii(plugin_desc.pcPluginId);
+		strTyp = plugin_desc.strPluginId;
 		strName.Printf("romloader_usb_%08x_%02x", ptNetxDev->bus->location, ptNetxDev->devnum);
 		ptInstance = new romloader(strName, strTyp, &tFunctionInterface, tHandle, romloader_usb_close_instance, m_ptLuaState);
 //		atInstanceCfg[uiIdx].fIsUsed = true;
