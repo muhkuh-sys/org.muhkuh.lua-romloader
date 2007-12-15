@@ -233,4 +233,13 @@ typedef struct
 
 #endif /* HAVE_ELF_H */
 
+
+#ifdef HAVE_INTTYPES_H
+	#include <inttypes.h>
+#endif /* HAVE_INTTYPES_H */
+
+#ifndef PRIi64
+	#define PRIi64 "li"
+#endif /* PRIi64 */
+
 #endif /* REPLACEMENTS_H */

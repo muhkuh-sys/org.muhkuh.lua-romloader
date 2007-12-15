@@ -29,7 +29,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
 
 int trace_point(target_t *target, int number)
 {
