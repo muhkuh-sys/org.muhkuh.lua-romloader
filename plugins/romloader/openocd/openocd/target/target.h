@@ -23,6 +23,7 @@
 #include "register.h"
 #include "breakpoints.h"
 #include "algorithm.h"
+#include "trace.h"
 
 #include "command.h"
 #include "types.h"
@@ -101,6 +102,9 @@ typedef struct target_type_s
 	/* architecture specific status reply */
 	int (*arch_state)(struct target_s *target, char *buf, int buf_size);
 
+	/* target request support */
+	int (*target_request_data)(struct target_s *target, u32 size, u8 *buffer);
+
 	/* target execution control */
 	int (*halt)(struct target_s *target);
 	int (*resume)(struct target_s *target, int current, u32 address, int handle_breakpoints, int debug_execution);
@@ -124,6 +128,8 @@ typedef struct target_type_s
 	
 	/* write target memory in multiples of 4 byte, optimized for writing large quantities of data */
 	int (*bulk_write_memory)(struct target_s *target, u32 address, u32 count, u8 *buffer);
+	
+	int (*checksum_memory)(struct target_s *target, u32 address, u32 count, u32* checksum);
 	
 	/* target break-/watchpoint control 
 	* rw: 0 = write, 1 = read, 2 = access
@@ -155,12 +161,14 @@ typedef struct target_s
 	u32 working_area_size;				/* size in bytes */
 	u32 backup_working_area;			/* whether the content of the working area has to be preserved */
 	struct working_area_s *working_areas;/* list of allocated working areas */
-	enum target_debug_reason debug_reason; /* reason why the target entered debug state */
+	enum target_debug_reason debug_reason;/* reason why the target entered debug state */
 	enum target_endianess endianness;	/* target endianess */
 	enum target_state state;			/* the current backend-state (running, halted, ...) */
 	struct reg_cache_s *reg_cache;		/* the first register cache of the target (core regs) */
 	struct breakpoint_s *breakpoints;	/* list of breakpoints */
 	struct watchpoint_s *watchpoints;	/* list of watchpoints */
+	struct trace_s *trace_info;			/* generic trace information */
+	struct debug_msg_receiver_s *dbgmsg;/* list of debug message receivers */
 	void *arch_info;					/* architecture specific information */
 	struct target_s *next;				/* next target in list */
 } target_t;
@@ -195,6 +203,7 @@ extern int target_register_commands(struct command_context_s *cmd_ctx);
 extern int target_register_user_commands(struct command_context_s *cmd_ctx);
 extern int target_init(struct command_context_s *cmd_ctx);
 extern int handle_target(void *priv);
+extern int target_process_reset(struct command_context_s *cmd_ctx);
 
 extern int target_register_event_callback(int (*callback)(struct target_s *target, enum target_event event, void *priv), void *priv);
 extern int target_unregister_event_callback(int (*callback)(struct target_s *target, enum target_event event, void *priv), void *priv);
@@ -210,6 +219,7 @@ extern target_t* get_target_by_num(int num);
 
 extern int target_write_buffer(struct target_s *target, u32 address, u32 size, u8 *buffer);
 extern int target_read_buffer(struct target_s *target, u32 address, u32 size, u8 *buffer);
+extern int target_checksum_memory(struct target_s *target, u32 address, u32 size, u32* crc);
 
 extern int target_alloc_working_area(struct target_s *target, u32 size, working_area_t **area);
 extern int target_free_working_area(struct target_s *target, working_area_t *area);

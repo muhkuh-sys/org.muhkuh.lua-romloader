@@ -54,6 +54,8 @@ target_type_t arm966e_target =
 	.poll = arm7_9_poll,
 	.arch_state = armv4_5_arch_state,
 
+	.target_request_data = arm7_9_target_request_data,
+
 	.halt = arm7_9_halt,
 	.resume = arm7_9_resume,
 	.step = arm7_9_step,
@@ -68,7 +70,8 @@ target_type_t arm966e_target =
 	.read_memory = arm7_9_read_memory,
 	.write_memory = arm7_9_write_memory,
 	.bulk_write_memory = arm7_9_bulk_write_memory,
-
+	.checksum_memory = arm7_9_checksum_memory,
+	
 	.run_algorithm = armv4_5_run_algorithm,
 	
 	.add_breakpoint = arm7_9_add_breakpoint,
@@ -224,9 +227,15 @@ int arm966e_read_cp15(target_t *target, int reg_addr, u32 *value)
 	
 	jtag_add_dr_scan(3, fields, -1, NULL);
 
-	fields[0].in_value = (u8*)value;
+	fields[0].in_handler_priv = value;
+	fields[0].in_handler = arm_jtag_buf_to_u32;
 
 	jtag_add_dr_scan(3, fields, -1, NULL);
+
+#ifdef _DEBUG_INSTRUCTION_EXECUTION_
+	jtag_execute_queue();
+	DEBUG("addr: 0x%x value: %8.8x", reg_addr, *value);
+#endif
 
 	return ERROR_OK;
 }
@@ -239,6 +248,9 @@ int arm966e_write_cp15(target_t *target, int reg_addr, u32 value)
 	scan_field_t fields[3];
 	u8 reg_addr_buf = reg_addr & 0x3f;
 	u8 nr_w_buf = 1;
+	u8 value_buf[4];
+	
+	buf_set_u32(value_buf, 0, 32, value);
 	
 	jtag_add_end_state(TAP_RTI);
 	arm_jtag_scann(jtag_info, 0xf);
@@ -246,7 +258,7 @@ int arm966e_write_cp15(target_t *target, int reg_addr, u32 value)
 
 	fields[0].device = jtag_info->chain_pos;
 	fields[0].num_bits = 32;
-	fields[0].out_value = (u8*)&value;
+	fields[0].out_value = value_buf;
 	fields[0].out_mask = NULL;
 	fields[0].in_value = NULL;
 	fields[0].in_check_value = NULL;
@@ -275,6 +287,10 @@ int arm966e_write_cp15(target_t *target, int reg_addr, u32 value)
 	fields[2].in_handler_priv = NULL;
 	
 	jtag_add_dr_scan(3, fields, -1, NULL);
+
+#ifdef _DEBUG_INSTRUCTION_EXECUTION_
+	DEBUG("addr: 0x%x value: %8.8x", reg_addr, value);
+#endif
 
 	return ERROR_OK;
 }

@@ -252,7 +252,7 @@ int parse_line(const char *line, char *words[], int max_words)
 	return nwords;
 }
 
-void command_print(command_context_t *context, char *format, ...)
+void command_print(command_context_t *context, const char *format, ...)
 {
 	va_list ap;
 	char *buffer = NULL;
@@ -383,7 +383,11 @@ int command_run_file(command_context_t *context, FILE *file, enum command_mode m
 {
 	int retval = ERROR_OK;
 	int old_command_mode;
-	char buffer[4096];
+	char *buffer=malloc(4096);
+	if (buffer==NULL)
+	{
+		return ERROR_INVALID_ARGUMENTS;
+	}
 	
 	old_command_mode = context->mode;
 	context->mode = mode;
@@ -422,6 +426,9 @@ int command_run_file(command_context_t *context, FILE *file, enum command_mode m
 	}
 	
 	context->mode = old_command_mode;
+
+	
+	free(buffer);
 	
 	return retval;
 }
@@ -491,13 +498,51 @@ command_context_t* copy_command_context(command_context_t* context)
 {
 	command_context_t* copy_context = malloc(sizeof(command_context_t));
 
-	*copy_context = *context;
+	/* copy context elements */
+	copy_context->mode = context->mode;
+	copy_context->is_copied = 1;
+	copy_context->commands = context->commands;
+	copy_context->current_target = context->current_target;
+	copy_context->echo = context->echo;
+	copy_context->output_handler = context->output_handler;
+	copy_context->output_handler_priv = context->output_handler_priv;
 	
 	return copy_context;
 }
 
+void free_commands(command_t *commands)
+{
+	if( commands->name!=NULL )
+	{
+		free(commands->name);
+	}
+	if( commands->help!=NULL )
+	{
+		free(commands->help);
+	}
+
+	/* free children */
+	if( commands->children!=NULL )
+	{
+		free_commands(commands->children);
+	}
+
+	/* free next */
+	if( commands->next!=NULL )
+	{
+		free_commands(commands->next);
+	}
+
+	/* free commands */
+	free(commands);
+}
+
 int command_done(command_context_t *context)
 {
+	if( context->is_copied==0 && context->commands!=NULL )
+	{
+		free_commands(context->commands);
+	}
 	free(context);
 	
 	return ERROR_OK;
@@ -508,6 +553,7 @@ command_context_t* command_init()
 	command_context_t* context = malloc(sizeof(command_context_t));
 	
 	context->mode = COMMAND_EXEC;
+	context->is_copied = 0;
 	context->commands = NULL;
 	context->current_target = 0;
 	context->echo = 0;

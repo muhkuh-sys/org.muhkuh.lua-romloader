@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2005, 2006 by Dominic Rath                                    *
+ *   Copyright (C) 2005, 2006 by Dominic Rath                              *
  *   Dominic.Rath@gmx.de                                                   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -97,5 +97,8 @@ extern int embeddedice_read_reg_w_check(reg_t *reg, u8* check_value, u8* check_m
 extern int embeddedice_store_reg(reg_t *reg);
 extern int embeddedice_set_reg(reg_t *reg, u32 value);
 extern int embeddedice_set_reg_w_exec(reg_t *reg, u8 *buf);
+extern int embeddedice_receive(arm_jtag_t *jtag_info, u32 *data, u32 size);
+extern int embeddedice_send(arm_jtag_t *jtag_info, u32 *data, u32 size);
+extern int embeddedice_handshake(arm_jtag_t *jtag_info, int hsbit, u32 timeout);
 
 #endif /* EMBEDDED_ICE_H */

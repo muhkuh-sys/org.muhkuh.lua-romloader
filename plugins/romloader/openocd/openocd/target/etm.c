@@ -285,12 +285,12 @@ reg_cache_t* etm_build_reg_cache(target_t *target, arm_jtag_t *jtag_info, etm_co
 		reg_cache->next = etb_build_reg_cache(etb);
 		
 		etb->reg_cache = reg_cache->next;
-		
-		if (etm_ctx->capture_driver->init(etm_ctx) != ERROR_OK)
-		{
-			ERROR("ETM capture driver initialization failed");
-			exit(-1);
-		}
+	}
+	
+	if (etm_ctx->capture_driver->init(etm_ctx) != ERROR_OK)
+	{
+		ERROR("ETM capture driver initialization failed");
+		exit(-1);
 	}
 	
 	return reg_cache;
@@ -466,11 +466,17 @@ int etm_store_reg(reg_t *reg)
  */
 extern etm_capture_driver_t etb_capture_driver;
 extern etm_capture_driver_t etm_dummy_capture_driver;
+#if BUILD_OOCD_TRACE == 1
+extern etm_capture_driver_t oocd_trace_capture_driver;
+#endif
 
 etm_capture_driver_t *etm_capture_drivers[] = 
 {
 	&etb_capture_driver,
 	&etm_dummy_capture_driver,
+#if BUILD_OOCD_TRACE == 1
+	&oocd_trace_capture_driver,
+#endif
 	NULL
 };
 
@@ -753,11 +759,19 @@ int etmv1_analyze_trace(etm_context_t *ctx, struct command_context_s *cmd_ctx)
 		u32 next_pc = ctx->current_pc;
 		u32 old_data_index = ctx->data_index;
 		u32 old_data_half = ctx->data_half;
+		u32 old_index = ctx->pipe_index;
+		u32 last_instruction = ctx->last_instruction;
+		u32 cycles = 0;
+		int current_pc_ok = ctx->pc_ok;
 		
 		if (ctx->trace_data[ctx->pipe_index].flags & ETMV1_TRIGGER_CYCLE)
 		{
 			command_print(cmd_ctx, "--- trigger ---");
 		}
+
+		/* instructions execute in IE/D or BE/D cycles */
+		if ((pipestat == STAT_IE) || (pipestat == STAT_ID))
+			ctx->last_instruction = ctx->pipe_index;
 		
 		/* if we don't have a valid pc skip until we reach an indirect branch */
 		if ((!ctx->pc_ok) && (pipestat != STAT_BE))
@@ -777,6 +791,8 @@ int etmv1_analyze_trace(etm_context_t *ctx, struct command_context_s *cmd_ctx)
 			 */
 			old_data_index = ctx->data_index;
 			old_data_half = ctx->data_half;
+
+			ctx->last_instruction = ctx->pipe_index;
 			
 			if ((retval = etmv1_branch_address(ctx)) != 0)
 			{
@@ -821,6 +837,16 @@ int etmv1_analyze_trace(etm_context_t *ctx, struct command_context_s *cmd_ctx)
 					break;
 				case 0x4:	/* periodic synchronization point */
 					next_pc = ctx->last_branch;
+					/* if we had no valid PC prior to this synchronization point,
+					 * we have to move on with the next trace cycle
+					 */
+					if (!current_pc_ok)
+					{
+						command_print(cmd_ctx, "--- periodic synchronization point at 0x%8.8x ---", next_pc);
+						ctx->current_pc = next_pc;
+						ctx->pipe_index++;
+						continue;
+					}
 					break;
 				default:	/* reserved */
 					ERROR("BUG: branch reason code 0x%x is reserved", ctx->last_branch_reason);		
@@ -868,9 +894,13 @@ int etmv1_analyze_trace(etm_context_t *ctx, struct command_context_s *cmd_ctx)
 				}
 				else if (retval == ERROR_TRACE_INSTRUCTION_UNAVAILABLE)
 				{
-					/* TODO: handle incomplete images */
+					/* TODO: handle incomplete images 
+					 * for now we just quit the analsysis*/
+					return retval;
 				}
 			}
+			
+			cycles = old_index - last_instruction;
 		}
 		
 		if ((pipestat == STAT_ID) || (pipestat == STAT_BD))
@@ -893,7 +923,7 @@ int etmv1_analyze_trace(etm_context_t *ctx, struct command_context_s *cmd_ctx)
 				
 				do {
 					if ((retval = etmv1_next_packet(ctx, &packet, 0)) != 0)
-						return -1;
+						return ERROR_ETM_ANALYSIS_FAILED;
 					ctx->last_ptr &= ~(0x7f << shift);
 					ctx->last_ptr |= (packet & 0x7f) << shift;
 					shift += 7;
@@ -919,7 +949,7 @@ int etmv1_analyze_trace(etm_context_t *ctx, struct command_context_s *cmd_ctx)
 						{
 							u32 data;
 							if (etmv1_data(ctx, 4, &data) != 0)
-								return -1;
+								return ERROR_ETM_ANALYSIS_FAILED;
 							command_print(cmd_ctx, "data: 0x%8.8x", data);
 						}
 					}
@@ -928,7 +958,7 @@ int etmv1_analyze_trace(etm_context_t *ctx, struct command_context_s *cmd_ctx)
 				{
 					u32 data;
 					if (etmv1_data(ctx, arm_access_size(&instruction), &data) != 0)
-						return -1;
+						return ERROR_ETM_ANALYSIS_FAILED;
 					command_print(cmd_ctx, "data: 0x%8.8x", data);
 				}
 			}
@@ -963,8 +993,22 @@ int etmv1_analyze_trace(etm_context_t *ctx, struct command_context_s *cmd_ctx)
 
 		if ((pipestat != STAT_TD) && (pipestat != STAT_WT))
 		{
-			command_print(cmd_ctx, "%s%s",
-				instruction.text, (pipestat == STAT_IN) ? " (not executed)" : "");
+			char cycles_text[32] = "";
+			
+			/* if the trace was captured with cycle accurate tracing enabled,
+			 * output the number of cycles since the last executed instruction
+			 */
+			if (ctx->tracemode & ETMV1_CYCLE_ACCURATE)
+			{
+				snprintf(cycles_text, 32, " (%i %s)",
+					cycles,
+					(cycles == 1) ? "cycle" : "cycles");
+			}
+			
+			command_print(cmd_ctx, "%s%s%s",
+				instruction.text,
+				(pipestat == STAT_IN) ? " (not executed)" : "",
+				cycles_text);
 
 			ctx->current_pc = next_pc;
 			
@@ -1265,6 +1309,7 @@ int handle_etm_config_command(struct command_context_s *cmd_ctx, char *cmd, char
 	}
 	
 	etm_ctx->target = target;
+	etm_ctx->trigger_percent = 50;
 	etm_ctx->trace_data = NULL;
 	etm_ctx->trace_depth = 0;
 	etm_ctx->portmode = portmode;
@@ -1280,10 +1325,83 @@ int handle_etm_config_command(struct command_context_s *cmd_ctx, char *cmd, char
 	etm_ctx->last_ptr = 0x0;
 	etm_ctx->ptr_ok = 0x0;
 	etm_ctx->context_id = 0x0;
+	etm_ctx->last_instruction = 0;
 	
 	arm7_9->etm_ctx = etm_ctx;
 	
 	etm_register_user_commands(cmd_ctx);
+	
+	return ERROR_OK;
+}
+
+int handle_etm_info_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc)
+{
+	target_t *target;
+	armv4_5_common_t *armv4_5;
+	arm7_9_common_t *arm7_9;
+	reg_t *etm_config_reg;
+	reg_t *etm_sys_config_reg;
+	
+	int max_port_size;
+		
+	target = get_current_target(cmd_ctx);
+	
+	if (arm7_9_get_arch_pointers(target, &armv4_5, &arm7_9) != ERROR_OK)
+	{
+		command_print(cmd_ctx, "current target isn't an ARM7/ARM9 target");
+		return ERROR_OK;
+	}
+	
+	if (!arm7_9->etm_ctx)
+	{
+		command_print(cmd_ctx, "current target doesn't have an ETM configured");
+		return ERROR_OK;
+	}
+	
+	etm_config_reg = &arm7_9->etm_ctx->reg_cache->reg_list[ETM_CONFIG];
+	etm_sys_config_reg = &arm7_9->etm_ctx->reg_cache->reg_list[ETM_SYS_CONFIG];
+	
+	etm_get_reg(etm_config_reg);
+	command_print(cmd_ctx, "pairs of address comparators: %i", buf_get_u32(etm_config_reg->value, 0, 4));
+	command_print(cmd_ctx, "pairs of data comparators: %i", buf_get_u32(etm_config_reg->value, 4, 4));
+	command_print(cmd_ctx, "memory map decoders: %i", buf_get_u32(etm_config_reg->value, 8, 4));
+	command_print(cmd_ctx, "number of counters: %i", buf_get_u32(etm_config_reg->value, 12, 4));
+	command_print(cmd_ctx, "sequencer %spresent",
+			(buf_get_u32(etm_config_reg->value, 16, 1) == 1) ? "" : "not ");
+	command_print(cmd_ctx, "number of ext. inputs: %i", buf_get_u32(etm_config_reg->value, 17, 3));
+	command_print(cmd_ctx, "number of ext. outputs: %i", buf_get_u32(etm_config_reg->value, 20, 3));
+	command_print(cmd_ctx, "FIFO full %spresent",
+			(buf_get_u32(etm_config_reg->value, 23, 1) == 1) ? "" : "not ");
+	command_print(cmd_ctx, "protocol version: %i", buf_get_u32(etm_config_reg->value, 28, 3));
+	
+	etm_get_reg(etm_sys_config_reg);
+
+	switch (buf_get_u32(etm_sys_config_reg->value, 0, 3))
+	{
+		case 0:
+			max_port_size = 4;
+			break;
+		case 1:
+			max_port_size = 8;
+			break;
+		case 2:
+			max_port_size = 16;
+			break;
+	}
+	command_print(cmd_ctx, "max. port size: %i", max_port_size);
+	
+	command_print(cmd_ctx, "half-rate clocking %ssupported",
+			(buf_get_u32(etm_sys_config_reg->value, 3, 1) == 1) ? "" : "not ");
+	command_print(cmd_ctx, "full-rate clocking %ssupported",
+			(buf_get_u32(etm_sys_config_reg->value, 4, 1) == 1) ? "" : "not ");
+	command_print(cmd_ctx, "normal trace format %ssupported",
+			(buf_get_u32(etm_sys_config_reg->value, 5, 1) == 1) ? "" : "not ");
+	command_print(cmd_ctx, "multiplex trace format %ssupported",
+			(buf_get_u32(etm_sys_config_reg->value, 6, 1) == 1) ? "" : "not ");
+	command_print(cmd_ctx, "demultiplex trace format %ssupported",
+			(buf_get_u32(etm_sys_config_reg->value, 7, 1) == 1) ? "" : "not ");
+	command_print(cmd_ctx, "FIFO full %ssupported",
+			(buf_get_u32(etm_sys_config_reg->value, 8, 1) == 1) ? "" : "not ");
 	
 	return ERROR_OK;
 }
@@ -1540,6 +1658,46 @@ int handle_etm_load_command(struct command_context_s *cmd_ctx, char *cmd, char *
 	return ERROR_OK;	
 }
 
+int handle_etm_trigger_percent_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc)
+{
+	target_t *target;
+	armv4_5_common_t *armv4_5;
+	arm7_9_common_t *arm7_9;
+	etm_context_t *etm_ctx;
+	
+	target = get_current_target(cmd_ctx);
+	
+	if (arm7_9_get_arch_pointers(target, &armv4_5, &arm7_9) != ERROR_OK)
+	{
+		command_print(cmd_ctx, "current target isn't an ARM7/ARM9 target");
+		return ERROR_OK;
+	}
+	
+	if (!(etm_ctx = arm7_9->etm_ctx))
+	{
+		command_print(cmd_ctx, "current target doesn't have an ETM configured");
+		return ERROR_OK;
+	}
+	
+	if (argc > 0)
+	{
+		u32 new_value = strtoul(args[0], NULL, 0);
+		
+		if ((new_value < 2) || (new_value > 100))
+		{
+			command_print(cmd_ctx, "valid settings are 2% to 100%");
+		}
+		else
+		{
+			etm_ctx->trigger_percent = new_value;
+		}
+	}
+	
+	command_print(cmd_ctx, "%i percent of the tracebuffer reserved for after the trigger", etm_ctx->trigger_percent);
+
+	return ERROR_OK;
+}
+
 int handle_etm_start_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc)
 {
 	target_t *target;
@@ -1626,6 +1784,7 @@ int handle_etm_analyze_command(struct command_context_s *cmd_ctx, char *cmd, cha
 	armv4_5_common_t *armv4_5;
 	arm7_9_common_t *arm7_9;
 	etm_context_t *etm_ctx;
+	int retval;
 
 	target = get_current_target(cmd_ctx);
 	
@@ -1641,7 +1800,23 @@ int handle_etm_analyze_command(struct command_context_s *cmd_ctx, char *cmd, cha
 		return ERROR_OK;
 	}
 	
-	etmv1_analyze_trace(etm_ctx, cmd_ctx);
+	if ((retval = etmv1_analyze_trace(etm_ctx, cmd_ctx)) != ERROR_OK)
+	{
+		switch(retval)
+		{
+			case ERROR_ETM_ANALYSIS_FAILED:
+				command_print(cmd_ctx, "further analysis failed (corrupted trace data or just end of data");
+				break;
+			case ERROR_TRACE_INSTRUCTION_UNAVAILABLE:
+				command_print(cmd_ctx, "no instruction for current address available, analysis aborted");
+				break;
+			case ERROR_TRACE_IMAGE_UNAVAILABLE:
+				command_print(cmd_ctx, "no image available for trace analysis");
+				break;
+			default:
+				command_print(cmd_ctx, "unknown error: %i", retval);
+		}
+	}
 	
 	return ERROR_OK;
 }
@@ -1660,6 +1835,11 @@ int etm_register_user_commands(struct command_context_s *cmd_ctx)
 	register_command(cmd_ctx, etm_cmd, "tracemode", handle_etm_tracemode_command,
 		COMMAND_EXEC, "configure trace mode <none|data|address|all> <context id bits> <cycle accurate> <branch output");
 
+	register_command(cmd_ctx, etm_cmd, "info", handle_etm_info_command,
+		COMMAND_EXEC, "display info about the current target's ETM");
+
+	register_command(cmd_ctx, etm_cmd, "trigger_percent <percent>", handle_etm_trigger_percent_command,
+		COMMAND_EXEC, "amount (<percent>) of trace buffer to be filled after the trigger occured");
 	register_command(cmd_ctx, etm_cmd, "status", handle_etm_status_command,
 		COMMAND_EXEC, "display current target's ETM status");
 	register_command(cmd_ctx, etm_cmd, "start", handle_etm_start_command,

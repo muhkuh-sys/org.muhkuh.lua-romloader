@@ -30,7 +30,7 @@
 
 extern "C"
 {
-	WXEXPORT int fn_init(wxLog *ptLogTarget);
+	WXEXPORT int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId);
 	WXEXPORT int fn_init_lua(wxLuaState *ptLuaState);
 	WXEXPORT int fn_leave(void);
 	WXEXPORT const muhkuh_plugin_desc *fn_get_desc(void);

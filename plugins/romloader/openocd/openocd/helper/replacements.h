@@ -69,6 +69,39 @@ struct timezone {
 extern int gettimeofday(struct timeval *tv, struct timezone *tz);
 #endif
 
+/**** clear_malloc & fill_malloc ****/
+void *clear_malloc(size_t size);
+void *fill_malloc(size_t size);
+
+/*
+ * Now you have 3 ways for the malloc function:
+ *
+ * 1. Do not change anything, use the original malloc
+ *
+ * 2. Use the clear_malloc function instead of the original malloc.
+ *    In this case you must use the following define:
+ *    #define malloc((_a)) clear_malloc((_a))
+ *
+ * 3. Use the fill_malloc function instead of the original malloc.
+ *    In this case you must use the following define:
+ *    #define malloc((_a)) fill_malloc((_a))
+ *
+ * We have figured out that there could exist some malloc problems
+ * where variables are using without to be initialise. To find this
+ * places, use the fill_malloc function. With this function we want 
+ * to initialize memory to some known bad state. This is quite easily 
+ * spotted in the debugger and will trap to an invalid address. 
+ *
+ * clear_malloc can be used if you want to set not initialise 
+ * variable to 0.
+ *
+ * If you do not want to change the malloc function, to not use one of
+ * the following macros. Which is the default way.
+ */
+ 
+//#define malloc(_a) clear_malloc(_a)
+//#define malloc(_a) fill_malloc(_a)
+
 /* GNU extensions to the C library that may be missing on some systems */
 #ifndef HAVE_STRNDUP
 extern char* strndup(const char *s, size_t n);
@@ -187,14 +220,14 @@ typedef struct
 
 typedef struct
 {
-	u32	p_type;			/* Segment type */
-	u32  p_offset;		/* Segment file offset */
-	u32	p_vaddr;		/* Segment virtual address */
-	u32	p_paddr;		/* Segment physical address */
-	u32	p_filesz;		/* Segment size in file */
-	u32	p_memsz;		/* Segment size in memory */
-	u32	p_flags;		/* Segment flags */
-	u32	p_align;		/* Segment alignment */
+	u32 p_type;			/* Segment type */
+	u32 p_offset;		/* Segment file offset */
+	u32 p_vaddr;		/* Segment virtual address */
+	u32 p_paddr;		/* Segment physical address */
+	u32 p_filesz;		/* Segment size in file */
+	u32 p_memsz;		/* Segment size in memory */
+	u32 p_flags;		/* Segment flags */
+	u32 p_align;		/* Segment alignment */
 } Elf32_Phdr;
 
 #define PT_LOAD		1		/* Loadable program segment */

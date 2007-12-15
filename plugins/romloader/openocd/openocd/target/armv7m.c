@@ -57,22 +57,22 @@ char* armv7m_exception_strings[] =
 
 char* armv7m_core_reg_list[] =
 {
-/* Registers accessed through core debug */
+	/* Registers accessed through core debug */
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12",
 	"sp", "lr", "pc",
 	"xPSR", "msp", "psp",
-/* Registers accessed through MSR instructions */
+	/* Registers accessed through MSR instructions */
 //	"apsr", "iapsr", "ipsr", "epsr",
 	"primask", "basepri", "faultmask", "control"
 };
 
 char* armv7m_core_dbgreg_list[] =
 {
-/* Registers accessed through core debug */
+	/* Registers accessed through core debug */
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10", "r11", "r12",
 	"sp", "lr", "pc",
 	"xPSR", "msp", "psp",
-/* Registers accessed through MSR instructions */
+	/* Registers accessed through MSR instructions */
 //	"dbg_apsr", "iapsr", "ipsr", "epsr",
 	"primask", "basepri", "faultmask", "dbg_control"
 };
@@ -121,7 +121,6 @@ armv7m_core_reg_t armv7m_core_reg_list_arch_info[] =
 };
 
 int armv7m_core_reg_arch_type = -1;
-
 
 /* Keep different contexts for the process being debugged and debug algorithms */
 enum armv7m_runcontext armv7m_get_context(target_t *target)
@@ -175,6 +174,33 @@ int armv7m_use_context(target_t *target, enum armv7m_runcontext new_ctx)
 	return ERROR_OK;
 }
 
+int armv7m_restore_context(target_t *target)
+{
+	int i;
+	
+	/* get pointers to arch-specific information */
+	armv7m_common_t *armv7m = target->arch_info;
+
+	DEBUG(" ");
+
+	if (armv7m->pre_restore_context)
+		armv7m->pre_restore_context(target);
+		
+	for (i = ARMV7NUMCOREREGS-1; i >= 0; i--)
+	{
+		if (armv7m->core_cache->reg_list[i].dirty)
+		{
+			armv7m->write_core_reg(target, i);
+		}
+	}
+	
+	if (armv7m->post_restore_context)
+		armv7m->post_restore_context(target);
+		
+	return ERROR_OK;		
+}
+
+
 /* Core state functions */
 char enamebuf[32];
 char *armv7m_exception_string(int number)
@@ -208,7 +234,6 @@ int armv7m_set_core_reg(reg_t *reg, u8 *buf)
 {
 	armv7m_core_reg_t *armv7m_reg = reg->arch_info;
 	target_t *target = armv7m_reg->target;
-	armv7m_common_t *armv7m_target = target->arch_info;
 	u32 value = buf_get_u32(buf, 0, 32);
 		
 	if (target->state != TARGET_HALTED)
@@ -238,8 +263,8 @@ int armv7m_read_core_reg(struct target_s *target, int num)
 	armv7m_core_reg = armv7m->core_cache->reg_list[num].arch_info;
 	retval = armv7m->load_core_reg_u32(target, armv7m_core_reg->type, armv7m_core_reg->num, &reg_value);
 	buf_set_u32(armv7m->core_cache->reg_list[num].value, 0, 32, reg_value);
-	armv7m->core_cache->reg_list[num].valid=1;
-	armv7m->core_cache->reg_list[num].dirty=0;
+	armv7m->core_cache->reg_list[num].valid = 1;
+	armv7m->core_cache->reg_list[num].dirty = 0;
 		
 	return ERROR_OK;	
 }
@@ -248,7 +273,7 @@ int armv7m_write_core_reg(struct target_s *target, int num)
 {
 	int retval;
 	u32 reg_value;
-	armv7m_core_reg_t * armv7m_core_reg;
+	armv7m_core_reg_t *armv7m_core_reg;
 	
 	/* get pointers to arch-specific information */
 	armv7m_common_t *armv7m = target->arch_info;
@@ -262,12 +287,12 @@ int armv7m_write_core_reg(struct target_s *target, int num)
 	if (retval != ERROR_OK)
 	{
 		ERROR("JTAG failure");
-		armv7m->core_cache->reg_list[num].dirty=1;
+		armv7m->core_cache->reg_list[num].dirty = 1;
 		return ERROR_JTAG_DEVICE_ERROR;
 	}
-	DEBUG("write core reg %i value 0x%x",num ,reg_value);
-	armv7m->core_cache->reg_list[num].valid=1;
-	armv7m->core_cache->reg_list[num].dirty=0;
+	DEBUG("write core reg %i value 0x%x", num , reg_value);
+	armv7m->core_cache->reg_list[num].valid = 1;
+	armv7m->core_cache->reg_list[num].dirty = 0;
 	
 	return ERROR_OK;
 }
@@ -311,12 +336,8 @@ int armv7m_get_gdb_reg_list(target_t *target, reg_t **reg_list[], int *reg_list_
 			(*reg_list)[i] = &armv7m_gdb_dummy_fp_reg;
 	}
 	/* ARMV7M is always in thumb mode, try to make GDB understand this if it does not support this arch */
-	//armv7m->core_cache->reg_list[15].value[0] |= 1;	
 	armv7m->process_context->reg_list[15].value[0] |= 1;	
-	//armv7m->core_cache->reg_list[ARMV7M_xPSR].value[0] = (1<<5);
-	//armv7m->process_context->reg_list[ARMV7M_xPSR].value[0] = (1<<5);
 	(*reg_list)[25] = &armv7m->process_context->reg_list[ARMV7M_xPSR];	
-	//(*reg_list)[25] = &armv7m->process_context->reg_list[ARMV7M_xPSR];	
 	return ERROR_OK;
 }
 
@@ -359,8 +380,6 @@ int armv7m_run_algorithm(struct target_s *target, int num_mem_params, mem_param_
 	for (i = 0; i < num_reg_params; i++)
 	{
 		reg_t *reg = register_get_by_name(armv7m->core_cache, reg_params[i].reg_name, 0);
-		//reg_t *reg = register_get_by_name(armv7m->debug_context, reg_params[i].reg_name, 0);
-		//armv7m_core_reg_t * armv7m_core_reg = reg->arch_info;
 		u32 regvalue;
 		
 		if (!reg)
@@ -376,7 +395,6 @@ int armv7m_run_algorithm(struct target_s *target, int num_mem_params, mem_param_
 		}
 		
 		regvalue = buf_get_u32(reg_params[i].value, 0, 32);
-		//armv7m->store_core_reg_u32(target, armv7m_core_reg->type, armv7m_core_reg->num, regvalue);
 		armv7m_set_core_reg(reg, reg_params[i].value);
 	}
 	
@@ -432,9 +450,7 @@ int armv7m_run_algorithm(struct target_s *target, int num_mem_params, mem_param_
 	{
 		if (reg_params[i].direction != PARAM_OUT)
 		{
-			//reg_t *reg = register_get_by_name(armv7m->core_cache, reg_params[i].reg_name, 0);
 			reg_t *reg = register_get_by_name(armv7m->debug_context, reg_params[i].reg_name, 0);
-			u32 regvalue;
 		
 			if (!reg)
 			{
@@ -448,23 +464,10 @@ int armv7m_run_algorithm(struct target_s *target, int num_mem_params, mem_param_
 				exit(-1);
 			}
 			
-			armv7m_core_reg_t *armv7m_core_reg = reg->arch_info;
-			//armv7m->load_core_reg_u32(target, armv7m_core_reg->type, armv7m_core_reg->num, &regvalue);
-			//buf_set_u32(reg_params[i].value, 0, 32, regvalue);
 			buf_set_u32(reg_params[i].value, 0, 32, buf_get_u32(reg->value, 0, 32));
 		}
 	}
 	
-	/* Mark all core registers !! except control !! as valid but dirty */
-	/* This will be done by armv7m_use_context in resume function */
-	//for (i = 0; i < armv7m->core_cache->num_regs-1; i++)
-	//{
-	//	armv7m->core_cache->reg_list[i].dirty = 1;
-	//}
-
-	// ????armv7m->core_state = core_state;
-	// ????armv7m->core_mode = core_mode;
-
 	return retval;
 }
 
@@ -489,7 +492,6 @@ reg_cache_t *armv7m_build_reg_cache(target_t *target)
 {
 	/* get pointers to arch-specific information */
 	armv7m_common_t *armv7m = target->arch_info;
-	arm_jtag_t *jtag_info = &armv7m->jtag_info;
 
 	int num_regs = ARMV7NUMCOREREGS;
 	reg_cache_t **cache_p = register_get_last_cache_p(&target->reg_cache);
@@ -549,8 +551,8 @@ reg_cache_t *armv7m_build_reg_cache(target_t *target)
 		reg_list[i].arch_type = armv7m_core_reg_arch_type;
 		reg_list[i].arch_info = &arch_info[i];
 	}
- 
-    return cache;
+	
+	return cache;
 }
 
 int armv7m_init_target(struct command_context_s *cmd_ctx, struct target_s *target)
@@ -574,7 +576,85 @@ int armv7m_init_arch_info(target_t *target, armv7m_common_t *armv7m)
 
 int armv7m_register_commands(struct command_context_s *cmd_ctx)
 {
+	return ERROR_OK;
+}
+
+int armv7m_checksum_memory(struct target_s *target, u32 address, u32 count, u32* checksum)
+{
+	working_area_t *crc_algorithm;
+	armv7m_algorithm_t armv7m_info;
+	reg_param_t reg_params[2];
 	int retval;
+	
+	u16 cortex_m3_crc_code[] = {	    
+		0x4602,					/* mov	r2, r0 */
+		0xF04F, 0x30FF,			/* mov	r0, #0xffffffff */
+		0x460B,					/* mov	r3, r1 */
+		0xF04F, 0x0400,			/* mov	r4, #0 */
+		0xE013,					/* b	ncomp */
+								/* nbyte: */
+		0x5D11,					/* ldrb	r1, [r2, r4] */
+		0xF8DF, 0x7028,			/* ldr		r7, CRC32XOR */
+		0xEA80, 0x6001,			/* eor		r0, r0, r1, asl #24 */
+		
+		0xF04F, 0x0500,			/* mov		r5, #0 */
+								/* loop: */
+		0x2800,					/* cmp		r0, #0 */
+		0xEA4F, 0x0640,			/* mov		r6, r0, asl #1 */
+		0xF105, 0x0501,			/* add		r5, r5, #1 */
+		0x4630,					/* mov		r0, r6 */
+		0xBFB8,					/* it		lt */
+		0xEA86, 0x0007,			/* eor		r0, r6, r7 */
+		0x2D08, 				/* cmp		r5, #8 */
+		0xD1F4,					/* bne		loop */
+		
+		0xF104, 0x0401,			/* add	r4, r4, #1 */
+								/* ncomp: */
+		0x429C,					/* cmp	r4, r3 */
+		0xD1E9,					/* bne	nbyte */
+								/* end: */
+		0xE7FE,					/* b	end */
+		0x1DB7, 0x04C1			/* CRC32XOR:	.word 0x04C11DB7 */
+	};
+
+	int i;
+	
+	if (target_alloc_working_area(target, sizeof(cortex_m3_crc_code), &crc_algorithm) != ERROR_OK)
+	{
+		return ERROR_TARGET_RESOURCE_NOT_AVAILABLE;
+	}
+	
+	/* convert flash writing code into a buffer in target endianness */
+	for (i = 0; i < (sizeof(cortex_m3_crc_code)/sizeof(u16)); i++)
+		target_write_u16(target, crc_algorithm->address + i*sizeof(u16), cortex_m3_crc_code[i]);
+	
+	armv7m_info.common_magic = ARMV7M_COMMON_MAGIC;
+	armv7m_info.core_mode = ARMV7M_MODE_ANY;
+	armv7m_info.core_state = ARMV7M_STATE_THUMB;
+	
+	init_reg_param(&reg_params[0], "r0", 32, PARAM_IN_OUT);
+	init_reg_param(&reg_params[1], "r1", 32, PARAM_OUT);
+	
+	buf_set_u32(reg_params[0].value, 0, 32, address);
+	buf_set_u32(reg_params[1].value, 0, 32, count);
+		
+	if ((retval = target->type->run_algorithm(target, 0, NULL, 2, reg_params,
+		crc_algorithm->address, crc_algorithm->address + (sizeof(cortex_m3_crc_code)-6), 20000, &armv7m_info)) != ERROR_OK)
+	{
+		ERROR("error executing cortex_m3 crc algorithm");
+		destroy_reg_param(&reg_params[0]);
+		destroy_reg_param(&reg_params[1]);
+		target_free_working_area(target, crc_algorithm);
+		return retval;
+	}
+	
+	*checksum = buf_get_u32(reg_params[0].value, 0, 32);
+	
+	destroy_reg_param(&reg_params[0]);
+	destroy_reg_param(&reg_params[1]);
+	
+	target_free_working_area(target, crc_algorithm);
 	
 	return ERROR_OK;
 }
+

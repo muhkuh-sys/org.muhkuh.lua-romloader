@@ -57,10 +57,10 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 
 /*-------------------------------------*/
 
-const muhkuh_plugin_desc plugin_desc =
+static muhkuh_plugin_desc plugin_desc =
 {
-	"netX500 OpenOCD Bootloader",
-	"romloader_openocd_netx500",
+	wxT("OpenOCD Bootloader"),
+	wxT(""),
 	{ 0, 0, 1 }
 };
 
@@ -87,7 +87,19 @@ static wxArrayString astrRunCfg;
 
 /*-------------------------------------*/
 
-int fn_init(wxLog *ptLogTarget)
+int romloader_openocd_default_output_handler(struct command_context_s *context, char* line)
+{
+	wxString strMsg;
+
+
+	strMsg.Printf(wxT("romloader_openocd(%p)") + wxString::FromAscii(line), context->output_handler_priv);
+	wxLogMessage(strMsg);
+}
+
+
+/*-------------------------------------*/
+
+int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId)
 {
 	wxLog *pOldLogTarget;
 
@@ -106,6 +118,9 @@ int fn_init(wxLog *ptLogTarget)
 	/* say hi */
 	wxLogMessage(wxT("bootloader openocd plugin init"));
 
+	/* remember id */
+	plugin_desc.strPluginId = strPluginId;
+
 	/* TODO: read this from the config file */
 
 	/* netX500 init config */
@@ -121,15 +136,21 @@ int fn_init(wxLog *ptLogTarget)
 	astrInitCfg.Add(wxT("reset_config trst_and_srst"));
 	astrInitCfg.Add(wxT("jtag_device 4 0x1 0xf 0xe"));
 	astrInitCfg.Add(wxT("daemon_startup reset"));
-	astrInitCfg.Add(wxT("target arm9tdmi little reset_halt 0 arm920t"));
+	astrInitCfg.Add(wxT("target arm926ejs little reset_halt 0 arm920t"));
 	astrInitCfg.Add(wxT("working_area 0 0x00018000 0x8000 backup"));
 	astrInitCfg.Add(wxT("run_and_halt_time 0 5000"));
 	/* netX500 run config */
-	astrRunCfg.Add(wxT("bp 0x200000 4 hw"));
-	astrRunCfg.Add(wxT("reg cpsr 0xd3"));
+	astrRunCfg.Add(wxT("bp 0x200000 4 hw"));			/* set breakpoint to start of rom */
+	astrRunCfg.Add(wxT("reg cpsr 0xd3"));				/* switch to svc */
 	astrRunCfg.Add(wxT("reg spsr_svc 0xd3"));
-	astrRunCfg.Add(wxT("reg r13_svc 0x7ffc"));
-	astrRunCfg.Add(wxT("reg lr_svc 0x200000"));
+	astrRunCfg.Add(wxT("reg r13_svc 0x10000200"));			/* set svc stack */
+	astrRunCfg.Add(wxT("reg lr_svc 0x200000"));			/* set return address to start of rom */
+	astrRunCfg.Add(wxT("arm926ejs cp15 0 0 7 7 0"));		/* invalidate instruction and data caches */
+	astrRunCfg.Add(wxT("arm926ejs cp15 0 4 7 10 0"));		/* clear data pipe */
+	astrRunCfg.Add(wxT("arm926ejs cp15 0 0 8 7 0"));		/* clear instruction and data translation buffers */
+	astrRunCfg.Add(wxT("arm926ejs cp15 0 0 1 0 0x00050078"));	/* disable mmu, alignment check and data cache, disable system protection and instruction cache */
+	astrRunCfg.Add(wxT("arm926ejs cp15 0 0 9 1 0x10000001"));	/* enable the tcm */
+	astrRunCfg.Add(wxT("target_request debugmsgs enable"));
 #if 0
 	/* netX50 init config */
 	astrInitCfg.Add(wxT("interface ft2232"));
@@ -208,7 +229,7 @@ int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList)
 	wxString strLuaCreateFn;
 
 
-	strTyp = wxString::FromAscii(plugin_desc.pcPluginId);
+	strTyp = plugin_desc.strPluginId;
 	strLuaCreateFn = wxT("muhkuh.romloader_openocd_create");
 
 	iInterfaces = 0;
@@ -279,7 +300,7 @@ romloader *romloader_openocd_create(void *pvHandle)
 	}
 	else
 	{
-		command_set_output_handler(cmd_ctx, configuration_output_handler, NULL);
+		command_set_output_handler(cmd_ctx, romloader_openocd_default_output_handler, NULL);
 		cmd_ctx->mode = COMMAND_CONFIG;
 
 		// set config
@@ -350,7 +371,7 @@ romloader *romloader_openocd_create(void *pvHandle)
 		usleep(1000);
 
 		// create the new instance
-		strTyp = wxString::FromAscii(plugin_desc.pcPluginId);
+		strTyp = plugin_desc.strPluginId;
 		// TODO: add some info
 		strName.Printf("romloader_openocd");
 		ptInstance = new romloader(strName, strTyp, &tFunctionInterface, cmd_ctx, romloader_openocd_close_instance, m_ptLuaState);
@@ -690,8 +711,7 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 			else
 			{
 				// grab messages here
-// something like this
-//	embeddedice_write_reg(&arm7_9->eice_cache->reg_list[EICE_COMMS_DATA], target_buffer_get_u32(target, buffer));
+				// TODO: redirect outputhandler, then grab messages, restore default output handler on halt
 
 				// wait_halt 10
 				iOocdResult = command_run_line(cmd_ctx, "wait_halt 10");

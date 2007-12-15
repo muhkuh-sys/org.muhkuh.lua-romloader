@@ -73,10 +73,12 @@ int ft2232_handle_device_desc_command(struct command_context_s *cmd_ctx, char *c
 int ft2232_handle_serial_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc);
 int ft2232_handle_layout_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc);
 int ft2232_handle_vid_pid_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc);
+int ft2232_handle_latency_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc);
 
 char *ft2232_device_desc = NULL;
 char *ft2232_serial = NULL;
 char *ft2232_layout = NULL;
+unsigned char ft2232_latency = 2;
 
 #define MAX_USB_IDS	8
 /* vid = pid = 0 marks the end of the list */
@@ -95,17 +97,19 @@ typedef struct ft2232_layout_s
 int usbjtag_init(void);
 int jtagkey_init(void);
 int olimex_jtag_init(void);
-int m5960_init(void);
+int flyswatter_init(void);
 int turtle_init(void);
 int comstick_init(void);
+int stm32stick_init(void);
 
 /* reset procedures for supported layouts */
 void usbjtag_reset(int trst, int srst);
 void jtagkey_reset(int trst, int srst);
 void olimex_jtag_reset(int trst, int srst);
-void m5960_reset(int trst, int srst);
+void flyswatter_reset(int trst, int srst);
 void turtle_reset(int trst, int srst);
 void comstick_reset(int trst, int srst);
+void stm32stick_reset(int trst, int srst);
 
 /* blink procedures for layouts that support a blinking led */
 void olimex_jtag_blink(void);
@@ -120,9 +124,10 @@ ft2232_layout_t ft2232_layouts[] =
 	{"signalyzer", usbjtag_init, usbjtag_reset, NULL},
 	{"evb_lm3s811", usbjtag_init, usbjtag_reset, NULL},
 	{"olimex-jtag", olimex_jtag_init, olimex_jtag_reset, olimex_jtag_blink},
-	{"m5960", m5960_init, m5960_reset, NULL},
+	{"flyswatter", flyswatter_init, flyswatter_reset, NULL},
 	{"turtelizer2", turtle_init, turtle_reset, turtle_jtag_blink},
 	{"comstick", comstick_init, comstick_reset, NULL},
+	{"stm32stick", stm32stick_init, stm32stick_reset, NULL},
 	{NULL, NULL, NULL},
 };
 
@@ -205,7 +210,8 @@ int ft2232_read(u8* buf, int size, u32* bytes_read)
 
 	while ((*bytes_read < size) && timeout--)
 	{
-		if ((status = FT_Read(ftdih, buf, size, &dw_bytes_read)) != FT_OK)
+		if ((status = FT_Read(ftdih, buf + *bytes_read, size - 
+			*bytes_read, &dw_bytes_read)) != FT_OK)		
 		{
 			*bytes_read = 0; 
 			ERROR("FT_Read returned: %lu", status);
@@ -246,7 +252,7 @@ int ft2232_speed(int speed)
 	u32 bytes_written;
 
 	buf[0] = 0x86; /* command "set divisor" */
-	buf[1] = speed & 0xff; /* valueL (0=6MHz, 1=3MHz, 2=1.5MHz, ...*/
+	buf[1] = speed & 0xff; /* valueL (0=6MHz, 1=3MHz, 2=2.0MHz, ...*/
 	buf[2] = (speed >> 8) & 0xff; /* valueH */
 	
 	DEBUG("%2.2x %2.2x %2.2x", buf[0], buf[1], buf[2]);
@@ -255,6 +261,8 @@ int ft2232_speed(int speed)
 		ERROR("couldn't set FT2232 TCK speed");
 		return retval;
 	}
+
+	jtag_speed = speed;
 	
 	return ERROR_OK;
 }
@@ -268,6 +276,8 @@ int ft2232_register_commands(struct command_context_s *cmd_ctx)
 	register_command(cmd_ctx, NULL, "ft2232_layout", ft2232_handle_layout_command,
 		COMMAND_CONFIG, NULL);
 	register_command(cmd_ctx, NULL, "ft2232_vid_pid", ft2232_handle_vid_pid_command,
+					 COMMAND_CONFIG, NULL);
+	register_command(cmd_ctx, NULL, "ft2232_latency", ft2232_handle_latency_command,
 					 COMMAND_CONFIG, NULL);
 	return ERROR_OK;
 }
@@ -990,7 +1000,7 @@ void olimex_jtag_reset(int trst, int srst)
     DEBUG("trst: %i, srst: %i, high_output: 0x%2.2x, high_direction: 0x%2.2x", trst, srst, high_output, high_direction);
 }
 
-void m5960_reset(int trst, int srst)
+void flyswatter_reset(int trst, int srst)
 {
 	if (trst == 1)
 	{
@@ -1058,6 +1068,39 @@ void comstick_reset(int trst, int srst)
     {
         high_output |= nSRST;
     }
+	
+	/* command "set data bits high byte" */
+	BUFFER_ADD = 0x82;
+	BUFFER_ADD = high_output;
+	BUFFER_ADD = high_direction;
+	DEBUG("trst: %i, srst: %i, high_output: 0x%2.2x, high_direction: 0x%2.2x", trst, srst, high_output, high_direction);
+}
+
+void stm32stick_reset(int trst, int srst)
+{
+	if (trst == 1)
+	{
+		cur_state = TAP_TLR;
+		high_output &= ~nTRST;
+	}
+	else if (trst == 0)
+	{
+		high_output |= nTRST;
+	}
+
+    if (srst == 1)
+    {
+        low_output &= ~nSRST;
+    }
+    else if (srst == 0)
+    {
+        low_output |= nSRST;
+    }
+	
+	/* command "set data bits low byte" */
+	BUFFER_ADD = 0x80;
+	BUFFER_ADD = low_output;
+	BUFFER_ADD = low_direction;
 	
 	/* command "set data bits high byte" */
 	BUFFER_ADD = 0x82;
@@ -1366,7 +1409,7 @@ static int ft2232_init_ftd2xx(u16 vid, u16 pid, int more, int *try_more)
 		return ERROR_JTAG_INIT_FAILED;
 	}
 
-	if ((status = FT_SetLatencyTimer(ftdih, 2)) != FT_OK)
+	if ((status = FT_SetLatencyTimer(ftdih, ft2232_latency)) != FT_OK)
 	{
 		ERROR("unable to set latency timer: %lu", status);
 		return ERROR_JTAG_INIT_FAILED;
@@ -1446,7 +1489,7 @@ static int ft2232_init_libftdi(u16 vid, u16 pid, int more, int *try_more)
 		return ERROR_JTAG_INIT_FAILED;
 	}
 
-	if (ftdi_set_latency_timer(&ftdic, 2) < 0)
+	if (ftdi_set_latency_timer(&ftdic, ft2232_latency) < 0)
 	{
 		ERROR("unable to set latency timer");
 		return ERROR_JTAG_INIT_FAILED;
@@ -1462,10 +1505,9 @@ static int ft2232_init_libftdi(u16 vid, u16 pid, int more, int *try_more)
 		DEBUG("current latency timer: %i", latency_timer);
 	}
 
-	/* ctx, JTAG I/O mask */
-	if (ftdi_set_bitmode(&ftdic, 0x0b, 2) < 0)
+	if (ftdi_set_bitmode(&ftdic, 0x0b, 2) < 0)	/* ctx, JTAG I/O mask */
 	{
-		ERROR("failed to activate advanced bitbang mode");
+		ERROR("unable to set bit mode: %s", ftdic.error_str);
 		return ERROR_JTAG_INIT_FAILED;
 	}
 
@@ -1785,7 +1827,7 @@ int olimex_jtag_init(void)
 	return ERROR_OK;
 }
 
-int m5960_init(void)
+int flyswatter_init(void)
 {
 	u8 buf[3];
 	u32 bytes_written;
@@ -1801,7 +1843,7 @@ int m5960_init(void)
 	
 	if (((ft2232_write(buf, 3, &bytes_written)) != ERROR_OK) || (bytes_written != 3))
 	{
-		ERROR("couldn't initialize FT2232 with 'm5960' layout"); 
+		ERROR("couldn't initialize FT2232 with 'flyswatter' layout"); 
 		return ERROR_JTAG_INIT_FAILED;
 	}
 	
@@ -1824,7 +1866,7 @@ int m5960_init(void)
 	
 	if (((ft2232_write(buf, 3, &bytes_written)) != ERROR_OK) || (bytes_written != 3))
 	{
-		ERROR("couldn't initialize FT2232 with 'm5960' layout"); 
+		ERROR("couldn't initialize FT2232 with 'flyswatter' layout"); 
 		return ERROR_JTAG_INIT_FAILED;
 	}
 	
@@ -1908,6 +1950,49 @@ int comstick_init(void)
 	if (((ft2232_write(buf, 3, &bytes_written)) != ERROR_OK) || (bytes_written != 3))
 	{
 		ERROR("couldn't initialize FT2232 with 'comstick' layout"); 
+		return ERROR_JTAG_INIT_FAILED;
+	}
+	
+	return ERROR_OK;
+}
+
+int stm32stick_init(void)
+{
+	u8 buf[3];
+	u32 bytes_written;
+	
+	low_output = 0x88;
+	low_direction = 0x8b;
+	
+	/* initialize low byte for jtag */
+	buf[0] = 0x80; /* command "set data bits low byte" */
+	buf[1] = low_output; /* value (TMS=1,TCK=0, TDI=0, nOE=0) */
+	buf[2] = low_direction; /* dir (output=1), TCK/TDI/TMS=out, TDO=in, nOE=out */
+	DEBUG("%2.2x %2.2x %2.2x", buf[0], buf[1], buf[2]);
+	
+	if (((ft2232_write(buf, 3, &bytes_written)) != ERROR_OK) || (bytes_written != 3))
+	{
+		ERROR("couldn't initialize FT2232 with 'stm32stick' layout"); 
+		return ERROR_JTAG_INIT_FAILED;
+	}
+		
+	nTRST = 0x01;
+	nTRSTnOE = 0x00; /* no output enable for nTRST */
+	nSRST = 0x80;
+	nSRSTnOE = 0x00; /* no output enable for nSRST */
+  	
+	high_output = 0x01;
+	high_direction = 0x03;
+	
+	/* initialize high port */
+	buf[0] = 0x82; /* command "set data bits high byte" */
+	buf[1] = high_output;
+	buf[2] = high_direction;
+	DEBUG("%2.2x %2.2x %2.2x", buf[0], buf[1], buf[2]);
+	
+	if (((ft2232_write(buf, 3, &bytes_written)) != ERROR_OK) || (bytes_written != 3))
+	{
+		ERROR("couldn't initialize FT2232 with 'stm32stick' layout"); 
 		return ERROR_JTAG_INIT_FAILED;
 	}
 	
@@ -2041,3 +2126,18 @@ int ft2232_handle_vid_pid_command(struct command_context_s *cmd_ctx, char *cmd, 
 
 	return ERROR_OK;
 }
+
+int ft2232_handle_latency_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc)
+{
+	if (argc == 1)
+	{
+		ft2232_latency = atoi(args[0]);
+	}
+	else
+	{
+		ERROR("expected exactly one argument to ft2232_latency <ms>");
+	}
+	
+	return ERROR_OK;
+}
+

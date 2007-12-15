@@ -214,7 +214,9 @@ int embeddedice_read_reg_w_check(reg_t *reg, u8* check_value, u8* check_mask)
 	embeddedice_reg_t *ice_reg = reg->arch_info;
 	u8 reg_addr = ice_reg->addr & 0x1f;
 	scan_field_t fields[3];
-	
+	u8 field1_out[1];
+	u8 field2_out[1];
+
 	DEBUG("%i", ice_reg->addr);
 
 	jtag_add_end_state(TAP_RTI);
@@ -234,7 +236,7 @@ int embeddedice_read_reg_w_check(reg_t *reg, u8* check_value, u8* check_mask)
 	
 	fields[1].device = ice_reg->jtag_info->chain_pos;
 	fields[1].num_bits = 5;
-	fields[1].out_value = malloc(1);
+	fields[1].out_value = field1_out;
 	buf_set_u32(fields[1].out_value, 0, 5, reg_addr);
 	fields[1].out_mask = NULL;
 	fields[1].in_value = NULL;
@@ -245,7 +247,7 @@ int embeddedice_read_reg_w_check(reg_t *reg, u8* check_value, u8* check_mask)
 
 	fields[2].device = ice_reg->jtag_info->chain_pos;
 	fields[2].num_bits = 1;
-	fields[2].out_value = malloc(1);
+	fields[2].out_value = field2_out;
 	buf_set_u32(fields[2].out_value, 0, 1, 0);
 	fields[2].out_mask = NULL;
 	fields[2].in_value = NULL;
@@ -268,10 +270,74 @@ int embeddedice_read_reg_w_check(reg_t *reg, u8* check_value, u8* check_mask)
 	
 	jtag_add_dr_scan(3, fields, -1, NULL);
 
-	free(fields[1].out_value);
-	free(fields[2].out_value);
-	
 	return ERROR_OK;
+}
+
+/* receive <size> words of 32 bit from the DCC
+ * we pretend the target is always going to be fast enough
+ * (relative to the JTAG clock), so we don't need to handshake
+ */
+int embeddedice_receive(arm_jtag_t *jtag_info, u32 *data, u32 size)
+{
+	scan_field_t fields[3];
+	u8 field1_out[1];
+	u8 field2_out[1];
+
+	jtag_add_end_state(TAP_RTI);
+	arm_jtag_scann(jtag_info, 0x2);
+	arm_jtag_set_instr(jtag_info, jtag_info->intest_instr, NULL);
+	
+	fields[0].device = jtag_info->chain_pos;
+	fields[0].num_bits = 32;
+	fields[0].out_value = NULL;
+	fields[0].out_mask = NULL;
+	fields[0].in_value = NULL;
+	fields[0].in_check_value = NULL;
+	fields[0].in_check_mask = NULL;
+	fields[0].in_handler = NULL;
+	fields[0].in_handler_priv = NULL;
+	
+	fields[1].device = jtag_info->chain_pos;
+	fields[1].num_bits = 5;
+	fields[1].out_value = field1_out;
+	buf_set_u32(fields[1].out_value, 0, 5, embeddedice_reg_arch_info[EICE_COMMS_DATA]);
+	fields[1].out_mask = NULL;
+	fields[1].in_value = NULL;
+	fields[1].in_check_value = NULL;
+	fields[1].in_check_mask = NULL;
+	fields[1].in_handler = NULL;
+	fields[1].in_handler_priv = NULL;
+
+	fields[2].device = jtag_info->chain_pos;
+	fields[2].num_bits = 1;
+	fields[2].out_value = field2_out;
+	buf_set_u32(fields[2].out_value, 0, 1, 0);
+	fields[2].out_mask = NULL;
+	fields[2].in_value = NULL;
+	fields[2].in_check_value = NULL;
+	fields[2].in_check_mask = NULL;
+	fields[2].in_handler = NULL;
+	fields[2].in_handler_priv = NULL;
+	
+	jtag_add_dr_scan(3, fields, -1, NULL);
+	
+	while (size > 0)
+	{
+		/* when reading the last item, set the register address to the DCC control reg,
+		 * to avoid reading additional data from the DCC data reg
+		 */
+		if (size == 1)
+			buf_set_u32(fields[1].out_value, 0, 5, embeddedice_reg_arch_info[EICE_COMMS_CTRL]);
+		
+		fields[0].in_handler = arm_jtag_buf_to_u32;
+		fields[0].in_handler_priv = data;
+		jtag_add_dr_scan(3, fields, -1, NULL);
+		
+		data++;
+		size--;
+	}
+	
+	return jtag_execute_queue();
 }
 
 int embeddedice_read_reg(reg_t *reg)
@@ -311,7 +377,10 @@ int embeddedice_write_reg(reg_t *reg, u32 value)
 	embeddedice_reg_t *ice_reg = reg->arch_info;
 	u8 reg_addr = ice_reg->addr & 0x1f;
 	scan_field_t fields[3];
-	
+	u8 field0_out[4];
+	u8 field1_out[1];
+	u8 field2_out[1];
+
 	DEBUG("%i: 0x%8.8x", ice_reg->addr, value);
 	
 	jtag_add_end_state(TAP_RTI);
@@ -321,7 +390,7 @@ int embeddedice_write_reg(reg_t *reg, u32 value)
 	
 	fields[0].device = ice_reg->jtag_info->chain_pos;
 	fields[0].num_bits = 32;
-	fields[0].out_value = malloc(4);
+	fields[0].out_value = field0_out;
 	buf_set_u32(fields[0].out_value, 0, 32, value);
 	fields[0].out_mask = NULL;
 	fields[0].in_value = NULL;
@@ -332,7 +401,7 @@ int embeddedice_write_reg(reg_t *reg, u32 value)
 	
 	fields[1].device = ice_reg->jtag_info->chain_pos;
 	fields[1].num_bits = 5;
-	fields[1].out_value = malloc(1);
+	fields[1].out_value = field1_out;
 	buf_set_u32(fields[1].out_value, 0, 5, reg_addr);
 	fields[1].out_mask = NULL;
 	fields[1].in_value = NULL;
@@ -343,7 +412,7 @@ int embeddedice_write_reg(reg_t *reg, u32 value)
 
 	fields[2].device = ice_reg->jtag_info->chain_pos;
 	fields[2].num_bits = 1;
-	fields[2].out_value = malloc(1);
+	fields[2].out_value = field2_out;
 	buf_set_u32(fields[2].out_value, 0, 1, 1);
 	fields[2].out_mask = NULL;
 	fields[2].in_value = NULL;
@@ -354,10 +423,6 @@ int embeddedice_write_reg(reg_t *reg, u32 value)
 	
 	jtag_add_dr_scan(3, fields, -1, NULL);
 	
-	free(fields[0].out_value);
-	free(fields[1].out_value);
-	free(fields[2].out_value);
-	
 	return ERROR_OK;
 }
 
@@ -366,3 +431,136 @@ int embeddedice_store_reg(reg_t *reg)
 	return embeddedice_write_reg(reg, buf_get_u32(reg->value, 0, reg->size));
 }
 
+/* send <size> words of 32 bit to the DCC
+ * we pretend the target is always going to be fast enough
+ * (relative to the JTAG clock), so we don't need to handshake
+ */
+int embeddedice_send(arm_jtag_t *jtag_info, u32 *data, u32 size)
+{
+	scan_field_t fields[3];
+	u8 field0_out[4];
+	u8 field1_out[1];
+	u8 field2_out[1];
+
+	jtag_add_end_state(TAP_RTI);
+	arm_jtag_scann(jtag_info, 0x2);
+	arm_jtag_set_instr(jtag_info, jtag_info->intest_instr, NULL);
+
+	fields[0].device = jtag_info->chain_pos;
+	fields[0].num_bits = 32;
+	fields[0].out_value = field0_out;
+	fields[0].out_mask = NULL;
+	fields[0].in_value = NULL;
+	fields[0].in_check_value = NULL;
+	fields[0].in_check_mask = NULL;
+	fields[0].in_handler = NULL;
+	fields[0].in_handler_priv = NULL;
+
+	fields[1].device = jtag_info->chain_pos;
+	fields[1].num_bits = 5;
+	fields[1].out_value = field1_out;
+	buf_set_u32(fields[1].out_value, 0, 5, embeddedice_reg_arch_info[EICE_COMMS_DATA]);
+	fields[1].out_mask = NULL;
+	fields[1].in_value = NULL;
+	fields[1].in_check_value = NULL;
+	fields[1].in_check_mask = NULL;
+	fields[1].in_handler = NULL;
+	fields[1].in_handler_priv = NULL;
+
+	fields[2].device = jtag_info->chain_pos;
+	fields[2].num_bits = 1;
+	fields[2].out_value = field2_out;
+	buf_set_u32(fields[2].out_value, 0, 1, 1);
+	fields[2].out_mask = NULL;
+	fields[2].in_value = NULL;
+	fields[2].in_check_value = NULL;
+	fields[2].in_check_mask = NULL;
+	fields[2].in_handler = NULL;
+	fields[2].in_handler_priv = NULL;
+
+	while (size > 0)
+	{
+		buf_set_u32(fields[0].out_value, 0, 32, *data);
+		jtag_add_dr_scan(3, fields, -1, NULL);
+
+		data++;
+		size--;
+	}
+
+	/* call to jtag_execute_queue() intentionally omitted */
+	return ERROR_OK;
+}
+
+/* wait for DCC control register R/W handshake bit to become active
+ */
+int embeddedice_handshake(arm_jtag_t *jtag_info, int hsbit, u32 timeout)
+{
+	scan_field_t fields[3];
+	u8 field0_in[4];
+	u8 field1_out[1];
+	u8 field2_out[1];
+	int retval;
+	int hsact;
+	struct timeval lap;
+	struct timeval now;
+
+	if (hsbit == EICE_COMM_CTRL_WBIT)
+		hsact = 1;
+	else if (hsbit == EICE_COMM_CTRL_RBIT)
+		hsact = 0;
+	else
+		return ERROR_INVALID_ARGUMENTS;
+
+	jtag_add_end_state(TAP_RTI);
+	arm_jtag_scann(jtag_info, 0x2);
+	arm_jtag_set_instr(jtag_info, jtag_info->intest_instr, NULL);
+
+	fields[0].device = jtag_info->chain_pos;
+	fields[0].num_bits = 32;
+	fields[0].out_value = NULL;
+	fields[0].out_mask = NULL;
+	fields[0].in_value = field0_in;
+	fields[0].in_check_value = NULL;
+	fields[0].in_check_mask = NULL;
+	fields[0].in_handler = NULL;
+	fields[0].in_handler_priv = NULL;
+
+	fields[1].device = jtag_info->chain_pos;
+	fields[1].num_bits = 5;
+	fields[1].out_value = field1_out;
+	buf_set_u32(fields[1].out_value, 0, 5, embeddedice_reg_arch_info[EICE_COMMS_CTRL]);
+	fields[1].out_mask = NULL;
+	fields[1].in_value = NULL;
+	fields[1].in_check_value = NULL;
+	fields[1].in_check_mask = NULL;
+	fields[1].in_handler = NULL;
+	fields[1].in_handler_priv = NULL;
+
+	fields[2].device = jtag_info->chain_pos;
+	fields[2].num_bits = 1;
+	fields[2].out_value = field2_out;
+	buf_set_u32(fields[2].out_value, 0, 1, 0);
+	fields[2].out_mask = NULL;
+	fields[2].in_value = NULL;
+	fields[2].in_check_value = NULL;
+	fields[2].in_check_mask = NULL;
+	fields[2].in_handler = NULL;
+	fields[2].in_handler_priv = NULL;
+
+	jtag_add_dr_scan(3, fields, -1, NULL);
+	gettimeofday(&lap, NULL);
+	do
+	{
+		jtag_add_dr_scan(3, fields, -1, NULL);
+		if ((retval = jtag_execute_queue()) != ERROR_OK)
+			return retval;
+
+		if (buf_get_u32(field0_in, hsbit, 1) == hsact)
+			return ERROR_OK;
+
+		gettimeofday(&now, NULL);
+	}
+	while ((now.tv_sec-lap.tv_sec)*1000 + (now.tv_usec-lap.tv_usec)/1000 <= timeout);
+
+	return ERROR_TARGET_TIMEOUT;
+}

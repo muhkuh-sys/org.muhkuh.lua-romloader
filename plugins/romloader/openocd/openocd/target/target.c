@@ -23,6 +23,7 @@
 
 #include "replacements.h"
 #include "target.h"
+#include "target_request.h"
 
 #include "log.h"
 #include "configuration.h"
@@ -68,6 +69,7 @@ int handle_md_command(struct command_context_s *cmd_ctx, char *cmd, char **args,
 int handle_mw_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc);
 int handle_load_image_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc);
 int handle_dump_image_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc);
+int handle_verify_image_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc);
 int handle_bp_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc);
 int handle_rbp_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc);
 int handle_wp_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc);
@@ -311,6 +313,23 @@ int target_process_reset(struct command_context_s *cmd_ctx)
 	while (target)
 	{
 		target->type->deassert_reset(target);
+
+		switch (target->reset_mode)
+		{
+			case RESET_INIT:
+			case RESET_HALT:
+				// If we're already halted, then this is harmless(reducing # of execution paths here)
+				// If nSRST & nTRST are tied together then the halt during reset failed(logged) and
+				// we use this as fallback(there is no other output to tell the user that reset halt 
+				// didn't work).
+				target->type->poll(target);
+				target->type->halt(target);
+				break;
+			default:
+				break;
+		}
+		
+		
 		target = target->next;
 	}
 	jtag_execute_queue();
@@ -751,6 +770,36 @@ int target_read_buffer(struct target_s *target, u32 address, u32 size, u8 *buffe
 	return ERROR_OK;
 }
 
+int target_checksum_memory(struct target_s *target, u32 address, u32 size, u32* crc)
+{
+	u8 *buffer;
+	int retval;
+	int i;
+	u32 checksum = 0;
+	
+	if ((retval = target->type->checksum_memory(target, address,
+		size, &checksum)) == ERROR_TARGET_RESOURCE_NOT_AVAILABLE)
+	{
+		buffer = malloc(size);
+		target_read_buffer(target, address, size, buffer);
+
+		/* convert to target endianess */
+		for (i = 0; i < (size/sizeof(u32)); i++)
+		{
+			u32 target_data;
+			target_data = target_buffer_get_u32(target, &buffer[i*sizeof(u32)]);
+			target_buffer_set_u32(target, &buffer[i*sizeof(u32)], target_data);
+		}
+
+		retval = image_calculate_checksum( buffer, size, &checksum );
+		free(buffer);
+	}
+	
+	*crc = checksum;
+	
+	return retval;
+}
+
 int target_read_u32(struct target_s *target, u32 address, u32 *value)
 {
 	u8 value_buf[4];
@@ -861,7 +910,7 @@ int target_register_user_commands(struct command_context_s *cmd_ctx)
 	register_command(cmd_ctx,  NULL, "wait_halt", handle_wait_halt_command, COMMAND_EXEC, "wait for target halt [time (s)]");
 	register_command(cmd_ctx,  NULL, "halt", handle_halt_command, COMMAND_EXEC, "halt target");
 	register_command(cmd_ctx,  NULL, "resume", handle_resume_command, COMMAND_EXEC, "resume target [addr]");
-	register_command(cmd_ctx,  NULL, "step", handle_step_command, COMMAND_EXEC, "step one instruction");
+	register_command(cmd_ctx,  NULL, "step", handle_step_command, COMMAND_EXEC, "step one instruction from current PC or [addr]");
 	register_command(cmd_ctx,  NULL, "reset", handle_reset_command, COMMAND_EXEC, "reset target [run|halt|init|run_and_halt|run_and_init]");
 	register_command(cmd_ctx,  NULL, "soft_reset_halt", handle_soft_reset_halt_command, COMMAND_EXEC, "halt the target and do a soft reset");
 
@@ -878,10 +927,14 @@ int target_register_user_commands(struct command_context_s *cmd_ctx)
 	register_command(cmd_ctx,  NULL, "wp", handle_wp_command, COMMAND_EXEC, "set watchpoint <address> <length> <r/w/a> [value] [mask]");	
 	register_command(cmd_ctx,  NULL, "rwp", handle_rwp_command, COMMAND_EXEC, "remove watchpoint <adress>");
 	
-	register_command(cmd_ctx,  NULL, "load_image", handle_load_image_command, COMMAND_EXEC, "load_image <file> <address> ['bin'|'ihex'|'elf']");
+	register_command(cmd_ctx,  NULL, "load_image", handle_load_image_command, COMMAND_EXEC, "load_image <file> <address> ['bin'|'ihex'|'elf'|'s19']");
 	register_command(cmd_ctx,  NULL, "dump_image", handle_dump_image_command, COMMAND_EXEC, "dump_image <file> <address> <size>");
+	register_command(cmd_ctx,  NULL, "verify_image", handle_verify_image_command, COMMAND_EXEC, "verify_image <file> [offset] [type]");
 	register_command(cmd_ctx,  NULL, "load_binary", handle_load_image_command, COMMAND_EXEC, "[DEPRECATED] load_binary <file> <address>");
 	register_command(cmd_ctx,  NULL, "dump_binary", handle_dump_image_command, COMMAND_EXEC, "[DEPRECATED] dump_binary <file> <address> <size>");
+	
+	target_request_register_commands(cmd_ctx);
+	trace_register_commands(cmd_ctx);
 	
 	return ERROR_OK;
 }
@@ -1000,6 +1053,18 @@ int handle_target_command(struct command_context_s *cmd_ctx, char *cmd, char **a
 				(*last_target_p)->next = NULL;
 				(*last_target_p)->arch_info = NULL;
 				
+				/* initialize trace information */
+				(*last_target_p)->trace_info = malloc(sizeof(trace_t));
+				(*last_target_p)->trace_info->num_trace_points = 0;
+				(*last_target_p)->trace_info->trace_points_size = 0;
+				(*last_target_p)->trace_info->trace_points = NULL;
+				(*last_target_p)->trace_info->trace_history_size = 0;
+				(*last_target_p)->trace_info->trace_history = NULL;
+				(*last_target_p)->trace_info->trace_history_pos = 0;
+				(*last_target_p)->trace_info->trace_history_overflowed = 0;
+				
+				(*last_target_p)->dbgmsg = NULL;
+								
 				(*last_target_p)->type->target_command(cmd_ctx, cmd, args, argc, *last_target_p);
 				
 				found = 1;
@@ -1140,8 +1205,7 @@ int handle_target(void *priv)
 			if (target_continous_poll)
 				if ((retval = target->type->poll(target)) < 0)
 				{
-					ERROR("couldn't poll target, exiting");
-					exit(-1);
+					ERROR("couldn't poll target. It's due for a reset.");
 				}
 		}
 	
@@ -1786,6 +1850,101 @@ int handle_dump_image_command(struct command_context_s *cmd_ctx, char *cmd, char
 
 }
 
+int handle_verify_image_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc)
+{
+	u8 *buffer;
+	u32 buf_cnt;
+	u32 image_size;
+	int i;
+	int retval;
+	u32 checksum = 0;
+	u32 mem_checksum = 0;
+
+	image_t image;	
+	
+	duration_t duration;
+	char *duration_text;
+	
+	target_t *target = get_current_target(cmd_ctx);
+	
+	if (argc < 1)
+	{
+		command_print(cmd_ctx, "usage: verify_image <file> [offset] [type]");
+		return ERROR_OK;
+	}
+	
+	if (!target)
+	{
+		ERROR("no target selected");
+	return ERROR_OK;
+	}
+	
+	duration_start_measure(&duration);
+	
+	if (argc >= 2)
+	{
+		image.base_address_set = 1;
+		image.base_address = strtoul(args[1], NULL, 0);
+	}
+	else
+	{
+		image.base_address_set = 0;
+		image.base_address = 0x0;
+	}
+
+	image.start_address_set = 0;
+
+	if (image_open(&image, args[0], (argc == 3) ? args[2] : NULL) != ERROR_OK)
+	{
+		command_print(cmd_ctx, "verify_image error: %s", image.error_str);
+		return ERROR_OK;
+	}
+	
+	image_size = 0x0;
+	for (i = 0; i < image.num_sections; i++)
+	{
+		buffer = malloc(image.sections[i].size);
+		if ((retval = image_read_section(&image, i, 0x0, image.sections[i].size, buffer, &buf_cnt)) != ERROR_OK)
+		{
+			ERROR("image_read_section failed with error code: %i", retval);
+			command_print(cmd_ctx, "image reading failed, verify aborted");
+			free(buffer);
+			image_close(&image);
+			return ERROR_OK;
+		}
+		
+		/* calculate checksum of image */
+		image_calculate_checksum( buffer, buf_cnt, &checksum );
+		free(buffer);
+		
+		retval = target_checksum_memory(target, image.sections[i].base_address, buf_cnt, &mem_checksum);
+		
+		if( retval != ERROR_OK )
+		{
+			command_print(cmd_ctx, "image verify failed, verify aborted");
+			image_close(&image);
+			return ERROR_OK;
+		}
+		
+		if( checksum != mem_checksum )
+		{
+			command_print(cmd_ctx, "image verify failed, verify aborted");
+			image_close(&image);
+			return ERROR_OK;
+		}
+			
+		image_size += buf_cnt;
+	}
+
+	duration_stop_measure(&duration, &duration_text);
+	command_print(cmd_ctx, "verified %u bytes in %s", image_size, duration_text);
+	free(duration_text);
+	
+	image_close(&image);
+	
+	return ERROR_OK;
+}
+
 int handle_bp_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc)
 {
 	int retval;
@@ -1862,6 +2021,7 @@ int handle_rbp_command(struct command_context_s *cmd_ctx, char *cmd, char **args
 int handle_wp_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc)
 {
 	target_t *target = get_current_target(cmd_ctx);
+	int retval;
 
 	if (argc == 0)
 	{
@@ -1905,7 +2065,23 @@ int handle_wp_command(struct command_context_s *cmd_ctx, char *cmd, char **args,
 		{
 			data_mask = strtoul(args[4], NULL, 0);
 		}
-		watchpoint_add(target, strtoul(args[0], NULL, 0), strtoul(args[1], NULL, 0), type, data_value, data_mask);
+		
+		if ((retval = watchpoint_add(target, strtoul(args[0], NULL, 0),
+				strtoul(args[1], NULL, 0), type, data_value, data_mask)) != ERROR_OK)
+		{
+			switch (retval)
+			{
+				case ERROR_TARGET_NOT_HALTED:
+					command_print(cmd_ctx, "target must be halted to set watchpoints");
+					break;
+				case ERROR_TARGET_RESOURCE_NOT_AVAILABLE:
+					command_print(cmd_ctx, "no more watchpoints available");
+					break;
+				default:
+					command_print(cmd_ctx, "unknown error, watchpoint not set");
+					break;
+			}	
+		}
 	}
 	else
 	{
@@ -1924,4 +2100,5 @@ int handle_rwp_command(struct command_context_s *cmd_ctx, char *cmd, char **args
 	
 	return ERROR_OK;
 }
+
 

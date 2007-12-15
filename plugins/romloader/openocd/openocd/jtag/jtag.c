@@ -162,7 +162,7 @@ jtag_event_callback_t *jtag_event_callbacks;
 	extern jtag_interface_t gw16012_interface;
 #endif
 
-#if BUILD_PRESTO == 1
+#if BUILD_PRESTO_LIBFTDI == 1 || BUILD_PRESTO_FTD2XX == 1
 	extern jtag_interface_t presto_interface;
 #endif
 
@@ -192,7 +192,7 @@ jtag_interface_t *jtag_interfaces[] = {
 #if BUILD_GW16012 == 1
 	&gw16012_interface,
 #endif
-#if BUILD_PRESTO == 1
+#if BUILD_PRESTO_LIBFTDI == 1 || BUILD_PRESTO_FTD2XX == 1
 	&presto_interface,
 #endif
 #if BUILD_USBPROG == 1
@@ -1251,7 +1251,7 @@ int jtag_examine_chain()
 	if ((zero_check == 0x00) || (one_check == 0xff))
 	{
 		ERROR("JTAG communication failure, check connection, JTAG interface, target power etc.");
-		exit(-1);
+		return ERROR_JTAG_INIT_FAILED;
 	}
 	
 	for (bit_count = 0; bit_count < (JTAG_MAX_CHAIN_SIZE * 32) - 31;)
@@ -1287,7 +1287,7 @@ int jtag_examine_chain()
 			part = (idcode & 0xffff000) >> 12;
 			version = (idcode & 0xf0000000) >> 28;
 
-			DEBUG("JTAG device found: 0x%8.8x (Manufacturer: 0x%3.3x, Part: 0x%4.4x, Version: 0x%1.1x", 
+			INFO("JTAG device found: 0x%8.8x (Manufacturer: 0x%3.3x, Part: 0x%4.4x, Version: 0x%1.1x)", 
 				idcode, manufacturer, part, version);
 			
 			bit_count += 32;
@@ -1300,7 +1300,7 @@ int jtag_examine_chain()
 		ERROR("number of discovered devices in JTAG chain (%i) doesn't match configuration (%i)", 
 			device_count, jtag_num_devices);
 		ERROR("check the config file and ensure proper JTAG communication (connections, speed, ...)");
-		exit(-1);
+		return ERROR_JTAG_INIT_FAILED;
 	}
 	
 	return ERROR_OK;
@@ -1345,7 +1345,7 @@ int jtag_validate_chain()
 			char *cbuf = buf_to_str(ir_test, total_ir_length, 16);
 			ERROR("Error validating JTAG scan chain, IR mismatch, scan returned 0x%s", cbuf);
 			free(cbuf);
-			exit(-1);
+			return ERROR_JTAG_INIT_FAILED;
 		}
 		chain_pos += device->ir_length;
 		device = device->next;
@@ -1356,7 +1356,7 @@ int jtag_validate_chain()
 		char *cbuf = buf_to_str(ir_test, total_ir_length, 16);
 		ERROR("Error validating JTAG scan chain, IR mismatch, scan returned 0x%s", cbuf);
 		free(cbuf);
-		exit(-1);
+		return ERROR_JTAG_INIT_FAILED;
 	}
 	
 	free(ir_test);
@@ -1402,7 +1402,7 @@ int jtag_register_commands(struct command_context_s *cmd_ctx)
 
 int jtag_init(struct command_context_s *cmd_ctx)
 {
-	int i;
+	int i, validate_tries = 0;
 	
 	DEBUG("-");
 
@@ -1433,11 +1433,25 @@ int jtag_init(struct command_context_s *cmd_ctx)
 				
 				jtag_add_statemove(TAP_TLR);
 				jtag_execute_queue();
+
+				/* examine chain first, as this could discover the real chain layout */
+				if (jtag_examine_chain() != ERROR_OK)
+				{
+					ERROR("trying to validate configured JTAG chain anyway...");
+				}
 				
-				jtag_examine_chain();
-				
-				jtag_validate_chain();
-				
+				while (jtag_validate_chain() != ERROR_OK)
+				{
+					validate_tries++;
+					if (validate_tries > 5)
+					{
+						ERROR("Could not validate JTAG chain, exit");
+						jtag = NULL;
+						return ERROR_JTAG_INVALID_INTERFACE;
+					}
+					usleep(10000);
+				}
+
 				return ERROR_OK;
 			}
 		}
@@ -1555,8 +1569,9 @@ int handle_reset_config_command(struct command_context_s *cmd_ctx, char *cmd, ch
 			jtag_reset_config = RESET_TRST_AND_SRST;
 		else
 		{
-			ERROR("invalid reset_config argument");
-			exit(-1);
+			ERROR("invalid reset_config argument, defaulting to none");
+			jtag_reset_config = RESET_NONE;
+			return ERROR_INVALID_ARGUMENTS;
 		}
 	}
 	
@@ -1572,8 +1587,9 @@ int handle_reset_config_command(struct command_context_s *cmd_ctx, char *cmd, ch
 			jtag_reset_config &= ~(RESET_SRST_PULLS_TRST | RESET_TRST_PULLS_SRST);
 		else
 		{
-			ERROR("invalid reset_config argument");
-			exit(-1);
+			ERROR("invalid reset_config argument, defaulting to none");
+			jtag_reset_config = RESET_NONE;
+			return ERROR_INVALID_ARGUMENTS;
 		}
 	}
 	
@@ -1585,8 +1601,9 @@ int handle_reset_config_command(struct command_context_s *cmd_ctx, char *cmd, ch
 			jtag_reset_config &= ~RESET_TRST_OPEN_DRAIN;
 		else
 		{
-			ERROR("invalid reset_config argument");
-			exit(-1);
+			ERROR("invalid reset_config argument, defaulting to none");
+			jtag_reset_config = RESET_NONE;
+			return ERROR_INVALID_ARGUMENTS;
 		}
 	}
 
@@ -1598,8 +1615,9 @@ int handle_reset_config_command(struct command_context_s *cmd_ctx, char *cmd, ch
 			jtag_reset_config &= ~RESET_SRST_PUSH_PULL;
 		else
 		{
-			ERROR("invalid reset_config argument");
-			exit(-1);
+			ERROR("invalid reset_config argument, defaulting to none");
+			jtag_reset_config = RESET_NONE;
+			return ERROR_INVALID_ARGUMENTS;
 		}
 	}
 	

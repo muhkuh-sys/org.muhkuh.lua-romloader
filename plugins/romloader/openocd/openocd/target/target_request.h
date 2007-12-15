@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2005 by Dominic Rath                                    *
+ *   Copyright (C) 2007 by Dominic Rath                              *
  *   Dominic.Rath@gmx.de                                                   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -17,25 +17,26 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef ARM966E_H
-#define ARM966E_H
+#ifndef TARGET_REQUEST_H
+#define TARGET_REQUEST_H
 
-#include "target.h"
-#include "register.h"
-#include "embeddedice.h"
-#include "arm_jtag.h"
-#include "arm9tdmi.h"
+#include "command.h"
 
-#define	ARM966E_COMMON_MAGIC 0x20f920f9
-
-typedef struct arm966e_common_s
+typedef enum target_req_cmd
 {
-	int common_magic;
-	arm9tdmi_common_t arm9tdmi_common;
-	u32 cp15_control_reg;
-} arm966e_common_t;
+	TARGET_REQ_TRACEMSG,
+	TARGET_REQ_DEBUGMSG,
+/*	TARGET_REQ_SEMIHOSTING, */
+} target_req_cmd_t;
 
-extern int arm966e_read_cp15(target_t *target, int reg_addr, u32 *value);
-extern int arm966e_write_cp15(target_t *target, int reg_addr, u32 value);
+typedef struct debug_msg_receiver_s
+{
+	command_context_t *cmd_ctx;
+	struct debug_msg_receiver_s *next;
+} debug_msg_receiver_t;
 
-#endif /* ARM966E_H */
+extern int target_request(target_t *target, u32 request);
+extern int delete_debug_msg_receiver(struct command_context_s *cmd_ctx, target_t *target);
+extern int target_request_register_commands(struct command_context_s *cmd_ctx);
+
+#endif /* TARGET_REQUEST_H */

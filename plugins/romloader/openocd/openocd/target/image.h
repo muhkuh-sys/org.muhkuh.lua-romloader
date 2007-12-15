@@ -34,7 +34,7 @@
 #define IMAGE_MAX_ERROR_STRING		(256)
 #define IMAGE_MAX_SECTIONS			(128)
 
-#define IMAGE_MEMORY_CACHE_SIZE		(128)
+#define IMAGE_MEMORY_CACHE_SIZE		(2048)
 
 typedef enum image_type
 {
@@ -42,10 +42,8 @@ typedef enum image_type
     IMAGE_IHEX,		/* intel hex-record format */
     IMAGE_MEMORY,	/* target-memory pseudo-image */
     IMAGE_ELF,		/* ELF binary */
-/*
- * Possible future enhancements:
- * IMAGE_SRECORD,
- */
+    IMAGE_SRECORD,	/* motorola s19 */
+    IMAGE_BUILDER,	/* when building a new image */
 } image_type_t;
 
 typedef struct image_section_s
@@ -96,12 +94,22 @@ typedef struct fileio_elf_s
 	u8 endianness;
 } image_elf_t;
 
+typedef struct image_mot_s
+{
+	fileio_t fileio;
+	u8 *buffer;
+} image_mot_t;
+
 extern int image_open(image_t *image, char *url, char *type_string);
 extern int image_read_section(image_t *image, int section, u32 offset, u32 size, u8 *buffer, u32 *size_read);
 extern int image_close(image_t *image);
+extern int image_add_section(image_t *image, u32 base, u32 size, int flags, u8 *data);
+
+extern int image_calculate_checksum(u8* buffer, u32 nbytes, u32* checksum);
 
 #define ERROR_IMAGE_FORMAT_ERROR	(-1400)
 #define ERROR_IMAGE_TYPE_UNKNOWN	(-1401)
 #define ERROR_IMAGE_TEMPORARILY_UNAVAILABLE		(-1402)
+#define ERROR_IMAGE_CHECKSUM		(-1403)
 
 #endif /* IMAGE_H */
