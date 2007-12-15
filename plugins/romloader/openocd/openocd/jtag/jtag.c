@@ -342,6 +342,7 @@ void* cmd_queue_alloc(size_t size)
 {
 	cmd_queue_page_t **p_page = &cmd_queue_pages;
 	int offset;
+	unsigned char *puc;
 
 	if (*p_page)
 	{
@@ -361,8 +362,10 @@ void* cmd_queue_alloc(size_t size)
 
 	offset = (*p_page)->used;
 	(*p_page)->used += size;
-	
-	return ((*p_page)->address) + offset;
+
+	puc = (unsigned char*)((*p_page)->address);
+	puc += offset;
+	return (void*)puc;
 }
 
 void cmd_queue_free()

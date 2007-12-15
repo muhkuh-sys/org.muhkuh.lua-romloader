@@ -152,16 +152,16 @@ static int ft2232_expect_read = 0;
 jtag_interface_t ft2232_interface = 
 {
 	
-	.name = "ft2232",
+	/* .name = */              "ft2232",
 	
-	.execute_queue = ft2232_execute_queue,
+	/* .execute_queue = */     ft2232_execute_queue,
 	
-	.support_pathmove = 1,
+	/* .support_pathmove = */  1,
 	
-	.speed = ft2232_speed,
-	.register_commands = ft2232_register_commands,
-	.init = ft2232_init,
-	.quit = ft2232_quit,
+	/* .speed = */             ft2232_speed,
+	/* .register_commands = */ ft2232_register_commands,
+	/* .init = */              ft2232_init,
+	/* .quit = */              ft2232_quit
 };
 
 int ft2232_write(u8 *buf, int size, u32* bytes_written)
@@ -450,12 +450,13 @@ void ft2232_add_pathmove(pathmove_command_t *cmd)
 	int num_states = cmd->num_states;
 	u8 tms_byte;
 	int state_count;
+	int bit_count;
 
 	state_count = 0;
 	while (num_states)
 	{
 		tms_byte = 0x0;
-		int bit_count = 0;
+		bit_count = 0;
 		
 		/* command "Clock Data to TMS/CS Pin (no Read)" */
 		BUFFER_ADD = 0x4b;

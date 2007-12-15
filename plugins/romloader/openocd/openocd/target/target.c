@@ -1216,6 +1216,7 @@ int handle_reg_command(struct command_context_s *cmd_ctx, char *cmd, char **args
 	reg_t *reg = NULL;
 	int count = 0;
 	char *value;
+	reg_arch_type_t *arch_type;
 	
 	DEBUG("-");
 	
@@ -1309,7 +1310,7 @@ int handle_reg_command(struct command_context_s *cmd_ctx, char *cmd, char **args
 		u8 *buf = malloc(CEIL(reg->size, 8));
 		str_to_buf(args[1], strlen(args[1]), buf, reg->size, 0);
 
-		reg_arch_type_t *arch_type = register_get_arch_type(reg->arch_type);
+		arch_type = register_get_arch_type(reg->arch_type);
 		if (arch_type == NULL)
 		{
 			ERROR("BUG: encountered unregistered arch type");

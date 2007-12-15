@@ -50,7 +50,7 @@ int xscale_register_commands(struct command_context_s *cmd_ctx);
 /* forward declarations */
 int xscale_target_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc, struct target_s *target);
 int xscale_init_target(struct command_context_s *cmd_ctx, struct target_s *target);
-int xscale_quit();
+int xscale_quit(void);
 
 int xscale_arch_state(struct target_s *target, char *buf, int buf_size);
 enum target_state xscale_poll(target_t *target);

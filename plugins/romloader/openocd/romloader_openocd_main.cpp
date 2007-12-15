@@ -94,6 +94,8 @@ int romloader_openocd_default_output_handler(struct command_context_s *context, 
 
 	strMsg.Printf(wxT("romloader_openocd(%p)") + wxString::FromAscii(line), context->output_handler_priv);
 	wxLogMessage(strMsg);
+
+	return ERROR_OK;
 }
 
 
@@ -675,7 +677,7 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 		iOocdResult = command_run_line(cmd_ctx, astrRunCfg.Item(sizCfgCnt).ToAscii());
 		if( iOocdResult!=ERROR_OK )
 		{
-			strMsg.Printf(wxT("failed to run command: %d"), iResult);
+			strMsg.Printf(wxT("failed to run command: %d"), iOocdResult);
 			wxLogError(strMsg);
 			strMsg = wxT("error line was: '") + astrRunCfg.Item(sizCfgCnt) + wxT("'");
 			wxLogError(strMsg);

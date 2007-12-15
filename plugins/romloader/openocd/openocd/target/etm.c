@@ -1591,6 +1591,7 @@ int handle_etm_load_command(struct command_context_s *cmd_ctx, char *cmd, char *
 	arm7_9_common_t *arm7_9;
 	etm_context_t *etm_ctx;
 	int i;
+	u32 ulVal;
 	
 	if (argc != 1)
 	{
@@ -1634,12 +1635,15 @@ int handle_etm_load_command(struct command_context_s *cmd_ctx, char *cmd, char *
 	{
 		free(etm_ctx->trace_data);
 	}
-	
-	fileio_read_u32(&file, &etm_ctx->capture_status);
-	fileio_read_u32(&file, &etm_ctx->portmode);
-	fileio_read_u32(&file, &etm_ctx->tracemode);
+
+	fileio_read_u32(&file, &ulVal);
+	etm_ctx->capture_status = (trace_status_t)ulVal;
+	fileio_read_u32(&file, &ulVal);
+	etm_ctx->portmode = (etm_portmode_t)ulVal;
+	fileio_read_u32(&file, &ulVal);
+	etm_ctx->tracemode = (etmv1_tracemode_t)ulVal;
 	fileio_read_u32(&file, &etm_ctx->trace_depth);
-	
+
 	etm_ctx->trace_data = malloc(sizeof(etmv1_trace_data_t) * etm_ctx->trace_depth);
 	
 	for (i = 0; i < etm_ctx->trace_depth; i++)

@@ -422,6 +422,7 @@ void arm926ejs_enable_mmu_caches(target_t *target, int mmu, int d_u_cache, int i
 
 void arm926ejs_post_debug_entry(target_t *target)
 {
+	u32 cache_dbg_ctrl;
 	armv4_5_common_t *armv4_5 = target->arch_info;
 	arm7_9_common_t *arm7_9 = armv4_5->arch_info;
 	arm9tdmi_common_t *arm9tdmi = arm7_9->arch_info;
@@ -452,9 +453,6 @@ void arm926ejs_post_debug_entry(target_t *target)
 	
 	DEBUG("D FSR: 0x%8.8x, D FAR: 0x%8.8x, I FSR: 0x%8.8x",
 		arm926ejs->d_fsr, arm926ejs->d_far, arm926ejs->i_fsr);  
-
-
-	u32 cache_dbg_ctrl;
 	
 	/* read-modify-write CP15 cache debug control register 
 	 * to disable I/D-cache linefills and force WT */
@@ -465,6 +463,7 @@ void arm926ejs_post_debug_entry(target_t *target)
 
 void arm926ejs_pre_restore_context(target_t *target)
 {
+	u32 cache_dbg_ctrl;
 	armv4_5_common_t *armv4_5 = target->arch_info;
 	arm7_9_common_t *arm7_9 = armv4_5->arch_info;
 	arm9tdmi_common_t *arm9tdmi = arm7_9->arch_info;
@@ -474,8 +473,6 @@ void arm926ejs_pre_restore_context(target_t *target)
 	arm926ejs_write_cp15(target, ARM926EJS_CP15_ADDR(0, 0, 5, 0), arm926ejs->d_fsr);
 	arm926ejs_write_cp15(target, ARM926EJS_CP15_ADDR(0, 1, 5, 0), arm926ejs->i_fsr);
 	arm926ejs_write_cp15(target, ARM926EJS_CP15_ADDR(0, 0, 6, 0), arm926ejs->d_far);
-	
-	u32 cache_dbg_ctrl;
 	
 	/* read-modify-write CP15 cache debug control register 
 	 * to reenable I/D-cache linefills and disable WT */

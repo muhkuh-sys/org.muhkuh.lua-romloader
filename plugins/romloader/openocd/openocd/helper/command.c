@@ -38,6 +38,50 @@
 
 int handle_sleep_command(struct command_context_s *cmd_ctx, char *cmd, char **args, int argc);
 
+
+#ifndef strncasecmp
+int strncasecmp(const char *str1, const char *str2, size_t sizLen)
+{
+	char c1, c2;
+	int iDiff = 0;
+
+
+	do
+	{
+		if( sizLen<=0 )
+		{
+			break;
+		}
+		--sizLen;
+		c1 = *(str1++);
+		c2 = *(str2++);
+		iDiff = tolower(c1) - tolower(c2);
+	} while( c1!=0 && c2!=0 && iDiff==0 );
+
+	return iDiff;
+}
+#endif
+
+
+#ifndef strcasecmp
+int strcasecmp(const char *str1, const char *str2)
+{
+	char c1, c2;
+	int iDiff;
+
+
+	do
+	{
+		c1 = *(str1++);
+		c2 = *(str2++);
+		iDiff = tolower(c1) - tolower(c2);
+	} while( c1!=0 && c2!=0 && iDiff==0 );
+
+	return iDiff;
+}
+#endif
+
+
 int build_unique_lengths(command_context_t *context, command_t *commands)
 {
 	command_t *c, *p;

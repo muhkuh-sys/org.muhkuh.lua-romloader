@@ -28,7 +28,7 @@
 
 /* include necessary headers for socket functionality */
 #ifdef _WIN32
-#include <winsock2.h>
+#include <windows.h>
 #define _TIMEVAL_DEFINED
 #else
 #include <sys/socket.h>
@@ -152,7 +152,7 @@ static __inline void outb(unsigned char value, unsigned short int port)
 static __inline int write_socket( int handle, const void *buffer, unsigned int count )
 {
 #ifdef _WIN32
-    return send(handle, buffer, count, 0);
+    return send(handle, (const char*)buffer, count, 0);
 #else
     return write(handle, buffer, count);
 #endif
@@ -161,7 +161,7 @@ static __inline int write_socket( int handle, const void *buffer, unsigned int c
 static __inline int read_socket( int handle, void *buffer, unsigned int count )
 {
 #ifdef _WIN32
-    return recv(handle, buffer, count, 0);
+    return recv(handle, (char*)buffer, count, 0);
 #else
     return read(handle, buffer, count);
 #endif
@@ -179,7 +179,7 @@ static __inline int close_socket(int sock)
 static __inline void socket_nonblock(int fd)
 {
 #ifdef _WIN32
-	long nonblock = 1;
+	u_long nonblock = 1;
 	ioctlsocket(fd, FIONBIO, &nonblock );
 #else
 	int oldopts = fcntl(fd, F_GETFL, 0);
@@ -242,5 +242,11 @@ typedef struct
 #ifndef PRIi64
 	#define PRIi64 "li"
 #endif /* PRIi64 */
+
+
+#ifndef S_ISDIR
+#define S_ISDIR(f) (((f)&_S_IFMT)==_S_IFDIR)
+#endif
+
 
 #endif /* REPLACEMENTS_H */

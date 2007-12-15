@@ -594,9 +594,10 @@ int arm920t_write_memory(struct target_s *target, u32 address, u32 size, u32 cou
 	{
 		if (arm920t->armv4_5_mmu.armv4_5_cache.d_u_cache_enabled)
 		{
-			DEBUG("D-Cache enabled, writing through to main memory");
 			u32 pa, cb, ap;
 			int type, domain;
+
+			DEBUG("D-Cache enabled, writing through to main memory");
 
 			pa = armv4_5_mmu_translate_va(target, &arm920t->armv4_5_mmu, address, &type, &cb, &domain, &ap);
 			if (type == -1)

@@ -673,13 +673,18 @@ void arm7tdmi_branch_resume(target_t *target)
 
 void arm7tdmi_branch_resume_thumb(target_t *target)
 {
+	armv4_5_common_t *armv4_5;
+	arm7_9_common_t *arm7_9;
+	arm_jtag_t *jtag_info;
+	reg_t *dbg_stat;
+
 	DEBUG("-");
 	
 	/* get pointers to arch-specific information */
-	armv4_5_common_t *armv4_5 = target->arch_info;
-	arm7_9_common_t *arm7_9 = armv4_5->arch_info;
-	arm_jtag_t *jtag_info = &arm7_9->jtag_info;
-	reg_t *dbg_stat = &arm7_9->eice_cache->reg_list[EICE_DBG_STAT];
+	armv4_5 = target->arch_info;
+	arm7_9 = armv4_5->arch_info;
+	jtag_info = &arm7_9->jtag_info;
+	dbg_stat = &arm7_9->eice_cache->reg_list[EICE_DBG_STAT];
 
 	/* LDMIA r0, [r0] at debug speed
 	 * register values will start to appear on 4th DCLK
