@@ -99,6 +99,80 @@ int romloader_openocd_default_output_handler(struct command_context_s *context, 
 }
 
 
+void romloader_openocd_log_printf(enum log_levels level, const char *file, int line, const char *function, const char *format, ...)
+{
+	wxString strMsg;
+	va_list args;
+	char buffer[512];
+
+
+	if (level > debug_level)
+		return;
+
+	va_start(args, format);
+	vsnprintf(buffer, 512, format, args);
+
+	strMsg.Printf(wxString::FromAscii(file) + wxT(":%d ") + wxString::FromAscii(function) + wxT("(): "), line);
+	strMsg += wxString::FromAscii(buffer);
+	switch(level)
+	{
+	case LOG_ERROR:
+		wxLogError(strMsg);
+		break;
+	case LOG_WARNING:
+		wxLogWarning(strMsg);
+		break;
+	case LOG_INFO:
+		wxLogMessage(strMsg);
+		break;
+	case LOG_DEBUG:
+		wxLogDebug(strMsg);
+		break;
+	default:
+		wxLogError(wxT("unknown errorlevel, ") + strMsg);
+		break;
+	}
+
+	va_end(args);
+}
+
+
+void romloader_openocd_short_log_printf(enum log_levels level, const char *format, ...)
+{
+	wxString strMsg;
+	va_list args;
+	char buffer[512];
+
+
+	if (level > debug_level)
+		return;
+
+	va_start(args, format);
+	vsnprintf(buffer, 512, format, args);
+
+	strMsg = wxString::FromAscii(buffer);
+	switch(level)
+	{
+	case LOG_ERROR:
+		wxLogError(strMsg);
+		break;
+	case LOG_WARNING:
+		wxLogWarning(strMsg);
+		break;
+	case LOG_INFO:
+		wxLogMessage(strMsg);
+		break;
+	case LOG_DEBUG:
+		wxLogDebug(strMsg);
+		break;
+	default:
+		wxLogError(wxT("unknown errorlevel, ") + strMsg);
+		break;
+	}
+
+	va_end(args);
+}
+
 /*-------------------------------------*/
 
 int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId)
@@ -137,14 +211,15 @@ int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId)
 	astrInitCfg.Add(wxT("jtag_speed 1"));
 	astrInitCfg.Add(wxT("reset_config trst_and_srst"));
 	astrInitCfg.Add(wxT("jtag_device 4 0x1 0xf 0xe"));
+	astrInitCfg.Add(wxT("jtag_nsrst_delay 100"));
+	astrInitCfg.Add(wxT("jtag_ntrst_delay 100"));
 	astrInitCfg.Add(wxT("daemon_startup reset"));
-	astrInitCfg.Add(wxT("target arm926ejs little reset_halt 0 arm920t"));
+	astrInitCfg.Add(wxT("target arm926ejs little run_and_init 0 arm920t"));
 	astrInitCfg.Add(wxT("working_area 0 0x00018000 0x8000 backup"));
-	astrInitCfg.Add(wxT("run_and_halt_time 0 5000"));
+	astrInitCfg.Add(wxT("run_and_halt_time 0 500"));
 	/* netX500 run config */
 	astrRunCfg.Add(wxT("bp 0x200000 4 hw"));			/* set breakpoint to start of rom */
 	astrRunCfg.Add(wxT("reg cpsr 0xd3"));				/* switch to svc */
-	astrRunCfg.Add(wxT("reg spsr_svc 0xd3"));
 	astrRunCfg.Add(wxT("reg r13_svc 0x10000200"));			/* set svc stack */
 	astrRunCfg.Add(wxT("reg lr_svc 0x200000"));			/* set return address to start of rom */
 	astrRunCfg.Add(wxT("arm926ejs cp15 0 0 7 7 0"));		/* invalidate instruction and data caches */
@@ -152,7 +227,7 @@ int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId)
 	astrRunCfg.Add(wxT("arm926ejs cp15 0 0 8 7 0"));		/* clear instruction and data translation buffers */
 	astrRunCfg.Add(wxT("arm926ejs cp15 0 0 1 0 0x00050078"));	/* disable mmu, alignment check and data cache, disable system protection and instruction cache */
 	astrRunCfg.Add(wxT("arm926ejs cp15 0 0 9 1 0x10000001"));	/* enable the tcm */
-	astrRunCfg.Add(wxT("target_request debugmsgs enable"));
+	astrRunCfg.Add(wxT("target_request debugmsgs enable"));		/* enable messages via dcc */
 #if 0
 	/* netX50 init config */
 	astrInitCfg.Add(wxT("interface ft2232"));
@@ -282,6 +357,7 @@ romloader *romloader_openocd_create(void *pvHandle)
 	romloader *ptInstance = NULL;
 	wxString strName;
 	wxString strTyp;
+	int iInitCnt;
 
 
 	cmd_ctx = command_init();
@@ -297,12 +373,13 @@ romloader *romloader_openocd_create(void *pvHandle)
 	iResult = log_init(cmd_ctx);
 	if( iResult!=ERROR_OK )
 	{
-		strMsg.Printf(wxT("failed to init command context: %d"), iResult);
+		strMsg.Printf(wxT("failed to init log level: %d"), iResult);
 		wxLogError(strMsg);
 	}
 	else
 	{
 		command_set_output_handler(cmd_ctx, romloader_openocd_default_output_handler, NULL);
+		log_set_output_handler(romloader_openocd_log_printf, romloader_openocd_short_log_printf);
 		cmd_ctx->mode = COMMAND_CONFIG;
 
 		// set config
@@ -341,18 +418,21 @@ romloader *romloader_openocd_create(void *pvHandle)
 				}
 				else
 				{
-					usleep(500000);
+					wxMilliSleep(500);
 
-					/* activate super cow powers */
-					target = get_current_target(cmd_ctx);
-
-					/* halt the target */
-					wxLogMessage(wxT("Halt the target"));
-					iResult = target->type->halt(target);
-					if( iResult!=ERROR_OK )
+					/* wait for target reset */
+					iInitCnt = 10;
+					do
 					{
-						strMsg.Printf(wxT("failed to halt the target: %d"), iResult);
-						wxLogError(strMsg);
+						target_call_timer_callbacks();
+						wxMilliSleep(100);
+					} while( --iInitCnt>0 );
+
+					target = get_current_target(cmd_ctx);
+					if( target->state!=TARGET_HALTED )
+					{
+						wxLogError(wxT("failed to halt the target"));
+						iResult = ERROR_TARGET_NOT_HALTED;
 					}
 				}
 			}
@@ -366,12 +446,6 @@ romloader *romloader_openocd_create(void *pvHandle)
 	}
 	else
 	{
-		while (target->state != TARGET_HALTED)
-		{
-			target->type->poll(target);
-		}
-		usleep(1000);
-
 		// create the new instance
 		strTyp = plugin_desc.strPluginId;
 		// TODO: add some info
@@ -380,6 +454,85 @@ romloader *romloader_openocd_create(void *pvHandle)
 	}
 
 	return ptInstance;
+}
+
+
+/*-------------------------------------*/
+
+
+static bool callback(lua_State *L, int iLuaCallbackTag, unsigned long ulProgressData, void *pvCallbackUserData)
+{
+	bool fStillRunning;
+	int iOldTopOfStack;
+	int iResult;
+	int iLuaType;
+	wxString strMsg;
+
+
+	// check lua state and callback tag
+	if( L!=NULL && iLuaCallbackTag!=0 )
+	{
+		// get the current stack position
+		iOldTopOfStack = lua_gettop(L);
+		// push the function tag on the stack
+		lua_rawgeti(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
+		// push the arguments on the stack
+		lua_pushnumber(L, ulProgressData);
+		lua_pushnumber(L, (long)pvCallbackUserData);
+		// call the function
+		iResult = lua_pcall(L, 2, 1, 0);
+		if( iResult!=0 )
+		{
+			switch( iResult )
+			{
+			case LUA_ERRRUN:
+				strMsg = wxT("runtime error");
+				break;
+			case LUA_ERRMEM:
+				strMsg = wxT("memory allocation error");
+				break;
+			default:
+				strMsg.Printf(wxT("unknown errorcode: %d"), iResult);
+				break;
+			}
+			wxLogError(wxT("callback function failed: ") + strMsg);
+			strMsg = wxlua_getstringtype(L, -1);
+			wxLogError(strMsg);
+			wxLogError(wxT("cancel operation"));
+			fStillRunning = false;
+		}
+		else
+		{
+			// get the function's return value
+			iLuaType = lua_type(L, -1);
+			if( wxlua_iswxluatype(iLuaType, WXLUAARG_Boolean)==false )
+			{
+				wxLogError(wxT("callback function returned a non-boolean type!"));
+				fStillRunning = false;
+			}
+			else
+			{
+				if( iLuaType==LUA_TNUMBER )
+				{
+					iResult = lua_tonumber(L, -1);
+				}
+				else
+				{
+					iResult = lua_toboolean(L, -1);
+				}
+				fStillRunning = (iResult!=0);
+			}
+		}
+		// return old stack top
+		lua_settop(L, iOldTopOfStack);
+	}
+	else
+	{
+		// no callback function -> keep running
+		fStillRunning = true;
+	}
+
+	return fStillRunning;
 }
 
 
@@ -431,7 +584,7 @@ int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *p
 		iResult = 1;
 	}
 
-	usleep(1000);
+	wxMilliSleep(1);
 
 	return iResult;
 }
@@ -462,7 +615,7 @@ int fn_read_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short *
 		iResult = 1;
 	}
 
-	usleep(1000);
+	wxMilliSleep(1);
 
 	return iResult;
 }
@@ -493,7 +646,7 @@ int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *p
 		iResult = 1;
 	}
 
-	usleep(1000);
+	wxMilliSleep(1);
 
 	return iResult;
 }
@@ -524,7 +677,7 @@ int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pcData, uns
 		iResult = 1;
 	}
 
-	usleep(1000);
+	wxMilliSleep(1);
 
 	return iResult;
 }
@@ -555,7 +708,7 @@ int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char u
 		iResult = 1;
 	}
 
-	usleep(1000);
+	wxMilliSleep(1);
 
 	return iResult;
 }
@@ -586,7 +739,7 @@ int fn_write_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short 
 		iResult = 1;
 	}
 
-	usleep(1000);
+	wxMilliSleep(1);
 
 	return iResult;
 }
@@ -617,7 +770,7 @@ int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long u
 		iResult = 1;
 	}
 
-	usleep(1000);
+	wxMilliSleep(1);
 
 	return iResult;
 }
@@ -648,7 +801,7 @@ int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcDa
 		iResult = 1;
 	}
 
-	usleep(1000);
+	wxMilliSleep(1);
 
 	return iResult;
 }
@@ -664,10 +817,16 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 	size_t sizCfgMax;
 	wxString strCmd;
 	wxString strMsg;
+	target_t *target;
+	bool fIsRunning;
+	enum target_state state;
 
 
 	/* cast the handle to the command context */
 	cmd_ctx = (command_context_t*)pvHandle;
+
+	// expect failure
+	iResult = 1;
 
 	// set config
 	sizCfgCnt = 0;
@@ -688,7 +847,6 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 	if( iOocdResult!=ERROR_OK )
 	{
 		wxLogError("config failed!");
-		iResult = 1;
 	}
 	else
 	{
@@ -698,7 +856,6 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 		if( iOocdResult!=ERROR_OK )
 		{
 			wxLogError("config failed!");
-			iResult = 1;
 		}
 		else
 		{
@@ -708,26 +865,50 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 			if( iOocdResult!=ERROR_OK )
 			{
 				wxLogError("config failed!");
-				iResult = 1;
 			}
 			else
 			{
 				// grab messages here
 				// TODO: redirect outputhandler, then grab messages, restore default output handler on halt
 
-				// wait_halt 10
-				iOocdResult = command_run_line(cmd_ctx, "wait_halt 10");
-				if( iOocdResult!=ERROR_OK )
+				// wait for halt
+				target = get_current_target(cmd_ctx);
+				do
 				{
-					fprintf(stderr, "config failed!\n");
-					iResult = 1;
-				}
-				else
-				{
-					// usb cmd delay
-					usleep(1000);
-					iResult = 0;
-				}
+					wxMilliSleep(100);
+
+					target->type->poll(target);
+					state = target->state;
+					if( state==TARGET_HALTED )
+					{
+						wxLogMessage(wxT("call finished!"));
+						iResult = 0;
+					}
+					else
+					{
+						// execute callback
+						fIsRunning = callback(L, iLuaCallbackTag, 0, pvCallbackUserData);
+						if( fIsRunning!=true )
+						{
+							// operation was canceled, halt the target
+							wxLogMessage(wxT("Call canceled, stopping target..."));
+							target = get_current_target(cmd_ctx);
+							iOocdResult = target->type->halt(target);
+							if( iOocdResult!=ERROR_OK && iOocdResult!=ERROR_TARGET_ALREADY_HALTED )
+							{
+								wxLogError(wxT("Failed to halt target!"));
+							}
+							break;
+						}
+						else
+						{
+							target_call_timer_callbacks();
+						}
+					}
+				} while( state!=TARGET_HALTED );
+
+				// usb cmd delay
+				wxMilliSleep(1);
 			}
 		}
 	}

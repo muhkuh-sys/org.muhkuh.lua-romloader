@@ -39,9 +39,16 @@ enum log_levels
 	LOG_DEBUG = 3
 };
 
-extern void log_printf(enum log_levels level, const char *file, int line, 
-	const char *function, const char *format, ...) 
-	__attribute__ ((format (printf, 5, 6)));
+typedef void (*pfn_log_printf_t)(enum log_levels level, const char *file, int line, const char *function, const char *format, ...);
+typedef void (*pfn_short_log_printf_t)(enum log_levels level, const char *format, ...);
+
+extern pfn_log_printf_t pfn_log_printf;
+extern pfn_short_log_printf_t pfn_short_log_printf;
+
+extern void default_log_printf(enum log_levels level, const char *file, int line, const char *function, const char *format, ...);
+extern void default_short_log_printf(enum log_levels level, const char *format, ...);
+
+extern void log_set_output_handler(pfn_log_printf_t pfn_log, pfn_short_log_printf_t pfn_short_log);
 extern int log_register_commands(struct command_context_s *cmd_ctx);
 extern int log_init(struct command_context_s *cmd_ctx);
 
@@ -49,42 +56,42 @@ extern int debug_level;
 
 #define DEBUG(expr ...) \
 	do { \
-		log_printf (LOG_DEBUG, __FILE__, __LINE__, __FUNCTION__, expr); \
+		pfn_log_printf (LOG_DEBUG, __FILE__, __LINE__, __FUNCTION__, expr); \
 	} while(0)
 
 #define INFO(expr ...) \
 	do { \
-		log_printf (LOG_INFO, __FILE__, __LINE__, __FUNCTION__, expr); \
+		pfn_log_printf (LOG_INFO, __FILE__, __LINE__, __FUNCTION__, expr); \
 	} while(0)
 
 #define WARNING(expr ...) \
 	do { \
-		log_printf (LOG_WARNING, __FILE__, __LINE__, __FUNCTION__, expr); \
+		pfn_log_printf (LOG_WARNING, __FILE__, __LINE__, __FUNCTION__, expr); \
 	} while(0)
 
 #define ERROR(expr ...) \
 	do { \
-		log_printf (LOG_ERROR, __FILE__, __LINE__, __FUNCTION__, expr); \
+		pfn_log_printf (LOG_ERROR, __FILE__, __LINE__, __FUNCTION__, expr); \
 	} while(0)
 
 #define SDEBUG(expr ...) \
 	do { \
-		short_log_printf (LOG_DEBUG, expr); \
+		pfn_short_log_printf (LOG_DEBUG, expr); \
 	} while(0)
 
 #define SINFO(expr ...) \
 	do { \
-		short_log_printf (LOG_INFO, expr); \
+		pfn_short_log_printf (LOG_INFO, expr); \
 	} while(0)
 
 #define SWARNING(expr ...) \
 	do { \
-		short_log_printf (LOG_WARNING, expr); \
+		pfn_short_log_printf (LOG_WARNING, expr); \
 	} while(0)
 
 #define SERROR(expr ...) \
 	do { \
-		short_log_printf (LOG_ERROR, expr); \
+		pfn_short_log_printf (LOG_ERROR, expr); \
 	} while(0)
 
 /* general failures

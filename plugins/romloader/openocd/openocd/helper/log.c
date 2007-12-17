@@ -41,7 +41,11 @@ static char *log_strings[4] =
 	"Debug:  ",
 };
 
-void log_printf(enum log_levels level, const char *file, int line, const char *function, const char *format, ...)
+pfn_log_printf_t pfn_log_printf;
+pfn_short_log_printf_t pfn_short_log_printf;
+
+
+void default_log_printf(enum log_levels level, const char *file, int line, const char *function, const char *format, ...)
 {
 	va_list args;
 	char buffer[512];
@@ -58,7 +62,7 @@ void log_printf(enum log_levels level, const char *file, int line, const char *f
 	va_end(args);
 }
 
-void short_log_printf(enum log_levels level, const char *format, ...)
+void default_short_log_printf(enum log_levels level, const char *format, ...)
 {
 	va_list args;
 	char buffer[512];
@@ -113,6 +117,12 @@ int handle_log_output_command(struct command_context_s *cmd_ctx, char *cmd, char
 	return ERROR_OK;
 }
 
+void log_set_output_handler(pfn_log_printf_t pfn_log, pfn_short_log_printf_t pfn_short_log)
+{
+	pfn_log_printf = pfn_log;
+	pfn_short_log_printf = pfn_short_log;
+}
+
 int log_register_commands(struct command_context_s *cmd_ctx)
 {
 	register_command(cmd_ctx, NULL, "log_output", handle_log_output_command,
@@ -125,6 +135,9 @@ int log_register_commands(struct command_context_s *cmd_ctx)
 
 int log_init(struct command_context_s *cmd_ctx)
 {
+	log_set_output_handler(default_log_printf, default_short_log_printf);
+
+
 	/* set defaults for daemon configuration, if not set by cmdline or cfgfile */
 	if (debug_level == -1)
 		debug_level = LOG_INFO;
