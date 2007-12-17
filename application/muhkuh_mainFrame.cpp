@@ -1473,7 +1473,8 @@ wxString muhkuh_mainFrame::luaLoad(wxString strFileName)
 				sizDataSize = ptGrowBuffer->getSize();
 				pucData = ptGrowBuffer->getData();
 				strData = wxString::From8BitData((const char*)pucData, sizDataSize);
-				strMsg.Printf(wxT("Read 0x%08X bytes"), strData.Len());
+				strMsg.Printf(wxT("lua load: Read 0x%08X bytes"), strData.Len());
+				wxLogMessage(strMsg);
 			}
 			else
 			{
