@@ -167,7 +167,7 @@ wxString romloader::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 		if( iResult!=0 )
 		{
 			strMsg.Printf(wxT("read_image failed with error %d"), iResult);
-			// free the memory as terror does not return
+			// free the buffer
 			delete[] pcBuffer;
 			m_ptLuaState->wxlua_Error(strMsg);
 		}

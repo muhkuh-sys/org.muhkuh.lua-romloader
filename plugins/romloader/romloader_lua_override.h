@@ -18,7 +18,7 @@ static int LUACALL wxLua_romloader_read_image(lua_State *L)
     else
     {
         // no callback function provided
-        wxlState.terror(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
+        wxlState.wxlua_Error(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
                                         4, wxlState.lua_TypeNameIndex(4).c_str()));
     }
     // unsigned long ulSize
@@ -59,7 +59,7 @@ static int LUACALL wxLua_romloader_write_image(lua_State *L)
     else
     {
         // no callback function provided
-        wxlState.terror(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
+        wxlState.wxlua_Error(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
                                         4, wxlState.lua_TypeNameIndex(4).c_str()));
     }
     // wxString strData
@@ -108,7 +108,7 @@ static int LUACALL wxLua_romloader_call(lua_State *L)
     else
     {
         // no callback function provided
-        wxlState.terror(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
+        wxlState.wxlua_Error(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
                                         4, wxlState.lua_TypeNameIndex(4).c_str()));
     }
     // unsigned long ulParameterR0
