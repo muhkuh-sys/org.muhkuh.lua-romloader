@@ -154,7 +154,7 @@ static int LUACALL wxLua_function_include(lua_State *L)
 static wxLuaBindCFunc s_wxluafunc_wxLua_function_include[1] = {{ wxLua_function_include, WXLUAMETHOD_CFUNCTION, 2, 2, s_wxluatagArray_wxLua_function_include }};
 
 static wxLuaArgTag s_wxluatagArray_wxLua_function_load[] = { &s_wxluaarg_String, NULL };
-// %function wxString load(wxString strFileName)
+// %override wxLua_function_load
 static int LUACALL wxLua_function_load(lua_State *L)
 {
     wxLuaState wxlState(L);
@@ -164,7 +164,7 @@ static int LUACALL wxLua_function_load(lua_State *L)
     // call load
     returns = (load(strFileName));
     // push the result string
-    wxlState.lua_PushString(returns);
+    wxlState.lua_PushLString(returns, returns.Len());
 
     return 1;
 }
