@@ -219,8 +219,12 @@ bool muhkuh_wrap_xml::readTestDescription(wxXmlDocument *xmldoc)
 
 	// look for the first root node named "TestDescription"
 	xml_testdesc = xmldoc->GetRoot();
-	while( xml_testdesc!=NULL && xml_testdesc->GetType()!=wxXML_ELEMENT_NODE && xml_testdesc->GetName()!=wxT("TestDescription") )
+	while( xml_testdesc!=NULL )
 	{
+		if( xml_testdesc->GetType()==wxXML_ELEMENT_NODE && xml_testdesc->GetName()==wxT("TestDescription") )
+		{
+			break;
+		}
 		xml_testdesc = xml_testdesc->GetNext();
 	}
 	// not found (node is NULL) ?
