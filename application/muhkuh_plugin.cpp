@@ -271,7 +271,7 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 			{
 				ptLogTarget = wxLog::GetActiveTarget();
 				iResult = fn_init(ptLogTarget, m_ptCfgNode, m_strPluginId);
-				if( iResult<0 )
+				if( iResult!=0 )
 				{
 					strMsg.Printf(wxT("...plugin init failed with errorcode %d"), iResult);
 					wxLogError(strMsg);
