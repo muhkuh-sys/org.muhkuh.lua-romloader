@@ -173,11 +173,117 @@ void romloader_openocd_short_log_printf(enum log_levels level, const char *forma
 	va_end(args);
 }
 
+
+void splitStringToArray(wxString &strLines, wxArrayString *ptArray)
+{
+	wxString strLine;
+	size_t sizLineStart;
+	size_t sizPos;
+	size_t sizLen;
+	wxChar c;
+
+
+	sizPos = sizLineStart = 0;
+	sizLen = strLines.Len();
+	while( sizPos<sizLen )
+	{
+		// find next break
+		c = strLines.GetChar(sizPos);
+		++sizPos;
+		if( c==wxT('\n') || c== wxT('\r') )
+		{
+			// found line end
+			strLine = strLines.SubString(sizLineStart, sizPos);
+			// trim string from both sides
+			strLine.Trim(true);
+			strLine.Trim(false);
+			// add string to the array
+			if( strLine.IsEmpty()==false )
+			{
+				ptArray->Add(strLine);
+				wxLogMessage(wxT("romloader_openocd(") + plugin_desc.strPluginId + wxT(") : ") + strLine);
+			}
+			// new line starts after eol
+			sizLineStart = sizPos;
+		}
+	}
+
+	// chars left without newline?
+	if( sizLineStart<sizPos )
+	{
+		strLine = strLines.SubString(sizLineStart, sizPos);
+		// trim string from both sides
+		strLine.Trim(true);
+		strLine.Trim(false);
+		if( strLine.IsEmpty()==false )
+		{
+			ptArray->Add(strLine);
+			wxLogMessage(wxT("romloader_openocd(") + plugin_desc.strPluginId + wxT(") : ") + strLine);
+		}
+	}
+}
+
+
+int readXmlTextArray(wxXmlNode *ptCfgNode, wxString strNodeName, wxArrayString *ptArray)
+{
+	wxXmlNode *ptNode;
+	wxString strCfg;
+	int iResult;
+	wxString strMsg;
+
+
+	/* expect failure */
+	iResult = 1;
+
+	wxLogMessage(wxT("romloader_openocd(") + plugin_desc.strPluginId + wxT(") : reading section '") + strNodeName + wxT("'"));
+
+	/* get the init node */
+	if( ptCfgNode==NULL )
+	{
+		wxLogMessage(wxT("romloader_openocd(") + plugin_desc.strPluginId + wxT(") : missing config node!"));
+	}
+	else
+	{
+		ptNode = ptCfgNode->GetChildren();
+		while( ptNode!=NULL )
+		{
+			if( ptNode->GetType()==wxXML_ELEMENT_NODE && ptNode->GetName()==strNodeName )
+			{
+				break;
+			}
+			ptNode = ptNode->GetNext();
+		}
+		// not found (node is NULL) ?
+		if( ptNode==NULL )
+		{
+			wxLogError(wxT("romloader_openocd(") + plugin_desc.strPluginId + wxT(") : failed to find '") + strNodeName + wxT("' section in config!"));
+		}
+		else
+		{
+			strCfg = ptNode->GetNodeContent();
+			if( strCfg.IsEmpty()!=false )
+			{
+				wxLogError(wxT("romloader_openocd(") + plugin_desc.strPluginId + wxT(") : empty '") + strNodeName + wxT("' section in config!"));
+			}
+			else
+			{
+				/* split text into lines */
+				splitStringToArray(strCfg, ptArray);
+				iResult = 0;
+			}
+		}
+	}
+
+	return iResult;
+}
+
+
 /*-------------------------------------*/
 
 int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId)
 {
 	wxLog *pOldLogTarget;
+	int iResult;
 
 
 	/* set main app's log target */
@@ -197,63 +303,21 @@ int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId)
 	/* remember id */
 	plugin_desc.strPluginId = strPluginId;
 
-	/* TODO: read this from the config file */
-
-	/* netX500 init config */
-	astrInitCfg.Add(wxT("interface ft2232"));
-#ifdef __WXMSW__
-	astrInitCfg.Add(wxT("ft2232_device_desc \"Amontec JTAGkey A\""));
-#else
-	astrInitCfg.Add(wxT("ft2232_device_desc \"Amontec JTAGkey\""));
-#endif
-	astrInitCfg.Add(wxT("ft2232_layout \"jtagkey\""));
-	astrInitCfg.Add(wxT("ft2232_vid_pid 0x0403 0xcff8"));
-	astrInitCfg.Add(wxT("jtag_speed 1"));
-	astrInitCfg.Add(wxT("reset_config trst_and_srst"));
-	astrInitCfg.Add(wxT("jtag_device 4 0x1 0xf 0xe"));
-	astrInitCfg.Add(wxT("jtag_nsrst_delay 100"));
-	astrInitCfg.Add(wxT("jtag_ntrst_delay 100"));
-	astrInitCfg.Add(wxT("daemon_startup reset"));
-	astrInitCfg.Add(wxT("target arm926ejs little run_and_init 0 arm920t"));
-	astrInitCfg.Add(wxT("working_area 0 0x00018000 0x8000 backup"));
-	astrInitCfg.Add(wxT("run_and_halt_time 0 500"));
-	/* netX500 run config */
-	astrRunCfg.Add(wxT("bp 0x200000 4 hw"));			/* set breakpoint to start of rom */
-	astrRunCfg.Add(wxT("reg cpsr 0xd3"));				/* switch to svc */
-	astrRunCfg.Add(wxT("reg r13_svc 0x10000200"));			/* set svc stack */
-	astrRunCfg.Add(wxT("reg lr_svc 0x200000"));			/* set return address to start of rom */
-	astrRunCfg.Add(wxT("arm926ejs cp15 0 0 7 7 0"));		/* invalidate instruction and data caches */
-	astrRunCfg.Add(wxT("arm926ejs cp15 0 4 7 10 0"));		/* clear data pipe */
-	astrRunCfg.Add(wxT("arm926ejs cp15 0 0 8 7 0"));		/* clear instruction and data translation buffers */
-	astrRunCfg.Add(wxT("arm926ejs cp15 0 0 1 0 0x00050078"));	/* disable mmu, alignment check and data cache, disable system protection and instruction cache */
-	astrRunCfg.Add(wxT("arm926ejs cp15 0 0 9 1 0x10000001"));	/* enable the tcm */
-	astrRunCfg.Add(wxT("target_request debugmsgs enable"));		/* enable messages via dcc */
-#if 0
-	/* netX50 init config */
-	astrInitCfg.Add(wxT("interface ft2232"));
-	astrInitCfg.Add(wxT("ft2232_device_desc \"NXHX board\""));
-	astrInitCfg.Add(wxT("ft2232_layout \"comstick\""));
-	astrInitCfg.Add(wxT("ft2232_vid_pid 0x0640 0x0028"));
-	astrInitCfg.Add(wxT("jtag_speed 1"));
-	astrInitCfg.Add(wxT("reset_config trst_and_srst"));
-	astrInitCfg.Add(wxT("jtag_device 4 0x1 0xf 0xe"));
-	astrInitCfg.Add(wxT("daemon_startup reset"));
-	astrInitCfg.Add(wxT("target arm966e little reset_halt 0"));
-	astrInitCfg.Add(wxT("working_area 0 0x00010000 0x8000 backup"));
-	astrInitCfg.Add(wxT("run_and_halt_time 0 5000"));
-	/* netX50 run config */
-	astrRunCfg.Add(wxT("bp 0x200000 4 hw"));
-	astrRunCfg.Add(wxT("reg cpsr 0xd3"));
-	astrRunCfg.Add(wxT("reg spsr_svc 0xd3"));
-	astrRunCfg.Add(wxT("reg r13_svc 0x7ffc"));
-	astrRunCfg.Add(wxT("reg lr_svc 0x200000"));
-#endif
-
-
 	/* init the lua state */
 	m_ptLuaState = NULL;
 
-	return 0;
+	/* clear the command arrays */
+	astrInitCfg.Empty();
+	astrRunCfg.Empty();
+
+	/* read the config file */
+	iResult = readXmlTextArray(ptCfgNode, wxT("Init"), &astrInitCfg);
+	if( iResult==0 )
+	{
+		iResult = readXmlTextArray(ptCfgNode, wxT("Run"), &astrRunCfg);
+	}
+
+	return iResult;
 }
 
 
@@ -339,6 +403,21 @@ static void romloader_openocd_close_instance(void *pvHandle)
 	strMsg.Printf(wxT("closing romloader openocd at %p"), cmd_ctx);
 	wxLogMessage(strMsg);
 
+	/* close all subsystems */
+	iResult = jtag_close(cmd_ctx);
+	if( iResult!=ERROR_OK )
+	{
+		strMsg.Printf(wxT("failed to close jtag interface: %d"), iResult);
+		wxLogWarning(strMsg);
+	}
+
+	iResult = target_close(cmd_ctx);
+	if( iResult!=ERROR_OK )
+	{
+		strMsg.Printf(wxT("failed to close target interface: %d"), iResult);
+		wxLogWarning(strMsg);
+	}
+
 	// free commandline interface
 	command_done(cmd_ctx);
 }
@@ -351,6 +430,7 @@ romloader *romloader_openocd_create(void *pvHandle)
 	int iResult;
 	command_context_t *cmd_ctx;
 	target_t *target;
+	wxString strCmd;
 	wxString strMsg;
 	size_t sizCfgCnt;
 	size_t sizCfgMax;
@@ -387,12 +467,14 @@ romloader *romloader_openocd_create(void *pvHandle)
 		sizCfgMax = astrInitCfg.GetCount();
 		while( sizCfgCnt<sizCfgMax )
 		{
-			iResult = command_run_line(cmd_ctx, astrInitCfg.Item(sizCfgCnt).ToAscii());
+			strCmd = astrInitCfg.Item(sizCfgCnt);
+			wxLogMessage(wxT("command: ") + strCmd);
+			iResult = command_run_line(cmd_ctx, strCmd.ToAscii());
 			if( iResult!=ERROR_OK )
 			{
 				strMsg.Printf(wxT("failed to set config: %d"), iResult);
 				wxLogError(strMsg);
-				strMsg = wxT("error line was: '") + astrInitCfg.Item(sizCfgCnt) + wxT("'");
+				strMsg = wxT("error line was: '") + strCmd + wxT("'");
 				wxLogError(strMsg);
 				break;
 			}
@@ -433,6 +515,31 @@ romloader *romloader_openocd_create(void *pvHandle)
 					{
 						wxLogError(wxT("failed to halt the target"));
 						iResult = ERROR_TARGET_NOT_HALTED;
+					}
+					else
+					{
+						// set config
+						sizCfgCnt = 0;
+						sizCfgMax = astrRunCfg.GetCount();
+						while( sizCfgCnt<sizCfgMax )
+						{
+							strCmd = astrRunCfg.Item(sizCfgCnt);
+							wxLogMessage(wxT("command: ") + strCmd);
+							iResult = command_run_line(cmd_ctx, strCmd.ToAscii());
+							if( iResult!=ERROR_OK )
+							{
+								strMsg.Printf(wxT("failed to run command: %d"), iResult);
+								wxLogError(strMsg);
+								strMsg = wxT("error line was: '") + strCmd + wxT("'");
+								wxLogError(strMsg);
+								break;
+							}
+							++sizCfgCnt;
+						}
+						if( iResult!=ERROR_OK )
+						{
+							wxLogError("config failed!");
+						}
 					}
 				}
 			}
@@ -813,10 +920,7 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 	command_context_t *cmd_ctx;
 	int iOocdResult;
 	int iResult;
-	size_t sizCfgCnt;
-	size_t sizCfgMax;
 	wxString strCmd;
-	wxString strMsg;
 	target_t *target;
 	bool fIsRunning;
 	enum target_state state;
@@ -828,30 +932,17 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 	// expect failure
 	iResult = 1;
 
-	// set config
-	sizCfgCnt = 0;
-	sizCfgMax = astrRunCfg.GetCount();
-	while( sizCfgCnt<sizCfgMax )
-	{
-		iOocdResult = command_run_line(cmd_ctx, astrRunCfg.Item(sizCfgCnt).ToAscii());
-		if( iOocdResult!=ERROR_OK )
-		{
-			strMsg.Printf(wxT("failed to run command: %d"), iOocdResult);
-			wxLogError(strMsg);
-			strMsg = wxT("error line was: '") + astrRunCfg.Item(sizCfgCnt) + wxT("'");
-			wxLogError(strMsg);
-			break;
-		}
-		++sizCfgCnt;
-	}
+	// set R0 parameter
+	strCmd.Printf(wxT("reg r0 0x%08X"), ulParameterR0);
+	iOocdResult = command_run_line(cmd_ctx, strCmd.ToAscii());
 	if( iOocdResult!=ERROR_OK )
 	{
 		wxLogError("config failed!");
 	}
 	else
 	{
-		// set R0 parameter
-		strCmd.Printf(wxT("reg r0 0x%08X"), ulParameterR0);
+		// resume <ulNetxAddress>
+		strCmd.Printf(wxT("resume 0x%08X"), ulNetxAddress);
 		iOocdResult = command_run_line(cmd_ctx, strCmd.ToAscii());
 		if( iOocdResult!=ERROR_OK )
 		{
@@ -859,57 +950,47 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 		}
 		else
 		{
-			// resume <ulNetxAddress>
-			strCmd.Printf(wxT("resume 0x%08X"), ulNetxAddress);
-			iOocdResult = command_run_line(cmd_ctx, strCmd.ToAscii());
-			if( iOocdResult!=ERROR_OK )
-			{
-				wxLogError("config failed!");
-			}
-			else
-			{
-				// grab messages here
-				// TODO: redirect outputhandler, then grab messages, restore default output handler on halt
+			// grab messages here
+			// TODO: redirect outputhandler, then grab messages, restore default output handler on halt
 
-				// wait for halt
-				target = get_current_target(cmd_ctx);
-				do
+			// wait for halt
+			target = get_current_target(cmd_ctx);
+			do
+			{
+				wxMilliSleep(100);
+
+				target->type->poll(target);
+				state = target->state;
+				if( state==TARGET_HALTED )
 				{
-					wxMilliSleep(100);
-
-					target->type->poll(target);
-					state = target->state;
-					if( state==TARGET_HALTED )
+					wxLogMessage(wxT("call finished!"));
+					iResult = 0;
+				}
+				else
+				{
+					// execute callback
+					fIsRunning = callback(L, iLuaCallbackTag, 0, pvCallbackUserData);
+					if( fIsRunning!=true )
 					{
-						wxLogMessage(wxT("call finished!"));
-						iResult = 0;
+						// operation was canceled, halt the target
+						wxLogMessage(wxT("Call canceled, stopping target..."));
+						target = get_current_target(cmd_ctx);
+						iOocdResult = target->type->halt(target);
+						if( iOocdResult!=ERROR_OK && iOocdResult!=ERROR_TARGET_ALREADY_HALTED )
+						{
+							wxLogError(wxT("Failed to halt target!"));
+						}
+						break;
 					}
 					else
 					{
-						// execute callback
-						fIsRunning = callback(L, iLuaCallbackTag, 0, pvCallbackUserData);
-						if( fIsRunning!=true )
-						{
-							// operation was canceled, halt the target
-							wxLogMessage(wxT("Call canceled, stopping target..."));
-							target = get_current_target(cmd_ctx);
-							iOocdResult = target->type->halt(target);
-							if( iOocdResult!=ERROR_OK && iOocdResult!=ERROR_TARGET_ALREADY_HALTED )
-							{
-								wxLogError(wxT("Failed to halt target!"));
-							}
-							break;
-						}
-						else
-						{
-							target_call_timer_callbacks();
-						}
+						target_call_timer_callbacks();
 					}
-				} while( state!=TARGET_HALTED );
+				}
+			} while( state!=TARGET_HALTED );
 
-				// usb cmd delay
-				wxMilliSleep(1);
-			}
+			// usb cmd delay
+			wxMilliSleep(1);
 		}
 	}
 
