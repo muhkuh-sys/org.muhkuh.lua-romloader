@@ -1522,7 +1522,7 @@ void muhkuh_mainFrame::luaInclude(wxString strFileName, wxString strChunkName)
 			}
 			else
 			{
-				strFileUrl = m_ptRepositoryManager->getTestlistBaseUrl(m_sizRunningTest_RepositoryIdx, m_sizRunningTest_TestIdx) + strFileName;
+				strFileUrl = m_ptRepositoryManager->getTestlistBaseUrl(m_sizRunningTest_RepositoryIdx, m_sizRunningTest_TestIdx) + wxFileName::GetPathSeparator() + strFileName;
 				wxLogMessage(wxT("lua include: searching '") + strFileUrl + wxT("'"));
 				urlError = filelistUrl.SetURL(strFileUrl);
 				if( urlError!=wxURL_NOERR )
@@ -1575,6 +1575,7 @@ void muhkuh_mainFrame::luaInclude(wxString strFileName, wxString strChunkName)
 						{
 						case 0:
 							// ok, the function is on the stack -> execute the new code with no arguments and no return values
+							wxLogMessage(wxT("lua_include: file loaded, executing code"));
 							m_ptLuaState->lua_Call(0,0);
 							break;
 
