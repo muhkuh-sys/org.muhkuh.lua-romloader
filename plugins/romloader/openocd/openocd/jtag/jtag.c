@@ -1905,3 +1905,65 @@ int handle_verify_ircapture_command(struct command_context_s *cmd_ctx, char *cmd
 	
 	return ERROR_OK;
 }
+
+int jtag_close(struct command_context_s *cmd_ctx)
+{
+	jtag_device_t *ptJtagDev, *ptLastDev;
+	jtag_event_callback_t *ptCallback, *ptLastCallback;
+
+
+	/* free all jtag callbacks */
+	ptCallback = jtag_event_callbacks;
+	while (ptCallback != NULL )
+	{
+		ptLastCallback = ptCallback;
+		ptCallback = ptCallback->next;
+		free(ptLastCallback);
+	}
+	jtag_event_callbacks = NULL;
+
+	/* free all jtag devices */
+	ptJtagDev = jtag_devices;
+	while (ptJtagDev != NULL)
+	{
+		ptLastDev = ptJtagDev;
+		ptJtagDev = ptJtagDev->next;
+		if (ptLastDev->expected != NULL)
+		{
+			free(ptLastDev->expected);
+		}
+		if (ptLastDev->expected_mask != NULL)
+		{
+			free(ptLastDev->expected_mask);
+		}
+		if (ptLastDev->cur_instr != NULL)
+		{
+			free(ptLastDev->cur_instr);
+		}
+		free(ptLastDev);
+	}
+	jtag_devices = NULL;
+
+	// init global vars
+	cmd_queue_pages = NULL;
+	end_state = TAP_TLR;
+	cur_state = TAP_TLR;
+	jtag_trst = 0;
+	jtag_srst = 0;
+	jtag_command_queue = NULL;
+	last_comand_pointer = &jtag_command_queue;
+	jtag_num_devices = 0;
+	jtag_ir_scan_size = 0;
+	jtag_reset_config = RESET_NONE;
+	cmd_queue_end_state = TAP_TLR;
+	cmd_queue_cur_state = TAP_TLR;
+	jtag_verify_capture_ir = 1;
+	jtag_nsrst_delay = 0;
+	jtag_ntrst_delay = 0;
+	jtag = NULL;
+	jtag_interface = NULL;
+	jtag_speed = -1;
+
+	return ERROR_OK;
+}
+

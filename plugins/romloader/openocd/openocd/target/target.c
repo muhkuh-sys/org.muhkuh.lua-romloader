@@ -2097,4 +2097,86 @@ int handle_rwp_command(struct command_context_s *cmd_ctx, char *cmd, char **args
 	return ERROR_OK;
 }
 
+int target_close(struct command_context_s *cmd_ctx)
+{
+	target_event_callback_t *ptEvent, *ptLastEvent;
+	target_timer_callback_t *ptTimer, *ptLastTimer;
+	target_t *ptTarget, *ptLastTarget;
+	struct debug_msg_receiver_s *ptDbg, *ptLastDbg;
+
+	/* free all event callbacks */
+	ptEvent = target_event_callbacks;
+	while (ptEvent != NULL)
+	{
+		ptLastEvent = ptEvent;
+		ptEvent = ptEvent->next;
+		free(ptLastEvent);
+	}
+	target_event_callbacks = NULL;
+
+	/* free all timer callbacks */
+	ptTimer = target_timer_callbacks;
+	while (ptTimer != NULL)
+	{
+		ptLastTimer = ptTimer;
+		ptTimer = ptTimer->next;
+		free(ptLastTimer);
+	}
+	target_timer_callbacks = NULL;
+
+	/* free all targets */
+	ptTarget = targets;
+	while (ptTarget != NULL)
+	{
+		ptLastTarget = ptTarget;
+		ptTarget = ptTarget->next;
+
+		/* free all script filenames */
+		if (ptLastTarget->reset_script == NULL)
+		{
+			free(ptLastTarget->reset_script);
+		}
+		if (ptLastTarget->post_halt_script == NULL)
+		{
+			free(ptLastTarget->post_halt_script);
+		}
+		if (ptLastTarget->pre_resume_script == NULL)
+		{
+			free(ptLastTarget->pre_resume_script);
+		}
+
+		target_free_all_working_areas(ptLastTarget);
+		breakpoint_remove_all(ptLastTarget);
+		watchpoint_remove_all(ptLastTarget);
+
+		/* free trace info */
+		if (ptLastTarget->trace_info != NULL )
+		{
+			if (ptLastTarget->trace_info->trace_points != NULL)
+			{
+				free(ptLastTarget->trace_info->trace_points);
+			}
+			if (ptLastTarget->trace_info->trace_history != NULL)
+			{
+				free(ptLastTarget->trace_info->trace_history);
+			}
+			free(ptLastTarget->trace_info);
+		}
+
+		/* free debug message receiver */
+		ptDbg = ptLastTarget->dbgmsg;
+		while (ptDbg != NULL)
+		{
+			ptLastDbg = ptDbg;
+			ptDbg = ptDbg->next;
+			free(ptLastDbg);
+		}
+		ptLastTarget->dbgmsg = NULL;
+
+		free(ptLastTarget);
+	}
+	targets = NULL;
+
+	return ERROR_OK;
+}
 

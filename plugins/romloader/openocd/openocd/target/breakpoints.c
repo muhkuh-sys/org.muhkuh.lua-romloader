@@ -139,6 +139,21 @@ int breakpoint_remove(target_t *target, u32 address)
 	return ERROR_OK;
 }
 
+void breakpoint_remove_all(target_t *target)
+{
+	breakpoint_t *ptBp, *ptLastBp;
+
+	ptBp = target->breakpoints;
+	while (ptBp != NULL)
+	{
+		ptLastBp = ptBp;
+		ptBp = ptBp->next;
+		free(ptLastBp->orig_instr);
+		free(ptLastBp);
+	}
+	target->breakpoints = NULL;
+}
+
 breakpoint_t* breakpoint_find(target_t *target, u32 address)
 {
 	breakpoint_t *breakpoint = target->breakpoints;
@@ -245,4 +260,18 @@ int watchpoint_remove(target_t *target, u32 address)
 	}
 	
 	return ERROR_OK;
+}
+
+void watchpoint_remove_all(target_t *target)
+{
+	watchpoint_t *ptWp, *ptLastWp;
+
+	ptWp = target->watchpoints;
+	while (ptWp != NULL)
+	{
+		ptLastWp = ptWp;
+		ptWp = ptWp->next;
+		free(ptLastWp);
+	}
+	target->watchpoints = NULL;
 }

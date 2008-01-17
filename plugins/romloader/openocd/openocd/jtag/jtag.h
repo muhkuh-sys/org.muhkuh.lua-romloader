@@ -247,6 +247,7 @@ extern enum reset_types jtag_reset_config;
 /* JTAG subsystem */
 extern int jtag_init(struct command_context_s *cmd_ctx);
 extern int jtag_register_commands(struct command_context_s *cmd_ctx);
+extern int jtag_close(struct command_context_s *cmd_ctx);
 
 /* JTAG interface */
 extern int jtag_add_ir_scan(int num_fields, scan_field_t *fields, enum tap_state endstate, error_handler_t *error_handler);
