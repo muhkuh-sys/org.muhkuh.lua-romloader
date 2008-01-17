@@ -34,11 +34,17 @@ local m_strTestName = nil
 local m_deviceNr = nil
 local m_boardCnt = nil
 local m_testCnt = nil
+local m_runningBoard = nil
+local m_runningTest = nil
 local m_testNames = nil
 local m_testIconView = nil
 local m_spinBoardNr = nil
 local m_testCombo = nil
 local m_saveReportDlg = nil
+local m_easyPrint = nil
+
+local m_strTestStartDatetime = nil
+local m_strTestEndDatetime = nil
 
 local m_testResults = nil
 
@@ -70,6 +76,9 @@ local ID_LISTCTRL_ICONVIEW		= nextID()
 local ID_BUTTON_TESTBOARD		= nextID()
 local ID_BUTTON_SAVEREPORT		= nextID()
 local ID_BUTTON_QUIT			= nextID()
+local ID_BUTTON_PAGESETUP		= nextID()
+local ID_BUTTON_PRINTPREVIEW		= nextID()
+local ID_BUTTON_PRINT			= nextID()
 
 local TEST_STATUS_NotCompleted		= 0
 local TEST_STATUS_Ok			= 1
@@ -405,6 +414,35 @@ end
 
 ---------------------------------------
 
+function hexdump(strData, iBytesPerRow)
+	local iCnt
+	local iByteCnt
+	local strDump
+
+
+	if iBytesPerRow<1 then
+		iBytesPerRow = 16
+	end
+
+	iByteCnt = 0
+	for iCnt=1,strData:len() do
+		if iByteCnt==0 then
+			strDump = string.format("%08X :", iCnt-1)
+		end
+		strDump = strDump .. string.format(" %02X", strData:byte(iCnt))
+		iByteCnt = iByteCnt + 1
+		if iByteCnt==iBytesPerRow then
+			iByteCnt = 0
+			print(strDump)
+		end
+	end
+	if iByteCnt~=0 then
+		print(strDump)
+	end
+end
+
+---------------------------------------
+
 local function changeMode(eNewMode)
 	-- leave old mode
 	if m_mode==eMODE_IDLE then
@@ -441,7 +479,21 @@ local function changeMode(eNewMode)
 end
 
 
+local function createDefaultReportName()
+	local strReportName
+
+
+	-- start the report filename with "report_",
+	-- add the testname,
+	-- add start and end serial number
+	strReportName = "report_" .. m_strTestName .. string.format("_%05d_%05d", __MUHKUH_PARAMETERS.SerialNumber, __MUHKUH_PARAMETERS.SerialNumber+m_boardCnt-1)
+
+	return strReportName
+end
+
+
 local function createControls()
+	local strReportName = nil
 	local style = nil
 	local size = nil
 	local mainSizer = nil
@@ -457,10 +509,18 @@ local function createControls()
 	local buttonRunTest = nil
 	local buttonSaveReport = nil
 	local buttonQuit = nil
+	local buttonPrintSizer = nil
+	local buttonPageSetup = nil
+	local buttonPrintPreview = nil
+	local buttonPrint = nil
 
 
 	-- the save report dialog
-	m_saveReportDlg = wx.wxFileDialog(m_panel, "Choose a file", "", "report.html", "Html Files (*.htm;*.html)|*.htm;*.html|All Files (*.*)|*.*", wx.wxFD_SAVE+wx.wxFD_OVERWRITE_PROMPT)
+	strReportName = createDefaultReportName()
+	m_saveReportDlg = wx.wxFileDialog(m_panel, "Choose a file", "", strReportName, "Html Files (*.htm;*.html)|*.htm;*.html|All Files (*.*)|*.*", wx.wxFD_SAVE+wx.wxFD_OVERWRITE_PROMPT)
+
+	-- the easy printer
+	m_easyPrint = wx.wxHtmlEasyPrinting(strReportName)
 
 	-- the main sizer
 	mainSizer = wx.wxBoxSizer(wx.wxVERTICAL)
@@ -537,6 +597,22 @@ local function createControls()
 	buttonSizer:AddStretchSpacer(1)
 	controlSizer:Add(buttonSizer, 0, wx.wxEXPAND)
 
+	controlSizer:AddSpacer(4)
+
+	-- create the print button sizer
+	buttonPrintSizer = wx.wxBoxSizer(wx.wxHORIZONTAL)
+	buttonPrintSizer:AddStretchSpacer(1)
+	buttonPageSetup = wx.wxButton(m_panel, ID_BUTTON_PAGESETUP, "Printer Page Setup")
+	buttonPrintSizer:Add(buttonPageSetup)
+	buttonPrintSizer:AddSpacer(8)
+	buttonPrintPreview = wx.wxButton(m_panel, ID_BUTTON_PRINTPREVIEW, "Print Preview")
+	buttonPrintSizer:Add(buttonPrintPreview)
+	buttonPrintSizer:AddSpacer(8)
+	buttonPrint = wx.wxButton(m_panel, ID_BUTTON_PRINT, "Print")
+	buttonPrintSizer:Add(buttonPrint)
+	buttonPrintSizer:AddStretchSpacer(1)
+	controlSizer:Add(buttonPrintSizer, 0, wx.wxEXPAND)
+
 	style = wx.wxHW_SCROLLBAR_AUTO+wx.wxBORDER_SUNKEN
 	m_htmlWindow = wx.wxHtmlWindow(m_panel, wx.wxID_ANY, wx.wxDefaultPosition, wx.wxDefaultSize, style)
 	mainSizer:Add(m_htmlWindow, 1, wx.wxEXPAND)
@@ -548,7 +624,7 @@ end
 local function clearTestResult(iBoardIdx)
 	m_testResults[iBoardIdx] = { results={}, logs={}, eResult=TEST_STATUS_NotCompleted, iSerialNr=-1, modified=true, report="" }
 	for i=1,m_testCnt do
-		m_testResults[iBoardIdx].results[i] = 0
+		m_testResults[iBoardIdx].results[i] = TEST_STATUS_NotCompleted
 		m_testResults[iBoardIdx].logs[i] = ""
 	end
 end
@@ -563,18 +639,41 @@ local function initTestResults()
 end
 
 
-local function showTestReport(iBoardIdx, iTestIdx)
-	local strAnchor
+function allPreviousTestsOk()
+	local isOk = false
+	local iCnt
 
 
-	strAnchor = "#"
-	if iBoardIdx>0 then
-		strAnchor = strAnchor.."B"..iBoardIdx
-		if iTestIdx>0 then
-			strAnchor = strAnchor.."T"..iTestIdx
+	if m_runningBoard~=nil and m_runningTest~=nil then
+		-- loop over all results
+		isOk = true
+		for iCnt=1,m_runningTest-1 do
+			isOk = isOk and (m_testResults[m_runningBoard].results[iCnt] == TEST_STATUS_Ok)
 		end
 	end
 
+	return isOk
+end
+
+
+function getRunningSerial()
+	return __MUHKUH_PARAMETERS.SerialNumber + m_runningBoard - 1
+end
+
+
+function setAssignedSerial(iSerial)
+	if m_runningBoard~=nil and m_runningTest~=nil then
+		m_testResults[m_runningBoard].iSerialNr = iSerial
+		m_testResults[m_runningBoard].modified = true
+	end
+end
+
+
+local function showTestReport(iBoardIdx)
+	local strAnchor
+
+
+	strAnchor = "#S"..iBoardIdx
 	m_htmlWindow:LoadPage(strAnchor)
 end
 
@@ -660,6 +759,8 @@ local function report_test_genDetails(testindex, test)
 	end
 	strReportDetails = strReportDetails .. "</tbody></table>\n"
 	strReportDetails = strReportDetails .. "<p>\n"
+	strReportDetails = strReportDetails .. "Back to the <a href=\"#Summary\">Summary</a>.\n"
+	strReportDetails = strReportDetails .. "<p>\n"
 
 	for j=1,m_testCnt do
 		strReportDetails = strReportDetails .. "<a name=\"B" .. testindex .. "T" .. j .. "\"></a>\n"
@@ -673,12 +774,14 @@ local function report_test_genDetails(testindex, test)
 end
 
 
-local function updateTestReport()
+local function updateTestReport(iCurrentBoard)
 	local report = ""
 	local iBoardsOk = 0
 	local iBoardsFailed = 0
 	local iBoardsFatalError = 0
 	local iBoardsUntested = 0
+	local fWasModified = false
+	local dToday = nil
 
 
 	-- update all report snipplets and collect test summary
@@ -692,6 +795,7 @@ local function updateTestReport()
 			-- cache is up to date now
 			t.report = strReport
 			t.modified = false
+			fWasModified = true
 		end
 
 		if t.eResult==TEST_STATUS_Ok then
@@ -705,13 +809,22 @@ local function updateTestReport()
 		end
 	end
 
+	-- set end date/time if no more boards left
+	if fWasModified==true and iBoardsUntested==0 then
+		-- get test start time
+		dToday = wx.wxDateTime()
+		dToday:SetToCurrent()
+		m_strTestEndDatetime = dToday:Format("%c")
+	end
+
 	-- show header
 	report = "<html><body>\n"
 	report = report.."<h1>Testreport for "..m_strTestName.."</h1>\n"
+	report = report.."<a name=\"Summary\"></a>\n"
 	report = report.."<h2>Test summary</h2>\n"
 	report = report.."<table border=\"0\"><tbody>\n"
-	report = report.."<tr><td>Test started:</td><td>2007.10.01, 12:15CET</td></tr>\n"
-	report = report.."<tr><td>Test finished:</td><td>2007.10.01, 12:27CET</td></tr>\n"
+	report = report.."<tr><td>Test started:</td><td>"..m_strTestStartDatetime.."</td></tr>\n"
+	report = report.."<tr><td>Test finished:</td><td>"..m_strTestEndDatetime.."</td></tr>\n"
 	report = report.."</tbody></table>\n"
 	report = report.."<p>\n"
 	report = report.."<table border=\"0\"><tbody>\n"
@@ -725,7 +838,11 @@ local function updateTestReport()
 	report = report.."<table border=\"1\"><tbody>\n"
 	report = report.."<tr><th>Board #</th><th>Status</th><th>Serial Nr</th></tr>\n"
 	for i,t in ipairs(m_testResults) do
-		report = report.."<tr><td><a href=\"#B"..i.."\">"..i.."</a></td><td>"
+		report = report.."<a name=\"S"..i.."\"></a><tr"
+		if iCurrentBoard==i then
+			report = report.." bgcolor=\"#aaaaff\""
+		end
+		report = report.."><td><a href=\"#B"..i.."\">"..i.."</a></td><td>"
 		if t.eResult==TEST_STATUS_Ok then
 			report = report.."ok"
 		elseif t.eResult==TEST_STATUS_NotCompleted then
@@ -798,8 +915,10 @@ local function moveToTest(iBoardIdx, iTestIdx)
 		m_testIconView:SetItemState(iSelectTest-1, wx.wxLIST_STATE_FOCUSED+wx.wxLIST_STATE_SELECTED, wx.wxLIST_STATE_FOCUSED+wx.wxLIST_STATE_SELECTED)
 		m_testIconView:EnsureVisible(iSelectTest-1)
 
+		-- show the current board with special bgcolor in the summary
+		updateTestReport(iBoardIdx)
 		-- scroll to the test summary
-		showTestReport(iBoardIdx, iTestIdx)
+		showTestReport(iBoardIdx)
 	end
 end
 
@@ -840,14 +959,15 @@ local function runTest(iBoardIdx, iTestIdx)
 	local strLogCapture
 
 
+	-- get the results
+	results = m_testResults[iBoardIdx]
+
 	while iTestIdx<=m_testCnt do
 		-- show the test
 		moveToTest(iBoardIdx, iTestIdx)
 
 		-- get the test
 		test = __MUHKUH_ALL_TESTS[iTestIdx+1]
-		-- get the results
-		results = m_testResults[iBoardIdx]
 
 		-- TODO: merge the parameters
 
@@ -855,6 +975,8 @@ local function runTest(iBoardIdx, iTestIdx)
 		muhkuh:setLogMarker()
 
 		-- execute the testcode
+		m_runningBoard = iBoardIdx
+		m_runningTest = iTestIdx
 		print("running test '"..test.name.."'")
 		testfn,luaresult = loadstring(test.code)
 		if not testfn then
@@ -868,6 +990,8 @@ local function runTest(iBoardIdx, iTestIdx)
 			end
 		end
 		print("finished test '"..test.name.."'")
+		m_runningBoard = nil
+		m_runningTest = nil
 
 		-- close any stray progress dialogs
 		stdWriteCloseProgress()
@@ -901,8 +1025,6 @@ local function runTest(iBoardIdx, iTestIdx)
 		results.logs[iTestIdx] = results.logs[iTestIdx] .. html_escape(strLogCapture)
 		results.modified = true
 
-		-- show the result
-		updateTestReport()
 		-- the report update set the page back to the top, move to the board result again
 		moveToTest(iBoardIdx, iTestIdx)
 
@@ -913,6 +1035,25 @@ local function runTest(iBoardIdx, iTestIdx)
 
 		-- next test
 		iTestIdx = iTestIdx + 1
+	end
+
+	-- move to next test if mode is not single test and result is not 'fatal error' and not 'canceled'
+	if eMODE_BOARD_TEST~=eMODE_SINGLE_TEST and results.eResult~=TEST_STATUS_FatalError and results.eResult~=TEST_STATUS_NotCompleted then
+		-- more boards to test?
+		iBoardIdx = iBoardIdx + 1
+		if iBoardIdx<=m_boardCnt then
+			local strMessage
+			local iResult
+
+
+			-- ask to move on to the next test
+			strMessage = "Zum naechsten Board gehen?"
+			iResult = wx.wxMessageBox(strMessage, "Test finished!", wx.wxYES_NO + wx.wxICON_QUESTION, tester.getPanel())
+			if iResult==wx.wxYES then
+				m_spinBoardNr:SetValue(iBoardIdx)
+				moveToTest(iBoardIdx, 0)
+			end
+		end
 	end
 end
 
@@ -989,6 +1130,8 @@ local function OnButtonTestBoard()
 	-- get the selected board
 	iBoardIdx = m_spinBoardNr:GetValue()
 	runTest(iBoardIdx, 1)
+
+	changeMode(eMODE_IDLE)
 end
 
 
@@ -1009,9 +1152,36 @@ local function OnButtonSaveReport()
 end
 
 
+local function OnButtonPageSetup()
+	m_easyPrint:PageSetup()
+end
+
+
+local function OnButtonPrint()
+	local fOk
+
+
+	fOk = m_easyPrint:PrintText(m_strTestReport)
+	if not fOk then
+	end	
+end
+
+
+local function OnButtonPrintPreview()
+	m_easyPrint:PreviewText(m_strTestReport)
+end
+
+
 function run()
 	local plugin
+	local dToday
 
+
+	-- get test start time
+	dToday = wx.wxDateTime()
+	dToday:SetToCurrent()
+	m_strTestStartDatetime = dToday:Format("%c")
+	m_strTestEndDatetime = ""
 
 	-- get the test name
 	m_strTestName = __MUHKUH_ALL_TESTS[1].name
@@ -1044,6 +1214,7 @@ function run()
 
 	-- create the controls
 	createControls()
+
 	-- connect some controls
 	m_panel:Connect(ID_SPIN_BOARDNR,		wx.wxEVT_COMMAND_SPINCTRL_UPDATED,		OnBoardSpin)
 	m_panel:Connect(ID_COMBO_TESTS,			wx.wxEVT_COMMAND_COMBOBOX_SELECTED,		OnTestNameSelected)
@@ -1051,9 +1222,12 @@ function run()
 	m_panel:Connect(ID_BUTTON_TESTBOARD,		wx.wxEVT_COMMAND_BUTTON_CLICKED,		OnButtonTestBoard)
 	m_panel:Connect(ID_BUTTON_SAVEREPORT,		wx.wxEVT_COMMAND_BUTTON_CLICKED,		OnButtonSaveReport)
 	m_panel:Connect(ID_BUTTON_QUIT,			wx.wxEVT_COMMAND_BUTTON_CLICKED,		OnClose)
+	m_panel:Connect(ID_BUTTON_PAGESETUP,		wx.wxEVT_COMMAND_BUTTON_CLICKED,		OnButtonPageSetup)
+	m_panel:Connect(ID_BUTTON_PRINTPREVIEW,		wx.wxEVT_COMMAND_BUTTON_CLICKED,		OnButtonPrintPreview)
+	m_panel:Connect(ID_BUTTON_PRINT,		wx.wxEVT_COMMAND_BUTTON_CLICKED,		OnButtonPrint)
 
-	-- init report
-	updateTestReport()
+	-- init report, do not scroll to a specific board
+	updateTestReport(nil)
 
 	-- run a single test?
 	if __MUHKUH_TEST_INDEX>0 then
