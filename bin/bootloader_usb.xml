@@ -1,0 +1,4 @@
+<MuhkuhPluginConfig name="Bootloader netX500 USB" so="bootloader_usb" id="romloader_usb">
+	<Cfg>
+	</Cfg>
+</MuhkuhPluginConfig>
