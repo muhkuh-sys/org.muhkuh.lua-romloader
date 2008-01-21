@@ -2,46 +2,46 @@
 /* config.h.in.  Generated from configure.in by autoheader.  */
 
 /* 0 if you don't want the Amontec JTAG-Accelerator driver. */
-#define BUILD_AMTJTAGACCEL 0
+//#define BUILD_AMTJTAGACCEL 0
 
 /* 0 if you don't want at91rm9200. */
-#define BUILD_AT91RM9200 0
+//#define BUILD_AT91RM9200 0
 
 /* 0 if you don't want a bitbang interface. */
-#define BUILD_BITBANG 0
+//#define BUILD_BITBANG 0
 
 /* 0 if you don't want a bitq interface. */
-#define BUILD_BITQ 0
+//#define BUILD_BITQ 0
 
 /* 0 if you don't want ep93xx. */
-#define BUILD_EP93XX 0
+//#define BUILD_EP93XX 0
 
 /* 0 if you don't want ftd2xx ft2232. */
-#define BUILD_FT2232_FTD2XX 0
+#define BUILD_FT2232_FTD2XX 1
 
 /* 0 if you don't want libftdi ft2232. */
-#define BUILD_FT2232_LIBFTDI 1
+//#define BUILD_FT2232_LIBFTDI 0
 
 /* 0 if you don't want the Gateworks GW16012 driver. */
-#define BUILD_GW16012 0
+//#define BUILD_GW16012 0
 
 /* 0 if you don't want parport. */
-#define BUILD_PARPORT 0
+//#define BUILD_PARPORT 0
 
 /* 0 if you don't want the ASIX PRESTO driver. */
-#define BUILD_PRESTO 0
+//#define BUILD_PRESTO 0
 
 /* 0 if you don't want the usbprog JTAG driver. */
-#define BUILD_USBPROG 0
+//#define BUILD_USBPROG 0
 
 /* Define to 1 if you have the <elf.h> header file. */
-#define HAVE_ELF_H 1
+//#define HAVE_ELF_H 0
 
 /* Define to 1 if you have the `gettimeofday' function. */
-#define HAVE_GETTIMEOFDAY 1
+//#define HAVE_GETTIMEOFDAY 0
 
 /* Define to 1 if you have the <inttypes.h> header file. */
-#define HAVE_INTTYPES_H 1
+//#define HAVE_INTTYPES_H 0
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -65,7 +65,7 @@
 #define HAVE_STRNLEN 1
 
 /* Define to 1 if you have the <sys/param.h> header file. */
-#define HAVE_SYS_PARAM_H 1
+//#define HAVE_SYS_PARAM_H 0
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #define HAVE_SYS_STAT_H 1
@@ -74,19 +74,19 @@
 #define HAVE_SYS_TYPES_H 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#define HAVE_UNISTD_H 1
+//#define HAVE_UNISTD_H 0
 
 /* Define to 1 if you have the `usleep' function. */
-#define HAVE_USLEEP 1
+//#define HAVE_USLEEP 0
 
 /* 0 if not building for Cygwin. */
-#define IS_CYGWIN 0
+//#define IS_CYGWIN 0
 
 /* 1 if building for MinGW. */
 /* #undef IS_MINGW */
 
 /* 0 if not building for Win32. */
-#define IS_WIN32 0
+#define IS_WIN32 1
 
 /* Name of package */
 #define PACKAGE "openocd"
@@ -107,10 +107,10 @@
 #define PACKAGE_VERSION ""
 
 /* 0 if you don't want parport to use giveio. */
-#define PARPORT_USE_GIVEIO 0
+//#define PARPORT_USE_GIVEIO 0
 
 /* 0 if you don't want parport to use ppdev. */
-#define PARPORT_USE_PPDEV 0
+//#define PARPORT_USE_PPDEV 0
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
