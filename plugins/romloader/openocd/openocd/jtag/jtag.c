@@ -1448,6 +1448,8 @@ int jtag_init(struct command_context_s *cmd_ctx)
 					if (validate_tries > 5)
 					{
 						ERROR("Could not validate JTAG chain, exit");
+						if( jtag->quit!=NULL )
+							jtag->quit();
 						jtag = NULL;
 						return ERROR_JTAG_INVALID_INTERFACE;
 					}
