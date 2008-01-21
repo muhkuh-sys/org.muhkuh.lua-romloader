@@ -22,6 +22,11 @@
 #include "romloader_openocd_main.h"
 #include "_luaif/romloader_openocd_wxlua_bindings.h"
 
+
+#ifdef _WIN32
+#define vsnprintf _vsnprintf
+#endif
+
 /*-------------------------------------*/
 /* openocd includes */
 
@@ -99,7 +104,7 @@ int romloader_openocd_default_output_handler(struct command_context_s *context, 
 }
 
 
-void romloader_openocd_log_printf(enum log_levels level, const char *file, int line, const char *function, const char *format, ...)
+void romloader_openocd_log_printf(enum log_levels level, const char *format, ...)
 {
 	wxString strMsg;
 	va_list args;
@@ -112,8 +117,7 @@ void romloader_openocd_log_printf(enum log_levels level, const char *file, int l
 	va_start(args, format);
 	vsnprintf(buffer, 512, format, args);
 
-	strMsg.Printf(wxString::FromAscii(file) + wxT(":%d ") + wxString::FromAscii(function) + wxT("(): "), line);
-	strMsg += wxString::FromAscii(buffer);
+	strMsg = wxString::FromAscii(buffer);
 	switch(level)
 	{
 	case LOG_ERROR:
@@ -298,7 +302,7 @@ int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId)
 	}
 
 	/* say hi */
-	wxLogMessage(wxT("bootloader openocd plugin init"));
+	wxLogMessage(wxT("bootloader openocd plugin init: ") + strPluginId);
 
 	/* remember id */
 	plugin_desc.strPluginId = strPluginId;
@@ -361,33 +365,6 @@ const muhkuh_plugin_desc *fn_get_desc(void)
 
 /*-------------------------------------*/
 
-int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList)
-{
-	int iInterfaces;
-	muhkuh_plugin_instance *ptInst;
-	wxString strName;
-	wxString strTyp;
-	wxString strLuaCreateFn;
-
-
-	strTyp = plugin_desc.strPluginId;
-	strLuaCreateFn = wxT("muhkuh.romloader_openocd_create");
-
-	iInterfaces = 0;
-
-	// construct the name
-	strName.Printf("romloader_openocd");
-	ptInst = new muhkuh_plugin_instance(strName, strTyp, false, strLuaCreateFn, NULL);
-	++iInterfaces;
-
-	pvInterfaceList->push_back(ptInst);
-
-	return iInterfaces;
-}
-
-
-/*-------------------------------------*/
-
 
 static void romloader_openocd_close_instance(void *pvHandle)
 {
@@ -402,6 +379,12 @@ static void romloader_openocd_close_instance(void *pvHandle)
 
 	strMsg.Printf(wxT("closing romloader openocd at %p"), cmd_ctx);
 	wxLogMessage(strMsg);
+
+	/* NOTE: this seems to work with ftd2xx, but not with libftdi */
+	if( jtag!=NULL && jtag->quit!=NULL )
+	{
+		jtag->quit();
+	}
 
 	/* close all subsystems */
 	iResult = jtag_close(cmd_ctx);
@@ -423,9 +406,10 @@ static void romloader_openocd_close_instance(void *pvHandle)
 }
 
 
-/*-------------------------------------*/
+/*-----------------------------------*/
 
-romloader *romloader_openocd_create(void *pvHandle)
+
+static int romloader_openocd_connect(command_context_t **pptCmdCtx)
 {
 	int iResult;
 	command_context_t *cmd_ctx;
@@ -434,14 +418,10 @@ romloader *romloader_openocd_create(void *pvHandle)
 	wxString strMsg;
 	size_t sizCfgCnt;
 	size_t sizCfgMax;
-	romloader *ptInstance = NULL;
-	wxString strName;
-	wxString strTyp;
 	int iInitCnt;
 
 
 	cmd_ctx = command_init();
-
 
 	/* register subsystem commands */
 	log_register_commands(cmd_ctx);
@@ -450,6 +430,7 @@ romloader *romloader_openocd_create(void *pvHandle)
 	xsvf_register_commands(cmd_ctx);
 	target_register_commands(cmd_ctx);
 
+	/* init the log functions */
 	iResult = log_init(cmd_ctx);
 	if( iResult!=ERROR_OK )
 	{
@@ -548,10 +529,71 @@ romloader *romloader_openocd_create(void *pvHandle)
 
 	if( iResult!=ERROR_OK )
 	{
-		// free commandline interface
-		command_done(cmd_ctx);
+		// close connection
+		romloader_openocd_close_instance(cmd_ctx);
+		*pptCmdCtx = NULL;
 	}
 	else
+	{
+		// connection open, ok!
+		*pptCmdCtx = cmd_ctx;
+	}
+
+	return iResult;
+}
+
+/*-----------------------------------*/
+
+int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList)
+{
+	int iInterfaces;
+	int iResult;
+	muhkuh_plugin_instance *ptInst;
+	command_context_t *cmd_ctx;
+	wxString strName;
+	wxString strTyp;
+	wxString strLuaCreateFn;
+
+
+	strTyp = plugin_desc.strPluginId;
+	strLuaCreateFn = wxT("muhkuh.romloader_openocd_create");
+
+	iInterfaces = 0;
+
+	// detect interface by trying to open it
+	iResult = romloader_openocd_connect(&cmd_ctx);
+	if( iResult==ERROR_OK )
+	{
+		// close the instance
+		romloader_openocd_close_instance(cmd_ctx);
+
+		// construct the name
+		strName.Printf("romloader_openocd");
+		ptInst = new muhkuh_plugin_instance(strName, strTyp, false, strLuaCreateFn, NULL);
+		++iInterfaces;
+
+		// add the new instance to the list
+		pvInterfaceList->push_back(ptInst);
+	}
+
+	return iInterfaces;
+}
+
+
+/*-------------------------------------*/
+
+
+romloader *romloader_openocd_create(void *pvHandle)
+{
+	int iResult;
+	command_context_t *cmd_ctx;
+	wxString strTyp;
+	wxString strName;
+	romloader *ptInstance = NULL;
+
+
+	iResult = romloader_openocd_connect(&cmd_ctx);
+	if( iResult==ERROR_OK )
 	{
 		// create the new instance
 		strTyp = plugin_desc.strPluginId;
