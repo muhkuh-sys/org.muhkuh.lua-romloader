@@ -33,7 +33,14 @@ romloader::romloader(wxString strName, wxString strTyp, const romloader_function
 	wxString strDebug;
 
 
-	memcpy(&m_tFunctionInterface, ptFn, sizeof(romloader_functioninterface));
+	if( ptFn==NULL )
+	{
+		memset(&m_tFunctionInterface, 0, sizeof(romloader_functioninterface));
+	}
+	else
+	{
+		memcpy(&m_tFunctionInterface, ptFn, sizeof(romloader_functioninterface));
+	}
 
 	// *** DEBUG ***
 	strDebug.Printf(wxT("created romloader at %p"), this);
@@ -60,21 +67,57 @@ romloader::~romloader(void)
 // open the connection to the device
 void romloader::connect(void)
 {
-	m_tFunctionInterface.fn_connect(m_pvHandle);
+	wxString strMsg;
+
+
+	if( m_tFunctionInterface.fn_connect==NULL )
+	{
+		strMsg.Printf(m_strName + wxT(" (%p): missing connect function, ignoring request."), this);
+		m_ptLuaState->wxlua_Error(strMsg);
+	}
+	else
+	{
+		m_tFunctionInterface.fn_connect(m_pvHandle);
+	}
 }
 
 
 // close the connection to the device
 void romloader::disconnect(void)
 {
-	m_tFunctionInterface.fn_disconnect(m_pvHandle);
+	wxString strMsg;
+
+
+	if( m_tFunctionInterface.fn_disconnect==NULL )
+	{
+		strMsg.Printf(m_strName + wxT(" (%p): missing disconnect function, ignoring request."), this);
+		m_ptLuaState->wxlua_Error(strMsg);
+	}
+	else
+	{
+		m_tFunctionInterface.fn_disconnect(m_pvHandle);
+	}
 }
 
 
 // returns the connection state of the device
 bool romloader::is_connected(void) const
 {
-	return m_tFunctionInterface.fn_is_connected(m_pvHandle);
+	bool fIsConnected = false;
+	wxString strMsg;
+
+
+	if( m_tFunctionInterface.fn_is_connected==NULL )
+	{
+		strMsg.Printf(m_strName + wxT(" (%p): missing is_connected function, ignoring request."), this);
+		m_ptLuaState->wxlua_Error(strMsg);
+	}
+	else
+	{
+		fIsConnected = m_tFunctionInterface.fn_is_connected(m_pvHandle);
+	}
+
+	return fIsConnected;
 }
 
 
@@ -100,11 +143,19 @@ unsigned char romloader::read_data08(unsigned long ulNetxAddress)
 	int iResult;
 
 
-	iResult = m_tFunctionInterface.fn_read_data08(m_pvHandle, ulNetxAddress, &ucData);
-	if( iResult!=0 )
+	if( m_tFunctionInterface.fn_read_data08==NULL )
 	{
-		strMsg.Printf(wxT("read_data08 failed with error %d"), iResult);
+		strMsg.Printf(m_strName + wxT(" (%p): missing read_data08 function, ignoring request."), this);
 		m_ptLuaState->wxlua_Error(strMsg);
+	}
+	else
+	{
+		iResult = m_tFunctionInterface.fn_read_data08(m_pvHandle, ulNetxAddress, &ucData);
+		if( iResult!=0 )
+		{
+			strMsg.Printf(wxT("read_data08 failed with error %d"), iResult);
+			m_ptLuaState->wxlua_Error(strMsg);
+		}
 	}
 
 	return ucData;
@@ -119,11 +170,19 @@ unsigned short romloader::read_data16(unsigned long ulNetxAddress)
 	int iResult;
 
 
-	iResult = m_tFunctionInterface.fn_read_data16(m_pvHandle, ulNetxAddress, &usData);
-	if( iResult!=0 )
+	if( m_tFunctionInterface.fn_read_data16==NULL )
 	{
-		strMsg.Printf(wxT("read_data16 failed with error %d"), iResult);
+		strMsg.Printf(m_strName + wxT(" (%p): missing read_data16 function, ignoring request."), this);
 		m_ptLuaState->wxlua_Error(strMsg);
+	}
+	else
+	{
+		iResult = m_tFunctionInterface.fn_read_data16(m_pvHandle, ulNetxAddress, &usData);
+		if( iResult!=0 )
+		{
+			strMsg.Printf(wxT("read_data16 failed with error %d"), iResult);
+			m_ptLuaState->wxlua_Error(strMsg);
+		}
 	}
 
 	return usData;
@@ -138,11 +197,19 @@ unsigned long romloader::read_data32(unsigned long ulNetxAddress)
 	int iResult;
 
 
-	iResult = m_tFunctionInterface.fn_read_data32(m_pvHandle, ulNetxAddress, &ulData);
-	if( iResult!=0 )
+	if( m_tFunctionInterface.fn_read_data32==NULL )
 	{
-		strMsg.Printf(wxT("read_data32 failed with error %d"), iResult);
+		strMsg.Printf(m_strName + wxT(" (%p): missing read_data32 function, ignoring request."), this);
 		m_ptLuaState->wxlua_Error(strMsg);
+	}
+	else
+	{
+		iResult = m_tFunctionInterface.fn_read_data32(m_pvHandle, ulNetxAddress, &ulData);
+		if( iResult!=0 )
+		{
+			strMsg.Printf(wxT("read_data32 failed with error %d"), iResult);
+			m_ptLuaState->wxlua_Error(strMsg);
+		}
 	}
 
 	return ulData;
@@ -158,29 +225,37 @@ wxString romloader::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 	int iResult;
 
 
-	// check parameter
-	if( ulSize!=0 )
+	if( m_tFunctionInterface.fn_read_image==NULL )
 	{
-		// get memory for the buffer
-		pcBuffer = new char[ulSize];
-		iResult = m_tFunctionInterface.fn_read_image(m_pvHandle, ulNetxAddress, pcBuffer, ulSize, L, iLuaCallbackTag, pvCallbackUserData);
-		if( iResult!=0 )
-		{
-			strMsg.Printf(wxT("read_image failed with error %d"), iResult);
-			// free the buffer
-			delete[] pcBuffer;
-			m_ptLuaState->wxlua_Error(strMsg);
-		}
-		else
-		{
-			// convert the binary data to wxString
-			strData = wxString::From8BitData(pcBuffer, ulSize);
-			delete[] pcBuffer;
-		}
+		strMsg.Printf(m_strName + wxT(" (%p): missing read_image function, ignoring request."), this);
+		m_ptLuaState->wxlua_Error(strMsg);
 	}
 	else
 	{
-		wxLogDebug(wxT("ignoring read_image request with size 0"));
+		// check parameter
+		if( ulSize!=0 )
+		{
+			// get memory for the buffer
+			pcBuffer = new char[ulSize];
+			iResult = m_tFunctionInterface.fn_read_image(m_pvHandle, ulNetxAddress, pcBuffer, ulSize, L, iLuaCallbackTag, pvCallbackUserData);
+			if( iResult!=0 )
+			{
+				strMsg.Printf(wxT("read_image failed with error %d"), iResult);
+				// free the buffer
+				delete[] pcBuffer;
+				m_ptLuaState->wxlua_Error(strMsg);
+			}
+			else
+			{
+				// convert the binary data to wxString
+				strData = wxString::From8BitData(pcBuffer, ulSize);
+				delete[] pcBuffer;
+			}
+		}
+		else
+		{
+			wxLogDebug(wxT("ignoring read_image request with size 0"));
+		}
 	}
 
 	return strData;
@@ -193,11 +268,19 @@ void romloader::write_data08(unsigned long ulNetxAddress, unsigned char ucData)
 	int iResult;
 
 
-	iResult = m_tFunctionInterface.fn_write_data08(m_pvHandle, ulNetxAddress, ucData);
-	if( iResult!=0 )
+	if( m_tFunctionInterface.fn_write_data08==NULL )
 	{
-		strMsg.Printf(wxT("write_data08 failed with error %d"), iResult);
+		strMsg.Printf(m_strName + wxT(" (%p): missing write_data08 function, ignoring request."), this);
 		m_ptLuaState->wxlua_Error(strMsg);
+	}
+	else
+	{
+		iResult = m_tFunctionInterface.fn_write_data08(m_pvHandle, ulNetxAddress, ucData);
+		if( iResult!=0 )
+		{
+			strMsg.Printf(wxT("write_data08 failed with error %d"), iResult);
+			m_ptLuaState->wxlua_Error(strMsg);
+		}
 	}
 }
 
@@ -209,11 +292,19 @@ void romloader::write_data16(unsigned long ulNetxAddress, unsigned short usData)
 	int iResult;
 
 
-	iResult = m_tFunctionInterface.fn_write_data16(m_pvHandle, ulNetxAddress, usData);
-	if( iResult!=0 )
+	if( m_tFunctionInterface.fn_write_data16==NULL )
 	{
-		strMsg.Printf(wxT("write_data16 failed with error %d"), iResult);
+		strMsg.Printf(m_strName + wxT(" (%p): missing write_data16 function, ignoring request."), this);
 		m_ptLuaState->wxlua_Error(strMsg);
+	}
+	else
+	{
+		iResult = m_tFunctionInterface.fn_write_data16(m_pvHandle, ulNetxAddress, usData);
+		if( iResult!=0 )
+		{
+			strMsg.Printf(wxT("write_data16 failed with error %d"), iResult);
+			m_ptLuaState->wxlua_Error(strMsg);
+		}
 	}
 }
 
@@ -225,11 +316,19 @@ void romloader::write_data32(unsigned long ulNetxAddress, unsigned long ulData)
 	int iResult;
 
 
-	iResult = m_tFunctionInterface.fn_write_data32(m_pvHandle, ulNetxAddress, ulData);
-	if( iResult!=0 )
+	if( m_tFunctionInterface.fn_write_data32==NULL )
 	{
-		strMsg.Printf(wxT("write_data32 failed with error %d"), iResult);
+		strMsg.Printf(m_strName + wxT(" (%p): missing write_data32 function, ignoring request."), this);
 		m_ptLuaState->wxlua_Error(strMsg);
+	}
+	else
+	{
+		iResult = m_tFunctionInterface.fn_write_data32(m_pvHandle, ulNetxAddress, ulData);
+		if( iResult!=0 )
+		{
+			strMsg.Printf(wxT("write_data32 failed with error %d"), iResult);
+			m_ptLuaState->wxlua_Error(strMsg);
+		}
 	}
 }
 
@@ -241,11 +340,19 @@ void romloader::write_image(unsigned long ulNetxAddress, wxString strData, lua_S
 	int iResult;
 
 
-	iResult = m_tFunctionInterface.fn_write_image(m_pvHandle, ulNetxAddress, strData.To8BitData(), strData.Len(), L, iLuaCallbackTag, pvCallbackUserData);
-	if( iResult!=0 )
+	if( m_tFunctionInterface.fn_write_image==NULL )
 	{
-		strMsg.Printf(wxT("write_image failed with error %d"), iResult);
+		strMsg.Printf(m_strName + wxT(" (%p): missing write_image function, ignoring request."), this);
 		m_ptLuaState->wxlua_Error(strMsg);
+	}
+	else
+	{
+		iResult = m_tFunctionInterface.fn_write_image(m_pvHandle, ulNetxAddress, strData.To8BitData(), strData.Len(), L, iLuaCallbackTag, pvCallbackUserData);
+		if( iResult!=0 )
+		{
+			strMsg.Printf(wxT("write_image failed with error %d"), iResult);
+			m_ptLuaState->wxlua_Error(strMsg);
+		}
 	}
 }
 
@@ -257,11 +364,19 @@ void romloader::call(unsigned long ulNetxAddress, unsigned long ulParameterR0, l
 	int iResult;
 
 
-	iResult = m_tFunctionInterface.fn_call(m_pvHandle, ulNetxAddress, ulParameterR0, L, iLuaCallbackTag, pvCallbackUserData);
-	if( iResult!=0 )
+	if( m_tFunctionInterface.fn_call==NULL )
 	{
-		strMsg.Printf(wxT("call failed with error %d"), iResult);
+		strMsg.Printf(m_strName + wxT(" (%p): missing call function, ignoring request."), this);
 		m_ptLuaState->wxlua_Error(strMsg);
+	}
+	else
+	{
+		iResult = m_tFunctionInterface.fn_call(m_pvHandle, ulNetxAddress, ulParameterR0, L, iLuaCallbackTag, pvCallbackUserData);
+		if( iResult!=0 )
+		{
+			strMsg.Printf(wxT("call failed with error %d"), iResult);
+			m_ptLuaState->wxlua_Error(strMsg);
+		}
 	}
 }
 
