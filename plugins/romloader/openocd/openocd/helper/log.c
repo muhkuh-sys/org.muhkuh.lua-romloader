@@ -45,7 +45,7 @@ pfn_log_printf_t pfn_log_printf;
 pfn_short_log_printf_t pfn_short_log_printf;
 
 
-void default_log_printf(enum log_levels level, const char *file, int line, const char *function, const char *format, ...)
+void default_log_printf(enum log_levels level, const char *format, ...)
 {
 	va_list args;
 	char buffer[512];
@@ -56,7 +56,7 @@ void default_log_printf(enum log_levels level, const char *file, int line, const
 	va_start(args, format);
 	vsnprintf(buffer, 512, format, args);
 
-	fprintf(log_output, "%s %s:%d %s(): %s\n", log_strings[level], file, line, function, buffer);
+	fprintf(log_output, "%s: %s\n", log_strings[level], buffer);
 	fflush(log_output);
 	
 	va_end(args);
@@ -78,6 +78,119 @@ void default_short_log_printf(enum log_levels level, const char *format, ...)
 
 	va_end(args);
 }
+
+
+void log_debug(const char *format, ...)
+{
+	va_list args;
+	char buffer[512];
+
+	va_start(args, format);
+	vsnprintf(buffer, 512, format, args);
+
+	pfn_log_printf(LOG_DEBUG, buffer);
+	
+	va_end(args);
+}
+
+
+void log_info(const char *format, ...)
+{
+	va_list args;
+	char buffer[512];
+
+	va_start(args, format);
+	vsnprintf(buffer, 512, format, args);
+
+	pfn_log_printf(LOG_INFO, buffer);
+	
+	va_end(args);
+}
+
+
+void log_warning(const char *format, ...)
+{
+	va_list args;
+	char buffer[512];
+
+	va_start(args, format);
+	vsnprintf(buffer, 512, format, args);
+
+	pfn_log_printf(LOG_WARNING, buffer);
+	
+	va_end(args);
+}
+
+
+void log_error(const char *format, ...)
+{
+	va_list args;
+	char buffer[512];
+
+	va_start(args, format);
+	vsnprintf(buffer, 512, format, args);
+
+	pfn_log_printf(LOG_ERROR, buffer);
+	
+	va_end(args);
+}
+
+
+void slog_debug(const char *format, ...)
+{
+	va_list args;
+	char buffer[512];
+
+	va_start(args, format);
+	vsnprintf(buffer, 512, format, args);
+
+	pfn_short_log_printf(LOG_DEBUG, buffer);
+	
+	va_end(args);
+}
+
+
+void slog_info(const char *format, ...)
+{
+	va_list args;
+	char buffer[512];
+
+	va_start(args, format);
+	vsnprintf(buffer, 512, format, args);
+
+	pfn_short_log_printf(LOG_INFO, buffer);
+	
+	va_end(args);
+}
+
+
+void slog_warning(const char *format, ...)
+{
+	va_list args;
+	char buffer[512];
+
+	va_start(args, format);
+	vsnprintf(buffer, 512, format, args);
+
+	pfn_short_log_printf(LOG_WARNING, buffer);
+	
+	va_end(args);
+}
+
+
+void slog_error(const char *format, ...)
+{
+	va_list args;
+	char buffer[512];
+
+	va_start(args, format);
+	vsnprintf(buffer, 512, format, args);
+
+	pfn_short_log_printf(LOG_ERROR, buffer);
+	
+	va_end(args);
+}
+
 
 /* change the current debug level on the fly
  * 0: only ERRORS

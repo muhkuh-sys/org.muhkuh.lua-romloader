@@ -39,13 +39,23 @@ enum log_levels
 	LOG_DEBUG = 3
 };
 
-typedef void (*pfn_log_printf_t)(enum log_levels level, const char *file, int line, const char *function, const char *format, ...);
+typedef void (*pfn_log_printf_t)(enum log_levels level, const char *format, ...);
 typedef void (*pfn_short_log_printf_t)(enum log_levels level, const char *format, ...);
 
 extern pfn_log_printf_t pfn_log_printf;
 extern pfn_short_log_printf_t pfn_short_log_printf;
 
-extern void default_log_printf(enum log_levels level, const char *file, int line, const char *function, const char *format, ...);
+extern void log_debug(const char *format, ...);
+extern void log_info(const char *format, ...);
+extern void log_warning(const char *format, ...);
+extern void log_error(const char *format, ...);
+
+extern void slog_debug(const char *format, ...);
+extern void slog_info(const char *format, ...);
+extern void slog_warning(const char *format, ...);
+extern void slog_error(const char *format, ...);
+
+extern void default_log_printf(enum log_levels level, const char *format, ...);
 extern void default_short_log_printf(enum log_levels level, const char *format, ...);
 
 extern void log_set_output_handler(pfn_log_printf_t pfn_log, pfn_short_log_printf_t pfn_short_log);
@@ -54,45 +64,16 @@ extern int log_init(struct command_context_s *cmd_ctx);
 
 extern int debug_level;
 
-#define DEBUG(expr ...) \
-	do { \
-		pfn_log_printf (LOG_DEBUG, __FILE__, __LINE__, __FUNCTION__, expr); \
-	} while(0)
+/* use 4 functions instead of vararg defines until I figure out how to do this with msvc */
+#define DEBUG		log_debug
+#define INFO		log_info
+#define WARNING		log_warning
+#define ERROR		log_error
 
-#define INFO(expr ...) \
-	do { \
-		pfn_log_printf (LOG_INFO, __FILE__, __LINE__, __FUNCTION__, expr); \
-	} while(0)
-
-#define WARNING(expr ...) \
-	do { \
-		pfn_log_printf (LOG_WARNING, __FILE__, __LINE__, __FUNCTION__, expr); \
-	} while(0)
-
-#define ERROR(expr ...) \
-	do { \
-		pfn_log_printf (LOG_ERROR, __FILE__, __LINE__, __FUNCTION__, expr); \
-	} while(0)
-
-#define SDEBUG(expr ...) \
-	do { \
-		pfn_short_log_printf (LOG_DEBUG, expr); \
-	} while(0)
-
-#define SINFO(expr ...) \
-	do { \
-		pfn_short_log_printf (LOG_INFO, expr); \
-	} while(0)
-
-#define SWARNING(expr ...) \
-	do { \
-		pfn_short_log_printf (LOG_WARNING, expr); \
-	} while(0)
-
-#define SERROR(expr ...) \
-	do { \
-		pfn_short_log_printf (LOG_ERROR, expr); \
-	} while(0)
+#define SDEBUG		slog_debug
+#define SINFO		slog_info
+#define SWARNING	slog_warning
+#define SERROR		slog_error
 
 /* general failures
  * error codes < 100
