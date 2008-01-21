@@ -146,6 +146,10 @@ static __inline void outb(unsigned char value, unsigned short int port)
 }
 
 #endif /* IS_MINGW */
+
+#define snprintf _snprintf
+#define vsnprintf _vsnprintf
+
 #endif  /* _WIN32 */
 
 /* generic socket functions for Windows and Posix */
