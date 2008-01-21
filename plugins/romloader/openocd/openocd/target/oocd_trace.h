@@ -24,8 +24,8 @@
 
 #include "etm.h"
 
-#include <termios.h>
-#include <unistd.h>
+//#include <termios.h>
+//#include <unistd.h>
 
 /* registers */
 enum
