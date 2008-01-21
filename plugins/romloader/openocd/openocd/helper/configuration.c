@@ -28,7 +28,21 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#if 0
 #include <getopt.h>
+#else
+struct option {
+	const char *name;
+	int  has_arg;
+	int *flag;
+	int val;
+};
+#define no_argument             0
+#define required_argument       1
+#define optional_argument       2
+#endif
+
+
 
 char* config_file_name;
 
@@ -51,7 +65,7 @@ int configuration_output_handler(struct command_context_s *context, char* line)
 	
 	return ERROR_OK;
 }
-
+#if 0
 int parse_cmdline_args(struct command_context_s *cmd_ctx, int argc, char *argv[])
 {
 	int c;
@@ -107,7 +121,7 @@ int parse_cmdline_args(struct command_context_s *cmd_ctx, int argc, char *argv[]
 
 	return ERROR_OK;
 }
-
+#endif
 int parse_config_file(struct command_context_s *cmd_ctx)
 {
 	FILE *config_file;
