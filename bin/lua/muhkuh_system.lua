@@ -28,7 +28,8 @@ local function parse_code(parent_node)
 	local strParameterName
 	local strParameterTyp
 	local strParameterValue
-	local parameter_value
+	local iParStart
+	local iParEnd
 
 
 	-- look for the first node named "Code"
@@ -63,41 +64,20 @@ local function parse_code(parent_node)
 				print("error: Parameter node has no name attribute")
 				return nil
 			end
-			-- get parameter typ
-			strParameterTyp = node:GetPropVal("typ", "")
-			if strParameterTyp==nil or strParameterTyp=="" then
-				print("error: Parameter node has no typ attribute")
-				return nil
-			end
 			-- get parameter value
 			strParameterValue = node:GetChildren():GetContent()
 			if strParameterValue==nil or strParameterValue=="" then
 				print("error: Parameter node has no value")
 				return nil
 			end
-
-			-- check the parameter value
-			if strParameterTyp=="integer" then
-				-- integer typ
-				parameter_value = tonumber(strParameterValue)
-				if not parameter_value then
-					-- value is no integer
-					print("error: Parameter should be of type integer but has invalid value: '"..strParameterValue.."'")
-					return nil
-				end
-			elseif strParameterTyp=="string" then
-				parameter_value = strParameterValue
-			else
-				-- invalid typ
-				print("error: Parameter typ is invalid: '"..strParameterTyp.."'")
-				return nil
-			end
+			iParStart = string.find(strParameterValue, "[^ \t\n\r]", 1, false)
+			iParEnd = string.find(string.reverse(strParameterValue), "[^ \t\n\r]", 1, false)
 
 			-- add parameter to table
 			if parameters[strParameterName] then
 				print("warning: overwriting old value of '"..strParameterName.."'")
 			end
-			parameters[strParameterName] = parameter_value
+			parameters[strParameterName] = string.sub(strParameterValue, iParStart, -iParEnd)
 		end
 
 		node = node:GetNext()
