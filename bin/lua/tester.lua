@@ -1037,6 +1037,9 @@ local function runTest(iBoardIdx, iTestIdx)
 		iTestIdx = iTestIdx + 1
 	end
 
+	-- finish test with garbage collection
+	collectgarbage("collect")
+
 	-- move to next test if mode is not single test and result is not 'fatal error' and not 'canceled'
 	if eMODE_BOARD_TEST~=eMODE_SINGLE_TEST and results.eResult~=TEST_STATUS_FatalError and results.eResult~=TEST_STATUS_NotCompleted then
 		-- more boards to test?
