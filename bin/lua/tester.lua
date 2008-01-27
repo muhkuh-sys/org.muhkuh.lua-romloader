@@ -957,6 +957,7 @@ local function runTest(iBoardIdx, iTestIdx)
 	local result
 	local results
 	local strLogCapture
+	local parameter
 
 
 	-- get the results
@@ -969,10 +970,26 @@ local function runTest(iBoardIdx, iTestIdx)
 		-- get the test
 		test = __MUHKUH_ALL_TESTS[iTestIdx+1]
 
-		-- TODO: merge the parameters
+		-- merge the parameter
+		parameter = {}
+		for i,v in pairs(__MUHKUH_ALL_TESTS[1].parameter) do
+			parameter[i] = v
+		end
+		for i,v in pairs(test.parameter) do
+			parameter[i] = v
+		end
 
 		-- capture the log
 		muhkuh:setLogMarker()
+
+		-- show the test parameter
+		print("Merged parameter:")
+		for i,v in pairs(parameter) do
+			print("\tname: '"..i.."', value: '"..v.."'")
+		end
+
+		-- set the merged parameters global
+		_G.__MUHKUH_TEST_PARAMETER = parameter
 
 		-- execute the testcode
 		m_runningBoard = iBoardIdx
@@ -997,6 +1014,10 @@ local function runTest(iBoardIdx, iTestIdx)
 		stdWriteCloseProgress()
 		stdReadCloseProgress()
 		stdCallCloseProgress()
+
+		-- clear the parameters
+		parameter = nil
+		_G.__MUHKUH_TEST_PARAMETER = nil
 
 		-- set the test result
 		if testresult==__MUHKUH_TEST_RESULT_OK then
