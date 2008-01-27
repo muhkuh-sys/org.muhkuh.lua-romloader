@@ -524,14 +524,16 @@ void muhkuh_mainFrame::setState(muhkuh_mainFrame_state tNewState)
 
 void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 {
-	wxString sStatus;
+	wxString strStatus;
+	wxString strMemStatus;
 	int iRepositoryIndex;
+	int iLuaMemKb;
 
 
 	switch(m_state)
 	{
 	case muhkuh_mainFrame_state_scanning:
-		sStatus = wxT("Scanning test descriptions...");
+		strStatus = wxT("Scanning test descriptions...");
 		break;
 
 	case muhkuh_mainFrame_state_idle:
@@ -554,11 +556,11 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 		// show the number of loaded tests
 		if( m_sizTestCnt==1 )
 		{
-			sStatus = _("1 test loaded...");
+			strStatus = _("1 test loaded...");
 		}
 		else
 		{
-			sStatus.Printf(_("%d tests loaded..."), m_sizTestCnt);
+			strStatus.Printf(_("%d tests loaded..."), m_sizTestCnt);
 		}
 		break;
 
@@ -572,15 +574,23 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 		}
 		else
 		{
-			sStatus = wxT("Test '");
-			sStatus += m_strRunningTestName;
-			sStatus += wxT("' in progress...");
+			strStatus = wxT("Test '");
+			strStatus += m_strRunningTestName;
+			strStatus += wxT("' in progress...");
+
+			// get the Lua Memory in kilobytes
+			if( m_ptLuaState!=NULL )
+			{
+				iLuaMemKb = m_ptLuaState->lua_GetGCCount();
+				strMemStatus.Printf(wxT("Lua uses %d kilobytes"), iLuaMemKb);
+				strStatus += strMemStatus;
+			}
 		}
 		break;
 	}
 
 	// set the status text
-	SetStatusText(sStatus, 1);
+	SetStatusText(strStatus, 1);
 
 	event.Skip();
 }
