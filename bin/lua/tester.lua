@@ -420,7 +420,7 @@ function hexdump(strData, iBytesPerRow)
 	local strDump
 
 
-	if iBytesPerRow<1 then
+	if not iBytesPerRow then
 		iBytesPerRow = 16
 	end
 
