@@ -35,6 +35,7 @@ enum
 	muhkuh_mainFrame_cancelTestButton_id,
 	muhkuh_mainFrame_Notebook_id,
 	muhkuh_mainFrame_Debug,
+	muhkuh_mainFrame_Welcome_id,
 
 	muhkuh_mainFrame_menuViewRepositoryPane,
 	muhkuh_mainFrame_menuViewPanicButton,

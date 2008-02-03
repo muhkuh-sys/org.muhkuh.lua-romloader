@@ -40,6 +40,7 @@
 #include "muhkuh_id.h"
 #include "muhkuh_plugin_manager.h"
 #include "muhkuh_repository_manager.h"
+#include "muhkuh_testTreeItemData.h"
 #include "muhkuh_wrap_xml.h"
 
 
@@ -89,6 +90,8 @@ public:
 	void OnTestTreeContextMenu(wxTreeEvent &event);
 	void OnTestTreeItemActivated(wxTreeEvent &event);
 	void OnTestTreeItemSelected(wxTreeEvent &event);
+
+	void OnWelcomeLinkClicked(wxHtmlLinkEvent &event);
 
 	// process the lua events
 	void OnLuaPrint(wxLuaEvent &event);
@@ -140,6 +143,8 @@ private:
 	bool scanFileXml(size_t sizRepositoryIdx, size_t sizTestIdx);
 
 	void updateRepositoryCombo(void);
+
+	bool addTestTree(testTreeItemData *ptTestTreeItem);
 
 	// main frame controls
 	wxAuiManager m_auiMgr;

@@ -28,7 +28,6 @@
 #include "muhkuh_lua_interface.h"
 #include "muhkuh_mainFrame.h"
 #include "muhkuh_configDialog.h"
-#include "muhkuh_testTreeItemData.h"
 #include "readFsFile.h"
 
 //-------------------------------------
@@ -88,6 +87,8 @@ BEGIN_EVENT_TABLE(muhkuh_mainFrame, wxFrame)
 	EVT_TREE_ITEM_ACTIVATED(muhkuh_mainFrame_TestTree_Ctrl,		muhkuh_mainFrame::OnTestTreeItemActivated)
 	EVT_TREE_ITEM_MENU(muhkuh_mainFrame_TestTree_Ctrl,		muhkuh_mainFrame::OnTestTreeContextMenu)
 	EVT_TREE_SEL_CHANGED(muhkuh_mainFrame_TestTree_Ctrl,		muhkuh_mainFrame::OnTestTreeItemSelected)
+
+	EVT_HTML_LINK_CLICKED(muhkuh_mainFrame_Welcome_id,		muhkuh_mainFrame::OnWelcomeLinkClicked)
 
 	EVT_LUA_PRINT(wxID_ANY,						muhkuh_mainFrame::OnLuaPrint)
 	EVT_LUA_ERROR(wxID_ANY,						muhkuh_mainFrame::OnLuaError)
@@ -182,6 +183,9 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	strMsg  = wxT("<html><body><h1>Welcome to ");
 	strMsg += strVersion;
 	strMsg += wxT("</h1>");
+	strMsg += wxT("<a href=\"mtd://abc/def/ghi#jkl\">testlink</a><br>");
+	strMsg += wxT("<a href=\"mtd:/abc/def/ghi#jkl\">testlink</a><br>");
+	strMsg += wxT("<a href=\"http://abc/def/ghi#jkl\">testlink</a><br>");
 	strMsg += wxT("</body></html>");
 	m_welcomeHtml->SetPage(strMsg);
 
@@ -313,7 +317,7 @@ void muhkuh_mainFrame::createControls(void)
 	m_auiMgr.AddPane(m_notebook, paneInfo);
 
 	// create the "welcome" html
-	m_welcomeHtml = new wxHtmlWindow(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER);
+	m_welcomeHtml = new wxHtmlWindow(this, muhkuh_mainFrame_Welcome_id, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER);
 	m_notebook->AddPage(m_welcomeHtml, wxT("Welcome"));
 
 	// create the test details list
@@ -1269,6 +1273,195 @@ void muhkuh_mainFrame::addAllTests(int iActiveRepositoryIdx)
 }
 
 
+bool muhkuh_mainFrame::addTestTree(testTreeItemData *ptTestTreeItem)
+{
+	wxString strTestPath;
+	wxString strPathElement;
+	size_t sizCnt, sizLen, sizPos;
+	wxTreeItemId itemId;
+	wxTreeItemId searchId;
+	wxTreeItemId prevId;
+	wxTreeItemIdValue searchCookie;
+	int iCmp;
+	wxArrayString aPathElems;
+	bool fIsFirst;
+	wxString strMsg;
+	bool fResult;
+
+
+	fResult = false;
+
+	// get the full test name
+	strTestPath = ptTestTreeItem->getTestLabel();
+	// cut the name into the path elements
+	sizCnt = 0;
+	sizLen = strTestPath.Length();
+	// does the string start with a slash?
+	if( strTestPath[0]==wxT('/') )
+	{
+		// yes -> ignore this slash
+		++sizCnt;
+	}
+	sizPos = sizCnt;
+	// loop over all path elements
+	while( sizCnt<sizLen )
+	{
+		// get the next path element
+		if( strTestPath[sizCnt]==wxT('/') )
+		{
+			if( sizPos<sizCnt )
+			{
+				// get the path element
+				aPathElems.Add(strTestPath.Mid(sizPos, sizCnt-sizPos));
+			}
+			// get start position for next path element
+			sizPos = sizCnt+1;
+		}
+		// next char
+		++sizCnt;
+	}
+	// is one element left?
+	if( sizPos>=sizLen )
+	{
+		// no, path ends with a slash
+		strMsg = wxT("The testname ") + strTestPath + wxT(" ends with a slash ('/'). This is only a path and does not point to a test.");
+		wxMessageBox(strMsg, wxT("Failed to add test"), wxICON_ERROR, this);
+	}
+	else
+	{
+		// add the file element
+		aPathElems.Add(strTestPath.Mid(sizPos, sizLen-sizPos));
+
+		// now create the complete path in the tree
+
+		// start at the root item
+		itemId = m_treeCtrl->GetRootItem();
+
+		// loop over all elements except the last one in the path
+		sizCnt = 0;
+		sizLen = aPathElems.Count() - 1;
+		while( sizCnt<sizLen )
+		{
+			// get the path element
+			strPathElement = aPathElems.Item(sizCnt);
+
+			// look for this element in the test tree
+			searchId = m_treeCtrl->GetFirstChild(itemId, searchCookie);
+			if( searchId.IsOk()==false )
+			{
+				// no items in this branch, just add the new item
+				searchId = m_treeCtrl->AppendItem(itemId, strPathElement, -1, -1, NULL);
+			}
+			else
+			{
+				fIsFirst = true;
+				do
+				{
+					iCmp = m_treeCtrl->GetItemText(searchId).Cmp(strPathElement);
+					if( iCmp==0 )
+					{
+						// a child with the requested name already exists
+						break;
+					}
+					else if( iCmp<0 )
+					{
+						// remember previous entry for the insert operation
+						prevId = searchId;
+						// move to next child
+						searchId = m_treeCtrl->GetNextChild(itemId, searchCookie);
+						// switch from append to insert operation
+						fIsFirst = false;
+					}
+					else
+					{
+						// create a new child if the item can't appear anymore because of the sort order
+						if( fIsFirst==true )
+						{
+							// append the new item before the fist one in this branch
+							searchId = m_treeCtrl->PrependItem(itemId, strPathElement, -1, -1, NULL);
+						}
+						else
+						{
+							// insert the new item before the current search position
+							searchId = m_treeCtrl->InsertItem(itemId, prevId, strPathElement, -1, -1, NULL);
+						}
+						// the child with the requested name was just created
+						break;
+					}
+				} while( searchId.IsOk()==true );
+			}
+
+			// the child is the new parent node
+			itemId = searchId;
+
+			// next path element
+			++sizCnt;
+		}
+
+		// ok, path created, now append the test item
+		strPathElement = aPathElems.Last();
+		// look for this element in the test tree
+		fIsFirst = true;
+		searchId = m_treeCtrl->GetFirstChild(itemId, searchCookie);
+		if( searchId.IsOk()==false )
+		{
+			// no items in this branch, just add the new item
+			searchId = m_treeCtrl->AppendItem(itemId, strPathElement, -1, -1, ptTestTreeItem);
+		}
+		else
+		{
+			do
+			{
+				iCmp = m_treeCtrl->GetItemText(searchId).Cmp(strPathElement);
+				if( iCmp==0 )
+				{
+					// a test with the requested name already exists
+					break;
+				}
+				else if( iCmp<0 )
+				{
+					// remember previous entry for the insert operation
+					prevId = searchId;
+					// move to next child
+					searchId = m_treeCtrl->GetNextChild(itemId, searchCookie);
+					// switch from append to insert operation
+					fIsFirst = false;
+				}
+				else
+				{
+					// create a new child if the item can't appear anymore because of the sort order
+					if( fIsFirst==true )
+					{
+						// append the new item before the fist one in this branch
+						searchId = m_treeCtrl->PrependItem(itemId, strPathElement, -1, -1, ptTestTreeItem);
+					}
+					else
+					{
+						// insert the new item before the current search position
+						searchId = m_treeCtrl->InsertItem(itemId, prevId, strPathElement, -1, -1, ptTestTreeItem);
+					}
+					// the child with the requested name was just created
+					break;
+				}
+			} while( searchId.IsOk()==true );
+
+			// check for error (element already exists)
+			if( iCmp==0 )
+			{
+				strMsg = wxT("The test ") + strTestPath + wxT(" already exists, skipping new instance!");
+				wxMessageBox(strMsg, wxT("Failed to add test"), wxICON_ERROR, this);
+			}
+			else
+			{
+				fResult = true;
+			}
+		}
+	}
+
+	return true;
+}
+
+
 bool muhkuh_mainFrame::scanFileXml(size_t sizRepositoryIdx, size_t sizTestIdx)
 {
 	wxString strXmlUrl;
@@ -1281,9 +1474,10 @@ bool muhkuh_mainFrame::scanFileXml(size_t sizRepositoryIdx, size_t sizTestIdx)
 	wxString strTestName;
 	wxString strHelpFile;
 	wxString strMsg;
-	wxTreeItemId rootId;
-	wxTreeItemId testId;
+	bool fResult;
 
+
+	fResult = false;
 
 	// get the url for the xml file
 	strXmlUrl = m_ptRepositoryManager->getTestlistXmlUrl(sizRepositoryIdx, sizTestIdx);
@@ -1294,41 +1488,41 @@ bool muhkuh_mainFrame::scanFileXml(size_t sizRepositoryIdx, size_t sizTestIdx)
 	if( ptFsFile==NULL )
 	{
 		wxLogError(wxT("could not read xml file '") + strXmlUrl + wxT("'"));
-		return false;
 	}
-
-	// ok, file exists. read all data into a string
-	ptInputStream = ptFsFile->GetStream();
-	// stream read, construct xml tree
-	ptWrapXml = new muhkuh_wrap_xml();
-	if( ptWrapXml==NULL )
+	else
 	{
-		return false;
+		// ok, file exists. read all data into a string
+		ptInputStream = ptFsFile->GetStream();
+		// stream read, construct xml tree
+		ptWrapXml = new muhkuh_wrap_xml();
+		if( ptWrapXml!=NULL )
+		{
+			if( ptWrapXml->initialize(ptInputStream, sizRepositoryIdx, sizTestIdx)==false )
+			{
+				wxLogError(wxT("Failed to read the xml file for testdescription ") + strXmlUrl);
+			}
+			else
+			{
+				// get the main test name
+				strTestName = ptWrapXml->testDescription_getName();
+				// TODO: get the help file name
+				strHelpFile.Empty();
+				// create the tree item object
+				ptItemData = new testTreeItemData(strTestName, strHelpFile, ptWrapXml);
+				if( addTestTree(ptItemData)!=true )
+				{
+					delete ptItemData;
+				}
+				else
+				{
+					fResult = true;
+				}
+			}
+		}
+		delete ptFsFile;
 	}
 
-	if( ptWrapXml->initialize(ptInputStream, sizRepositoryIdx, sizTestIdx)==false )
-	{
-		wxLogError(wxT("Failed to read the xml file for testdescription ") + strXmlUrl);
-		return false;
-	}
-
-	// get the main test name
-	strTestName = ptWrapXml->testDescription_getName();
-	// TODO: get the help file name
-	strHelpFile.Empty();
-	// create the tree item object
-	ptItemData = new testTreeItemData(strTestName, strHelpFile, ptWrapXml);
-
-	// get the root item, here the test is appended
-	rootId = m_treeCtrl->GetRootItem();
-	// add the test item, this is always the first item
-	testId = m_treeCtrl->AppendItem(rootId, ptWrapXml->testDescription_getName(), -1, -1, ptItemData);
-//	// set 'opened' icon
-//	SetItemImage(testId, muhkuh_testTreeIcon_TestGroupOpened, wxTreeItemIcon_Expanded);
-
-	delete ptFsFile;
-
-	return true;
+	return fResult;
 }
 
 
@@ -1407,6 +1601,24 @@ void muhkuh_mainFrame::OnLuaError(wxLuaEvent &event)
 	wxLogError( event.GetString() );
 }
 
+
+void muhkuh_mainFrame::OnWelcomeLinkClicked(wxHtmlLinkEvent &event)
+{
+	wxURI tUri;
+
+
+	tUri.Create(event.GetLinkInfo().GetHref());
+	if( tUri.HasScheme()==true && tUri.GetScheme().Cmp(wxT("mtd"))==0 )
+	{
+		wxLogMessage(tUri.GetServer());
+		wxLogMessage(tUri.GetPath());
+		wxLogMessage(tUri.GetFragment());
+	}
+	else
+	{
+		event.Skip();
+	}
+}
 
 void muhkuh_mainFrame::luaTestHasFinished(void)
 {
