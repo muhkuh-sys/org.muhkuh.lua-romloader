@@ -260,9 +260,9 @@
 		</headers>
 
 		<if cond="TARGETING_WIN32=='1'">
-			<include>$(SRCDIR)/plugins/romloader/openocd/win/include</include>
-			<lib-path>$(SRCDIR)/plugins/romloader/openocd/win/lib/msvc</lib-path>
-			<sys-lib>libftdi</sys-lib>
+			<include>$(SRCDIR)/plugins/romloader/openocd/openocd/win/include</include>
+			<lib-path>$(SRCDIR)/plugins/romloader/openocd/openocd/win/lib/msvc</lib-path>
+			<sys-lib>ftd2xx</sys-lib>
 		</if>
 		<if cond="TARGETING_UNIX=='1'">
 			<sys-lib>ftdi</sys-lib>
