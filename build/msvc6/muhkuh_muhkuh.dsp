@@ -66,8 +66,8 @@ LINK32=link.exe
 # PROP Output_Dir "..\..\bin"
 # PROP Intermediate_Dir "vcmswd_dll\muhkuh"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /FD /MDd /W1 /GR /EHsc /I "$(WXWIN)\lib\vc_dll\mswd" /I "$(WXWIN)\include" /Od /I "..\..\modules" /I ".\..\.." /I "..\..\..\modules\lua\include" /I "..\..\application" /Zi /Gm /GZ /Fd..\..\bin\muhkuh.pdb /D "WIN32" /D "WXUSINGDLL" /D "__WXDEBUG__" /D "__WXMSW__" /D "_WINDOWS" /D "_DEBUG" /c
-# ADD CPP /nologo /FD /MDd /W1 /GR /EHsc /I "$(WXWIN)\lib\vc_dll\mswd" /I "$(WXWIN)\include" /Od /I "..\..\modules" /I ".\..\.." /I "..\..\..\modules\lua\include" /I "..\..\application" /Zi /Gm /GZ /Fd..\..\bin\muhkuh.pdb /D "WIN32" /D "WXUSINGDLL" /D "__WXDEBUG__" /D "__WXMSW__" /D "_WINDOWS" /D "_DEBUG" /c
+# ADD BASE CPP /nologo /FD /MDd /W1 /GR /EHsc /I "$(WXWIN)\lib\vc_dll\mswd" /I "$(WXWIN)\include" /Od /Gm /I "..\..\modules" /I ".\..\.." /I "..\..\..\modules\lua\include" /I "..\..\application" /Zi /Fd..\..\bin\muhkuh.pdb /D "WIN32" /D "WXUSINGDLL" /D "__WXDEBUG__" /D "__WXMSW__" /D "_WINDOWS" /D "_DEBUG" /c
+# ADD CPP /nologo /FD /MDd /W1 /GR /EHsc /I "$(WXWIN)\lib\vc_dll\mswd" /I "$(WXWIN)\include" /Od /Gm /I "..\..\modules" /I ".\..\.." /I "..\..\..\modules\lua\include" /I "..\..\application" /Zi /Fd..\..\bin\muhkuh.pdb /D "WIN32" /D "WXUSINGDLL" /D "__WXDEBUG__" /D "__WXMSW__" /D "_WINDOWS" /D "_DEBUG" /c
 # ADD BASE MTL /nologo /D "WIN32" /D "WXUSINGDLL" /D "__WXDEBUG__" /D "__WXMSW__" /D "_WINDOWS" /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "WIN32" /D "WXUSINGDLL" /D "__WXDEBUG__" /D "__WXMSW__" /D "_WINDOWS" /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "WXUSINGDLL" /d "__WXDEBUG__" /d "__WXMSW__" /i "$(WXWIN)\lib\vc_dll\mswd" /i "$(WXWIN)\include" /i "..\..\modules" /i ".\..\.." /i "..\..\..\modules\lua\include" /d "_WINDOWS" /i "..\..\application" /d _DEBUG
@@ -90,79 +90,79 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=../..\plugins\_luaif\bit_lua.cpp
+SOURCE=..\..\plugins\_luaif\bit_lua.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\plugins\_luaif\bit_lua_bind.cpp
+SOURCE=..\..\plugins\_luaif\bit_lua_bind.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\application\bit_lua_interface.cpp
+SOURCE=..\..\application\bit_lua_interface.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\application\growbuffer.cpp
+SOURCE=..\..\application\growbuffer.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\application\license.cpp
+SOURCE=..\..\application\license.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\application\muhkuh.rc
+SOURCE=..\..\application\muhkuh.rc
 # End Source File
 # Begin Source File
 
-SOURCE=../..\application\muhkuh_aboutDialog.cpp
+SOURCE=..\..\application\muhkuh_aboutDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\application\muhkuh_app.cpp
+SOURCE=..\..\application\muhkuh_app.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\application\muhkuh_configDialog.cpp
+SOURCE=..\..\application\muhkuh_configDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\application\muhkuh_config_reposEntryDialog.cpp
+SOURCE=..\..\application\muhkuh_config_reposEntryDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\plugins\_luaif\muhkuh_lua.cpp
+SOURCE=..\..\plugins\_luaif\muhkuh_lua.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\plugins\_luaif\muhkuh_lua_bind.cpp
+SOURCE=..\..\plugins\_luaif\muhkuh_lua_bind.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\application\muhkuh_mainFrame.cpp
+SOURCE=..\..\application\muhkuh_mainFrame.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\application\muhkuh_plugin.cpp
+SOURCE=..\..\application\muhkuh_plugin.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\application\muhkuh_plugin_manager.cpp
+SOURCE=..\..\application\muhkuh_plugin_manager.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\application\muhkuh_repository.cpp
+SOURCE=..\..\application\muhkuh_repository.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\application\muhkuh_repository_manager.cpp
+SOURCE=..\..\application\muhkuh_repository_manager.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\application\muhkuh_wrap_xml.cpp
+SOURCE=..\..\application\muhkuh_wrap_xml.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\application\readFsFile.cpp
+SOURCE=..\..\application\readFsFile.cpp
 # End Source File
 # End Group
 # End Target

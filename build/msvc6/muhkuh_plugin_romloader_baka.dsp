@@ -66,8 +66,8 @@ LINK32=link.exe
 # PROP Output_Dir "..\..\bin"
 # PROP Intermediate_Dir "vcmswd_dll\plugin_romloader_baka"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /FD /MDd /W1 /GR /EHsc /I "$(WXWIN)\lib\vc_dll\mswd" /I "$(WXWIN)\include" /Od /I "..\..\modules" /I ".\..\.." /I "..\..\..\modules\lua\include" /Zi /Gm /GZ /Fd..\..\bin\baka.pdb /I "..\..\plugins\romloader\baka" /D "WIN32" /D "_USRDLL" /D "DLL_EXPORTS" /D "WXUSINGDLL" /D "__WXDEBUG__" /D "__WXMSW__" /D "_DEBUG" /c
-# ADD CPP /nologo /FD /MDd /W1 /GR /EHsc /I "$(WXWIN)\lib\vc_dll\mswd" /I "$(WXWIN)\include" /Od /I "..\..\modules" /I ".\..\.." /I "..\..\..\modules\lua\include" /Zi /Gm /GZ /Fd..\..\bin\baka.pdb /I "..\..\plugins\romloader\baka" /D "WIN32" /D "_USRDLL" /D "DLL_EXPORTS" /D "WXUSINGDLL" /D "__WXDEBUG__" /D "__WXMSW__" /D "_DEBUG" /c
+# ADD BASE CPP /nologo /FD /MDd /W1 /GR /EHsc /I "$(WXWIN)\lib\vc_dll\mswd" /I "$(WXWIN)\include" /Od /Gm /I "..\..\modules" /I ".\..\.." /I "..\..\..\modules\lua\include" /Zi /Fd..\..\bin\baka.pdb /I "..\..\plugins\romloader\baka" /D "WIN32" /D "_USRDLL" /D "DLL_EXPORTS" /D "WXUSINGDLL" /D "__WXDEBUG__" /D "__WXMSW__" /D "_DEBUG" /c
+# ADD CPP /nologo /FD /MDd /W1 /GR /EHsc /I "$(WXWIN)\lib\vc_dll\mswd" /I "$(WXWIN)\include" /Od /Gm /I "..\..\modules" /I ".\..\.." /I "..\..\..\modules\lua\include" /Zi /Fd..\..\bin\baka.pdb /I "..\..\plugins\romloader\baka" /D "WIN32" /D "_USRDLL" /D "DLL_EXPORTS" /D "WXUSINGDLL" /D "__WXDEBUG__" /D "__WXMSW__" /D "_DEBUG" /c
 # ADD BASE MTL /nologo /D "WIN32" /D "_USRDLL" /D "DLL_EXPORTS" /D "WXUSINGDLL" /D "__WXDEBUG__" /D "__WXMSW__" /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "WIN32" /D "_USRDLL" /D "DLL_EXPORTS" /D "WXUSINGDLL" /D "__WXDEBUG__" /D "__WXMSW__" /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "WXUSINGDLL" /d "__WXDEBUG__" /d "__WXMSW__" /i "$(WXWIN)\lib\vc_dll\mswd" /i "$(WXWIN)\include" /i "..\..\modules" /i ".\..\.." /i "..\..\..\modules\lua\include" /d "_DEBUG" /i ..\..\plugins\romloader\baka
@@ -90,19 +90,19 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=../..\plugins\romloader\romloader.cpp
+SOURCE=..\..\plugins\romloader\romloader.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\plugins\romloader\baka\_luaif\romloader_baka_lua.cpp
+SOURCE=..\..\plugins\romloader\baka\_luaif\romloader_baka_lua.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\plugins\romloader\baka\_luaif\romloader_baka_lua_bind.cpp
+SOURCE=..\..\plugins\romloader\baka\_luaif\romloader_baka_lua_bind.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=../..\plugins\romloader\baka\romloader_baka_main.cpp
+SOURCE=..\..\plugins\romloader\baka\romloader_baka_main.cpp
 # End Source File
 # End Group
 # End Target
