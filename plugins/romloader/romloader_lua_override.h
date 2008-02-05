@@ -18,15 +18,14 @@ static int LUACALL wxLua_romloader_read_image(lua_State *L)
     else
     {
         // no callback function provided
-        wxlState.wxlua_Error(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
-                                        4, wxlState.lua_TypeNameIndex(4).c_str()));
+        wxlua_argerror(L, 4, wxT("a 'function'"));
     }
     // unsigned long ulSize
     unsigned long ulSize = (long)wxlua_getnumbertype(L, 3);
     // unsigned long ulNetxAddress
     unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
     // get this
-    romloader * self = (romloader *)wxlState.GetUserDataType(1, s_wxluatag_romloader);
+    romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call read_image
     returns = (self->read_image(ulNetxAddress, ulSize, L, iLuaCallbackTag, (void*)vplCallbackUserData));
 
@@ -59,8 +58,7 @@ static int LUACALL wxLua_romloader_write_image(lua_State *L)
     else
     {
         // no callback function provided
-        wxlState.wxlua_Error(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
-                                        4, wxlState.lua_TypeNameIndex(4).c_str()));
+        wxlua_argerror(L, 4, wxT("a 'function'"));
     }
     // wxString strData
     wxString strData;
@@ -78,7 +76,7 @@ static int LUACALL wxLua_romloader_write_image(lua_State *L)
     // unsigned long ulNetxAddress
     unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
     // get this
-    romloader * self = (romloader *)wxlState.GetUserDataType(1, s_wxluatag_romloader);
+    romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call write_image
     self->write_image(ulNetxAddress, strData, L, iLuaCallbackTag, (void*)vplCallbackUserData);
 
@@ -94,7 +92,6 @@ static int LUACALL wxLua_romloader_write_image(lua_State *L)
 static int LUACALL wxLua_romloader_call(lua_State *L)
 {
     int iLuaCallbackTag;
-    wxLuaState wxlState(L);
     // voidptr_long vplCallbackUserData
     long vplCallbackUserData = (long)wxlua_getnumbertype(L, 5);
     // LuaFunction fnCallback
@@ -107,18 +104,19 @@ static int LUACALL wxLua_romloader_call(lua_State *L)
     }
     else
     {
-        // no callback function provided
-        wxlState.wxlua_Error(wxString::Format(_("wxLua: Expected lua function(long item1, long item2, long data) for parameter %d, but got '%s'."),
-                                        4, wxlState.lua_TypeNameIndex(4).c_str()));
+        wxlua_argerror(L, 4, wxT("a 'function'"));
     }
     // unsigned long ulParameterR0
     unsigned long ulParameterR0 = (long)wxlua_getnumbertype(L, 3);
     // unsigned long ulNetxAddress
     unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
     // get this
-    romloader * self = (romloader *)wxlState.GetUserDataType(1, s_wxluatag_romloader);
+    romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call call
     self->call(ulNetxAddress, ulParameterR0, L, iLuaCallbackTag, (void*)vplCallbackUserData);
+
+    // remove ref to function
+    luaL_unref(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
 
     return 0;
 }

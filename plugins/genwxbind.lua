@@ -17,7 +17,7 @@
 -- Globals
 -- ---------------------------------------------------------------------------
 
-WXLUA_BINDING_VERSION = 18 -- Used to verify that the bindings are updated
+WXLUA_BINDING_VERSION = 23 -- Used to verify that the bindings are updated
                            -- This must match modules/wxlua/include/wxldefs.h
                            -- otherwise a compile time error will be generated.
 
@@ -43,7 +43,7 @@ eventBindingTable          = {} -- table[i] = { Map, Condition, ... }
 functionBindingTable       = {} -- table[i] = { Map, Condition, Method, ... }
 classBindingTable          = {}
 enumClassBindingTable      = {} -- table[classname][i] = { Map, Condition, ... }
-classTagBindingTable       = {}
+classTypeBindingTable      = {}
 classIncludeBindingTable   = {}
 encapsulationBindingTable  = {}
 
@@ -84,12 +84,15 @@ function CheckRules()
 
     assert(type(hook_lua_namespace) == "string", "Rules file ERROR: 'hook_lua_namespace' is not a string")
     assert(type(hook_cpp_namespace) == "string", "Rules file ERROR: 'hook_cpp_namespace' is not a string")
+
+    assert(wxLuaBinding_PreRegister == nil, "Rules file ERROR: 'wxLuaBinding_PreRegister' is deprecated")
+    assert(wxLuaBinding_PostRegister == nil, "Rules file ERROR: 'wxLuaBinding_PreRegister' is deprecated")
 end
 
 -- ---------------------------------------------------------------------------
 -- Replacement for pairs(table) that sorts them alphabetically, returns iterator
 --  Code from "Programming in Lua" by Roberto Ierusalimschy
---  the input is a lua table and optional comp function (see table.sort)
+--  the input is a Lua table and optional comp function (see table.sort)
 -- ---------------------------------------------------------------------------
 function pairs_sort(atable, comp_func)
     local a = {}
@@ -191,7 +194,7 @@ function AllocDataType(name, value_type, is_number, abstract)
         ValueType = value_type, -- "number", "enum", "class", "special" (special handling)
                                 -- determines how to handle the data type
         BaseClass = nil,        -- the BaseClass of this, if this is a class
-        IsNumber  = is_number,  -- can this data type be stored as a double (lua's number type)
+        IsNumber  = is_number,  -- can this data type be stored as a double (Lua's number type)
         Abstract  = abstract,
         Condition = nil,        -- conditions for this data type, eg. wxLUA_USE_xxx
         ["%encapsulate"] = nil, -- Non wxObject derived class
@@ -249,7 +252,7 @@ function InitDataTypes()
     AllocDataType("wxFileOffset",       "number", true)
     --AllocDataType("wxStructStat",       "number", true)
 
-    -- lua data types
+    -- Lua data types
     AllocDataType("lua_State",          "number", false)
 
     -- win32 data types
@@ -275,8 +278,8 @@ function InitDataTypes()
     dataTypeAttribTable["unsigned"] = true
     dataTypeAttribTable["const"]    = true
 
-    dataTypeAttribTable["%gc"]     = true -- this object will be gc by lua
-    dataTypeAttribTable["%ungc"]   = true -- this object won't be gc by lua
+    dataTypeAttribTable["%gc"]     = true -- this object will be gc by Lua
+    dataTypeAttribTable["%ungc"]   = true -- this object won't be gc by Lua
 
     -- attributes that can precede a function (must set equal to true)
     functionAttribTable["static"]  = true
@@ -501,26 +504,28 @@ end
 --   the table may contain any number of \n per index
 --   returns true for a match or false if not
 -- ---------------------------------------------------------------------------
-function FileDataIsTableData(filename, fileData)
+function FileDataIsStringData(filename, strData)
     local file_handle = io.open(filename)
     if not file_handle then return false end -- ok if it doesn't exist
 
     local f = file_handle:read("*a")
-    local is_same = (f == table.concat(fileData))
+    local is_same = (f == strData)
     io.close(file_handle)
     return is_same
 end
 
 -- ---------------------------------------------------------------------------
 -- Write the contents of the table fileData (indexes 1.. are line numbers)
---  to the filename, but only write to the file if FileDataIsTableData returns
+--  to the filename, but only write to the file if FileDataIsStringData returns
 --  false. If overwrite_always is true then always overwrite the file.
 --  returns true if the file was overwritten
 -- ---------------------------------------------------------------------------
 function WriteTableToFile(filename, fileData, overwrite_always)
     assert(filename and fileData, "Invalid filename or fileData in WriteTableToFile")
 
-    if (not overwrite_always) and FileDataIsTableData(filename, fileData) then
+    local strData = table.concat(fileData)
+
+    if (not overwrite_always) and FileDataIsStringData(filename, strData) then
         print("No changes to file : '"..filename.."'")
         return false
     end
@@ -533,7 +538,7 @@ function WriteTableToFile(filename, fileData, overwrite_always)
         return
     end
 
-    outfile:write(table.concat(fileData))
+    outfile:write(strData)
 
     outfile:flush()
     outfile:close()
@@ -574,9 +579,9 @@ function FindOrCreateCondition(condition)
         print("WARNING: found wxcompat_XXX, did you forget the leading '%'? '"..condition.."'")
 
     elseif string.find(condition, "wxLUA_USE_", 1, 1) then
-        print("WARNING: unknown wxLUA_USE_XXX tag, maybe a missing condition? '"..condition.."'")
+        print("WARNING: unknown wxLUA_USE_XXX condition? '"..condition.."'")
     elseif string.find(condition, "wxUSE_", 1, 1) then
-        print("WARNING: unknown wxUSE_XXX tag, maybe a missing condition? '"..condition.."'")
+        print("WARNING: unknown wxUSE_XXX condition? '"..condition.."'")
 
     elseif string.find(condition, "%wxchkver2", 1, 1) then
         assert(false, "ERROR: %wxchkverXYZ has been replaced by %wxchkver_X_Y_Z, please update your bindings.")
@@ -606,7 +611,7 @@ function FixCondition(condition)
 end
 
 -- ---------------------------------------------------------------------------
--- Build condition string using condition stack (number indexed lua table)
+-- Build condition string using condition stack (number indexed Lua table)
 -- ---------------------------------------------------------------------------
 function BuildCondition(conditionStack)
     local condition = nil
@@ -1456,6 +1461,9 @@ end
 function WriteWrapperFiles(interfaceList)
     local time1 = os.time()
 
+    local monolithicFileData = {}
+    local updated_files = 0
+
     -- generatelanguage binding, binding is stored in objectList
     for i = 1, #interfaceList do
         local interface = interfaceList[i]
@@ -1465,25 +1473,51 @@ function WriteWrapperFiles(interfaceList)
         GenerateLuaLanguageBinding(interface)
 
         -- create c/c++ file
-        local fileData = GenerateBindingFileTable(interface)
-        WriteTableToFile(interface.CPPFileName, fileData, false)
+        local fileData = {}
+        local add_includes = true
+        if output_single_cpp_binding_file then
+            fileData = monolithicFileData
+            add_includes = (i == 1)
+        end
+
+        fileData = GenerateBindingFileTable(interface, fileData, add_includes)
+
+        if output_single_cpp_binding_file then
+            monolithicFileData[#monolithicFileData+1] = "\n\n"
+        else
+            local written = WriteTableToFile(interface.CPPFileName, fileData, false)
+            if written then
+                updated_files = updated_files + 1
+            end
+        end
     end
 
     local fileData = GenerateHookHeaderFileTable()
-    WriteTableToFile(GetCPPHeaderFileName(hook_cpp_header_filename), fileData, false)
+    local written = WriteTableToFile(GetCPPHeaderFileName(hook_cpp_header_filename), fileData, false)
+    if written then
+        updated_files = updated_files + 1
+    end
 
     local fileData = {} -- reset to empty table
-    fileData = GenerateHookCppFileHeader(fileData)
+    if output_single_cpp_binding_file then
+        fileData = monolithicFileData
+    end
+
+    fileData = GenerateHookCppFileHeader(fileData, GetCPPFileName(hook_cpp_binding_filename), not output_single_cpp_binding_file)
     table.insert(fileData, (hook_cpp_binding_source_includes or "").."\n")
     fileData = GenerateHookEventFileTable(fileData)
     fileData = GenerateHookDefineFileTable(fileData)
     fileData = GenerateHookObjectFileTable(fileData)
     fileData = GenerateHookCFunctionFileTable(fileData)
     fileData = GenerateHookClassFileTable(fileData)
-    WriteTableToFile(GetCPPFileName(hook_cpp_binding_filename), fileData, false)
+    written = WriteTableToFile(GetCPPFileName(hook_cpp_binding_filename), fileData, false)
+    if written then
+        updated_files = updated_files + 1
+    end
 
     local time2 = os.time()
     --print("Timing: GenerateLuaLanguageBinding and write files "..os.difftime(time2, time1).." seconds.")
+    return updated_files
 end
 
 function AllocParseObject(obj_type)
@@ -2238,6 +2272,9 @@ function ParseData(interfaceData)
                                 lineState.Action = "action_member"
                                 lineState.ActionMandatory = true
 
+                            elseif tag == "static" then
+                                lineState.IsStaticFunction = true
+
                             elseif IsDelimiter(tag) or functionAttribTable[tag] then
                                 print("ERROR: Expected Member Name, got Tag='"..tag.."'. "..LineTableErrString(lineTable))
                             else
@@ -2631,6 +2668,26 @@ function MakeImpExpData(data_type)
 end
 
 -- ---------------------------------------------------------------------------
+-- Remove the code line wxLuaState wxlState(L); if it won't be used.
+-- ---------------------------------------------------------------------------
+
+function RemovewxLuaStateIfNotUsed(codeList)
+    -- remove the wxLuaState if we don't use it
+    local needs_wxluastate = -1
+    for i = 1, #codeList do
+        if string.find(codeList[i], "wxLuaState wxl", 1, 1) then
+            needs_wxluastate = i
+        elseif string.find(codeList[i], "wxlState", 1, 1) then
+            needs_wxluastate = -1
+            break
+        end
+    end
+    if (needs_wxluastate > 0) then
+        table.remove(codeList, needs_wxluastate)
+    end
+end
+
+-- ---------------------------------------------------------------------------
 -- Create Language Binding - This generates c-binding to Lua interpreter
 -- ---------------------------------------------------------------------------
 function GenerateLuaLanguageBinding(interface)
@@ -2671,6 +2728,11 @@ function GenerateLuaLanguageBinding(interface)
                 Condition      = encapcondition
             }
 
+            if (parseObject.Name == "wxGridCellWorker") or (parseObject.Name == "wxGridCellEditor") or
+               (parseObject.Name == "wxGridCellAttr") then
+                encapsulationBinding.Implementation = "wxLUA_IMPLEMENT_wxGridCellWorker_ENCAPSULATION("..parseObject.Name..", "..MakeVar(parseObject.Name)..")\n"
+            end
+
             if not encapsulationBindingTable[encapcondition] then
                 encapsulationBindingTable[encapcondition] = {}
             end
@@ -2694,6 +2756,13 @@ function GenerateLuaLanguageBinding(interface)
                 if member["%rename"] then
                     memberGetFunc = "Get"..member["%rename"]
                     memberSetFunc = "Set"..member["%rename"]
+                end
+
+                local funcType = "WXLUAMETHOD_METHOD"
+                local propType = ""
+                if member.IsStaticFunction then
+                    funcType = "WXLUAMETHOD_METHOD|WXLUAMETHOD_STATIC"
+                    propType = "|WXLUAMETHOD_STATIC"
                 end
 
                 local memberPtr = member.DataTypePointer[1]
@@ -2725,45 +2794,52 @@ function GenerateLuaLanguageBinding(interface)
                 local funcName = "wxLua_"..MakeVar(parseObject.Name).."_"..memberGetFunc
                 CommentBindingTable(codeList, "// "..interface.lineData[member.LineNumber].LineText.."\n")
                 table.insert(codeList, "static int LUACALL "..funcName.."(lua_State *L)\n{\n")
-                table.insert(codeList, "    wxLuaState wxlState(L);\n")
-                CommentBindingTable(codeList, "    // get this\n")
-                table.insert(codeList, "    "..parseObject.Name.." *self = ("..parseObject.Name.." *) wxlState.GetUserDataType(1, s_wxluatag_"..MakeClassVar(parseObject.Name)..");\n")
-                overload_argList = "&s_wxluatag_"..MakeClassVar(parseObject.Name)..", "..overload_argList
+
+                local self_name = "self->"
+                if member.IsStaticFunction then
+                    self_name = parseObject.Name.."::"
+                else
+                    CommentBindingTable(codeList, "    // get this\n")
+                    table.insert(codeList, "    "..parseObject.Name.." *self = ("..parseObject.Name.." *)wxluaT_getuserdatatype(L, 1, wxluatype_"..MakeClassVar(parseObject.Name)..");\n")
+                    overload_argList = "&wxluatype_"..MakeClassVar(parseObject.Name)..", "..overload_argList
+                end
 
                 if memberType == "wxString" then
                     CommentBindingTable(codeList, "    // push the result string\n")
-                    table.insert(codeList, "    wxlState.lua_PushString(self->"..member.Name..");\n")
+                    table.insert(codeList, "    wxlua_pushwxString(L, "..self_name..member.Name..");\n")
                 elseif not numeric and (not memberPtr or (memberPtr == "&")) then
                     CommentBindingTable(codeList, "    // push the result datatype\n")
 
 --                    if string.find(member.Name, "::") then
---                        table.insert(codeList, "    wxlState.PushUserDataType(s_wxluatag_"..MakeClassVar(memberType)..", "..member.Name..");\n")
+--                        table.insert(codeList, "    wxluaT_pushuserdatatype(L, "..member.Name..", wxluatype_"..MakeClassVar(memberType)..");\n")
 --                    else
-                        table.insert(codeList, "    wxlState.PushUserDataType(s_wxluatag_"..MakeClassVar(memberType)..", &self->"..member.Name..");\n")
+                        table.insert(codeList, "    wxluaT_pushuserdatatype(L, &"..self_name..member.Name..", wxluatype_"..MakeClassVar(memberType)..");\n")
 --                    end
                 elseif not numeric then
                     CommentBindingTable(codeList, "    // push the result datatype\n")
-                    table.insert(codeList, "    wxlState.PushUserDataType(s_wxluatag_"..MakeClassVar(memberType)..", self->"..member.Name..");\n")
+                    table.insert(codeList, "    wxluaT_pushuserdatatype(L, "..self_name..member.Name..", wxluatype_"..MakeClassVar(memberType)..");\n")
 
                 elseif (memberType == "BOOL") or (memberType == "bool") then
                     CommentBindingTable(codeList, "    // push the result flag\n")
-                    table.insert(codeList, "    lua_pushboolean(L, self->"..member.Name..");\n")
+                    table.insert(codeList, "    lua_pushboolean(L, "..self_name..member.Name..");\n")
 
                 else
                     CommentBindingTable(codeList, "    // push the result number\n")
-                    table.insert(codeList, "    lua_pushnumber(L, self->"..member.Name..");\n")
+                    table.insert(codeList, "    lua_pushnumber(L, "..self_name..member.Name..");\n")
                 end
 
                 CommentBindingTable(codeList, "    // return the number of values\n")
                 table.insert(codeList, "    return 1;\n")
                 table.insert(codeList, "}\n")
 
-                local overload_argListName = "s_wxluatagArray_"..funcName
+                local overload_argListName = "s_wxluatypeArray_"..funcName
                 if overload_argList == "" then
-                    overload_argListName = "s_wxluaargArray_None"
+                    overload_argListName = "g_wxluaargtypeArray_None"
                 else
                     overload_argList = "{ "..overload_argList.."NULL }"
                 end
+
+                RemovewxLuaStateIfNotUsed(codeList)
 
                 local funcMapName = "s_wxluafunc_"..funcName
 
@@ -2775,10 +2851,10 @@ function GenerateLuaLanguageBinding(interface)
                     Method        = codeList,
                     ArgArray      = overload_argList,
                     ArgArrayName  = overload_argListName,
-                    FuncType      = "WXLUAMETHOD_METHOD",
-                    FuncMap       = "{ "..funcName..", WXLUAMETHOD_METHOD, 1, 1, "..overload_argListName.." }",
+                    FuncType      = funcType,
+                    FuncMap       = "{ "..funcName..", "..funcType..", 1, 1, "..overload_argListName.." }",
                     FuncMapName   = funcMapName,
-                    Map           = "    { \""..memberGetFunc.."\", WXLUAMETHOD_METHOD, "..funcMapName..", 1, NULL },\n",
+                    Map           = "    { \""..memberGetFunc.."\", "..funcType..", "..funcMapName..", 1, NULL },\n",
                     Condition     = membercondition
                 }
 
@@ -2786,8 +2862,8 @@ function GenerateLuaLanguageBinding(interface)
                 local propertyBinding =
                 {
                     LuaName   = member.Name,
-                    FuncType  = "WXLUAMETHOD_GETPROP",
-                    Map       = "    { \""..member.Name.."\", WXLUAMETHOD_GETPROP, "..funcMapName..", 1, NULL },\n",
+                    FuncType  = "WXLUAMETHOD_GETPROP"..propType,
+                    Map       = "    { \""..member.Name.."\", WXLUAMETHOD_GETPROP"..propType..", "..funcMapName..", 1, NULL },\n",
                     Condition = membercondition
                 }
 
@@ -2813,54 +2889,65 @@ function GenerateLuaLanguageBinding(interface)
                 local funcName = "wxLua_"..MakeVar(parseObject.Name).."_"..memberSetFunc
                 CommentBindingTable(codeList, "// "..interface.lineData[member.LineNumber].LineText.."\n")
                 table.insert(codeList, "static int LUACALL "..funcName.."(lua_State *L)\n{\n")
-                table.insert(codeList, "    wxLuaState wxlState(L);\n")
+
+                local stack_idx = iff(member.IsStaticFunction, "1", "2")
 
                 if memberType == "wxString" then
-                    overload_argList = overload_argList.."&s_wxluaarg_String, "
+                    overload_argList = overload_argList.."&wxluatype_TSTRING, "
                     CommentBindingTable(codeList, "    // get the string value\n")
-                    table.insert(codeList, "    wxString val = wxlState.GetwxStringType(2);\n")
+                    table.insert(codeList, "    wxString val = wxlua_getwxStringtype(L, "..stack_idx..");\n")
                 elseif not numeric and (not memberPtr or (memberPtr == "&"))  then
-                    overload_argList = overload_argList.."&s_wxluatag_"..MakeClassVar(memberType)..", "
+                    overload_argList = overload_argList.."&wxluatype_"..MakeClassVar(memberType)..", "
                     CommentBindingTable(codeList, "    // get the data type value\n")
-                    table.insert(codeList, "    "..memberType.."* val = ("..memberType.."*)wxlState.GetUserDataType(2, s_wxluatag_"..MakeClassVar(memberType)..");\n")
+                    table.insert(codeList, "    "..memberType.."* val = ("..memberType.."*)wxluaT_getuserdatatype(L, "..stack_idx..", wxluatype_"..MakeClassVar(memberType)..");\n")
                 elseif not numeric then
-                    overload_argList = overload_argList.."&s_wxluatag_"..MakeClassVar(memberType)..", "
+                    overload_argList = overload_argList.."&wxluatype_"..MakeClassVar(memberType)..", "
                     CommentBindingTable(codeList, "    // get the data type value\n")
-                    table.insert(codeList, "    "..memberType.."* val = ("..memberType.."*)wxlState.GetUserDataType(2, s_wxluatag_"..MakeClassVar(memberType)..");\n")
+                    table.insert(codeList, "    "..memberType.."* val = ("..memberType.."*)wxluaT_getuserdatatype(L, "..stack_idx..", wxluatype_"..MakeClassVar(memberType)..");\n")
                 elseif (memberType == "BOOL") or (memberType == "bool") then
-                    overload_argList = overload_argList.."&s_wxluaarg_Boolean, "
+                    overload_argList = overload_argList.."&wxluatype_TBOOLEAN, "
                     CommentBindingTable(codeList, "    // get the boolean value\n")
-                    table.insert(codeList, "    bool val = wxlua_getbooleantype(L, 2);\n")
+                    table.insert(codeList, "    bool val = wxlua_getbooleantype(L, "..stack_idx..");\n")
                 elseif IsDataTypeEnum(memberType) then
-                    overload_argList = overload_argList.."&s_wxluaarg_Integer, "
+                    overload_argList = overload_argList.."&wxluatype_TINTEGER, "
                     CommentBindingTable(codeList, "    // get the number value\n")
-                    table.insert(codeList, "    "..memberType.." val = ("..memberType..")wxlua_getintegertype(L, 2);\n")
+                    table.insert(codeList, "    "..memberType.." val = ("..memberType..")wxlua_getintegertype(L, "..stack_idx..");\n")
                 else
-                    overload_argList = overload_argList.."&s_wxluaarg_Number, "
+                    overload_argList = overload_argList.."&wxluatype_TNUMBER, "
                     CommentBindingTable(codeList, "    // get the number value\n")
-                    table.insert(codeList, "    "..memberType.." val = ("..memberType..")wxlua_getnumbertype(L, 2);\n")
+                    table.insert(codeList, "    "..memberType.." val = ("..memberType..")wxlua_getnumbertype(L, "..stack_idx..");\n")
                 end
 
-                CommentBindingTable(codeList, "    // get this\n")
-                table.insert(codeList, "    "..parseObject.Name.." *self = ("..parseObject.Name.." *)wxlState.GetUserDataType(1, s_wxluatag_"..MakeClassVar(parseObject.Name)..");\n")
-                overload_argList = "&s_wxluatag_"..MakeClassVar(parseObject.Name)..", "..overload_argList
-
-                if not numeric and (not memberPtr or (memberPtr == "&"))  then
-                    table.insert(codeList, "    self->"..member.Name.." = *val;\n")
+                if member.IsStaticFunction then
+                    if not numeric and (not memberPtr or (memberPtr == "&"))  then
+                        table.insert(codeList, "    "..parseObject.Name.."::"..member.Name.." = *val;\n")
+                    else
+                        table.insert(codeList, "    "..parseObject.Name.."::"..member.Name.." = val;\n")
+                    end
                 else
-                    table.insert(codeList, "    self->"..member.Name.." = val;\n")
+                    CommentBindingTable(codeList, "    // get this\n")
+                    table.insert(codeList, "    "..parseObject.Name.." *self = ("..parseObject.Name.." *)wxluaT_getuserdatatype(L, 1, wxluatype_"..MakeClassVar(parseObject.Name)..");\n")
+                    overload_argList = "&wxluatype_"..MakeClassVar(parseObject.Name)..", "..overload_argList
+
+                    if not numeric and (not memberPtr or (memberPtr == "&"))  then
+                        table.insert(codeList, "    self->"..member.Name.." = *val;\n")
+                    else
+                        table.insert(codeList, "    self->"..member.Name.." = val;\n")
+                    end
                 end
 
                 CommentBindingTable(codeList, "    // return the number of values\n")
                 table.insert(codeList, "    return 0;\n")
                 table.insert(codeList, "}\n")
 
-                local overload_argListName = "s_wxluatagArray_".. funcName
+                local overload_argListName = "s_wxluatypeArray_".. funcName
                 if overload_argList == "" then
-                    overload_argListName = "s_wxluaargArray_None"
+                    overload_argListName = "g_wxluaargtypeArray_None"
                 else
                     overload_argList = "{ "..overload_argList.."NULL }"
                 end
+
+                RemovewxLuaStateIfNotUsed(codeList)
 
                 local funcMapName = "s_wxluafunc_"..funcName
 
@@ -2872,10 +2959,10 @@ function GenerateLuaLanguageBinding(interface)
                     Method        = codeList,
                     ArgArray      = overload_argList,
                     ArgArrayName  = overload_argListName,
-                    FuncType      = "WXLUAMETHOD_METHOD",
-                    FuncMap       = "{ "..funcName..", WXLUAMETHOD_METHOD, 2, 2, "..overload_argListName.." }", -- FIXME make sure this is right
+                    FuncType      = funcType,
+                    FuncMap       = "{ "..funcName..", "..funcType..", 2, 2, "..overload_argListName.." }", -- FIXME make sure this is right
                     FuncMapName   = funcMapName,
-                    Map           = "    { \""..memberSetFunc.."\", WXLUAMETHOD_METHOD, "..funcMapName..", 1, NULL },\n",
+                    Map           = "    { \""..memberSetFunc.."\", "..funcType..", "..funcMapName..", 1, NULL },\n",
                     Condition     = membercondition
                 }
 
@@ -2883,8 +2970,8 @@ function GenerateLuaLanguageBinding(interface)
                 local propertyBinding =
                 {
                     LuaName   = member.Name,
-                    FuncType  = "WXLUAMETHOD_SETPROP",
-                    Map       = "    { \""..member.Name.."\", WXLUAMETHOD_SETPROP, "..funcMapName..", 1, NULL },\n",
+                    FuncType  = "WXLUAMETHOD_SETPROP"..propType,
+                    Map       = "    { \""..member.Name.."\", WXLUAMETHOD_SETPROP"..propType..", "..funcMapName..", 1, NULL },\n",
                     Condition = membercondition
                 }
 
@@ -2996,7 +3083,7 @@ function GenerateLuaLanguageBinding(interface)
                 local objectBinding =
                 {
                     LuaName   = luaname,
-                    Map       = "        { \""..luaname.."\", &s_wxluatag_"..MakeClassVar(parseObject.Name)..", &"..member.Name..", NULL },\n",
+                    Map       = "        { \""..luaname.."\", &wxluatype_"..MakeClassVar(parseObject.Name)..", &"..member.Name..", NULL },\n",
                     Condition = fullcondition
                 }
 
@@ -3011,7 +3098,7 @@ function GenerateLuaLanguageBinding(interface)
                 local pointerBinding =
                 {
                     LuaName   = luaname,
-                    Map       = "        { \""..luaname.."\", &s_wxluatag_"..MakeClassVar(parseObject.Name)..", NULL, (const void **) &"..member.Name.." },\n",
+                    Map       = "        { \""..luaname.."\", &wxluatype_"..MakeClassVar(parseObject.Name)..", NULL, (const void **) &"..member.Name.." },\n",
                     Condition = fullcondition
                 }
 
@@ -3026,7 +3113,7 @@ function GenerateLuaLanguageBinding(interface)
                 local eventBinding =
                 {
                     LuaName   = luaname,
-                    Map       = "        { \""..luaname.."\", &"..member.Name..", &s_wxluatag_"..MakeClassVar(parseObject.Name).." },\n",
+                    Map       = "        { \""..luaname.."\", &"..member.Name..", &wxluatype_"..MakeClassVar(parseObject.Name).." },\n",
                     Condition = fullcondition
                 }
 
@@ -3113,42 +3200,42 @@ function GenerateLuaLanguageBinding(interface)
                         argCast = "void*"
                     end
 
-                    -- our special notation to get wxString/IntArray from a lua table of strings
+                    -- our special notation to get wxString/IntArray from a Lua table of strings
                     -- BUT! it has to be const wxArrayString& arr or wxArrayString arr
                     --      and NOT wxArrayString& arr or wxArrayString* arr
                     if ((argType == "wxArrayString") and
                         ((indirectionCount == 0) or
                          ((indirectionCount == 1) and (argPtr == "&") and string.find(argTypeWithAttrib, "const", 1, 1)))) then
-                        overload_argList = overload_argList.."&s_wxluatag_wxArrayString, "
-                        argItem = "wxArrayString(); wxlState.GetwxArrayString("..argNum..", "..argName..")"
-                        declare = "wxArrayString "
+                        overload_argList = overload_argList.."&wxluatype_wxArrayString, "
+                        argItem = "wxlua_getwxArrayString(L, "..argNum..")"
+                        declare = "wxLuaSmartwxArrayString"
                     elseif ((argType == "wxSortedArrayString") and
                         ((indirectionCount == 0) or
                          ((indirectionCount == 1) and (argPtr == "&") and string.find(argTypeWithAttrib, "const", 1, 1)))) then
-                        overload_argList = overload_argList.."&s_wxluatag_wxSortedArrayString, "
-                        argItem = "wxArrayString(); wxlState.GetwxArrayString("..argNum..", "..argName..")"
-                        declare = "wxSortedArrayString "
+                        overload_argList = overload_argList.."&wxluatype_wxSortedArrayString, "
+                        argItem = "wxlua_getwxSortedArrayString(L, "..argNum..")"
+                        declare = "wxLuaSmartwxSortedArrayString"
                     elseif ((argType == "wxArrayInt") and
                             ((indirectionCount == 0) or
                              ((indirectionCount == 1) and (argPtr == "&") and string.find(argTypeWithAttrib, "const", 1, 1)))) then
-                        overload_argList = overload_argList.."&s_wxluatag_wxArrayInt, "
-                        argItem = "wxArrayInt(); wxlState.GetwxArrayInt("..argNum..", "..argName..")"
-                        declare = "wxArrayInt "
+                        overload_argList = overload_argList.."&wxluatype_wxArrayInt, "
+                        argItem = "wxlua_getwxArrayInt(L, "..argNum..")"
+                        declare = "wxLuaSmartwxArrayInt"
                     elseif argType == "IntArray_FromLuaTable" then
-                        overload_argList = overload_argList.."&s_wxluaarg_Table, "
-                        argItem = "NULL; ptr = "..argName.." = wxlState.GetIntArray("..argNum..", count_)"
+                        overload_argList = overload_argList.."&wxluatype_TTABLE, "
+                        argItem = "NULL; ptr = "..argName.." = wxlua_getintarray(L, "..argNum..", count_)"
                         declare = "int count_ = 0; wxLuaSmartIntArray ptr; int*"
                         argList = argList.."count_, "
                     elseif argType == "LuaTable" then
                         -- THIS MUST BE AN OVERRIDE AND HANDLED THERE, we just set overload_argList
                         -- the code genererated here is nonsense
-                        overload_argList = overload_argList.."&s_wxluaarg_Table, "
+                        overload_argList = overload_argList.."&wxluatype_TTABLE, "
                         argItem = "YOU MUST OVERRIDE THIS FUNCTION "
                         declare = "YOU MUST OVERRIDE THIS FUNCTION "
                     elseif argType == "LuaFunction" then
                         -- THIS MUST BE AN OVERRIDE AND HANDLED THERE, we just set overload_argList
                         -- the code genererated here is nonsense
-                        overload_argList = overload_argList.."&s_wxluaarg_Function, "
+                        overload_argList = overload_argList.."&wxluatype_TFUNCTION, "
                         argItem = "YOU MUST OVERRIDE THIS FUNCTION "
                         declare = "YOU MUST OVERRIDE THIS FUNCTION "
                     elseif (indirectionCount == 1) and (argPtr == "[]") then
@@ -3161,9 +3248,8 @@ function GenerateLuaLanguageBinding(interface)
                                 argTypeWithAttrib = string.sub(argTypeWithAttrib, 7)
                             end
 
-                            overload_argList = overload_argList.."&s_wxluaarg_Table, "
-                            argItem = "wxlState.GetStringArray("..argNum..", count)"
-                            --declare = "int count = 0; wxLuaSmartStringArray ptr; "..argTypeWithAttrib.." "..argName.."; ptr = "
+                            overload_argList = overload_argList.."&wxluatype_TTABLE, "
+                            argItem = "wxlua_getwxStringarray("..argNum..", count)"
                             declare = "int count = 0; wxLuaSmartStringArray "
                         elseif argType == "int" then
                             -- Un 'const' ints
@@ -3171,19 +3257,18 @@ function GenerateLuaLanguageBinding(interface)
                                 argTypeWithAttrib = string.sub(argTypeWithAttrib, 7)
                             end
 
-                            overload_argList = overload_argList.."&s_wxluaarg_Table, "
-                            argItem = "wxlState.GetIntArray("..argNum..", count)"
-                            --declare = "int count = 0; wxLuaSmartIntArray ptr; "..argTypeWithAttrib.." "..argName.."; ptr = "
+                            overload_argList = overload_argList.."&wxluatype_TTABLE, "
+                            argItem = "wxlua_getintarray(L, "..argNum..", count)"
                             declare = "int count = 0; wxLuaSmartIntArray "
                         elseif not numeric then
-                            argItem = "("..argTypeWithAttrib..") wxlState.GetUserDataType("..argNum..", s_wxluatag_"..MakeClassVar(argType)..")"
+                            argItem = "("..argTypeWithAttrib..")wxluaT_getuserdatatype(L, "..argNum..", wxluatype_"..MakeClassVar(argType)..")"
                         else
-                            argItem = "("..argTypeWithAttrib..") wxlState.wxlua_ToUserdata("..argNum..")"
+                            argItem = "("..argTypeWithAttrib..")wxlua_touserdata(L, "..argNum..")"
                         end
                     elseif (indirectionCount == 1) and (argPtr == "*") then
                         if (argType == "wxString") or (argType == "wxChar") then
-                            overload_argList = overload_argList.."&s_wxluaarg_String, "
-                            argItem = "wxlState.GetwxStringType("..argNum..")"
+                            overload_argList = overload_argList.."&wxluatype_TSTRING, "
+                            argItem = "wxlua_getwxStringtype(L, "..argNum..")"
 
                             -- Default String Value
                             if opt then
@@ -3202,8 +3287,8 @@ function GenerateLuaLanguageBinding(interface)
                             end
 
                         elseif argType == "char" then
-                            overload_argList = overload_argList.."&s_wxluaarg_String, "
-                            argItem = "wxlState.GetStringType("..argNum..")"
+                            overload_argList = overload_argList.."&wxluatype_TSTRING, "
+                            argItem = "wxlua_getstringtype(L, "..argNum..")"
 
                             argTypeWithAttrib = "wxCharBuffer"
                         else
@@ -3215,38 +3300,38 @@ function GenerateLuaLanguageBinding(interface)
                             end
 
                             if not numeric then
-                                overload_argList = overload_argList.."&s_wxluatag_"..MakeClassVar(argType)..", "
-                                argItem = "("..argTypeWithAttrib..")wxlState.GetUserDataType("..argNum..", s_wxluatag_"..MakeClassVar(argType)..")"
+                                overload_argList = overload_argList.."&wxluatype_"..MakeClassVar(argType)..", "
+                                argItem = "("..argTypeWithAttrib..")wxluaT_getuserdatatype(L, "..argNum..", wxluatype_"..MakeClassVar(argType)..")"
                             else
-                                overload_argList = overload_argList.."&s_wxluaarg_LightUserData, "
-                                argItem = "("..argTypeWithAttrib..")wxlState.wxlua_ToUserdata("..argNum..")"
+                                overload_argList = overload_argList.."&wxluatype_TLIGHTUSERDATA, "
+                                argItem = "("..argTypeWithAttrib..")wxlua_touserdata(L, "..argNum..")"
                             end
 
                             if param.GC then
                                 if dataTypeTable[argType]["%encapsulate"] then
-                                    table.insert(gcList, "    if (!wxlState.IsTrackedObject("..argName..")) wxlState.AddTrackedObject((long)"..argName..", new wxLua_wxObject_"..MakeVar(argType).."("..argName.."));\n")
+                                    table.insert(gcList, "    if (!wxluaO_isgcobject(L, "..argName..")) wxluaO_addgcobject(L, (void*)"..argName..", new wxLua_wxObject_"..MakeVar(argType).."("..argName.."));\n")
                                 else
-                                    table.insert(gcList, "    if (!wxlState.IsTrackedObject("..argName..")) wxlState.AddTrackedObject("..argName..");\n")
+                                    table.insert(gcList, "    if (!wxluaO_isgcobject(L, "..argName..")) wxluaO_addgcobject(L, "..argName..");\n")
                                 end
                             elseif param.UnGC then
-                                table.insert(gcList, "    if (wxlState.IsTrackedObject("..argName..")) wxlState.RemoveTrackedObject("..argName..", wxLuaState::UNDELETE_OBJECT);\n")
+                                table.insert(gcList, "    if (wxluaO_isgcobject(L, "..argName..")) wxluaO_undeletegcobject(L, "..argName..");\n")
                             end
 
                         end
                     elseif (indirectionCount == 2) and (argPtr == "*") then
                         if not numeric then
-                            overload_argList = overload_argList.."&s_wxluatag_"..MakeClassVar(argType)..", "
+                            overload_argList = overload_argList.."&wxluatype_"..MakeClassVar(argType)..", "
                             argTypeWithAttrib = argTypeWithAttrib.." **"
-                            argItem = "("..argTypeWithAttrib..")wxlState.GetUserDataType("..argNum..", s_wxluatag_"..MakeClassVar(argType)..")"
+                            argItem = "("..argTypeWithAttrib..")wxluaT_getuserdatatype(L, "..argNum..", wxluatype_"..MakeClassVar(argType)..")"
                         else
-                            overload_argList = overload_argList.."&s_wxluaarg_LightUserData, "
+                            overload_argList = overload_argList.."&wxluatype_TLIGHTUSERDATA, "
                             argTypeWithAttrib = argTypeWithAttrib.." *"
-                            argItem = "("..argTypeWithAttrib..")wxlState.wxlua_ToUserdata("..argNum..")"
+                            argItem = "("..argTypeWithAttrib..")wxlua_touserdata(L, "..argNum..")"
                         end
                     elseif (indirectionCount == 1) and (argPtr == "&") then
                         if argType == "wxString" then
-                            overload_argList = overload_argList.."&s_wxluaarg_String, "
-                            argItem = "wxlState.GetwxStringType("..argNum..")"
+                            overload_argList = overload_argList.."&wxluatype_TSTRING, "
+                            argItem = "wxlua_getwxStringtype(L, "..argNum..")"
 
                             -- Default String Value
                             if opt then
@@ -3261,11 +3346,11 @@ function GenerateLuaLanguageBinding(interface)
                         else
                             argTypeWithAttrib = argTypeWithAttrib.." *"
                             if not numeric then
-                                overload_argList = overload_argList.."&s_wxluatag_"..MakeClassVar(argType)..", "
-                                argItem = "("..argTypeWithAttrib..")wxlState.GetUserDataType("..argNum..", s_wxluatag_"..MakeClassVar(argType)..")"
+                                overload_argList = overload_argList.."&wxluatype_"..MakeClassVar(argType)..", "
+                                argItem = "("..argTypeWithAttrib..")wxluaT_getuserdatatype(L, "..argNum..", wxluatype_"..MakeClassVar(argType)..")"
                             else
-                                overload_argList = overload_argList.."&s_wxluaarg_LightUserData, "
-                                argItem = "("..argTypeWithAttrib..")wxlState.wxlua_ToUserdata("..argNum..")"
+                                overload_argList = overload_argList.."&wxluatype_TLIGHTUSERDATA, "
+                                argItem = "("..argTypeWithAttrib..")wxlua_touserdata(L, "..argNum..")"
                             end
 
                             -- Default Value
@@ -3275,8 +3360,8 @@ function GenerateLuaLanguageBinding(interface)
                         end
                     elseif indirectionCount == 0 then
                         if argType == "wxString" then
-                            overload_argList = overload_argList.."&s_wxluaarg_String, "
-                            argItem = "wxlState.GetwxStringType("..argNum..")"
+                            overload_argList = overload_argList.."&wxluatype_TSTRING, "
+                            argItem = "wxlua_getwxStringtype(L, "..argNum..")"
 
                             -- Default String Value
                             if opt then
@@ -3289,16 +3374,16 @@ function GenerateLuaLanguageBinding(interface)
                                 end
                             end
                         elseif (argType == "bool") or (argType == "BOOL") then
-                            overload_argList = overload_argList.."&s_wxluaarg_Boolean, "
+                            overload_argList = overload_argList.."&wxluatype_TBOOLEAN, "
                             argItem = "wxlua_getbooleantype(L, "..argNum..")"
                         elseif IsDataTypeEnum(argType) then
-                            overload_argList = overload_argList.."&s_wxluaarg_Integer, "
+                            overload_argList = overload_argList.."&wxluatype_TINTEGER, "
                             argItem = "("..argType..")wxlua_getintegertype(L, "..argNum..")"
                         elseif not numeric then
-                            overload_argList = overload_argList.."&s_wxluatag_"..MakeClassVar(argType)..", "
-                            argItem = "*("..argTypeWithAttrib.."*)wxlState.GetUserDataType("..argNum..", s_wxluatag_"..MakeClassVar(argType)..")"
+                            overload_argList = overload_argList.."&wxluatype_"..MakeClassVar(argType)..", "
+                            argItem = "*("..argTypeWithAttrib.."*)wxluaT_getuserdatatype(L, "..argNum..", wxluatype_"..MakeClassVar(argType)..")"
                         else
-                            overload_argList = overload_argList.."&s_wxluaarg_Number, "
+                            overload_argList = overload_argList.."&wxluatype_TNUMBER, "
                             argItem = "("..argType..")wxlua_getnumbertype(L, "..argNum..")"
                         end
                     else
@@ -3410,10 +3495,6 @@ function GenerateLuaLanguageBinding(interface)
                 -- function
                 CommentBindingTable(codeList, "// "..interface.lineData[member.LineNumber].LineText.."\n")
                 table.insert(codeList, "static int LUACALL "..funcName.."(lua_State *L)\n{\n")
-                if member.IsConstructor then
-                    table.insert(codeList, "    wxluabind_removetableforcall(L);\n")
-                end
-                table.insert(codeList, "    wxLuaState wxlState(L);\n")
 
                 -- See if we're supposed to track or untrack the return value
                 local a = string.find(member.DataTypeWithAttrib, "%gc", 1, 1)
@@ -3465,7 +3546,7 @@ function GenerateLuaLanguageBinding(interface)
                         memberTypeWithAttrib = origMemberTypeWithAttrib.." "
                         memberCast = origMemberTypeWithAttrib
                     else
-                        memberTypeWithAttrib = memberTypeWithAttrib.." "..returnPtr
+                        memberTypeWithAttrib = memberTypeWithAttrib..returnPtr
                     end
 
                     -- Un 'const' strings and non-pointer datatypes
@@ -3473,11 +3554,9 @@ function GenerateLuaLanguageBinding(interface)
                         memberTypeWithAttrib = string.sub(memberTypeWithAttrib, 7)
                     end
 
-                    if memberTypeWithAttrib == "voidptr_long " then
+                    if string.find("voidptr_long", memberTypeWithAttrib, 1, 1) then
                         memberTypeWithAttrib = "long "
                     end
-
-                    table.insert(codeList, "    "..memberTypeWithAttrib.."returns;\n")
                 end
 
                 -- conditions for method are dependent on return type, argument types, and inline conditions
@@ -3499,6 +3578,8 @@ function GenerateLuaLanguageBinding(interface)
                     for arg=1, paramCount do
                         if not member.Params[arg].DefaultValue then
                             requiredParamCount = requiredParamCount + 1
+                        elseif member.Params[arg+1] and (not member.Params[arg+1].DefaultValue) then
+                            print("ERROR: Missing default arg #"..tostring(arg+1).." in function. "..LineTableErrString(member))
                         end
                     end
 
@@ -3529,7 +3610,7 @@ function GenerateLuaLanguageBinding(interface)
                 -- constructor?
                 if member.IsConstructor then
                     CommentBindingTable(codeList, "    // call constructor\n")
-                    table.insert(codeList, "    returns = new "..parseObject.Name.."("..argList..");\n")
+                    table.insert(codeList, "    "..memberTypeWithAttrib.." returns = new "..parseObject.Name.."("..argList..");\n")
 
                     if parseObject["%gc_this"] or (parseObject["%delete"] and (not parseObject["%ungc_this"])) then
                         CommentBindingTable(codeList, "    // add to tracked memory list\n")
@@ -3541,17 +3622,17 @@ function GenerateLuaLanguageBinding(interface)
                         end
 
                         if parseObject["%encapsulate"] then
-                            table.insert(codeList, "    wxlState.AddTrackedObject((long)returns, new wxLua_wxObject_"..MakeVar(parseObject.Name).."(("..returnCast..")returns));\n")
+                            table.insert(codeList, "    wxluaO_addgcobject(L, (void*)returns, new wxLua_wxObject_"..MakeVar(parseObject.Name).."(("..returnCast..")returns));\n")
                         else
-                            table.insert(codeList, "    wxlState.AddTrackedObject(returns);\n")
+                            table.insert(codeList, "    wxluaO_addgcobject(L, returns);\n")
                         end
                     elseif not parseObject["%noclassinfo"] then
                         CommentBindingTable(codeList, "    // add to tracked window list, it will check validity\n")
-                        table.insert(codeList, "    wxlState.AddTrackedWindow(returns);\n")
+                        table.insert(codeList, "    wxluaW_addtrackedwindow(L, returns);\n")
                     end
 
                     CommentBindingTable(codeList, "    // push the constructed class pointer\n")
-                    table.insert(codeList, "    wxlState.PushUserDataType(s_wxluatag_"..MakeClassVar(parseObject.Name)..", returns);\n")
+                    table.insert(codeList, "    wxluaT_pushuserdatatype(L, returns, wxluatype_"..MakeClassVar(parseObject.Name)..");\n")
 
                     table.insert(codeList, "\n    return 1;\n")
                     table.insert(codeList, "}\n")
@@ -3564,16 +3645,16 @@ function GenerateLuaLanguageBinding(interface)
                     else
                         CommentBindingTable(codeList, "    // get this\n")
 
-                        table.insert(codeList, "    "..parseObject.Name.." * self = ("..parseObject.Name.." *)wxlState.GetUserDataType(1, s_wxluatag_"..MakeClassVar(parseObject.Name)..");\n")
-                        overload_argList = "&s_wxluatag_"..MakeClassVar(parseObject.Name)..", "..overload_argList
+                        table.insert(codeList, "    "..parseObject.Name.." * self = ("..parseObject.Name.." *)wxluaT_getuserdatatype(L, 1, wxluatype_"..MakeClassVar(parseObject.Name)..");\n")
+                        overload_argList = "&wxluatype_"..MakeClassVar(parseObject.Name)..", "..overload_argList
 
                         if parseObject["%ungc_this"] then
-                            table.insert(codeList, "    wxlState.RemoveTrackedObject(self, wxLuaState::UNDELETE_OBJECT);\n")
+                            table.insert(codeList, "    wxluaO_undeletegcobject(L, self);\n")
                         elseif parseObject["%gc_this"] then
                             if parseObject["%encapsulate"] then
-                                table.insert(codeList, "    if (!wxlState.IsTrackedObject(self)) wxlState.AddTrackedObject((long)self, new wxLua_wxObject_"..MakeClassVar(parseObject.Name).."(self));\n")
+                                table.insert(codeList, "    if (!wxluaO_isgcobject(L, self)) wxluaO_addgcobject(L, (void*)self, new wxLua_wxObject_"..MakeClassVar(parseObject.Name).."(self));\n")
                             else
-                                table.insert(codeList, "    wxlState.AddTrackedObject(self);\n")
+                                table.insert(codeList, "    wxluaO_addgcobject(L, self);\n")
                             end
                         end
 
@@ -3617,11 +3698,11 @@ function GenerateLuaLanguageBinding(interface)
                     else
                         -- call function, get return value
                         if member["%operator"] and origMemberPtr and string.find(origMemberPtr, "&", 1, 1) then
-                            table.insert(codeList, "    returns = self;\n")
+                            table.insert(codeList, "    "..memberTypeWithAttrib.." returns = self;\n")
                             table.insert(codeList, "    *returns = ("..functor..");\n")
                         elseif (not numeric) and (not memberPtr) then
                             CommentBindingTable(codeList, "    // allocate a new object using the copy constructor\n")
-                            table.insert(codeList, "    returns = new "..memberType.."("..functor..");\n")
+                            table.insert(codeList, "    "..memberTypeWithAttrib.." returns = new "..memberType.."("..functor..");\n")
                             CommentBindingTable(codeList, "    // add the new object to the tracked memory list\n")
 
                             -- Un 'const' AddTrackedObject
@@ -3631,37 +3712,37 @@ function GenerateLuaLanguageBinding(interface)
                             end
 
                             if dataTypeTable[memberType]["%encapsulate"] then
-                                table.insert(codeList, "    wxlState.AddTrackedObject((long)returns, new wxLua_wxObject_"..MakeVar(memberType).."(("..returnCast..")returns));\n")
+                                table.insert(codeList, "    wxluaO_addgcobject(L, (void*)returns, new wxLua_wxObject_"..MakeVar(memberType).."(("..returnCast..")returns));\n")
                             else
-                                table.insert(codeList, "    wxlState.AddTrackedObject(("..returnCast..")returns);\n")
+                                table.insert(codeList, "    wxluaO_addgcobject(L, ("..returnCast..")returns);\n")
                             end
 
                         elseif (not member["%operator"]) and (memberPtr == "&") and (memberType ~= "wxString") then
-                            table.insert(codeList, "    returns = &"..functor..";\n")
+                            table.insert(codeList, "    "..memberTypeWithAttrib.." returns = &"..functor..";\n")
                         elseif (memberPtr == "*") or (memberType == "voidptr_long") then
-                            table.insert(codeList, "    returns = ("..memberTypeWithAttrib..")"..functor..";\n")
+                            table.insert(codeList, "    "..memberTypeWithAttrib.." returns = ("..memberTypeWithAttrib..")"..functor..";\n")
 
                             if member.GC then
                                 if dataTypeTable[memberType]["%encapsulate"] then
-                                    table.insert(codeList, "    if (!wxlState.IsTrackedObject(returns)) wxlState.AddTrackedObject((long)returns, new wxLua_wxObject_"..MakeVar(memberType).."(returns));\n")
+                                    table.insert(codeList, "    if (!wxluaO_isgcobject(L, returns)) wxluaO_addgcobject(L, (void*)returns, new wxLua_wxObject_"..MakeVar(memberType).."(returns));\n")
                                 else
-                                    table.insert(codeList, "    if (!wxlState.IsTrackedObject(returns)) wxlState.AddTrackedObject(returns);\n")
+                                    table.insert(codeList, "    if (!wxluaO_isgcobject(L, returns)) wxluaO_addgcobject(L, returns);\n")
                                 end
                             elseif member.UnGC then
-                                table.insert(codeList, "    if (wxlState.IsTrackedObject(returns)) wxlState.RemoveTrackedObject(returns, wxLuaState::UNDELETE_OBJECT);\n")
+                                table.insert(codeList, "    if (wxluaO_isgcobject(L, returns)) wxluaO_undeletegcobject(L, returns);\n")
                             end
 
                         else
-                            table.insert(codeList, "    returns = ("..functor..");\n")
+                            table.insert(codeList, "    "..memberTypeWithAttrib.." returns = ("..functor..");\n")
                         end
 
                         -- bind return value
                         if memberType == "wxString" then
                             CommentBindingTable(codeList, "    // push the result string\n")
-                            table.insert(codeList, "    wxlState.lua_PushString("..returnPtr.."returns);\n")
+                            table.insert(codeList, "    wxlua_pushwxString(L, "..returnPtr.."returns);\n")
                         elseif not numeric then
                             CommentBindingTable(codeList, "    // push the result datatype\n")
-                            table.insert(codeList, "    wxlState.PushUserDataType(s_wxluatag_"..MakeClassVar(memberType)..", returns);\n")
+                            table.insert(codeList, "    wxluaT_pushuserdatatype(L, returns, wxluatype_"..MakeClassVar(memberType)..");\n")
                         elseif (member.DataType == "BOOL") or (member.DataType == "bool") then
                             CommentBindingTable(codeList, "    // push the result flag\n")
                             table.insert(codeList, "    lua_pushboolean(L, returns);\n")
@@ -3678,9 +3759,9 @@ function GenerateLuaLanguageBinding(interface)
                     end
                 end
 
-                local overload_argListName = "s_wxluatagArray_".. funcName
+                local overload_argListName = "s_wxluatypeArray_".. funcName
                 if overload_argList == "" then
-                    overload_argListName = "s_wxluaargArray_None"
+                    overload_argListName = "g_wxluaargtypeArray_None"
                 else
                     overload_argList = "{ "..overload_argList.."NULL }"
                 end
@@ -3696,19 +3777,7 @@ function GenerateLuaLanguageBinding(interface)
                     methodcondition = AddCondition(methodcondition, condition)
                 end
 
-                -- remove the wxLuaState if we don't use it
-                local needs_wxluastate = -1
-                for i = 1, #codeList do
-                    if string.find(codeList[i], "wxLuaState", 1, 1) then
-                        needs_wxluastate = i
-                    elseif string.find(codeList[i], "wxlState", 1, 1) then
-                        needs_wxluastate = -1
-                        break
-                    end
-                end
-                if (needs_wxluastate > 0) then
-                    table.remove(codeList, needs_wxluastate)
-                end
+                RemovewxLuaStateIfNotUsed(codeList)
 
                 methodcondition = FixCondition(methodcondition)
 
@@ -3764,11 +3833,11 @@ function GenerateLuaLanguageBinding(interface)
             -- Figure out if we really need to have member enums for the class
             local enumArrayName = MakeVar(parseObject.Name).."_enums"
             local enumArrayCountName = MakeVar(parseObject.Name).."_enumCount"
-            local ExternEnumDeclaration = "extern "..output_cpp_impexpsymbol.." wxLuaBindDefine "..enumArrayName.."[];\n"
+            local ExternEnumDeclaration = "extern "..output_cpp_impexpsymbol.." wxLuaBindNumber "..enumArrayName.."[];\n"
             local ExternEnumCountDeclaration = "extern "..MakeImpExpData("int").." "..enumArrayCountName..";\n"
 
             if enumClassBindingTable[MakeVar(parseObject.Name)] == nil then
-                enumArrayName = "s_wxluadefineArray_None"
+                enumArrayName = "g_wxluanumberArray_None"
                 enumArrayCountName = 0
                 ExternEnumDeclaration = ""
                 ExternEnumCountDeclaration = ""
@@ -3777,9 +3846,9 @@ function GenerateLuaLanguageBinding(interface)
 
             -- Extern Class Tag Declaration
             local tagcondition = FixCondition(parseObject.Condition)
-            local classTagBinding =
+            local classTypeBinding =
             {
-                ExternDeclaration            = "extern "..MakeImpExpData("int").." s_wxluatag_"..MakeClassVar(parseObject.Name)..";\n",
+                ExternDeclaration            = "extern "..MakeImpExpData("int").." wxluatype_"..MakeClassVar(parseObject.Name)..";\n",
                 ExternMethodDeclaration      = "extern "..output_cpp_impexpsymbol.." wxLuaBindMethod "..MakeVar(parseObject.Name).."_methods[];\n",
                 ExternMethodCountDeclaration = "extern "..MakeImpExpData("int").." "..MakeVar(parseObject.Name).."_methodCount;\n",
                 ExternEnumDeclaration        = ExternEnumDeclaration,
@@ -3787,15 +3856,15 @@ function GenerateLuaLanguageBinding(interface)
                 Condition                    = tagcondition
             }
 
-            if not classTagBindingTable[tagcondition] then classTagBindingTable[tagcondition] = {} end
-            classTagBindingTable[tagcondition][parseObject.Name] = classTagBinding
+            if not classTypeBindingTable[tagcondition] then classTypeBindingTable[tagcondition] = {} end
+            classTypeBindingTable[tagcondition][parseObject.Name] = classTypeBinding
 
             -- Class Tag Declaration
             local decl = "";
             if comment_cpp_binding_code then
                 decl = decl.."// Lua MetaTable Tag for Class '"..parseObject.Name.."'\n"
             end
-            decl = decl.."int s_wxluatag_"..MakeClassVar(parseObject.Name).." = -1;\n"
+            decl = decl.."int wxluatype_"..MakeClassVar(parseObject.Name).." = WXLUA_TUNKNOWN;\n"
 
             interface.objectData[o].TagDeclaration = decl
 
@@ -3814,33 +3883,29 @@ function GenerateLuaLanguageBinding(interface)
             if parseObject["%delete"] then
                 -- delete routine
                 codeList = {}
-                local funcName = "wxLua_"..MakeVar(parseObject.Name).."_delete"
-                table.insert(codeList, "static int LUACALL "..funcName.."(lua_State *L)\n{\n")
-                table.insert(codeList, "    wxLuaState wxlState(L);\n")
-                table.insert(codeList, "    "..parseObject.Name.." * self = ("..parseObject.Name.." *)wxlState.GetUserDataType(1, s_wxluatag_"..MakeClassVar(parseObject.Name)..");\n")
-                CommentBindingTable(codeList, "    // if removed from tracked mem list, reset the tag so that gc() is not called on this object.\n")
-                table.insert(codeList, "    if ((self != NULL) && wxlState.RemoveTrackedObject(self, wxLuaState::DELETE_CLEAR_OBJECT))\n")
-                table.insert(codeList, "    {\n")
-                table.insert(codeList, "        lua_pushnil(L);\n")
-                table.insert(codeList, "        lua_setmetatable(L, -2);\n")
-                table.insert(codeList, "    }\n")
-                table.insert(codeList, "    return 0;\n")
-                table.insert(codeList, "}\n")
+                local funcName  = "wxLua_"..MakeVar(parseObject.Name).."_delete"
+                local funcName_ = funcName
+
+                if not overrideTable[funcName] then
+                    funcName_ = "wxlua_userdata_delete"
+                end
 
                 local funcMapName = "s_wxluafunc_"..funcName
 
-                local overload_argListName = "s_wxluatagArray_".. funcName
-                local overload_argList = "{ &s_wxluatag_"..MakeClassVar(parseObject.Name)..", NULL }"
+                local overload_argListName = "s_wxluatypeArray_".. funcName
+                local overload_argList = "{ &wxluatype_"..MakeClassVar(parseObject.Name)..", NULL }"
 
                 local condition = FixCondition(parseObject.Condition)
+
+                RemovewxLuaStateIfNotUsed(codeList)
 
                 local delMethodBinding =
                 {
                     LuaName         = "delete",
-                    CFunctionName   = funcName,
+                    CFunctionName   = funcName_,
                     Method          = codeList,
                     FuncType        = "WXLUAMETHOD_METHOD",
-                    FuncMap         = "{ "..funcName..", WXLUAMETHOD_METHOD|WXLUAMETHOD_DELETE, 1, 1, "..overload_argListName.." }",
+                    FuncMap         = "{ "..funcName_..", WXLUAMETHOD_METHOD|WXLUAMETHOD_DELETE, 1, 1, "..overload_argListName.." }",
                     FuncMapName     = funcMapName,
                     ArgArray        = overload_argList,
                     ArgArrayName    = overload_argListName,
@@ -3851,9 +3916,9 @@ function GenerateLuaLanguageBinding(interface)
                 }
 
                 -- Override Generated Method Code
-                if overrideTable[delMethodBinding.CFunctionName] then
-                    delMethodBinding.Method = overrideTable[delMethodBinding.CFunctionName]
-                    overrideTableUsed[delMethodBinding.CFunctionName] = true
+                if overrideTable[funcName] then
+                    delMethodBinding.Method = overrideTable[funcName]
+                    overrideTableUsed[funcName] = true
                 end
 
                 table.insert(interface.objectData[o].BindTable, delMethodBinding)
@@ -3867,7 +3932,7 @@ function GenerateLuaLanguageBinding(interface)
                                 ..MakeVar(parseObject.Name).."_methods, "
                                 ..MakeVar(parseObject.Name).."_methodCount, "
                                 ..classinfo..", "
-                                .."&s_wxluatag_"..MakeClassVar(parseObject.Name)..", "
+                                .."&wxluatype_"..MakeClassVar(parseObject.Name)..", "
                                 ..MakeVar(baseclass)..", "
                                 .."NULL ,"
                                 ..enumArrayName..", "
@@ -3973,10 +4038,10 @@ function GenerateHookHeaderFileTable()
     local fileData = {}
 
     table.insert(fileData, "// ---------------------------------------------------------------------------\n")
-    table.insert(fileData, "// "..hook_cpp_namespace..".h - headers and tags for wxLua binding\n")
+    table.insert(fileData, "// "..hook_cpp_namespace..".h - headers and wxLua types for wxLua binding\n")
     table.insert(fileData, "//\n")
     table.insert(fileData, "// This file was generated by genwxbind.lua \n")
-    table.insert(fileData, "// Any changes made to this file may be lost when file is regenerated\n")
+    table.insert(fileData, "// Any changes made to this file will be lost when the file is regenerated\n")
     table.insert(fileData, "// ---------------------------------------------------------------------------\n")
     table.insert(fileData, "\n")
     table.insert(fileData, "#ifndef __HOOK_WXLUA_"..hook_cpp_namespace.."_H__\n")
@@ -4001,22 +4066,17 @@ function GenerateHookHeaderFileTable()
     end
 
     table.insert(fileData, "// binding class\n")
-    table.insert(fileData, "class "..hook_cpp_binding_classname.." : public wxLuaBinding\n")
+    table.insert(fileData, "class "..output_cpp_impexpsymbol.." "..hook_cpp_binding_classname.." : public wxLuaBinding\n")
     table.insert(fileData, "{\n")
     table.insert(fileData, "public:\n")
     table.insert(fileData, "    "..hook_cpp_binding_classname.."();\n")
-    table.insert(fileData, "    virtual wxLuaBinding* Clone() const { return new "..hook_cpp_binding_classname.."; }\n")
     table.insert(fileData, "\n")
-    table.insert(fileData, "protected:\n")
-    table.insert(fileData, "    virtual void PreRegister(const wxLuaState& wxlState, int luaTable);\n")
-    table.insert(fileData, "    virtual void PostRegister(const wxLuaState& wxlState, int luaTable);\n")
-    table.insert(fileData, "\n")
+    table.insert(fileData, wxLuaBinding_class_declaration or "")
+    table.insert(fileData, "\nprivate:\n")
     table.insert(fileData, "    DECLARE_DYNAMIC_CLASS("..hook_cpp_binding_classname..")\n")
     table.insert(fileData, "};\n")
     table.insert(fileData, "\n\n")
 
-    table.insert(fileData, "// bind "..hook_cpp_binding_classname.." to a single wxLuaState\n")
-    table.insert(fileData, "extern "..output_cpp_impexpsymbol.." bool "..hook_cpp_binding_classname.."_bind(const wxLuaState& wxlState);\n")
     table.insert(fileData, "// initialize "..hook_cpp_binding_classname.." for all wxLuaStates\n")
     table.insert(fileData, "extern "..output_cpp_impexpsymbol.." bool "..hook_cpp_binding_classname.."_init();\n\n")
 
@@ -4053,8 +4113,20 @@ function GenerateHookHeaderFileTable()
         end
     end
 
+--[[
     table.insert(fileData, "\n")
 
+    table.insert(fileData, "// ---------------------------------------------------------------------------\n")
+    table.insert(fileData, "// Functions to access wxLuaBindXXX structs\n")
+    table.insert(fileData, "// ---------------------------------------------------------------------------\n\n")
+
+    table.insert(fileData, "extern wxLuaBindClass  *"..hook_cpp_class_funcname.."(size_t &count);\n")
+    table.insert(fileData, "extern wxLuaBindNumber *"..hook_cpp_define_funcname.."(size_t &count);\n")
+    table.insert(fileData, "extern wxLuaBindString *"..hook_cpp_string_funcname.."(size_t &count);\n")
+    table.insert(fileData, "extern wxLuaBindEvent  *"..hook_cpp_event_funcname.."(size_t &count);\n")
+    table.insert(fileData, "extern wxLuaBindObject *"..hook_cpp_object_funcname.."(size_t &count);\n")
+    table.insert(fileData, "extern wxLuaBindMethod *"..hook_cpp_function_funcname.."(size_t &count);\n\n")
+]]
     -- ------------------------------------------------------------------------
     -- Class Tag Declaration - sorted by condition for the C++ compiler
     -- ------------------------------------------------------------------------
@@ -4063,7 +4135,7 @@ function GenerateHookHeaderFileTable()
     table.insert(fileData, "// Lua Tag Method Values and Tables for each Class\n")
     table.insert(fileData, "// ---------------------------------------------------------------------------\n\n")
 
-    for condition, classTagBindingList in pairs_sort(classTagBindingTable) do
+    for condition, classTypeBindingList in pairs_sort(classTypeBindingTable) do
         local indent = ""
 
         if HasCondition(condition) then
@@ -4071,13 +4143,13 @@ function GenerateHookHeaderFileTable()
             table.insert(fileData, "#if "..condition.."\n")
         end
 
-        for idx, classTagBinding in pairs_sort(classTagBindingList) do
-            table.insert(fileData, indent..classTagBinding.ExternDeclaration)
-            table.insert(fileData, indent..classTagBinding.ExternMethodDeclaration)
-            table.insert(fileData, indent..classTagBinding.ExternMethodCountDeclaration)
-            if string.len(classTagBinding.ExternEnumCountDeclaration) > 0 then
-                table.insert(fileData, indent..classTagBinding.ExternEnumDeclaration)
-                table.insert(fileData, indent..classTagBinding.ExternEnumCountDeclaration)
+        for idx, classTypeBinding in pairs_sort(classTypeBindingList) do
+            table.insert(fileData, indent..classTypeBinding.ExternDeclaration)
+            table.insert(fileData, indent..classTypeBinding.ExternMethodDeclaration)
+            table.insert(fileData, indent..classTypeBinding.ExternMethodCountDeclaration)
+            if string.len(classTypeBinding.ExternEnumCountDeclaration) > 0 then
+                table.insert(fileData, indent..classTypeBinding.ExternEnumDeclaration)
+                table.insert(fileData, indent..classTypeBinding.ExternEnumCountDeclaration)
             end
         end
 
@@ -4088,7 +4160,7 @@ function GenerateHookHeaderFileTable()
         end
     end
 
-    table.insert(fileData, "\n\n")
+    table.insert(fileData, "\n")
 
     -- ------------------------------------------------------------------------
     -- Encapsulation Declarations - sorted by condition for the C++ compiler
@@ -4129,29 +4201,31 @@ end
 -- Write the header (top part) of the Cpp files
 -- ---------------------------------------------------------------------------
 
-function GenerateHookCppFileHeader(fileData)
+function GenerateHookCppFileHeader(fileData, fileName, add_includes)
     table.insert(fileData, "// ---------------------------------------------------------------------------\n")
-    table.insert(fileData, "// This file was generated by genwxbind.lua \n")
+    table.insert(fileData, "// "..fileName.." was generated by genwxbind.lua \n")
     table.insert(fileData, "//\n")
-    table.insert(fileData, "// Any changes made to this file may be lost when file is regenerated.\n")
-    table.insert(fileData, "// ---------------------------------------------------------------------------\n")
-    table.insert(fileData, "\n")
-    table.insert(fileData, "#ifdef __BORLANDC__\n")
-    table.insert(fileData, "    #pragma hdrstop\n")
-    table.insert(fileData, "#endif\n")
-    table.insert(fileData, "\n")
-    table.insert(fileData, "#include \"wx/wxprec.h\"\n")
-    table.insert(fileData, "\n")
-    table.insert(fileData, hook_cpp_binding_includes or "")
-    table.insert(fileData, "\n")
-    table.insert(fileData, "#ifndef WX_PRECOMP\n")
-    table.insert(fileData, "     #include \"wx/wx.h\"\n")
-    table.insert(fileData, "#endif\n")
-    table.insert(fileData, "\n")
-    table.insert(fileData, "#include \"wxlua/include/wxlstate.h\"\n")
-    table.insert(fileData, "#include \""..hook_cpp_header_filename.."\"\n")
-    table.insert(fileData, hook_cpp_binding_post_includes or "")
-    table.insert(fileData, "\n")
+    table.insert(fileData, "// Any changes made to this file will be lost when the file is regenerated.\n")
+    table.insert(fileData, "// ---------------------------------------------------------------------------\n\n")
+
+    if add_includes then
+        table.insert(fileData, "#ifdef __BORLANDC__\n")
+        table.insert(fileData, "    #pragma hdrstop\n")
+        table.insert(fileData, "#endif\n")
+        table.insert(fileData, "\n")
+        table.insert(fileData, "#include \"wx/wxprec.h\"\n")
+        table.insert(fileData, "\n")
+        table.insert(fileData, "#ifndef WX_PRECOMP\n")
+        table.insert(fileData, "     #include \"wx/wx.h\"\n")
+        table.insert(fileData, "#endif\n")
+        table.insert(fileData, "\n")
+        table.insert(fileData, hook_cpp_binding_includes or "")
+        table.insert(fileData, "\n")
+        table.insert(fileData, "#include \"wxlua/include/wxlstate.h\"\n")
+        table.insert(fileData, "#include \""..hook_cpp_header_filename.."\"\n")
+        table.insert(fileData, hook_cpp_binding_post_includes or "")
+        table.insert(fileData, "\n")
+    end
 
     return fileData
 end
@@ -4187,9 +4261,7 @@ function GenerateHookClassFileTable(fileData)
     table.insert(fileData, "    };\n")
     table.insert(fileData, "    count = sizeof(classList)/sizeof(wxLuaBindClass) - 1;\n\n")
     table.insert(fileData, "    return classList;\n")
-    table.insert(fileData, "}\n")
-
-    table.insert(fileData, "\n\n")
+    table.insert(fileData, "}\n\n")
 
     table.insert(fileData, "// ---------------------------------------------------------------------------\n")
     table.insert(fileData, "// "..hook_cpp_binding_classname.."() - the binding class\n")
@@ -4199,70 +4271,23 @@ function GenerateHookClassFileTable(fileData)
         table.insert(fileData, "#if "..hook_bind_condition.."\n\n")
     end
 
-    table.insert(fileData, "// binding class\n")
-    table.insert(fileData, "extern wxLuaBindClass  *"..hook_cpp_class_funcname.."(size_t &count);\n")
-    table.insert(fileData, "extern wxLuaBindDefine *"..hook_cpp_define_funcname.."(size_t &count);\n")
-    table.insert(fileData, "extern wxLuaBindString *"..hook_cpp_string_funcname.."(size_t &count);\n")
-    table.insert(fileData, "extern wxLuaBindEvent  *"..hook_cpp_event_funcname.."(size_t &count);\n")
-    table.insert(fileData, "extern wxLuaBindObject *"..hook_cpp_object_funcname.."(size_t &count);\n")
-    table.insert(fileData, "extern wxLuaBindMethod *"..hook_cpp_function_funcname.."(size_t &count);\n")
-    table.insert(fileData, "\n\n")
-    table.insert(fileData, "IMPLEMENT_DYNAMIC_CLASS("..hook_cpp_binding_classname..", wxLuaBinding)\n")
-    table.insert(fileData, "\n")
+    table.insert(fileData, "IMPLEMENT_DYNAMIC_CLASS("..hook_cpp_binding_classname..", wxLuaBinding)\n\n")
     table.insert(fileData, ""..hook_cpp_binding_classname.."::"..hook_cpp_binding_classname.."() : wxLuaBinding()\n")
     table.insert(fileData, "{\n")
     table.insert(fileData, "    m_bindingName   = wxT(\""..hook_cpp_namespace.."\");\n")
     table.insert(fileData, "    m_nameSpace     = wxT(\""..hook_lua_namespace.."\");\n")
     table.insert(fileData, "    m_classArray    = "..hook_cpp_class_funcname.."(m_classCount);\n")
-    table.insert(fileData, "    m_defineArray   = "..hook_cpp_define_funcname.."(m_defineCount);\n")
+    table.insert(fileData, "    m_numberArray   = "..hook_cpp_define_funcname.."(m_numberCount);\n")
     table.insert(fileData, "    m_stringArray   = "..hook_cpp_string_funcname.."(m_stringCount);\n")
     table.insert(fileData, "    m_eventArray    = "..hook_cpp_event_funcname.."(m_eventCount);\n")
     table.insert(fileData, "    m_objectArray   = "..hook_cpp_object_funcname.."(m_objectCount);\n")
     table.insert(fileData, "    m_functionArray = "..hook_cpp_function_funcname.."(m_functionCount);\n")
-    table.insert(fileData, "    InitBinding();\n")
-    table.insert(fileData, "}\n")
-    table.insert(fileData, "\n")
+    table.insert(fileData, "}\n\n")
 
-    -- load preregister fn from rules file
-    if wxLuaBinding_PreRegister and string.len(wxLuaBinding_PreRegister) then
-        table.insert(fileData, "void "..hook_cpp_binding_classname.."::PreRegister(const wxLuaState& wxlState, int luaTable)\n")
-    else
-        table.insert(fileData, "void "..hook_cpp_binding_classname.."::PreRegister(const wxLuaState& , int )\n")
-    end
-    table.insert(fileData, "{\n")
-    table.insert(fileData, wxLuaBinding_PreRegister or "")
-    table.insert(fileData, "}\n")
-    -- load postregister fn from rules file
-    if wxLuaBinding_PostRegister and string.len(wxLuaBinding_PostRegister) then
-        table.insert(fileData, "void "..hook_cpp_binding_classname.."::PostRegister(const wxLuaState& wxlState, int luaTable)\n")
-    else
-        table.insert(fileData, "void "..hook_cpp_binding_classname.."::PostRegister(const wxLuaState&, int )\n")
-    end
-    table.insert(fileData, "{\n")
-    table.insert(fileData, wxLuaBinding_PostRegister or "")
-    table.insert(fileData, "}\n")
+    table.insert(fileData, (wxLuaBinding_class_implementation or "").."\n\n")
 
-    table.insert(fileData, "\n\n")
+    table.insert(fileData, "// ---------------------------------------------------------------------------\n\n")
 
-    table.insert(fileData, "// bind "..hook_cpp_binding_classname.." to a single wxLuaState\n")
-    table.insert(fileData, "bool "..hook_cpp_binding_classname.."_bind(const wxLuaState& wxlState_)\n")
-    table.insert(fileData, "{\n")
-    table.insert(fileData, "    wxLuaState wxlState(wxlState_);\n")
-    table.insert(fileData, "    wxCHECK_MSG(wxlState.Ok(), false, wxT(\"Invalid wxLuaState\"));\n")
-    table.insert(fileData, "\n")
-    table.insert(fileData, "    wxASSERT(!wxlState.GetLuaStateData()->m_bindings_registered);\n")
-    table.insert(fileData, "    wxASSERT(!wxlState.GetLuaBinding(wxT(\""..hook_cpp_namespace.."\")));\n")
-    table.insert(fileData, "\n")
-    table.insert(fileData, "    // ignore binding request when we already have "..hook_cpp_namespace.." registered\n")
-    table.insert(fileData, "    if (wxlState.GetLuaBinding(wxT(\""..hook_cpp_namespace.."\")))\n")
-    table.insert(fileData, "        return false;\n")
-    table.insert(fileData, "\n")
-    table.insert(fileData, "    wxlState.GetLuaStateData()->m_bindingList.Append(new "..hook_cpp_binding_classname.."());\n")
-    table.insert(fileData, "\n")
-    table.insert(fileData, "    return true;\n")
-    table.insert(fileData, "}\n")
-
-    table.insert(fileData, "// initialize "..hook_cpp_binding_classname.." for all wxLuaStates\n")
     table.insert(fileData, "bool "..hook_cpp_binding_classname.."_init()\n")
     table.insert(fileData, "{\n")
     table.insert(fileData, "    static "..hook_cpp_binding_classname.." m_binding;\n")
@@ -4313,10 +4338,10 @@ function GenerateHookDefineFileTable(fileData)
     table.insert(fileData, "// "..hook_cpp_define_funcname.."() is called to register %define and %enum\n")
     table.insert(fileData, "// ---------------------------------------------------------------------------\n\n")
 
-    table.insert(fileData, "wxLuaBindDefine* "..hook_cpp_define_funcname.."(size_t &count)\n{\n")
-    table.insert(fileData, "    static wxLuaBindDefine defineList[] =\n    {\n")
+    table.insert(fileData, "wxLuaBindNumber* "..hook_cpp_define_funcname.."(size_t &count)\n{\n")
+    table.insert(fileData, "    static wxLuaBindNumber numberList[] =\n    {\n")
 
-    -- mix the %define and %enums together since they're both in the same wxLuaBindDefine struct
+    -- mix the %define and %enums together since they're both in the same wxLuaBindNumber struct
     local namedBindingTable = {}
     GenerateLuaNameFromIndexedTable(defineBindingTable, namedBindingTable)
     GenerateLuaNameFromIndexedTable(enumBindingTable, namedBindingTable)
@@ -4328,8 +4353,8 @@ function GenerateHookDefineFileTable(fileData)
     table.insert(fileData, "\n")
     table.insert(fileData, "        { 0, 0 },\n")
     table.insert(fileData, "    };\n")
-    table.insert(fileData, "    count = sizeof(defineList)/sizeof(wxLuaBindDefine) - 1;\n")
-    table.insert(fileData, "    return defineList;\n")
+    table.insert(fileData, "    count = sizeof(numberList)/sizeof(wxLuaBindNumber) - 1;\n")
+    table.insert(fileData, "    return numberList;\n")
     table.insert(fileData, "}\n\n")
 
     -- ------------------------------------------------------------------------
@@ -4446,8 +4471,8 @@ function GenerateHookCFunctionFileTable(fileData)
 
     local function writeFunc(functionBinding)
         if functionBinding.Method then
-            if functionBinding.ArgArrayName and (functionBinding.ArgArrayName ~= "s_wxluaargArray_None") then
-                table.insert(fileData, "static wxLuaArgTag "..functionBinding.ArgArrayName.."[] = "..functionBinding.ArgArray..";\n")
+            if functionBinding.ArgArrayName and (functionBinding.ArgArrayName ~= "g_wxluaargtypeArray_None") then
+                table.insert(fileData, "static wxLuaArgType "..functionBinding.ArgArrayName.."[] = "..functionBinding.ArgArray..";\n")
             end
 
             table.insert(fileData, table.concat(functionBinding.Method))
@@ -4545,7 +4570,7 @@ function GenerateOverloadBinding(sortedBindings, object)
 
             CommentBindingTable(funcMap, "// function overload table\n")
             table.insert(funcMap, "static wxLuaBindCFunc "..funcMapName.."[] =\n{\n")
-            table.insert(funcMap, "    { "..funcName..", WXLUAMETHOD_METHOD|WXLUAMETHOD_OVERLOAD, "..tostring(requiredParamCount)..", "..tostring(paramCount)..", s_wxluaargArray_None },\n")
+--            table.insert(funcMap, "    { "..funcName..", WXLUAMETHOD_METHOD|WXLUAMETHOD_OVERLOAD, "..tostring(requiredParamCount)..", "..tostring(paramCount)..", g_wxluaargtypeArray_None },\n")
             for i = 1, #methodBindings do
                 if HasCondition(methodBindings[i].Condition) and (methodBindings[i].Condition ~= object.Condition) then
                     table.insert(funcMap, "\n#if "..methodBindings[i].Condition.."\n")
@@ -4559,19 +4584,18 @@ function GenerateOverloadBinding(sortedBindings, object)
             end
             table.insert(funcMap, "};\n")
 
-            table.insert(funcMap, "static int "..funcMapName.."_count = sizeof("..funcMapName..")/sizeof(wxLuaBindCFunc);\n")
+            table.insert(funcMap, "static int "..funcMapName.."_count = sizeof("..funcMapName..")/sizeof(wxLuaBindCFunc);\n\n")
 
             local methodMap = "    { \""..methodBindings[1].LuaName.."\", "..funcType..", "..funcMapName..", "..funcMapName.."_count, 0 }"
 
             local codeList = {}
 
-            CommentBindingTable(codeList, "// Overloaded function for "..methodBindings[1].ClassName.."::"..methodBindings[1].LuaName.."\n")
-            table.insert(codeList, "static int LUACALL "..funcName.."(lua_State *L)\n{\n")
-            table.insert(codeList, "    wxLuaState wxlState(L);\n")
-            table.insert(codeList, "    static wxLuaBindMethod overload_method = \n")
-            table.insert(codeList, "    "..methodMap..";\n")
-            table.insert(codeList, "    return wxlState.CallOverloadedFunction(&overload_method);\n")
-            table.insert(codeList, "}\n")
+--            CommentBindingTable(codeList, "// Overloaded function for "..methodBindings[1].ClassName.."::"..methodBindings[1].LuaName.."\n")
+--            table.insert(codeList, "static int LUACALL "..funcName.."(lua_State *L)\n{\n")
+--            table.insert(codeList, "    static wxLuaBindMethod overload_method = \n")
+--            table.insert(codeList, "    "..methodMap..";\n")
+--            table.insert(codeList, "    return wxlua_CallOverloadedFunction(L, &overload_method);\n")
+--            table.insert(codeList, "}\n")
 
             local methodBinding =
             {
@@ -4601,10 +4625,9 @@ end
 -- ---------------------------------------------------------------------------
 -- Write Hook file for an interface file
 -- ---------------------------------------------------------------------------
-function GenerateBindingFileTable(interface)
-    local fileData = {}
+function GenerateBindingFileTable(interface, fileData, add_includes)
 
-    fileData = GenerateHookCppFileHeader(fileData)
+    fileData = GenerateHookCppFileHeader(fileData, interface.CPPFileName, add_includes)
 
     for k, v in pairs_sort(interface.includeFiles) do
         table.insert(fileData, "#include "..v.."\n")
@@ -4645,11 +4668,13 @@ function GenerateBindingFileTable(interface)
                     if functionBinding.PreDefineCode then
                         table.insert(fileData, functionBinding.PreDefineCode)
                     end
-                    if functionBinding.ArgArrayName and (functionBinding.ArgArrayName ~= "s_wxluaargArray_None") then
-                        table.insert(fileData, "static wxLuaArgTag "..functionBinding.ArgArrayName.."[] = "..functionBinding.ArgArray..";\n")
+                    if functionBinding.ArgArrayName and (functionBinding.ArgArrayName ~= "g_wxluaargtypeArray_None") then
+                        table.insert(fileData, "static wxLuaArgType "..functionBinding.ArgArrayName.."[] = "..functionBinding.ArgArray..";\n")
                     end
                     if functionBinding.FuncMapName then
-                        table.insert(fileData, "static int LUACALL "..functionBinding.CFunctionName.."(lua_State *L);\n")
+                        if functionBinding.CFunctionName ~= "wxlua_userdata_delete" then
+                            table.insert(fileData, "static int LUACALL "..functionBinding.CFunctionName.."(lua_State *L);\n")
+                        end
                         table.insert(fileData, "static wxLuaBindCFunc "..functionBinding.FuncMapName.."[1] = {"..functionBinding.FuncMap.."};\n")
                     end
 
@@ -4665,7 +4690,7 @@ function GenerateBindingFileTable(interface)
 
             local function writeFunc(functionBinding)
                 if functionBinding.IsOverload then
-                    table.insert(fileData, "static int LUACALL "..functionBinding.CFunctionName.."(lua_State *L);\n")
+--                    table.insert(fileData, "static int LUACALL "..functionBinding.CFunctionName.."(lua_State *L);\n")
                     table.insert(fileData, table.concat(functionBinding.FuncMap))
                     table.insert(fileData, table.concat(functionBinding.Method))
                 end
@@ -4685,7 +4710,7 @@ function GenerateBindingFileTable(interface)
             table.insert(fileData, "int "..MakeVar(ObjectName).."_methodCount = sizeof("..MakeClassVar(ObjectName).."_methods)/sizeof(wxLuaBindMethod) - 1;\n\n")
 
             if enumClassBindingTable[MakeClassVar(ObjectName)] then
-                table.insert(fileData, "wxLuaBindDefine "..MakeClassVar(ObjectName).."_enums[] = {\n")
+                table.insert(fileData, "wxLuaBindNumber "..MakeClassVar(ObjectName).."_enums[] = {\n")
                 local namedBindingTable = {}
                 GenerateLuaNameFromIndexedTable(enumClassBindingTable[MakeClassVar(ObjectName)], namedBindingTable)
                 -- sort the bindings by class name and write them out alphabetically
@@ -4695,7 +4720,7 @@ function GenerateBindingFileTable(interface)
                 table.insert(fileData, "};\n")
 
                 -- since there may be conditions count them up afterwards
-                table.insert(fileData, "int "..MakeVar(ObjectName).."_enumCount = sizeof("..MakeClassVar(ObjectName).."_enums)/sizeof(wxLuaBindDefine) - 1;\n")
+                table.insert(fileData, "int "..MakeVar(ObjectName).."_enumCount = sizeof("..MakeClassVar(ObjectName).."_enums)/sizeof(wxLuaBindNumber) - 1;\n")
             end
 
             if object.Condition then
@@ -4742,9 +4767,9 @@ function SerializeDataTypes(filename)
     local fileData = {}
 
     table.insert(fileData, "-- ---------------------------------------------------------------------------\n")
-    table.insert(fileData, "-- This file was generated by genwxbind.lua \n")
+    table.insert(fileData, "-- "..filename.." was generated by genwxbind.lua \n")
     table.insert(fileData, "-- \n")
-    table.insert(fileData, "-- Any changes made to this file may be lost when file is regenerated  \n")
+    table.insert(fileData, "-- Any changes made to this file will be lost when the file is regenerated  \n")
     table.insert(fileData, "-- ---------------------------------------------------------------------------\n")
     table.insert(fileData, "\n\n")
 
@@ -4849,7 +4874,7 @@ function main()
     -- load rules file
     if not rulesFilename then
         print("ERROR: No rules filename set!")
-        rulesFilename = ""
+        do return end
     end
 
     local rules = loadfile(rulesFilename)
@@ -4857,6 +4882,10 @@ function main()
         rules()
         print("Loaded rules file: "..rulesFilename)
         CheckRules()
+    else
+        dofile(rulesFilename) -- get the error message
+        print("ERROR: Unable to load rules file: '"..tostring(rulesFilename).."'")
+        do return end
     end
 
     -- load any cached settings from other wrappers
@@ -4867,7 +4896,7 @@ function main()
                 cache() -- run loaded file
                 print("Loaded datatypes cache file: "..filename)
             else
-                print("ERROR: Unable to load datatypes cache file: "..filename)
+                print("ERROR: Unable to load datatypes cache file: '"..filename.."'")
             end
         end
     end
@@ -4881,9 +4910,11 @@ function main()
         end
     end
 
+    local updated_files = 0
+
     if #interface_fileTable > 0 then
         local interfaceList = GenerateInterfaceData()
-        WriteWrapperFiles(interfaceList)
+        updated_files = WriteWrapperFiles(interfaceList)
     end
 
     -- Write out the data types for these interface files
@@ -4898,8 +4929,7 @@ function main()
         end
     end
 
-    print("Timing: "..os.difftime(os.time(), time1).." seconds.")
-    print("Done\n")
+    print("Done. "..updated_files.." Files were updated in "..os.difftime(os.time(), time1).." seconds.\n")
 end
 
 main()

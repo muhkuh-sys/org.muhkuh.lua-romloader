@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 
 <!-- Author: Francesco Montorsi <frm@users.sourceforge.net>            -->
-<!-- RCS-ID: $Id: wxluabase.bkl,v 1.42 2007/07/31 23:15:12 jrl1 Exp $ -->
+<!-- RCS-ID: $Id: wxluabase.bkl,v 1.48 2008/01/17 00:37:37 jrl1 Exp $ -->
 
 
 <!-- ====================================================================== -->
@@ -12,7 +12,7 @@
 
 <makefile>
 
-    <requires version="0.2.2"/>
+    <requires version="0.2.3"/>
     <using module="datafiles"/>
 
 
@@ -39,7 +39,7 @@
               files. Remember to update all of them !
     -->
 
-    <set var="WXLUA_RELEASE">4</set>
+    <set var="WXLUA_RELEASE">7</set>
 
     <!-- The default version of wxWidgets which is used by wxLua;
          if you want to use other versions, you'll have to specify it
@@ -51,7 +51,6 @@
     <set var="WXLUA_VERSION">$(WX_VERSION_DEFAULT[:1]).$(WX_VERSION_DEFAULT[1:]).$(WXLUA_RELEASE)</set>
     <set var="WXLUA_SOVERSION">0.0.$(WXLUA_RELEASE)</set>
     <set var="WXLUA_MACVERSION">$(int(WXLUA_RELEASE)+1)</set>   <!-- must be > 0 -->
-
 
 
     <!-- ================================================================== -->
@@ -70,12 +69,12 @@
         <if cond="FORMAT!='autoconf' and FORMAT!='gnu'">0</if>
     </set>
     <set var="TARGETING_IDE">
-        <if cond="FORMAT in [ 'msvc6prj', 'cbuilderx', 'kdevelop', 'msvs2003prj', 'msvs2005prj' ]">1</if>
-        <if cond="FORMAT not in [ 'msvc6prj', 'cbuilderx', 'kdevelop', 'msvs2003prj', 'msvs2005prj' ]">0</if>
+        <if cond="FORMAT in [ 'msvc6prj', 'cbuilderx', 'kdevelop', 'msvs2005prj' ]">1</if>
+        <if cond="FORMAT not in [ 'msvc6prj', 'cbuilderx', 'kdevelop', 'msvs2005prj' ]">0</if>
     </set>
     <set var="TARGETING_MAKEFILE">
-        <if cond="FORMAT in [ 'msvc6prj', 'cbuilderx', 'kdevelop', 'msvs2003prj', 'msvs2005prj' ]">0</if>
-        <if cond="FORMAT not in [ 'msvc6prj', 'cbuilderx', 'kdevelop', 'msvs2003prj', 'msvs2005prj' ]">1</if>
+        <if cond="FORMAT in [ 'msvc6prj', 'cbuilderx', 'kdevelop', 'msvs2005prj' ]">0</if>
+        <if cond="FORMAT not in [ 'msvc6prj', 'cbuilderx', 'kdevelop', 'msvs2005prj' ]">1</if>
     </set>
 
     <if cond="TARGETING_WIN32=='1'">
@@ -85,8 +84,6 @@
         <set var="SUBPROJECT_POSTFIX_PATH"/>
     </if>
 
-
-
     <!-- ================================================================== -->
     <!--                            OPTIONS                                 -->
     <!-- ================================================================== -->
@@ -94,7 +91,11 @@
     <!-- the global options -->
     <include file="options.bkl" once="1"/>
 
+    <!-- This file contains the list of MODULES options             -->
+<!--    <include file="../../modules/build/bakefiles/options.bkl" once="1"/> -->
 
+    <!-- This file contains the list of APPS options                -->
+<!--    <include file="../../apps/build/bakefiles/options.bkl" once="1"/> -->
 
 
     <!-- ================================================================== -->
@@ -109,17 +110,41 @@
     <!-- the <wxlua-lib> tag accepts only those values which refer to a wxLua module name.
          Trying to use an invalid name will generate an error at bake-time.
     -->
-    <define-tag name="wxlua-lib" rules="exe,dll,module">
-        <if cond="value not in [ 'wxluasocket', 'wxluadebug', 'wxlua', 'wxbindadv', 'wxbindaui', 'wxbindbase', 'wxbindcore', 'wxbindgl', 'wxbindhtml', 'wxbindmedia', 'wxbindnet', 'wxbindrichtext', 'wxbindstc', 'wxbindxml', 'wxbindxrc', 'lua' ]">
-            <error>Invalid wxlua-lib value !</error>
-        </if>
-        <if cond="value=='lua'">
-            <sys-lib>lua5.1</sys-lib>
-        </if>
-        <if cond="value!='lua'">
-            <wxlike-lib prefix="wxlua">$(value)</wxlike-lib>
-        </if>
-    </define-tag>
+
+    <set var="WXLUA_LIB_LIST">
+        wxluasocket wxluadebug wxlua wxbindadv wxbindaui wxbindbase wxbindcore wxbindgl wxbindhtml wxbindmedia wxbindnet wxbindrichtext wxbindstc wxbindxml wxbindxrc lua
+    </set>
+
+    <if cond="FORMAT=='autoconf'">
+        <option name="WXLUA_LIBS"/>
+
+        <define-tag name="wxlua-lib" rules="exe,dll,module">
+            <if cond="value not in WXLUA_LIB_LIST.split()">
+                <error>Unknown wxLua library given in the wxlua-lib tag</error>
+            </if>
+
+            <if cond="value=='lua'">
+                <!-- all wxlua-dependent libraries should have been already listed
+                     thus we can now add WXLUA_LIBS to the linker line -->
+                <ldlibs>$(WXLUA_LIBS)</ldlibs>
+            </if>
+        </define-tag>
+    </if>
+
+    <if cond="FORMAT not in ['autoconf']">
+        <define-tag name="wxlua-lib" rules="exe,dll,module">
+            <if cond="value not in WXLUA_LIB_LIST.split()">
+                <error>Unknown wxLua library given in the wxlib-lib tag</error>
+            </if>
+
+            <if cond="value=='lua'">
+                <sys-lib>lua5.1</sys-lib>
+            </if>
+            <if cond="value!='lua'">
+                <wxlike-lib prefix="wxlua">$(value)</wxlike-lib>
+            </if>
+        </define-tag>
+    </if>
 
     <!-- shortcut for including *all* wxLua libraries, even CONTRIB wrappers -->
     <define-tag name="wxlua-alllibs" rules="exe,dll,module">
@@ -140,7 +165,7 @@
         <wxlua-lib>wxbindxrc</wxlua-lib>
 
         <wxlua-lib>wxlua</wxlua-lib>
-        <wxlua-lib>lua</wxlua-lib>
+        <wxlua-lib>lua</wxlua-lib>                  <!-- MUST BE LAST! -->
     </define-tag>
 
     <!-- shortcut for including *all* wxLua libraries, except CONTRIB wrappers -->
@@ -154,7 +179,7 @@
         <wxlua-lib>wxbindcore</wxlua-lib>
         <!-- <wxlua-lib>wxbindgl</wxlua-lib> -->
         <wxlua-lib>wxbindhtml</wxlua-lib>
-        <!-- <wxlua-lib>wxbindmedia</wxlua-lib> -->
+        <wxlua-lib>wxbindmedia</wxlua-lib>
         <wxlua-lib>wxbindnet</wxlua-lib>
         <!-- <wxlua-lib>wxbindrichtext</wxlua-lib> -->
         <!-- <wxlua-lib>wxbindstc</wxlua-lib> -->
@@ -162,16 +187,16 @@
         <wxlua-lib>wxbindxrc</wxlua-lib>
 
         <wxlua-lib>wxlua</wxlua-lib>
-        <wxlua-lib>lua</wxlua-lib>
+        <wxlua-lib>lua</wxlua-lib>                  <!-- MUST BE LAST! -->
     </define-tag>
 
     <!-- shortcut for including all wxWidgets libraries required by wxLua -->
     <define-tag name="wx-alllibs-req-bywxlua" rules="exe,dll,module">
         <wx-lib>xrc</wx-lib>
         <wx-lib>html</wx-lib>
-        <!-- <wx-lib>gl</wx-lib> -->
+        <wx-lib>gl</wx-lib>
         <wx-lib>aui</wx-lib>
-        <!-- <wx-lib>media</wx-lib> -->
+        <wx-lib>media</wx-lib>
         <wx-lib>adv</wx-lib>
         <wx-lib>net</wx-lib>
         <wx-lib>xml</wx-lib>
@@ -209,7 +234,7 @@
         <include>./$(WXLUA_BASEDIR)</include>
 
         <!-- both when we use the system lua or our own lua we need an additional include path -->
-        <include>$(LUA_DIR)/include</include>
+        <include>$(LUA_INCLUDE_DIR)</include>
     </template>
 
     <!-- a template for wxLua-based libraries -->
@@ -237,7 +262,7 @@
 
         <!-- both in case we are using system's lua or our own lua,
              we need yet another linker path -->
-        <lib-path>$(LUA_DIR)/lib</lib-path>
+        <lib-path>$(LUA_LIB_DIR)</lib-path>
 
         <!-- same technique used by wx_win32.bkl: this is a placeholder
              for the lua-lib tags so that the library order is always
@@ -245,7 +270,27 @@
         <__wxlua-libs-point/>
     </template>
 
+    <!-- a template for wxLua-based exe/dll targets -->
+    <template id="wxlua_with_bindings" template="wxlua">
 
+        <if cond="FORMAT!='autoconf'">
+
+            <define>wxLUA_USEBINDING_WXADV=$(USE_WXBINDADV)</define>
+            <define>wxLUA_USEBINDING_WXAUI=$(USE_WXBINDAUI)</define>
+            <define>wxLUA_USEBINDING_WXBASE=$(USE_WXBINDBASE)</define>
+            <define>wxLUA_USEBINDING_WXCORE=$(USE_WXBINDCORE)</define>
+            <define>wxLUA_USEBINDING_WXGL=$(USE_WXBINDGL)</define>
+            <define>wxLUA_USEBINDING_WXHTML=$(USE_WXBINDHTML)</define>
+            <define>wxLUA_USEBINDING_WXMEDIA=$(USE_WXBINDMEDIA)</define>
+            <define>wxLUA_USEBINDING_WXNET=$(USE_WXBINDNET)</define>
+            <define>wxLUA_USEBINDING_WXRICHTEXT=$(USE_WXBINDRICHTEXT)</define>
+            <define>wxLUA_USEBINDING_WXSTC=$(USE_WXBINDSTC)</define>
+            <define>wxLUA_USEBINDING_WXXML=$(USE_WXBINDXML)</define>
+            <define>wxLUA_USEBINDING_WXXRC=$(USE_WXBINDXRC)</define>
+
+        </if>
+
+    </template>
 
     <!-- ================================================================== -->
     <!--                            TAGS                                    -->
@@ -261,14 +306,24 @@
         shared libraries. This means the user under Unix will be able to run samples
         also before installing the component system-wide:
     -->
+
+    <if cond="FORMAT=='autoconf'">
+        <option name="RPATH_FLAGS"/>
+    </if>
+
     <define-tag name="rpath-to" rules="exe,module">
-        <set var="RPATH">
-            <if cond="FORMAT=='gnu' and SHARED=='1'">-Wl,-rpath,$(value)/gcc_dll</if>
-            <if cond="FORMAT=='autoconf' and SHARED=='1'">-Wl,-rpath,$(value)</if>
-        </set>
 
         <!-- for autoconf&gnu only (see comments above): -->
-        <ldflags>$(RPATH)</ldflags>
+
+        <if cond="FORMAT=='gnu'">
+            <set var="RPATH_FLAGS">
+                <if cond="SHARED=='1'">-Wl,-rpath,$(value)/gcc_dll</if>
+            </set>
+            <ldflags>$(RPATH_FLAGS)</ldflags>
+        </if>
+        <if cond="FORMAT=='autoconf'">
+            <ldflags>$(RPATH_FLAGS)</ldflags>
+        </if>
     </define-tag>
 
 

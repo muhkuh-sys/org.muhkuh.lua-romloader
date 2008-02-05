@@ -654,7 +654,7 @@ static bool callback(lua_State *L, int iLuaCallbackTag, unsigned long ulProgress
 		{
 			// get the function's return value
 			iLuaType = lua_type(L, -1);
-			if( wxlua_iswxluatype(iLuaType, WXLUAARG_Boolean)==false )
+			if( wxlua_iswxluatype(iLuaType, WXLUA_TBOOLEAN)==false )
 			{
 				wxLogError(wxT("callback function returned a non-boolean type!"));
 				fStillRunning = false;

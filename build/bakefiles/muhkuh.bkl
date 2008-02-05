@@ -215,7 +215,6 @@
 			plugins/romloader/openocd/openocd/target/etm.c
 			plugins/romloader/openocd/openocd/target/etm_dummy.c
 			plugins/romloader/openocd/openocd/target/image.c
-			plugins/romloader/openocd/openocd/target/oocd_trace.c
 			plugins/romloader/openocd/openocd/target/register.c
 			plugins/romloader/openocd/openocd/target/target.c
 			plugins/romloader/openocd/openocd/target/target_request.c

@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 
 <!-- Author: Francesco Montorsi <frm@users.sourceforge.net>         -->
-<!-- RCS-ID: $Id: options.bkl,v 1.10 2007/04/24 14:39:52 frm Exp $  -->
+<!-- RCS-ID: $Id: options.bkl,v 1.13 2008/01/19 21:37:09 jrl1 Exp $  -->
 
 
 <!-- ====================================================================== -->
@@ -16,16 +16,17 @@
 
     <set var="BUILD_DEFAULT">debug</set>
     <set var="UNICODE_DEFAULT">0</set>
-    <set var="SHARED_DEFAULT">1</set>
+    <set var="SHARED_DEFAULT">0</set>
 
     <set var="USE_APPS_DEFAULT">1</set>
     <set var="USE_SYSTEM_LUA_DEFAULT">0</set>
-    
+
     <!-- don't touch this default! it's used also when using USE_SYSTEM_LUA==0
          and thus it's very important to keep it set so that the built-in lua
          is used
     -->
-    <set var="LUA_DIR_DEFAULT">..\..\..\modules\lua</set>
+    <set var="LUA_INCLUDE_DIR_DEFAULT">..\..\..\modules\lua\include</set>
+    <set var="LUA_LIB_DIR_DEFAULT">..\..\..\modules\lua\lib</set>
 
 
     <!-- ================================================================== -->
@@ -123,9 +124,14 @@
             <description>Should wxLua use the system-wide Lua library ?</description>
         </option>
 
-        <option name="LUA_DIR" category="path">
-            <default-value>$(LUA_DIR_DEFAULT)</default-value>
-            <description>The path to the Lua library</description>
+        <option name="LUA_INCLUDE_DIR" category="path">
+            <default-value>$(LUA_INCLUDE_DIR_DEFAULT)</default-value>
+            <description>The path to the Lua library includes</description>
+        </option>
+
+        <option name="LUA_LIB_DIR" category="path">
+            <default-value>$(LUA_LIB_DIR_DEFAULT)</default-value>
+            <description>The path to the Lua library libs</description>
         </option>
 
         <!-- Some advanced options: -->
@@ -158,7 +164,8 @@ multi-threading.
              the default values -->
         <set var="USE_APPS">$(USE_APPS_DEFAULT)</set>
         <set var="USE_SYSTEM_LUA">$(USE_SYSTEM_LUA_DEFAULT)</set>
-        <set var="LUA_DIR">$(LUA_DIR_DEFAULT)</set>
+        <set var="LUA_INCLUDE_DIR">$(LUA_INCLUDE_DIR_DEFAULT)</set>
+        <set var="LUA_LIB_DIR">$(LUA_LIB_DIR_DEFAULT)</set>
     </if>
 
 </makefile>

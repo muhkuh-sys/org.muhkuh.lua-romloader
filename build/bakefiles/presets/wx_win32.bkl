@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<!-- $Id: wx_win32.bkl,v 1.2 2007/05/04 20:22:25 frm Exp $ -->
+<!-- $Id: wx_win32.bkl,v 1.3 2008/01/16 16:46:11 jrl1 Exp $ -->
 
 <!-- Original source: http://wiki.wxwidgets.org/wiki.pl?Bakefile    -->
 <!-- Modified by: Francesco Montorsi <frm@users.sourceforge.net>    -->
@@ -7,7 +7,7 @@
                   into Bakefile's presets                           -->
 <!-- Creation date: 6/9/2004                                        -->
 <!-- Last revision: 22/1/2005 off-CVS                               -->
-<!--                $Id: wx_win32.bkl,v 1.2 2007/05/04 20:22:25 frm Exp $ -->
+<!--                $Id: wx_win32.bkl,v 1.3 2008/01/16 16:46:11 jrl1 Exp $ -->
 
 
 <makefile>
@@ -148,12 +148,12 @@
     <define-wxlib-name>adv</define-wxlib-name>
     <define-wxlib-name>qa</define-wxlib-name>
     <define-wxlib-name>dbgrid</define-wxlib-name>
-    <define-wxlib-name>gl</define-wxlib-name>
     <define-wxlib-name>aui</define-wxlib-name>
     <define-wxlib-name>richtext</define-wxlib-name>
 
-
-
+    <!-- The GL lib is not part of the monolithic build in 2.8, treat it as a contrib
+        <define-wxlib-name>gl</define-wxlib-name>
+    -->
 
 
     <!--                        WX TEMPLATE                         -->
@@ -187,11 +187,15 @@
         <if cond="value=='xrc'"><sys-lib>$(WXLIB_XRC_NAME)</sys-lib></if>
         <if cond="value=='html'"><sys-lib>$(WXLIB_HTML_NAME)</sys-lib></if>
         <if cond="value=='adv'"><sys-lib>$(WXLIB_ADV_NAME)</sys-lib></if>
-        <if cond="value=='gl'"><sys-lib>$(WXLIB_GL_NAME)</sys-lib></if>
         <if cond="value=='dbgrid'"><sys-lib>$(WXLIB_DBGRID_NAME)</sys-lib></if>
         <if cond="value=='qa'"><sys-lib>$(WXLIB_QA_NAME)</sys-lib></if>
         <if cond="value=='aui'"><sys-lib>$(WXLIB_AUI_NAME)</sys-lib></if>
         <if cond="value=='richtext'"><sys-lib>$(WXLIB_RICHTEXT_NAME)</sys-lib></if>
+
+        <!-- The GL lib isn't part of the monolithic build in 2.8, treat it as a contrib -->
+        <if cond="value=='gl'">
+            <sys-lib>wx$(WX_PORT)$(WX_VERSION)$(WXLIBPOSTFIX)_$(value)</sys-lib>
+        </if>
 
         <!-- wx-lib can be used also to link against contrib libraries
              (which always have the same name, regardless of WX_MONOLITHIC value) -->

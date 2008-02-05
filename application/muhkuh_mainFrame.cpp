@@ -36,8 +36,8 @@
 #include <wxlua/include/wxlstate.h>
 #include <wxbind/include/wxbinddefs.h>
 
-WXIMPORT int s_wxluatag_wxXmlDocument;
-WXIMPORT int s_wxluatag_wxPanel;
+WXIMPORT int wxluatype_wxXmlDocument;
+WXIMPORT int wxluatype_wxPanel;
 
 WXLUA_DECLARE_BIND_WXLUA
 WXLUA_DECLARE_BIND_WXLUASOCKET
@@ -744,11 +744,13 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	bool fCreated;
 	int iResult;
 	wxString strLuaCode;
-	wxString strErrorMessage;
-	bool fExecutedSuccessfully;
+	wxString strMsg;
+	wxString strErrorMsg;
 	wxString strLuaSystemModulePath;
 	wxString strDebug;
 	wxFileName cfgName;
+	int iGetTop;
+	int iLineNr;
 
 
 	m_strRunningTestName = ptTestData->testDescription_getName();
@@ -869,13 +871,13 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	m_ptLuaState->lua_PushString(strVersion.ToAscii());
 	m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_VERSION"));
 	// set the xml document
-	m_ptLuaState->PushUserDataType(s_wxluatag_wxXmlDocument, ptTestData->getXmlDocument());
+	m_ptLuaState->wxluaT_PushUserDataType(ptTestData->getXmlDocument(), wxluatype_wxXmlDocument, false);
 	m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_XML"));
 	// set the selected test index
 	m_ptLuaState->lua_PushNumber(uiIndex);
 	m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_INDEX"));
 	// set the panel
-	m_ptLuaState->PushUserDataType(s_wxluatag_wxPanel, m_testPanel);
+	m_ptLuaState->wxluaT_PushUserDataType(m_testPanel, wxluatype_wxPanel, false);
 	m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_PANEL"));
 
 	// set state to 'testing'
@@ -885,12 +887,13 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	// set the log marker
 	luaSetLogMarker();
 
+	iGetTop = m_ptLuaState->lua_GetTop();
 	iResult = m_ptLuaState->RunString(strLuaCode, wxT("system boot"));
-
-	fExecutedSuccessfully = wxLuaState::CheckRunError(iResult, &strErrorMessage);
-	if( fExecutedSuccessfully!=true )
+	if( iResult!=0 )
 	{
-		wxLogError(strErrorMessage);
+		wxlua_errorinfo(m_ptLuaState->GetLuaState(), iResult, iGetTop, &strErrorMsg, &iLineNr);
+		strMsg.Printf(wxT("error %d in line %d: ") + strErrorMsg, iResult, iLineNr);
+		wxLogError(strMsg);
 		finishTest();
 		setState(muhkuh_mainFrame_state_idle);
 	}
@@ -1713,6 +1716,7 @@ wxString muhkuh_mainFrame::luaLoad(wxString strFileName)
 void muhkuh_mainFrame::luaInclude(wxString strFileName, wxString strChunkName)
 {
 	wxString strMsg;
+	wxString strErrorMsg;
 	wxString strFileUrl;
 	wxURL filelistUrl;
 	wxURLError urlError;
@@ -1802,8 +1806,8 @@ void muhkuh_mainFrame::luaInclude(wxString strFileName, wxString strChunkName)
 							break;
 
 						case LUA_ERRSYNTAX:
-							iResult = m_ptLuaState->LuaError(iResult, iGetTop, NULL, &strMsg, &iLineNr);
-							strMsg.Printf(wxT("error %d in line %d"), iResult, iLineNr);
+							wxlua_errorinfo(m_ptLuaState->GetLuaState(), iResult, iGetTop, &strErrorMsg, &iLineNr);
+							strMsg.Printf(wxT("error %d in line %d: ") + strErrorMsg, iResult, iLineNr);
 							wxLogError(strMsg);
 							strMsg = _("syntax error during pre-compilation");
 							m_ptLuaState->wxlua_Error(strMsg);
