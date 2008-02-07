@@ -483,14 +483,15 @@ bool muhkuh_plugin::open(wxString strPluginPath)
 	}
 	else
 	{
-		// does the path point to a directory?
-		if( fileName.IsFileExecutable()==false )
-		{
-			// no, the path does not point to a directory
-			wxLogError(wxT("the path does not point to an executable file"));
-		}
-		else
-		{
+// this does not work with win98
+//		// does the path point to a directory?
+//		if( fileName.IsFileExecutable()==false )
+//		{
+//			// no, the path does not point to a directory
+//			wxLogError(wxT("the path does not point to an executable file"));
+//		}
+//		else
+//		{
 			strFullPath = fileName.GetFullPath();
 			fDllLoaded = dll.Load(strFullPath, wxDL_DEFAULT);
 			if( fDllLoaded==false )
@@ -535,7 +536,7 @@ bool muhkuh_plugin::open(wxString strPluginPath)
 					dll.Unload();
 				}
 			}
-		}
+//		}
 	}
 
 	m_tPluginIf.tHandle = tDllHandle;

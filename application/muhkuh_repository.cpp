@@ -788,13 +788,14 @@ bool muhkuh_repository::createTestlist_singlexml(wxProgressDialog *ptScannerProg
 			wxLogError(wxT("the path does not point to a file"));
 			return false;
 		}
-		// is the file readable?
-		if( fileName.IsFileReadable()!=true )
-		{
-			// no, the file is not readable
-			wxLogError(wxT("the file is not readable"));
-			return false;
-		}
+// this does not work with win98
+//		// is the file readable?
+//		if( fileName.IsFileReadable()!=true )
+//		{
+//			// no, the file is not readable
+//			wxLogError(wxT("the file is not readable"));
+//			return false;
+//		}
 
 		// the path seems to be ok
 		strCompletePath = fileName.GetFullPath(wxPATH_NATIVE);
