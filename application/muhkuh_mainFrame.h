@@ -84,6 +84,8 @@ public:
 	void OnViewPanicButton(wxCommandEvent &event);
 	void OnViewTestTree(wxCommandEvent &event);
 	void OnViewMessageLog(wxCommandEvent &event);
+	void OnViewWelcomePage(wxCommandEvent &event);
+	void OnViewTestDetails(wxCommandEvent &event);
 
 	void OnRepositoryCombo(wxCommandEvent &event);
 
@@ -91,7 +93,7 @@ public:
 	void OnTestTreeItemActivated(wxTreeEvent &event);
 	void OnTestTreeItemSelected(wxTreeEvent &event);
 
-	void OnWelcomeLinkClicked(wxHtmlLinkEvent &event);
+	void OnMtdLinkClicked(wxHtmlLinkEvent &event);
 
 	// process the lua events
 	void OnLuaPrint(wxLuaEvent &event);
@@ -129,6 +131,8 @@ private:
 	void createMenu(void);
 	void createControls(void);
 	void createTipProvider(void);
+	void createWelcomeWindow(void);
+	void createTestDetailsWindow(void);
 
 	void read_config(void);
 	void write_config(void);
@@ -144,6 +148,7 @@ private:
 
 	void updateRepositoryCombo(void);
 
+	bool cutPath(wxString &strPath, wxArrayString *ptElems);
 	bool addTestTree(testTreeItemData *ptTestTreeItem);
 
 	// main frame controls
@@ -157,8 +162,7 @@ private:
 	wxTextCtrl *m_textCtrl;
 	wxAuiNotebook *m_notebook;
 	wxHtmlWindow *m_welcomeHtml;
-	wxListCtrl *m_testDetailsList;
-	wxImageList *m_testDetailsImages;
+	wxHtmlWindow *m_testDetailsHtml;
 	wxButton *m_buttonCancelTest;
 	wxMenuBar *m_menuBar;
 
@@ -213,6 +217,11 @@ private:
 
 	// path settings
 	wxString m_strApplicationPath;
+
+	// the welcome page
+	wxString strWelcomePage;
+	// the test details page
+	wxString strTestDetails;
 
     DECLARE_EVENT_TABLE()
 };

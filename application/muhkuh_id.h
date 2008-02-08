@@ -36,11 +36,15 @@ enum
 	muhkuh_mainFrame_Notebook_id,
 	muhkuh_mainFrame_Debug,
 	muhkuh_mainFrame_Welcome_id,
+	muhkuh_mainFrame_TestDetails_id,
 
 	muhkuh_mainFrame_menuViewRepositoryPane,
 	muhkuh_mainFrame_menuViewPanicButton,
 	muhkuh_mainFrame_menuViewTestTree,
 	muhkuh_mainFrame_menuViewMessageLog,
+	muhkuh_mainFrame_menuViewWelcomePage,
+	muhkuh_mainFrame_menuViewTestDetails,
+
 	muhkuh_mainFrame_menuShowTip,
 	muhkuh_mainFrame_menuRestoreDefaultPerspective,
 	muhkuh_mainFrame_menuTestCancel,

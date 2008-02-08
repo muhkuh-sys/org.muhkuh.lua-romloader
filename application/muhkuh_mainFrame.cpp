@@ -81,6 +81,8 @@ BEGIN_EVENT_TABLE(muhkuh_mainFrame, wxFrame)
 	EVT_MENU(muhkuh_mainFrame_menuViewPanicButton,			muhkuh_mainFrame::OnViewPanicButton)
 	EVT_MENU(muhkuh_mainFrame_menuViewTestTree,			muhkuh_mainFrame::OnViewTestTree)
 	EVT_MENU(muhkuh_mainFrame_menuViewMessageLog,			muhkuh_mainFrame::OnViewMessageLog)
+	EVT_MENU(muhkuh_mainFrame_menuViewWelcomePage,			muhkuh_mainFrame::OnViewWelcomePage)
+	EVT_MENU(muhkuh_mainFrame_menuViewTestDetails,			muhkuh_mainFrame::OnViewTestDetails)
 
 	EVT_COMBOBOX(muhkuh_mainFrame_RepositoryCombo_id,		muhkuh_mainFrame::OnRepositoryCombo)
 
@@ -88,7 +90,8 @@ BEGIN_EVENT_TABLE(muhkuh_mainFrame, wxFrame)
 	EVT_TREE_ITEM_MENU(muhkuh_mainFrame_TestTree_Ctrl,		muhkuh_mainFrame::OnTestTreeContextMenu)
 	EVT_TREE_SEL_CHANGED(muhkuh_mainFrame_TestTree_Ctrl,		muhkuh_mainFrame::OnTestTreeItemSelected)
 
-	EVT_HTML_LINK_CLICKED(muhkuh_mainFrame_Welcome_id,		muhkuh_mainFrame::OnWelcomeLinkClicked)
+	EVT_HTML_LINK_CLICKED(muhkuh_mainFrame_Welcome_id,		muhkuh_mainFrame::OnMtdLinkClicked)
+	EVT_HTML_LINK_CLICKED(muhkuh_mainFrame_TestDetails_id,		muhkuh_mainFrame::OnMtdLinkClicked)
 
 	EVT_LUA_PRINT(wxID_ANY,						muhkuh_mainFrame::OnLuaPrint)
 	EVT_LUA_ERROR(wxID_ANY,						muhkuh_mainFrame::OnLuaError)
@@ -116,6 +119,8 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
  , m_ptHelp(NULL)
  , m_testPanel(NULL)
  , m_tipProvider(NULL)
+ , m_welcomeHtml(NULL)
+ , m_testDetailsHtml(NULL)
 {
 	wxLog *pOldLogTarget;
 	wxString strMsg;
@@ -138,6 +143,16 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 
 	// create the repository manager
 	m_ptRepositoryManager = new muhkuh_repository_manager();
+
+	// set the welcome message
+	// TODO: show the "About" page from the docs here
+	strWelcomePage = wxT("<html><title>Welcome</title><body><h1>Welcome to ");
+	strWelcomePage += strVersion;
+	strWelcomePage += wxT("</h1>");
+	strWelcomePage += wxT("<a href=\"mtd://abc/def/ghi#jkl\">testlink</a><br>");
+	strWelcomePage += wxT("<a href=\"mtd:/abc/def/ghi#jkl\">testlink</a><br>");
+	strWelcomePage += wxT("<a href=\"mtd:abc/def/ghi#jkl\">testlink</a><br>");
+	strWelcomePage += wxT("</body></html>");
 
 	// use aui manager for this frame
 	m_auiMgr.SetManagedWindow(this);
@@ -177,17 +192,6 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	strVersion.Printf(wxT(MUHKUH_APPLICATION_NAME) wxT(" v%d.%d.%d"), MUHKUH_VERSION_MAJ, MUHKUH_VERSION_MIN, MUHKUH_VERSION_SUB);
 	// set the window title
 	SetTitle(strVersion);
-
-	// set the welcome message
-	// TODO: show the "About" page from the docs here
-	strMsg  = wxT("<html><body><h1>Welcome to ");
-	strMsg += strVersion;
-	strMsg += wxT("</h1>");
-	strMsg += wxT("<a href=\"mtd://abc/def/ghi#jkl\">testlink</a><br>");
-	strMsg += wxT("<a href=\"mtd:/abc/def/ghi#jkl\">testlink</a><br>");
-	strMsg += wxT("<a href=\"http://abc/def/ghi#jkl\">testlink</a><br>");
-	strMsg += wxT("</body></html>");
-	m_welcomeHtml->SetPage(strMsg);
 
 	strMsg = wxT("application started");
 	wxLogMessage(strMsg);
@@ -256,15 +260,17 @@ void muhkuh_mainFrame::createMenu(void)
 	file_menu->Append(wxID_EXIT);
 
 	test_menu = new wxMenu;
-	test_menu->Append(muhkuh_mainFrame_menuTestCancel,				wxT("Cancel"),					wxT("Cancel the running test"));
-	test_menu->Append(muhkuh_mainFrame_menuTestRescan,				wxT("Rescan"),					wxT("Rescan the repository"));
+	test_menu->Append(muhkuh_mainFrame_menuTestCancel,			wxT("Cancel"),					wxT("Cancel the running test"));
+	test_menu->Append(muhkuh_mainFrame_menuTestRescan,			wxT("Rescan"),					wxT("Rescan the repository"));
 
 	view_menu = new wxMenu;
-	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewRepositoryPane,		wxT("View Repository Selector"),		wxT("Toggle the visibility of the repository selector"));
-	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewPanicButton,		wxT("View Panic Button"),			wxT("Toggle the visibility of the panic button"));
-	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewTestTree,			wxT("View Test Tree"),				wxT("Toggle the visibility of the test tree"));
-	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewMessageLog,			wxT("View Message Log"),			wxT("Toggle the visibility of the message log"));
-	view_menu->Append(muhkuh_mainFrame_menuRestoreDefaultPerspective,		wxT("Restore Default Layout"),			wxT("Restore the default window layout"));
+	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewRepositoryPane,	wxT("View Repository Selector"),		wxT("Toggle the visibility of the repository selector"));
+	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewPanicButton,	wxT("View Panic Button"),			wxT("Toggle the visibility of the panic button"));
+	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewTestTree,		wxT("View Test Tree"),				wxT("Toggle the visibility of the test tree"));
+	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewMessageLog,		wxT("View Message Log"),			wxT("Toggle the visibility of the message log"));
+	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewWelcomePage,	wxT("View Welcome Page"),			wxT("Toggle the visibility of the Welcome page"));
+	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewTestDetails,	wxT("View Test Details"),			wxT("Toggle the visibility of the Test Details page"));
+	view_menu->Append(muhkuh_mainFrame_menuRestoreDefaultPerspective,	wxT("Restore Default Layout"),			wxT("Restore the default window layout"));
 
 	help_menu = new wxMenu;
 	help_menu->Append(wxID_HELP);
@@ -317,26 +323,9 @@ void muhkuh_mainFrame::createControls(void)
 	m_auiMgr.AddPane(m_notebook, paneInfo);
 
 	// create the "welcome" html
-	m_welcomeHtml = new wxHtmlWindow(this, muhkuh_mainFrame_Welcome_id, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER);
-	m_notebook->AddPage(m_welcomeHtml, wxT("Welcome"));
-
+	createWelcomeWindow();
 	// create the test details list
-	style = wxLC_REPORT | wxLC_HRULES;
-	m_testDetailsList = new wxListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, style);
-	listItem.SetText(_("Name"));
-	listItem.SetImage(-1);
-	listItem.SetAlign(wxLIST_FORMAT_LEFT);
-	m_testDetailsList->InsertColumn(0, listItem);
-	listItem.SetText(_("Version"));
-	listItem.SetImage(-1);
-	listItem.SetAlign(wxLIST_FORMAT_RIGHT);
-	m_testDetailsList->InsertColumn(1, listItem);
-	tSize.Set(16, 16);
-	m_testDetailsImages = new wxImageList(tSize.GetWidth(), tSize.GetHeight(), true, 2);
-	m_testDetailsImages->Add( wxArtProvider::GetBitmap(wxART_REPORT_VIEW, wxART_MENU, tSize) );
-	m_testDetailsImages->Add( wxArtProvider::GetBitmap(wxART_NORMAL_FILE, wxART_MENU, tSize) );
-	m_testDetailsList->AssignImageList(m_testDetailsImages, wxIMAGE_LIST_SMALL);
-	m_notebook->AddPage(m_testDetailsList, wxT("Test Details"));
+	createTestDetailsWindow();
 
 	style = wxTE_MULTILINE | wxSUNKEN_BORDER | wxTE_READONLY;
 	m_textCtrl = new wxTextCtrl(this, wxID_ANY, wxT(""), wxDefaultPosition, wxDefaultSize, style);
@@ -361,12 +350,30 @@ void muhkuh_mainFrame::createTipProvider(void)
 }
 
 
+void muhkuh_mainFrame::createWelcomeWindow(void)
+{
+	m_welcomeHtml = new wxHtmlWindow(this, muhkuh_mainFrame_Welcome_id, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER);
+	m_welcomeHtml->SetPage(strWelcomePage);
+	m_welcomeHtml->SetRelatedFrame(this, strVersion + wxT(" - %s"));
+	m_welcomeHtml->SetRelatedStatusBar(0);
+	m_notebook->AddPage(m_welcomeHtml, wxT("Welcome"));
+}
+
+
+void muhkuh_mainFrame::createTestDetailsWindow(void)
+{
+	m_testDetailsHtml = new wxHtmlWindow(this, muhkuh_mainFrame_TestDetails_id, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER);
+	m_testDetailsHtml->SetPage(strTestDetails);
+	m_testDetailsHtml->SetRelatedFrame(this, strVersion + wxT(" - %s"));
+	m_testDetailsHtml->SetRelatedStatusBar(0);
+	m_notebook->AddPage(m_testDetailsHtml, wxT("Test Details"));
+}
+
+
 void muhkuh_mainFrame::read_config(void)
 {
 	wxConfigBase *pConfig;
 	int iMainFrameX, iMainFrameY, iMainFrameW, iMainFrameH;
-	int iDetailsCol0Size;
-	int iDetailsCol1Size;
 	wxString strPerspective;
 	bool fPaneIsVisible;
 
@@ -384,8 +391,6 @@ void muhkuh_mainFrame::read_config(void)
 	iMainFrameY = pConfig->Read(wxT("y"), 50);
 	iMainFrameW = pConfig->Read(wxT("w"), 640);
 	iMainFrameH = pConfig->Read(wxT("h"), 480);
-	iDetailsCol0Size = pConfig->Read(wxT("detailscol0"), wxLIST_AUTOSIZE);
-	iDetailsCol1Size = pConfig->Read(wxT("detailscol1"), wxLIST_AUTOSIZE);
 	strPerspective = pConfig->Read(wxT("perspective"), wxEmptyString);
 	m_fShowStartupTips = pConfig->Read(wxT("showtips"), true);
 	m_sizStartupTipsIdx = pConfig->Read(wxT("tipidx"), (long)0);
@@ -402,9 +407,6 @@ void muhkuh_mainFrame::read_config(void)
 
 	// set window properties
 	SetSize(iMainFrameX, iMainFrameY, iMainFrameW, iMainFrameH);
-	// set column widths
-	m_testDetailsList->SetColumnWidth(0, iDetailsCol0Size);
-	m_testDetailsList->SetColumnWidth(1, iDetailsCol1Size);
 	if( strPerspective.IsEmpty()==false )
 	{
 		m_auiMgr.LoadPerspective(strPerspective,true);
@@ -425,8 +427,6 @@ void muhkuh_mainFrame::write_config(void)
 {
 	wxConfigBase *pConfig;
 	int iMainFrameX, iMainFrameY, iMainFrameW, iMainFrameH;
-	int iDetailsCol0Size;
-	int iDetailsCol1Size;
 	wxString strPerspective;
 
 
@@ -439,8 +439,6 @@ void muhkuh_mainFrame::write_config(void)
 	// save the frame position
 	GetPosition(&iMainFrameX, &iMainFrameY);
 	GetSize(&iMainFrameW, &iMainFrameH);
-	iDetailsCol0Size = m_testDetailsList->GetColumnWidth(0);
-	iDetailsCol1Size = m_testDetailsList->GetColumnWidth(1);
 	strPerspective = m_auiMgr.SavePerspective();
 
 	// save tip provider data
@@ -454,8 +452,6 @@ void muhkuh_mainFrame::write_config(void)
 	pConfig->Write(wxT("y"), (long)iMainFrameY);
 	pConfig->Write(wxT("w"), (long)iMainFrameW);
 	pConfig->Write(wxT("h"), (long)iMainFrameH);
-	pConfig->Write(wxT("detailscol0"), (long)iDetailsCol0Size);
-	pConfig->Write(wxT("detailscol1"), (long)iDetailsCol1Size);
 	pConfig->Write(wxT("perspective"), strPerspective);
 	pConfig->Write(wxT("showtips"), m_fShowStartupTips);
 	pConfig->Write(wxT("tipidx"), (long)m_sizStartupTipsIdx);
@@ -472,6 +468,10 @@ void muhkuh_mainFrame::write_config(void)
 
 void muhkuh_mainFrame::setState(muhkuh_mainFrame_state tNewState)
 {
+	int iWelcomePageIdx;
+	int iTestDetailsPageIdx;
+
+
 	// leave old state
 	switch(m_state)
 	{
@@ -486,23 +486,44 @@ void muhkuh_mainFrame::setState(muhkuh_mainFrame_state tNewState)
 		break;
 	}
 
+	iWelcomePageIdx = m_notebook->GetPageIndex(m_welcomeHtml);
+	iTestDetailsPageIdx = m_notebook->GetPageIndex(m_testDetailsHtml);
+
 	// enter new state
 	switch(tNewState)
 	{
 	case muhkuh_mainFrame_state_scanning:
 		m_buttonCancelTest->Enable(false);
 		m_menuBar->Enable(muhkuh_mainFrame_menuTestCancel, false);
-		m_testDetailsList->Enable(false);
+		m_menuBar->Enable(muhkuh_mainFrame_menuViewWelcomePage, false);
+		m_menuBar->Enable(muhkuh_mainFrame_menuViewTestDetails, false);
 		m_repositoryCombo->Enable(false);
 		m_treeCtrl->Enable(false);
 		m_menuBar->Enable(wxID_PREFERENCES, false);
 		m_menuBar->Enable(muhkuh_mainFrame_menuTestRescan, false);
+		if( iWelcomePageIdx!=wxNOT_FOUND )
+		{
+			m_welcomeHtml->Enable(false);
+		}
+		if( iTestDetailsPageIdx!=wxNOT_FOUND )
+		{
+			m_testDetailsHtml->Enable(false);
+		}
 		break;
 
 	case muhkuh_mainFrame_state_idle:
 		m_buttonCancelTest->Enable(false);
 		m_menuBar->Enable(muhkuh_mainFrame_menuTestCancel, false);
-		m_testDetailsList->Enable(true);
+		m_menuBar->Enable(muhkuh_mainFrame_menuViewWelcomePage, true);
+		m_menuBar->Enable(muhkuh_mainFrame_menuViewTestDetails, true);
+		if( iWelcomePageIdx!=wxNOT_FOUND )
+		{
+			m_welcomeHtml->Enable(true);
+		}
+		if( iTestDetailsPageIdx!=wxNOT_FOUND )
+		{
+			m_testDetailsHtml->Enable(true);
+		}
 		m_repositoryCombo->Enable(true);
 		m_treeCtrl->Enable(true);
 		m_menuBar->Enable(wxID_PREFERENCES, true);
@@ -513,11 +534,20 @@ void muhkuh_mainFrame::setState(muhkuh_mainFrame_state tNewState)
 		fTestHasFinished = false;
 		m_buttonCancelTest->Enable(true);
 		m_menuBar->Enable(muhkuh_mainFrame_menuTestCancel, true);
-		m_testDetailsList->Enable(false);
+		m_menuBar->Enable(muhkuh_mainFrame_menuViewWelcomePage, false);
+		m_menuBar->Enable(muhkuh_mainFrame_menuViewTestDetails, false);
 		m_repositoryCombo->Enable(false);
 		m_treeCtrl->Enable(false);
 		m_menuBar->Enable(wxID_PREFERENCES, false);
-		m_menuBar->Enable(muhkuh_mainFrame_menuTestRescan, false);
+		m_menuBar->Enable(muhkuh_mainFrame_menuViewTestDetails, false);
+		if( iWelcomePageIdx!=wxNOT_FOUND )
+		{
+			m_welcomeHtml->Enable(false);
+		}
+		if( iTestDetailsPageIdx!=wxNOT_FOUND )
+		{
+			m_testDetailsHtml->Enable(false);
+		}
 		break;
 	}
 
@@ -1017,6 +1047,60 @@ void muhkuh_mainFrame::OnViewMessageLog(wxCommandEvent &event)
 }
 
 
+void muhkuh_mainFrame::OnViewWelcomePage(wxCommandEvent &event)
+{
+	int iPageIdx;
+
+
+	if( event.IsChecked()==true )
+	{
+		// show page
+		if( m_welcomeHtml==NULL )
+		{
+			// page does not exist yet -> create and add
+			createWelcomeWindow();
+		}
+	}
+	else
+	{
+		// hide welcome page
+		iPageIdx = m_notebook->GetPageIndex(m_welcomeHtml);
+		if( iPageIdx!=wxNOT_FOUND )
+		{
+			m_notebook->DeletePage(iPageIdx);
+			m_welcomeHtml = NULL;
+		}
+	}
+}
+
+
+void muhkuh_mainFrame::OnViewTestDetails(wxCommandEvent &event)
+{
+	int iPageIdx;
+
+
+	if( event.IsChecked()==true )
+	{
+		// show page
+		if( m_testDetailsHtml==NULL )
+		{
+			// page does not exist yet -> create and add
+			createTestDetailsWindow();
+		}
+	}
+	else
+	{
+		// hide welcome page
+		iPageIdx = m_notebook->GetPageIndex(m_testDetailsHtml);
+		if( iPageIdx!=wxNOT_FOUND )
+		{
+			m_notebook->DeletePage(iPageIdx);
+			m_testDetailsHtml = NULL;
+		}
+	}
+}
+
+
 void muhkuh_mainFrame::OnShowTip(wxCommandEvent &event)
 {
 	if( m_tipProvider!=NULL )
@@ -1108,16 +1192,17 @@ void muhkuh_mainFrame::OnTestTreeItemSelected(wxTreeEvent &event)
 	const testTreeItemData *ptItemData;
 	muhkuh_wrap_xml *ptWrapXml;
 	wxListItem listItem;
-	wxString sTestName;
+	wxString strTestName;
 	unsigned int uiSubTestCnt;
 	unsigned int uiCnt;
-	wxString sSubTestName;
+	wxString strSubTestName;
 	bool fOk;
 	long lItemIdx;
+	wxString strPage;
 
 
 	// clear the complete list
-	m_testDetailsList->DeleteAllItems();
+	strTestDetails = wxEmptyString;
 
 	// get item data structure
 	itemId = event.GetItem();
@@ -1129,16 +1214,18 @@ void muhkuh_mainFrame::OnTestTreeItemSelected(wxTreeEvent &event)
 			ptWrapXml = ptItemData->getXmlDescription();
 			if( ptWrapXml!=NULL )
 			{
-				lItemIdx = m_testDetailsList->GetItemCount();
+				strTestName = ptWrapXml->testDescription_getName();
 
-				listItem.Clear();
-				listItem.SetMask(wxLIST_MASK_TEXT | wxLIST_MASK_IMAGE);
-				listItem.SetId(lItemIdx);
-				listItem.SetColumn(0);
-				listItem.SetText( ptWrapXml->testDescription_getName() );
-				listItem.SetImage(0);
-				m_testDetailsList->InsertItem(listItem);
-				m_testDetailsList->SetItem(lItemIdx, 1, ptWrapXml->testDescription_getVersion());
+				strPage  = wxT("<html><body>\n");
+
+				strPage += wxT("<h1><a href=\"mtd://");
+				strPage += strTestName;
+				strPage += wxT("\">");
+				strPage += strTestName;
+				strPage += wxT("</a></h1>");
+				strPage += wxT("V");
+				strPage += ptWrapXml->testDescription_getVersion();
+				strPage += wxT("<p>");
 
 				// append all subitems to the list
 				uiSubTestCnt = ptWrapXml->testDescription_getTestCnt();
@@ -1152,22 +1239,28 @@ void muhkuh_mainFrame::OnTestTreeItemSelected(wxTreeEvent &event)
 						break;
 					}
 
-					lItemIdx = m_testDetailsList->GetItemCount();
+					strSubTestName = ptWrapXml->test_getName();
 
-					listItem.Clear();
-					listItem.SetMask(wxLIST_MASK_TEXT | wxLIST_MASK_IMAGE);
-					listItem.SetId(lItemIdx);
-					listItem.SetColumn(0);
-					listItem.SetText( ptWrapXml->test_getName() );
-					listItem.SetImage(1);
-					m_testDetailsList->InsertItem(listItem);
-					m_testDetailsList->SetItem(lItemIdx, 1, ptWrapXml->test_getVersion());
+					strPage += wxT("<a href=\"mtd://") + strTestName + wxT('#') + strSubTestName + wxT("\">");
+					strPage += strSubTestName;
+					strPage += wxT("</a>");
+					strPage += wxT("V");
+					strPage += ptWrapXml->test_getVersion();
+					strPage += wxT("<br>");
 
 					// next item
 					++uiCnt;
 				}
+
+				strPage += wxT("</body></html>");
+				strTestDetails = strPage;
 			}
 		}
+	}
+
+	if( m_testDetailsHtml!=NULL )
+	{
+		m_testDetailsHtml->SetPage(strTestDetails);
 	}
 }
 
@@ -1200,6 +1293,12 @@ void muhkuh_mainFrame::scanTests(int iActiveRepositoryIdx)
 	{
 		// clear all old tests
 		m_sizTestCnt = 0;
+		// clear the test description
+		strTestDetails = wxEmptyString;
+		if( m_testDetailsHtml!=NULL )
+		{
+			m_testDetailsHtml->SetPage(strTestDetails);
+		}
 		// clear the complete tree
 		m_treeCtrl->DeleteAllItems();
 		// add a root item
@@ -1276,6 +1375,56 @@ void muhkuh_mainFrame::addAllTests(int iActiveRepositoryIdx)
 }
 
 
+bool muhkuh_mainFrame::cutPath(wxString &strPath, wxArrayString *ptElems)
+{
+	size_t sizCnt, sizLen, sizPos;
+	bool fResult;
+	wxURI tUri;
+
+
+	// cut the name into the path elements
+	sizCnt = 0;
+	sizLen = strPath.Length();
+	// does the string start with a slash?
+	if( strPath[0]==wxT('/') )
+	{
+		// yes -> ignore this slash
+		++sizCnt;
+	}
+	sizPos = sizCnt;
+	// loop over all path elements
+	while( sizCnt<sizLen )
+	{
+		// get the next path element
+		if( strPath[sizCnt]==wxT('/') )
+		{
+			if( sizPos<sizCnt )
+			{
+				// get the path element
+				ptElems->Add(tUri.Unescape(strPath.Mid(sizPos, sizCnt-sizPos)));
+			}
+			// get start position for next path element
+			sizPos = sizCnt+1;
+		}
+		// next char
+		++sizCnt;
+	}
+	// is one element left?
+	if( sizPos>=sizLen )
+	{
+		fResult = false;
+	}
+	else
+	{
+		// add the file element
+		ptElems->Add(tUri.Unescape(strPath.Mid(sizPos, sizLen-sizPos)));
+		fResult = true;
+	}
+
+	return fResult;
+}
+
+
 bool muhkuh_mainFrame::addTestTree(testTreeItemData *ptTestTreeItem)
 {
 	wxString strTestPath;
@@ -1292,49 +1441,18 @@ bool muhkuh_mainFrame::addTestTree(testTreeItemData *ptTestTreeItem)
 	bool fResult;
 
 
-	fResult = false;
-
 	// get the full test name
 	strTestPath = ptTestTreeItem->getTestLabel();
-	// cut the name into the path elements
-	sizCnt = 0;
-	sizLen = strTestPath.Length();
-	// does the string start with a slash?
-	if( strTestPath[0]==wxT('/') )
+
+	fResult = cutPath(strTestPath, &aPathElems);
+	if( fResult==false )
 	{
-		// yes -> ignore this slash
-		++sizCnt;
-	}
-	sizPos = sizCnt;
-	// loop over all path elements
-	while( sizCnt<sizLen )
-	{
-		// get the next path element
-		if( strTestPath[sizCnt]==wxT('/') )
-		{
-			if( sizPos<sizCnt )
-			{
-				// get the path element
-				aPathElems.Add(strTestPath.Mid(sizPos, sizCnt-sizPos));
-			}
-			// get start position for next path element
-			sizPos = sizCnt+1;
-		}
-		// next char
-		++sizCnt;
-	}
-	// is one element left?
-	if( sizPos>=sizLen )
-	{
-		// no, path ends with a slash
-		strMsg = wxT("The testname ") + strTestPath + wxT(" ends with a slash ('/'). This is only a path and does not point to a test.");
+		// path not ok
+		strMsg = wxT("The testname ") + strTestPath + wxT(" is no valid path to a test.");
 		wxMessageBox(strMsg, wxT("Failed to add test"), wxICON_ERROR, this);
 	}
 	else
 	{
-		// add the file element
-		aPathElems.Add(strTestPath.Mid(sizPos, sizLen-sizPos));
-
 		// now create the complete path in the tree
 
 		// start at the root item
@@ -1410,6 +1528,7 @@ bool muhkuh_mainFrame::addTestTree(testTreeItemData *ptTestTreeItem)
 		{
 			// no items in this branch, just add the new item
 			searchId = m_treeCtrl->AppendItem(itemId, strPathElement, -1, -1, ptTestTreeItem);
+			fResult = true;
 		}
 		else
 		{
@@ -1453,6 +1572,7 @@ bool muhkuh_mainFrame::addTestTree(testTreeItemData *ptTestTreeItem)
 			{
 				strMsg = wxT("The test ") + strTestPath + wxT(" already exists, skipping new instance!");
 				wxMessageBox(strMsg, wxT("Failed to add test"), wxICON_ERROR, this);
+				fResult = false;
 			}
 			else
 			{
@@ -1461,7 +1581,7 @@ bool muhkuh_mainFrame::addTestTree(testTreeItemData *ptTestTreeItem)
 		}
 	}
 
-	return true;
+	return fResult;
 }
 
 
@@ -1565,6 +1685,20 @@ void muhkuh_mainFrame::OnNotebookPageClose(wxAuiNotebookEvent &event)
 			setState(muhkuh_mainFrame_state_idle);
 		}
 	}
+	// close the welcome page?
+	else if( ptWin==m_welcomeHtml )
+	{
+		m_menuBar->Check(muhkuh_mainFrame_menuViewWelcomePage, false);
+		// forget the pointer
+		m_welcomeHtml = NULL;
+	}
+	// close the test details page?
+	else if( ptWin==m_testDetailsHtml )
+	{
+		m_menuBar->Check(muhkuh_mainFrame_menuViewTestDetails, false);
+		// forget the pointer
+		m_testDetailsHtml = NULL;
+	}
 }
 
 
@@ -1605,23 +1739,181 @@ void muhkuh_mainFrame::OnLuaError(wxLuaEvent &event)
 }
 
 
-void muhkuh_mainFrame::OnWelcomeLinkClicked(wxHtmlLinkEvent &event)
+void muhkuh_mainFrame::OnMtdLinkClicked(wxHtmlLinkEvent &event)
 {
+	wxString strHref;
 	wxURI tUri;
+	wxString strElem;
+	wxString strPath;
+	wxArrayString aPathElems;
+	size_t sizCnt, sizLen;
+	wxTreeItemId parentId;
+	wxTreeItemId searchId;
+	wxTreeItemIdValue searchCookie;
+	bool fResult;
+	int iCmp;
+	const testTreeItemData *ptItemData;
+	muhkuh_wrap_xml *ptWrapXml;
+	unsigned int uiCnt, uiMax;
+	wxString strFragment;
 
 
-	tUri.Create(event.GetLinkInfo().GetHref());
+	strHref = event.GetLinkInfo().GetHref();
+	wxLogMessage(wxT("Link clicked: ") + strHref);
+	tUri.Create(strHref);
 	if( tUri.HasScheme()==true && tUri.GetScheme().Cmp(wxT("mtd"))==0 )
 	{
-		wxLogMessage(tUri.GetServer());
-		wxLogMessage(tUri.GetPath());
-		wxLogMessage(tUri.GetFragment());
+		// a mtd link must at least have a server or a path
+		if( tUri.HasServer()==false && tUri.HasPath()==false )
+		{
+			// no server and no path -> no good mtd link
+			wxLogError(wxT("mtd link has no valid path: '") + tUri.Unescape(strHref) + wxT("'"));
+		}
+		else
+		{
+			if( tUri.HasServer()==true )
+			{
+				strPath = tUri.GetServer();
+			}
+			if( tUri.HasPath()==true )
+			{
+				// separate server and path with '/'
+				strPath += wxT("/");
+				strElem = tUri.GetPath();
+				// cut off leading '/'
+				if( strElem[0]==wxT('/') )
+				{
+					// cut off the first char
+					strElem = strElem.Mid(1);
+				}
+				strPath += strElem;
+			}
+
+			// cut the path into elements
+			fResult = cutPath(strPath, &aPathElems);
+			if( fResult==false )
+			{
+				// path not ok
+				wxLogError(wxT("The testname '") + tUri.Unescape(strPath) + wxT("' is no valid path to a test."));
+			}
+			else
+			{
+				// path is ok, now search the tree for the test
+				sizCnt = 0;
+				sizLen = aPathElems.Count();
+
+				// start at the root item
+				parentId = m_treeCtrl->GetRootItem();
+
+				iCmp = 1;
+				while( sizCnt<sizLen )
+				{
+					// look for this element in the test tree
+					searchId = m_treeCtrl->GetFirstChild(parentId, searchCookie);
+					if( searchId.IsOk()==false )
+					{
+						// no items in this branch
+						iCmp = 1;
+						break;
+					}
+					else
+					{
+						do
+						{
+							iCmp = m_treeCtrl->GetItemText(searchId).Cmp(aPathElems.Item(sizCnt));
+							if( iCmp==0 )
+							{
+								// found the element
+								parentId = searchId;
+								break;
+							}
+							else if( iCmp<0 )
+							{
+								// move to next child
+								searchId = m_treeCtrl->GetNextChild(parentId, searchCookie);
+							}
+							else
+							{
+								// the item can't appear anymore because of the sort order
+								break;
+							}
+						} while( searchId.IsOk()==true );
+					}
+
+					// next path element
+					++sizCnt;
+				}
+
+				// found all elements?
+				if( iCmp!=0 || searchId.IsOk()!=true )
+				{
+					// no
+					wxLogError(wxT("The test '") + tUri.Unescape(strPath) + wxT("' could not be found."));
+				}
+				else
+				{
+					// yes, found all elements -> searchId is the test node!
+					ptItemData = (const testTreeItemData*)m_treeCtrl->GetItemData(searchId);
+					if( ptItemData!=NULL )
+					{
+						ptWrapXml = ptItemData->getXmlDescription();
+						if( ptWrapXml!=NULL )
+						{
+							uiCnt = 0;
+							if( tUri.HasFragment()==true )
+							{
+								strFragment = tUri.Unescape(tUri.GetFragment());
+								uiMax = ptWrapXml->testDescription_getTestCnt();
+								iCmp = 1;
+								while( uiCnt<uiMax )
+								{
+									fResult = ptWrapXml->testDescription_setTest(uiCnt);
+									if( fResult!=true )
+									{
+										wxLogError(wxT("failed to query subtest ") + strFragment + wxT(" in test ") + strPath);
+										break;
+									}
+									else
+									{
+										++uiCnt;
+										iCmp = strFragment.Cmp(ptWrapXml->test_getName());
+										if( iCmp==0 )
+										{
+											// found subtest
+											break;
+										}
+									}
+								}
+								// found test
+								if( iCmp!=0 )
+								{
+									wxLogError(wxT("test ") + strPath + wxT(" has no subtest ") + strFragment);
+								}
+							}
+							else
+							{
+								iCmp = 0;
+							}
+
+							if( iCmp==0 )
+							{
+								// execute the main test
+								wxLogMessage(wxT("executing test!"));
+								executeTest(ptWrapXml, uiCnt);
+							}
+						}
+					}
+				}
+			}
+			
+		}
 	}
 	else
 	{
 		event.Skip();
 	}
 }
+
 
 void muhkuh_mainFrame::luaTestHasFinished(void)
 {
