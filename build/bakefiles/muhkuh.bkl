@@ -5,7 +5,18 @@
 	<!-- This is required because it contains the definitions of a lot of utils -->
 	<include file="wxluabase.bkl"/>
 
-	<set var="WXLUA_BASEDIR">$(SRCDIR)</set>
+	<!-- Set Lua include and libdir to env var on win platforms -->
+	<if cond="TARGETING_WIN32=='1'">
+		<set var="WXLUA_BASEDIR">$(DOLLAR)($(ENV_VAR)WXLUA)</set>
+		<set var="LUA_INCLUDE_DIR_DEFAULT">$(WXLUA_BASEDIR)\modules\lua\include</set>
+		<set var="LUA_LIB_DIR_DEFAULT">$(WXLUA_BASEDIR)\modules\lua\lib</set>
+		<set var="LUA_INCLUDE_DIR">$(LUA_INCLUDE_DIR_DEFAULT)</set>
+		<set var="LUA_LIB_DIR">$(LUA_LIB_DIR_DEFAULT)</set>
+	</if>
+	<!-- for all other platforms -->
+	<if cond="TARGETING_WIN32=='0'">
+		<set var="WXLUA_BASEDIR">$(SRCDIR)</set>
+	</if>
 
 	<!-- ================================================================== -->
 	<!--                     The muhkuh application                         -->
@@ -14,6 +25,7 @@
 	<exe id="muhkuh" template="wxlua">
 		<app-type>gui</app-type>
 		<threading>multi</threading>
+		<include>$(SRCDIR)</include>
 		<include>$(SRCDIR)/application</include>
 		<dirname>$(SRCDIR)/bin</dirname>
 		<sources>
@@ -61,10 +73,11 @@
 		<wx-lib>base</wx-lib>
 	</exe>
 
-	<module id="plugin_romloader_usb" template="wxlua-lib">
+	<module id="plugin_romloader_usb" template="wxlua">
 		<dllname>bootloader_usb</dllname>
 		<threading>multi</threading>
 		<dirname>$(SRCDIR)/bin</dirname>
+		<include>$(SRCDIR)</include>
 		<include>$(SRCDIR)/plugins/romloader/usb</include>
 		<sources>
 			plugins/romloader/romloader.cpp
@@ -106,10 +119,11 @@
 		<wx-lib>base</wx-lib>
 	</module>
 
-	<module id="plugin_romloader_baka" template="wxlua-lib">
+	<module id="plugin_romloader_baka" template="wxlua">
 		<dllname>baka</dllname>
 		<threading>multi</threading>
 		<dirname>$(SRCDIR)/bin</dirname>
+		<include>$(SRCDIR)</include>
 		<include>$(SRCDIR)/plugins/romloader/baka</include>
 		<sources>
 			plugins/romloader/romloader.cpp
@@ -142,10 +156,11 @@
 	</module>
 
 
-	<module id="plugin_romloader_openocd" template="wxlua-lib">
+	<module id="plugin_romloader_openocd" template="wxlua">
 		<dllname>openocd</dllname>
 		<threading>multi</threading>
 		<dirname>$(SRCDIR)/bin</dirname>
+		<include>$(SRCDIR)</include>
 		<include>$(SRCDIR)/plugins/romloader/openocd</include>
 		<include>$(SRCDIR)/plugins/romloader/openocd/openocd</include>
 		<include>$(SRCDIR)/plugins/romloader/openocd/openocd/helper</include>

@@ -37,7 +37,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_dll\msw;$(WXWIN)\include;..\..\modules;.\..\..;..\..\..\modules\lua\include;..\..\application"
+				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_dll\msw;$(WXWIN)\include;$(WXLUA)\modules;.\$(WXLUA);$(WXLUA)\modules\lua\include;..\..;..\..\application"
 				MinimalRebuild="false"
 				ExceptionHandling="1"
 				AdditionalOptions=""
@@ -57,7 +57,7 @@
 			<Tool
 				Name="VCResourceCompilerTool"
 				Culture="1033"
-				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_dll\msw;$(WXWIN)\include;..\..\modules;.\..\..;..\..\..\modules\lua\include;..\..\application"
+				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_dll\msw;$(WXWIN)\include;$(WXLUA)\modules;.\$(WXLUA);$(WXLUA)\modules\lua\include;..\..;..\..\application"
 				PreprocessorDefinitions="WXUSINGDLL;__WXMSW__;_WINDOWS"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
@@ -69,7 +69,7 @@
 				LinkIncremental="1"
 				SubSystem="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(WXWIN)\lib\vc_dll;..\..\lib\vc_dll;..\..\..\modules\lua\lib"
+				AdditionalLibraryDirectories="$(WXWIN)\lib\vc_dll;$(WXLUA)\lib\vc_dll;$(WXLUA)\modules\lua\lib"
 				ProgramDatabaseFile="..\..\bin\muhkuh.pdb"
 				TargetMachine="1"/>
 			<Tool
@@ -110,7 +110,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_dll\msw;$(WXWIN)\include;..\..\modules;.\..\..;..\..\..\modules\lua\include;..\..\application"
+				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_dll\msw;$(WXWIN)\include;$(WXLUA)\modules;.\$(WXLUA);$(WXLUA)\modules\lua\include;..\..;..\..\application"
 				MinimalRebuild="false"
 				ExceptionHandling="1"
 				AdditionalOptions=""
@@ -130,7 +130,7 @@
 			<Tool
 				Name="VCResourceCompilerTool"
 				Culture="1033"
-				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_dll\msw;$(WXWIN)\include;..\..\modules;.\..\..;..\..\..\modules\lua\include;..\..\application"
+				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_dll\msw;$(WXWIN)\include;$(WXLUA)\modules;.\$(WXLUA);$(WXLUA)\modules\lua\include;..\..;..\..\application"
 				PreprocessorDefinitions="WXUSINGDLL;__WXMSW__;_WINDOWS"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
@@ -142,7 +142,7 @@
 				LinkIncremental="1"
 				SubSystem="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(WXWIN)\lib\vc_dll;..\..\lib\vc_dll;..\..\..\modules\lua\lib"
+				AdditionalLibraryDirectories="$(WXWIN)\lib\vc_dll;$(WXLUA)\lib\vc_dll;$(WXLUA)\modules\lua\lib"
 				ProgramDatabaseFile="..\..\bin\muhkuh.pdb"
 				TargetMachine="1"/>
 			<Tool
@@ -183,7 +183,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_lib\msw;$(WXWIN)\include;..\..\modules;.\..\..;..\..\..\modules\lua\include;..\..\application"
+				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_lib\msw;$(WXWIN)\include;$(WXLUA)\modules;.\$(WXLUA);$(WXLUA)\modules\lua\include;..\..;..\..\application"
 				MinimalRebuild="false"
 				ExceptionHandling="1"
 				AdditionalOptions=""
@@ -203,7 +203,7 @@
 			<Tool
 				Name="VCResourceCompilerTool"
 				Culture="1033"
-				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_lib\msw;$(WXWIN)\include;..\..\modules;.\..\..;..\..\..\modules\lua\include;..\..\application"
+				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_lib\msw;$(WXWIN)\include;$(WXLUA)\modules;.\$(WXLUA);$(WXLUA)\modules\lua\include;..\..;..\..\application"
 				PreprocessorDefinitions="__WXMSW__;_WINDOWS"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
@@ -215,7 +215,7 @@
 				LinkIncremental="1"
 				SubSystem="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(WXWIN)\lib\vc_lib;..\..\lib\vc_dll;..\..\..\modules\lua\lib"
+				AdditionalLibraryDirectories="$(WXWIN)\lib\vc_lib;$(WXLUA)\lib\vc_dll;$(WXLUA)\modules\lua\lib"
 				ProgramDatabaseFile="..\..\bin\muhkuh.pdb"
 				TargetMachine="1"/>
 			<Tool
@@ -256,7 +256,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_lib\msw;$(WXWIN)\include;..\..\modules;.\..\..;..\..\..\modules\lua\include;..\..\application"
+				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_lib\msw;$(WXWIN)\include;$(WXLUA)\modules;.\$(WXLUA);$(WXLUA)\modules\lua\include;..\..;..\..\application"
 				MinimalRebuild="false"
 				ExceptionHandling="1"
 				AdditionalOptions=""
@@ -276,7 +276,7 @@
 			<Tool
 				Name="VCResourceCompilerTool"
 				Culture="1033"
-				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_lib\msw;$(WXWIN)\include;..\..\modules;.\..\..;..\..\..\modules\lua\include;..\..\application"
+				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_lib\msw;$(WXWIN)\include;$(WXLUA)\modules;.\$(WXLUA);$(WXLUA)\modules\lua\include;..\..;..\..\application"
 				PreprocessorDefinitions="__WXMSW__;_WINDOWS"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
@@ -288,7 +288,7 @@
 				LinkIncremental="1"
 				SubSystem="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(WXWIN)\lib\vc_lib;..\..\lib\vc_dll;..\..\..\modules\lua\lib"
+				AdditionalLibraryDirectories="$(WXWIN)\lib\vc_lib;$(WXLUA)\lib\vc_dll;$(WXLUA)\modules\lua\lib"
 				ProgramDatabaseFile="..\..\bin\muhkuh.pdb"
 				TargetMachine="1"/>
 			<Tool
@@ -329,7 +329,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_dll\mswd;$(WXWIN)\include;..\..\modules;.\..\..;..\..\..\modules\lua\include;..\..\application"
+				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_dll\mswd;$(WXWIN)\include;$(WXLUA)\modules;.\$(WXLUA);$(WXLUA)\modules\lua\include;..\..;..\..\application"
 				MinimalRebuild="true"
 				ExceptionHandling="1"
 				AdditionalOptions=""
@@ -349,7 +349,7 @@
 			<Tool
 				Name="VCResourceCompilerTool"
 				Culture="1033"
-				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_dll\mswd;$(WXWIN)\include;..\..\modules;.\..\..;..\..\..\modules\lua\include;..\..\application"
+				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_dll\mswd;$(WXWIN)\include;$(WXLUA)\modules;.\$(WXLUA);$(WXLUA)\modules\lua\include;..\..;..\..\application"
 				PreprocessorDefinitions="WXUSINGDLL;__WXDEBUG__;__WXMSW__;_WINDOWS;_DEBUG"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
@@ -361,7 +361,7 @@
 				LinkIncremental="2"
 				SubSystem="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(WXWIN)\lib\vc_dll;..\..\lib\vc_dll;..\..\..\modules\lua\lib"
+				AdditionalLibraryDirectories="$(WXWIN)\lib\vc_dll;$(WXLUA)\lib\vc_dll;$(WXLUA)\modules\lua\lib"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="..\..\bin\muhkuh.pdb"
 				TargetMachine="1"/>
@@ -403,7 +403,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_dll\mswd;$(WXWIN)\include;..\..\modules;.\..\..;..\..\..\modules\lua\include;..\..\application"
+				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_dll\mswd;$(WXWIN)\include;$(WXLUA)\modules;.\$(WXLUA);$(WXLUA)\modules\lua\include;..\..;..\..\application"
 				MinimalRebuild="true"
 				ExceptionHandling="1"
 				AdditionalOptions=""
@@ -423,7 +423,7 @@
 			<Tool
 				Name="VCResourceCompilerTool"
 				Culture="1033"
-				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_dll\mswd;$(WXWIN)\include;..\..\modules;.\..\..;..\..\..\modules\lua\include;..\..\application"
+				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_dll\mswd;$(WXWIN)\include;$(WXLUA)\modules;.\$(WXLUA);$(WXLUA)\modules\lua\include;..\..;..\..\application"
 				PreprocessorDefinitions="WXUSINGDLL;__WXDEBUG__;__WXMSW__;_WINDOWS;_DEBUG"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
@@ -435,7 +435,7 @@
 				LinkIncremental="2"
 				SubSystem="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(WXWIN)\lib\vc_dll;..\..\lib\vc_dll;..\..\..\modules\lua\lib"
+				AdditionalLibraryDirectories="$(WXWIN)\lib\vc_dll;$(WXLUA)\lib\vc_dll;$(WXLUA)\modules\lua\lib"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="..\..\bin\muhkuh.pdb"
 				TargetMachine="1"/>
@@ -477,7 +477,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_lib\mswd;$(WXWIN)\include;..\..\modules;.\..\..;..\..\..\modules\lua\include;..\..\application"
+				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_lib\mswd;$(WXWIN)\include;$(WXLUA)\modules;.\$(WXLUA);$(WXLUA)\modules\lua\include;..\..;..\..\application"
 				MinimalRebuild="true"
 				ExceptionHandling="1"
 				AdditionalOptions=""
@@ -497,7 +497,7 @@
 			<Tool
 				Name="VCResourceCompilerTool"
 				Culture="1033"
-				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_lib\mswd;$(WXWIN)\include;..\..\modules;.\..\..;..\..\..\modules\lua\include;..\..\application"
+				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_lib\mswd;$(WXWIN)\include;$(WXLUA)\modules;.\$(WXLUA);$(WXLUA)\modules\lua\include;..\..;..\..\application"
 				PreprocessorDefinitions="__WXDEBUG__;__WXMSW__;_WINDOWS;_DEBUG"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
@@ -509,7 +509,7 @@
 				LinkIncremental="2"
 				SubSystem="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(WXWIN)\lib\vc_lib;..\..\lib\vc_dll;..\..\..\modules\lua\lib"
+				AdditionalLibraryDirectories="$(WXWIN)\lib\vc_lib;$(WXLUA)\lib\vc_dll;$(WXLUA)\modules\lua\lib"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="..\..\bin\muhkuh.pdb"
 				TargetMachine="1"/>
@@ -551,7 +551,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_lib\mswd;$(WXWIN)\include;..\..\modules;.\..\..;..\..\..\modules\lua\include;..\..\application"
+				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_lib\mswd;$(WXWIN)\include;$(WXLUA)\modules;.\$(WXLUA);$(WXLUA)\modules\lua\include;..\..;..\..\application"
 				MinimalRebuild="true"
 				ExceptionHandling="1"
 				AdditionalOptions=""
@@ -571,7 +571,7 @@
 			<Tool
 				Name="VCResourceCompilerTool"
 				Culture="1033"
-				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_lib\mswd;$(WXWIN)\include;..\..\modules;.\..\..;..\..\..\modules\lua\include;..\..\application"
+				AdditionalIncludeDirectories="$(WXWIN)\lib\vc_lib\mswd;$(WXWIN)\include;$(WXLUA)\modules;.\$(WXLUA);$(WXLUA)\modules\lua\include;..\..;..\..\application"
 				PreprocessorDefinitions="__WXDEBUG__;__WXMSW__;_WINDOWS;_DEBUG"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
@@ -583,7 +583,7 @@
 				LinkIncremental="2"
 				SubSystem="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="$(WXWIN)\lib\vc_lib;..\..\lib\vc_dll;..\..\..\modules\lua\lib"
+				AdditionalLibraryDirectories="$(WXWIN)\lib\vc_lib;$(WXLUA)\lib\vc_dll;$(WXLUA)\modules\lua\lib"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="..\..\bin\muhkuh.pdb"
 				TargetMachine="1"/>
