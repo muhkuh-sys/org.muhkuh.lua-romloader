@@ -134,6 +134,7 @@ bool muhkuh_repository::GetSelected(void) const
 wxString muhkuh_repository::GetStringRepresentation(void) const
 {
 	wxString strName;
+	wxString strDetails;
 
 
 	// start with the user defined name
@@ -146,25 +147,20 @@ wxString muhkuh_repository::GetStringRepresentation(void) const
 	switch( m_eTyp )
 	{
 	case REPOSITORY_TYP_DIRSCAN:
-		strName += wxT("directory scan in ");
-		strName += m_strLocation;
-		strName += wxT(" for ");
-		strName += m_strExtension;
+		strDetails.Printf(_("directory scan in '%s' for '%s'"), m_strLocation.fn_str(), m_strExtension.fn_str());
 		break;
 	case REPOSITORY_TYP_FILELIST:
-		strName += wxT("filelist from ");
-		strName += m_strLocation;
+		strDetails.Printf(_("filelist from '%s'"), m_strLocation.fn_str());
 		break;
 	case REPOSITORY_TYP_SINGLEXML:
-		strName += wxT("single xml file from ");
-		strName += m_strLocation;
+		strDetails.Printf(_("single xml file from '%s'"), m_strLocation.fn_str());
 		break;
 	default:
-		strName += wxT("unknown typ");
+		strDetails = _("unknown typ");
 		break;
 	}
 
-	strName += wxT(")");
+	strName += strDetails + wxT(")");
 
 	return strName;
 }
@@ -270,7 +266,6 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 	wxString strLocation;
 	wxString strExtension;
 	muhkuh_repository *ptRepoCfg;
-	wxString strMessage;
 
 
 	// no item created yet
@@ -288,8 +283,7 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 	// the name must not be empty
 	if( strName.IsEmpty() )
 	{
-		strMessage.Printf(wxT("repository entry %d has no name, ignore entry"), iIndex);
-		wxLogWarning(strMessage);
+		wxLogWarning(_("repository entry %d has no name, ignore entry"), iIndex);
 	}
 	else
 	{
@@ -300,13 +294,11 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 			// the dirscan typ must have a location and an extension
 			if( strLocation.IsEmpty() )
 			{
-				strMessage.Printf(wxT("repository entry %d has no location, ignore entry"), iIndex);
-				wxLogWarning(strMessage);
+				wxLogWarning(_("repository entry %d has no location, ignore entry"), iIndex);
 			}
 			else if( strExtension.IsEmpty() )
 			{
-				strMessage.Printf(wxT("repository entry %d has no extension, ignore entry"), iIndex);
-				wxLogWarning(strMessage);
+				wxLogWarning(_("repository entry %d has no extension, ignore entry"), iIndex);
 			}
 			else
 			{
@@ -320,8 +312,7 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 			// the filelist typ must have a location
 			if( strLocation.IsEmpty() )
 			{
-				strMessage.Printf(wxT("repository entry %d has no location, ignore entry"), iIndex);
-				wxLogWarning(strMessage);
+				wxLogWarning(_("repository entry %d has no location, ignore entry"), iIndex);
 			}
 			else
 			{
@@ -335,8 +326,7 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 			// the filelist typ must have a location
 			if( strLocation.IsEmpty() )
 			{
-				strMessage.Printf(wxT("repository entry %d has no location, ignore entry"), iIndex);
-				wxLogWarning(strMessage);
+				wxLogWarning(_("repository entry %d has no location, ignore entry"), iIndex);
 			}
 			else
 			{
@@ -348,8 +338,7 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 
 		default:
 			// here end up all unknown types, show an errormessage
-			strMessage.Printf(wxT("repository entry %d has invalid typ, ignore entry"), iIndex);
-			wxLogWarning(strMessage);
+			wxLogWarning(_("repository entry %d has invalid typ, ignore entry"), iIndex);
 			break;
 		}
 	}
@@ -387,7 +376,7 @@ bool muhkuh_repository::createTestlist(wxProgressDialog *ptScannerProgress)
 		fResult = createTestlist_local(ptScannerProgress);
 		if( fResult==false )
 		{
-			wxLogError(wxT("failed to scan the test directory"));
+			wxLogError(_("failed to scan the test directory"));
 		}
 		break;
 
@@ -395,7 +384,7 @@ bool muhkuh_repository::createTestlist(wxProgressDialog *ptScannerProgress)
 		fResult = createTestlist_url(ptScannerProgress);
 		if( fResult==false )
 		{
-			wxLogError(wxT("failed to open the repository"));
+			wxLogError(_("failed to open the repository"));
 		}
 		break;
 
@@ -403,7 +392,7 @@ bool muhkuh_repository::createTestlist(wxProgressDialog *ptScannerProgress)
 		fResult = createTestlist_singlexml(ptScannerProgress);
 		if( fResult==false )
 		{
-			wxLogError(wxT("failed to open the repository"));
+			wxLogError(_("failed to open the repository"));
 		}
 		break;
 
@@ -523,9 +512,7 @@ bool muhkuh_repository::createTestlist_local(wxProgressDialog *ptScannerProgress
 	astrTestList.Clear();
 
 	// no idea how long the scanning will take -> set to pulse (that's 'unknown time remaining)
-	strProgressMessage  = wxT("scanning local folder '");
-	strProgressMessage += m_strLocation;
-	strProgressMessage += wxT("' for tests...");
+	strProgressMessage.Printf(_("scanning local folder '%s' for tests..."), m_strLocation.fn_str());
 	fScannerIsRunning = ptScannerProgress->Pulse(strProgressMessage, NULL);
 	// update gui for new scanner message
 	wxTheApp->Yield();
@@ -541,21 +528,21 @@ bool muhkuh_repository::createTestlist_local(wxProgressDialog *ptScannerProgress
 		if( !fileName.IsOk() )
 		{
 			// path is not correct
-			wxLogError(wxT("failed to set path, IsOK returned false"));
+			wxLogError(_("failed to set path, IsOK returned false"));
 			return false;
 		}
 		// does the path point to a directory?
 		if( !fileName.IsDir() )
 		{
 			// no, the path does not point to a directory
-			wxLogError(wxT("the path does not point to a directory"));
+			wxLogError(_("the path does not point to a directory"));
 			return false;
 		}
 		// does the directory exist?
 		if( !fileName.DirExists() )
 		{
 			// no, the directory does not exist
-			wxLogError(wxT("the directory does not exist"));
+			wxLogError(_("the directory does not exist"));
 			return false;
 		}
 
@@ -563,7 +550,7 @@ bool muhkuh_repository::createTestlist_local(wxProgressDialog *ptScannerProgress
 		strCompletePath = fileName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR);
 		// convert path to url
 		strUrl = wxFileSystem::FileNameToURL(strCompletePath);
-		wxLogDebug(wxT("scanning testdescriptions at ") + strUrl);
+		wxLogDebug(_("scanning testdescriptions at '%s'"), strUrl.fn_str());
 
 		// set path
 		fileSystem.ChangePathTo(strUrl, true);
@@ -578,7 +565,7 @@ bool muhkuh_repository::createTestlist_local(wxProgressDialog *ptScannerProgress
 
 			// convert to url
 			strUrl = wxFileSystem::FileNameToURL(strFilename);
-			wxLogDebug(wxT("found ") + strUrl);
+			wxLogDebug(_("found '%s'"), strUrl.fn_str());
 			astrTestList.Add(strUrl);
 			strFilename = fileSystem.FindNext();
 		}
@@ -614,9 +601,7 @@ bool muhkuh_repository::createTestlist_url(wxProgressDialog *ptScannerProgress)
 	strLocation = m_strLocation;
 
 	// no idea how long the scanning will take -> set to pulse (that's 'unknown time remaining)
-	strProgressMessage  = wxT("scanning repository '");
-	strProgressMessage += m_strLocation;
-	strProgressMessage += wxT("' for tests...");
+	strProgressMessage.Printf(_("scanning repository '%s' for tests..."), m_strLocation.fn_str());
 	fScannerIsRunning = ptScannerProgress->Pulse(strProgressMessage, NULL);
 	// update gui for new scanner message
 	wxTheApp->Yield();
@@ -628,55 +613,48 @@ bool muhkuh_repository::createTestlist_url(wxProgressDialog *ptScannerProgress)
 		if( urlError!=wxURL_NOERR )
 		{
 			// this was no valid url
-			strMessage  = wxT("Invalid URL : '");
-			strMessage += strLocation;
-			strMessage += wxT("'\n");
+			strMessage.Printf(_("Invalid URL : '%s': "), strLocation.fn_str());
 			// try to show some details
 			switch( urlError )
 			{
 			case wxURL_SNTXERR:
-				strMessage += wxT("Syntax error in the URL string.");
+				strMessage += _("Syntax error in the URL string.");
 				break;
 			case wxURL_NOPROTO:
-				strMessage += wxT("Found no protocol which can get this URL.");
+				strMessage += _("Found no protocol which can get this URL.");
 				break;
 			case wxURL_NOHOST:
-				strMessage += wxT("An host name is required for this protocol.");
+				strMessage += _("An host name is required for this protocol.");
 				break;
 			case wxURL_NOPATH:
-				strMessage += wxT("A path is required for this protocol.");
+				strMessage += _("A path is required for this protocol.");
 				break;
 			case wxURL_CONNERR:
-				strMessage += wxT("Connection error. (did anybody press connect? should never happen!)");
+				strMessage += _("Connection error.");
 				break;
 			case wxURL_PROTOERR:
-				strMessage += wxT("An error occurred during negotiation. (should never happen!)");
+				strMessage += _("An error occurred during negotiation. (should never happen!)");
 				break;
 			default:
-				strMessage += wxT("unknown errorcode");
+				strMessage += _("unknown errorcode");
 				break;
 			}
 
 			// show the error message
-			wxMessageBox(strMessage, wxTRANSLATE("Invalid URL"), wxOK|wxICON_ERROR);
+			wxMessageBox(strMessage, _("Invalid URL"), wxOK|wxICON_ERROR);
 			fScannerIsRunning = false;
 		}
 		else
 		{
-			strMessage  = wxT("Get list of testdescriptions from '");
-			strMessage += strLocation;
-			strMessage += wxT("'");
+			strMessage.Printf(_("Get list of testdescriptions from '%s'"), strLocation.fn_str());
 			wxLogMessage(strMessage);
 
 			// test if file exists
 			ptFsFile = fileSystem.OpenFile(strLocation);
 			if( ptFsFile==NULL )
 			{
-				strMessage  = wxT("Failed to open filelist at '");
-				strMessage += strLocation;
-				strMessage += wxT("'");
-
-				wxMessageBox(strMessage, wxTRANSLATE("Error!"), wxOK|wxICON_ERROR);
+				strMessage.Printf(_("Failed to open filelist at '%s'"), strLocation.fn_str());
+				wxMessageBox(strMessage, _("Error!"), wxOK|wxICON_ERROR);
 				fScannerIsRunning = false;
 			}
 			else
@@ -697,7 +675,7 @@ bool muhkuh_repository::createTestlist_url(wxProgressDialog *ptScannerProgress)
 					}
 
 					// check for cancel button
-					strProgressMessage = wxT("receiving ") + strFilename;
+					strProgressMessage.Printf(_("receiving '%s'"), strFilename.fn_str());
 					fScannerIsRunning = ptScannerProgress->Pulse(strProgressMessage, NULL);
 					// update gui for new scanner message
 					wxTheApp->Yield();
@@ -712,7 +690,7 @@ bool muhkuh_repository::createTestlist_url(wxProgressDialog *ptScannerProgress)
 					strFilename = astrTmpPathNames.Item(sizCnt++);
 
 					// check for cancel button
-					strProgressMessage = wxT("checking ") + strFilename;
+					strProgressMessage.Printf(_("checking '%s'"), strFilename.fn_str());
 					fScannerIsRunning = ptScannerProgress->Pulse(strProgressMessage, NULL);
 					// update gui for new scanner message
 					wxTheApp->Yield();
@@ -722,15 +700,12 @@ bool muhkuh_repository::createTestlist_url(wxProgressDialog *ptScannerProgress)
 					ptFsFile = fileSystem.OpenFile(strFilename);
 					if( ptFsFile==NULL )
 					{
-						strMessage  = wxT("failed to open '");
-						strMessage += strFilename;
-						strMessage += wxT("' from filelist");
-						wxLogError(strMessage);
+						wxLogError(_("failed to open '%s' from filelist."), strFilename.fn_str());
 					}
 					else
 					{
 						strUrl = ptFsFile->GetLocation();
-						wxLogMessage(wxT("found ") + strUrl);
+						wxLogMessage(_("found '%s'"), strUrl.fn_str());
 						astrTestList.Add(strUrl);
 						// delete the fsfile
 						delete ptFsFile;
@@ -760,9 +735,7 @@ bool muhkuh_repository::createTestlist_singlexml(wxProgressDialog *ptScannerProg
 	astrTestList.Clear();
 
 	// no idea how long the scanning will take -> set to pulse (that's 'unknown time remaining)
-	strProgressMessage  = wxT("scanning single xml file '");
-	strProgressMessage += m_strLocation;
-	strProgressMessage += wxT("'...");
+	strProgressMessage.Printf(_("scanning single xml file '%s'..."), m_strLocation.fn_str());
 	fScannerIsRunning = ptScannerProgress->Pulse(strProgressMessage, NULL);
 	// update gui for new scanner message
 	wxTheApp->Yield();
@@ -778,14 +751,14 @@ bool muhkuh_repository::createTestlist_singlexml(wxProgressDialog *ptScannerProg
 		if( fileName.IsOk()!=true )
 		{
 			// path is not correct
-			wxLogError(wxT("failed to set path, IsOK returned false"));
+			wxLogError(_("failed to set path, IsOK returned false"));
 			return false;
 		}
 		// does the path point to a file (i.e. not a directory)?
 		if( fileName.IsDir()!=false )
 		{
 			// no, the path points to a directory
-			wxLogError(wxT("the path does not point to a file"));
+			wxLogError(_("the path does not point to a file"));
 			return false;
 		}
 // this does not work with win98
@@ -801,7 +774,7 @@ bool muhkuh_repository::createTestlist_singlexml(wxProgressDialog *ptScannerProg
 		strCompletePath = fileName.GetFullPath(wxPATH_NATIVE);
 		// convert path to url
 		strUrl = wxFileSystem::FileNameToURL(strCompletePath);
-		wxLogDebug(wxT("found ") + strUrl);
+		wxLogDebug(_("found '%s'"), strUrl.fn_str());
 		astrTestList.Add(strUrl);
 	}
 

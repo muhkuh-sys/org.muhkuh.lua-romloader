@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 
+#include <wx/wx.h>
 #include <wx/log.h>
 
 #include "muhkuh_wrap_xml.h"
@@ -73,7 +74,7 @@ bool muhkuh_wrap_xml::initialize(wxInputStream *pStream, size_t sizRepositoryIdx
 	if( xmldoc==NULL )
 	{
 		// failed to create the new xml document
-		wxLogFatalError(wxT("could not create xml object"));
+		wxLogFatalError(_("could not create xml object"));
 	}
 	else
 	{
@@ -81,7 +82,7 @@ bool muhkuh_wrap_xml::initialize(wxInputStream *pStream, size_t sizRepositoryIdx
 		if( xmldoc->Load(*pStream)!=true )
 		{
 			// failed to load the xml file
-			wxLogError(wxT("failed to load the test description from the input stream"));
+			wxLogError(_("failed to load the test description from the input stream"));
 			delete xmldoc;
 		}
 		else
@@ -90,7 +91,7 @@ bool muhkuh_wrap_xml::initialize(wxInputStream *pStream, size_t sizRepositoryIdx
 			if( readTestDescription(xmldoc)!=true )
 			{
 				// strange test description
-				wxLogError(wxT("could not read test"));
+				wxLogError(_("could not read test"));
 				delete xmldoc;
 			}
 			else
@@ -214,7 +215,6 @@ bool muhkuh_wrap_xml::readTestDescription(wxXmlDocument *xmldoc)
 {
 	wxXmlNode *xml_testdesc;
 	tTesterXml_TestDescription *ptTestDesc;
-	wxString strMessage;
 
 
 	// look for the first root node named "TestDescription"
@@ -248,10 +248,7 @@ bool muhkuh_wrap_xml::readTestDescription(wxXmlDocument *xmldoc)
 	if( xml_testdesc->GetPropVal(wxT("version"), &ptTestDesc->strVersion)==false )
 	{
 		// show a warning
-		strMessage  = wxT("testdescription '");
-		strMessage += ptTestDesc->strName;
-		strMessage += wxT(" has no version information");
-		wxLogWarning(strMessage);
+		wxLogWarning(_("testdescription '%s' has no version information"), ptTestDesc->strName.fn_str());
 	}
 
 	// read in all tests
@@ -273,7 +270,6 @@ bool muhkuh_wrap_xml::readTest(wxXmlNode *xml_parent, tTesterXml_TestDescription
 	wxXmlNode *xml_test_cnt;
 	tTesterXml_Test *ptTests;
 	tTesterXml_Test *tc;
-	wxString strMessage;
 
 
 	// count the tests
@@ -314,10 +310,7 @@ bool muhkuh_wrap_xml::readTest(wxXmlNode *xml_parent, tTesterXml_TestDescription
 				if( xml_test_cnt->GetPropVal(wxT("version"), &tc->strVersion)==false )
 				{
 					// show a warning
-					strMessage  = wxT("test '");
-					strMessage += tc->strName;
-					strMessage + wxT("' has no version information");
-					wxLogWarning(strMessage);
+					wxLogWarning(_("test '%s' has no version information"), tc->strName.fn_str());
 				}
 
 				// next slot in test array

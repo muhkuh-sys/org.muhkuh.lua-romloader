@@ -96,25 +96,27 @@ void muhkuh_aboutDialog::setAbout(wxHtmlWindow *ptHtmlWin)
 
 	// describe the application here
 	strMsg += wxT("<center>");
-	strMsg += _("Your friendly testtool with super cow powers!<p>");
-	strMsg += _("(c) 2007, the Muhkuh team<br>");
-	strMsg += wxT("<a href=\"http://muhkuh.sf.net\">http://muhkuh.sf.net</a><p><br>");
+	strMsg += _("Your friendly testtool with super cow powers!");
+	strMsg += wxT("<p>(c) 2007, the Muhkuh team<br>");
+	strMsg += wxT("<a href=\"http://muhkuh.sf.net\">http://muhkuh.sf.net</a><br>");
+	strMsg += wxT("<a href=\"http://www.sf.net\">http://www.sf.net/projects/muhkuh</a><p><br>");
 	strMsg += wxT("</center>");
 
-	strMsg += _("This version uses <ul><li>");
+	strMsg += _("This version uses");
+	strMsg += wxT(" <ul><li>");
 	strMsg += wxVERSION_STRING;
 	strMsg += wxT(" (");
 	// NOTE: these strings will be translated, don't optimize to '*abled'
 #ifdef UNICODE
-	strMsg += _("Unicode");
+	strMsg += wxT("Unicode");
 #else
-	strMsg += _("Ansi");
+	strMsg += wxT("Ansi");
 #endif
 	strMsg += wxT(", ");
 #ifdef __WXDEBUG__
-	strMsg += _("Debug");
+	strMsg += wxT("Debug");
 #else
-	strMsg += _("Release");
+	strMsg += wxT("Release");
 #endif
 	strMsg += wxT(")</li>");
 
@@ -124,7 +126,7 @@ void muhkuh_aboutDialog::setAbout(wxHtmlWindow *ptHtmlWin)
 
 	strMsg += wxT("</ul><p>");
 
-	strMsg += wxT("It was compiled on ");
+	strMsg += _("It was compiled on ");
 
 // NOTE: append this to strOS to see multiple hits (like __LINUX__ and __UNIX__)
 
@@ -234,76 +236,76 @@ void muhkuh_aboutDialog::setAbout(wxHtmlWindow *ptHtmlWin)
 
 	if( strOS.IsEmpty()==true )
 	{
-		strOS = wxT("unknown OS");
+		strOS = _("unknown OS");
 	}
 
 	strMsg += strOS;
 
-	strMsg += wxT(" with ");
+	strMsg += _(" with ");
 
 	// show the compiler
 #ifdef __BORLANDC__
 	// The value of the macro corresponds to the compiler version: 500 is 5.0.
-	strCompiler.Printf(wxTRANSLATE("Borland C++ v%d.%02d"), __BORLANDC__/100, __BORLANDC__%100);
+	strCompiler.Printf(wxT("Borland C++ v%d.%02d"), __BORLANDC__/100, __BORLANDC__%100);
 #endif
 
 #ifdef __DJGPP__
-	strCompiler.Printf(wxTRANSLATE("DJGPP"));
+	strCompiler.Printf(wxT("DJGPP"));
 #endif
 
 #ifdef __DIGITALMARS__
-	strCompiler.Printf(wxTRANSLATE("Digital Mars"));
+	strCompiler.Printf(wxT("Digital Mars"));
 #endif
 
 #ifdef __GNUG__
-	strCompiler.Printf(wxTRANSLATE("Gnu C++ v%d.%d"), __GNUC__, __GNUC_MINOR__);
+	strCompiler.Printf(wxT("Gnu C++ v%d.%d"), __GNUC__, __GNUC_MINOR__);
 #endif
 
 #ifdef __GNUWIN32__
-	strCompiler.Printf(wxTRANSLATE("Gnu-Win32 v%d.%d"), __GNUC__, __GNUC_MINOR__);
+	strCompiler.Printf(wxT("Gnu-Win32 v%d.%d"), __GNUC__, __GNUC_MINOR__);
 #endif
 
 #ifdef __MINGW32__
-	strCompiler.Printf(wxTRANSLATE("MinGW v%d.%d"), __GNUC__, __GNUC_MINOR__);
+	strCompiler.Printf(wxT("MinGW v%d.%d"), __GNUC__, __GNUC_MINOR__);
 #endif
 
 #ifdef __MWERKS__
-	strCompiler.Printf(wxTRANSLATE("CodeWarrior MetroWerks"));
+	strCompiler.Printf(wxT("CodeWarrior MetroWerks"));
 #endif
 
 #ifdef __SUNCC__
-	strCompiler.Printf(wxTRANSLATE("Sun CC"));
+	strCompiler.Printf(wxT("Sun CC"));
 #endif
 
 #ifdef __SYMANTECC__
-	strCompiler.Printf(wxTRANSLATE("Symantec C++"));
+	strCompiler.Printf(wxT("Symantec C++"));
 #endif
 
 #ifdef __VISAGECPP__
-	strCompiler.Printf(wxTRANSLATE("IBM Visual Age (OS/2)"));
+	strCompiler.Printf(wxT("IBM Visual Age (OS/2)"));
 #endif
 
 #ifdef __VISUALC__
 	// The value of this macro corresponds to the compiler version: 1020 for 4.2 (the first supported version), 1100 for 5.0, 1200 for 6.0 and so on 
-	strCompiler.Printf(wxTRANSLATE("Microsoft Visual C++ v%d.%02d"), __VISUALC__/100 - 6, __VISUALC__%100);
+	strCompiler.Printf(wxT("Microsoft Visual C++ v%d.%02d"), __VISUALC__/100 - 6, __VISUALC__%100);
 #endif
 
 #ifdef __XLC__
-	strCompiler.Printf(wxTRANSLATE("AIX compiler"));
+	strCompiler.Printf(wxT("AIX compiler"));
 #endif
 
 #ifdef __WATCOMC__
 	// The value of this macro corresponds to the compiler version, 1100 is 11.0 and 1200 is OpenWatcom.
-	strCompiler.Printf(wxTRANSLATE("Watcom C++ v%d.%02d"), __WATCOMC__/100, __WATCOMC__%100);
+	strCompiler.Printf(wxT("Watcom C++ v%d.%02d"), __WATCOMC__/100, __WATCOMC__%100);
 #endif
 
 #ifdef _WIN32_WCE
-	strCompiler.Printf(wxTRANSLATE("Windows CE"));
+	strCompiler.Printf(wxT("Windows CE"));
 #endif
 
 	if( strCompiler.IsEmpty()==true )
 	{
-		strCompiler = wxT("an unknown compiler");
+		strCompiler = _("an unknown compiler");
 	}
 	strMsg += strCompiler + wxT(" .<br>");
 

@@ -197,14 +197,12 @@ wxString muhkuh_repository_manager::GetStringRepresentation(size_t sizIdx) const
 	std::vector<muhkuh_repository*>::const_iterator iter;
 	muhkuh_repository *ptRepository;
 	wxString strRepository;
-	wxString strMsg;
 
 
 	/* check input parameter */
 	if( sizIdx>=m_ptRepositories->size() )
 	{
-		strMsg.Printf(wxT("muhkuh_repository_manager::GetStringRepresentation : idx %d is out of range, ignoring request"), sizIdx);
-		wxLogError(strMsg);
+		wxLogError(_("muhkuh_repository_manager::GetStringRepresentation : idx %d is out of range, ignoring request"), sizIdx);
 	}
 	else
 	{
@@ -223,14 +221,12 @@ wxBitmap muhkuh_repository_manager::GetBitmap(size_t sizIdx, wxSize tBitmapSize)
 	std::vector<muhkuh_repository*>::const_iterator iter;
 	muhkuh_repository *ptRepository;
 	wxBitmap tBitmap;
-	wxString strMsg;
 
 
 	/* check input parameter */
 	if( sizIdx>=m_ptRepositories->size() )
 	{
-		strMsg.Printf(wxT("muhkuh_repository_manager::GetBitmap : idx %d is out of range, ignoring request"), sizIdx);
-		wxLogError(strMsg);
+		wxLogError(_("muhkuh_repository_manager::GetBitmap : idx %d is out of range, ignoring request"), sizIdx);
 	}
 	else
 	{
@@ -249,14 +245,12 @@ int muhkuh_repository_manager::GetImageListIndex(size_t sizIdx) const
 	std::vector<muhkuh_repository*>::const_iterator iter;
 	muhkuh_repository *ptRepository;
 	int iResult;
-	wxString strMsg;
 
 
 	/* check input parameter */
 	if( sizIdx>=m_ptRepositories->size() )
 	{
-		strMsg.Printf(wxT("muhkuh_repository_manager::GetBitmap : idx %d is out of range, ignoring request"), sizIdx);
-		wxLogError(strMsg);
+		wxLogError(_("muhkuh_repository_manager::GetBitmap : idx %d is out of range, ignoring request"), sizIdx);
 		iResult = 0;
 	}
 	else
@@ -297,14 +291,12 @@ void muhkuh_repository_manager::removeRepository(unsigned long ulIdx)
 {
 	std::vector<muhkuh_repository*>::iterator iter;
 	muhkuh_repository *ptRepository;
-	wxString strMsg;
 
 
 	/* check input parameter */
 	if( ulIdx>=m_ptRepositories->size() )
 	{
-		strMsg.Printf(wxT("muhkuh_repository_manager::removeRepository : idx %ld is out of range, ignoring request"), ulIdx);
-		wxLogError(strMsg);
+		wxLogError(_("muhkuh_repository_manager::removeRepository : idx %ld is out of range, ignoring request"), ulIdx);
 	}
 	else
 	{
@@ -323,14 +315,12 @@ muhkuh_repository *muhkuh_repository_manager::GetRepository(size_t sizIdx)
 {
 	std::vector<muhkuh_repository*>::const_iterator iter;
 	muhkuh_repository *ptRepository;
-	wxString strMsg;
 
 
 	/* check input parameter */
 	if( sizIdx>=m_ptRepositories->size() )
 	{
-		strMsg.Printf(wxT("muhkuh_repository_manager::GetRepository : idx %d is out of range, ignoring request"), sizIdx);
-		wxLogError(strMsg);
+		wxLogError(_("muhkuh_repository_manager::GetRepository : idx %d is out of range, ignoring request"), sizIdx);
 		ptRepository = NULL;
 	}
 	else

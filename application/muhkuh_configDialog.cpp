@@ -167,7 +167,7 @@ void muhkuh_configDialog::OnNewRepositoryButton(wxCommandEvent &WXUNUSED(event))
 	long lIdx;
 
 
-	ptRepos = new muhkuh_repository(wxT("new repository"));
+	ptRepos = new muhkuh_repository(_("new repository"));
 	ptEntryDialog = new muhkuh_config_reposEntryDialog(this, m_strApplicationPath, ptRepos);
 	if( ptEntryDialog->ShowModal()==wxID_OK )
 	{
@@ -274,12 +274,12 @@ void muhkuh_configDialog::OnAddPluginButton(wxCommandEvent &WXUNUSED(event))
 		}
 	}
 */
-	pluginDialog = new wxFileDialog(this, wxT("Select the new plugin"), strDialogInitPath, wxEmptyString, wxT("*.xml"), wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+	pluginDialog = new wxFileDialog(this, _("Select the new plugin"), strDialogInitPath, wxEmptyString, wxT("*.xml"), wxFD_OPEN|wxFD_FILE_MUST_EXIST);
 
 	if( pluginDialog->ShowModal()==wxID_OK )
 	{
 		strPluginName = pluginDialog->GetPath();
-		wxLogMessage(wxT("open plugin ") + strPluginName);
+		wxLogMessage(_("open plugin '%s'"), strPluginName.fn_str());
 		lIdx = m_ptPluginManager->addPlugin(strPluginName);
 		if( lIdx>=0 )
 		{
@@ -404,7 +404,7 @@ void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 	ptPluginDesc = m_ptPluginManager->getPluginDescription(lIdx);
 	if( ptPluginDesc==NULL )
 	{
-		wxLogError(wxT("failed to get plugin description!"));
+		wxLogError(_("failed to get plugin description!"));
 	}
 	else
 	{

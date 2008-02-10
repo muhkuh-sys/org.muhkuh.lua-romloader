@@ -28,6 +28,7 @@
 #include <wx/dir.h>
 #include <wx/html/helpctrl.h>
 #include <wx/image.h>
+#include <wx/intl.h>
 #include <wx/listctrl.h>
 #include <wx/progdlg.h>
 #include <wx/splitter.h>
@@ -224,6 +225,9 @@ private:
 	wxString m_strTestDetails;
 	// the default test details page for 'no test selected'
 	wxString m_strTestDetailsEmpty;
+
+	// the locale object
+	wxLocale m_locale;
 
     DECLARE_EVENT_TABLE()
 };

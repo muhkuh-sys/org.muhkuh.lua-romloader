@@ -284,7 +284,7 @@ void muhkuh_config_reposEntryDialog::OnOkButton(wxCommandEvent &WXUNUSED(event))
 	strName = m_textRepoName->GetValue();
 	if( strName.IsEmpty()==true )
 	{
-		wxMessageBox(wxT("Please enter a name for the repository!"), wxT("Input error"), wxOK|wxICON_ERROR);
+		wxMessageBox(_("Please enter a name for the repository!"), _("Input error"), wxOK|wxICON_ERROR);
 	}
 	else
 	{
@@ -305,16 +305,16 @@ void muhkuh_config_reposEntryDialog::OnOkButton(wxCommandEvent &WXUNUSED(event))
 			}
 			if( !fileName.IsDir() )
 			{
-				wxMessageBox(wxTRANSLATE("The selected path to the test descriptions is no directory!"), wxTRANSLATE("Input error"), wxOK|wxICON_ERROR);
+				wxMessageBox(_("The selected path to the test descriptions is no directory!"), _("Input error"), wxOK|wxICON_ERROR);
 			}
 			else if( !wxFileName::DirExists(fileName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR)) )
 			{
-				wxMessageBox(wxTRANSLATE("The selected path to the test descriptions does not exist!"), wxTRANSLATE("Input error"), wxOK|wxICON_ERROR);
+				wxMessageBox(_("The selected path to the test descriptions does not exist!"), _("Input error"), wxOK|wxICON_ERROR);
 			}
 			// the extension must not be empty
 			else if( strExtension.IsEmpty() )
 			{
-				wxMessageBox(wxT("Please select the test descriptions extension file!"), wxT("Input error"), wxOK|wxICON_ERROR);
+				wxMessageBox(_("Please select the test descriptions extension file!"), _("Input error"), wxOK|wxICON_ERROR);
 			}
 			else
 			{
@@ -331,7 +331,7 @@ void muhkuh_config_reposEntryDialog::OnOkButton(wxCommandEvent &WXUNUSED(event))
 			// the location must not be empty
 			if( strLocation.IsEmpty() )
 			{
-				wxMessageBox(wxT("Please enter the location!"), wxT("Input error"), wxOK|wxICON_ERROR);
+				wxMessageBox(_("Please enter the location!"), _("Input error"), wxOK|wxICON_ERROR);
 			}
 			else
 			{
@@ -348,7 +348,7 @@ void muhkuh_config_reposEntryDialog::OnOkButton(wxCommandEvent &WXUNUSED(event))
 			// the location must not be empty
 			if( strLocation.IsEmpty() )
 			{
-				wxMessageBox(wxT("Please enter the location!"), wxT("Input error"), wxOK|wxICON_ERROR);
+				wxMessageBox(_("Please enter the location!"), _("Input error"), wxOK|wxICON_ERROR);
 			}
 			else
 			{
@@ -388,7 +388,7 @@ void muhkuh_config_reposEntryDialog::OnBrowseDirscanLocationButton(wxCommandEven
 		}
 	}
 
-	testPathDialog = new wxDirDialog(this, wxT("Choose the path to the test descriptions"));
+	testPathDialog = new wxDirDialog(this, _("Choose the path to the test descriptions"));
 	testPathDialog->SetPath(strDialogInitPath);
 
 	if( testPathDialog->ShowModal()==wxID_OK )
@@ -416,7 +416,7 @@ void muhkuh_config_reposEntryDialog::OnBrowseSingleXmlLocationButton(wxCommandEv
 		}
 	}
 
-	testPathDialog = new wxFileDialog(this, wxT("Choose the path to the test description"), strDialogInitPath, wxEmptyString, wxT("*.xml"));
+	testPathDialog = new wxFileDialog(this, _("Choose the path to the test description"), strDialogInitPath, wxEmptyString, wxT("*.xml"));
 
 	if( testPathDialog->ShowModal()==wxID_OK )
 	{
