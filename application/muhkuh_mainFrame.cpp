@@ -144,15 +144,25 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	// create the repository manager
 	m_ptRepositoryManager = new muhkuh_repository_manager();
 
+	// build version string
+	m_strVersion.Printf(wxT(MUHKUH_APPLICATION_NAME) wxT(" v%d.%d.%d"), MUHKUH_VERSION_MAJ, MUHKUH_VERSION_MIN, MUHKUH_VERSION_SUB);
+
 	// set the welcome message
 	// TODO: show the "About" page from the docs here
-	strWelcomePage = wxT("<html><title>Welcome</title><body><h1>Welcome to ");
-	strWelcomePage += strVersion;
-	strWelcomePage += wxT("</h1>");
-	strWelcomePage += wxT("<a href=\"mtd://abc/def/ghi#jkl\">testlink</a><br>");
-	strWelcomePage += wxT("<a href=\"mtd:/abc/def/ghi#jkl\">testlink</a><br>");
-	strWelcomePage += wxT("<a href=\"mtd:abc/def/ghi#jkl\">testlink</a><br>");
-	strWelcomePage += wxT("</body></html>");
+	m_strWelcomePage  = wxT("<html><title>Welcome</title><body><h1>Welcome to ");
+	m_strWelcomePage += m_strVersion;
+	m_strWelcomePage += wxT("</h1>");
+	m_strWelcomePage += wxT("<a href=\"mtd://abc/def/ghi#jkl\">testlink</a><br>");
+	m_strWelcomePage += wxT("<a href=\"mtd:/abc/def/ghi#jkl\">testlink</a><br>");
+	m_strWelcomePage += wxT("<a href=\"mtd:abc/def/ghi#jkl\">testlink</a><br>");
+	m_strWelcomePage += wxT("</body></html>");
+
+	// set the test details page for 'no test selected'
+	m_strTestDetailsEmpty  = wxT("<html><title>Test Details</title><body><h1>Test Details</h1>");
+	m_strTestDetailsEmpty += wxT("No test selected.<p>");
+	m_strTestDetailsEmpty += wxT("Please select a test in the test tree.</body></html>");
+	// set this as the current test details page
+	m_strTestDetails = m_strTestDetailsEmpty;
 
 	// use aui manager for this frame
 	m_auiMgr.SetManagedWindow(this);
@@ -163,11 +173,11 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	SetStatusBarPane(0);
 
 	// set the muhkuh icon
-	frameIcons.AddIcon(muhkuh_016_xpm);
-	frameIcons.AddIcon(muhkuh_032_xpm);
-	frameIcons.AddIcon(muhkuh_064_xpm);
-	frameIcons.AddIcon(muhkuh_128_xpm);
-	SetIcons(frameIcons);
+	m_frameIcons.AddIcon(muhkuh_016_xpm);
+	m_frameIcons.AddIcon(muhkuh_032_xpm);
+	m_frameIcons.AddIcon(muhkuh_064_xpm);
+	m_frameIcons.AddIcon(muhkuh_128_xpm);
+	SetIcons(m_frameIcons);
 
 	// create the menu bar
 	createMenu();
@@ -188,10 +198,8 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	// this is for debug, it's a lot more noisy
 	wxLog::SetLogLevel(wxLOG_Debug);
 
-	// build version string
-	strVersion.Printf(wxT(MUHKUH_APPLICATION_NAME) wxT(" v%d.%d.%d"), MUHKUH_VERSION_MAJ, MUHKUH_VERSION_MIN, MUHKUH_VERSION_SUB);
 	// set the window title
-	SetTitle(strVersion);
+	SetTitle(m_strVersion);
 
 	strMsg = wxT("application started");
 	wxLogMessage(strMsg);
@@ -353,20 +361,20 @@ void muhkuh_mainFrame::createTipProvider(void)
 void muhkuh_mainFrame::createWelcomeWindow(void)
 {
 	m_welcomeHtml = new wxHtmlWindow(this, muhkuh_mainFrame_Welcome_id, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER);
-	m_welcomeHtml->SetPage(strWelcomePage);
-	m_welcomeHtml->SetRelatedFrame(this, strVersion + wxT(" - %s"));
+	m_welcomeHtml->SetPage(m_strWelcomePage);
+	m_welcomeHtml->SetRelatedFrame(this, m_strVersion + wxT(" - %s"));
 	m_welcomeHtml->SetRelatedStatusBar(0);
-	m_notebook->AddPage(m_welcomeHtml, wxT("Welcome"));
+	m_notebook->AddPage(m_welcomeHtml, wxT("Welcome"), false, m_frameIcons.GetIcon(16));
 }
 
 
 void muhkuh_mainFrame::createTestDetailsWindow(void)
 {
 	m_testDetailsHtml = new wxHtmlWindow(this, muhkuh_mainFrame_TestDetails_id, wxDefaultPosition, wxDefaultSize, wxSUNKEN_BORDER);
-	m_testDetailsHtml->SetPage(strTestDetails);
-	m_testDetailsHtml->SetRelatedFrame(this, strVersion + wxT(" - %s"));
+	m_testDetailsHtml->SetPage(m_strTestDetails);
+	m_testDetailsHtml->SetRelatedFrame(this, m_strVersion + wxT(" - %s"));
 	m_testDetailsHtml->SetRelatedStatusBar(0);
-	m_notebook->AddPage(m_testDetailsHtml, wxT("Test Details"));
+	m_notebook->AddPage(m_testDetailsHtml, wxT("Test Details"), false, m_frameIcons.GetIcon(16));
 }
 
 
@@ -376,6 +384,9 @@ void muhkuh_mainFrame::read_config(void)
 	int iMainFrameX, iMainFrameY, iMainFrameW, iMainFrameH;
 	wxString strPerspective;
 	bool fPaneIsVisible;
+	bool fWelcomePageIsVisible;
+	bool fTestDetailsPageIsVisible;
+	int iPageIdx;
 
 
 	// get the config
@@ -392,6 +403,8 @@ void muhkuh_mainFrame::read_config(void)
 	iMainFrameW = pConfig->Read(wxT("w"), 640);
 	iMainFrameH = pConfig->Read(wxT("h"), 480);
 	strPerspective = pConfig->Read(wxT("perspective"), wxEmptyString);
+	fWelcomePageIsVisible = pConfig->Read(wxT("showwelcome"), true);
+	fTestDetailsPageIsVisible = pConfig->Read(wxT("showtestdetails"), true);
 	m_fShowStartupTips = pConfig->Read(wxT("showtips"), true);
 	m_sizStartupTipsIdx = pConfig->Read(wxT("tipidx"), (long)0);
 
@@ -420,6 +433,30 @@ void muhkuh_mainFrame::read_config(void)
 		fPaneIsVisible = m_auiMgr.GetPane(m_textCtrl).IsShown();
 		m_menuBar->Check(muhkuh_mainFrame_menuViewMessageLog, fPaneIsVisible);
 	}
+	m_menuBar->Check(muhkuh_mainFrame_menuViewWelcomePage, fWelcomePageIsVisible);
+	if( m_welcomeHtml!=NULL && fWelcomePageIsVisible==false )
+	{
+		// close welcome page
+		iPageIdx = m_notebook->GetPageIndex(m_welcomeHtml);
+		if( iPageIdx!=wxNOT_FOUND )
+		{
+			m_notebook->DeletePage(iPageIdx);
+		}
+		// forget the pointer
+		m_welcomeHtml = NULL;
+	}
+	m_menuBar->Check(muhkuh_mainFrame_menuViewTestDetails, fTestDetailsPageIsVisible);
+	if( m_testDetailsHtml!=NULL && fTestDetailsPageIsVisible==false )
+	{
+		// close test details page
+		iPageIdx = m_notebook->GetPageIndex(m_testDetailsHtml);
+		if( iPageIdx!=wxNOT_FOUND )
+		{
+			m_notebook->DeletePage(iPageIdx);
+		}
+		// forget the pointer
+		m_testDetailsHtml = NULL;	
+	}
 }
 
 
@@ -428,6 +465,10 @@ void muhkuh_mainFrame::write_config(void)
 	wxConfigBase *pConfig;
 	int iMainFrameX, iMainFrameY, iMainFrameW, iMainFrameH;
 	wxString strPerspective;
+	int iPageIdx;
+	bool fWelcomePageIsVisible;
+	bool fTestDetailsPageIsVisible;
+
 
 
 	pConfig = wxConfigBase::Get();
@@ -447,12 +488,36 @@ void muhkuh_mainFrame::write_config(void)
 		m_sizStartupTipsIdx = m_tipProvider->GetCurrentTip();
 	}
 
+	// save visibility of welcome and test details page
+	if( m_welcomeHtml!=NULL )
+	{
+		// close welcome page
+		iPageIdx = m_notebook->GetPageIndex(m_welcomeHtml);
+		fWelcomePageIsVisible =  (iPageIdx!=wxNOT_FOUND);
+	}
+	else
+	{
+		fWelcomePageIsVisible = false;
+	}
+	if( m_testDetailsHtml!=NULL )
+	{
+		// close test details page
+		iPageIdx = m_notebook->GetPageIndex(m_testDetailsHtml);
+		fTestDetailsPageIsVisible = (iPageIdx!=wxNOT_FOUND);
+	}
+	else
+	{
+		fTestDetailsPageIsVisible = false;
+	}
+
 	pConfig->SetPath(wxT("/MainFrame"));
 	pConfig->Write(wxT("x"), (long)iMainFrameX);
 	pConfig->Write(wxT("y"), (long)iMainFrameY);
 	pConfig->Write(wxT("w"), (long)iMainFrameW);
 	pConfig->Write(wxT("h"), (long)iMainFrameH);
 	pConfig->Write(wxT("perspective"), strPerspective);
+	pConfig->Write(wxT("showwelcome"), fWelcomePageIsVisible);
+	pConfig->Write(wxT("showtestdetails"), fTestDetailsPageIsVisible);
 	pConfig->Write(wxT("showtips"), m_fShowStartupTips);
 	pConfig->Write(wxT("tipidx"), (long)m_sizStartupTipsIdx);
 	pConfig->SetPath(wxT("/"));
@@ -482,7 +547,7 @@ void muhkuh_mainFrame::setState(muhkuh_mainFrame_state tNewState)
 		break;
 
 	case muhkuh_mainFrame_state_testing:
-		fTestHasFinished = true;
+		m_fTestHasFinished = true;
 		break;
 	}
 
@@ -531,7 +596,7 @@ void muhkuh_mainFrame::setState(muhkuh_mainFrame_state tNewState)
 		break;
 
 	case muhkuh_mainFrame_state_testing:
-		fTestHasFinished = false;
+		m_fTestHasFinished = false;
 		m_buttonCancelTest->Enable(true);
 		m_menuBar->Enable(muhkuh_mainFrame_menuTestCancel, true);
 		m_menuBar->Enable(muhkuh_mainFrame_menuViewWelcomePage, false);
@@ -600,7 +665,7 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 
 	case muhkuh_mainFrame_state_testing:
 		// check for finish
-		if( fTestHasFinished==true )
+		if( m_fTestHasFinished==true )
 		{
 			// test done -> go back to idle state
 			setState(muhkuh_mainFrame_state_idle);
@@ -679,7 +744,7 @@ void muhkuh_mainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
 	muhkuh_aboutDialog *pAboutDialog;
 
 
-	pAboutDialog = new muhkuh_aboutDialog(this, strVersion, frameIcons);
+	pAboutDialog = new muhkuh_aboutDialog(this, m_strVersion, m_frameIcons);
 	pAboutDialog->ShowModal();
 	pAboutDialog->Destroy();
 }
@@ -898,7 +963,7 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	// set some global vars
 
 	// set the lua version
-	m_ptLuaState->lua_PushString(strVersion.ToAscii());
+	m_ptLuaState->lua_PushString(m_strVersion.ToAscii());
 	m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_VERSION"));
 	// set the xml document
 	m_ptLuaState->wxluaT_PushUserDataType(ptTestData->getXmlDocument(), wxluatype_wxXmlDocument, false);
@@ -1112,8 +1177,41 @@ void muhkuh_mainFrame::OnShowTip(wxCommandEvent &event)
 
 void muhkuh_mainFrame::OnRestoreDefaultPerspective(wxCommandEvent &event)
 {
+	int iPageIdx;
+
+
 	// restore the default perspective
 	m_auiMgr.LoadPerspective(strDefaultPerspective, true);
+
+	// create welcome notebook
+	if( m_welcomeHtml!=NULL )
+	{
+		iPageIdx = m_notebook->GetPageIndex(m_welcomeHtml);
+	}
+	else
+	{
+		iPageIdx = wxNOT_FOUND;
+	}
+	if( iPageIdx==wxNOT_FOUND )
+	{
+		createWelcomeWindow();
+		m_menuBar->Check(muhkuh_mainFrame_menuViewWelcomePage, true);
+	}
+
+	// create test details notebook
+	if( m_testDetailsHtml!=NULL )
+	{
+		iPageIdx = m_notebook->GetPageIndex(m_testDetailsHtml);
+	}
+	else
+	{
+		iPageIdx = wxNOT_FOUND;
+	}
+	if( iPageIdx==wxNOT_FOUND )
+	{
+		createTestDetailsWindow();
+		m_menuBar->Check(muhkuh_mainFrame_menuViewTestDetails, true);
+	}
 }
 
 
@@ -1202,7 +1300,7 @@ void muhkuh_mainFrame::OnTestTreeItemSelected(wxTreeEvent &event)
 
 
 	// clear the complete list
-	strTestDetails = wxEmptyString;
+	m_strTestDetails = m_strTestDetailsEmpty;
 
 	// get item data structure
 	itemId = event.GetItem();
@@ -1253,14 +1351,14 @@ void muhkuh_mainFrame::OnTestTreeItemSelected(wxTreeEvent &event)
 				}
 
 				strPage += wxT("</body></html>");
-				strTestDetails = strPage;
+				m_strTestDetails = strPage;
 			}
 		}
 	}
 
 	if( m_testDetailsHtml!=NULL )
 	{
-		m_testDetailsHtml->SetPage(strTestDetails);
+		m_testDetailsHtml->SetPage(m_strTestDetails);
 	}
 }
 
@@ -1294,10 +1392,10 @@ void muhkuh_mainFrame::scanTests(int iActiveRepositoryIdx)
 		// clear all old tests
 		m_sizTestCnt = 0;
 		// clear the test description
-		strTestDetails = wxEmptyString;
+		m_strTestDetails = m_strTestDetailsEmpty;
 		if( m_testDetailsHtml!=NULL )
 		{
-			m_testDetailsHtml->SetPage(strTestDetails);
+			m_testDetailsHtml->SetPage(m_strTestDetails);
 		}
 		// clear the complete tree
 		m_treeCtrl->DeleteAllItems();
@@ -1917,7 +2015,7 @@ void muhkuh_mainFrame::OnMtdLinkClicked(wxHtmlLinkEvent &event)
 
 void muhkuh_mainFrame::luaTestHasFinished(void)
 {
-	fTestHasFinished = true;
+	m_fTestHasFinished = true;
 }
 
 

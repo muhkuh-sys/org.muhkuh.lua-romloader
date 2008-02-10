@@ -170,10 +170,10 @@ private:
 	wxLog *m_pLogTarget;
 
 	// the version string
-	wxString strVersion;
+	wxString m_strVersion;
 
 	// the application icons in different sizes
-	wxIconBundle frameIcons;
+	wxIconBundle m_frameIcons;
 
 	// state of the init process
 	MAINFRAME_INIT_STATE_E m_eInitState;
@@ -213,15 +213,17 @@ private:
 	size_t m_sizStartupTipsIdx;
 
 	// finish flag for tests
-	volatile bool fTestHasFinished;
+	volatile bool m_fTestHasFinished;
 
 	// path settings
 	wxString m_strApplicationPath;
 
 	// the welcome page
-	wxString strWelcomePage;
+	wxString m_strWelcomePage;
 	// the test details page
-	wxString strTestDetails;
+	wxString m_strTestDetails;
+	// the default test details page for 'no test selected'
+	wxString m_strTestDetailsEmpty;
 
     DECLARE_EVENT_TABLE()
 };
