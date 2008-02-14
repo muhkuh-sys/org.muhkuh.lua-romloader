@@ -51,28 +51,28 @@ function zones2bin(zones)
 	zone = string.sub( zones.zone1.abMacAddress..string.char( 0, 0, 0, 0, 0, 0 ), 1, 6 )
 
 	zone = zone .. string.char( bit.band(zones.zone1.ulSdramGeneralCtrl, 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone1.ulSdramGeneralCtrl, 8), 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone1.ulSdramGeneralCtrl, 16), 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone1.ulSdramGeneralCtrl, 24), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone1.ulSdramGeneralCtrl, 8), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone1.ulSdramGeneralCtrl, 16), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone1.ulSdramGeneralCtrl, 24), 0xff) )
 
 	zone = zone .. string.char( bit.band(zones.zone1.ulSdramTimingCtrl, 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone1.ulSdramTimingCtrl, 8), 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone1.ulSdramTimingCtrl, 16), 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone1.ulSdramTimingCtrl, 24), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone1.ulSdramTimingCtrl, 8), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone1.ulSdramTimingCtrl, 16), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone1.ulSdramTimingCtrl, 24), 0xff) )
 
 	zone = zone .. string.char( zones.zone1.bSdramSizeExp )
 
 	zone = zone .. string.char( bit.band(zones.zone1.usHwOptions0, 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone1.usHwOptions0, 8), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone1.usHwOptions0, 8), 0xff) )
 
 	zone = zone .. string.char( bit.band(zones.zone1.usHwOptions1, 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone1.usHwOptions1, 8), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone1.usHwOptions1, 8), 0xff) )
 
 	zone = zone .. string.char( bit.band(zones.zone1.usHwOptions2, 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone1.usHwOptions2, 8), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone1.usHwOptions2, 8), 0xff) )
 
 	zone = zone .. string.char( bit.band(zones.zone1.usHwOptions3, 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone1.usHwOptions3, 8), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone1.usHwOptions3, 8), 0xff) )
 
 	zone = zone .. string.char( zones.zone1.bBootMode )
 
@@ -89,30 +89,30 @@ function zones2bin(zones)
 
 
 	zone = string.char( bit.band(zones.zone2.usPciVendorID, 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone2.usPciVendorID, 8), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone2.usPciVendorID, 8), 0xff) )
 
 	zone = zone .. string.char( bit.band(zones.zone2.usPciDeviceID, 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone2.usPciDeviceID, 8), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone2.usPciDeviceID, 8), 0xff) )
 
 	zone = zone .. string.char( zones.zone2.bPciSubClassCode )
 
 	zone = zone .. string.char( zones.zone2.bPciClassCode )
 
 	zone = zone .. string.char( bit.band(zones.zone2.usPciSubSystemVendorID, 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone2.usPciSubSystemVendorID, 8), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone2.usPciSubSystemVendorID, 8), 0xff) )
 
 	zone = zone .. string.char( bit.band(zones.zone2.usPciSubSystemDeviceID, 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone2.usPciSubSystemDeviceID, 8), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone2.usPciSubSystemDeviceID, 8), 0xff) )
 
 	zone = zone .. string.char( bit.band(zones.zone2.ulPciSizeTarget, 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone2.ulPciSizeTarget, 8), 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone2.ulPciSizeTarget, 16), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone2.ulPciSizeTarget, 8), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone2.ulPciSizeTarget, 16), 0xff) )
 
 	zone = zone .. string.char( zones.zone2.bPciSizeIO )
 
 	zone = zone .. string.char( bit.band(zones.zone2.ulPciSizeROM, 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone2.ulPciSizeROM, 8), 0xff) )
-	zone = zone .. string.char( bit.band(bit.bshr(zones.zone2.ulPciSizeROM, 16), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone2.ulPciSizeROM, 8), 0xff) )
+	zone = zone .. string.char( bit.band(bit.rshift(zones.zone2.ulPciSizeROM, 16), 0xff) )
 
 	zone = zone .. string.char( 0 )
 
@@ -154,8 +154,8 @@ function crc(strArea)
 		for uiBitCnt=1,8 do
 			uiBit = bit.bxor(uiCrc, uiByte)
 			uiBit = bit.band(uiBit, 0x80)
-			uiCrc = bit.bshl(uiCrc, 1)
-			uiByte = bit.bshl(uiByte, 1)
+			uiCrc = bit.lshift(uiCrc, 1)
+			uiByte = bit.lshift(uiByte, 1)
 			if uiBit~=0 then
 				uiCrc = bit.bxor(uiCrc, 0x07)
 			end

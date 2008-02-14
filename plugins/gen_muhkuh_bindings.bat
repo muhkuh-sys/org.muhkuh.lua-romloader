@@ -1,6 +1,5 @@
 #! /bin/bash
 echo Generating wxWidgets Binding
-lua -e"rulesFilename=\"bit_rules.lua\"" genwxbind.lua 
 lua -e"rulesFilename=\"muhkuh_rules.lua\"" genwxbind.lua 
 cd romloader
 cd baka

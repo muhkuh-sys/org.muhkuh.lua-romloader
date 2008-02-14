@@ -148,10 +148,13 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 		// NOTE: translate this so the default system language may be used at least.
 		wxLogError(_("The language '%s' is not supported by the system."), wxLocale::GetLanguageName(iLanguage).fn_str());
 	}
-	// search locales in the 'locale' directory
-	// TODO: use some systempath for this
-	wxLocale::AddCatalogLookupPathPrefix(wxT("locale"));
-	m_locale.AddCatalog(wxTheApp->GetAppName());
+	else
+	{
+		// search locales in the 'locale' directory
+		// TODO: use some systempath for this
+		wxLocale::AddCatalogLookupPathPrefix(wxT("locale"));
+		m_locale.AddCatalog(wxTheApp->GetAppName());
+	}
 
 	// create the plugin manager
 	m_ptPluginManager = new muhkuh_plugin_manager();
@@ -915,14 +918,6 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	{
 		// failed to init the muhkuh lua bindings
 		wxLogError(_("Failed to init the muhkuh_lua bindings"));
-	}
-
-	// init the bit lua bindings
-	fCreated = wxLuaBinding_bit_lua_init();
-	if( fCreated!=true )
-	{
-		// failed to init the bit lua bindings
-		wxLogError(_("Failed to init the bit_lua bindings"));
 	}
 
 	// init the lua bindings for all plugins

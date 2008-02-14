@@ -76,8 +76,6 @@ MUHKUH_OBJECTS =  \
 	vcmsw$(WX)_dll\muhkuh_muhkuh_repository_manager.obj \
 	vcmsw$(WX)_dll\muhkuh_muhkuh_wrap_xml.obj \
 	vcmsw$(WX)_dll\muhkuh_readFsFile.obj \
-	vcmsw$(WX)_dll\muhkuh_bit_lua.obj \
-	vcmsw$(WX)_dll\muhkuh_bit_lua_bind.obj \
 	vcmsw$(WX)_dll\muhkuh_muhkuh_lua.obj \
 	vcmsw$(WX)_dll\muhkuh_muhkuh_lua_bind.obj \
 	vcmsw$(WX)_dll\muhkuh_muhkuh.res
@@ -332,22 +330,22 @@ test_for_selected_wxbuild:
 	exit 1
 
 .\bin\muhkuh.exe: $(MUHKUH_OBJECTS) vcmsw$(WX)_dll\muhkuh_muhkuh.res
-	link /NOLOGO /OUT:$@ $(LDFLAGS) /LIBPATH:$(WX_DIR)$(WXLIBPATH) $(VAR_7) /pdb:".\bin\muhkuh.pdb" /LIBPATH:$(WXLUA)\lib\vc_dll /LIBPATH:$(WXLUA)\modules\lua\lib /SUBSYSTEM:WINDOWS  @<<
+	link /NOLOGO /OUT:$@  /LIBPATH:$(WX_DIR)$(WXLIBPATH) $(VAR_7) /pdb:".\bin\muhkuh.pdb" /LIBPATH:$(WXLUA)\lib\vc_dll /LIBPATH:$(WXLUA)\modules\lua\lib /SUBSYSTEM:WINDOWS  $(LDFLAGS) @<<
 	$(MUHKUH_OBJECTS)  wxlua_msw$(WX_VERSION)$(WX)_wxluasocket.lib wxlua_msw$(WX_VERSION)$(WX)_wxluadebug.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindxrc.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindhtml.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindadv.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindaui.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindnet.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindxml.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindcore.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindbase.lib wxlua_msw$(WX_VERSION)$(WX)_wxlua.lib lua5.1.lib $(__WXLIB_XRC_NAME_p) $(__WXLIB_HTML_NAME_p) $(__WXLIB_ADV_NAME_p) $(__WXLIB_AUI_NAME_p) $(__WXLIB_NET_NAME_p) $(__WXLIB_XML_NAME_p) $(__WXLIB_CORE_NAME_p) $(__WXLIB_BASE_NAME_p) wxtiff$(WX).lib wxjpeg$(WX).lib wxpng$(WX).lib wxzlib$(WX).lib wxregex$(WX).lib wxexpat$(WX).lib kernel32.lib user32.lib gdi32.lib comdlg32.lib winspool.lib winmm.lib shell32.lib comctl32.lib ole32.lib oleaut32.lib uuid.lib rpcrt4.lib advapi32.lib wsock32.lib odbc32.lib oleacc.lib
 <<
 
 .\bin\bootloader_usb.dll: $(PLUGIN_ROMLOADER_USB_OBJECTS)
-	link /DLL /NOLOGO /OUT:$@ $(LDFLAGS) /LIBPATH:$(WX_DIR)$(WXLIBPATH) $(VAR_7) /pdb:".\bin\bootloader_usb.pdb" /LIBPATH:$(WXLUA)\lib\vc_dll /LIBPATH:$(WXLUA)\modules\lua\lib  /LIBPATH:.\plugins\romloader\usb\win\lib\msvc @<<
+	link /DLL /NOLOGO /OUT:$@  /LIBPATH:$(WX_DIR)$(WXLIBPATH) $(VAR_7) /pdb:".\bin\bootloader_usb.pdb" /LIBPATH:$(WXLUA)\lib\vc_dll /LIBPATH:$(WXLUA)\modules\lua\lib  /LIBPATH:.\plugins\romloader\usb\win\lib\msvc $(LDFLAGS) @<<
 	$(PLUGIN_ROMLOADER_USB_OBJECTS)  libusb.lib setupapi.lib wxlua_msw$(WX_VERSION)$(WX)_wxluasocket.lib wxlua_msw$(WX_VERSION)$(WX)_wxluadebug.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindxrc.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindhtml.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindadv.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindaui.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindnet.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindxml.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindcore.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindbase.lib wxlua_msw$(WX_VERSION)$(WX)_wxlua.lib lua5.1.lib $(__WXLIB_XRC_NAME_p) $(__WXLIB_HTML_NAME_p) $(__WXLIB_ADV_NAME_p) $(__WXLIB_AUI_NAME_p) $(__WXLIB_NET_NAME_p) $(__WXLIB_XML_NAME_p) $(__WXLIB_CORE_NAME_p) $(__WXLIB_BASE_NAME_p) wxtiff$(WX).lib wxjpeg$(WX).lib wxpng$(WX).lib wxzlib$(WX).lib wxregex$(WX).lib wxexpat$(WX).lib kernel32.lib user32.lib gdi32.lib comdlg32.lib winspool.lib winmm.lib shell32.lib comctl32.lib ole32.lib oleaut32.lib uuid.lib rpcrt4.lib advapi32.lib wsock32.lib odbc32.lib oleacc.lib
 <<
 
 .\bin\baka.dll: $(PLUGIN_ROMLOADER_BAKA_OBJECTS)
-	link /DLL /NOLOGO /OUT:$@ $(LDFLAGS) /LIBPATH:$(WX_DIR)$(WXLIBPATH) $(VAR_7) /pdb:".\bin\baka.pdb" /LIBPATH:$(WXLUA)\lib\vc_dll /LIBPATH:$(WXLUA)\modules\lua\lib  @<<
+	link /DLL /NOLOGO /OUT:$@  /LIBPATH:$(WX_DIR)$(WXLIBPATH) $(VAR_7) /pdb:".\bin\baka.pdb" /LIBPATH:$(WXLUA)\lib\vc_dll /LIBPATH:$(WXLUA)\modules\lua\lib  $(LDFLAGS) @<<
 	$(PLUGIN_ROMLOADER_BAKA_OBJECTS)  wxlua_msw$(WX_VERSION)$(WX)_wxluasocket.lib wxlua_msw$(WX_VERSION)$(WX)_wxluadebug.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindxrc.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindhtml.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindadv.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindaui.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindnet.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindxml.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindcore.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindbase.lib wxlua_msw$(WX_VERSION)$(WX)_wxlua.lib lua5.1.lib $(__WXLIB_XRC_NAME_p) $(__WXLIB_HTML_NAME_p) $(__WXLIB_ADV_NAME_p) $(__WXLIB_AUI_NAME_p) $(__WXLIB_NET_NAME_p) $(__WXLIB_XML_NAME_p) $(__WXLIB_CORE_NAME_p) $(__WXLIB_BASE_NAME_p) wxtiff$(WX).lib wxjpeg$(WX).lib wxpng$(WX).lib wxzlib$(WX).lib wxregex$(WX).lib wxexpat$(WX).lib kernel32.lib user32.lib gdi32.lib comdlg32.lib winspool.lib winmm.lib shell32.lib comctl32.lib ole32.lib oleaut32.lib uuid.lib rpcrt4.lib advapi32.lib wsock32.lib odbc32.lib oleacc.lib
 <<
 
 .\bin\openocd.dll: $(PLUGIN_ROMLOADER_OPENOCD_OBJECTS)
-	link /DLL /NOLOGO /OUT:$@ $(LDFLAGS) /LIBPATH:$(WX_DIR)$(WXLIBPATH) $(VAR_7) /pdb:".\bin\openocd.pdb" /LIBPATH:$(WXLUA)\lib\vc_dll /LIBPATH:$(WXLUA)\modules\lua\lib  /LIBPATH:.\plugins\romloader\openocd\openocd\win\lib\msvc @<<
+	link /DLL /NOLOGO /OUT:$@  /LIBPATH:$(WX_DIR)$(WXLIBPATH) $(VAR_7) /pdb:".\bin\openocd.pdb" /LIBPATH:$(WXLUA)\lib\vc_dll /LIBPATH:$(WXLUA)\modules\lua\lib  /LIBPATH:.\plugins\romloader\openocd\openocd\win\lib\msvc $(LDFLAGS) @<<
 	$(PLUGIN_ROMLOADER_OPENOCD_OBJECTS)  ftd2xx.lib wxlua_msw$(WX_VERSION)$(WX)_wxluasocket.lib wxlua_msw$(WX_VERSION)$(WX)_wxluadebug.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindxrc.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindhtml.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindadv.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindaui.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindnet.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindxml.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindcore.lib wxlua_msw$(WX_VERSION)$(WX)_wxbindbase.lib wxlua_msw$(WX_VERSION)$(WX)_wxlua.lib lua5.1.lib $(__WXLIB_XRC_NAME_p) $(__WXLIB_HTML_NAME_p) $(__WXLIB_ADV_NAME_p) $(__WXLIB_AUI_NAME_p) $(__WXLIB_NET_NAME_p) $(__WXLIB_XML_NAME_p) $(__WXLIB_CORE_NAME_p) $(__WXLIB_BASE_NAME_p) wxtiff$(WX).lib wxjpeg$(WX).lib wxpng$(WX).lib wxzlib$(WX).lib wxregex$(WX).lib wxexpat$(WX).lib kernel32.lib user32.lib gdi32.lib comdlg32.lib winspool.lib winmm.lib shell32.lib comctl32.lib ole32.lib oleaut32.lib uuid.lib rpcrt4.lib advapi32.lib wsock32.lib odbc32.lib oleacc.lib
 <<
 
@@ -392,12 +390,6 @@ vcmsw$(WX)_dll\muhkuh_muhkuh_wrap_xml.obj: .\application\muhkuh_wrap_xml.cpp
 
 vcmsw$(WX)_dll\muhkuh_readFsFile.obj: .\application\readFsFile.cpp
 	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\application\readFsFile.cpp
-
-vcmsw$(WX)_dll\muhkuh_bit_lua.obj: .\plugins\_luaif\bit_lua.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\plugins\_luaif\bit_lua.cpp
-
-vcmsw$(WX)_dll\muhkuh_bit_lua_bind.obj: .\plugins\_luaif\bit_lua_bind.cpp
-	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\plugins\_luaif\bit_lua_bind.cpp
 
 vcmsw$(WX)_dll\muhkuh_muhkuh_lua.obj: .\plugins\_luaif\muhkuh_lua.cpp
 	$(CXX) /c /nologo /TP /Fo$@ $(MUHKUH_CXXFLAGS) .\plugins\_luaif\muhkuh_lua.cpp

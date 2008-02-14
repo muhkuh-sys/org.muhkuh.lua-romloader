@@ -43,8 +43,6 @@
 			application/muhkuh_repository_manager.cpp
 			application/muhkuh_wrap_xml.cpp
 			application/readFsFile.cpp
-			plugins/_luaif/bit_lua.cpp
-			plugins/_luaif/bit_lua_bind.cpp
 			plugins/_luaif/muhkuh_lua.cpp
 			plugins/_luaif/muhkuh_lua_bind.cpp
 		</sources>

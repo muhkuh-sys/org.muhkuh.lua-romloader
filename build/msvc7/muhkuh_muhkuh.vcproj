@@ -614,10 +614,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx">
 			<File
-				RelativePath="..\..\plugins\_luaif\bit_lua.cpp"/>
-			<File
-				RelativePath="..\..\plugins\_luaif\bit_lua_bind.cpp"/>
-			<File
 				RelativePath="..\..\application\bit_lua_interface.cpp"/>
 			<File
 				RelativePath="..\..\application\growbuffer.cpp"/>
