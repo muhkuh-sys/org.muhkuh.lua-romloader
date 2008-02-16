@@ -136,6 +136,7 @@ void muhkuh_configDialog::createControls(void)
 	m_repositoryToolBar->EnableTool(muhkuh_configDialog_EditRepository, false);
 	m_repositoryToolBar->AddTool(muhkuh_configDialog_RemoveRepository, _("Remove"), icon_famfamfam_silk_database_delete, wxNullBitmap, wxITEM_NORMAL, _("Remove Repository"), _("Remove the selected repository from the list"));
 	m_repositoryToolBar->EnableTool(muhkuh_configDialog_RemoveRepository, false);
+	m_repositoryToolBar->Realize();
 	m_repositoryListSizer->Add(m_repositoryToolBar, 0, wxEXPAND);
 
 	m_pluginToolBar = new wxToolBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,  wxTB_HORIZONTAL|wxNO_BORDER|wxTB_TEXT);
@@ -146,6 +147,7 @@ void muhkuh_configDialog::createControls(void)
 	m_pluginToolBar->EnableTool(muhkuh_configDialog_EnablePlugin, false);
 	m_pluginToolBar->AddTool(muhkuh_configDialog_DisablePlugin, _("Disable"), icon_famfamfam_silk_plugin_disabled, wxNullBitmap, wxITEM_NORMAL, _("Disable Plugin"), _("Disable the selected plugin"));
 	m_pluginToolBar->EnableTool(muhkuh_configDialog_DisablePlugin, false);
+	m_pluginToolBar->Realize();
 	m_pluginListSizer->Add(m_pluginToolBar, 0, wxEXPAND);
 
 	m_buttonSizer = new wxBoxSizer(wxHORIZONTAL);
