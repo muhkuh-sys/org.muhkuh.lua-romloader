@@ -118,11 +118,13 @@ void muhkuh_aboutDialog::setAbout(wxHtmlWindow *ptHtmlWin)
 #else
 	strMsg += wxT("Release");
 #endif
-	strMsg += wxT(")</li>");
+	strMsg += wxT(")<br><a href=\"http://www.wxwidgets.org\">http://www.wxwidgets.org</a></li>");
 
 	strMsg += wxT("<li>");
 	strMsg += wxLUA_VERSION_STRING;
-	strMsg += wxT("</li>");
+	strMsg += wxT("<br><a href=\"http://wxlua.sf.net\">http://wxlua.sf.net</a></li>");
+
+	strMsg += wxT("<li>Silk icon set 1.3 by Mark James<br><a href=\"http://www.famfamfam.com/lab/icons/silk/\">http://www.famfamfam.com/lab/icons/silk/</a></li>");
 
 	strMsg += wxT("</ul><p>");
 

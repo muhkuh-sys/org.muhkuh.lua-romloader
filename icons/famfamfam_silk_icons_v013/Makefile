@@ -1,4 +1,10 @@
-
+#--------------------------------------
+#
+# Simple makefile to convert all png images to xpm.
+# Needs 'pngtopnm' and 'ppmtoxpm' from the netpbm suite and
+# the stream editor 'sed'.
+# It will most probably only run on linux.
+#
 
 ICONS_PNG = $(basename $(wildcard *.png))
 ICONS_XPM = $(addsuffix .xpm,$(ICONS_PNG))
