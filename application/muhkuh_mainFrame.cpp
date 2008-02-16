@@ -61,6 +61,17 @@ muhkuh_mainFrame *g_ptMainFrame;
 #include "muhkuh_128.xpm"
 
 //-------------------------------------
+// the control icons
+
+#include "icons/famfamfam_silk_icons_v013/cancel.xpm"
+#include "icons/famfamfam_silk_icons_v013/database_refresh.xpm"
+#include "icons/famfamfam_silk_icons_v013/door_out.xpm"
+#include "icons/famfamfam_silk_icons_v013/help.xpm"
+#include "icons/famfamfam_silk_icons_v013/information.xpm"
+#include "icons/famfamfam_silk_icons_v013/lightbulb.xpm"
+#include "icons/famfamfam_silk_icons_v013/wrench.xpm"
+
+//-------------------------------------
 
 BEGIN_EVENT_TABLE(muhkuh_mainFrame, wxFrame)
 	EVT_IDLE(muhkuh_mainFrame::OnIdle)
@@ -278,15 +289,24 @@ void muhkuh_mainFrame::createMenu(void)
 	wxMenu *test_menu;
 	wxMenu *view_menu;
 	wxMenu *help_menu;
+	wxMenuItem *ptMenuItem;
 
 
 	file_menu = new wxMenu;
-	file_menu->Append(wxID_PREFERENCES);
-	file_menu->Append(wxID_EXIT);
+	ptMenuItem = new wxMenuItem(file_menu, wxID_PREFERENCES, _("Preferences"), _("Open the preferences dialog"));
+	ptMenuItem->SetBitmap(icon_famfamfam_silk_wrench);
+	file_menu->Append(ptMenuItem);
+	ptMenuItem = new wxMenuItem(file_menu, wxID_EXIT, wxString(_("Quit"))+wxT("\tCtrl+Q"), _("Quit the program"));
+	ptMenuItem->SetBitmap(icon_famfamfam_silk_door_out);
+	file_menu->Append(ptMenuItem);
 
 	test_menu = new wxMenu;
-	test_menu->Append(muhkuh_mainFrame_menuTestCancel,			_("Cancel"),				_("Cancel the running test"));
-	test_menu->Append(muhkuh_mainFrame_menuTestRescan,			_("Rescan"),				_("Rescan the repository"));
+	ptMenuItem = new wxMenuItem(test_menu, muhkuh_mainFrame_menuTestCancel, _("Cancel"), _("Cancel the running test"));
+	ptMenuItem->SetBitmap(icon_famfamfam_silk_cancel);
+	test_menu->Append(ptMenuItem);
+	ptMenuItem = new wxMenuItem(test_menu, muhkuh_mainFrame_menuTestRescan, wxString(_("Rescan"))+wxT("\tCtrl-R"), _("Rescan the repository"));
+	ptMenuItem->SetBitmap(icon_famfamfam_silk_database_refresh);
+	test_menu->Append(ptMenuItem);
 
 	view_menu = new wxMenu;
 	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewRepositoryPane,	_("View Repository Selector"),		_("Toggle the visibility of the repository selector"));
@@ -298,11 +318,17 @@ void muhkuh_mainFrame::createMenu(void)
 	view_menu->Append(muhkuh_mainFrame_menuRestoreDefaultPerspective,	_("Restore Default Layout"),		_("Restore the default window layout"));
 
 	help_menu = new wxMenu;
-	help_menu->Append(wxID_HELP);
+	ptMenuItem = new wxMenuItem(help_menu, wxID_HELP, wxString(_("Help"))+wxT("\tCtrl+H"), _("Show the documentation"));
+	ptMenuItem->SetBitmap(icon_famfamfam_silk_help);
+	help_menu->Append(ptMenuItem);
 	help_menu->AppendSeparator();
-	help_menu->Append(wxID_ABOUT);
+	ptMenuItem = new wxMenuItem(help_menu, wxID_ABOUT, _("About"), _("Show details about Muhkuh"));
+	ptMenuItem->SetBitmap(icon_famfamfam_silk_information);
+	help_menu->Append(ptMenuItem);
 	help_menu->AppendSeparator();
-	help_menu->Append(muhkuh_mainFrame_menuShowTip,				_("Show Tip"),				_("Show some tips about Muhkuh"));
+	ptMenuItem = new wxMenuItem(help_menu, muhkuh_mainFrame_menuShowTip, _("Show Tip"), _("Show some tips about Muhkuh"));
+	ptMenuItem->SetBitmap(icon_famfamfam_silk_lightbulb);
+	help_menu->Append(ptMenuItem);
 
 	m_menuBar = new wxMenuBar;
 	m_menuBar->Append(file_menu, _("&File"));

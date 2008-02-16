@@ -70,16 +70,9 @@ private:
 	wxStaticBoxSizer *m_pluginListSizer;
 	wxListCtrl *m_repositoryList;
 	wxListCtrl *m_pluginList;
-	wxBoxSizer *m_repositoryButtonSizer;
-	wxBoxSizer *m_pluginButtonSizer;
 	wxBoxSizer *m_buttonSizer;
-	wxButton *m_buttonNewRepository;
-	wxButton *m_buttonEditRepository;
-	wxButton *m_buttonDeleteRepository;
-	wxButton *m_buttonAddPlugin;
-	wxButton *m_buttonDeletePlugin;
-	wxButton *m_buttonEnablePlugin;
-	wxButton *m_buttonDisablePlugin;
+	wxToolBar *m_repositoryToolBar;
+	wxToolBar *m_pluginToolBar;
 	wxButton *m_buttonOk;
 	wxButton *m_buttonCancel;
 
