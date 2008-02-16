@@ -63,9 +63,9 @@ public:
 	bool GetSelected(void) const;
 
 	wxString GetStringRepresentation(void) const;
-	wxBitmap GetBitmap(wxSize tBitmapSize) const;
-	static wxBitmap GetBitmap(REPOSITORY_TYP_E eTyp, wxSize tBitmapSize);
-	static wxImageList *CreateNewImageList(wxSize tBitmapSize);
+	wxBitmap GetBitmap(void) const;
+	static wxBitmap GetBitmap(REPOSITORY_TYP_E eTyp);
+	static wxImageList *CreateNewImageList(void);
 	static int GetImageListIndex(REPOSITORY_TYP_E eTyp);
 	int GetImageListIndex(void) const;
 

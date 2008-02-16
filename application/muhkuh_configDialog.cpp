@@ -56,7 +56,6 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
  , m_ptRepositoryManager(ptRepositoryManager)
  , m_ptPluginManager(ptPluginManager)
 {
-	wxSize tBitmapSize;
 	size_t sizCnt, sizIdx;
 
 
@@ -69,12 +68,12 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 	createControls();
 
 	// create the imagelist
-	tBitmapSize.Set(16, 16);
-	ptRepoImageList = muhkuh_repository::CreateNewImageList(tBitmapSize);
+	ptRepoImageList = muhkuh_repository::CreateNewImageList();
 	// assign image list, NOTE: this makes the ListCtrl the owner, i.e. the image list will be deleted when the ListCtrl is deleted
 	m_repositoryList->AssignImageList(ptRepoImageList, wxIMAGE_LIST_SMALL);
 
-	ptPluginImageList = new wxImageList(tBitmapSize.GetWidth(), tBitmapSize.GetHeight(), true, 2);
+	// create imagelist for 2 images with 16x16 pixels
+	ptPluginImageList = new wxImageList(16, 16, true, 2);
 	ptPluginImageList->Add( icon_famfamfam_silk_bullet_green );
 	ptPluginImageList->Add( icon_famfamfam_silk_bullet_yellow );
 	ptPluginImageList->Add( icon_famfamfam_silk_exclamation );

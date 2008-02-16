@@ -1075,20 +1075,18 @@ void muhkuh_mainFrame::finishTest(void)
 void muhkuh_mainFrame::updateRepositoryCombo(void)
 {
 	wxString strReposEntry;
-	wxSize tRepoBitmapSize;
 	wxBitmap tRepoBitmap;
 	size_t sizCnt, sizMax;
 
 
 	m_repositoryCombo->Clear();
-	tRepoBitmapSize.Set(16, 16);
 	sizMax = m_ptRepositoryManager->GetRepositoryCount();
 	for(sizCnt=0; sizCnt<sizMax; ++sizCnt)
 	{
 		// get string representation of the new entry
 		strReposEntry = m_ptRepositoryManager->GetStringRepresentation(sizCnt);
 		// get bitmap for the entry
-		tRepoBitmap = m_ptRepositoryManager->GetBitmap(sizCnt, tRepoBitmapSize);
+		tRepoBitmap = m_ptRepositoryManager->GetBitmap(sizCnt);
 		// add to combo box
 		m_repositoryCombo->Append(strReposEntry, tRepoBitmap);
 	}

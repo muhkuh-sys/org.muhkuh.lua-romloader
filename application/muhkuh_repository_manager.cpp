@@ -216,7 +216,7 @@ wxString muhkuh_repository_manager::GetStringRepresentation(size_t sizIdx) const
 }
 
 
-wxBitmap muhkuh_repository_manager::GetBitmap(size_t sizIdx, wxSize tBitmapSize) const
+wxBitmap muhkuh_repository_manager::GetBitmap(size_t sizIdx) const
 {
 	std::vector<muhkuh_repository*>::const_iterator iter;
 	muhkuh_repository *ptRepository;
@@ -233,7 +233,7 @@ wxBitmap muhkuh_repository_manager::GetBitmap(size_t sizIdx, wxSize tBitmapSize)
 		iter = m_ptRepositories->begin();
 		iter += sizIdx;
 		ptRepository = *iter;
-		tBitmap = ptRepository->GetBitmap(tBitmapSize);
+		tBitmap = ptRepository->GetBitmap();
 	}
 
 	return tBitmap;

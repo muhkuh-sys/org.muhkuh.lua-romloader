@@ -49,7 +49,7 @@ public:
 
 	size_t GetRepositoryCount(void) const;
 	wxString GetStringRepresentation(size_t sizIdx) const;
-	wxBitmap GetBitmap(size_t sizIdx, wxSize tBitmapSize) const;
+	wxBitmap GetBitmap(size_t sizIdx) const;
 	int GetImageListIndex(size_t sizIdx) const;
 
 	void read_config(wxConfigBase *pConfig);

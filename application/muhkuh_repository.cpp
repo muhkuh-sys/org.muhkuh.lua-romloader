@@ -30,6 +30,12 @@
 #include "muhkuh_repository.h"
 
 
+#include "icons/famfamfam_silk_icons_v013/folder_table.xpm"
+#include "icons/famfamfam_silk_icons_v013/database.xpm"
+#include "icons/famfamfam_silk_icons_v013/script.xpm"
+#include "icons/famfamfam_silk_icons_v013/exclamation.xpm"
+
+
 muhkuh_repository::muhkuh_repository(wxString strName)
  : m_strName(strName)
  , m_eTyp(REPOSITORY_TYP_UNDEFINED)
@@ -166,59 +172,59 @@ wxString muhkuh_repository::GetStringRepresentation(void) const
 }
 
 
-wxBitmap muhkuh_repository::GetBitmap(wxSize tBitmapSize) const
+wxBitmap muhkuh_repository::GetBitmap(void) const
 {
-	return GetBitmap(m_eTyp, tBitmapSize);
+	return GetBitmap(m_eTyp);
 }
 
 
-wxBitmap muhkuh_repository::GetBitmap(REPOSITORY_TYP_E eTyp, wxSize tBitmapSize)
+wxBitmap muhkuh_repository::GetBitmap(REPOSITORY_TYP_E eTyp)
 {
-	wxArtID tArtId;
+	const char **ppcXpm;
 
 
 	// append the typ
 	switch( eTyp )
 	{
 	case REPOSITORY_TYP_DIRSCAN:
-		tArtId = wxART_FOLDER_OPEN;
+		ppcXpm = icon_famfamfam_silk_folder_table;
 		break;
 	case REPOSITORY_TYP_FILELIST:
-		tArtId = wxART_HELP_BOOK;
+		ppcXpm = icon_famfamfam_silk_database;
 		break;
 	case REPOSITORY_TYP_SINGLEXML:
-		tArtId = wxART_NORMAL_FILE;
+		ppcXpm = icon_famfamfam_silk_script;
 		break;
 	default:
-		tArtId = wxART_ERROR;
+		ppcXpm = icon_famfamfam_silk_exclamation;
 		break;
 	}
 
-	return wxArtProvider::GetBitmap(tArtId, wxART_MENU, tBitmapSize);
+	return wxBitmap(ppcXpm);
 }
 
 
-wxImageList *muhkuh_repository::CreateNewImageList(wxSize tBitmapSize)
+wxImageList *muhkuh_repository::CreateNewImageList(void)
 {
 	wxImageList *ptImageList;
 	wxBitmap bitmap;
 
 
 	// create the new empty list and reserve space for 4 icons
-	ptImageList = new wxImageList(tBitmapSize.GetWidth(), tBitmapSize.GetHeight(), true, 4);
+	ptImageList = new wxImageList(16, 16, true, 4);
 
 	// NOTE: if you change the order or amount of icons here, you must also change the GetImageListIndex function
 	// add 'undefined' bitmap
-	bitmap = muhkuh_repository::GetBitmap(muhkuh_repository::REPOSITORY_TYP_UNDEFINED, tBitmapSize);
+	bitmap = muhkuh_repository::GetBitmap(muhkuh_repository::REPOSITORY_TYP_UNDEFINED);
 	ptImageList->Add(bitmap);
 	// add 'dirscan' bitmap
-	bitmap = muhkuh_repository::GetBitmap(muhkuh_repository::REPOSITORY_TYP_DIRSCAN, tBitmapSize);
+	bitmap = muhkuh_repository::GetBitmap(muhkuh_repository::REPOSITORY_TYP_DIRSCAN);
 	ptImageList->Add(bitmap);
 	// add 'filelist' bitmap
-	bitmap = muhkuh_repository::GetBitmap(muhkuh_repository::REPOSITORY_TYP_FILELIST, tBitmapSize);
+	bitmap = muhkuh_repository::GetBitmap(muhkuh_repository::REPOSITORY_TYP_FILELIST);
 	ptImageList->Add(bitmap);
 	// add 'singlexml' bitmap
-	bitmap = muhkuh_repository::GetBitmap(muhkuh_repository::REPOSITORY_TYP_SINGLEXML, tBitmapSize);
+	bitmap = muhkuh_repository::GetBitmap(muhkuh_repository::REPOSITORY_TYP_SINGLEXML);
 	ptImageList->Add(bitmap);
 
 	// return the new imagelist
