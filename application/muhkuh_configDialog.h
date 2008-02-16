@@ -41,11 +41,15 @@ public:
 	void OnNewRepositoryButton(wxCommandEvent &event);
 	void OnEditRepositoryButton(wxCommandEvent &event);
 	void OnDeleteRepositoryButton(wxCommandEvent &event);
+	void OnRepositorySelect(wxListEvent &event);
+	void OnRepositoryDeselect(wxListEvent &event);
 
 	void OnAddPluginButton(wxCommandEvent &event);
 	void OnRemovePluginButton(wxCommandEvent &event);
 	void OnEnablePluginButton(wxCommandEvent &event);
 	void OnDisablePluginButton(wxCommandEvent &event);
+	void OnPluginSelect(wxListEvent &event);
+	void OnPluginDeselect(wxListEvent &event);
 
 	void OnSize(wxSizeEvent &event);
 
@@ -58,6 +62,8 @@ private:
 	void ShowPluginImage(long lIdx);
 	void ShowUpdatedRepositoryEntry(long lIdx, muhkuh_repository *ptRepos);
 
+	void SetRepositoryButtons(long lIdx);
+	void SetPluginButtons(long lIdx);
 
 	muhkuh_repository_manager *m_ptRepositoryManager;
 	muhkuh_plugin_manager *m_ptPluginManager;

@@ -51,6 +51,7 @@ enum
 	muhkuh_mainFrame_menuTestRescan,
 
 	muhkuh_configDialog_RepositoryList,
+	muhkuh_configDialog_PluginList,
 	muhkuh_configDialog_AddRepository,
 	muhkuh_configDialog_EditRepository,
 	muhkuh_configDialog_RemoveRepository,
