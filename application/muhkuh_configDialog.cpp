@@ -78,9 +78,9 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 
 	// create imagelist for 2 images with 16x16 pixels
 	ptPluginImageList = new wxImageList(16, 16, true, 2);
-	ptPluginImageList->Add( icon_famfamfam_silk_bullet_green );
-	ptPluginImageList->Add( icon_famfamfam_silk_bullet_yellow );
-	ptPluginImageList->Add( icon_famfamfam_silk_exclamation );
+	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_bullet_green) );
+	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_bullet_yellow) );
+	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_exclamation) );
 	m_pluginList->AssignImageList(ptPluginImageList, wxIMAGE_LIST_SMALL);
 
 	// loop over all repositories and add them to the list

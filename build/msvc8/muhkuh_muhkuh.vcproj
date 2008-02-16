@@ -217,9 +217,6 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			>
 			<File
-				RelativePath="..\..\application\bit_lua_interface.cpp"
-			/>
-			<File
 				RelativePath="..\..\application\growbuffer.cpp"
 			/>
 			<File

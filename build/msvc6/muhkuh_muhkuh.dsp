@@ -90,10 +90,6 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\application\bit_lua_interface.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\application\growbuffer.cpp
 # End Source File
 # Begin Source File
