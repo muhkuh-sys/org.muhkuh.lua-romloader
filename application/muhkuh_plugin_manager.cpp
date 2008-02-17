@@ -199,7 +199,7 @@ wxString muhkuh_plugin_manager::GetConfigName(unsigned long ulIdx) const
 	/* check input parameter */
 	if( ulIdx>=m_ptOpenPlugins->size() )
 	{
-		wxLogError(_("muhkuh_plugin_manager::SetEnable : idx %ld is out of range, ignoring request"), ulIdx);
+		wxLogError(_("muhkuh_plugin_manager::GetConfigName : idx %ld is out of range, ignoring request"), ulIdx);
 	}
 	else
 	{

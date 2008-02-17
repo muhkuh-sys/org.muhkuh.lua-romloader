@@ -109,6 +109,7 @@ muhkuh_plugin::~muhkuh_plugin(void)
 void muhkuh_plugin::showInitError(wxString strMessage, wxString strPath)
 {
 	wxFileName tFileName;
+	wxString strMsg;
 	wxString strTitle;
 
 
@@ -116,11 +117,13 @@ void muhkuh_plugin::showInitError(wxString strMessage, wxString strPath)
 	tFileName.Assign(strPath, wxPATH_NATIVE);
 	strTitle.Printf(_("Plugin '%s' failed to load!"), tFileName.GetName().fn_str());
 	// build errormessage
-	m_strInitError.Printf(_("The plugin '%s' failed to load, it will be disabled: %s"), strPath.fn_str(), strMessage.fn_str());
+	m_strInitError.Printf(_("The plugin '%s' failed to load: %s"), strPath.fn_str(), strMessage.fn_str());
+	// build the message for the dialog
+	strMsg.Printf(_("The plugin '%s' failed to load, it will be disabled: %s"), strPath.fn_str(), strMessage.fn_str());
 	// show message in logfile
 	wxLogError(m_strInitError);
 	// show error in messagebox
-	wxMessageBox(m_strInitError, strTitle, wxICON_ERROR, NULL);
+	wxMessageBox(strMsg, strTitle, wxICON_ERROR, NULL);
 }
 
 
@@ -277,6 +280,14 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 	{
 		/* plugin is not open yet, accept new name */
 		m_strPluginCfgPath = strPluginCfgPath;
+
+		// init plugin description with defaults
+		m_strCfgName = strPluginCfgPath;
+		tPluginDesc.strPluginName = strPluginCfgPath;
+		tPluginDesc.strPluginId = wxEmptyString;
+		tPluginDesc.tVersion.uiVersionMajor = 0;
+		tPluginDesc.tVersion.uiVersionMinor = 0;
+		tPluginDesc.tVersion.uiVersionSub = 0;
 
 		/* open plugin xml config */
 		fResult = openXml(strPluginCfgPath);

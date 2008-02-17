@@ -31,10 +31,12 @@
 #include "icons/famfamfam_silk_icons_v013/database_delete.xpm"
 #include "icons/famfamfam_silk_icons_v013/database_edit.xpm"
 #include "icons/famfamfam_silk_icons_v013/exclamation.xpm"
+#include "icons/famfamfam_silk_icons_v013/key.xpm"
 #include "icons/famfamfam_silk_icons_v013/plugin_add.xpm"
 #include "icons/famfamfam_silk_icons_v013/plugin_delete.xpm"
 #include "icons/famfamfam_silk_icons_v013/plugin_disabled.xpm"
 #include "icons/famfamfam_silk_icons_v013/plugin_go.xpm"
+#include "icons/famfamfam_silk_icons_v013/tag_blue.xpm"
 
 
 BEGIN_EVENT_TABLE(muhkuh_configDialog, wxDialog)
@@ -48,8 +50,8 @@ BEGIN_EVENT_TABLE(muhkuh_configDialog, wxDialog)
 	EVT_TOOL(muhkuh_configDialog_RemovePlugin,			muhkuh_configDialog::OnRemovePluginButton)
 	EVT_TOOL(muhkuh_configDialog_EnablePlugin,			muhkuh_configDialog::OnEnablePluginButton)
 	EVT_TOOL(muhkuh_configDialog_DisablePlugin,			muhkuh_configDialog::OnDisablePluginButton)
-	EVT_LIST_ITEM_SELECTED(muhkuh_configDialog_PluginList,		muhkuh_configDialog::OnPluginSelect)
-	EVT_LIST_ITEM_DESELECTED(muhkuh_configDialog_PluginList,	muhkuh_configDialog::OnPluginDeselect)
+	EVT_TREE_SEL_CHANGED(muhkuh_configDialog_PluginList,		muhkuh_configDialog::OnPluginSelectionChanged)
+	EVT_TREE_SEL_CHANGING(muhkuh_configDialog_PluginList,		muhkuh_configDialog::OnPluginSelectionChanging)
 
 	EVT_SIZE(muhkuh_configDialog::OnSize)
 END_EVENT_TABLE()
@@ -75,13 +77,6 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 	ptRepoImageList = muhkuh_repository::CreateNewImageList();
 	// assign image list, NOTE: this makes the ListCtrl the owner, i.e. the image list will be deleted when the ListCtrl is deleted
 	m_repositoryList->AssignImageList(ptRepoImageList, wxIMAGE_LIST_SMALL);
-
-	// create imagelist for 2 images with 16x16 pixels
-	ptPluginImageList = new wxImageList(16, 16, true, 2);
-	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_bullet_yellow) );
-	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_bullet_green) );
-	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_exclamation) );
-	m_pluginList->AssignImageList(ptPluginImageList, wxIMAGE_LIST_SMALL);
 
 	// loop over all repositories and add them to the list
 	sizIdx = 0;
@@ -135,11 +130,18 @@ void muhkuh_configDialog::createControls(void)
 	m_repositoryListSizer->Add(m_repositoryToolBar, 0, wxEXPAND);
 
 	// create the plugin list
-	m_pluginList = new wxListCtrl(this, muhkuh_configDialog_PluginList, wxDefaultPosition, wxDefaultSize, wxLC_REPORT);
-	m_pluginList->InsertColumn(0, _("Plugin"));
-	m_pluginList->InsertColumn(1, _("Id"));
-	m_pluginList->InsertColumn(2, _("Version"));
-	m_pluginListSizer->Add(m_pluginList, 1, wxEXPAND);
+	m_pluginTree = new wxTreeCtrl(this, muhkuh_configDialog_PluginList, wxDefaultPosition, wxDefaultSize, wxTR_HAS_BUTTONS|wxTR_NO_LINES|wxTR_HIDE_ROOT|wxTR_SINGLE);
+	m_pluginTree->AddRoot(wxEmptyString);
+	m_pluginListSizer->Add(m_pluginTree, 1, wxEXPAND);
+
+	// create imagelist for 5 images with 16x16 pixels
+	ptPluginImageList = new wxImageList(16, 16, true, 5);
+	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_bullet_yellow) );
+	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_bullet_green) );
+	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_exclamation) );
+	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_key) );
+	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_tag_blue) );
+	m_pluginTree->AssignImageList(ptPluginImageList);
 
 	// create the plugin toolbar
 	m_pluginToolBar = new wxToolBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,  wxTB_HORIZONTAL|wxNO_BORDER|wxTB_TEXT);
@@ -335,98 +337,130 @@ void muhkuh_configDialog::OnAddPluginButton(wxCommandEvent &WXUNUSED(event))
 
 void muhkuh_configDialog::OnRemovePluginButton(wxCommandEvent &WXUNUSED(event))
 {
-	int iSelectedEntries;
-	long lIdx;
-	long *plIdx;
-	int iCnt;
+	wxTreeItemId tItem;
+	pluginTreeItemData *ptData;
+	long lPluginIdx;
 
 
-	// get the number of selected files
-	iSelectedEntries = m_pluginList->GetSelectedItemCount();
-	// it at lease one item selected
-	if( iSelectedEntries>0 )
+	// get the selected item
+	tItem = m_pluginTree->GetSelection();
+	// was something selected?
+	if( tItem.IsOk()==true )
 	{
-		plIdx = new long[iSelectedEntries];
-		iCnt = 0;
-		// loop over all selected plugins and add them to the requester
-		lIdx = -1;
-		do
-		{
-			lIdx = m_pluginList->GetNextItem(lIdx, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
-			if( lIdx>=0 )
-			{
-				// add index and name to the lists
-				plIdx[iCnt] = lIdx;
-				++iCnt;
-			}
-		} while( lIdx>=0 && iCnt<iSelectedEntries );
-
-		// TODO: show a requester with all selected plugins and ask the user for confirmation
-
 		// disable all buttons (in case if no update event follows the delete)
-		SetPluginButtons(-1);
+		SetPluginButtons(wxTreeItemId());
 
-		// delete all the files
-		while(iCnt>0)
+		// get the plugin id
+		ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tItem);
+		if( ptData!=NULL )
 		{
-			lIdx = plIdx[--iCnt];
-			// erase from the listctrl
-			m_pluginList->DeleteItem(lIdx);
+			lPluginIdx = ptData->GetPluginId();
+
+			// erase from the tree
+			m_pluginTree->Delete(tItem);
+
 			// erase from the manager
-			m_ptPluginManager->removePlugin(lIdx);
+			m_ptPluginManager->removePlugin(lPluginIdx);
 		}
-		// free the index list
-		delete[] plIdx;
 	}
 }
 
 
 void muhkuh_configDialog::OnEnablePluginButton(wxCommandEvent &WXUNUSED(event))
 {
-	long lIdx;
+	wxTreeItemId tItem;
+	pluginTreeItemData *ptData;
+	long lPluginIdx;
 
 
-	// get the focussed item in the plugin list
-	lIdx = m_pluginList->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_FOCUSED);
-	if( lIdx>=0 )
+	// get the selected item
+	tItem = m_pluginTree->GetSelection();
+	// was something selected?
+	if( tItem.IsOk()==true )
 	{
-		m_ptPluginManager->SetEnable(lIdx, true);
-		ShowPluginImage(lIdx);
-		SetPluginButtons(lIdx);
+		// get the plugin id
+		ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tItem);
+		if( ptData!=NULL )
+		{
+			lPluginIdx = ptData->GetPluginId();
+
+			m_ptPluginManager->SetEnable(lPluginIdx, true);
+			ShowPluginImage(tItem);
+			SetPluginButtons(tItem);
+		}
 	}
 }
 
 
 void muhkuh_configDialog::OnDisablePluginButton(wxCommandEvent &WXUNUSED(event))
 {
-	long lIdx;
+	wxTreeItemId tItem;
+	pluginTreeItemData *ptData;
+	long lPluginIdx;
 
 
-	// get the focussed item in the plugin list
-	lIdx = m_pluginList->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_FOCUSED);
-	if( lIdx>=0 )
+	// get the selected item
+	tItem = m_pluginTree->GetSelection();
+	// was something selected?
+	if( tItem.IsOk()==true )
 	{
-		m_ptPluginManager->SetEnable(lIdx, false);
-		ShowPluginImage(lIdx);
-		SetPluginButtons(lIdx);
+		// get the plugin id
+		ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tItem);
+		if( ptData!=NULL )
+		{
+			lPluginIdx = ptData->GetPluginId();
+
+			m_ptPluginManager->SetEnable(lPluginIdx, false);
+			ShowPluginImage(tItem);
+			SetPluginButtons(tItem);
+		}
 	}
 }
 
 
-void muhkuh_configDialog::OnPluginSelect(wxListEvent &event)
+void muhkuh_configDialog::OnPluginSelectionChanging(wxTreeEvent &event)
 {
-	SetPluginButtons(event.GetIndex());
+	wxTreeItemId tItem;
+	pluginTreeItemData *ptData;
+	bool fAllowChange;
+
+
+	// don't allow change by default
+	fAllowChange = false;
+
+	// only allow items with tree data to be selected
+	tItem = event.GetItem();
+	if( tItem.IsOk()==true )
+	{
+		ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tItem);
+		if( ptData!=NULL )
+		{
+			fAllowChange = true;
+		}
+	}
+
+	// allow or veto the change request
+	if( fAllowChange==true )
+	{
+		event.Allow();
+	}
+	else
+	{
+		event.Veto();
+	}
 }
 
 
-void muhkuh_configDialog::OnPluginDeselect(wxListEvent &event)
+void muhkuh_configDialog::OnPluginSelectionChanged(wxTreeEvent &event)
 {
-	SetPluginButtons(-1);
+	SetPluginButtons(event.GetItem());
 }
 
 
-void muhkuh_configDialog::SetPluginButtons(long lIdx)
+void muhkuh_configDialog::SetPluginButtons(wxTreeItemId tItem)
 {
+	pluginTreeItemData *ptData;
+	long lPluginIdx;
 	bool fPluginSelected;
 	bool fPluginIsOk;
 	bool fPluginIsEnabled;
@@ -434,19 +468,23 @@ void muhkuh_configDialog::SetPluginButtons(long lIdx)
 	bool fPluginCanBeDisabled;
 
 
-	fPluginSelected = ( lIdx>=0 );
+	fPluginSelected = tItem.IsOk();
+	// set default values
+	fPluginCanBeEnabled = false;
+	fPluginCanBeDisabled = false;
+
 	if( fPluginSelected==true )
 	{
-		fPluginIsOk = m_ptPluginManager->IsOk(lIdx);
-		fPluginIsEnabled = m_ptPluginManager->GetEnable(lIdx);
+		ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tItem);
+		if( ptData!=NULL )
+		{
+			lPluginIdx = ptData->GetPluginId();
+			fPluginIsOk = m_ptPluginManager->IsOk(lPluginIdx);
+			fPluginIsEnabled = m_ptPluginManager->GetEnable(lPluginIdx);
 
-		fPluginCanBeEnabled = fPluginSelected && fPluginIsOk && !fPluginIsEnabled;
-		fPluginCanBeDisabled = fPluginSelected && fPluginIsOk && fPluginIsEnabled;
-	}
-	else
-	{
-		fPluginCanBeEnabled = false;
-		fPluginCanBeDisabled = false;
+			fPluginCanBeEnabled = fPluginSelected && fPluginIsOk && !fPluginIsEnabled;
+			fPluginCanBeDisabled = fPluginSelected && fPluginIsOk && fPluginIsEnabled;
+		}
 	}
 
 	m_pluginToolBar->EnableTool(muhkuh_configDialog_RemovePlugin,	fPluginSelected);
@@ -485,13 +523,18 @@ void muhkuh_configDialog::ShowNewRepository(long lIdx)
 void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 {
 	bool fPluginIsOk;
-	wxListItem listItem;
+	wxTreeItemId tRootItem;
+	wxTreeItemId tPluginItem;
 	const muhkuh_plugin_desc *ptPluginDesc;
 	wxString strName;
 	wxString strId;
 	wxString strVersion;
 	long lItemIdx;
+	pluginTreeItemData *ptData;
 
+
+	// append all plugins to the root item
+	tRootItem = m_pluginTree->GetRootItem();
 
 	/* get the plugin description */
 	fPluginIsOk = m_ptPluginManager->IsOk(lIdx);
@@ -500,49 +543,64 @@ void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 	{
 		wxLogError(_("failed to get plugin description!"));
 	}
-
-	if( fPluginIsOk==true && ptPluginDesc!=NULL )
-	{
-		strName = m_ptPluginManager->GetConfigName(lIdx);
-		strId = ptPluginDesc->strPluginId;
-		strVersion.Printf(wxT("%d.%d.%d"), ptPluginDesc->tVersion.uiVersionMajor, ptPluginDesc->tVersion.uiVersionMinor, ptPluginDesc->tVersion.uiVersionSub);
-	}
 	else
 	{
-		strName = m_ptPluginManager->GetInitError(lIdx);
-		strId = wxEmptyString;
-		strVersion = wxEmptyString;
-	}
+		strName = m_ptPluginManager->GetConfigName(lIdx);
 
-	listItem.Clear();
-	listItem.SetId(lIdx);
-	listItem.SetText( strName );
-	// add the entry to the list
-	lItemIdx = m_pluginList->InsertItem(listItem);
-	m_pluginList->SetItem(lItemIdx, 1, strId);
-	m_pluginList->SetItem(lItemIdx, 2, strVersion);
-	ShowPluginImage(lIdx);
+		// create the new data item
+		ptData = new pluginTreeItemData(lIdx);
+
+		if( fPluginIsOk==true )
+		{
+			strId = ptPluginDesc->strPluginId;
+			strVersion.Printf(wxT("V%d.%d.%d"), ptPluginDesc->tVersion.uiVersionMajor, ptPluginDesc->tVersion.uiVersionMinor, ptPluginDesc->tVersion.uiVersionSub);
+
+			// set the plugin item
+			tPluginItem = m_pluginTree->AppendItem(tRootItem, strName, -1, -1, ptData);
+			m_pluginTree->AppendItem(tPluginItem, strId, 3);
+			m_pluginTree->AppendItem(tPluginItem, strVersion, 4);
+			ShowPluginImage(tPluginItem);
+		}
+		else
+		{
+			tPluginItem = m_pluginTree->AppendItem(tRootItem, strName, 2, -1, ptData);
+			// append the errormessage
+			m_pluginTree->AppendItem(tPluginItem, m_ptPluginManager->GetInitError(lIdx), 2, -1, NULL);
+		}
+	}
 }
 
 
-void muhkuh_configDialog::ShowPluginImage(long lIdx)
+void muhkuh_configDialog::ShowPluginImage(wxTreeItemId tPluginItem)
 {
+	pluginTreeItemData *ptData;
+	long lIdx;
 	int iImageIdx;
 
 
-	if( m_ptPluginManager->IsOk(lIdx)==false )
+	// get the tree item data
+	if( tPluginItem.IsOk()==true )
 	{
-		iImageIdx = 2;
+		ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tPluginItem);
+		if( ptData!=NULL )
+		{
+			lIdx = ptData->GetPluginId();
+
+			if( m_ptPluginManager->IsOk(lIdx)==false )
+			{
+				iImageIdx = 2;
+			}
+			else if( m_ptPluginManager->GetEnable(lIdx)==false )
+			{
+				iImageIdx = 0;
+			}
+			else
+			{
+				iImageIdx = 1;
+			}
+			m_pluginTree->SetItemImage(tPluginItem, iImageIdx);
+		}
 	}
-	else if( m_ptPluginManager->GetEnable(lIdx)==false )
-	{
-		iImageIdx = 0;
-	}
-	else
-	{
-		iImageIdx = 1;
-	}
-	m_pluginList->SetItemImage(lIdx, iImageIdx);
 }
 
 

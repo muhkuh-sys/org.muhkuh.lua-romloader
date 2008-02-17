@@ -33,6 +33,23 @@
 #include "muhkuh_repository_manager.h"
 
 
+class pluginTreeItemData : public wxTreeItemData
+{
+public:
+	pluginTreeItemData(long lPluginId)
+	 : m_lPluginId(lPluginId)
+	 { };
+
+	long GetPluginId(void) const
+	{
+		return m_lPluginId;
+	};
+
+private:
+	long m_lPluginId;
+};
+
+
 class muhkuh_configDialog : public wxDialog
 {
 public:
@@ -48,8 +65,8 @@ public:
 	void OnRemovePluginButton(wxCommandEvent &event);
 	void OnEnablePluginButton(wxCommandEvent &event);
 	void OnDisablePluginButton(wxCommandEvent &event);
-	void OnPluginSelect(wxListEvent &event);
-	void OnPluginDeselect(wxListEvent &event);
+	void OnPluginSelectionChanged(wxTreeEvent &event);
+	void OnPluginSelectionChanging(wxTreeEvent &event);
 
 	void OnSize(wxSizeEvent &event);
 
@@ -59,11 +76,11 @@ private:
 	void ShowNewRepository(long lIdx);
 	void ShowNewPlugin(long lIdx);
 
-	void ShowPluginImage(long lIdx);
+	void ShowPluginImage(wxTreeItemId tPluginItem);
 	void ShowUpdatedRepositoryEntry(long lIdx, muhkuh_repository *ptRepos);
 
 	void SetRepositoryButtons(long lIdx);
-	void SetPluginButtons(long lIdx);
+	void SetPluginButtons(wxTreeItemId tItem);
 
 	muhkuh_repository_manager *m_ptRepositoryManager;
 	muhkuh_plugin_manager *m_ptPluginManager;
@@ -75,7 +92,7 @@ private:
 	wxStaticBoxSizer *m_repositoryListSizer;
 	wxStaticBoxSizer *m_pluginListSizer;
 	wxListCtrl *m_repositoryList;
-	wxListCtrl *m_pluginList;
+	wxTreeCtrl *m_pluginTree;
 	wxBoxSizer *m_buttonSizer;
 	wxToolBar *m_repositoryToolBar;
 	wxToolBar *m_pluginToolBar;
