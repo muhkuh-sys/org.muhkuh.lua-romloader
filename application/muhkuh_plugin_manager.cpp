@@ -60,15 +60,8 @@ muhkuh_plugin_manager::muhkuh_plugin_manager(const muhkuh_plugin_manager *ptClon
 		ptPluginClone = new muhkuh_plugin(ptPluginOrg);
 		if( ptPluginClone!=NULL )
 		{
-			if( ptPluginClone->IsOk()==true )
-			{
-				/* add the new plugin to the list */
-				m_ptOpenPlugins->push_back(ptPluginClone);
-			}
-			else
-			{
-				delete ptPluginClone;
-			}
+			/* add the new plugin to the list */
+			m_ptOpenPlugins->push_back(ptPluginClone);
 		}
 
 		/* next entry */
@@ -95,6 +88,23 @@ muhkuh_plugin_manager::~muhkuh_plugin_manager(void)
 }
 
 
+void muhkuh_plugin_manager::disableBrokenPlugin(muhkuh_plugin *ptPlugin, wxString strPluginName, wxString strError)
+{
+	wxString strMsg;
+
+
+	/* disable plugin */
+	if( ptPlugin!=NULL )
+	{
+		ptPlugin->SetEnable(false);
+	}
+	/* show warning in log and in a messagebox */
+	strMsg.Printf(_("Disabled the plugin '%s': %s"), strPluginName.fn_str(), strError.fn_str());
+	wxLogError(strMsg);
+	wxMessageBox(strMsg, strPluginName, wxICON_ERROR, NULL);
+}
+
+
 long muhkuh_plugin_manager::addPlugin(wxString strPluginCfgName)
 {
 	muhkuh_plugin *ptPlugin;
@@ -113,17 +123,10 @@ long muhkuh_plugin_manager::addPlugin(wxString strPluginCfgName)
 	}
 	else
 	{
-		if( ptPlugin->IsOk()==true )
-		{
-			lPluginIdx = m_ptOpenPlugins->size();
+		lPluginIdx = m_ptOpenPlugins->size();
 
-			/* plugin is ok, add it to the list */
-			m_ptOpenPlugins->push_back(ptPlugin);
-		}
-		else
-		{
-			delete ptPlugin;
-		}
+		/* plugin is ok, add it to the list */
+		m_ptOpenPlugins->push_back(ptPlugin);
 	}
 
 	return lPluginIdx;
@@ -335,16 +338,8 @@ void muhkuh_plugin_manager::read_config(wxConfigBase *pConfig)
 			ptPlugin = new muhkuh_plugin(pConfig);
 			if( ptPlugin!=NULL )
 			{
-				if( ptPlugin->IsOk()==true )
-				{
-					// add the plugin to the list
-					m_ptOpenPlugins->push_back(ptPlugin);
-				}
-				else
-				{
-					// delete the plugin
-					delete ptPlugin;
-				}
+				// add the plugin to the list
+				m_ptOpenPlugins->push_back(ptPlugin);
 			}
 			// go one path element back
 			pConfig->SetPath(wxT(".."));
@@ -399,6 +394,7 @@ int muhkuh_plugin_manager::initLuaBindings(wxLuaState *ptLuaState)
 	int iResult;
 	const muhkuh_plugin_desc *ptDesc;
 	wxString strPluginName;
+	wxString strMsg;
 
 
 	/* loop over all plugins */
@@ -413,26 +409,23 @@ int muhkuh_plugin_manager::initLuaBindings(wxLuaState *ptLuaState)
 			ptDesc = ptPlugin->fn_get_desc();
 			strPluginName = ptDesc->strPluginName;
 
-			fResult = ptPlugin->IsOk();
-			if( fResult!=true )
+			fResult = ptPlugin->GetEnable();
+			if( fResult==true )
 			{
-				wxLogError(_("plugin '%s': state is not ok, closing plugin"), strPluginName.fn_str());
-				/* remove from list */
-				m_ptOpenPlugins->erase(iter);
-				/* unload and delete plugin */
-				delete ptPlugin;
-			}
-			else
-			{
-				fResult = ptPlugin->GetEnable();
-				if( fResult==true )
+				fResult = ptPlugin->IsOk();
+				if( fResult!=true )
+				{
+					/* disable plugin and show error */
+					disableBrokenPlugin(ptPlugin, strPluginName, _("state is not ok"));
+				}
+				else
 				{
 					/* init lua bindings */
 					iResult = ptPlugin->fn_init_lua(ptLuaState);
 					if( iResult!=0 )
 					{
-						wxLogWarning(_("plugin '%s': lua binding init failed, disabling plugin!"), strPluginName.fn_str());
-						ptPlugin->SetEnable(false);
+						/* disable plugin and show error */
+						disableBrokenPlugin(ptPlugin, strPluginName, _("lua binding init failed"));
 					}
 				}
 			}
@@ -492,19 +485,16 @@ bool muhkuh_plugin_manager::ScanPlugins(wxString strPattern)
 			// get the plugin id for the match
 			strPluginId = ptDesc->strPluginId;
 
-			fResult = ptPlugin->IsOk();
-			if( fResult!=true )
+			fResult = ptPlugin->GetEnable();
+			if( fResult==true )
 			{
-				wxLogError(_("plugin '%s': not ok, closing plugin"), strPluginName.fn_str());
-				// remove from list
-				m_ptOpenPlugins->erase(iter);
-				// unload and delete plugin
-				delete ptPlugin;
-			}
-			else
-			{
-				fResult = ptPlugin->GetEnable();
-				if( fResult==true )
+				fResult = ptPlugin->IsOk();
+				if( fResult!=true )
+				{
+					/* disable plugin and show error */
+					disableBrokenPlugin(ptPlugin, strPluginName, _("state is not ok"));
+				}
+				else
 				{
 					// does the plugin name match the pattern?
 					fResult = re.Matches(strPluginId);
@@ -514,8 +504,8 @@ bool muhkuh_plugin_manager::ScanPlugins(wxString strPattern)
 						iResult = ptPlugin->fn_detect_interfaces(m_ptMatchingPlugins);
 						if( iResult<0 )
 						{
-							wxLogWarning(_("plugin '%s': failed to scan for interfaces, disabling plugin!"), strPluginName.fn_str());
-							ptPlugin->SetEnable(false);
+							/* disable plugin and show error */
+							disableBrokenPlugin(ptPlugin, strPluginName, _("failed to scan for interfaces"));
 						}
 					}
 				}

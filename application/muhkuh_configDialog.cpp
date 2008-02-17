@@ -291,6 +291,7 @@ void muhkuh_configDialog::OnAddPluginButton(wxCommandEvent &WXUNUSED(event))
 	wxString strPluginName;
 	wxString strDialogInitPath;
 	long lIdx;
+	bool fPluginIsOk;
 
 
 	strDialogInitPath = wxEmptyString;
@@ -313,7 +314,16 @@ void muhkuh_configDialog::OnAddPluginButton(wxCommandEvent &WXUNUSED(event))
 		lIdx = m_ptPluginManager->addPlugin(strPluginName);
 		if( lIdx>=0 )
 		{
-			ShowNewPlugin(lIdx);
+			// do not accept broken plugins
+			fPluginIsOk = m_ptPluginManager->IsOk(lIdx);
+			if( fPluginIsOk==true )
+			{
+				ShowNewPlugin(lIdx);
+			}
+			else
+			{
+				m_ptPluginManager->removePlugin(lIdx);
+			}
 		}
 	}
 	pluginDialog->Destroy();
@@ -376,6 +386,7 @@ void muhkuh_configDialog::OnEnablePluginButton(wxCommandEvent &WXUNUSED(event))
 	{
 		m_ptPluginManager->SetEnable(lIdx, true);
 		ShowPluginImage(lIdx);
+		SetPluginButtons(lIdx);
 	}
 }
 
@@ -391,6 +402,7 @@ void muhkuh_configDialog::OnDisablePluginButton(wxCommandEvent &WXUNUSED(event))
 	{
 		m_ptPluginManager->SetEnable(lIdx, false);
 		ShowPluginImage(lIdx);
+		SetPluginButtons(lIdx);
 	}
 }
 
@@ -410,12 +422,30 @@ void muhkuh_configDialog::OnPluginDeselect(wxListEvent &event)
 void muhkuh_configDialog::SetPluginButtons(long lIdx)
 {
 	bool fPluginSelected;
+	bool fPluginIsOk;
+	bool fPluginIsEnabled;
+	bool fPluginCanBeEnabled;
+	bool fPluginCanBeDisabled;
 
 
 	fPluginSelected = ( lIdx>=0 );
+	if( fPluginSelected==true )
+	{
+		fPluginIsOk = m_ptPluginManager->IsOk(lIdx);
+		fPluginIsEnabled = m_ptPluginManager->GetEnable(lIdx);
+
+		fPluginCanBeEnabled = fPluginSelected && fPluginIsOk && !fPluginIsEnabled;
+		fPluginCanBeDisabled = fPluginSelected && fPluginIsOk && fPluginIsEnabled;
+	}
+	else
+	{
+		fPluginCanBeEnabled = false;
+		fPluginCanBeDisabled = false;
+	}
+
 	m_pluginToolBar->EnableTool(muhkuh_configDialog_RemovePlugin,	fPluginSelected);
-	m_pluginToolBar->EnableTool(muhkuh_configDialog_EnablePlugin,	fPluginSelected);
-	m_pluginToolBar->EnableTool(muhkuh_configDialog_DisablePlugin,	fPluginSelected);
+	m_pluginToolBar->EnableTool(muhkuh_configDialog_EnablePlugin,	fPluginCanBeEnabled);
+	m_pluginToolBar->EnableTool(muhkuh_configDialog_DisablePlugin,	fPluginCanBeDisabled);
 }
 
 
@@ -448,35 +478,44 @@ void muhkuh_configDialog::ShowNewRepository(long lIdx)
 
 void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 {
+	bool fPluginIsOk;
 	wxListItem listItem;
 	const muhkuh_plugin_desc *ptPluginDesc;
 	wxString strName;
+	wxString strId;
+	wxString strVersion;
 	long lItemIdx;
 
 
 	/* get the plugin description */
+	fPluginIsOk = m_ptPluginManager->IsOk(lIdx);
 	ptPluginDesc = m_ptPluginManager->getPluginDescription(lIdx);
 	if( ptPluginDesc==NULL )
 	{
 		wxLogError(_("failed to get plugin description!"));
 	}
-	else
+
+	if( fPluginIsOk==true && ptPluginDesc!=NULL )
 	{
 		strName = m_ptPluginManager->GetConfigName(lIdx);
-		listItem.Clear();
-		listItem.SetId(lIdx);
-		listItem.SetText( strName );
-		// add the entry to the list
-		lItemIdx = m_pluginList->InsertItem(listItem);
-
-		ShowPluginImage(lIdx);
-
-		strName = ptPluginDesc->strPluginId;
-		m_pluginList->SetItem(lItemIdx, 1, strName);
-
-		strName.Printf(wxT("%d.%d.%d"), ptPluginDesc->tVersion.uiVersionMajor, ptPluginDesc->tVersion.uiVersionMinor, ptPluginDesc->tVersion.uiVersionSub);
-		m_pluginList->SetItem(lItemIdx, 2, strName);
+		strId = ptPluginDesc->strPluginId;
+		strVersion.Printf(wxT("%d.%d.%d"), ptPluginDesc->tVersion.uiVersionMajor, ptPluginDesc->tVersion.uiVersionMinor, ptPluginDesc->tVersion.uiVersionSub);
 	}
+	else
+	{
+		strName = m_ptPluginManager->GetInitError(lIdx);
+		strId = wxEmptyString;
+		strVersion = wxEmptyString;
+	}
+
+	listItem.Clear();
+	listItem.SetId(lIdx);
+	listItem.SetText( strName );
+	// add the entry to the list
+	lItemIdx = m_pluginList->InsertItem(listItem);
+	m_pluginList->SetItem(lItemIdx, 1, strId);
+	m_pluginList->SetItem(lItemIdx, 2, strVersion);
+	ShowPluginImage(lIdx);
 }
 
 

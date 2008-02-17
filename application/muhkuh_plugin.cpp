@@ -92,7 +92,7 @@ muhkuh_plugin::muhkuh_plugin(wxConfigBase *pConfig)
 		fReadOk = pConfig->Read(wxT("enable"), &m_fPluginIsEnabled, false);
 		if( fReadOk==false )
 		{
-			wxLogWarning(_("missing 'enable' entry in plugin configuration, defaulting to 'disabled'"));
+			wxLogWarning(_("missing 'enable' entry in application config file, defaulting to 'disabled'"));
 		}
 		Load(strPath);
 	}
@@ -275,6 +275,9 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 	}
 	else
 	{
+		/* plugin is not open yet, accept new name */
+		m_strPluginCfgPath = strPluginCfgPath;
+
 		/* open plugin xml config */
 		fResult = openXml(strPluginCfgPath);
 		if( fResult!=true )
@@ -324,9 +327,6 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 						}
 						tPluginDesc.strPluginId = ptDesc->strPluginId;
 						tPluginDesc.tVersion = ptDesc->tVersion;
-
-						/* ok, accept plugin name */
-						m_strPluginCfgPath = strPluginCfgPath;
 					}
 				}
 

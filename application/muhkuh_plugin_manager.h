@@ -73,6 +73,9 @@ private:
 	void closeAllPlugins(void);
 	void close_plugin(muhkuh_plugin_interface *ptPluginIf);
 
+	void disableBrokenPlugin(muhkuh_plugin *ptPlugin, wxString strPluginName, wxString strError);
+
+
 	static const muhkuh_plugin_symbol_offset_t atPluginSymbolOffsets[6];
 
 	// all open plugins
