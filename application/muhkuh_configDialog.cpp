@@ -246,6 +246,9 @@ void muhkuh_configDialog::OnDeleteRepositoryButton(wxCommandEvent &WXUNUSED(even
 
 		// TODO: show a requester with all selected repositories and ask the user for confirmation
 
+		// disable all buttons (in case if no update event follows the delete)
+		SetRepositoryButtons(-1);
+
 		// delete all the files
 		while(iCnt>0)
 		{
@@ -359,6 +362,9 @@ void muhkuh_configDialog::OnRemovePluginButton(wxCommandEvent &WXUNUSED(event))
 		} while( lIdx>=0 && iCnt<iSelectedEntries );
 
 		// TODO: show a requester with all selected plugins and ask the user for confirmation
+
+		// disable all buttons (in case if no update event follows the delete)
+		SetPluginButtons(-1);
 
 		// delete all the files
 		while(iCnt>0)
