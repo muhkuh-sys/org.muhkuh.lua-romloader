@@ -27,11 +27,13 @@
 #include "icons/famfamfam_silk_icons_v013/bullet_green.xpm"
 #include "icons/famfamfam_silk_icons_v013/bullet_yellow.xpm"
 #include "icons/famfamfam_silk_icons_v013/cancel.xpm"
+#include "icons/famfamfam_silk_icons_v013/database.xpm"
 #include "icons/famfamfam_silk_icons_v013/database_add.xpm"
 #include "icons/famfamfam_silk_icons_v013/database_delete.xpm"
 #include "icons/famfamfam_silk_icons_v013/database_edit.xpm"
 #include "icons/famfamfam_silk_icons_v013/exclamation.xpm"
 #include "icons/famfamfam_silk_icons_v013/key.xpm"
+#include "icons/famfamfam_silk_icons_v013/plugin.xpm"
 #include "icons/famfamfam_silk_icons_v013/plugin_add.xpm"
 #include "icons/famfamfam_silk_icons_v013/plugin_delete.xpm"
 #include "icons/famfamfam_silk_icons_v013/plugin_disabled.xpm"
@@ -43,8 +45,7 @@ BEGIN_EVENT_TABLE(muhkuh_configDialog, wxDialog)
 	EVT_TOOL(muhkuh_configDialog_AddRepository,			muhkuh_configDialog::OnNewRepositoryButton)
 	EVT_TOOL(muhkuh_configDialog_EditRepository,			muhkuh_configDialog::OnEditRepositoryButton)
 	EVT_TOOL(muhkuh_configDialog_RemoveRepository,			muhkuh_configDialog::OnDeleteRepositoryButton)
-	EVT_LIST_ITEM_SELECTED(muhkuh_configDialog_RepositoryList,	muhkuh_configDialog::OnRepositorySelect)
-	EVT_LIST_ITEM_DESELECTED(muhkuh_configDialog_RepositoryList,	muhkuh_configDialog::OnRepositoryDeselect)
+	EVT_TREE_SEL_CHANGED(muhkuh_configDialog_RepositoryList,	muhkuh_configDialog::OnRepositorySelect)
 
 	EVT_TOOL(muhkuh_configDialog_AddPlugin,				muhkuh_configDialog::OnAddPluginButton)
 	EVT_TOOL(muhkuh_configDialog_RemovePlugin,			muhkuh_configDialog::OnRemovePluginButton)
@@ -52,8 +53,6 @@ BEGIN_EVENT_TABLE(muhkuh_configDialog, wxDialog)
 	EVT_TOOL(muhkuh_configDialog_DisablePlugin,			muhkuh_configDialog::OnDisablePluginButton)
 	EVT_TREE_SEL_CHANGED(muhkuh_configDialog_PluginList,		muhkuh_configDialog::OnPluginSelectionChanged)
 	EVT_TREE_SEL_CHANGING(muhkuh_configDialog_PluginList,		muhkuh_configDialog::OnPluginSelectionChanging)
-
-	EVT_SIZE(muhkuh_configDialog::OnSize)
 END_EVENT_TABLE()
 
 
@@ -72,11 +71,6 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 
 	// create the controls
 	createControls();
-
-	// create the imagelist
-	ptRepoImageList = muhkuh_repository::CreateNewImageList();
-	// assign image list, NOTE: this makes the ListCtrl the owner, i.e. the image list will be deleted when the ListCtrl is deleted
-	m_repositoryList->AssignImageList(ptRepoImageList, wxIMAGE_LIST_SMALL);
 
 	// loop over all repositories and add them to the list
 	sizIdx = 0;
@@ -101,38 +95,86 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 
 void muhkuh_configDialog::createControls(void)
 {
+	wxBoxSizer *ptMainSizer;
+	wxBoxSizer *ptbuttonSizer;
+	wxImageList *ptTreeBookImageList;
+	wxButton *ptButtonOk;
+	wxButton *ptButtonCancel;
+
+
 	// init the controls
+	ptMainSizer = new wxBoxSizer(wxVERTICAL);
+	SetSizer(ptMainSizer);
+
+	// create the treebook
+	m_treeBook = new wxTreebook(this, muhkuh_configDialog_TreeBook);
+	ptMainSizer->Add(m_treeBook, 1, wxEXPAND);
+	ptTreeBookImageList = new wxImageList(16, 16, true, 2);
+	ptTreeBookImageList->Add( wxIcon(icon_famfamfam_silk_database) );
+	ptTreeBookImageList->Add( wxIcon(icon_famfamfam_silk_plugin) );
+	m_treeBook->AssignImageList(ptTreeBookImageList);
+
+	m_treeBook->AddPage(createControls_repository(m_treeBook), _("Repositories"), true, 0);
+	m_treeBook->AddPage(createControls_plugin(m_treeBook), _("Plugins"), false, 1);
+
+	ptbuttonSizer = new wxBoxSizer(wxHORIZONTAL);
+	ptMainSizer->Add(ptbuttonSizer, 0, wxEXPAND);
+	ptButtonOk = new wxButton(this, wxID_OK);
+	ptButtonCancel = new wxButton(this, wxID_CANCEL);
+	ptbuttonSizer->AddStretchSpacer(1);
+	ptbuttonSizer->Add(ptButtonOk);
+	ptbuttonSizer->AddStretchSpacer(1);
+	ptbuttonSizer->Add(ptButtonCancel);
+	ptbuttonSizer->AddStretchSpacer(1);
+
+	ptMainSizer->SetSizeHints(this);
+}
+
+
+wxPanel *muhkuh_configDialog::createControls_repository(wxWindow *ptParent)
+{
+	wxPanel *ptRepositoryPanel;
+	wxBoxSizer *ptMainSizer;
+	wxBoxSizer *ptbuttonSizer;
+	wxImageList *ptRepoImageList;
+
+
+	// create the imagelist
+	ptRepoImageList = muhkuh_repository::CreateNewImageList();
+
+	// create the repository page
+	ptRepositoryPanel = new wxPanel(ptParent);
 
 	// create the main sizer
-	m_mainSizer = new wxBoxSizer(wxVERTICAL);
-	SetSizer(m_mainSizer);
-
-	// create the result box sizer
-	m_repositoryListSizer = new wxStaticBoxSizer(wxVERTICAL, this, _("Repositories"));
-	m_mainSizer->Add(m_repositoryListSizer, 1, wxEXPAND);
-
-	m_pluginListSizer = new wxStaticBoxSizer(wxVERTICAL, this, _("Plugins"));
-	m_mainSizer->Add(m_pluginListSizer, 1, wxEXPAND);
+	ptMainSizer = new wxBoxSizer(wxVERTICAL);
+	ptRepositoryPanel->SetSizer(ptMainSizer);
 
 	// create the repository list
-	m_repositoryList = new wxListCtrl(this, muhkuh_configDialog_RepositoryList, wxDefaultPosition, wxDefaultSize, wxLC_REPORT);
-	m_repositoryList->InsertColumn(0, _("Repository"));
-	m_repositoryListSizer->Add(m_repositoryList, 1, wxEXPAND);
+	m_repositoryTree = new wxTreeCtrl(ptRepositoryPanel, muhkuh_configDialog_RepositoryList, wxDefaultPosition, wxDefaultSize, wxTR_NO_BUTTONS|wxTR_NO_LINES|wxTR_HIDE_ROOT|wxTR_SINGLE);
+	m_repositoryTree->AddRoot(wxEmptyString);
+	m_repositoryTree->AssignImageList(ptRepoImageList);
+	ptMainSizer->Add(m_repositoryTree, 1, wxEXPAND);
 
 	// create the repository toolbar
-	m_repositoryToolBar = new wxToolBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,  wxTB_HORIZONTAL|wxNO_BORDER|wxTB_TEXT);
+	m_repositoryToolBar = new wxToolBar(ptRepositoryPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize,  wxTB_HORIZONTAL|wxNO_BORDER|wxTB_TEXT);
 	m_repositoryToolBar->AddTool(muhkuh_configDialog_AddRepository, _("Add"), icon_famfamfam_silk_database_add, wxNullBitmap, wxITEM_NORMAL, _("Add Repository"), _("Add a new repository to the list"));
 	m_repositoryToolBar->AddTool(muhkuh_configDialog_EditRepository, _("Edit"), icon_famfamfam_silk_database_edit, wxNullBitmap, wxITEM_NORMAL, _("Edit Repository"), _("Edit the settings of the selected repository"));
 	m_repositoryToolBar->EnableTool(muhkuh_configDialog_EditRepository, false);
 	m_repositoryToolBar->AddTool(muhkuh_configDialog_RemoveRepository, _("Remove"), icon_famfamfam_silk_database_delete, wxNullBitmap, wxITEM_NORMAL, _("Remove Repository"), _("Remove the selected repository from the list"));
 	m_repositoryToolBar->EnableTool(muhkuh_configDialog_RemoveRepository, false);
 	m_repositoryToolBar->Realize();
-	m_repositoryListSizer->Add(m_repositoryToolBar, 0, wxEXPAND);
+	ptMainSizer->Add(m_repositoryToolBar, 0, wxEXPAND);
 
-	// create the plugin list
-	m_pluginTree = new wxTreeCtrl(this, muhkuh_configDialog_PluginList, wxDefaultPosition, wxDefaultSize, wxTR_HAS_BUTTONS|wxTR_NO_LINES|wxTR_HIDE_ROOT|wxTR_SINGLE);
-	m_pluginTree->AddRoot(wxEmptyString);
-	m_pluginListSizer->Add(m_pluginTree, 1, wxEXPAND);
+	return ptRepositoryPanel;
+}
+
+
+wxPanel *muhkuh_configDialog::createControls_plugin(wxWindow *ptParent)
+{
+	wxPanel *ptPluginPanel;
+	wxBoxSizer *ptMainSizer;
+	wxImageList *ptPluginImageList;
+
 
 	// create imagelist for 5 images with 16x16 pixels
 	ptPluginImageList = new wxImageList(16, 16, true, 5);
@@ -141,10 +183,22 @@ void muhkuh_configDialog::createControls(void)
 	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_exclamation) );
 	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_key) );
 	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_tag_blue) );
+
+	// create the plugin page
+	ptPluginPanel = new wxPanel(ptParent);
+
+	// create the main sizer
+	ptMainSizer = new wxBoxSizer(wxVERTICAL);
+	ptPluginPanel->SetSizer(ptMainSizer);
+
+	// create the plugin list
+	m_pluginTree = new wxTreeCtrl(ptPluginPanel, muhkuh_configDialog_PluginList, wxDefaultPosition, wxDefaultSize, wxTR_HAS_BUTTONS|wxTR_NO_LINES|wxTR_HIDE_ROOT|wxTR_SINGLE);
+	m_pluginTree->AddRoot(wxEmptyString);
 	m_pluginTree->AssignImageList(ptPluginImageList);
+	ptMainSizer->Add(m_pluginTree, 1, wxEXPAND);
 
 	// create the plugin toolbar
-	m_pluginToolBar = new wxToolBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,  wxTB_HORIZONTAL|wxNO_BORDER|wxTB_TEXT);
+	m_pluginToolBar = new wxToolBar(ptPluginPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize,  wxTB_HORIZONTAL|wxNO_BORDER|wxTB_TEXT);
 	m_pluginToolBar->AddTool(muhkuh_configDialog_AddPlugin, _("Add"), icon_famfamfam_silk_plugin_add, wxNullBitmap, wxITEM_NORMAL, _("Add Plugin"), _("Add a new plugin to the list"));
 	m_pluginToolBar->AddTool(muhkuh_configDialog_RemovePlugin, _("Remove"), icon_famfamfam_silk_plugin_delete, wxNullBitmap, wxITEM_NORMAL, _("Remove Plugin"), _("Remove the selected plugin from the list"));
 	m_pluginToolBar->EnableTool(muhkuh_configDialog_RemovePlugin, false);
@@ -153,19 +207,9 @@ void muhkuh_configDialog::createControls(void)
 	m_pluginToolBar->AddTool(muhkuh_configDialog_DisablePlugin, _("Disable"), icon_famfamfam_silk_plugin_disabled, wxNullBitmap, wxITEM_NORMAL, _("Disable Plugin"), _("Disable the selected plugin"));
 	m_pluginToolBar->EnableTool(muhkuh_configDialog_DisablePlugin, false);
 	m_pluginToolBar->Realize();
-	m_pluginListSizer->Add(m_pluginToolBar, 0, wxEXPAND);
+	ptMainSizer->Add(m_pluginToolBar, 0, wxEXPAND);
 
-	m_buttonSizer = new wxBoxSizer(wxHORIZONTAL);
-	m_mainSizer->Add(m_buttonSizer, 0, wxEXPAND);
-	m_buttonOk = new wxButton(this, wxID_OK);
-	m_buttonCancel = new wxButton(this, wxID_CANCEL);
-	m_buttonSizer->AddStretchSpacer(1);
-	m_buttonSizer->Add(m_buttonOk);
-	m_buttonSizer->AddStretchSpacer(1);
-	m_buttonSizer->Add(m_buttonCancel);
-	m_buttonSizer->AddStretchSpacer(1);
-
-	m_mainSizer->SetSizeHints(this);
+	return ptPluginPanel;
 }
 
 
@@ -195,95 +239,84 @@ void muhkuh_configDialog::OnNewRepositoryButton(wxCommandEvent &WXUNUSED(event))
 
 void muhkuh_configDialog::OnEditRepositoryButton(wxCommandEvent &WXUNUSED(event))
 {
-	long lIdx;
+	wxTreeItemId tItem;
+	repositoryTreeItemData *ptData;
+	long lRepositoryIdx;
 	muhkuh_config_reposEntryDialog *ptEntryDialog;
 	muhkuh_repository *ptRepos;
 
 
-	// get the focussed item in the repository list
-	lIdx = m_repositoryList->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_FOCUSED);
-	if( lIdx>=0 )
+	// get the selected item
+	tItem = m_repositoryTree->GetSelection();
+	// was something selected?
+	if( tItem.IsOk()==true )
 	{
-		ptRepos = m_ptRepositoryManager->GetRepository(lIdx);
-
-		// clone the entry
-		ptEntryDialog = new muhkuh_config_reposEntryDialog(this, m_strApplicationPath, ptRepos);
-		if( ptEntryDialog->ShowModal()==wxID_OK )
+		// get the repository id
+		ptData = (repositoryTreeItemData*)m_pluginTree->GetItemData(tItem);
+		if( ptData!=NULL )
 		{
-			// update the listctrl
-			ShowUpdatedRepositoryEntry(lIdx, ptRepos);
+			lRepositoryIdx = ptData->GetRepositoryId();
+
+			ptRepos = m_ptRepositoryManager->GetRepository(lRepositoryIdx);
+
+			// clone the entry
+			ptEntryDialog = new muhkuh_config_reposEntryDialog(this, m_strApplicationPath, ptRepos);
+			if( ptEntryDialog->ShowModal()==wxID_OK )
+			{
+				// update the item
+				m_repositoryTree->SetItemText(tItem, ptRepos->GetStringRepresentation());
+				m_repositoryTree->SetItemImage(tItem, ptRepos->GetImageListIndex());
+			}
+			ptEntryDialog->Destroy();
 		}
-		ptEntryDialog->Destroy();
 	}
 }
 
 
 void muhkuh_configDialog::OnDeleteRepositoryButton(wxCommandEvent &WXUNUSED(event))
 {
-	int iSelectedEntries;
-	long lIdx;
-	long *plIdx;
-	int iCnt;
+	wxTreeItemId tItem;
+	repositoryTreeItemData *ptData;
+	long lRepositoryIdx;
+	muhkuh_config_reposEntryDialog *ptEntryDialog;
+	muhkuh_repository *ptRepos;
 
 
-	// get the number of selected files
-	iSelectedEntries = m_repositoryList->GetSelectedItemCount();
-	// it at lease one item selected
-	if( iSelectedEntries>0 )
+	// get the selected item
+	tItem = m_repositoryTree->GetSelection();
+	// was something selected?
+	if( tItem.IsOk()==true )
 	{
-		plIdx = new long[iSelectedEntries];
-		iCnt = 0;
-		// loop over all selected repositories and add them to the requester
-		lIdx = -1;
-		do
+		// get the repository id
+		ptData = (repositoryTreeItemData*)m_pluginTree->GetItemData(tItem);
+		if( ptData!=NULL )
 		{
-			lIdx = m_repositoryList->GetNextItem(lIdx, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
-			if( lIdx>=0 )
-			{
-				// add index and name to the lists
-				plIdx[iCnt] = lIdx;
-				++iCnt;
-			}
-		} while( lIdx>=0 && iCnt<iSelectedEntries );
+			lRepositoryIdx = ptData->GetRepositoryId();
 
-		// TODO: show a requester with all selected repositories and ask the user for confirmation
-
-		// disable all buttons (in case if no update event follows the delete)
-		SetRepositoryButtons(-1);
-
-		// delete all the files
-		while(iCnt>0)
-		{
-			lIdx = plIdx[--iCnt];
 			// erase from the listctrl
-			m_repositoryList->DeleteItem(lIdx);
+			m_repositoryTree->Delete(tItem);
 			// erase from the vector
-			m_ptRepositoryManager->removeRepository(lIdx);
+			m_ptRepositoryManager->removeRepository(lRepositoryIdx);
 		}
-		// free the index list
-		delete[] plIdx;
 	}
 }
 
 
-void muhkuh_configDialog::OnRepositorySelect(wxListEvent &event)
+void muhkuh_configDialog::OnRepositorySelect(wxTreeEvent &event)
 {
-	SetRepositoryButtons(event.GetIndex());
-}
-
-
-void muhkuh_configDialog::OnRepositoryDeselect(wxListEvent &event)
-{
-	SetRepositoryButtons(-1);
-}
-
-
-void muhkuh_configDialog::SetRepositoryButtons(long lIdx)
-{
+	wxTreeItemId tItem;
+	long lIdx;
 	bool fPluginSelected;
+	repositoryTreeItemData *ptData;
 
 
-	fPluginSelected = ( lIdx>=0 );
+	tItem = event.GetItem();
+	fPluginSelected = tItem.IsOk();
+	if( fPluginSelected==true )
+	{
+		ptData = (repositoryTreeItemData*)m_pluginTree->GetItemData(tItem);
+		fPluginSelected = (ptData!=NULL);
+	}	
 	m_repositoryToolBar->EnableTool(muhkuh_configDialog_EditRepository,	fPluginSelected);
 	m_repositoryToolBar->EnableTool(muhkuh_configDialog_RemoveRepository,	fPluginSelected);
 }
@@ -493,30 +526,22 @@ void muhkuh_configDialog::SetPluginButtons(wxTreeItemId tItem)
 }
 
 
-void muhkuh_configDialog::OnSize(wxSizeEvent &event)
-{
-	int iWidth;
-
-
-	iWidth = m_repositoryList->GetClientSize().GetWidth();
-	m_repositoryList->SetColumnWidth(0, iWidth);
-
-	// continue processing the event
-	event.Skip(true);
-}
-
-
 void muhkuh_configDialog::ShowNewRepository(long lIdx)
 {
-	wxListItem listItem;
+	wxTreeItemId tRootItem;
+	repositoryTreeItemData *ptData;
+	int iImageIdx;
+	wxString strName;
 
 
-	listItem.Clear();
-	listItem.SetId(lIdx);
-	listItem.SetImage( m_ptRepositoryManager->GetImageListIndex(lIdx) );
-	listItem.SetText( m_ptRepositoryManager->GetStringRepresentation(lIdx) );
-	// add the entry to the list
-	m_repositoryList->InsertItem(listItem);
+	// append all plugins to the root item
+	tRootItem = m_repositoryTree->GetRootItem();
+
+	strName = m_ptRepositoryManager->GetStringRepresentation(lIdx);
+	iImageIdx = m_ptRepositoryManager->GetImageListIndex(lIdx);
+	ptData = new repositoryTreeItemData(lIdx);
+
+	m_repositoryTree->AppendItem(tRootItem, strName, iImageIdx, -1, ptData);
 }
 
 
@@ -601,19 +626,5 @@ void muhkuh_configDialog::ShowPluginImage(wxTreeItemId tPluginItem)
 			m_pluginTree->SetItemImage(tPluginItem, iImageIdx);
 		}
 	}
-}
-
-
-void muhkuh_configDialog::ShowUpdatedRepositoryEntry(long lIdx, muhkuh_repository *ptRepos)
-{
-	wxListItem listItem;
-
-
-	listItem.Clear();
-	listItem.SetId(lIdx);
-	listItem.SetImage( ptRepos->GetImageListIndex() );
-	listItem.SetText( ptRepos->GetStringRepresentation() );
-	// replace the old listentry
-	m_repositoryList->SetItem(listItem);
 }
 

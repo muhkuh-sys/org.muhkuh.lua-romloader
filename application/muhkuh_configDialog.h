@@ -20,11 +20,12 @@
 
 
 #include <wx/wx.h>
-#include <wx/artprov.h>
 #include <wx/filename.h>
 #include <wx/imaglist.h>
-#include <wx/listctrl.h>
 #include <wx/textctrl.h>
+#include <wx/treebook.h>
+#include <wx/treectrl.h>
+
 
 #ifndef __MUHKUH_CONFIGDIALOG_H__
 #define __MUHKUH_CONFIGDIALOG_H__
@@ -50,6 +51,23 @@ private:
 };
 
 
+class repositoryTreeItemData : public wxTreeItemData
+{
+public:
+	repositoryTreeItemData(long lRepositoryId)
+	 : m_lRepositoryId(lRepositoryId)
+	 { };
+
+	long GetRepositoryId(void) const
+	{
+		return m_lRepositoryId;
+	};
+
+private:
+	long m_lRepositoryId;
+};
+
+
 class muhkuh_configDialog : public wxDialog
 {
 public:
@@ -58,8 +76,7 @@ public:
 	void OnNewRepositoryButton(wxCommandEvent &event);
 	void OnEditRepositoryButton(wxCommandEvent &event);
 	void OnDeleteRepositoryButton(wxCommandEvent &event);
-	void OnRepositorySelect(wxListEvent &event);
-	void OnRepositoryDeselect(wxListEvent &event);
+	void OnRepositorySelect(wxTreeEvent &event);
 
 	void OnAddPluginButton(wxCommandEvent &event);
 	void OnRemovePluginButton(wxCommandEvent &event);
@@ -68,18 +85,16 @@ public:
 	void OnPluginSelectionChanged(wxTreeEvent &event);
 	void OnPluginSelectionChanging(wxTreeEvent &event);
 
-	void OnSize(wxSizeEvent &event);
-
 private:
 	void createControls(void);
+	wxPanel *createControls_repository(wxWindow *ptParent);
+	wxPanel *createControls_plugin(wxWindow *ptParent);
 
 	void ShowNewRepository(long lIdx);
 	void ShowNewPlugin(long lIdx);
 
 	void ShowPluginImage(wxTreeItemId tPluginItem);
-	void ShowUpdatedRepositoryEntry(long lIdx, muhkuh_repository *ptRepos);
 
-	void SetRepositoryButtons(long lIdx);
 	void SetPluginButtons(wxTreeItemId tItem);
 
 	muhkuh_repository_manager *m_ptRepositoryManager;
@@ -88,20 +103,14 @@ private:
 	wxString m_strApplicationPath;
 
 	// the controls
-	wxBoxSizer *m_mainSizer;
-	wxStaticBoxSizer *m_repositoryListSizer;
-	wxStaticBoxSizer *m_pluginListSizer;
-	wxListCtrl *m_repositoryList;
+	wxTreebook *m_treeBook;
+	wxTreeCtrl *m_repositoryTree;
 	wxTreeCtrl *m_pluginTree;
 	wxBoxSizer *m_buttonSizer;
 	wxToolBar *m_repositoryToolBar;
 	wxToolBar *m_pluginToolBar;
 	wxButton *m_buttonOk;
 	wxButton *m_buttonCancel;
-
-	// image list for the repository list
-	wxImageList *ptRepoImageList;
-	wxImageList *ptPluginImageList;
 
     DECLARE_EVENT_TABLE()
 };

@@ -50,6 +50,7 @@ enum
 	muhkuh_mainFrame_menuTestCancel,
 	muhkuh_mainFrame_menuTestRescan,
 
+	muhkuh_configDialog_TreeBook,
 	muhkuh_configDialog_RepositoryList,
 	muhkuh_configDialog_PluginList,
 	muhkuh_configDialog_AddRepository,
