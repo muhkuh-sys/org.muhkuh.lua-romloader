@@ -257,6 +257,56 @@ bool muhkuh_plugin_manager::GetEnable(unsigned long ulIdx) const
 }
 
 
+bool muhkuh_plugin_manager::IsOk(unsigned long ulIdx) const
+{
+	std::vector<muhkuh_plugin*>::const_iterator iter;
+	muhkuh_plugin *ptPluginIf;
+	bool fPluginIsOk;
+
+
+	/* check input parameter */
+	if( ulIdx>=m_ptOpenPlugins->size() )
+	{
+		wxLogError(_("muhkuh_plugin_manager::IsOk : idx %ld is out of range, ignoring request"), ulIdx);
+		fPluginIsOk = false;
+	}
+	else
+	{
+		iter = m_ptOpenPlugins->begin();
+		iter += ulIdx;
+		ptPluginIf = *iter;
+		fPluginIsOk = ptPluginIf->IsOk();
+	}
+
+	return fPluginIsOk;
+}
+
+
+wxString muhkuh_plugin_manager::GetInitError(unsigned long ulIdx) const
+{
+	std::vector<muhkuh_plugin*>::const_iterator iter;
+	muhkuh_plugin *ptPluginIf;
+	wxString strInitError;
+
+
+	/* check input parameter */
+	if( ulIdx>=m_ptOpenPlugins->size() )
+	{
+		strInitError.Printf(_("muhkuh_plugin_manager::SetEnable : idx %ld is out of range, ignoring request"), ulIdx);
+		wxLogError(strInitError);
+	}
+	else
+	{
+		iter = m_ptOpenPlugins->begin();
+		iter += ulIdx;
+		ptPluginIf = *iter;
+		strInitError = ptPluginIf->GetInitError();
+	}
+
+	return strInitError;
+}
+
+
 void muhkuh_plugin_manager::read_config(wxConfigBase *pConfig)
 {
 	size_t sizPluginCnt;

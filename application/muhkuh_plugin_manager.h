@@ -48,6 +48,8 @@ public:
 
 	wxString GetConfigName(unsigned long ulIdx) const;
 
+	bool IsOk(unsigned long ulIdx) const;
+	wxString GetInitError(unsigned long ulIdx) const;
 	void SetEnable(unsigned long ulIdx, bool fPluginIsEnabled);
 	bool GetEnable(unsigned long ulIdx) const;
 

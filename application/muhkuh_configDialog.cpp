@@ -78,8 +78,8 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 
 	// create imagelist for 2 images with 16x16 pixels
 	ptPluginImageList = new wxImageList(16, 16, true, 2);
-	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_bullet_green) );
 	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_bullet_yellow) );
+	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_bullet_green) );
 	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_exclamation) );
 	m_pluginList->AssignImageList(ptPluginImageList, wxIMAGE_LIST_SMALL);
 
@@ -124,12 +124,7 @@ void muhkuh_configDialog::createControls(void)
 	m_repositoryList->InsertColumn(0, _("Repository"));
 	m_repositoryListSizer->Add(m_repositoryList, 1, wxEXPAND);
 
-	m_pluginList = new wxListCtrl(this, muhkuh_configDialog_PluginList, wxDefaultPosition, wxDefaultSize, wxLC_REPORT);
-	m_pluginList->InsertColumn(0, _("Plugin"));
-	m_pluginList->InsertColumn(1, _("Id"));
-	m_pluginList->InsertColumn(2, _("Version"));
-	m_pluginListSizer->Add(m_pluginList, 1, wxEXPAND);
-
+	// create the repository toolbar
 	m_repositoryToolBar = new wxToolBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,  wxTB_HORIZONTAL|wxNO_BORDER|wxTB_TEXT);
 	m_repositoryToolBar->AddTool(muhkuh_configDialog_AddRepository, _("Add"), icon_famfamfam_silk_database_add, wxNullBitmap, wxITEM_NORMAL, _("Add Repository"), _("Add a new repository to the list"));
 	m_repositoryToolBar->AddTool(muhkuh_configDialog_EditRepository, _("Edit"), icon_famfamfam_silk_database_edit, wxNullBitmap, wxITEM_NORMAL, _("Edit Repository"), _("Edit the settings of the selected repository"));
@@ -139,6 +134,14 @@ void muhkuh_configDialog::createControls(void)
 	m_repositoryToolBar->Realize();
 	m_repositoryListSizer->Add(m_repositoryToolBar, 0, wxEXPAND);
 
+	// create the plugin list
+	m_pluginList = new wxListCtrl(this, muhkuh_configDialog_PluginList, wxDefaultPosition, wxDefaultSize, wxLC_REPORT);
+	m_pluginList->InsertColumn(0, _("Plugin"));
+	m_pluginList->InsertColumn(1, _("Id"));
+	m_pluginList->InsertColumn(2, _("Version"));
+	m_pluginListSizer->Add(m_pluginList, 1, wxEXPAND);
+
+	// create the plugin toolbar
 	m_pluginToolBar = new wxToolBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,  wxTB_HORIZONTAL|wxNO_BORDER|wxTB_TEXT);
 	m_pluginToolBar->AddTool(muhkuh_configDialog_AddPlugin, _("Add"), icon_famfamfam_silk_plugin_add, wxNullBitmap, wxITEM_NORMAL, _("Add Plugin"), _("Add a new plugin to the list"));
 	m_pluginToolBar->AddTool(muhkuh_configDialog_RemovePlugin, _("Remove"), icon_famfamfam_silk_plugin_delete, wxNullBitmap, wxITEM_NORMAL, _("Remove Plugin"), _("Remove the selected plugin from the list"));
@@ -482,7 +485,11 @@ void muhkuh_configDialog::ShowPluginImage(long lIdx)
 	int iImageIdx;
 
 
-	if( m_ptPluginManager->GetEnable(lIdx)==false )
+	if( m_ptPluginManager->IsOk(lIdx)==false )
+	{
+		iImageIdx = 2;
+	}
+	else if( m_ptPluginManager->GetEnable(lIdx)==false )
 	{
 		iImageIdx = 0;
 	}

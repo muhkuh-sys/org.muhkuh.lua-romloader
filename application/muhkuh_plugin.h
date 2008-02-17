@@ -47,6 +47,7 @@ public:
 
 	bool Load(wxString strPluginCfgPath);
 	bool IsOk(void);
+	wxString GetInitError(void) const;
 
 	void SetEnable(bool fPluginIsEnabled);
 	bool GetEnable(void) const;
@@ -71,6 +72,9 @@ private:
 	int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId);
 	int fn_leave(void);
 
+	void showInitError(wxString strMessage, wxString strPath);
+
+
 	static const muhkuh_plugin_symbol_offset_t atPluginSymbolOffsets[];
 
 	muhkuh_plugin_desc tPluginDesc;
@@ -87,6 +91,8 @@ private:
 	wxString m_strSoName;
 	wxString m_strPluginId;
 	wxString m_strXmlCfgPath;
+
+	wxString m_strInitError;
 };
 
 
