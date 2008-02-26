@@ -112,7 +112,7 @@ Name: {group}\Muhkuh; Filename: {app}\muhkuh.exe; WorkingDir: {app}; Components:
 Name: {group}\Uninstall; Filename: {uninstallexe}; Components: muhkuh; Tasks: startmenu
 
 Name: {userdesktop}\Muhkuh; Filename: {app}\muhkuh.exe; WorkingDir: {app}; Components: muhkuh; Tasks: desktopicon
-Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\Muhkuh; Filename: {app}\muhkuh.exe; Tasks: quicklaunchicon
+Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\Muhkuh; Filename: {app}\muhkuh.exe; WorkingDir: {app}; Tasks: quicklaunchicon
 
 
 [Messages]
