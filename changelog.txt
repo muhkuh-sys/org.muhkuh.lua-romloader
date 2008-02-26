@@ -1,0 +1,30 @@
+Changelog
+
+Muhkuh 1.0.123
+ * fixed bitlib bit#31 bug in wxLua
+ * removed testlinks in welcome page
+ * fixed test tree construction
+ * fixed quickstart icon in inno installer
+
+
+Muhkuh 1.0.121
+ * new config dialog
+ * fixed button state in cfg dialog
+ * keep broken plugins from config file in plugin list instead of deleting them after just a log message
+ * show plugin init error in messagebox
+ * added windows bootstrap file
+ * replaced icons with Mark Jame's Silk Icon Set from http://www.famfamfam.com/lab/icons/silk/, replaced buttons in config dialog with toolbars, added link to Silk Icons homepage in About dialog
+ * replaced custom lua bit interface with wxLua's bitlib
+ * new inno setup installer
+ * fixed buildsystem for win
+ * show icons on notebook tabs, load/save visibilty of welcome and test details page
+ * show default page in test details window if no test is selected
+ * replace test Details with html page
+ * use mtd links in html pages to start a test
+ * updated to wxlua 2.8.7
+ * split testtree entries in path elements
+ * added lua utility functions
+ * added lua module to request the number of boards for a test, a range of serial numbers and the production date
+ * added lua secmem module to parse the public areas of Hilscher Security memory
+ * added lua mmio module for netx50
+ * set default value for lua hexdump function

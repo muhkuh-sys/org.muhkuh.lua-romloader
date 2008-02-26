@@ -18,6 +18,7 @@ SourceDir=..\..
 
 AllowNoIcons=yes
 ;ChangesAssociations=yes
+InfoBeforeFile=changelog.txt
 LicenseFile=docs\gpl-2.0.txt
 
 ; misc info
