@@ -181,9 +181,6 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	m_strWelcomePage  = wxT("<html><title>Welcome</title><body><h1>Welcome to ");
 	m_strWelcomePage += m_strVersion;
 	m_strWelcomePage += wxT("</h1>");
-	m_strWelcomePage += wxT("<a href=\"mtd://abc/def/ghi#jkl\">testlink</a><br>");
-	m_strWelcomePage += wxT("<a href=\"mtd:/abc/def/ghi#jkl\">testlink</a><br>");
-	m_strWelcomePage += wxT("<a href=\"mtd:abc/def/ghi#jkl\">testlink</a><br>");
 	m_strWelcomePage += wxT("</body></html>");
 
 	// set the test details page for 'no test selected'
@@ -1651,23 +1648,21 @@ bool muhkuh_mainFrame::addTestTree(testTreeItemData *ptTestTreeItem)
 		// look for this element in the test tree
 		fIsFirst = true;
 		searchId = m_treeCtrl->GetFirstChild(itemId, searchCookie);
-		if( searchId.IsOk()==false )
+		do
 		{
-			// no items in this branch, just add the new item
-			searchId = m_treeCtrl->AppendItem(itemId, strPathElement, -1, -1, ptTestTreeItem);
-			fResult = true;
-		}
-		else
-		{
-			do
+			// reached end of list?
+			if( searchId.IsOk()==false )
+			{
+				// end of list reached, just add the new item
+				searchId = m_treeCtrl->AppendItem(itemId, strPathElement, -1, -1, ptTestTreeItem);
+				// set iCmp to something != 0
+				iCmp = 1;
+				break;
+			}
+			else
 			{
 				iCmp = m_treeCtrl->GetItemText(searchId).Cmp(strPathElement);
-				if( iCmp==0 )
-				{
-					// a test with the requested name already exists
-					break;
-				}
-				else if( iCmp<0 )
+				if( iCmp<0 )
 				{
 					// remember previous entry for the insert operation
 					prevId = searchId;
@@ -1676,7 +1671,7 @@ bool muhkuh_mainFrame::addTestTree(testTreeItemData *ptTestTreeItem)
 					// switch from append to insert operation
 					fIsFirst = false;
 				}
-				else
+				else if( iCmp>0 )
 				{
 					// create a new child if the item can't appear anymore because of the sort order
 					if( fIsFirst==true )
@@ -1692,19 +1687,19 @@ bool muhkuh_mainFrame::addTestTree(testTreeItemData *ptTestTreeItem)
 					// the child with the requested name was just created
 					break;
 				}
-			} while( searchId.IsOk()==true );
+			}
+		} while( iCmp!=0 );
 
-			// check for error (element already exists)
-			if( iCmp==0 )
-			{
-				strMsg.Printf(_("The test '%s' already exists, skipping new instance!"), strTestPath.fn_str());
-				wxMessageBox(strMsg, _("Failed to add test"), wxICON_ERROR, this);
-				fResult = false;
-			}
-			else
-			{
-				fResult = true;
-			}
+		// check for error (element already exists)
+		if( iCmp==0 )
+		{
+			strMsg.Printf(_("The test '%s' already exists, skipping new instance!"), strTestPath.fn_str());
+			wxMessageBox(strMsg, _("Failed to add test"), wxICON_ERROR, this);
+			fResult = false;
+		}
+		else
+		{
+			fResult = true;
 		}
 	}
 
