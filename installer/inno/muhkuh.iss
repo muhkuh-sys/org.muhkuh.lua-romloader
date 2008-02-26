@@ -1,12 +1,16 @@
+
+
+
+
 ; Muhkuh Inno Setup Cfg
 
 [Setup]
 AppName=Muhkuh
-AppVersion="1.0.0"
-AppVerName="Muhkuh 1.0.0"
-OutputBaseFilename=muhkuh_1.0.0_setup
-VersionInfoTextVersion="1.0.0"
-VersionInfoVersion="1.0.0"
+AppVersion="1.0.125M"
+AppVerName="Muhkuh 1.0.125M"
+OutputBaseFilename=muhkuh_1.0.125_setup
+VersionInfoTextVersion="1.0.125M"
+VersionInfoVersion="1.0.125"
 
 DefaultDirName={pf}\Muhkuh
 DefaultGroupName=Muhkuh
@@ -118,5 +122,4 @@ Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\Muhkuh; Filename: {
 
 [Messages]
 BeveledLabel=Muhkuh
-
 

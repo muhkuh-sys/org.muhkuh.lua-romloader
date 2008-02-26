@@ -1,0 +1,4 @@
+define(__VERSION_MAJ__, 1)
+define(__VERSION_MIN__, 0)
+define(__VERSION_SUB__, esyscmd(`svnversion -n'))
+define(__VERSION_SUB_INT__, regexp(__VERSION_SUB__, `\([0-9]+\)', `\1'))
