@@ -2,15 +2,16 @@
 
 
 
+
 ; Muhkuh Inno Setup Cfg
 
 [Setup]
 AppName=Muhkuh
-AppVersion="1.0.125M"
-AppVerName="Muhkuh 1.0.125M"
-OutputBaseFilename=muhkuh_1.0.125_setup
-VersionInfoTextVersion="1.0.125M"
-VersionInfoVersion="1.0.125"
+AppVersion="1.0.127"
+AppVerName="Muhkuh 1.0.127"
+OutputBaseFilename=muhkuh_1.0.127_setup
+VersionInfoTextVersion="1.0.127"
+VersionInfoVersion="1.0.127"
 
 DefaultDirName={pf}\Muhkuh
 DefaultGroupName=Muhkuh
