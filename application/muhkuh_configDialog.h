@@ -85,6 +85,7 @@ public:
 	void OnDisablePluginButton(wxCommandEvent &event);
 	void OnPluginSelectionChanged(wxTreeEvent &event);
 	void OnPluginSelectionChanging(wxTreeEvent &event);
+	void OnPluginKey(wxTreeEvent &event);
 
 private:
 	void createControls(void);
@@ -101,6 +102,9 @@ private:
 	void repository_add(void);
 	void repository_delete(void);
 
+	void plugin_add(void);
+	void plugin_delete(void);
+	void plugin_enable(bool fEnablePlugin);
 
 	muhkuh_repository_manager *m_ptRepositoryManager;
 	muhkuh_plugin_manager *m_ptPluginManager;

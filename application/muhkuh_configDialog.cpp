@@ -54,6 +54,7 @@ BEGIN_EVENT_TABLE(muhkuh_configDialog, wxDialog)
 	EVT_TOOL(muhkuh_configDialog_DisablePlugin,			muhkuh_configDialog::OnDisablePluginButton)
 	EVT_TREE_SEL_CHANGED(muhkuh_configDialog_PluginList,		muhkuh_configDialog::OnPluginSelectionChanged)
 	EVT_TREE_SEL_CHANGING(muhkuh_configDialog_PluginList,		muhkuh_configDialog::OnPluginSelectionChanging)
+	EVT_TREE_KEY_DOWN(muhkuh_configDialog_PluginList,		muhkuh_configDialog::OnPluginKey)
 END_EVENT_TABLE()
 
 
@@ -308,130 +309,25 @@ void muhkuh_configDialog::OnRepositoryKey(wxTreeEvent &event)
 
 void muhkuh_configDialog::OnAddPluginButton(wxCommandEvent &WXUNUSED(event))
 {
-	wxFileDialog *pluginDialog;
-	wxFileName fileName;
-	wxString strPluginName;
-	wxString strDialogInitPath;
-	long lIdx;
-	bool fPluginIsOk;
-
-
-	strDialogInitPath = wxEmptyString;
-/*
-	if( m_fUseRelativePaths==true )
-	{
-		fileName.Assign(strDialogInitPath);
-		if(fileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE))
-		{
-			strDialogInitPath = fileName.GetFullPath();
-		}
-	}
-*/
-	pluginDialog = new wxFileDialog(this, _("Select the new plugin"), strDialogInitPath, wxEmptyString, wxT("*.xml"), wxFD_OPEN|wxFD_FILE_MUST_EXIST);
-
-	if( pluginDialog->ShowModal()==wxID_OK )
-	{
-		strPluginName = pluginDialog->GetPath();
-		wxLogMessage(_("open plugin '%s'"), strPluginName.fn_str());
-		lIdx = m_ptPluginManager->addPlugin(strPluginName);
-		if( lIdx>=0 )
-		{
-			// do not accept broken plugins
-			fPluginIsOk = m_ptPluginManager->IsOk(lIdx);
-			if( fPluginIsOk==true )
-			{
-				ShowNewPlugin(lIdx);
-			}
-			else
-			{
-				m_ptPluginManager->removePlugin(lIdx);
-			}
-		}
-	}
-	pluginDialog->Destroy();
+	plugin_add();
 }
 
 
 void muhkuh_configDialog::OnRemovePluginButton(wxCommandEvent &WXUNUSED(event))
 {
-	wxTreeItemId tItem;
-	pluginTreeItemData *ptData;
-	long lPluginIdx;
-
-
-	// get the selected item
-	tItem = m_pluginTree->GetSelection();
-	// was something selected?
-	if( tItem.IsOk()==true )
-	{
-		// disable all buttons (in case if no update event follows the delete)
-		SetPluginButtons(wxTreeItemId());
-
-		// get the plugin id
-		ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tItem);
-		if( ptData!=NULL )
-		{
-			lPluginIdx = ptData->GetPluginId();
-
-			// erase from the tree
-			m_pluginTree->Delete(tItem);
-
-			// erase from the manager
-			m_ptPluginManager->removePlugin(lPluginIdx);
-		}
-	}
+	plugin_delete();
 }
 
 
 void muhkuh_configDialog::OnEnablePluginButton(wxCommandEvent &WXUNUSED(event))
 {
-	wxTreeItemId tItem;
-	pluginTreeItemData *ptData;
-	long lPluginIdx;
-
-
-	// get the selected item
-	tItem = m_pluginTree->GetSelection();
-	// was something selected?
-	if( tItem.IsOk()==true )
-	{
-		// get the plugin id
-		ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tItem);
-		if( ptData!=NULL )
-		{
-			lPluginIdx = ptData->GetPluginId();
-
-			m_ptPluginManager->SetEnable(lPluginIdx, true);
-			ShowPluginImage(tItem);
-			SetPluginButtons(tItem);
-		}
-	}
+	plugin_enable(true);
 }
 
 
 void muhkuh_configDialog::OnDisablePluginButton(wxCommandEvent &WXUNUSED(event))
 {
-	wxTreeItemId tItem;
-	pluginTreeItemData *ptData;
-	long lPluginIdx;
-
-
-	// get the selected item
-	tItem = m_pluginTree->GetSelection();
-	// was something selected?
-	if( tItem.IsOk()==true )
-	{
-		// get the plugin id
-		ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tItem);
-		if( ptData!=NULL )
-		{
-			lPluginIdx = ptData->GetPluginId();
-
-			m_ptPluginManager->SetEnable(lPluginIdx, false);
-			ShowPluginImage(tItem);
-			SetPluginButtons(tItem);
-		}
-	}
+	plugin_enable(false);
 }
 
 
@@ -464,6 +360,57 @@ void muhkuh_configDialog::OnPluginSelectionChanging(wxTreeEvent &event)
 	else
 	{
 		event.Veto();
+	}
+}
+
+
+void muhkuh_configDialog::OnPluginKey(wxTreeEvent &event)
+{
+	int iKeyCode;
+	wxTreeItemId tItem;
+	pluginTreeItemData *ptData;
+	long lPluginIdx;
+	bool fEnabled;
+
+
+	iKeyCode = event.GetKeyEvent().GetKeyCode();
+	switch( iKeyCode )
+	{
+	case WXK_DELETE:
+		// delete the selected repository
+		plugin_delete();
+		break;
+
+	case WXK_INSERT:
+		// add a new repository
+		plugin_add();
+		break;
+
+	case ' ':
+		// toggle plugin enable
+
+		// get the selected item
+		tItem = m_pluginTree->GetSelection();
+		// was something selected?
+		if( tItem.IsOk()==true )
+		{
+			// get the plugin id
+			ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tItem);
+			if( ptData!=NULL )
+			{
+				lPluginIdx = ptData->GetPluginId();
+				// get the current state
+				fEnabled = m_ptPluginManager->GetEnable(lPluginIdx);
+				// invert the state
+				plugin_enable(!fEnabled);
+			}
+		}
+		break;
+
+	default:
+		// the event was not processed by this routine
+		event.Skip();
+		break;
 	}
 }
 
@@ -661,6 +608,109 @@ void muhkuh_configDialog::repository_delete(void)
 			m_repositoryTree->Delete(tItem);
 			// erase from the vector
 			m_ptRepositoryManager->removeRepository(lRepositoryIdx);
+		}
+	}
+}
+
+
+void muhkuh_configDialog::plugin_add(void)
+{
+	wxFileDialog *pluginDialog;
+	wxFileName fileName;
+	wxString strPluginName;
+	wxString strDialogInitPath;
+	long lIdx;
+	bool fPluginIsOk;
+
+
+	strDialogInitPath = wxEmptyString;
+/*
+	if( m_fUseRelativePaths==true )
+	{
+		fileName.Assign(strDialogInitPath);
+		if(fileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE))
+		{
+			strDialogInitPath = fileName.GetFullPath();
+		}
+	}
+*/
+	pluginDialog = new wxFileDialog(this, _("Select the new plugin"), strDialogInitPath, wxEmptyString, wxT("*.xml"), wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+
+	if( pluginDialog->ShowModal()==wxID_OK )
+	{
+		strPluginName = pluginDialog->GetPath();
+		wxLogMessage(_("open plugin '%s'"), strPluginName.fn_str());
+		lIdx = m_ptPluginManager->addPlugin(strPluginName);
+		if( lIdx>=0 )
+		{
+			// do not accept broken plugins
+			fPluginIsOk = m_ptPluginManager->IsOk(lIdx);
+			if( fPluginIsOk==true )
+			{
+				ShowNewPlugin(lIdx);
+			}
+			else
+			{
+				m_ptPluginManager->removePlugin(lIdx);
+			}
+		}
+	}
+	pluginDialog->Destroy();
+}
+
+
+void muhkuh_configDialog::plugin_delete(void)
+{
+	wxTreeItemId tItem;
+	pluginTreeItemData *ptData;
+	long lPluginIdx;
+
+
+	// get the selected item
+	tItem = m_pluginTree->GetSelection();
+	// was something selected?
+	if( tItem.IsOk()==true )
+	{
+		// disable all buttons (in case if no update event follows the delete)
+		SetPluginButtons(wxTreeItemId());
+
+		// get the plugin id
+		ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tItem);
+		if( ptData!=NULL )
+		{
+			lPluginIdx = ptData->GetPluginId();
+
+			// erase from the tree
+			m_pluginTree->Delete(tItem);
+
+			// erase from the manager
+			m_ptPluginManager->removePlugin(lPluginIdx);
+		}
+	}
+}
+
+
+void muhkuh_configDialog::plugin_enable(bool fEnablePlugin)
+{
+	wxTreeItemId tItem;
+	pluginTreeItemData *ptData;
+	long lPluginIdx;
+
+
+	// get the selected item
+	tItem = m_pluginTree->GetSelection();
+	// was something selected?
+	if( tItem.IsOk()==true )
+	{
+		// get the plugin id
+		ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tItem);
+		if( ptData!=NULL )
+		{
+			lPluginIdx = ptData->GetPluginId();
+
+			m_ptPluginManager->SetEnable(lPluginIdx, fEnablePlugin);
+			ShowPluginImage(tItem);
+			SetPluginButtons(tItem);
 		}
 	}
 }
