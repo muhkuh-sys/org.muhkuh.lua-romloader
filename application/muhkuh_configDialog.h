@@ -77,6 +77,7 @@ public:
 	void OnEditRepositoryButton(wxCommandEvent &event);
 	void OnDeleteRepositoryButton(wxCommandEvent &event);
 	void OnRepositorySelect(wxTreeEvent &event);
+	void OnRepositoryKey(wxTreeEvent &event);
 
 	void OnAddPluginButton(wxCommandEvent &event);
 	void OnRemovePluginButton(wxCommandEvent &event);
@@ -96,6 +97,10 @@ private:
 	void ShowPluginImage(wxTreeItemId tPluginItem);
 
 	void SetPluginButtons(wxTreeItemId tItem);
+
+	void repository_add(void);
+	void repository_delete(void);
+
 
 	muhkuh_repository_manager *m_ptRepositoryManager;
 	muhkuh_plugin_manager *m_ptPluginManager;

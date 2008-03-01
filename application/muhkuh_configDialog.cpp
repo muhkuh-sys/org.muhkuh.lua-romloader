@@ -46,6 +46,7 @@ BEGIN_EVENT_TABLE(muhkuh_configDialog, wxDialog)
 	EVT_TOOL(muhkuh_configDialog_EditRepository,			muhkuh_configDialog::OnEditRepositoryButton)
 	EVT_TOOL(muhkuh_configDialog_RemoveRepository,			muhkuh_configDialog::OnDeleteRepositoryButton)
 	EVT_TREE_SEL_CHANGED(muhkuh_configDialog_RepositoryList,	muhkuh_configDialog::OnRepositorySelect)
+	EVT_TREE_KEY_DOWN(muhkuh_configDialog_RepositoryList,		muhkuh_configDialog::OnRepositoryKey)
 
 	EVT_TOOL(muhkuh_configDialog_AddPlugin,				muhkuh_configDialog::OnAddPluginButton)
 	EVT_TOOL(muhkuh_configDialog_RemovePlugin,			muhkuh_configDialog::OnRemovePluginButton)
@@ -215,25 +216,7 @@ wxPanel *muhkuh_configDialog::createControls_plugin(wxWindow *ptParent)
 
 void muhkuh_configDialog::OnNewRepositoryButton(wxCommandEvent &WXUNUSED(event))
 {
-	muhkuh_config_reposEntryDialog *ptEntryDialog;
-	muhkuh_repository *ptRepos;
-	long lIdx;
-
-
-	ptRepos = new muhkuh_repository(_("new repository"));
-	ptEntryDialog = new muhkuh_config_reposEntryDialog(this, m_strApplicationPath, ptRepos);
-	if( ptEntryDialog->ShowModal()==wxID_OK )
-	{
-		// add to list
-		lIdx = m_ptRepositoryManager->addRepository(ptRepos);
-		// show
-		ShowNewRepository(lIdx);
-	}
-	else
-	{
-		delete ptRepos;
-	}
-	ptEntryDialog->Destroy();
+	repository_add();
 }
 
 
@@ -275,30 +258,7 @@ void muhkuh_configDialog::OnEditRepositoryButton(wxCommandEvent &WXUNUSED(event)
 
 void muhkuh_configDialog::OnDeleteRepositoryButton(wxCommandEvent &WXUNUSED(event))
 {
-	wxTreeItemId tItem;
-	repositoryTreeItemData *ptData;
-	long lRepositoryIdx;
-	muhkuh_config_reposEntryDialog *ptEntryDialog;
-	muhkuh_repository *ptRepos;
-
-
-	// get the selected item
-	tItem = m_repositoryTree->GetSelection();
-	// was something selected?
-	if( tItem.IsOk()==true )
-	{
-		// get the repository id
-		ptData = (repositoryTreeItemData*)m_pluginTree->GetItemData(tItem);
-		if( ptData!=NULL )
-		{
-			lRepositoryIdx = ptData->GetRepositoryId();
-
-			// erase from the listctrl
-			m_repositoryTree->Delete(tItem);
-			// erase from the vector
-			m_ptRepositoryManager->removeRepository(lRepositoryIdx);
-		}
-	}
+	repository_delete();
 }
 
 
@@ -319,6 +279,30 @@ void muhkuh_configDialog::OnRepositorySelect(wxTreeEvent &event)
 	}	
 	m_repositoryToolBar->EnableTool(muhkuh_configDialog_EditRepository,	fPluginSelected);
 	m_repositoryToolBar->EnableTool(muhkuh_configDialog_RemoveRepository,	fPluginSelected);
+}
+
+
+void muhkuh_configDialog::OnRepositoryKey(wxTreeEvent &event)
+{
+	int iKeyCode;
+
+
+	iKeyCode = event.GetKeyEvent().GetKeyCode();
+	switch( iKeyCode )
+	{
+	case WXK_DELETE:
+		// delete the selected repository
+		repository_delete();
+		break;
+	case WXK_INSERT:
+		// add a new repository
+		repository_add();
+		break;
+	default:
+		// the event was not processed by this routine
+		event.Skip();
+		break;
+	}
 }
 
 
@@ -627,4 +611,58 @@ void muhkuh_configDialog::ShowPluginImage(wxTreeItemId tPluginItem)
 		}
 	}
 }
+
+
+void muhkuh_configDialog::repository_add(void)
+{
+	muhkuh_config_reposEntryDialog *ptEntryDialog;
+	muhkuh_repository *ptRepos;
+	long lIdx;
+
+
+	ptRepos = new muhkuh_repository(_("new repository"));
+	ptEntryDialog = new muhkuh_config_reposEntryDialog(this, m_strApplicationPath, ptRepos);
+	if( ptEntryDialog->ShowModal()==wxID_OK )
+	{
+		// add to list
+		lIdx = m_ptRepositoryManager->addRepository(ptRepos);
+		// show
+		ShowNewRepository(lIdx);
+	}
+	else
+	{
+		delete ptRepos;
+	}
+	ptEntryDialog->Destroy();
+}
+
+
+void muhkuh_configDialog::repository_delete(void)
+{
+	wxTreeItemId tItem;
+	repositoryTreeItemData *ptData;
+	long lRepositoryIdx;
+	muhkuh_config_reposEntryDialog *ptEntryDialog;
+	muhkuh_repository *ptRepos;
+
+
+	// get the selected item
+	tItem = m_repositoryTree->GetSelection();
+	// was something selected?
+	if( tItem.IsOk()==true )
+	{
+		// get the repository id
+		ptData = (repositoryTreeItemData*)m_pluginTree->GetItemData(tItem);
+		if( ptData!=NULL )
+		{
+			lRepositoryIdx = ptData->GetRepositoryId();
+
+			// erase from the listctrl
+			m_repositoryTree->Delete(tItem);
+			// erase from the vector
+			m_ptRepositoryManager->removeRepository(lRepositoryIdx);
+		}
+	}
+}
+
 
