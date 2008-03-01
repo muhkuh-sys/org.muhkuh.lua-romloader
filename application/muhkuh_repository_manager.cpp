@@ -287,26 +287,37 @@ long muhkuh_repository_manager::addRepository(muhkuh_repository *ptRepository)
 }
 
 
-void muhkuh_repository_manager::removeRepository(unsigned long ulIdx)
+void muhkuh_repository_manager::removeRepository(size_t sizIdx)
 {
 	std::vector<muhkuh_repository*>::iterator iter;
 	muhkuh_repository *ptRepository;
 
 
 	/* check input parameter */
-	if( ulIdx>=m_ptRepositories->size() )
+	if( sizIdx>=m_ptRepositories->size() )
 	{
-		wxLogError(_("muhkuh_repository_manager::removeRepository : idx %ld is out of range, ignoring request"), ulIdx);
+		wxLogError(_("muhkuh_repository_manager::removeRepository : idx %ld is out of range, ignoring request"), sizIdx);
 	}
 	else
 	{
 		iter = m_ptRepositories->begin();
-		iter += ulIdx;
+		iter += sizIdx;
 		ptRepository = *iter;
 		/* remove from list */
 		m_ptRepositories->erase(iter);
 		/* delete the repository */
 		delete ptRepository;
+		// adapt active repository index
+		if( sizIdx==m_sizActiveRepositoryIdx )
+		{
+			// deleted the active repository -> no repository is active now
+			m_sizActiveRepositoryIdx = wxNOT_FOUND;
+		}
+		else if( sizIdx<m_sizActiveRepositoryIdx )
+		{
+			// deleted a repository before the active one -> index moved one up
+			--m_sizActiveRepositoryIdx;
+		}
 	}
 }
 

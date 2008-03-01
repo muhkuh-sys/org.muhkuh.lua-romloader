@@ -34,37 +34,14 @@
 #include "muhkuh_repository_manager.h"
 
 
-class pluginTreeItemData : public wxTreeItemData
+class treeItemIdData : public wxTreeItemData
 {
 public:
-	pluginTreeItemData(long lPluginId)
-	 : m_lPluginId(lPluginId)
+	treeItemIdData(long lId)
+	 : m_lId(lId)
 	 { };
 
-	long GetPluginId(void) const
-	{
-		return m_lPluginId;
-	};
-
-private:
-	long m_lPluginId;
-};
-
-
-class repositoryTreeItemData : public wxTreeItemData
-{
-public:
-	repositoryTreeItemData(long lRepositoryId)
-	 : m_lRepositoryId(lRepositoryId)
-	 { };
-
-	long GetRepositoryId(void) const
-	{
-		return m_lRepositoryId;
-	};
-
-private:
-	long m_lRepositoryId;
+	long m_lId;
 };
 
 

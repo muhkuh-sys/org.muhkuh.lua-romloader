@@ -224,7 +224,7 @@ void muhkuh_configDialog::OnNewRepositoryButton(wxCommandEvent &WXUNUSED(event))
 void muhkuh_configDialog::OnEditRepositoryButton(wxCommandEvent &WXUNUSED(event))
 {
 	wxTreeItemId tItem;
-	repositoryTreeItemData *ptData;
+	treeItemIdData *ptData;
 	long lRepositoryIdx;
 	muhkuh_config_reposEntryDialog *ptEntryDialog;
 	muhkuh_repository *ptRepos;
@@ -236,10 +236,10 @@ void muhkuh_configDialog::OnEditRepositoryButton(wxCommandEvent &WXUNUSED(event)
 	if( tItem.IsOk()==true )
 	{
 		// get the repository id
-		ptData = (repositoryTreeItemData*)m_pluginTree->GetItemData(tItem);
+		ptData = (treeItemIdData*)m_pluginTree->GetItemData(tItem);
 		if( ptData!=NULL )
 		{
-			lRepositoryIdx = ptData->GetRepositoryId();
+			lRepositoryIdx = ptData->m_lId;
 
 			ptRepos = m_ptRepositoryManager->GetRepository(lRepositoryIdx);
 
@@ -268,14 +268,14 @@ void muhkuh_configDialog::OnRepositorySelect(wxTreeEvent &event)
 	wxTreeItemId tItem;
 	long lIdx;
 	bool fPluginSelected;
-	repositoryTreeItemData *ptData;
+	treeItemIdData *ptData;
 
 
 	tItem = event.GetItem();
 	fPluginSelected = tItem.IsOk();
 	if( fPluginSelected==true )
 	{
-		ptData = (repositoryTreeItemData*)m_pluginTree->GetItemData(tItem);
+		ptData = (treeItemIdData*)m_pluginTree->GetItemData(tItem);
 		fPluginSelected = (ptData!=NULL);
 	}	
 	m_repositoryToolBar->EnableTool(muhkuh_configDialog_EditRepository,	fPluginSelected);
@@ -334,7 +334,7 @@ void muhkuh_configDialog::OnDisablePluginButton(wxCommandEvent &WXUNUSED(event))
 void muhkuh_configDialog::OnPluginSelectionChanging(wxTreeEvent &event)
 {
 	wxTreeItemId tItem;
-	pluginTreeItemData *ptData;
+	treeItemIdData *ptData;
 	bool fAllowChange;
 
 
@@ -345,7 +345,7 @@ void muhkuh_configDialog::OnPluginSelectionChanging(wxTreeEvent &event)
 	tItem = event.GetItem();
 	if( tItem.IsOk()==true )
 	{
-		ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tItem);
+		ptData = (treeItemIdData*)m_pluginTree->GetItemData(tItem);
 		if( ptData!=NULL )
 		{
 			fAllowChange = true;
@@ -368,7 +368,7 @@ void muhkuh_configDialog::OnPluginKey(wxTreeEvent &event)
 {
 	int iKeyCode;
 	wxTreeItemId tItem;
-	pluginTreeItemData *ptData;
+	treeItemIdData *ptData;
 	long lPluginIdx;
 	bool fEnabled;
 
@@ -395,10 +395,10 @@ void muhkuh_configDialog::OnPluginKey(wxTreeEvent &event)
 		if( tItem.IsOk()==true )
 		{
 			// get the plugin id
-			ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tItem);
+			ptData = (treeItemIdData*)m_pluginTree->GetItemData(tItem);
 			if( ptData!=NULL )
 			{
-				lPluginIdx = ptData->GetPluginId();
+				lPluginIdx = ptData->m_lId;
 				// get the current state
 				fEnabled = m_ptPluginManager->GetEnable(lPluginIdx);
 				// invert the state
@@ -423,7 +423,7 @@ void muhkuh_configDialog::OnPluginSelectionChanged(wxTreeEvent &event)
 
 void muhkuh_configDialog::SetPluginButtons(wxTreeItemId tItem)
 {
-	pluginTreeItemData *ptData;
+	treeItemIdData *ptData;
 	long lPluginIdx;
 	bool fPluginSelected;
 	bool fPluginIsOk;
@@ -439,10 +439,10 @@ void muhkuh_configDialog::SetPluginButtons(wxTreeItemId tItem)
 
 	if( fPluginSelected==true )
 	{
-		ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tItem);
+		ptData = (treeItemIdData*)m_pluginTree->GetItemData(tItem);
 		if( ptData!=NULL )
 		{
-			lPluginIdx = ptData->GetPluginId();
+			lPluginIdx = ptData->m_lId;
 			fPluginIsOk = m_ptPluginManager->IsOk(lPluginIdx);
 			fPluginIsEnabled = m_ptPluginManager->GetEnable(lPluginIdx);
 
@@ -460,7 +460,7 @@ void muhkuh_configDialog::SetPluginButtons(wxTreeItemId tItem)
 void muhkuh_configDialog::ShowNewRepository(long lIdx)
 {
 	wxTreeItemId tRootItem;
-	repositoryTreeItemData *ptData;
+	treeItemIdData *ptData;
 	int iImageIdx;
 	wxString strName;
 
@@ -470,7 +470,7 @@ void muhkuh_configDialog::ShowNewRepository(long lIdx)
 
 	strName = m_ptRepositoryManager->GetStringRepresentation(lIdx);
 	iImageIdx = m_ptRepositoryManager->GetImageListIndex(lIdx);
-	ptData = new repositoryTreeItemData(lIdx);
+	ptData = new treeItemIdData(lIdx);
 
 	m_repositoryTree->AppendItem(tRootItem, strName, iImageIdx, -1, ptData);
 }
@@ -486,7 +486,7 @@ void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 	wxString strId;
 	wxString strVersion;
 	long lItemIdx;
-	pluginTreeItemData *ptData;
+	treeItemIdData *ptData;
 
 
 	// append all plugins to the root item
@@ -504,7 +504,7 @@ void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 		strName = m_ptPluginManager->GetConfigName(lIdx);
 
 		// create the new data item
-		ptData = new pluginTreeItemData(lIdx);
+		ptData = new treeItemIdData(lIdx);
 
 		if( fPluginIsOk==true )
 		{
@@ -529,7 +529,7 @@ void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 
 void muhkuh_configDialog::ShowPluginImage(wxTreeItemId tPluginItem)
 {
-	pluginTreeItemData *ptData;
+	treeItemIdData *ptData;
 	long lIdx;
 	int iImageIdx;
 
@@ -537,10 +537,10 @@ void muhkuh_configDialog::ShowPluginImage(wxTreeItemId tPluginItem)
 	// get the tree item data
 	if( tPluginItem.IsOk()==true )
 	{
-		ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tPluginItem);
+		ptData = (treeItemIdData*)m_pluginTree->GetItemData(tPluginItem);
 		if( ptData!=NULL )
 		{
-			lIdx = ptData->GetPluginId();
+			lIdx = ptData->m_lId;
 
 			if( m_ptPluginManager->IsOk(lIdx)==false )
 			{
@@ -587,10 +587,10 @@ void muhkuh_configDialog::repository_add(void)
 void muhkuh_configDialog::repository_delete(void)
 {
 	wxTreeItemId tItem;
-	repositoryTreeItemData *ptData;
+	treeItemIdData *ptData;
 	long lRepositoryIdx;
-	muhkuh_config_reposEntryDialog *ptEntryDialog;
-	muhkuh_repository *ptRepos;
+	wxTreeItemId tRootItem;
+	wxTreeItemIdValue tCookie;
 
 
 	// get the selected item
@@ -599,15 +599,33 @@ void muhkuh_configDialog::repository_delete(void)
 	if( tItem.IsOk()==true )
 	{
 		// get the repository id
-		ptData = (repositoryTreeItemData*)m_pluginTree->GetItemData(tItem);
+		ptData = (treeItemIdData*)m_pluginTree->GetItemData(tItem);
 		if( ptData!=NULL )
 		{
-			lRepositoryIdx = ptData->GetRepositoryId();
+			lRepositoryIdx = ptData->m_lId;
 
 			// erase from the listctrl
 			m_repositoryTree->Delete(tItem);
 			// erase from the vector
 			m_ptRepositoryManager->removeRepository(lRepositoryIdx);
+
+			// rebuild idlist
+			tRootItem = m_repositoryTree->GetRootItem();
+			lRepositoryIdx = 0;
+			tItem = m_repositoryTree->GetFirstChild(tRootItem, tCookie);
+			while( tItem.IsOk()==true )
+			{
+				// set the plugin id
+				ptData = (treeItemIdData*)m_repositoryTree->GetItemData(tItem);
+				if( ptData!=NULL )
+				{
+					ptData->m_lId = lRepositoryIdx;
+				}
+				// inc id
+				++lRepositoryIdx;
+				// move to next child
+				tItem = m_repositoryTree->GetNextChild(tRootItem, tCookie);
+			}
 		}
 	}
 }
@@ -662,8 +680,10 @@ void muhkuh_configDialog::plugin_add(void)
 void muhkuh_configDialog::plugin_delete(void)
 {
 	wxTreeItemId tItem;
-	pluginTreeItemData *ptData;
+	treeItemIdData *ptData;
 	long lPluginIdx;
+	wxTreeItemId tRootItem;
+	wxTreeItemIdValue tCookie;
 
 
 	// get the selected item
@@ -675,16 +695,34 @@ void muhkuh_configDialog::plugin_delete(void)
 		SetPluginButtons(wxTreeItemId());
 
 		// get the plugin id
-		ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tItem);
+		ptData = (treeItemIdData*)m_pluginTree->GetItemData(tItem);
 		if( ptData!=NULL )
 		{
-			lPluginIdx = ptData->GetPluginId();
+			lPluginIdx = ptData->m_lId;
 
 			// erase from the tree
 			m_pluginTree->Delete(tItem);
 
 			// erase from the manager
 			m_ptPluginManager->removePlugin(lPluginIdx);
+
+			// rebuild idlist
+			tRootItem = m_pluginTree->GetRootItem();
+			lPluginIdx = 0;
+			tItem = m_pluginTree->GetFirstChild(tRootItem, tCookie);
+			while( tItem.IsOk()==true )
+			{
+				// set the plugin id
+				ptData = (treeItemIdData*)m_pluginTree->GetItemData(tItem);
+				if( ptData!=NULL )
+				{
+					ptData->m_lId = lPluginIdx;
+				}
+				// inc id
+				++lPluginIdx;
+				// move to next child
+				tItem = m_pluginTree->GetNextChild(tRootItem, tCookie);
+			}
 		}
 	}
 }
@@ -693,7 +731,7 @@ void muhkuh_configDialog::plugin_delete(void)
 void muhkuh_configDialog::plugin_enable(bool fEnablePlugin)
 {
 	wxTreeItemId tItem;
-	pluginTreeItemData *ptData;
+	treeItemIdData *ptData;
 	long lPluginIdx;
 
 
@@ -703,10 +741,10 @@ void muhkuh_configDialog::plugin_enable(bool fEnablePlugin)
 	if( tItem.IsOk()==true )
 	{
 		// get the plugin id
-		ptData = (pluginTreeItemData*)m_pluginTree->GetItemData(tItem);
+		ptData = (treeItemIdData*)m_pluginTree->GetItemData(tItem);
 		if( ptData!=NULL )
 		{
-			lPluginIdx = ptData->GetPluginId();
+			lPluginIdx = ptData->m_lId;
 
 			m_ptPluginManager->SetEnable(lPluginIdx, fEnablePlugin);
 			ShowPluginImage(tItem);

@@ -41,7 +41,7 @@ public:
 	~muhkuh_repository_manager(void);
 
 	long addRepository(muhkuh_repository *ptRepository);
-	void removeRepository(unsigned long ulIdx);
+	void removeRepository(size_t sizIdx);
 	muhkuh_repository *GetRepository(size_t sizIdx);
 
 	void SetActiveRepository(int iActiveRepoIdx);
