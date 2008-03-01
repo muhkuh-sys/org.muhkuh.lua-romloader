@@ -686,10 +686,7 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 			}
 
 			iRepositoryIndex = m_ptRepositoryManager->GetActiveRepository();
-			if( iRepositoryIndex>=0 )
-			{
-				scanTests(iRepositoryIndex);
-			}
+			scanTests(iRepositoryIndex);
 		}
 
 		// show the number of loaded tests
@@ -824,10 +821,7 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 		// get new test list
 		iNewSelection = m_ptRepositoryManager->GetActiveRepository();
 		m_repositoryCombo->Select(iNewSelection);
-		if( iNewSelection!=wxNOT_FOUND )
-		{
-			scanTests(iNewSelection);
-		}
+		scanTests(iNewSelection);
 	}
 	else
 	{
@@ -1104,10 +1098,7 @@ void muhkuh_mainFrame::OnTestRescan(wxCommandEvent& WXUNUSED(event))
 	if( m_ptRepositoryManager!=NULL )
 	{
 		iRepositoryIdx = m_ptRepositoryManager->GetActiveRepository();
-		if( iRepositoryIdx!=wxNOT_FOUND )
-		{
-			scanTests(iRepositoryIdx);
-		}
+		scanTests(iRepositoryIdx);
 	}
 }
 
@@ -1397,69 +1388,72 @@ void muhkuh_mainFrame::scanTests(int iActiveRepositoryIdx)
 	size_t sizTestCnt;
 
 
-	// set new state
-	setState(muhkuh_mainFrame_state_scanning);
-
-	// show process dialog
-	m_scannerProgress = new wxProgressDialog(
-		_("Scanning available test descriptions"),
-		_("Please wait..."),
-		1,
-		this,
-		wxPD_CAN_ABORT | wxPD_APP_MODAL | wxPD_ELAPSED_TIME | wxPD_ESTIMATED_TIME | wxPD_REMAINING_TIME
-	);
-
-	// create the testlist
-	bRes = m_ptRepositoryManager->createTestlist(iActiveRepositoryIdx, m_scannerProgress);
-
-	// destroy the progress dialog, it's not possible to update the max count
-	m_scannerProgress->Destroy();
-
-	if( bRes==true )
+	// clear all old tests
+	m_sizTestCnt = 0;
+	// clear the test description
+	m_strTestDetails = m_strTestDetailsEmpty;
+	if( m_testDetailsHtml!=NULL )
 	{
-		// clear all old tests
-		m_sizTestCnt = 0;
-		// clear the test description
-		m_strTestDetails = m_strTestDetailsEmpty;
-		if( m_testDetailsHtml!=NULL )
-		{
-			m_testDetailsHtml->SetPage(m_strTestDetails);
-		}
-		// clear the complete tree
-		m_treeCtrl->DeleteAllItems();
-		// add a root item
-		m_treeCtrl->AddRoot(wxT("Root"));
-
-		// vaild directory or repository -> accept the index
-		m_ptRepositoryManager->SetActiveRepository(iActiveRepositoryIdx);
-
-		// create a new progress dialog with the correct max count
-		sizTestCnt = m_ptRepositoryManager->getTestlistCount(iActiveRepositoryIdx);
-		if( sizTestCnt>0 )
-		{
-			// show process dialog
-			m_scannerProgress = new wxProgressDialog(
-				_("Scanning available test descriptions"),
-				_("Please wait..."),
-				sizTestCnt,
-				this,
-				wxPD_CAN_ABORT | wxPD_APP_MODAL | wxPD_ELAPSED_TIME | wxPD_ESTIMATED_TIME | wxPD_REMAINING_TIME
-			);
-
-			addAllTests(iActiveRepositoryIdx);
-
-			// destroy the scanner progress dialog
-			m_scannerProgress->Destroy();
-		}
+		m_testDetailsHtml->SetPage(m_strTestDetails);
 	}
-	else
+	// clear the complete tree
+	m_treeCtrl->DeleteAllItems();
+	// add a root item
+	m_treeCtrl->AddRoot(wxT("Root"));
+
+	if( iActiveRepositoryIdx!=wxNOT_FOUND )
 	{
-		// failed to create test list -> this repository is not valid
-		m_repositoryCombo->Select(wxNOT_FOUND);
-		m_ptRepositoryManager->SetActiveRepository(wxNOT_FOUND);
-	}
+		// set new state
+		setState(muhkuh_mainFrame_state_scanning);
 
-	setState(muhkuh_mainFrame_state_idle);
+		// show process dialog
+		m_scannerProgress = new wxProgressDialog(
+			_("Scanning available test descriptions"),
+			_("Please wait..."),
+			1,
+			this,
+			wxPD_CAN_ABORT | wxPD_APP_MODAL | wxPD_ELAPSED_TIME | wxPD_ESTIMATED_TIME | wxPD_REMAINING_TIME
+		);
+
+		// create the testlist
+		bRes = m_ptRepositoryManager->createTestlist(iActiveRepositoryIdx, m_scannerProgress);
+
+		// destroy the progress dialog, it's not possible to update the max count
+		m_scannerProgress->Destroy();
+
+		if( bRes==true )
+		{
+			// vaild directory or repository -> accept the index
+			m_ptRepositoryManager->SetActiveRepository(iActiveRepositoryIdx);
+
+			// create a new progress dialog with the correct max count
+			sizTestCnt = m_ptRepositoryManager->getTestlistCount(iActiveRepositoryIdx);
+			if( sizTestCnt>0 )
+			{
+				// show process dialog
+				m_scannerProgress = new wxProgressDialog(
+					_("Scanning available test descriptions"),
+					_("Please wait..."),
+					sizTestCnt,
+					this,
+					wxPD_CAN_ABORT | wxPD_APP_MODAL | wxPD_ELAPSED_TIME | wxPD_ESTIMATED_TIME | wxPD_REMAINING_TIME
+				);
+
+				addAllTests(iActiveRepositoryIdx);
+
+				// destroy the scanner progress dialog
+				m_scannerProgress->Destroy();
+			}
+		}
+		else
+		{
+			// failed to create test list -> this repository is not valid
+			m_repositoryCombo->Select(wxNOT_FOUND);
+			m_ptRepositoryManager->SetActiveRepository(wxNOT_FOUND);
+		}
+
+		setState(muhkuh_mainFrame_state_idle);
+	}
 }
 
 
