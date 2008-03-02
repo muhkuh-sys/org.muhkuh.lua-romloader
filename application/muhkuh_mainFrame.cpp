@@ -575,6 +575,7 @@ void muhkuh_mainFrame::setState(muhkuh_mainFrame_state tNewState)
 {
 	int iWelcomePageIdx;
 	int iTestDetailsPageIdx;
+	bool fRepositorySelected;
 
 
 	// leave old state
@@ -621,6 +622,11 @@ void muhkuh_mainFrame::setState(muhkuh_mainFrame_state tNewState)
 		m_menuBar->Enable(muhkuh_mainFrame_menuTestCancel, false);
 		m_menuBar->Enable(muhkuh_mainFrame_menuViewWelcomePage, true);
 		m_menuBar->Enable(muhkuh_mainFrame_menuViewTestDetails, true);
+		m_repositoryCombo->Enable(true);
+		m_treeCtrl->Enable(true);
+		m_menuBar->Enable(wxID_PREFERENCES, true);
+		fRepositorySelected = (m_repositoryCombo->GetSelection() != wxNOT_FOUND);
+		m_menuBar->Enable(muhkuh_mainFrame_menuTestRescan, fRepositorySelected);
 		if( iWelcomePageIdx!=wxNOT_FOUND )
 		{
 			m_welcomeHtml->Enable(true);
@@ -629,10 +635,6 @@ void muhkuh_mainFrame::setState(muhkuh_mainFrame_state tNewState)
 		{
 			m_testDetailsHtml->Enable(true);
 		}
-		m_repositoryCombo->Enable(true);
-		m_treeCtrl->Enable(true);
-		m_menuBar->Enable(wxID_PREFERENCES, true);
-		m_menuBar->Enable(muhkuh_mainFrame_menuTestRescan, true);
 		break;
 
 	case muhkuh_mainFrame_state_testing:
@@ -645,6 +647,7 @@ void muhkuh_mainFrame::setState(muhkuh_mainFrame_state tNewState)
 		m_treeCtrl->Enable(false);
 		m_menuBar->Enable(wxID_PREFERENCES, false);
 		m_menuBar->Enable(muhkuh_mainFrame_menuViewTestDetails, false);
+		m_menuBar->Enable(muhkuh_mainFrame_menuTestRescan, false);
 		if( iWelcomePageIdx!=wxNOT_FOUND )
 		{
 			m_welcomeHtml->Enable(false);
@@ -829,7 +832,6 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 		delete ptTmpRepositoryManager;
 		delete ptTmpPluginManager;
 	}
-
 }
 
 
@@ -1451,9 +1453,9 @@ void muhkuh_mainFrame::scanTests(int iActiveRepositoryIdx)
 			m_repositoryCombo->Select(wxNOT_FOUND);
 			m_ptRepositoryManager->SetActiveRepository(wxNOT_FOUND);
 		}
-
-		setState(muhkuh_mainFrame_state_idle);
 	}
+
+	setState(muhkuh_mainFrame_state_idle);
 }
 
 

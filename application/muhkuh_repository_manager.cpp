@@ -313,7 +313,7 @@ void muhkuh_repository_manager::removeRepository(size_t sizIdx)
 			// deleted the active repository -> no repository is active now
 			m_sizActiveRepositoryIdx = wxNOT_FOUND;
 		}
-		else if( sizIdx<m_sizActiveRepositoryIdx )
+		else if( m_sizActiveRepositoryIdx!=wxNOT_FOUND && sizIdx<m_sizActiveRepositoryIdx )
 		{
 			// deleted a repository before the active one -> index moved one up
 			--m_sizActiveRepositoryIdx;
