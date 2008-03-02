@@ -17,6 +17,10 @@
 	<if cond="TARGETING_WIN32=='0'">
 		<set var="WXLUA_BASEDIR">$(SRCDIR)</set>
 	</if>
+	<!-- set lib postfix for gnu platform -->
+	<if cond="FORMAT=='gnu'">
+		<set var="WXLIBPOSTFIX">$(DOLLAR)(shell echo `$(WX_CONFIG) --selected-config` `$(WX_CONFIG) --basename` | sed 's/^\([^-]\+\)[^ ]\+ wx_\1\([u|d]*\)/\2/')</set>
+	</if>
 
 	<!-- ================================================================== -->
 	<!--                     The muhkuh application                         -->
