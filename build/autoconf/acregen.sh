@@ -1,7 +1,7 @@
-#!/bin/bash 
+#!/bin/bash
 #
 # Author: Francesco Montorsi
-# RCS-ID: $Id: acregen.sh,v 1.5 2007/07/27 14:11:59 jrl1 Exp $
+# RCS-ID: $Id: acregen.sh,v 1.6 2008/01/10 00:06:53 jrl1 Exp $
 # Creation date: 14/9/2005
 #
 # A simple script to generate the configure script for a wxCode component
@@ -35,19 +35,20 @@ aclocal_maj=`echo $aclocal_verfull | sed 's/aclocal (GNU automake) \([0-9]*\).\(
 aclocal_min=`echo $aclocal_verfull | sed 's/aclocal (GNU automake) \([0-9]*\).\([0-9]*\).\([0-9]*\).*/\2/'`
 aclocal_rel=`echo $aclocal_verfull | sed 's/aclocal (GNU automake) \([0-9]*\).\([0-9]*\).\([0-9]*\).*/\3/'`
 
+# the version may only be 1.10 instead of 1.10.0
+if [[ "x$aclocal_rel" = "x" ]]; then aclocal_rel=0; fi
+
 aclocal_minimal_maj=1
 aclocal_minimal_min=9
 aclocal_minimal_rel=6
 
-majok=$(expr $aclocal_maj \>= $aclocal_minimal_maj)
-minok=$(expr $aclocal_min \>= $aclocal_minimal_min)
-relok=$(expr $aclocal_rel \>= $aclocal_minimal_rel)
+majok=$(expr $aclocal_maj \- $aclocal_minimal_maj)
+minok=$(expr $aclocal_min \- $aclocal_minimal_min)
+relok=$(expr $aclocal_rel \- $aclocal_minimal_rel)
 
-if [[ "$majok" = "0" ]]; then aclocalold; fi
-if [[ "$majok" = "1" && "$minok" = "0" ]]; then aclocalold; fi
-if [[ "$majok" = "1" && "$minok" = "1" && "$relok" = 0 ]]; then aclocalold; fi
-
-
+if [[ $majok < 0 ]]; then aclocalold; fi
+if [[ $majok = 0 && $minok < 0 ]]; then aclocalold; fi
+if [[ $majok = 0 && $minok = 0 && $relok < 0 ]]; then aclocalold; fi
 
 
 # check if we have an AUTOCONF version recent enough
@@ -58,12 +59,11 @@ autoconf_min=`echo $autoconf_verfull | sed 's/autoconf (GNU Autoconf) \([0-9]*\)
 autoconf_minimal_maj=2
 autoconf_minimal_min=60
 
-majok=$(expr $autoconf_maj \>= $autoconf_minimal_maj)
-minok=$(expr $autoconf_min \>= $autoconf_minimal_min)
+majok=$(expr $autoconf_maj \- $autoconf_minimal_maj)
+minok=$(expr $autoconf_min \- $autoconf_minimal_min)
 
-if [[ "$majok" = "0" ]]; then autoconfold; fi
-if [[ "$majok" = "1" && "$minok" = "0" ]]; then autoconfold; fi
-
+if [[ $majok < 0 ]]; then autoconfold; fi
+if [[ $majok = 0 && $minok < 0 ]]; then autoconfold; fi
 
 
 # we can safely proceed
