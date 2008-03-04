@@ -264,23 +264,24 @@ muhkuh_test_failed_32_xpm = {
 
 ---------------------------------------
 
-local commonPlugin = false
+function getCommonPlugin(pattern)
+	local pattern = pattern or ".*"
 
-function getCommonPlugin()
-	if not commonPlugin then
-		commonPlugin = select_plugin.SelectPlugin("romloader*.")
-		if commonPlugin then
-			commonPlugin:connect()
+
+	if not m_commonPlugin then
+		m_commonPlugin = select_plugin.SelectPlugin(pattern)
+		if m_commonPlugin then
+			m_commonPlugin:connect()
 		end
 	end
-	return commonPlugin
+	return m_commonPlugin
 end
 
 function closeCommonPlugin()
-	if commonPlugin then
-		commonPlugin:disconnect()
-		commonPlugin:delete()
-		commonPlugin = false
+	if m_commonPlugin then
+		m_commonPlugin:disconnect()
+		m_commonPlugin:delete()
+		m_commonPlugin = nil
 	end
 end
 
