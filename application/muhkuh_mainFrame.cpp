@@ -832,6 +832,8 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 		delete ptTmpRepositoryManager;
 		delete ptTmpPluginManager;
 	}
+	// delete config dialog
+	cfgDlg->Destroy();
 }
 
 
