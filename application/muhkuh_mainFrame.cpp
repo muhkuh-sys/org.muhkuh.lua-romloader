@@ -1559,6 +1559,7 @@ bool muhkuh_mainFrame::addTestTree(testTreeItemData *ptTestTreeItem)
 	bool fIsFirst;
 	wxString strMsg;
 	bool fResult;
+	testTreeItemData *ptOldTreeItem;
 
 
 	// get the full test name
@@ -1581,28 +1582,36 @@ bool muhkuh_mainFrame::addTestTree(testTreeItemData *ptTestTreeItem)
 		// loop over all elements except the last one in the path
 		sizCnt = 0;
 		sizLen = aPathElems.Count() - 1;
-		while( sizCnt<sizLen )
+		while( fResult==true && sizCnt<sizLen )
 		{
 			// get the path element
 			strPathElement = aPathElems.Item(sizCnt);
 
 			// look for this element in the test tree
 			searchId = m_treeCtrl->GetFirstChild(itemId, searchCookie);
-			if( searchId.IsOk()==false )
+			fIsFirst = true;
+			do
 			{
-				// no items in this branch, just add the new item
-				searchId = m_treeCtrl->AppendItem(itemId, strPathElement, -1, -1, NULL);
-			}
-			else
-			{
-				fIsFirst = true;
-				do
+				if( searchId.IsOk()==false )
 				{
-					iCmp = m_treeCtrl->GetItemText(searchId).Cmp(strPathElement);
+					// no items in this branch, just add the new item
+					searchId = m_treeCtrl->AppendItem(itemId, strPathElement, -1, -1, NULL);
+					break;
+				}
+				else
+				{
+					iCmp = m_treeCtrl->GetItemText(searchId).CmpNoCase(strPathElement);
 					if( iCmp==0 )
 					{
 						// a child with the requested name already exists
-						break;
+						// is this a folder or a test?
+						ptOldTreeItem = (testTreeItemData*)m_treeCtrl->GetItemData(searchId);
+						if( ptOldTreeItem!=NULL )
+						{
+							strMsg.Printf(_("The path '%s' conflicts with a test in this path!"), strTestPath.fn_str());
+							wxMessageBox(strMsg, _("Failed to add test"), wxICON_ERROR, this);
+							fResult = false;
+						}
 					}
 					else if( iCmp<0 )
 					{
@@ -1629,8 +1638,8 @@ bool muhkuh_mainFrame::addTestTree(testTreeItemData *ptTestTreeItem)
 						// the child with the requested name was just created
 						break;
 					}
-				} while( searchId.IsOk()==true );
-			}
+				}
+			} while( iCmp!=0 );
 
 			// the child is the new parent node
 			itemId = searchId;
@@ -1639,63 +1648,62 @@ bool muhkuh_mainFrame::addTestTree(testTreeItemData *ptTestTreeItem)
 			++sizCnt;
 		}
 
-		// ok, path created, now append the test item
-		strPathElement = aPathElems.Last();
-		// look for this element in the test tree
-		fIsFirst = true;
-		searchId = m_treeCtrl->GetFirstChild(itemId, searchCookie);
-		do
+		if( fResult==true )
 		{
-			// reached end of list?
-			if( searchId.IsOk()==false )
+			// ok, path created, now append the test item
+			strPathElement = aPathElems.Last();
+			// look for this element in the test tree
+			fIsFirst = true;
+			searchId = m_treeCtrl->GetFirstChild(itemId, searchCookie);
+			do
 			{
-				// end of list reached, just add the new item
-				searchId = m_treeCtrl->AppendItem(itemId, strPathElement, -1, -1, ptTestTreeItem);
-				// set iCmp to something != 0
-				iCmp = 1;
-				break;
-			}
-			else
-			{
-				iCmp = m_treeCtrl->GetItemText(searchId).Cmp(strPathElement);
-				if( iCmp<0 )
+				// reached end of list?
+				if( searchId.IsOk()==false )
 				{
-					// remember previous entry for the insert operation
-					prevId = searchId;
-					// move to next child
-					searchId = m_treeCtrl->GetNextChild(itemId, searchCookie);
-					// switch from append to insert operation
-					fIsFirst = false;
-				}
-				else if( iCmp>0 )
-				{
-					// create a new child if the item can't appear anymore because of the sort order
-					if( fIsFirst==true )
-					{
-						// append the new item before the fist one in this branch
-						searchId = m_treeCtrl->PrependItem(itemId, strPathElement, -1, -1, ptTestTreeItem);
-					}
-					else
-					{
-						// insert the new item before the current search position
-						searchId = m_treeCtrl->InsertItem(itemId, prevId, strPathElement, -1, -1, ptTestTreeItem);
-					}
-					// the child with the requested name was just created
+					// end of list reached, just add the new item
+					searchId = m_treeCtrl->AppendItem(itemId, strPathElement, -1, -1, ptTestTreeItem);
+					// set iCmp to something != 0
+					iCmp = 1;
 					break;
 				}
+				else
+				{
+					iCmp = m_treeCtrl->GetItemText(searchId).CmpNoCase(strPathElement);
+					if( iCmp<0 )
+					{
+						// remember previous entry for the insert operation
+						prevId = searchId;
+						// move to next child
+						searchId = m_treeCtrl->GetNextChild(itemId, searchCookie);
+						// switch from append to insert operation
+						fIsFirst = false;
+					}
+					else if( iCmp>0 )
+					{
+						// create a new child if the item can't appear anymore because of the sort order
+						if( fIsFirst==true )
+						{
+							// append the new item before the fist one in this branch
+							searchId = m_treeCtrl->PrependItem(itemId, strPathElement, -1, -1, ptTestTreeItem);
+						}
+						else
+						{
+							// insert the new item before the current search position
+							searchId = m_treeCtrl->InsertItem(itemId, prevId, strPathElement, -1, -1, ptTestTreeItem);
+						}
+						// the child with the requested name was just created
+						break;
+					}
+				}
+			} while( iCmp!=0 );
+	
+			// check for error (element already exists)
+			if( iCmp==0 )
+			{
+				strMsg.Printf(_("The test '%s' already exists, skipping new instance!"), strTestPath.fn_str());
+				wxMessageBox(strMsg, _("Failed to add test"), wxICON_ERROR, this);
+				fResult = false;
 			}
-		} while( iCmp!=0 );
-
-		// check for error (element already exists)
-		if( iCmp==0 )
-		{
-			strMsg.Printf(_("The test '%s' already exists, skipping new instance!"), strTestPath.fn_str());
-			wxMessageBox(strMsg, _("Failed to add test"), wxICON_ERROR, this);
-			fResult = false;
-		}
-		else
-		{
-			fResult = true;
 		}
 	}
 
