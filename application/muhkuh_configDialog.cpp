@@ -64,6 +64,11 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
  , m_ptPluginManager(ptPluginManager)
 {
 	size_t sizCnt, sizIdx;
+	wxConfigBase *pConfig;
+	int iPosX;
+	int iPosY;
+	int iSizW;
+	int iSizH;
 
 
 	m_strApplicationPath = strApplicationPath;
@@ -73,6 +78,24 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 
 	// create the controls
 	createControls();
+
+	// get dialog settings
+	pConfig = wxConfigBase::Get();
+	// set default values
+	iPosX = wxDefaultPosition.x;
+	iPosY = wxDefaultPosition.y;
+	iSizW = 320;
+	iSizH = 200;
+	if( pConfig!=NULL )
+	{
+		// get mainframe position and size
+		pConfig->SetPath(wxT("/ConfigFrame"));
+		iPosX = pConfig->Read(wxT("x"), iPosX);
+		iPosY = pConfig->Read(wxT("y"), iPosY);
+		iSizW = pConfig->Read(wxT("w"), iSizW);
+		iSizH = pConfig->Read(wxT("h"), iSizH);
+	}
+	SetSize(iPosX, iPosY, iSizW, iSizH);
 
 	// loop over all repositories and add them to the list
 	sizIdx = 0;
@@ -91,6 +114,30 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 	{
 		ShowNewPlugin(sizIdx);
 		++sizIdx;
+	}
+}
+
+
+muhkuh_configDialog::~muhkuh_configDialog(void)
+{
+	wxConfigBase *pConfig;
+	wxSize tSize;
+	wxPoint tPos;
+
+
+	tPos = GetPosition();
+	tSize = GetSize();
+
+	// set dialog settings
+	pConfig = wxConfigBase::Get();
+	if( pConfig!=NULL )
+	{
+		// get mainframe position and size
+		pConfig->SetPath(wxT("/ConfigFrame"));
+		pConfig->Write(wxT("x"), tPos.x);
+		pConfig->Write(wxT("y"), tPos.y);
+		pConfig->Write(wxT("w"), tSize.GetWidth());
+		pConfig->Write(wxT("h"), tSize.GetHeight());
 	}
 }
 

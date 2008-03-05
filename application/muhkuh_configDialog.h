@@ -49,6 +49,7 @@ class muhkuh_configDialog : public wxDialog
 {
 public:
 	muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, muhkuh_plugin_manager *ptPluginManager, muhkuh_repository_manager *ptRepositoryManager);
+	~muhkuh_configDialog(void);
 
 	void OnNewRepositoryButton(wxCommandEvent &event);
 	void OnEditRepositoryButton(wxCommandEvent &event);
