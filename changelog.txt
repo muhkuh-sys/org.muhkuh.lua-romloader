@@ -1,5 +1,26 @@
 Changelog
 
+Muhkuh 1.0.142
+
+ * save config dialog position and size
+ * fixed memory leak in config dialog
+ * fixed test tree creation
+ * test tree items are sorted case-insensitive
+ * show error if the path of a new test would overwrite an existing test
+ * added pattern parameter to tester.getCommonPlugin
+ * updated autoconf system to wxLua 2.8.7
+ * set lib postifx for wxlua libs in unix makefile
+ * added script to generate a source distribution from a fresh checkout
+ * fixed config dialog button states for no repository selected
+ * deleting the active repository kept old data in the test tree and test details
+ * deleting plugins and repositories broke the mapping between the tree items and the manager
+ * added "insert", "delete" and "toggle enable" key events to plugin list in config dialog
+ * added "insert" and "delete" key events to repository list in config dialog
+ * gen_version script generates muhkuh_version.h and muhkuh.iss with svn version number
+ * added readme file
+ * added changelog, display changelog in inno installer
+
+
 Muhkuh 1.0.123
  * fixed bitlib bit#31 bug in wxLua
  * removed testlinks in welcome page
