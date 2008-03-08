@@ -22,23 +22,7 @@
 #include "muhkuh_id.h"
 #include "muhkuh_configDialog.h"
 #include "muhkuh_config_reposEntryDialog.h"
-
-#include "icons/famfamfam_silk_icons_v013/accept.xpm"
-#include "icons/famfamfam_silk_icons_v013/bullet_green.xpm"
-#include "icons/famfamfam_silk_icons_v013/bullet_yellow.xpm"
-#include "icons/famfamfam_silk_icons_v013/cancel.xpm"
-#include "icons/famfamfam_silk_icons_v013/database.xpm"
-#include "icons/famfamfam_silk_icons_v013/database_add.xpm"
-#include "icons/famfamfam_silk_icons_v013/database_delete.xpm"
-#include "icons/famfamfam_silk_icons_v013/database_edit.xpm"
-#include "icons/famfamfam_silk_icons_v013/exclamation.xpm"
-#include "icons/famfamfam_silk_icons_v013/key.xpm"
-#include "icons/famfamfam_silk_icons_v013/plugin.xpm"
-#include "icons/famfamfam_silk_icons_v013/plugin_add.xpm"
-#include "icons/famfamfam_silk_icons_v013/plugin_delete.xpm"
-#include "icons/famfamfam_silk_icons_v013/plugin_disabled.xpm"
-#include "icons/famfamfam_silk_icons_v013/plugin_go.xpm"
-#include "icons/famfamfam_silk_icons_v013/tag_blue.xpm"
+#include "muhkuh_icons.h"
 
 
 BEGIN_EVENT_TABLE(muhkuh_configDialog, wxDialog)

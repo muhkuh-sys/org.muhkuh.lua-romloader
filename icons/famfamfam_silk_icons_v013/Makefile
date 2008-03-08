@@ -18,7 +18,7 @@ all: $(ICONS_XPM)
 	pngtopnm -alpha $< >$@
 
 %.xpm: %.apnm %.pnm
-	ppmtoxpm -name=icon_famfamfam_silk_$(notdir $(basename $@)) -alphamask=$^ | sed -e's/static char/static const char/' >$@
+	ppmtoxpm -name=icon_famfamfam_silk_$(notdir $(basename $@)) -alphamask=$^ | sed -e's/static char/const char/' >$@
 
 clean:
 	rm -f $(ICONS_XPM)

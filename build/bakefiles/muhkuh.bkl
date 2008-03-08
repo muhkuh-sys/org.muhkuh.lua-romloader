@@ -39,6 +39,7 @@
 			application/muhkuh_app.cpp
 			application/muhkuh_configDialog.cpp
 			application/muhkuh_config_reposEntryDialog.cpp
+			application/muhkuh_icons.cpp
 			application/muhkuh_mainFrame.cpp
 			application/muhkuh_plugin.cpp
 			application/muhkuh_plugin_manager.cpp

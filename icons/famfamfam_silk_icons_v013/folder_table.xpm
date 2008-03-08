@@ -1,5 +1,5 @@
 /* XPM */
-static const char *icon_famfamfam_silk_folder_table[] = {
+const char *icon_famfamfam_silk_folder_table[] = {
 /* width height ncolors chars_per_pixel */
 "16 16 151 2",
 /* colors */

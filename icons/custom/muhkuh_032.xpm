@@ -1,5 +1,5 @@
 /* XPM */
-static const char * muhkuh_032_xpm[] = {
+const char * muhkuh_032_xpm[] = {
 "32 32 281 2",
 "  	c None",
 ". 	c #2C200E",

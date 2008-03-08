@@ -1,5 +1,5 @@
 /* XPM */
-static const char *icon_famfamfam_silk_database_refresh[] = {
+const char *icon_famfamfam_silk_database_refresh[] = {
 /* width height ncolors chars_per_pixel */
 "16 16 150 2",
 /* colors */

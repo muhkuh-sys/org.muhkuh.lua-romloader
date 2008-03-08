@@ -1,5 +1,5 @@
 /* XPM */
-static const char *icon_famfamfam_silk_cancel[] = {
+const char *icon_famfamfam_silk_cancel[] = {
 /* width height ncolors chars_per_pixel */
 "16 16 105 2",
 /* colors */

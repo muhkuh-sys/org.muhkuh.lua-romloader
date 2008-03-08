@@ -1,5 +1,5 @@
 /* XPM */
-static const char *icon_famfamfam_silk_information[] = {
+const char *icon_famfamfam_silk_information[] = {
 /* width height ncolors chars_per_pixel */
 "16 16 161 2",
 /* colors */

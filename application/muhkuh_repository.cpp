@@ -26,14 +26,8 @@
 #include <wx/txtstrm.h>
 #include <wx/url.h>
 
-
+#include "muhkuh_icons.h"
 #include "muhkuh_repository.h"
-
-
-#include "icons/famfamfam_silk_icons_v013/folder_table.xpm"
-#include "icons/famfamfam_silk_icons_v013/database.xpm"
-#include "icons/famfamfam_silk_icons_v013/script.xpm"
-#include "icons/famfamfam_silk_icons_v013/exclamation.xpm"
 
 
 muhkuh_repository::muhkuh_repository(wxString strName)

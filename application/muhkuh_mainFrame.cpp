@@ -28,6 +28,7 @@
 #include "muhkuh_lua_interface.h"
 #include "muhkuh_mainFrame.h"
 #include "muhkuh_configDialog.h"
+#include "muhkuh_icons.h"
 #include "readFsFile.h"
 
 //-------------------------------------
@@ -51,25 +52,6 @@ WXLUA_DECLARE_BIND_WXHTML
 WXLUA_DECLARE_BIND_WXAUI
 
 muhkuh_mainFrame *g_ptMainFrame;
-
-//-------------------------------------
-// the main window icons
-
-#include "muhkuh_016.xpm"
-#include "muhkuh_032.xpm"
-#include "muhkuh_064.xpm"
-#include "muhkuh_128.xpm"
-
-//-------------------------------------
-// the control icons
-
-#include "icons/famfamfam_silk_icons_v013/cancel.xpm"
-#include "icons/famfamfam_silk_icons_v013/database_refresh.xpm"
-#include "icons/famfamfam_silk_icons_v013/door_out.xpm"
-#include "icons/famfamfam_silk_icons_v013/help.xpm"
-#include "icons/famfamfam_silk_icons_v013/information.xpm"
-#include "icons/famfamfam_silk_icons_v013/lightbulb.xpm"
-#include "icons/famfamfam_silk_icons_v013/wrench.xpm"
 
 //-------------------------------------
 

@@ -1,5 +1,5 @@
 /* XPM */
-static const char *icon_famfamfam_silk_bullet_green[] = {
+const char *icon_famfamfam_silk_bullet_green[] = {
 /* width height ncolors chars_per_pixel */
 "16 16 36 1",
 /* colors */
