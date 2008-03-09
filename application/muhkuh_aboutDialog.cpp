@@ -336,7 +336,7 @@ void muhkuh_aboutDialog::setAuthors(wxHtmlWindow *ptHtmlWin)
 
 	// add one author
 	strMsg += wxT("<dt>Chris</dt>");
-	strMsg += wxT("<dd><a href=\"mailto:DocBacardi@gmx.net\">DocBacardi@gmx.net</a><p></dd>");
+	strMsg += wxT("<dd><a href=\"mailto:doc_bacardi@users.sourceforge.net\">doc_bacardi@users.sourceforge.net</a><p></dd>");
 
 	// close the list of authors
 	strMsg += wxT("</dl>");
