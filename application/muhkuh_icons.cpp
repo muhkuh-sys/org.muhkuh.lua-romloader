@@ -27,6 +27,8 @@
 #include "icons/custom/muhkuh_128.xpm"
 
 #include "icons/famfamfam_silk_icons_v013/accept.xpm"
+#include "icons/famfamfam_silk_icons_v013/arrow_down.xpm"
+#include "icons/famfamfam_silk_icons_v013/arrow_up.xpm"
 #include "icons/famfamfam_silk_icons_v013/bullet_green.xpm"
 #include "icons/famfamfam_silk_icons_v013/bullet_yellow.xpm"
 #include "icons/famfamfam_silk_icons_v013/cancel.xpm"
@@ -37,6 +39,9 @@
 #include "icons/famfamfam_silk_icons_v013/database_refresh.xpm"
 #include "icons/famfamfam_silk_icons_v013/door_out.xpm"
 #include "icons/famfamfam_silk_icons_v013/exclamation.xpm"
+#include "icons/famfamfam_silk_icons_v013/folder_add.xpm"
+#include "icons/famfamfam_silk_icons_v013/folder_delete.xpm"
+#include "icons/famfamfam_silk_icons_v013/folder_edit.xpm"
 #include "icons/famfamfam_silk_icons_v013/folder_table.xpm"
 #include "icons/famfamfam_silk_icons_v013/help.xpm"
 #include "icons/famfamfam_silk_icons_v013/information.xpm"
@@ -50,3 +55,6 @@
 #include "icons/famfamfam_silk_icons_v013/script.xpm"
 #include "icons/famfamfam_silk_icons_v013/tag_blue.xpm"
 #include "icons/famfamfam_silk_icons_v013/wrench.xpm"
+
+#include "icons/lua/lua.xpm"
+

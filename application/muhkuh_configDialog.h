@@ -30,6 +30,7 @@
 #ifndef __MUHKUH_CONFIGDIALOG_H__
 #define __MUHKUH_CONFIGDIALOG_H__
 
+#include "muhkuh_dirlistbox.h"
 #include "muhkuh_plugin_manager.h"
 #include "muhkuh_repository_manager.h"
 
@@ -65,10 +66,18 @@ public:
 	void OnPluginSelectionChanging(wxTreeEvent &event);
 	void OnPluginKey(wxTreeEvent &event);
 
+	void OnAddLuaIncludePathButton(wxCommandEvent &event);
+	void OnRemoveLuaIncludePathButton(wxCommandEvent &event);
+	void OnEditLuaIncludePathButton(wxCommandEvent &event);
+	void OnMoveUpLuaIncludePathButton(wxCommandEvent &event);
+	void OnMoveDownLuaIncludePathButton(wxCommandEvent &event);
+	void OnLuaIncludePathSelectionChanged(wxCommandEvent &event);
+
 private:
 	void createControls(void);
 	wxPanel *createControls_repository(wxWindow *ptParent);
 	wxPanel *createControls_plugin(wxWindow *ptParent);
+	wxPanel *createControls_lua(wxWindow *ptParent);
 
 	void ShowNewRepository(long lIdx);
 	void ShowNewPlugin(long lIdx);
@@ -84,10 +93,15 @@ private:
 	void plugin_delete(void);
 	void plugin_enable(bool fEnablePlugin);
 
+	void luaIncludePathUpdateButtons(int iSelection);
+
+
 	muhkuh_repository_manager *m_ptRepositoryManager;
 	muhkuh_plugin_manager *m_ptPluginManager;
 
 	wxString m_strApplicationPath;
+
+	wxArrayString m_astrLuaPaths;
 
 	// the controls
 	wxTreebook *m_treeBook;
@@ -96,8 +110,9 @@ private:
 	wxBoxSizer *m_buttonSizer;
 	wxToolBar *m_repositoryToolBar;
 	wxToolBar *m_pluginToolBar;
-	wxButton *m_buttonOk;
-	wxButton *m_buttonCancel;
+	wxTextCtrl *m_ptStartupCodeText;
+	wxToolBar *m_luaPathToolBar;
+	muhkuh_dirlistbox *m_ptPathListBox;
 
     DECLARE_EVENT_TABLE()
 };

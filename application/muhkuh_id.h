@@ -60,6 +60,12 @@ enum
 	muhkuh_configDialog_RemovePlugin,
 	muhkuh_configDialog_EnablePlugin,
 	muhkuh_configDialog_DisablePlugin,
+	muhkuh_configDialog_LuaPathList,
+	muhkuh_configDialog_LuaAddPath,
+	muhkuh_configDialog_LuaDeletePath,
+	muhkuh_configDialog_LuaEditPath,
+	muhkuh_configDialog_LuaMovePathUp,
+	muhkuh_configDialog_LuaMovePathDown,
 	muhkuh_configReposEntryDialog_radioDirscan,
 	muhkuh_configReposEntryDialog_radioFilelist,
 	muhkuh_configReposEntryDialog_radioSingleXml,
@@ -67,6 +73,9 @@ enum
 	muhkuh_configReposEntryDialog_ButtonSingleXmlLocationBrowse,
 	muhkuh_configReposEntryDialog_CheckboxDirscanRelPaths,
 	muhkuh_configReposEntryDialog_CheckboxSingleXmlRelPaths,
+
+	muhkuh_dirlistbox_BrowseButton,
+	muhkuh_dirlistbox_TextCtrl,
 
 	muhkuh_scanner_thread_event,
 	muhkuh_tester_thread_event,

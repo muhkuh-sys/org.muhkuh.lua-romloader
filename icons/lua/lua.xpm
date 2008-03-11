@@ -1,5 +1,5 @@
 /* XPM */
-static char * lua_xpm[] = {
+const char * lua_xpm[] = {
 "16 16 5 1",
 " 	c None",
 ".	c #C0C0C0",
