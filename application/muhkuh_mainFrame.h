@@ -225,6 +225,11 @@ private:
 	// the default test details page for 'no test selected'
 	wxString m_strTestDetailsEmpty;
 
+	// the lua include path
+	wxString m_strLuaIncludePath;
+	// lua startup code
+	wxString m_strLuaStartupCode;
+
 	// the locale object
 	wxLocale m_locale;
 

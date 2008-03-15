@@ -49,7 +49,7 @@ public:
 class muhkuh_configDialog : public wxDialog
 {
 public:
-	muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, muhkuh_plugin_manager *ptPluginManager, muhkuh_repository_manager *ptRepositoryManager);
+	muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, muhkuh_plugin_manager *ptPluginManager, muhkuh_repository_manager *ptRepositoryManager, wxString strLuaIncludePath, wxString strLuaStartupCode);
 	~muhkuh_configDialog(void);
 
 	void OnNewRepositoryButton(wxCommandEvent &event);
@@ -72,6 +72,9 @@ public:
 	void OnMoveUpLuaIncludePathButton(wxCommandEvent &event);
 	void OnMoveDownLuaIncludePathButton(wxCommandEvent &event);
 	void OnLuaIncludePathSelectionChanged(wxCommandEvent &event);
+
+	wxString GetLuaIncludePath(void) const;
+	wxString GetLuaStartupCode(void) const;
 
 private:
 	void createControls(void);

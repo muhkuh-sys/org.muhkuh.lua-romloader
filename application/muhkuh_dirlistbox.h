@@ -21,17 +21,19 @@
 #include <wx/wx.h>
 #include <wx/dynarray.h>
 #include <wx/vlbox.h>
+#include <wx/tooltip.h>
 
 
 #ifndef __MUHKUH_DIRLISTBOX_H__
 #define __MUHKUH_DIRLISTBOX_H__
+
 
 WX_DEFINE_ARRAY_INT(int, taiPathPixelSize);
 
 class muhkuh_dirlistbox : public wxVListBox
 {
 public:
-	muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxPoint& pos, const wxSize& size, const wxArrayString& astrPaths, long style = 0, const wxString& name = wxVListBoxNameStr);
+	muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxPoint& pos, const wxSize& size, const wxArrayString& astrPaths, const wxString &strAppPath, long style);
 	~muhkuh_dirlistbox(void);
 
 	size_t Append(const wxString&  item);
@@ -46,6 +48,8 @@ public:
 	void OnTextEnter(wxCommandEvent &event);
 	void OnKeyDown(wxKeyEvent& event);
 
+	wxString GetPaths(wxChar cSeparator) const;
+
 protected:
 	virtual void OnDrawItem(wxDC& dc, const wxRect& rect, size_t n) const;
 	virtual wxCoord OnMeasureItem(size_t n) const;
@@ -57,6 +61,9 @@ private:
 	wxArrayString m_astrPaths;
 	taiPathPixelSize m_aiPathPixelHeight;
 	taiPathPixelSize m_aiPathPixelWidth;
+
+	// the application path
+	wxString m_strApplicationPath;
 
 	// the default height for all lines
 	wxCoord tDefaultHeight;

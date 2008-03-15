@@ -430,6 +430,11 @@ void muhkuh_mainFrame::read_config(void)
 	m_fShowStartupTips = pConfig->Read(wxT("showtips"), true);
 	m_sizStartupTipsIdx = pConfig->Read(wxT("tipidx"), (long)0);
 
+	// get lua settings
+	pConfig->SetPath(wxT("/Lua"));
+	m_strLuaIncludePath = pConfig->Read(wxT("includepaths"), wxT("lua/?.lua"));
+	m_strLuaStartupCode = pConfig->Read(wxT("startupcode"), wxT("require(\"muhkuh_system\")\nmuhkuh_system.boot_xml()\n"));
+
 	// get all plugins
 	m_ptPluginManager->read_config(pConfig);
 
@@ -544,6 +549,11 @@ void muhkuh_mainFrame::write_config(void)
 	pConfig->Write(wxT("tipidx"), (long)m_sizStartupTipsIdx);
 	pConfig->SetPath(wxT("/"));
 
+	// get lua settings
+	pConfig->SetPath(wxT("/Lua"));
+	pConfig->Write(wxT("includepaths"), m_strLuaIncludePath);
+	pConfig->Write(wxT("startupcode"), m_strLuaStartupCode);
+	pConfig->SetPath(wxT("/"));
 
 	// save all plugins
 	m_ptPluginManager->write_config(pConfig);
@@ -789,9 +799,14 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 	ptTmpRepositoryManager = new muhkuh_repository_manager(m_ptRepositoryManager);
 
 	// show config dialog
-	cfgDlg = new muhkuh_configDialog(this, m_strApplicationPath, ptTmpPluginManager, ptTmpRepositoryManager);
+	cfgDlg = new muhkuh_configDialog(this, m_strApplicationPath, ptTmpPluginManager, ptTmpRepositoryManager, m_strLuaIncludePath, m_strLuaStartupCode);
 	if( cfgDlg->ShowModal()==wxID_OK )
 	{
+		m_strLuaIncludePath = cfgDlg->GetLuaIncludePath();
+		wxLogDebug(wxT("New Lua include path: ") + m_strLuaIncludePath);
+		m_strLuaStartupCode = cfgDlg->GetLuaStartupCode();
+		wxLogDebug(wxT("New Lua startup code: ") + m_strLuaStartupCode);
+
 		// copy tmp plugin manager over current one
 		delete m_ptPluginManager;
 		m_ptPluginManager = ptTmpPluginManager;
@@ -856,12 +871,9 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 {
 	bool fCreated;
 	int iResult;
-	wxString strLuaCode;
 	wxString strMsg;
 	wxString strErrorMsg;
-	wxString strLuaSystemModulePath;
 	wxString strDebug;
-	wxFileName cfgName;
 	int iGetTop;
 	int iLineNr;
 
@@ -872,10 +884,6 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 
 	strDebug.Printf(wxT("execute test '") + m_strRunningTestName + wxT("', index %d"), uiIndex);
 	wxLogMessage(strDebug);
-
-	// get the boot code
-	strLuaCode  = wxT("require(\"muhkuh_system\")\n");
-	strLuaCode += wxT("muhkuh_system.boot_xml()\n");
 
 	// delete old lua state
 	if( m_ptLuaState!=NULL )
@@ -950,11 +958,7 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	// return one function for all module names.
 
 	// set the package path
-	// TODO: use a config option here
-	cfgName.Assign(m_strApplicationPath, wxT("?.lua"));
-	cfgName.AppendDir(wxT("lua"));
-	strLuaSystemModulePath = cfgName.GetFullPath();
-	wxLogMessage(wxT("Lua path:") + strLuaSystemModulePath);
+	wxLogMessage(wxT("Lua path:") + m_strLuaIncludePath);
 
 	m_ptLuaState->lua_GetGlobal(wxT("package"));
 	if( m_ptLuaState->lua_IsNoneOrNil(-1)==true )
@@ -962,7 +966,7 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 		wxLogError(_("Failed to get the global 'package'"));
 		return;
 	}
-	m_ptLuaState->lua_PushString(strLuaSystemModulePath);
+	m_ptLuaState->lua_PushString(m_strLuaIncludePath);
 	m_ptLuaState->lua_SetField(-2, wxT("path"));
 
 
@@ -993,7 +997,7 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	luaSetLogMarker();
 
 	iGetTop = m_ptLuaState->lua_GetTop();
-	iResult = m_ptLuaState->RunString(strLuaCode, wxT("system boot"));
+	iResult = m_ptLuaState->RunString(m_strLuaStartupCode, wxT("system boot"));
 	if( iResult!=0 )
 	{
 		wxlua_errorinfo(m_ptLuaState->GetLuaState(), iResult, iGetTop, &strErrorMsg, &iLineNr);

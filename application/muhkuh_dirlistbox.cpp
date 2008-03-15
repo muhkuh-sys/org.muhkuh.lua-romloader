@@ -19,6 +19,9 @@
  ***************************************************************************/
 
 #include "muhkuh_dirlistbox.h"
+
+#include <wx/filename.h>
+
 #include "muhkuh_id.h"
 
 BEGIN_EVENT_TABLE(muhkuh_dirlistbox, wxVListBox)
@@ -26,9 +29,10 @@ BEGIN_EVENT_TABLE(muhkuh_dirlistbox, wxVListBox)
 	EVT_BUTTON(muhkuh_dirlistbox_BrowseButton,		muhkuh_dirlistbox::OnBrowseButton)
 END_EVENT_TABLE()
 
-muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxPoint& pos, const wxSize& size, const wxArrayString& astrPaths, long style, const wxString& name)
- : wxVListBox(parent, id, pos, size, style, wxVListBoxNameStr)
+muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxPoint& pos, const wxSize& size, const wxArrayString& astrPaths, const wxString &strAppPath, long style)
+ : wxVListBox(parent, id, pos, size, style)
  , m_astrPaths(astrPaths)
+ , m_strApplicationPath(strAppPath)
 {
 	wxSize tSize;
 	size_t sizCnt;
@@ -50,6 +54,7 @@ muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxPo
 		m_aiPathPixelWidth.Add( tSize.GetWidth() );
 		++sizCnt;
 	}
+	SetLineCount(sizMax);
 
 	// get the size of "..."
 	tSize = m_paintDC->GetTextExtent( wxT("...") );
@@ -254,18 +259,51 @@ void muhkuh_dirlistbox::OnBrowseButton(wxCommandEvent &event)
 {
 	wxDirDialog *testPathDialog;
 	wxString strDialogInitPath;
+	wxString strWild;
+	wxString strPath;
+	int iFirstQm;
+	wxFileName fileName;
 
 
 	if( sizActiveItem>=0 )
 	{
 		strDialogInitPath = m_ptTextCtrl->GetValue();
+		// find first '?'
+		iFirstQm = strDialogInitPath.Find(wxT('?'));
+		if( iFirstQm!=wxNOT_FOUND )
+		{
+			// cut off wildcart
+			strWild = strDialogInitPath.Mid(iFirstQm);
+			if( iFirstQm==0 )
+			{
+				// only wildcart
+				strPath = wxEmptyString;
+			}
+			else
+			{
+				strPath = strDialogInitPath.Left(iFirstQm);
+			}
+		}
+		else
+		{
+			// no wildcart -> use the whole string
+			strWild = wxEmptyString;
+			strPath = strDialogInitPath;
+		}
+
+		fileName.Assign(strPath);
+		if(fileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE))
+		{
+			strPath = fileName.GetFullPath();
+		}
 
 		testPathDialog = new wxDirDialog(this, _("Choose the lua include path"));
-		testPathDialog->SetPath(strDialogInitPath);
+		testPathDialog->SetPath(strPath);
 
 		if( testPathDialog->ShowModal()==wxID_OK )
 		{
-			m_ptTextCtrl->SetValue(testPathDialog->GetPath());
+			strPath = testPathDialog->GetPath() + wxFileName::GetPathSeparator() + strWild;
+			m_ptTextCtrl->SetValue(strPath);
 		}
 		testPathDialog->Destroy();
 	}
@@ -325,4 +363,29 @@ void muhkuh_dirlistbox::stopEditing(muhkuh_dirlistbox *ptSelf)
 		ptSelf->sizActiveItem = -1;
 	}
 }
+
+
+wxString muhkuh_dirlistbox::GetPaths(wxChar cSeparator) const
+{
+	wxString strPaths;
+	size_t sizCnt;
+	size_t sizMax;
+
+
+	sizCnt = 0;
+	sizMax = m_astrPaths.GetCount();
+	if( sizMax>0 )
+	{
+		while( (sizCnt+1)<sizMax )
+		{
+			strPaths += m_astrPaths.Item(sizCnt) + cSeparator;
+			++sizCnt;
+		}
+		strPaths += m_astrPaths.Item(sizCnt);
+	}
+
+	wxLogMessage(strPaths);
+	return strPaths;
+}
+
 

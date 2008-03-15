@@ -50,7 +50,7 @@ BEGIN_EVENT_TABLE(muhkuh_configDialog, wxDialog)
 END_EVENT_TABLE()
 
 
-muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, muhkuh_plugin_manager *ptPluginManager, muhkuh_repository_manager *ptRepositoryManager)
+muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, muhkuh_plugin_manager *ptPluginManager, muhkuh_repository_manager *ptRepositoryManager, wxString strLuaIncludePath, wxString strLuaStartupCode)
  : wxDialog(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER)
  , m_ptRepositoryManager(ptRepositoryManager)
  , m_ptPluginManager(ptPluginManager)
@@ -61,12 +61,32 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 	int iPosY;
 	int iSizW;
 	int iSizH;
+	int iColonPos;
 
 
 	m_strApplicationPath = strApplicationPath;
 
 	// set the title
 	SetTitle(_("Muhkuh Settings"));
+
+	// split up the include paths
+	while( strLuaIncludePath.IsEmpty()==false )
+	{
+		iColonPos = strLuaIncludePath.Find(wxT(';'));
+		if( iColonPos==wxNOT_FOUND )
+		{
+			m_astrLuaPaths.Add( strLuaIncludePath );
+			break;
+		}
+		else
+		{
+			if( iColonPos>0 )
+			{
+				m_astrLuaPaths.Add( strLuaIncludePath.Left(iColonPos-1) );
+			}
+			strLuaIncludePath = strLuaIncludePath.Mid(iColonPos+1);
+		}
+	}
 
 	// create the controls
 	createControls();
@@ -78,6 +98,7 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 	iPosY = wxDefaultPosition.y;
 	iSizW = 320;
 	iSizH = 200;
+
 	if( pConfig!=NULL )
 	{
 		// get mainframe position and size
@@ -107,6 +128,9 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 		ShowNewPlugin(sizIdx);
 		++sizIdx;
 	}
+
+	// set the lua startup code
+	m_ptStartupCodeText->SetValue(strLuaStartupCode);
 }
 
 
@@ -276,7 +300,7 @@ wxPanel *muhkuh_configDialog::createControls_lua(wxWindow *ptParent)
 	ptPathSizer = new wxStaticBoxSizer(wxVERTICAL, ptLuaPanel, _("Include Paths"));
 	ptMainSizer->Add(ptPathSizer, 1, wxEXPAND);
 	lStyle = wxLB_SINGLE|wxLB_HSCROLL;
-	m_ptPathListBox = new muhkuh_dirlistbox(ptLuaPanel, muhkuh_configDialog_LuaPathList, wxDefaultPosition, wxDefaultSize, m_astrLuaPaths, lStyle);
+	m_ptPathListBox = new muhkuh_dirlistbox(ptLuaPanel, muhkuh_configDialog_LuaPathList, wxDefaultPosition, wxDefaultSize, m_astrLuaPaths, m_strApplicationPath, lStyle);
 	ptPathSizer->Add(m_ptPathListBox, 1, wxEXPAND);
 
 	// create the path toolbar
@@ -847,6 +871,7 @@ void muhkuh_configDialog::OnAddLuaIncludePathButton(wxCommandEvent &event)
 	wxDirDialog *includePathDialog;
 	wxFileName fileName;
 	wxString strDialogInitPath;
+	wxString strPath;
 	int iSelection;
 
 
@@ -857,7 +882,8 @@ void muhkuh_configDialog::OnAddLuaIncludePathButton(wxCommandEvent &event)
 
 	if( includePathDialog->ShowModal()==wxID_OK )
 	{
-		iSelection = m_ptPathListBox->Append(includePathDialog->GetPath());
+		strPath = includePathDialog->GetPath() + wxFileName::GetPathSeparator() + wxT("?.lua");
+		iSelection = m_ptPathListBox->Append(strPath);
 		m_ptPathListBox->SetSelection(iSelection);
 		luaIncludePathUpdateButtons(iSelection);
 	}
@@ -994,5 +1020,17 @@ void muhkuh_configDialog::luaIncludePathUpdateButtons(int iSelection)
 	m_luaPathToolBar->EnableTool(muhkuh_configDialog_LuaEditPath, fPathSelected);
 	m_luaPathToolBar->EnableTool(muhkuh_configDialog_LuaMovePathUp, fCanMoveUp);
 	m_luaPathToolBar->EnableTool(muhkuh_configDialog_LuaMovePathDown, fCanMoveDown);
+}
+
+
+wxString muhkuh_configDialog::GetLuaIncludePath(void) const
+{
+	return m_ptPathListBox->GetPaths(wxT(';'));
+}
+
+
+wxString muhkuh_configDialog::GetLuaStartupCode(void) const
+{
+	return m_ptStartupCodeText->GetValue();
 }
 
