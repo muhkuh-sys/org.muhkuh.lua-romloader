@@ -51,6 +51,12 @@ enum
 	muhkuh_mainFrame_menuTestRescan,
 
 	muhkuh_configDialog_TreeBook,
+	muhkuh_configDialog_RadioWelcomeBuiltIn,
+	muhkuh_configDialog_RadioWelcomeFile,
+	muhkuh_configDialog_RadioDetailsBuiltIn,
+	muhkuh_configDialog_RadioDetailsFile,
+	muhkuh_configDialog_StartPageBrowse,
+	muhkuh_configDialog_DetailsPageBrowse,
 	muhkuh_configDialog_RepositoryList,
 	muhkuh_configDialog_PluginList,
 	muhkuh_configDialog_AddRepository,

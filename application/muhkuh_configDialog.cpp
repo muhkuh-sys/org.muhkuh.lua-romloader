@@ -26,6 +26,13 @@
 
 
 BEGIN_EVENT_TABLE(muhkuh_configDialog, wxDialog)
+	EVT_RADIOBUTTON(muhkuh_configDialog_RadioWelcomeBuiltIn,	muhkuh_configDialog::OnRadioWelcomeBuiltIn)
+	EVT_RADIOBUTTON(muhkuh_configDialog_RadioWelcomeFile,		muhkuh_configDialog::OnRadioWelcomeFile)
+	EVT_RADIOBUTTON(muhkuh_configDialog_RadioDetailsBuiltIn,	muhkuh_configDialog::OnRadioDetailsBuiltIn)
+	EVT_RADIOBUTTON(muhkuh_configDialog_RadioDetailsFile,		muhkuh_configDialog::OnRadioDetailsFile)
+	EVT_BUTTON(muhkuh_configDialog_StartPageBrowse,			muhkuh_configDialog::OnBrowseStartPageButton)
+	EVT_BUTTON(muhkuh_configDialog_DetailsPageBrowse,		muhkuh_configDialog::OnBrowseDetailPageButton)
+
 	EVT_TOOL(muhkuh_configDialog_AddRepository,			muhkuh_configDialog::OnNewRepositoryButton)
 	EVT_TOOL(muhkuh_configDialog_EditRepository,			muhkuh_configDialog::OnEditRepositoryButton)
 	EVT_TOOL(muhkuh_configDialog_RemoveRepository,			muhkuh_configDialog::OnDeleteRepositoryButton)
@@ -50,7 +57,7 @@ BEGIN_EVENT_TABLE(muhkuh_configDialog, wxDialog)
 END_EVENT_TABLE()
 
 
-muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, muhkuh_plugin_manager *ptPluginManager, muhkuh_repository_manager *ptRepositoryManager, wxString strLuaIncludePath, wxString strLuaStartupCode)
+muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, wxString strWelcomeFile, wxString strDetailsFile, muhkuh_plugin_manager *ptPluginManager, muhkuh_repository_manager *ptRepositoryManager, wxString strLuaIncludePath, wxString strLuaStartupCode)
  : wxDialog(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER)
  , m_ptRepositoryManager(ptRepositoryManager)
  , m_ptPluginManager(ptPluginManager)
@@ -62,6 +69,7 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 	int iSizW;
 	int iSizH;
 	int iColonPos;
+	bool fUseBuiltin;
 
 
 	m_strApplicationPath = strApplicationPath;
@@ -110,6 +118,23 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 	}
 	SetSize(iPosX, iPosY, iSizW, iSizH);
 
+	// set the welcome file
+	fUseBuiltin = strWelcomeFile.IsEmpty();
+	m_ptRadioBuiltinWelcome->SetValue(fUseBuiltin);
+	m_ptRadioFileWelcome->SetValue(!fUseBuiltin);
+	m_ptTextStartPage->SetValue(strWelcomeFile);
+	m_ptTextStartPage->Enable(!fUseBuiltin);
+	m_ptButtonStartPage->Enable(!fUseBuiltin);
+
+	// set the details file
+	fUseBuiltin = strDetailsFile.IsEmpty();
+	m_ptRadioBuiltinDetails->SetValue(fUseBuiltin);
+	m_ptRadioFileDetails->SetValue(!fUseBuiltin);
+	m_ptTextDetailsPage->SetValue(strDetailsFile);
+	m_ptTextDetailsPage->Enable(!fUseBuiltin);
+	m_ptButtonDetailsPage->Enable(!fUseBuiltin);
+
+
 	// loop over all repositories and add them to the list
 	sizIdx = 0;
 	sizCnt = m_ptRepositoryManager->GetRepositoryCount();
@@ -131,6 +156,9 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 
 	// set the lua startup code
 	m_ptStartupCodeText->SetValue(strLuaStartupCode);
+
+	// set focus to the tree book
+	m_treeBook->SetFocus();
 }
 
 
@@ -174,15 +202,17 @@ void muhkuh_configDialog::createControls(void)
 	// create the treebook
 	m_treeBook = new wxTreebook(this, muhkuh_configDialog_TreeBook);
 	ptMainSizer->Add(m_treeBook, 1, wxEXPAND);
-	ptTreeBookImageList = new wxImageList(16, 16, true, 2);
+	ptTreeBookImageList = new wxImageList(16, 16, true, 4);
+	ptTreeBookImageList->Add( wxIcon(icon_famfamfam_silk_application_form_edit) );
 	ptTreeBookImageList->Add( wxIcon(icon_famfamfam_silk_database) );
 	ptTreeBookImageList->Add( wxIcon(icon_famfamfam_silk_plugin) );
 	ptTreeBookImageList->Add( wxIcon(lua_xpm) );
 	m_treeBook->AssignImageList(ptTreeBookImageList);
 
-	m_treeBook->AddPage(createControls_repository(m_treeBook), _("Repositories"), true, 0);
-	m_treeBook->AddPage(createControls_plugin(m_treeBook), _("Plugins"), false, 1);
-	m_treeBook->AddPage(createControls_lua(m_treeBook), _("Lua"), false, 2);
+	m_treeBook->AddPage(createControls_application(m_treeBook), _("Application"), true, 0);
+	m_treeBook->AddPage(createControls_repository(m_treeBook), _("Repositories"), false, 1);
+	m_treeBook->AddPage(createControls_plugin(m_treeBook), _("Plugins"), false, 2);
+	m_treeBook->AddPage(createControls_lua(m_treeBook), _("Lua"), false, 3);
 
 	ptbuttonSizer = new wxBoxSizer(wxHORIZONTAL);
 	ptMainSizer->Add(ptbuttonSizer, 0, wxEXPAND);
@@ -198,11 +228,78 @@ void muhkuh_configDialog::createControls(void)
 }
 
 
+wxPanel *muhkuh_configDialog::createControls_application(wxWindow *ptParent)
+{
+	wxPanel *ptApplicationPanel;
+	wxBoxSizer *ptMainSizer;
+	wxStaticBoxSizer *ptWelcomePageSizer;
+	wxStaticBoxSizer *ptDetailsPageSizer;
+	wxBoxSizer *ptWelcomeFileSizer;
+	wxBoxSizer *ptDetailsFileSizer;
+
+
+	// create the repository page
+	ptApplicationPanel = new wxPanel(ptParent);
+
+	// create the main sizer
+	ptMainSizer = new wxBoxSizer(wxVERTICAL);
+	ptApplicationPanel->SetSizer(ptMainSizer);
+
+	// create the welcome page sizer
+	ptWelcomePageSizer = new wxStaticBoxSizer(wxVERTICAL, ptApplicationPanel, _("Welcome Page"));
+	ptMainSizer->Add(ptWelcomePageSizer, 1, wxEXPAND);
+
+	// create the radio button "builtin"
+	m_ptRadioBuiltinWelcome = new wxRadioButton(ptApplicationPanel, muhkuh_configDialog_RadioWelcomeBuiltIn, _("Built-In"), wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
+	ptWelcomePageSizer->Add(m_ptRadioBuiltinWelcome, 0, 0);
+
+	// create the radio button "file"
+	m_ptRadioFileWelcome = new wxRadioButton(ptApplicationPanel, muhkuh_configDialog_RadioWelcomeFile, _("File"), wxDefaultPosition, wxDefaultSize, 0);
+	ptWelcomePageSizer->Add(m_ptRadioFileWelcome, 0, 0);
+
+	// create the file sizer
+	ptWelcomeFileSizer = new wxBoxSizer(wxHORIZONTAL);
+	ptWelcomePageSizer->Add(ptWelcomeFileSizer, 0, wxEXPAND|wxLEFT, 32);
+
+	// fill the input grid
+	m_ptTextStartPage = new wxTextCtrl(ptApplicationPanel, wxID_ANY);
+	m_ptButtonStartPage = new wxBitmapButton(ptApplicationPanel, muhkuh_configDialog_StartPageBrowse, icon_famfamfam_silk_folder);
+	ptWelcomeFileSizer->Add(m_ptTextStartPage, 1, wxEXPAND);
+	ptWelcomeFileSizer->Add(m_ptButtonStartPage);
+
+
+
+	// create the details page sizer
+	ptDetailsPageSizer = new wxStaticBoxSizer(wxVERTICAL, ptApplicationPanel, _("Details Page"));
+	ptMainSizer->Add(ptDetailsPageSizer, 1, wxEXPAND);
+
+	// create the radio button "builtin"
+	m_ptRadioBuiltinDetails = new wxRadioButton(ptApplicationPanel, muhkuh_configDialog_RadioDetailsBuiltIn, _("Built-In"), wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
+	ptDetailsPageSizer->Add(m_ptRadioBuiltinDetails, 0, 0);
+
+	// create the radio button "file"
+	m_ptRadioFileDetails = new wxRadioButton(ptApplicationPanel, muhkuh_configDialog_RadioDetailsFile, _("File"), wxDefaultPosition, wxDefaultSize, 0);
+	ptDetailsPageSizer->Add(m_ptRadioFileDetails, 0, 0);
+
+	// create the file sizer
+	ptDetailsFileSizer = new wxBoxSizer(wxHORIZONTAL);
+	ptDetailsPageSizer->Add(ptDetailsFileSizer, 0, wxEXPAND|wxLEFT, 32);
+
+	// fill the input grid
+	m_ptTextDetailsPage = new wxTextCtrl(ptApplicationPanel, wxID_ANY);
+	m_ptButtonDetailsPage = new wxBitmapButton(ptApplicationPanel, muhkuh_configDialog_DetailsPageBrowse, icon_famfamfam_silk_folder);
+	ptDetailsFileSizer->Add(m_ptTextDetailsPage, 1, wxEXPAND);
+	ptDetailsFileSizer->Add(m_ptButtonDetailsPage);
+
+
+	return ptApplicationPanel;
+}
+
+
 wxPanel *muhkuh_configDialog::createControls_repository(wxWindow *ptParent)
 {
 	wxPanel *ptRepositoryPanel;
 	wxBoxSizer *ptMainSizer;
-	wxBoxSizer *ptbuttonSizer;
 	wxImageList *ptRepoImageList;
 
 
@@ -324,6 +421,72 @@ wxPanel *muhkuh_configDialog::createControls_lua(wxWindow *ptParent)
 	ptStartupCodeSizer->Add(m_ptStartupCodeText, 1, wxEXPAND);
 
 	return ptLuaPanel;
+}
+
+
+void muhkuh_configDialog::OnRadioWelcomeBuiltIn(wxCommandEvent &event)
+{
+	m_ptTextStartPage->Enable(false);
+	m_ptButtonStartPage->Enable(false);
+}
+
+
+void muhkuh_configDialog::OnRadioWelcomeFile(wxCommandEvent &event)
+{
+	m_ptTextStartPage->Enable(true);
+	m_ptButtonStartPage->Enable(true);
+}
+
+
+void muhkuh_configDialog::OnRadioDetailsBuiltIn(wxCommandEvent &event)
+{
+	m_ptTextDetailsPage->Enable(false);
+	m_ptButtonDetailsPage->Enable(false);
+}
+
+
+void muhkuh_configDialog::OnRadioDetailsFile(wxCommandEvent &event)
+{
+	m_ptTextDetailsPage->Enable(true);
+	m_ptButtonDetailsPage->Enable(true);
+}
+
+
+void muhkuh_configDialog::OnBrowseStartPageButton(wxCommandEvent &event)
+{
+	wxFileDialog *pageDialog;
+	wxFileName fileName;
+
+
+	fileName.Assign(m_ptTextStartPage->GetValue());
+	fileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE);
+
+	pageDialog = new wxFileDialog(this, _("Select the Welcome page"), fileName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR), fileName.GetFullName(), wxT("Static HTML Page (*.html;*.htm)|*.html;*.htm|Dynamic LUA Page (*.lua)|*.lua|All Files (*.*)|*.*"));
+
+	if( pageDialog->ShowModal()==wxID_OK )
+	{
+		m_ptTextStartPage->SetValue(pageDialog->GetPath());
+	}
+	pageDialog->Destroy();
+}
+
+
+void muhkuh_configDialog::OnBrowseDetailPageButton(wxCommandEvent &event)
+{
+	wxFileDialog *pageDialog;
+	wxFileName fileName;
+
+
+	fileName.Assign(m_ptTextDetailsPage->GetValue());
+	fileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE);
+
+	pageDialog = new wxFileDialog(this, _("Select the Test Details page"), fileName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR), fileName.GetFullName(), wxT("Static HTML Page (*.html;*.htm)|*.html;*.htm|Dynamic LUA Page (*.lua)|*.lua|All Files (*.*)|*.*"));
+
+	if( pageDialog->ShowModal()==wxID_OK )
+	{
+		m_ptTextDetailsPage->SetValue(pageDialog->GetPath());
+	}
+	pageDialog->Destroy();
 }
 
 
@@ -1020,6 +1183,34 @@ void muhkuh_configDialog::luaIncludePathUpdateButtons(int iSelection)
 	m_luaPathToolBar->EnableTool(muhkuh_configDialog_LuaEditPath, fPathSelected);
 	m_luaPathToolBar->EnableTool(muhkuh_configDialog_LuaMovePathUp, fCanMoveUp);
 	m_luaPathToolBar->EnableTool(muhkuh_configDialog_LuaMovePathDown, fCanMoveDown);
+}
+
+
+wxString muhkuh_configDialog::GetWelcomePageFile(void) const
+{
+	wxString strFile;
+
+
+	if( m_ptRadioFileWelcome->GetValue()==true )
+	{
+		strFile = m_ptTextStartPage->GetValue();
+	}
+
+	return strFile;
+}
+
+
+wxString muhkuh_configDialog::GetDetailsPageFile(void) const
+{
+	wxString strFile;
+
+
+	if( m_ptRadioFileDetails->GetValue()==true )
+	{
+		strFile = m_ptTextDetailsPage->GetValue();
+	}
+
+	return strFile;
 }
 
 

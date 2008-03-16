@@ -27,6 +27,7 @@
 #include "icons/custom/muhkuh_128.xpm"
 
 #include "icons/famfamfam_silk_icons_v013/accept.xpm"
+#include "icons/famfamfam_silk_icons_v013/application_form_edit.xpm"
 #include "icons/famfamfam_silk_icons_v013/arrow_down.xpm"
 #include "icons/famfamfam_silk_icons_v013/arrow_up.xpm"
 #include "icons/famfamfam_silk_icons_v013/bullet_green.xpm"
@@ -39,6 +40,7 @@
 #include "icons/famfamfam_silk_icons_v013/database_refresh.xpm"
 #include "icons/famfamfam_silk_icons_v013/door_out.xpm"
 #include "icons/famfamfam_silk_icons_v013/exclamation.xpm"
+#include "icons/famfamfam_silk_icons_v013/folder.xpm"
 #include "icons/famfamfam_silk_icons_v013/folder_add.xpm"
 #include "icons/famfamfam_silk_icons_v013/folder_delete.xpm"
 #include "icons/famfamfam_silk_icons_v013/folder_edit.xpm"

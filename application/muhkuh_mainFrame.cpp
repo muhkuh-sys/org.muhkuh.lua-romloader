@@ -158,20 +158,6 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	// build version string
 	m_strVersion.Printf(wxT(MUHKUH_APPLICATION_NAME) wxT(" v%d.%d.%d"), MUHKUH_VERSION_MAJ, MUHKUH_VERSION_MIN, MUHKUH_VERSION_SUB);
 
-	// set the welcome message
-	// TODO: show the "About" page from the docs here
-	m_strWelcomePage  = wxT("<html><title>Welcome</title><body><h1>Welcome to ");
-	m_strWelcomePage += m_strVersion;
-	m_strWelcomePage += wxT("</h1>");
-	m_strWelcomePage += wxT("</body></html>");
-
-	// set the test details page for 'no test selected'
-	m_strTestDetailsEmpty  = wxT("<html><title>Test Details</title><body><h1>Test Details</h1>");
-	m_strTestDetailsEmpty += wxT("No test selected.<p>");
-	m_strTestDetailsEmpty += wxT("Please select a test in the test tree.</body></html>");
-	// set this as the current test details page
-	m_strTestDetails = m_strTestDetailsEmpty;
-
 	// use aui manager for this frame
 	m_auiMgr.SetManagedWindow(this);
 
@@ -400,6 +386,101 @@ void muhkuh_mainFrame::createTestDetailsWindow(void)
 }
 
 
+void muhkuh_mainFrame::reloadWelcomePage(void)
+{
+	wxString strPage;
+
+
+	if( m_strWelcomePageFile.IsEmpty()==true )
+	{
+		// use the default welcome message
+		strPage.Printf(_("<html><title>Welcome</title><body><h1>Welcome to %s</h1></body></html>"), m_strVersion.fn_str());
+	}
+	else
+	{
+	
+	}
+
+	m_strWelcomePage = strPage;
+
+	if( m_welcomeHtml!=NULL )
+	{
+		m_welcomeHtml->SetPage(m_strWelcomePage);
+	}
+}
+
+
+void muhkuh_mainFrame::reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml)
+{
+	wxString strTestName;
+	unsigned int uiSubTestCnt;
+	unsigned int uiCnt;
+	wxString strSubTestName;
+	bool fOk;
+	long lItemIdx;
+	wxString strPage;
+
+
+	if( m_strDetailsPageFile.IsEmpty()==true )
+	{
+		if( ptWrapXml==NULL )
+		{
+			// set the test details page for 'no test selected'
+			strPage = _("<html><title>Test Details</title><body><h1>Test Details</h1>No test selected.<p>Please select a test in the test tree.</body></html>");
+		}
+		else
+		{
+			strTestName = ptWrapXml->testDescription_getName();
+
+			strPage  = wxT("<html><body>\n");
+			strPage += wxT("<h1><a href=\"mtd://");
+			strPage += strTestName;
+			strPage += wxT("\">");
+			strPage += strTestName;
+			strPage += wxT("</a></h1>Version ");
+			strPage += ptWrapXml->testDescription_getVersion();
+			strPage += wxT("<p>");
+
+			strPage += wxT("<table border=1><tr><th>Subtest</th><th>Version</th></tr><tbody>");
+
+			// append all subitems to the list
+			uiSubTestCnt = ptWrapXml->testDescription_getTestCnt();
+			uiCnt = 0;
+			while( uiCnt<uiSubTestCnt )
+			{
+				fOk = ptWrapXml->testDescription_setTest(uiCnt);
+				if( fOk!=true )
+				{
+					wxLogError(_("failed to query subtest!"));
+					break;
+				}
+
+				strSubTestName = ptWrapXml->test_getName();
+
+				strPage += wxT("<tr><td>");
+				strPage += wxT("<a href=\"mtd://") + strTestName + wxT('#') + strSubTestName + wxT("\">");
+				strPage += strSubTestName;
+				strPage += wxT("</a></td><td>");
+				strPage += ptWrapXml->test_getVersion();
+				strPage += wxT("</td></tr>");
+
+				// next item
+				++uiCnt;
+			}
+
+			strPage += wxT("</tbody></table></body></html>");
+		}
+	}
+
+	m_strTestDetails = strPage;
+
+	if( m_testDetailsHtml!=NULL )
+	{
+		m_testDetailsHtml->SetPage(m_strTestDetails);
+	}
+}
+
+
 void muhkuh_mainFrame::read_config(void)
 {
 	wxConfigBase *pConfig;
@@ -429,6 +510,8 @@ void muhkuh_mainFrame::read_config(void)
 	fTestDetailsPageIsVisible = pConfig->Read(wxT("showtestdetails"), true);
 	m_fShowStartupTips = pConfig->Read(wxT("showtips"), true);
 	m_sizStartupTipsIdx = pConfig->Read(wxT("tipidx"), (long)0);
+	m_strWelcomePageFile = pConfig->Read(wxT("welcomepage"), wxEmptyString);
+	m_strDetailsPageFile = pConfig->Read(wxT("detailspage"), wxEmptyString);
 
 	// get lua settings
 	pConfig->SetPath(wxT("/Lua"));
@@ -547,6 +630,8 @@ void muhkuh_mainFrame::write_config(void)
 	pConfig->Write(wxT("showtestdetails"), fTestDetailsPageIsVisible);
 	pConfig->Write(wxT("showtips"), m_fShowStartupTips);
 	pConfig->Write(wxT("tipidx"), (long)m_sizStartupTipsIdx);
+	pConfig->Write(wxT("welcomepage"), m_strWelcomePageFile);
+	pConfig->Write(wxT("detailspage"), m_strDetailsPageFile);
 	pConfig->SetPath(wxT("/"));
 
 	// get lua settings
@@ -675,6 +760,11 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 		{
 			// NOTE: this must be the first statement in this case, or it will be executed with every idle event
 			m_eInitState = MAINFRAME_INIT_STATE_SCANNED;
+
+			// show welcome and details page
+			reloadWelcomePage();
+			reloadDetailsPage(NULL);
+
 			if( m_fShowStartupTips==true && m_tipProvider!=NULL )
 			{
 				m_fShowStartupTips = wxShowTip(this, m_tipProvider);
@@ -799,13 +889,18 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 	ptTmpRepositoryManager = new muhkuh_repository_manager(m_ptRepositoryManager);
 
 	// show config dialog
-	cfgDlg = new muhkuh_configDialog(this, m_strApplicationPath, ptTmpPluginManager, ptTmpRepositoryManager, m_strLuaIncludePath, m_strLuaStartupCode);
+	cfgDlg = new muhkuh_configDialog(this, m_strApplicationPath, m_strWelcomePageFile, m_strDetailsPageFile, ptTmpPluginManager, ptTmpRepositoryManager, m_strLuaIncludePath, m_strLuaStartupCode);
 	if( cfgDlg->ShowModal()==wxID_OK )
 	{
 		m_strLuaIncludePath = cfgDlg->GetLuaIncludePath();
 		wxLogDebug(wxT("New Lua include path: ") + m_strLuaIncludePath);
 		m_strLuaStartupCode = cfgDlg->GetLuaStartupCode();
 		wxLogDebug(wxT("New Lua startup code: ") + m_strLuaStartupCode);
+
+		m_strWelcomePageFile = cfgDlg->GetWelcomePageFile();
+		wxLogDebug(wxT("New Welcome Page File: ") + m_strWelcomePageFile);
+		m_strDetailsPageFile = cfgDlg->GetDetailsPageFile();
+		wxLogDebug(wxT("New Details Page File: ") + m_strDetailsPageFile);
 
 		// copy tmp plugin manager over current one
 		delete m_ptPluginManager;
@@ -1299,19 +1394,10 @@ void muhkuh_mainFrame::OnTestTreeItemSelected(wxTreeEvent &event)
 	const testTreeItemData *ptItemData;
 	muhkuh_wrap_xml *ptWrapXml;
 	wxListItem listItem;
-	wxString strTestName;
-	unsigned int uiSubTestCnt;
-	unsigned int uiCnt;
-	wxString strSubTestName;
-	bool fOk;
-	long lItemIdx;
-	wxString strPage;
 
-
-	// clear the complete list
-	m_strTestDetails = m_strTestDetailsEmpty;
 
 	// get item data structure
+	ptWrapXml = NULL;
 	itemId = event.GetItem();
 	if( itemId.IsOk() )
 	{
@@ -1319,56 +1405,10 @@ void muhkuh_mainFrame::OnTestTreeItemSelected(wxTreeEvent &event)
 		if( ptItemData!=NULL )
 		{
 			ptWrapXml = ptItemData->getXmlDescription();
-			if( ptWrapXml!=NULL )
-			{
-				strTestName = ptWrapXml->testDescription_getName();
-
-				strPage  = wxT("<html><body>\n");
-
-				strPage += wxT("<h1><a href=\"mtd://");
-				strPage += strTestName;
-				strPage += wxT("\">");
-				strPage += strTestName;
-				strPage += wxT("</a></h1>");
-				strPage += wxT("V");
-				strPage += ptWrapXml->testDescription_getVersion();
-				strPage += wxT("<p>");
-
-				// append all subitems to the list
-				uiSubTestCnt = ptWrapXml->testDescription_getTestCnt();
-				uiCnt = 0;
-				while( uiCnt<uiSubTestCnt )
-				{
-					fOk = ptWrapXml->testDescription_setTest(uiCnt);
-					if( fOk!=true )
-					{
-						wxLogError(_("failed to query subtest!"));
-						break;
-					}
-
-					strSubTestName = ptWrapXml->test_getName();
-
-					strPage += wxT("<a href=\"mtd://") + strTestName + wxT('#') + strSubTestName + wxT("\">");
-					strPage += strSubTestName;
-					strPage += wxT("</a>");
-					strPage += wxT("V");
-					strPage += ptWrapXml->test_getVersion();
-					strPage += wxT("<br>");
-
-					// next item
-					++uiCnt;
-				}
-
-				strPage += wxT("</body></html>");
-				m_strTestDetails = strPage;
-			}
 		}
 	}
 
-	if( m_testDetailsHtml!=NULL )
-	{
-		m_testDetailsHtml->SetPage(m_strTestDetails);
-	}
+	reloadDetailsPage(ptWrapXml);
 }
 
 
@@ -1380,12 +1420,8 @@ void muhkuh_mainFrame::scanTests(int iActiveRepositoryIdx)
 
 	// clear all old tests
 	m_sizTestCnt = 0;
-	// clear the test description
-	m_strTestDetails = m_strTestDetailsEmpty;
-	if( m_testDetailsHtml!=NULL )
-	{
-		m_testDetailsHtml->SetPage(m_strTestDetails);
-	}
+	// clear the test details
+	reloadDetailsPage(NULL);
 	// clear the complete tree
 	m_treeCtrl->DeleteAllItems();
 	// add a root item

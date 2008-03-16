@@ -22,6 +22,8 @@
 #include "muhkuh_id.h"
 #include "muhkuh_config_reposEntryDialog.h"
 
+#include "muhkuh_icons.h"
+
 
 BEGIN_EVENT_TABLE(muhkuh_config_reposEntryDialog, wxDialog)
 	EVT_BUTTON(wxID_OK,							muhkuh_config_reposEntryDialog::OnOkButton)
@@ -133,7 +135,7 @@ void muhkuh_config_reposEntryDialog::createControls(void)
 	// fill the input grid
 	m_labelDirscanLocation = new wxStaticText(this, wxID_ANY, _("Path to test descriptions :"));
 	m_textDirscanLocation = new wxTextCtrl(this, wxID_ANY);
-	m_buttonDirscanLocation = new wxBitmapButton(this, muhkuh_configReposEntryDialog_ButtonDirscanLocationBrowse, wxArtProvider::GetBitmap(wxART_FILE_OPEN));
+	m_buttonDirscanLocation = new wxBitmapButton(this, muhkuh_configReposEntryDialog_ButtonDirscanLocationBrowse, icon_famfamfam_silk_folder);
 	m_dirscanGrid->Add(m_labelDirscanLocation, 0, wxALIGN_CENTER_VERTICAL);
 	m_dirscanGrid->AddSpacer(4);
 	m_dirscanGrid->Add(m_textDirscanLocation, 0, wxEXPAND);
@@ -183,7 +185,7 @@ void muhkuh_config_reposEntryDialog::createControls(void)
 	m_singleXmlGrid = new wxFlexGridSizer(1, 4, 0, 0);
 	m_singleXmlGrid->AddGrowableCol(2, 1);
 	m_mainSizer->Add(m_singleXmlGrid, 0, wxEXPAND|wxLEFT, 32);
-	m_buttonSingleXmlLocation = new wxBitmapButton(this, muhkuh_configReposEntryDialog_ButtonSingleXmlLocationBrowse, wxArtProvider::GetBitmap(wxART_FILE_OPEN));
+	m_buttonSingleXmlLocation = new wxBitmapButton(this, muhkuh_configReposEntryDialog_ButtonSingleXmlLocationBrowse, icon_famfamfam_silk_folder);
 
 	// fill the input grid
 	m_labelSingleXmlLocation = new wxStaticText(this, wxID_ANY, _("Path to the xml test description :"));

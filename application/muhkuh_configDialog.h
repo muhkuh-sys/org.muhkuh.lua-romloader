@@ -49,8 +49,16 @@ public:
 class muhkuh_configDialog : public wxDialog
 {
 public:
-	muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, muhkuh_plugin_manager *ptPluginManager, muhkuh_repository_manager *ptRepositoryManager, wxString strLuaIncludePath, wxString strLuaStartupCode);
+	muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, wxString strWelcomeFile, wxString strDetailsFile, muhkuh_plugin_manager *ptPluginManager, muhkuh_repository_manager *ptRepositoryManager, wxString strLuaIncludePath, wxString strLuaStartupCode);
 	~muhkuh_configDialog(void);
+
+	void OnRadioWelcomeBuiltIn(wxCommandEvent &event);
+	void OnRadioWelcomeFile(wxCommandEvent &event);
+	void OnRadioDetailsBuiltIn(wxCommandEvent &event);
+	void OnRadioDetailsFile(wxCommandEvent &event);
+
+	void OnBrowseStartPageButton(wxCommandEvent &event);
+	void OnBrowseDetailPageButton(wxCommandEvent &event);
 
 	void OnNewRepositoryButton(wxCommandEvent &event);
 	void OnEditRepositoryButton(wxCommandEvent &event);
@@ -73,11 +81,15 @@ public:
 	void OnMoveDownLuaIncludePathButton(wxCommandEvent &event);
 	void OnLuaIncludePathSelectionChanged(wxCommandEvent &event);
 
+	wxString GetWelcomePageFile(void) const;
+	wxString GetDetailsPageFile(void) const;
+
 	wxString GetLuaIncludePath(void) const;
 	wxString GetLuaStartupCode(void) const;
 
 private:
 	void createControls(void);
+	wxPanel *createControls_application(wxWindow *ptParent);
 	wxPanel *createControls_repository(wxWindow *ptParent);
 	wxPanel *createControls_plugin(wxWindow *ptParent);
 	wxPanel *createControls_lua(wxWindow *ptParent);
@@ -108,6 +120,14 @@ private:
 
 	// the controls
 	wxTreebook *m_treeBook;
+	wxRadioButton *m_ptRadioBuiltinWelcome;
+	wxRadioButton *m_ptRadioFileWelcome;
+	wxRadioButton *m_ptRadioBuiltinDetails;
+	wxRadioButton *m_ptRadioFileDetails;
+	wxTextCtrl *m_ptTextStartPage;
+	wxTextCtrl *m_ptTextDetailsPage;
+	wxBitmapButton *m_ptButtonStartPage;
+	wxBitmapButton *m_ptButtonDetailsPage;
 	wxTreeCtrl *m_repositoryTree;
 	wxTreeCtrl *m_pluginTree;
 	wxBoxSizer *m_buttonSizer;

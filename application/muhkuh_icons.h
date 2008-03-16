@@ -34,6 +34,7 @@ extern const char *muhkuh_128_xpm[1305];
 // the famfamfam icons
 
 extern const char *icon_famfamfam_silk_accept[174];
+extern const char *icon_famfamfam_silk_application_form_edit[155];
 extern const char *icon_famfamfam_silk_arrow_down[82];
 extern const char *icon_famfamfam_silk_arrow_up[82];
 extern const char *icon_famfamfam_silk_bullet_green[55];
@@ -46,6 +47,7 @@ extern const char *icon_famfamfam_silk_database_edit[163];
 extern const char *icon_famfamfam_silk_database_refresh[169];
 extern const char *icon_famfamfam_silk_door_out[197];
 extern const char *icon_famfamfam_silk_exclamation[147];
+extern const char *icon_famfamfam_silk_folder[143];
 extern const char *icon_famfamfam_silk_folder_add[149];
 extern const char *icon_famfamfam_silk_folder_delete[160];
 extern const char *icon_famfamfam_silk_folder_edit[170];

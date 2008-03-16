@@ -151,6 +151,9 @@ private:
 	bool cutPath(wxString &strPath, wxArrayString *ptElems);
 	bool addTestTree(testTreeItemData *ptTestTreeItem);
 
+	void reloadWelcomePage(void);
+	void reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml);
+
 	// main frame controls
 	wxAuiManager m_auiMgr;
 	// the default perspective
@@ -222,13 +225,16 @@ private:
 	wxString m_strWelcomePage;
 	// the test details page
 	wxString m_strTestDetails;
-	// the default test details page for 'no test selected'
-	wxString m_strTestDetailsEmpty;
 
 	// the lua include path
 	wxString m_strLuaIncludePath;
 	// lua startup code
 	wxString m_strLuaStartupCode;
+
+	// the welcome page file
+	wxString m_strWelcomePageFile;
+	// the details page file
+	wxString m_strDetailsPageFile;
 
 	// the locale object
 	wxLocale m_locale;
