@@ -386,6 +386,33 @@ void muhkuh_mainFrame::createTestDetailsWindow(void)
 }
 
 
+wxString muhkuh_mainFrame::loadHtmlString(wxString strFileUrl)
+{
+	growbuffer *ptGrowBuffer;
+	bool fResult;
+	size_t sizDataSize;
+	unsigned char *pucData;
+	wxString strData;
+
+
+	ptGrowBuffer = new growbuffer(65536);
+	fResult = readFsFile(ptGrowBuffer, strFileUrl);
+	if( fResult==true )
+	{
+		sizDataSize = ptGrowBuffer->getSize();
+		pucData = ptGrowBuffer->getData();
+		strData = wxString::From8BitData((const char*)pucData, sizDataSize);
+	}
+	else
+	{
+		strData.Printf(_("<html><body><h1>Error!</h1>Failed to load file '%s'!</body></html>"), strFileUrl.fn_str());
+	}
+	delete ptGrowBuffer;
+
+	return strData;
+}
+
+
 void muhkuh_mainFrame::reloadWelcomePage(void)
 {
 	wxString strPage;
@@ -398,14 +425,17 @@ void muhkuh_mainFrame::reloadWelcomePage(void)
 	}
 	else
 	{
-	
+		// load from file
+		strPage = loadHtmlString(m_strWelcomePageFile);
 	}
 
 	m_strWelcomePage = strPage;
 
 	if( m_welcomeHtml!=NULL )
 	{
+		initLuaState();
 		m_welcomeHtml->SetPage(m_strWelcomePage);
+		clearLuaState();
 	}
 }
 
@@ -471,12 +501,19 @@ void muhkuh_mainFrame::reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml)
 			strPage += wxT("</tbody></table></body></html>");
 		}
 	}
+	else
+	{
+		// load from file
+		strPage = loadHtmlString(m_strWelcomePageFile);
+	}
 
 	m_strTestDetails = strPage;
 
 	if( m_testDetailsHtml!=NULL )
 	{
+		initLuaState();
 		m_testDetailsHtml->SetPage(m_strTestDetails);
+		clearLuaState();
 	}
 }
 
@@ -902,6 +939,9 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 		m_strDetailsPageFile = cfgDlg->GetDetailsPageFile();
 		wxLogDebug(wxT("New Details Page File: ") + m_strDetailsPageFile);
 
+		reloadWelcomePage();
+		reloadDetailsPage(NULL);
+
 		// copy tmp plugin manager over current one
 		delete m_ptPluginManager;
 		m_ptPluginManager = ptTmpPluginManager;
@@ -962,23 +1002,15 @@ void muhkuh_mainFrame::OnTestExecute(wxCommandEvent& WXUNUSED(event))
 }
 
 
-void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex)
+bool muhkuh_mainFrame::initLuaState(void)
 {
-	bool fCreated;
+	bool fResult;
 	int iResult;
-	wxString strMsg;
-	wxString strErrorMsg;
-	wxString strDebug;
-	int iGetTop;
-	int iLineNr;
+	wxLuaBindingList *ptBindings;
 
 
-	m_strRunningTestName = ptTestData->testDescription_getName();
-	m_sizRunningTest_RepositoryIdx = ptTestData->getRepositoryIndex();
-	m_sizRunningTest_TestIdx = ptTestData->getTestIndex();
-
-	strDebug.Printf(wxT("execute test '") + m_strRunningTestName + wxT("', index %d"), uiIndex);
-	wxLogMessage(strDebug);
+	// expect success
+	fResult = true;
 
 	// delete old lua state
 	if( m_ptLuaState!=NULL )
@@ -992,125 +1024,93 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	}
 
 	// clear all bindings
-	{
-		wxLuaBindingList *ptBindings;
-		ptBindings = wxLuaBinding::GetBindingList();
-		ptBindings->Clear();
-	}
+	ptBindings = wxLuaBinding::GetBindingList();
+	ptBindings->Clear();
 
 	// create a new lua state
 	m_ptLuaState = new wxLuaState(false);
 	if( m_ptLuaState==NULL )
 	{
 		wxLogError(_("Failed to allocate a new lua state"));
-		return;
+		fResult = false;
 	}
-
-	// init the standard lua bindings
-	WXLUA_IMPLEMENT_BIND_WXLUA
-	WXLUA_IMPLEMENT_BIND_WXLUASOCKET
-	WXLUA_IMPLEMENT_BIND_WXBASE
-	WXLUA_IMPLEMENT_BIND_WXCORE
-	WXLUA_IMPLEMENT_BIND_WXADV
-	WXLUA_IMPLEMENT_BIND_WXNET
-	WXLUA_IMPLEMENT_BIND_WXXML
-	WXLUA_IMPLEMENT_BIND_WXXRC
-	WXLUA_IMPLEMENT_BIND_WXHTML
-	WXLUA_IMPLEMENT_BIND_WXAUI
-
-	// init the muhkuh lua bindings
-	fCreated = wxLuaBinding_muhkuh_lua_init();
-	if( fCreated!=true )
+	else
 	{
-		// failed to init the muhkuh lua bindings
-		wxLogError(_("Failed to init the muhkuh_lua bindings"));
+		// init the standard lua bindings
+		WXLUA_IMPLEMENT_BIND_WXLUA
+		WXLUA_IMPLEMENT_BIND_WXLUASOCKET
+		WXLUA_IMPLEMENT_BIND_WXBASE
+		WXLUA_IMPLEMENT_BIND_WXCORE
+		WXLUA_IMPLEMENT_BIND_WXADV
+		WXLUA_IMPLEMENT_BIND_WXNET
+		WXLUA_IMPLEMENT_BIND_WXXML
+		WXLUA_IMPLEMENT_BIND_WXXRC
+		WXLUA_IMPLEMENT_BIND_WXHTML
+		WXLUA_IMPLEMENT_BIND_WXAUI
+	
+		// init the muhkuh lua bindings
+		fResult = wxLuaBinding_muhkuh_lua_init();
+		if( fResult!=true )
+		{
+			// failed to init the muhkuh lua bindings
+			wxLogError(_("Failed to init the muhkuh_lua bindings"));
+		}
+		else
+		{
+			// init the lua bindings for all plugins
+			iResult = m_ptPluginManager->initLuaBindings(m_ptLuaState);
+			if( iResult!=0 )
+			{
+				wxLogError(_("Failed to init plugin bindings"));
+				fResult = false;
+			}
+			else
+			{
+				// create the lua state
+				fResult = m_ptLuaState->Create(this, wxID_ANY);
+				if( fResult!=true )
+				{
+					wxLogError(_("Failed to create a new lua state"));
+				}
+				
+				else
+				{
+					// is the state valid?
+					fResult = m_ptLuaState->Ok();
+					if( fResult!=true )
+					{
+						wxLogError(_("Strange lua state"));
+					}
+					else
+					{
+						// set the package path
+						wxLogMessage(wxT("Lua path:") + m_strLuaIncludePath);
+
+						m_ptLuaState->lua_GetGlobal(wxT("package"));
+						if( m_ptLuaState->lua_IsNoneOrNil(-1)==true )
+						{
+							wxLogError(_("Failed to get the global 'package'"));
+						}
+						m_ptLuaState->lua_PushString(m_strLuaIncludePath);
+						m_ptLuaState->lua_SetField(-2, wxT("path"));
+
+						// set the lua version
+						m_ptLuaState->lua_PushString(m_strVersion.ToAscii());
+						m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_VERSION"));
+					}
+				}
+			}
+		}
 	}
 
-	// init the lua bindings for all plugins
-	iResult = m_ptPluginManager->initLuaBindings(m_ptLuaState);
-	if( iResult!=0 )
-	{
-		wxLogError(_("Failed to init plugin bindings"));
-		return;
-	}
-
-	// create the lua state
-	fCreated = m_ptLuaState->Create(this, wxID_ANY);
-	if( fCreated!=true )
-	{
-		wxLogError(_("Failed to create a new lua state"));
-		return;
-	}
-
-	// is the state valid?
-	if( m_ptLuaState->Ok()!=true )
-	{
-		wxLogError(_("Strange lua state"));
-		return;
-	}
-
-	// TODO: overwrite the package.preload index metatable to
-	// return one function for all module names.
-
-	// set the package path
-	wxLogMessage(wxT("Lua path:") + m_strLuaIncludePath);
-
-	m_ptLuaState->lua_GetGlobal(wxT("package"));
-	if( m_ptLuaState->lua_IsNoneOrNil(-1)==true )
-	{
-		wxLogError(_("Failed to get the global 'package'"));
-		return;
-	}
-	m_ptLuaState->lua_PushString(m_strLuaIncludePath);
-	m_ptLuaState->lua_SetField(-2, wxT("path"));
-
-
-	// create a new panel for the test
-	m_testPanel = new wxPanel(this);
-	m_notebook->AddPage(m_testPanel, m_strRunningTestName, true);
-
-	// set some global vars
-
-	// set the lua version
-	m_ptLuaState->lua_PushString(m_strVersion.ToAscii());
-	m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_VERSION"));
-	// set the xml document
-	m_ptLuaState->wxluaT_PushUserDataType(ptTestData->getXmlDocument(), wxluatype_wxXmlDocument, false);
-	m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_XML"));
-	// set the selected test index
-	m_ptLuaState->lua_PushNumber(uiIndex);
-	m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_INDEX"));
-	// set the panel
-	m_ptLuaState->wxluaT_PushUserDataType(m_testPanel, wxluatype_wxPanel, false);
-	m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_PANEL"));
-
-	// set state to 'testing'
-	// NOTE: this must be done before the call to 'RunString', or the state will not change before the first idle event
-	setState(muhkuh_mainFrame_state_testing);
-
-	// set the log marker
-	luaSetLogMarker();
-
-	iGetTop = m_ptLuaState->lua_GetTop();
-	iResult = m_ptLuaState->RunString(m_strLuaStartupCode, wxT("system boot"));
-	if( iResult!=0 )
-	{
-		wxlua_errorinfo(m_ptLuaState->GetLuaState(), iResult, iGetTop, &strErrorMsg, &iLineNr);
-		strMsg.Printf(_("error %d in line %d: ") + strErrorMsg, iResult, iLineNr);
-		wxLogError(strMsg);
-		finishTest();
-		setState(muhkuh_mainFrame_state_idle);
-	}
+	return fResult;
 }
 
 
-void muhkuh_mainFrame::finishTest(void)
+void muhkuh_mainFrame::clearLuaState(void)
 {
 	wxLuaBindingList *ptBindings;
-	int iPanelIdx;
 
-
-	wxLogMessage(_("Test '%s' finished, cleaning up..."), m_strRunningTestName.fn_str());
 
 	// clear any plugin scans
 	m_ptPluginManager->ClearAllMatches();
@@ -1132,6 +1132,75 @@ void muhkuh_mainFrame::finishTest(void)
 	
 		m_ptLuaState = NULL;
 	}
+}
+
+
+void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex)
+{
+	bool fResult;
+	int iResult;
+	wxString strMsg;
+	wxString strErrorMsg;
+	wxString strDebug;
+	int iGetTop;
+	int iLineNr;
+
+
+	m_strRunningTestName = ptTestData->testDescription_getName();
+	m_sizRunningTest_RepositoryIdx = ptTestData->getRepositoryIndex();
+	m_sizRunningTest_TestIdx = ptTestData->getTestIndex();
+
+	strDebug.Printf(wxT("execute test '") + m_strRunningTestName + wxT("', index %d"), uiIndex);
+	wxLogMessage(strDebug);
+
+	fResult = initLuaState();
+	if( fResult==true )
+	{
+		// create a new panel for the test
+		m_testPanel = new wxPanel(this);
+		m_notebook->AddPage(m_testPanel, m_strRunningTestName, true);
+
+		// set some global vars
+
+		// set the xml document
+		m_ptLuaState->wxluaT_PushUserDataType(ptTestData->getXmlDocument(), wxluatype_wxXmlDocument, false);
+		m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_XML"));
+		// set the selected test index
+		m_ptLuaState->lua_PushNumber(uiIndex);
+		m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_INDEX"));
+		// set the panel
+		m_ptLuaState->wxluaT_PushUserDataType(m_testPanel, wxluatype_wxPanel, false);
+		m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_PANEL"));
+
+		// set state to 'testing'
+		// NOTE: this must be done before the call to 'RunString', or the state will not change before the first idle event
+		setState(muhkuh_mainFrame_state_testing);
+
+		// set the log marker
+		luaSetLogMarker();
+
+		iGetTop = m_ptLuaState->lua_GetTop();
+		iResult = m_ptLuaState->RunString(m_strLuaStartupCode, wxT("system boot"));
+		if( iResult!=0 )
+		{
+			wxlua_errorinfo(m_ptLuaState->GetLuaState(), iResult, iGetTop, &strErrorMsg, &iLineNr);
+			strMsg.Printf(_("error %d in line %d: ") + strErrorMsg, iResult, iLineNr);
+			wxLogError(strMsg);
+			finishTest();
+			setState(muhkuh_mainFrame_state_idle);
+		}
+	}
+}
+
+
+void muhkuh_mainFrame::finishTest(void)
+{
+	int iPanelIdx;
+
+
+	wxLogMessage(_("Test '%s' finished, cleaning up..."), m_strRunningTestName.fn_str());
+
+	clearLuaState();
 
 	if( m_testPanel!=NULL )
 	{
@@ -2341,6 +2410,76 @@ muhkuh_plugin_instance *muhkuh_mainFrame::luaGetNextPlugin(void)
 	return ptInstance;
 }
 
+
+wxString muhkuh_mainFrame::htmlTag_lua(const wxString &strLuaCode)
+{
+	wxString strHtmlData;
+
+
+	if( g_ptMainFrame==NULL )
+	{
+		strHtmlData = wxT("LUA ERROR");
+	}
+	else
+	{
+		strHtmlData = g_ptMainFrame->local_htmlTag_lua(strLuaCode);
+	}
+
+	return strHtmlData;
+}
+
+
+wxString muhkuh_mainFrame::local_htmlTag_lua(const wxString &strLuaCode)
+{
+	int iTopPre;
+	int iTopPost;
+	int iResult;
+	int iLineNr;
+	wxString strHtmlCode;
+	wxString strMsg;
+	wxString strErrorMsg;
+	
+
+
+	wxLogMessage(wxT("Lua code: ") + strLuaCode);
+
+	if( m_ptLuaState!=NULL && m_ptLuaState->Ok()==true )
+	{
+		iTopPre = m_ptLuaState->lua_GetTop();
+		iResult = m_ptLuaState->luaL_LoadBuffer(strLuaCode.fn_str(), strLuaCode.Len(), "html lua tag");
+		if( iResult!=0 )
+		{
+			m_ptLuaState->SendLuaErrorEvent(iResult, iTopPre);
+		}
+		else
+		{
+			iResult = m_ptLuaState->LuaPCall(0, 1);
+		}
+
+		if( iResult!=0 )
+		{
+			wxlua_errorinfo(m_ptLuaState->GetLuaState(), iResult, iTopPre, &strErrorMsg, &iLineNr);
+			strMsg.Printf(_("html lua tag: error %d in line %d: ") + strErrorMsg, iResult, iLineNr);
+			wxLogError(strMsg);
+			strHtmlCode = strMsg;
+		}
+		else
+		{
+			iTopPost = m_ptLuaState->lua_GetTop();
+			if( iTopPre<iTopPost )
+			{
+				strHtmlCode = m_ptLuaState->GetwxStringType(0);
+			}
+		}
+		m_ptLuaState->lua_SetTop(iTopPre);
+	}
+	else
+	{
+		strHtmlCode = _("Lua Scripting not supported!");
+	}
+
+	return strHtmlCode;
+}
 
 
 void TestHasFinished(void)

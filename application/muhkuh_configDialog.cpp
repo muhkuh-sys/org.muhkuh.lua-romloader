@@ -461,7 +461,7 @@ void muhkuh_configDialog::OnBrowseStartPageButton(wxCommandEvent &event)
 	fileName.Assign(m_ptTextStartPage->GetValue());
 	fileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE);
 
-	pageDialog = new wxFileDialog(this, _("Select the Welcome page"), fileName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR), fileName.GetFullName(), wxT("Static HTML Page (*.html;*.htm)|*.html;*.htm|Dynamic LUA Page (*.lua)|*.lua|All Files (*.*)|*.*"));
+	pageDialog = new wxFileDialog(this, _("Select the Welcome page"), fileName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR), fileName.GetFullName(), wxT("HTML Page (*.html;*.htm)|*.html;*.htm|All Files (*.*)|*.*"));
 
 	if( pageDialog->ShowModal()==wxID_OK )
 	{
@@ -480,7 +480,7 @@ void muhkuh_configDialog::OnBrowseDetailPageButton(wxCommandEvent &event)
 	fileName.Assign(m_ptTextDetailsPage->GetValue());
 	fileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE);
 
-	pageDialog = new wxFileDialog(this, _("Select the Test Details page"), fileName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR), fileName.GetFullName(), wxT("Static HTML Page (*.html;*.htm)|*.html;*.htm|Dynamic LUA Page (*.lua)|*.lua|All Files (*.*)|*.*"));
+	pageDialog = new wxFileDialog(this, _("Select the Test Details page"), fileName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR), fileName.GetFullName(), wxT("HTML Page (*.html;*.htm)|*.html;*.htm|All Files (*.*)|*.*"));
 
 	if( pageDialog->ShowModal()==wxID_OK )
 	{

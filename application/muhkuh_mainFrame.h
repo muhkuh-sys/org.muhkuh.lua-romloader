@@ -111,6 +111,9 @@ public:
 	void luaScanPlugins(wxString strPattern);
 	muhkuh_plugin_instance *luaGetNextPlugin(void);
 
+	static wxString htmlTag_lua(const wxString &strLuaCode);
+	wxString local_htmlTag_lua(const wxString &strLuaCode);
+
 	// main frame status
 	typedef enum {
 		muhkuh_mainFrame_state_scanning = 0,
@@ -137,6 +140,9 @@ private:
 	void read_config(void);
 	void write_config(void);
 
+	bool initLuaState(void);
+	void clearLuaState(void);
+
 	void executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex);
 	void finishTest(void);
 
@@ -151,6 +157,7 @@ private:
 	bool cutPath(wxString &strPath, wxArrayString *ptElems);
 	bool addTestTree(testTreeItemData *ptTestTreeItem);
 
+	wxString loadHtmlString(wxString strFileUrl);
 	void reloadWelcomePage(void);
 	void reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml);
 
