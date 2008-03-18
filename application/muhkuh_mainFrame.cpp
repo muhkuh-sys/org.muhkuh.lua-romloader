@@ -208,6 +208,8 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 
 	InitDialog();
 
+	initLuaState();
+
 	g_ptMainFrame = this;
 }
 
@@ -229,8 +231,8 @@ muhkuh_mainFrame::~muhkuh_mainFrame(void)
 		delete m_tipProvider;
 	}
 
-
 	finishTest();
+	clearLuaState();
 
 	// delete the plugin manager
 	if( m_ptPluginManager!=NULL )
@@ -421,7 +423,7 @@ void muhkuh_mainFrame::reloadWelcomePage(void)
 	if( m_strWelcomePageFile.IsEmpty()==true )
 	{
 		// use the default welcome message
-		strPage.Printf(_("<html><title>Welcome</title><body><h1>Welcome to %s</h1></body></html>"), m_strVersion.fn_str());
+		strPage = _("<html><title>Welcome</title><body><h1>Welcome to <lua>return _G.__MUHKUH_VERSION</lua></h1></body></html>");
 	}
 	else
 	{
@@ -433,9 +435,7 @@ void muhkuh_mainFrame::reloadWelcomePage(void)
 
 	if( m_welcomeHtml!=NULL )
 	{
-		initLuaState();
 		m_welcomeHtml->SetPage(m_strWelcomePage);
-		clearLuaState();
 	}
 }
 
@@ -504,16 +504,14 @@ void muhkuh_mainFrame::reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml)
 	else
 	{
 		// load from file
-		strPage = loadHtmlString(m_strWelcomePageFile);
+		strPage = loadHtmlString(m_strDetailsPageFile);
 	}
 
 	m_strTestDetails = strPage;
 
 	if( m_testDetailsHtml!=NULL )
 	{
-		initLuaState();
 		m_testDetailsHtml->SetPage(m_strTestDetails);
-		clearLuaState();
 	}
 }
 
@@ -939,8 +937,7 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 		m_strDetailsPageFile = cfgDlg->GetDetailsPageFile();
 		wxLogDebug(wxT("New Details Page File: ") + m_strDetailsPageFile);
 
-		reloadWelcomePage();
-		reloadDetailsPage(NULL);
+		clearLuaState();
 
 		// copy tmp plugin manager over current one
 		delete m_ptPluginManager;
@@ -949,6 +946,11 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 		// copy tmp repository manager over current one
 		delete m_ptRepositoryManager;
 		m_ptRepositoryManager = ptTmpRepositoryManager;
+
+		initLuaState();
+
+		reloadWelcomePage();
+		reloadDetailsPage(NULL);
 
 		// show all repositories in the combo box
 		updateRepositoryCombo();
@@ -1153,8 +1155,7 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	strDebug.Printf(wxT("execute test '") + m_strRunningTestName + wxT("', index %d"), uiIndex);
 	wxLogMessage(strDebug);
 
-	fResult = initLuaState();
-	if( fResult==true )
+	if( m_ptLuaState!=NULL && m_ptLuaState->Ok()==true )
 	{
 		// create a new panel for the test
 		m_testPanel = new wxPanel(this);
@@ -1199,8 +1200,6 @@ void muhkuh_mainFrame::finishTest(void)
 
 
 	wxLogMessage(_("Test '%s' finished, cleaning up..."), m_strRunningTestName.fn_str());
-
-	clearLuaState();
 
 	if( m_testPanel!=NULL )
 	{
