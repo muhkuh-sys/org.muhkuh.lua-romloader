@@ -136,12 +136,15 @@ wxString romloader::get_typ(void)
 
 
 // read a byte (8bit) from the netx to the pc
-unsigned char romloader::read_data08(unsigned long ulNetxAddress)
+double romloader::read_data08(double dNetxAddress)
 {
 	wxString strMsg;
 	unsigned char ucData = 0x00;
 	int iResult;
+	unsigned long ulNetxAddress;
 
+
+	ulNetxAddress = (unsigned long)dNetxAddress;
 
 	if( m_tFunctionInterface.fn_read_data08==NULL )
 	{
@@ -163,12 +166,15 @@ unsigned char romloader::read_data08(unsigned long ulNetxAddress)
 
 
 // read a word (16bit) from the netx to the pc
-unsigned short romloader::read_data16(unsigned long ulNetxAddress)
+double romloader::read_data16(double dNetxAddress)
 {
 	wxString strMsg;
 	unsigned short usData = 0x0000;
 	int iResult;
+	unsigned long ulNetxAddress;
 
+
+	ulNetxAddress = (unsigned long)dNetxAddress;
 
 	if( m_tFunctionInterface.fn_read_data16==NULL )
 	{
@@ -190,12 +196,15 @@ unsigned short romloader::read_data16(unsigned long ulNetxAddress)
 
 
 // read a long (32bit) from the netx to the pc
-unsigned long romloader::read_data32(unsigned long ulNetxAddress)
+double romloader::read_data32(double dNetxAddress)
 {
 	wxString strMsg;
 	unsigned long ulData = 0x00000000;
 	int iResult;
+	unsigned long ulNetxAddress;
 
+
+	ulNetxAddress = (unsigned long)dNetxAddress;
 
 	if( m_tFunctionInterface.fn_read_data32==NULL )
 	{
@@ -217,13 +226,18 @@ unsigned long romloader::read_data32(unsigned long ulNetxAddress)
 
 
 // read a byte array from the netx to the pc
-wxString romloader::read_image(unsigned long ulNetxAddress, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
+wxString romloader::read_image(double dNetxAddress, double dSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	wxString strMsg;
 	wxString strData;
 	char *pcBuffer;
 	int iResult;
+	unsigned long ulNetxAddress;
+	unsigned long ulSize;
 
+
+	ulNetxAddress = (unsigned long)dNetxAddress;
+	ulSize = (unsigned long)dSize;
 
 	if( m_tFunctionInterface.fn_read_image==NULL )
 	{
@@ -262,11 +276,16 @@ wxString romloader::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 }
 
 // write a byte (8bit) from the pc to the netx
-void romloader::write_data08(unsigned long ulNetxAddress, unsigned char ucData)
+void romloader::write_data08(double dNetxAddress, double dData)
 {
 	wxString strMsg;
 	int iResult;
+	unsigned long ulNetxAddress;
+	unsigned char ucData;
 
+
+	ulNetxAddress = (unsigned long)dNetxAddress;
+	ucData = (unsigned char)dData;
 
 	if( m_tFunctionInterface.fn_write_data08==NULL )
 	{
@@ -286,11 +305,16 @@ void romloader::write_data08(unsigned long ulNetxAddress, unsigned char ucData)
 
 
 // write a word (16bit) from the pc to the netx
-void romloader::write_data16(unsigned long ulNetxAddress, unsigned short usData)
+void romloader::write_data16(double dNetxAddress, double dData)
 {
 	wxString strMsg;
 	int iResult;
+	unsigned long ulNetxAddress;
+	unsigned short usData;
 
+
+	ulNetxAddress = (unsigned long)dNetxAddress;
+	usData = (unsigned short)dData;
 
 	if( m_tFunctionInterface.fn_write_data16==NULL )
 	{
@@ -310,11 +334,16 @@ void romloader::write_data16(unsigned long ulNetxAddress, unsigned short usData)
 
 
 // write a long (32bit) from the pc to the netx
-void romloader::write_data32(unsigned long ulNetxAddress, unsigned long ulData)
+void romloader::write_data32(double dNetxAddress, double dData)
 {
 	wxString strMsg;
 	int iResult;
+	unsigned long ulNetxAddress;
+	unsigned long ulData;
 
+
+	ulNetxAddress = (unsigned long)dNetxAddress;
+	ulData = (unsigned long)dData;
 
 	if( m_tFunctionInterface.fn_write_data32==NULL )
 	{
@@ -334,11 +363,14 @@ void romloader::write_data32(unsigned long ulNetxAddress, unsigned long ulData)
 
 
 // write a byte array from the pc to the netx
-void romloader::write_image(unsigned long ulNetxAddress, wxString strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
+void romloader::write_image(double dNetxAddress, wxString strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	wxString strMsg;
 	int iResult;
+	unsigned long ulNetxAddress;
 
+
+	ulNetxAddress = (unsigned long)dNetxAddress;
 
 	if( m_tFunctionInterface.fn_write_image==NULL )
 	{
@@ -358,11 +390,16 @@ void romloader::write_image(unsigned long ulNetxAddress, wxString strData, lua_S
 
 
 // call routine
-void romloader::call(unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
+void romloader::call(double dNetxAddress, double dParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	wxString strMsg;
 	int iResult;
+	unsigned long ulNetxAddress;
+	unsigned long ulParameterR0;
 
+
+	ulNetxAddress = (unsigned long)dNetxAddress;
+	ulParameterR0 = (unsigned long)dParameterR0;
 
 	if( m_tFunctionInterface.fn_call==NULL )
 	{

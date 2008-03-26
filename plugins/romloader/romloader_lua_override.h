@@ -21,13 +21,13 @@ static int LUACALL wxLua_romloader_read_image(lua_State *L)
         wxlua_argerror(L, 4, wxT("a 'function'"));
     }
     // unsigned long ulSize
-    unsigned long ulSize = (long)wxlua_getnumbertype(L, 3);
+    double dSize = wxlua_getnumbertype(L, 3);
     // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    double dNetxAddress = wxlua_getnumbertype(L, 2);
     // get this
     romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call read_image
-    returns = (self->read_image(ulNetxAddress, ulSize, L, iLuaCallbackTag, (void*)vplCallbackUserData));
+    returns = (self->read_image(dNetxAddress, dSize, L, iLuaCallbackTag, (void*)vplCallbackUserData));
 
     // remove ref to function
     luaL_unref(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
@@ -74,11 +74,11 @@ static int LUACALL wxLua_romloader_write_image(lua_State *L)
         strData = wxString::From8BitData(pcBuf, sizLen);
     }
     // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    double dNetxAddress = wxlua_getnumbertype(L, 2);
     // get this
     romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call write_image
-    self->write_image(ulNetxAddress, strData, L, iLuaCallbackTag, (void*)vplCallbackUserData);
+    self->write_image(dNetxAddress, strData, L, iLuaCallbackTag, (void*)vplCallbackUserData);
 
     // remove ref to function
     luaL_unref(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
@@ -107,13 +107,13 @@ static int LUACALL wxLua_romloader_call(lua_State *L)
         wxlua_argerror(L, 4, wxT("a 'function'"));
     }
     // unsigned long ulParameterR0
-    unsigned long ulParameterR0 = (long)wxlua_getnumbertype(L, 3);
+    double dParameterR0 = wxlua_getnumbertype(L, 3);
     // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    double dNetxAddress = wxlua_getnumbertype(L, 2);
     // get this
     romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call call
-    self->call(ulNetxAddress, ulParameterR0, L, iLuaCallbackTag, (void*)vplCallbackUserData);
+    self->call(dNetxAddress, dParameterR0, L, iLuaCallbackTag, (void*)vplCallbackUserData);
 
     // remove ref to function
     luaL_unref(L, LUA_REGISTRYINDEX, iLuaCallbackTag);

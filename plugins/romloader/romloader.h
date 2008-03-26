@@ -96,37 +96,37 @@ public:
 
 // *** lua interface start ***
 	// open the connection to the device
-	void connect(void);
+	virtual void connect(void);
 	// close the connection to the device
-	void disconnect(void);
+	virtual void disconnect(void);
 	// returns the connection state of the device
-	bool is_connected(void) const;
+	virtual bool is_connected(void) const;
 
 	// returns the device name
-	wxString get_name(void);
+	virtual wxString get_name(void);
 	// returns the device typ
-	wxString get_typ(void);
+	virtual wxString get_typ(void);
 
 	// read a byte (8bit) from the netx to the pc
-	unsigned char read_data08(unsigned long ulNetxAddress);
+	virtual double read_data08(double dNetxAddress);
 	// read a word (16bit) from the netx to the pc
-	unsigned short read_data16(unsigned long ulNetxAddress);
+	virtual double read_data16(double dNetxAddress);
 	// read a long (32bit) from the netx to the pc
-	unsigned long read_data32(unsigned long ulNetxAddress);
+	virtual double read_data32(double dNetxAddress);
 	// read a byte array from the netx to the pc
-	wxString read_image(unsigned long ulNetxAddress, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+	virtual wxString read_image(double dNetxAddress, double dSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 
 	// write a byte (8bit) from the pc to the netx
-	void write_data08(unsigned long ulNetxAddress, unsigned char ucData);
+	virtual void write_data08(double dNetxAddress, double dData);
 	// write a word (16bit) from the pc to the netx
-	void write_data16(unsigned long ulNetxAddress, unsigned short usData);
+	virtual void write_data16(double dNetxAddress, double dData);
 	// write a long (32bit) from the pc to the netx
-	void write_data32(unsigned long ulNetxAddress, unsigned long ulData);
+	virtual void write_data32(double dNetxAddress, double dData);
 	// write a byte array from the pc to the netx
-	void write_image(unsigned long ulNetxAddress, wxString strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+	virtual void write_image(double dNetxAddress, wxString strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 
 	// call routine
-	void call(unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+	virtual void call(double dNetxAddress, double dParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 // *** lua interface end ***
 
 private:

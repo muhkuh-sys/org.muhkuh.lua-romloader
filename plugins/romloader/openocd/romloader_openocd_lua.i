@@ -18,24 +18,24 @@
  // returns the device typ
  wxString get_typ()
  // read a byte (8bit) from the netx to the pc
- unsigned char read_data08(unsigned long ulNetxAddress)
+ double read_data08(double dNetxAddress)
  // read a word (16bit) from the netx to the pc
- unsigned short read_data16(unsigned long ulNetxAddress)
+ double read_data16(double dNetxAddress)
  // read a long (32bit) from the netx to the pc
- unsigned long read_data32(unsigned long ulNetxAddress)
+ double read_data32(double dNetxAddress)
  // read a byte array from the netx to the pc
- wxString read_image(unsigned long ulNetxAddress, unsigned long ulSize, LuaFunction fnCallback, voidptr_long vplCallbackUserData)
+ wxString read_image(double dNetxAddress, double dSize, LuaFunction fnCallback, voidptr_long vplCallbackUserData)
 
  // write a byte (8bit) from the pc to the netx
- void write_data08(unsigned long ulNetxAddress, unsigned char bData)
+ void write_data08(double dNetxAddress, double dData)
  // write a word (16bit) from the pc to the netx
- void write_data16(unsigned long ulNetxAddress, unsigned short usData)
+ void write_data16(double dNetxAddress, double dData)
  // write a long (32bit) from the pc to the netx
- void write_data32(unsigned long ulNetxAddress, unsigned long ulData)
+ void write_data32(double dNetxAddress, double dData)
  // write a byte array from the pc to the netx
- void write_image(unsigned long ulNetxAddress, wxString strData, LuaFunction fnCallback, voidptr_long vplCallbackUserData)
+ void write_image(double dNetxAddress, wxString strData, LuaFunction fnCallback, voidptr_long vplCallbackUserData)
 
  // call routine
- void call(unsigned long ulNetxAddress, unsigned long ulParameterR0, LuaFunction fnCallback, voidptr_long vplCallbackUserData)
+ void call(double dNetxAddress, double dParameterR0, LuaFunction fnCallback, voidptr_long vplCallbackUserData)
 %endclass
 %function %gc romloader *romloader_openocd_create(voidptr_long pvHandle)

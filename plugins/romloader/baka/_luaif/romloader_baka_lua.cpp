@@ -48,13 +48,13 @@ static int LUACALL wxLua_romloader_call(lua_State *L)
         wxlua_argerror(L, 4, wxT("a 'function'"));
     }
     // unsigned long ulParameterR0
-    unsigned long ulParameterR0 = (long)wxlua_getnumbertype(L, 3);
+    double dParameterR0 = wxlua_getnumbertype(L, 3);
     // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    double dNetxAddress = wxlua_getnumbertype(L, 2);
     // get this
     romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call call
-    self->call(ulNetxAddress, ulParameterR0, L, iLuaCallbackTag, (void*)vplCallbackUserData);
+    self->call(dNetxAddress, dParameterR0, L, iLuaCallbackTag, (void*)vplCallbackUserData);
 
     // remove ref to function
     luaL_unref(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
@@ -145,15 +145,15 @@ static int LUACALL wxLua_romloader_is_connected(lua_State *L)
 static wxLuaArgType s_wxluatypeArray_wxLua_romloader_read_data08[] = { &wxluatype_romloader, &wxluatype_TNUMBER, NULL };
 static int LUACALL wxLua_romloader_read_data08(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_read_data08[1] = {{ wxLua_romloader_read_data08, WXLUAMETHOD_METHOD, 2, 2, s_wxluatypeArray_wxLua_romloader_read_data08 }};
-//  unsigned char read_data08(unsigned long ulNetxAddress)
+//  double read_data08(double dNetxAddress)
 static int LUACALL wxLua_romloader_read_data08(lua_State *L)
 {
-    // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    // double dNetxAddress
+    double dNetxAddress = (double)wxlua_getnumbertype(L, 2);
     // get this
     romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call read_data08
-    unsigned char returns = (self->read_data08(ulNetxAddress));
+    double returns = (self->read_data08(dNetxAddress));
     // push the result number
     lua_pushnumber(L, returns);
 
@@ -163,15 +163,15 @@ static int LUACALL wxLua_romloader_read_data08(lua_State *L)
 static wxLuaArgType s_wxluatypeArray_wxLua_romloader_read_data16[] = { &wxluatype_romloader, &wxluatype_TNUMBER, NULL };
 static int LUACALL wxLua_romloader_read_data16(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_read_data16[1] = {{ wxLua_romloader_read_data16, WXLUAMETHOD_METHOD, 2, 2, s_wxluatypeArray_wxLua_romloader_read_data16 }};
-//  unsigned short read_data16(unsigned long ulNetxAddress)
+//  double read_data16(double dNetxAddress)
 static int LUACALL wxLua_romloader_read_data16(lua_State *L)
 {
-    // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    // double dNetxAddress
+    double dNetxAddress = (double)wxlua_getnumbertype(L, 2);
     // get this
     romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call read_data16
-    unsigned short returns = (self->read_data16(ulNetxAddress));
+    double returns = (self->read_data16(dNetxAddress));
     // push the result number
     lua_pushnumber(L, returns);
 
@@ -181,15 +181,15 @@ static int LUACALL wxLua_romloader_read_data16(lua_State *L)
 static wxLuaArgType s_wxluatypeArray_wxLua_romloader_read_data32[] = { &wxluatype_romloader, &wxluatype_TNUMBER, NULL };
 static int LUACALL wxLua_romloader_read_data32(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_read_data32[1] = {{ wxLua_romloader_read_data32, WXLUAMETHOD_METHOD, 2, 2, s_wxluatypeArray_wxLua_romloader_read_data32 }};
-//  unsigned long read_data32(unsigned long ulNetxAddress)
+//  double read_data32(double dNetxAddress)
 static int LUACALL wxLua_romloader_read_data32(lua_State *L)
 {
-    // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    // double dNetxAddress
+    double dNetxAddress = (double)wxlua_getnumbertype(L, 2);
     // get this
     romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call read_data32
-    unsigned long returns = (self->read_data32(ulNetxAddress));
+    double returns = (self->read_data32(dNetxAddress));
     // push the result number
     lua_pushnumber(L, returns);
 
@@ -221,13 +221,13 @@ static int LUACALL wxLua_romloader_read_image(lua_State *L)
         wxlua_argerror(L, 4, wxT("a 'function'"));
     }
     // unsigned long ulSize
-    unsigned long ulSize = (long)wxlua_getnumbertype(L, 3);
+    double dSize = wxlua_getnumbertype(L, 3);
     // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    double dNetxAddress = wxlua_getnumbertype(L, 2);
     // get this
     romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call read_image
-    returns = (self->read_image(ulNetxAddress, ulSize, L, iLuaCallbackTag, (void*)vplCallbackUserData));
+    returns = (self->read_image(dNetxAddress, dSize, L, iLuaCallbackTag, (void*)vplCallbackUserData));
 
     // remove ref to function
     luaL_unref(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
@@ -242,17 +242,17 @@ static int LUACALL wxLua_romloader_read_image(lua_State *L)
 static wxLuaArgType s_wxluatypeArray_wxLua_romloader_write_data08[] = { &wxluatype_romloader, &wxluatype_TNUMBER, &wxluatype_TNUMBER, NULL };
 static int LUACALL wxLua_romloader_write_data08(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_write_data08[1] = {{ wxLua_romloader_write_data08, WXLUAMETHOD_METHOD, 3, 3, s_wxluatypeArray_wxLua_romloader_write_data08 }};
-//  void write_data08(unsigned long ulNetxAddress, unsigned char bData)
+//  void write_data08(double dNetxAddress, double dData)
 static int LUACALL wxLua_romloader_write_data08(lua_State *L)
 {
-    // unsigned char bData
-    unsigned char bData = (char)wxlua_getnumbertype(L, 3);
-    // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    // double dData
+    double dData = (double)wxlua_getnumbertype(L, 3);
+    // double dNetxAddress
+    double dNetxAddress = (double)wxlua_getnumbertype(L, 2);
     // get this
     romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call write_data08
-    self->write_data08(ulNetxAddress, bData);
+    self->write_data08(dNetxAddress, dData);
 
     return 0;
 }
@@ -260,17 +260,17 @@ static int LUACALL wxLua_romloader_write_data08(lua_State *L)
 static wxLuaArgType s_wxluatypeArray_wxLua_romloader_write_data16[] = { &wxluatype_romloader, &wxluatype_TNUMBER, &wxluatype_TNUMBER, NULL };
 static int LUACALL wxLua_romloader_write_data16(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_write_data16[1] = {{ wxLua_romloader_write_data16, WXLUAMETHOD_METHOD, 3, 3, s_wxluatypeArray_wxLua_romloader_write_data16 }};
-//  void write_data16(unsigned long ulNetxAddress, unsigned short usData)
+//  void write_data16(double dNetxAddress, double dData)
 static int LUACALL wxLua_romloader_write_data16(lua_State *L)
 {
-    // unsigned short usData
-    unsigned short usData = (short)wxlua_getnumbertype(L, 3);
-    // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    // double dData
+    double dData = (double)wxlua_getnumbertype(L, 3);
+    // double dNetxAddress
+    double dNetxAddress = (double)wxlua_getnumbertype(L, 2);
     // get this
     romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call write_data16
-    self->write_data16(ulNetxAddress, usData);
+    self->write_data16(dNetxAddress, dData);
 
     return 0;
 }
@@ -278,17 +278,17 @@ static int LUACALL wxLua_romloader_write_data16(lua_State *L)
 static wxLuaArgType s_wxluatypeArray_wxLua_romloader_write_data32[] = { &wxluatype_romloader, &wxluatype_TNUMBER, &wxluatype_TNUMBER, NULL };
 static int LUACALL wxLua_romloader_write_data32(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_write_data32[1] = {{ wxLua_romloader_write_data32, WXLUAMETHOD_METHOD, 3, 3, s_wxluatypeArray_wxLua_romloader_write_data32 }};
-//  void write_data32(unsigned long ulNetxAddress, unsigned long ulData)
+//  void write_data32(double dNetxAddress, double dData)
 static int LUACALL wxLua_romloader_write_data32(lua_State *L)
 {
-    // unsigned long ulData
-    unsigned long ulData = (long)wxlua_getnumbertype(L, 3);
-    // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    // double dData
+    double dData = (double)wxlua_getnumbertype(L, 3);
+    // double dNetxAddress
+    double dNetxAddress = (double)wxlua_getnumbertype(L, 2);
     // get this
     romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call write_data32
-    self->write_data32(ulNetxAddress, ulData);
+    self->write_data32(dNetxAddress, dData);
 
     return 0;
 }
@@ -330,11 +330,11 @@ static int LUACALL wxLua_romloader_write_image(lua_State *L)
         strData = wxString::From8BitData(pcBuf, sizLen);
     }
     // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    double dNetxAddress = wxlua_getnumbertype(L, 2);
     // get this
     romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call write_image
-    self->write_image(ulNetxAddress, strData, L, iLuaCallbackTag, (void*)vplCallbackUserData);
+    self->write_image(dNetxAddress, strData, L, iLuaCallbackTag, (void*)vplCallbackUserData);
 
     // remove ref to function
     luaL_unref(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
