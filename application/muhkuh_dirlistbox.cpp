@@ -90,6 +90,7 @@ void muhkuh_dirlistbox::OnDrawItem(wxDC& dc, const wxRect& rect, size_t n) const
 	wxString strPath;
 	wxSize tStringSize;
 	int iYOffset;
+	const int iXOffset = 4;
 
 
 	// is this the active item?
@@ -115,18 +116,18 @@ void muhkuh_dirlistbox::OnDrawItem(wxDC& dc, const wxRect& rect, size_t n) const
 		}
 
 		iYOffset = (tDefaultHeight - tStringSize.GetHeight())/2;
-		// does the text fit into the window?
-		if( tStringSize.GetWidth()>rect.width )
+		// does the text plus offset fit into the window?
+		if( (tStringSize.GetWidth()+iXOffset)>rect.width )
 		{
 			{
-				wxDCClipper clip(dc, rect.x, rect.y, rect.width-m_iDotDotDotWidth, rect.height);
-				dc.DrawText(strPath, rect.x, rect.y+iYOffset);
+				wxDCClipper clip(dc, rect.x+iXOffset, rect.y, rect.width-m_iDotDotDotWidth, rect.height);
+				dc.DrawText(strPath, rect.x+iXOffset, rect.y+iYOffset);
 			}
 			dc.DrawText(wxT("..."), rect.x+rect.width-m_iDotDotDotWidth, rect.y+iYOffset);
 		}
 		else
 		{
-			dc.DrawText(strPath, rect.x, rect.y+iYOffset);
+			dc.DrawText(strPath, rect.x+iXOffset, rect.y+iYOffset);
 		}
 	}
 }
