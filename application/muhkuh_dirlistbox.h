@@ -78,7 +78,6 @@ private:
 
 	wxTextCtrl *m_ptTextCtrl;
 	wxButton *m_ptBrowseButton;
-	wxPaintDC *m_paintDC;
     DECLARE_EVENT_TABLE()
 };
 

@@ -37,19 +37,19 @@ muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxPo
 	wxSize tSize;
 	size_t sizCnt;
 	size_t sizMax;
+	wxMemoryDC memoryDC;
 
 
 	// create a paintDC to get the pixel length of the path strings
-	m_paintDC = new wxPaintDC(this);
 	// use this control's font
-	m_paintDC->SetFont( GetFont() );
+	memoryDC.SetFont( GetFont() );
 
 	// loop over all strings and get the pixel width
 	sizCnt = 0;
 	sizMax = m_astrPaths.GetCount();
 	while( sizCnt<sizMax )
 	{
-		tSize = m_paintDC->GetTextExtent( m_astrPaths.Item(sizCnt) );
+		tSize = memoryDC.GetTextExtent( m_astrPaths.Item(sizCnt) );
 		m_aiPathPixelHeight.Add( tSize.GetHeight() );
 		m_aiPathPixelWidth.Add( tSize.GetWidth() );
 		++sizCnt;
@@ -57,7 +57,7 @@ muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxPo
 	SetLineCount(sizMax);
 
 	// get the size of "..."
-	tSize = m_paintDC->GetTextExtent( wxT("...") );
+	tSize = memoryDC.GetTextExtent( wxT("...") );
 	m_iDotDotDotWidth = tSize.GetWidth();
 
 	// no active item
@@ -82,7 +82,6 @@ muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxPo
 
 muhkuh_dirlistbox::~muhkuh_dirlistbox(void)
 {
-	delete m_paintDC;
 }
 
 
@@ -145,10 +144,15 @@ size_t muhkuh_dirlistbox::Append(const wxString&  item)
 {
 	wxSize tSize;
 	size_t sizLineCount;
+	wxMemoryDC memoryDC;
 
+
+	// create a paintDC to get the pixel length of the path strings
+	// use this control's font
+	memoryDC.SetFont( GetFont() );
 
 	// get the string's pixel size
-	tSize = m_paintDC->GetTextExtent(item);
+	tSize = memoryDC.GetTextExtent(item);
 	// append the new item to the path array
 	m_astrPaths.Add(item);
 	m_aiPathPixelHeight.Add( tSize.GetHeight() );
@@ -199,14 +203,19 @@ void muhkuh_dirlistbox::SetString(unsigned int n, const wxString&  string)
 {
 	wxSize tSize;
 	size_t sizLineCount;
+	wxMemoryDC memoryDC;
 
+
+	// create a paintDC to get the pixel length of the path strings
+	// use this control's font
+	memoryDC.SetFont( GetFont() );
 
 	// get old line count
 	sizLineCount = m_astrPaths.GetCount();
 	if( n<sizLineCount )
 	{
 		// get the string's pixel size
-		tSize = m_paintDC->GetTextExtent(string);
+		tSize = memoryDC.GetTextExtent(string);
 
 		// remove the old item from the path array
 		m_astrPaths.RemoveAt(n);
