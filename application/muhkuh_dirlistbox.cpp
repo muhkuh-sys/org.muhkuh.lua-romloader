@@ -314,6 +314,8 @@ void muhkuh_dirlistbox::OnBrowseButton(wxCommandEvent &event)
 		{
 			strPath = testPathDialog->GetPath() + wxFileName::GetPathSeparator() + strWild;
 			m_ptTextCtrl->SetValue(strPath);
+			// set focus back to textctrl
+			m_ptTextCtrl->SetFocus();
 		}
 		testPathDialog->Destroy();
 	}
