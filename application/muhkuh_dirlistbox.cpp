@@ -40,9 +40,33 @@ muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxPo
 	wxMemoryDC memoryDC;
 
 
+	m_ptTextCtrl = new wxTextCtrl(this, muhkuh_dirlistbox_TextCtrl, wxT(""), wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
+	m_ptBrowseButton = new wxButton(this, muhkuh_dirlistbox_BrowseButton, wxT("..."), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
+	m_ptTextCtrl->Show(false);
+	m_ptBrowseButton->Show(false);
+
+	tSize = m_ptTextCtrl->GetEffectiveMinSize();
+	tDefaultHeight = tSize.GetHeight();
+
+	tSize.SetWidth(-1);
+	m_ptBrowseButton->SetMinSize(tSize);
+	tSize = m_ptBrowseButton->GetEffectiveMinSize();
+	m_iButtonWidth = tSize.GetWidth();
+
+	m_ptTextCtrl->Connect(muhkuh_dirlistbox_TextCtrl, wxEVT_KEY_DOWN, wxKeyEventHandler(muhkuh_dirlistbox::OnKeyDown));
+
+	// set default config values
+	m_iTextXOffset = 4;
+	m_colTextNormal = *wxBLACK;
+	m_colTextSelected = *wxWHITE;
+	m_fontDirlist = m_ptTextCtrl->GetFont();
+
+	// set font for this list
+	SetFont( m_fontDirlist );
+
 	// create a paintDC to get the pixel length of the path strings
 	// use this control's font
-	memoryDC.SetFont( GetFont() );
+	memoryDC.SetFont( m_fontDirlist );
 
 	// loop over all strings and get the pixel width
 	sizCnt = 0;
@@ -62,21 +86,6 @@ muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxPo
 
 	// no active item
 	sizActiveItem = -1;
-
-	m_ptTextCtrl = new wxTextCtrl(this, muhkuh_dirlistbox_TextCtrl, wxT(""), wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
-	m_ptBrowseButton = new wxButton(this, muhkuh_dirlistbox_BrowseButton, wxT("..."), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
-	m_ptTextCtrl->Show(false);
-	m_ptBrowseButton->Show(false);
-
-	tSize = m_ptTextCtrl->GetEffectiveMinSize();
-	tDefaultHeight = tSize.GetHeight();
-
-	tSize.SetWidth(-1);
-	m_ptBrowseButton->SetMinSize(tSize);
-	tSize = m_ptBrowseButton->GetEffectiveMinSize();
-	m_iButtonWidth = tSize.GetWidth();
-
-	m_ptTextCtrl->Connect(muhkuh_dirlistbox_TextCtrl, wxEVT_KEY_DOWN, wxKeyEventHandler(muhkuh_dirlistbox::OnKeyDown));
 }
 
 
@@ -90,8 +99,11 @@ void muhkuh_dirlistbox::OnDrawItem(wxDC& dc, const wxRect& rect, size_t n) const
 	wxString strPath;
 	wxSize tStringSize;
 	int iYOffset;
-	const int iXOffset = 4;
+	bool fIsSelected;
 
+
+	// set the font
+	dc.SetFont(m_fontDirlist);
 
 	// is this the active item?
 	if( n==sizActiveItem )
@@ -115,19 +127,23 @@ void muhkuh_dirlistbox::OnDrawItem(wxDC& dc, const wxRect& rect, size_t n) const
 			tStringSize.Set( 0, 0 );
 		}
 
+		// is the item selected? -> draw text with different color
+		fIsSelected = IsSelected(n);
+		dc.SetTextForeground( fIsSelected?m_colTextSelected:m_colTextNormal );
+
 		iYOffset = (tDefaultHeight - tStringSize.GetHeight())/2;
 		// does the text plus offset fit into the window?
-		if( (tStringSize.GetWidth()+iXOffset)>rect.width )
+		if( (tStringSize.GetWidth()+m_iTextXOffset)>rect.width )
 		{
 			{
-				wxDCClipper clip(dc, rect.x+iXOffset, rect.y, rect.width-m_iDotDotDotWidth, rect.height);
-				dc.DrawText(strPath, rect.x+iXOffset, rect.y+iYOffset);
+				wxDCClipper clip(dc, rect.x+m_iTextXOffset, rect.y, rect.width-m_iDotDotDotWidth, rect.height);
+				dc.DrawText(strPath, rect.x+m_iTextXOffset, rect.y+iYOffset);
 			}
 			dc.DrawText(wxT("..."), rect.x+rect.width-m_iDotDotDotWidth, rect.y+iYOffset);
 		}
 		else
 		{
-			dc.DrawText(strPath, rect.x+iXOffset, rect.y+iYOffset);
+			dc.DrawText(strPath, rect.x+m_iTextXOffset, rect.y+iYOffset);
 		}
 	}
 }
@@ -150,7 +166,7 @@ size_t muhkuh_dirlistbox::Append(const wxString&  item)
 
 	// create a paintDC to get the pixel length of the path strings
 	// use this control's font
-	memoryDC.SetFont( GetFont() );
+	memoryDC.SetFont( m_fontDirlist );
 
 	// get the string's pixel size
 	tSize = memoryDC.GetTextExtent(item);
@@ -209,7 +225,7 @@ void muhkuh_dirlistbox::SetString(unsigned int n, const wxString&  string)
 
 	// create a paintDC to get the pixel length of the path strings
 	// use this control's font
-	memoryDC.SetFont( GetFont() );
+	memoryDC.SetFont( m_fontDirlist );
 
 	// get old line count
 	sizLineCount = m_astrPaths.GetCount();

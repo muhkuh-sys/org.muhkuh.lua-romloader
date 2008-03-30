@@ -78,6 +78,11 @@ private:
 
 	wxTextCtrl *m_ptTextCtrl;
 	wxButton *m_ptBrowseButton;
+	int m_iTextXOffset;
+	wxColor m_colTextNormal;
+	wxColor m_colTextSelected;
+	wxFont m_fontDirlist;
+
     DECLARE_EVENT_TABLE()
 };
 
