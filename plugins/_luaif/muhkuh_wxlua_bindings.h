@@ -49,6 +49,9 @@ extern WXLUA_NO_DLLIMPEXP bool wxLuaBinding_muhkuh_lua_init();
 extern WXLUA_NO_DLLIMPEXP_DATA(int) wxluatype_muhkuh_plugin_instance;
 extern WXLUA_NO_DLLIMPEXP wxLuaBindMethod muhkuh_plugin_instance_methods[];
 extern WXLUA_NO_DLLIMPEXP_DATA(int) muhkuh_plugin_instance_methodCount;
+extern WXLUA_NO_DLLIMPEXP_DATA(int) wxluatype_muhkuh_wrap_xml;
+extern WXLUA_NO_DLLIMPEXP wxLuaBindMethod muhkuh_wrap_xml_methods[];
+extern WXLUA_NO_DLLIMPEXP_DATA(int) muhkuh_wrap_xml_methodCount;
 
 
 // ---------------------------------------------------------------------------

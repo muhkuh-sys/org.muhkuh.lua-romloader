@@ -110,6 +110,7 @@ public:
 	wxString luaGetMarkedLog(void);
 	void luaScanPlugins(wxString strPattern);
 	muhkuh_plugin_instance *luaGetNextPlugin(void);
+	muhkuh_wrap_xml *luaGetSelectedTest(void);
 
 	static wxString htmlTag_lua(const wxString &strLuaCode);
 	wxString local_htmlTag_lua(const wxString &strLuaCode);

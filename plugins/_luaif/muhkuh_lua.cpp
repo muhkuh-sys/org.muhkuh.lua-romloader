@@ -138,3 +138,124 @@ wxLuaBindMethod muhkuh_plugin_instance_methods[] = {
 int muhkuh_plugin_instance_methodCount = sizeof(muhkuh_plugin_instance_methods)/sizeof(wxLuaBindMethod) - 1;
 
 
+// ---------------------------------------------------------------------------
+// Bind class muhkuh_wrap_xml
+// ---------------------------------------------------------------------------
+
+// Lua MetaTable Tag for Class 'muhkuh_wrap_xml'
+int wxluatype_muhkuh_wrap_xml = WXLUA_TUNKNOWN;
+
+static wxLuaArgType s_wxluatypeArray_wxLua_muhkuh_wrap_xml_testDescription_getName[] = { &wxluatype_muhkuh_wrap_xml, NULL };
+static int LUACALL wxLua_muhkuh_wrap_xml_testDescription_getName(lua_State *L);
+static wxLuaBindCFunc s_wxluafunc_wxLua_muhkuh_wrap_xml_testDescription_getName[1] = {{ wxLua_muhkuh_wrap_xml_testDescription_getName, WXLUAMETHOD_METHOD, 1, 1, s_wxluatypeArray_wxLua_muhkuh_wrap_xml_testDescription_getName }};
+// 	wxString testDescription_getName()
+static int LUACALL wxLua_muhkuh_wrap_xml_testDescription_getName(lua_State *L)
+{
+    // get this
+    muhkuh_wrap_xml * self = (muhkuh_wrap_xml *)wxluaT_getuserdatatype(L, 1, wxluatype_muhkuh_wrap_xml);
+    // call testDescription_getName
+    wxString returns = (self->testDescription_getName());
+    // push the result string
+    wxlua_pushwxString(L, returns);
+
+    return 1;
+}
+
+static wxLuaArgType s_wxluatypeArray_wxLua_muhkuh_wrap_xml_testDescription_getTestCnt[] = { &wxluatype_muhkuh_wrap_xml, NULL };
+static int LUACALL wxLua_muhkuh_wrap_xml_testDescription_getTestCnt(lua_State *L);
+static wxLuaBindCFunc s_wxluafunc_wxLua_muhkuh_wrap_xml_testDescription_getTestCnt[1] = {{ wxLua_muhkuh_wrap_xml_testDescription_getTestCnt, WXLUAMETHOD_METHOD, 1, 1, s_wxluatypeArray_wxLua_muhkuh_wrap_xml_testDescription_getTestCnt }};
+// 	unsigned int testDescription_getTestCnt()
+static int LUACALL wxLua_muhkuh_wrap_xml_testDescription_getTestCnt(lua_State *L)
+{
+    // get this
+    muhkuh_wrap_xml * self = (muhkuh_wrap_xml *)wxluaT_getuserdatatype(L, 1, wxluatype_muhkuh_wrap_xml);
+    // call testDescription_getTestCnt
+    unsigned int returns = (self->testDescription_getTestCnt());
+    // push the result number
+    lua_pushnumber(L, returns);
+
+    return 1;
+}
+
+static wxLuaArgType s_wxluatypeArray_wxLua_muhkuh_wrap_xml_testDescription_getVersion[] = { &wxluatype_muhkuh_wrap_xml, NULL };
+static int LUACALL wxLua_muhkuh_wrap_xml_testDescription_getVersion(lua_State *L);
+static wxLuaBindCFunc s_wxluafunc_wxLua_muhkuh_wrap_xml_testDescription_getVersion[1] = {{ wxLua_muhkuh_wrap_xml_testDescription_getVersion, WXLUAMETHOD_METHOD, 1, 1, s_wxluatypeArray_wxLua_muhkuh_wrap_xml_testDescription_getVersion }};
+// 	wxString testDescription_getVersion()
+static int LUACALL wxLua_muhkuh_wrap_xml_testDescription_getVersion(lua_State *L)
+{
+    // get this
+    muhkuh_wrap_xml * self = (muhkuh_wrap_xml *)wxluaT_getuserdatatype(L, 1, wxluatype_muhkuh_wrap_xml);
+    // call testDescription_getVersion
+    wxString returns = (self->testDescription_getVersion());
+    // push the result string
+    wxlua_pushwxString(L, returns);
+
+    return 1;
+}
+
+static wxLuaArgType s_wxluatypeArray_wxLua_muhkuh_wrap_xml_testDescription_setTest[] = { &wxluatype_muhkuh_wrap_xml, &wxluatype_TNUMBER, NULL };
+static int LUACALL wxLua_muhkuh_wrap_xml_testDescription_setTest(lua_State *L);
+static wxLuaBindCFunc s_wxluafunc_wxLua_muhkuh_wrap_xml_testDescription_setTest[1] = {{ wxLua_muhkuh_wrap_xml_testDescription_setTest, WXLUAMETHOD_METHOD, 2, 2, s_wxluatypeArray_wxLua_muhkuh_wrap_xml_testDescription_setTest }};
+// 	bool testDescription_setTest(unsigned int uiTestIdx)
+static int LUACALL wxLua_muhkuh_wrap_xml_testDescription_setTest(lua_State *L)
+{
+    // unsigned int uiTestIdx
+    unsigned int uiTestIdx = (int)wxlua_getnumbertype(L, 2);
+    // get this
+    muhkuh_wrap_xml * self = (muhkuh_wrap_xml *)wxluaT_getuserdatatype(L, 1, wxluatype_muhkuh_wrap_xml);
+    // call testDescription_setTest
+    bool returns = (self->testDescription_setTest(uiTestIdx));
+    // push the result flag
+    lua_pushboolean(L, returns);
+
+    return 1;
+}
+
+static wxLuaArgType s_wxluatypeArray_wxLua_muhkuh_wrap_xml_test_getName[] = { &wxluatype_muhkuh_wrap_xml, NULL };
+static int LUACALL wxLua_muhkuh_wrap_xml_test_getName(lua_State *L);
+static wxLuaBindCFunc s_wxluafunc_wxLua_muhkuh_wrap_xml_test_getName[1] = {{ wxLua_muhkuh_wrap_xml_test_getName, WXLUAMETHOD_METHOD, 1, 1, s_wxluatypeArray_wxLua_muhkuh_wrap_xml_test_getName }};
+// 	wxString test_getName()
+static int LUACALL wxLua_muhkuh_wrap_xml_test_getName(lua_State *L)
+{
+    // get this
+    muhkuh_wrap_xml * self = (muhkuh_wrap_xml *)wxluaT_getuserdatatype(L, 1, wxluatype_muhkuh_wrap_xml);
+    // call test_getName
+    wxString returns = (self->test_getName());
+    // push the result string
+    wxlua_pushwxString(L, returns);
+
+    return 1;
+}
+
+static wxLuaArgType s_wxluatypeArray_wxLua_muhkuh_wrap_xml_test_getVersion[] = { &wxluatype_muhkuh_wrap_xml, NULL };
+static int LUACALL wxLua_muhkuh_wrap_xml_test_getVersion(lua_State *L);
+static wxLuaBindCFunc s_wxluafunc_wxLua_muhkuh_wrap_xml_test_getVersion[1] = {{ wxLua_muhkuh_wrap_xml_test_getVersion, WXLUAMETHOD_METHOD, 1, 1, s_wxluatypeArray_wxLua_muhkuh_wrap_xml_test_getVersion }};
+// 	wxString test_getVersion()
+static int LUACALL wxLua_muhkuh_wrap_xml_test_getVersion(lua_State *L)
+{
+    // get this
+    muhkuh_wrap_xml * self = (muhkuh_wrap_xml *)wxluaT_getuserdatatype(L, 1, wxluatype_muhkuh_wrap_xml);
+    // call test_getVersion
+    wxString returns = (self->test_getVersion());
+    // push the result string
+    wxlua_pushwxString(L, returns);
+
+    return 1;
+}
+
+
+
+// Map Lua Class Methods to C Binding Functions
+wxLuaBindMethod muhkuh_wrap_xml_methods[] = {
+    { "testDescription_getName", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_muhkuh_wrap_xml_testDescription_getName, 1, NULL },
+    { "testDescription_getTestCnt", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_muhkuh_wrap_xml_testDescription_getTestCnt, 1, NULL },
+    { "testDescription_getVersion", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_muhkuh_wrap_xml_testDescription_getVersion, 1, NULL },
+    { "testDescription_setTest", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_muhkuh_wrap_xml_testDescription_setTest, 1, NULL },
+    { "test_getName", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_muhkuh_wrap_xml_test_getName, 1, NULL },
+    { "test_getVersion", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_muhkuh_wrap_xml_test_getVersion, 1, NULL },
+    { 0, 0, 0, 0 },
+};
+
+int muhkuh_wrap_xml_methodCount = sizeof(muhkuh_wrap_xml_methods)/sizeof(wxLuaBindMethod) - 1;
+
+

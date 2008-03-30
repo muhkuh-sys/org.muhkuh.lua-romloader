@@ -132,6 +132,11 @@ muhkuh_lua_dataTypeTable =
     Name = "muhkuh_plugin_instance",
     ValueType = "class",
   },
+  muhkuh_wrap_xml = {
+    IsNumber = false,
+    Name = "muhkuh_wrap_xml",
+    ValueType = "class",
+  },
   short = {
     IsNumber = true,
     Name = "short",

@@ -97,6 +97,18 @@ static int LUACALL wxLua_function_GetNextPlugin(lua_State *L)
 }
 static wxLuaBindCFunc s_wxluafunc_wxLua_function_GetNextPlugin[1] = {{ wxLua_function_GetNextPlugin, WXLUAMETHOD_CFUNCTION, 0, 0, g_wxluaargtypeArray_None }};
 
+// %function muhkuh_wrap_xml *GetSelectedTest()
+static int LUACALL wxLua_function_GetSelectedTest(lua_State *L)
+{
+    // call GetSelectedTest
+    muhkuh_wrap_xml* returns = (muhkuh_wrap_xml*)GetSelectedTest();
+    // push the result datatype
+    wxluaT_pushuserdatatype(L, returns, wxluatype_muhkuh_wrap_xml);
+
+    return 1;
+}
+static wxLuaBindCFunc s_wxluafunc_wxLua_function_GetSelectedTest[1] = {{ wxLua_function_GetSelectedTest, WXLUAMETHOD_CFUNCTION, 0, 0, g_wxluaargtypeArray_None }};
+
 static wxLuaArgType s_wxluatypeArray_wxLua_function_ScanPlugins[] = { &wxluatype_TSTRING, NULL };
 // %function void ScanPlugins(wxString strPattern)
 static int LUACALL wxLua_function_ScanPlugins(lua_State *L)
@@ -183,6 +195,7 @@ wxLuaBindMethod* wxLuaGetFunctionList_muhkuh_lua(size_t &count)
     static wxLuaBindMethod functionList[] =
     {
         { "GetNextPlugin", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_GetNextPlugin, 1, NULL },
+        { "GetSelectedTest", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_GetSelectedTest, 1, NULL },
         { "ScanPlugins", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_ScanPlugins, 1, NULL },
         { "TestHasFinished", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_TestHasFinished, 1, NULL },
         { "getMarkedLog", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_getMarkedLog, 1, NULL },
@@ -207,6 +220,7 @@ wxLuaBindClass* wxLuaGetClassList_muhkuh_lua(size_t &count)
     static wxLuaBindClass classList[] =
     {
         { "muhkuh_plugin_instance", muhkuh_plugin_instance_methods, muhkuh_plugin_instance_methodCount, NULL, &wxluatype_muhkuh_plugin_instance, NULL, NULL ,g_wxluanumberArray_None, 0, }, 
+        { "muhkuh_wrap_xml", muhkuh_wrap_xml_methods, muhkuh_wrap_xml_methodCount, NULL, &wxluatype_muhkuh_wrap_xml, NULL, NULL ,g_wxluanumberArray_None, 0, }, 
 
         { 0, 0, 0, 0, 0, 0, 0 }, 
     };

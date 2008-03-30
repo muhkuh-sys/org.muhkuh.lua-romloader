@@ -22,6 +22,7 @@
 #include <wx/wx.h>
 
 #include "muhkuh_plugin_manager.h"
+#include "muhkuh_wrap_xml.h"
 
 
 #ifndef __MUHKUH_LUA_INTERFACE_H__
@@ -39,6 +40,7 @@ wxString getMarkedLog(void);
 void ScanPlugins(wxString strPattern);
 muhkuh_plugin_instance *GetNextPlugin(void);
 
+muhkuh_wrap_xml *GetSelectedTest();
 
 #endif	// __MUHKUH_LUA_INTERFACE_H__
 

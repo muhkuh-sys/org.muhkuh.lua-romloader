@@ -423,7 +423,7 @@ void muhkuh_mainFrame::reloadWelcomePage(void)
 	if( m_strWelcomePageFile.IsEmpty()==true )
 	{
 		// use the default welcome message
-		strPage = _("<html><title>Welcome</title><body><h1>Welcome to <lua>return _G.__MUHKUH_VERSION</lua></h1></body></html>");
+		strPage = _("<html><head><title>Welcome</title></head><body><h1>Welcome to <lua>return _G.__MUHKUH_VERSION</lua></h1></body></html>");
 	}
 	else
 	{
@@ -453,53 +453,64 @@ void muhkuh_mainFrame::reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml)
 
 	if( m_strDetailsPageFile.IsEmpty()==true )
 	{
-		if( ptWrapXml==NULL )
-		{
-			// set the test details page for 'no test selected'
-			strPage = _("<html><title>Test Details</title><body><h1>Test Details</h1>No test selected.<p>Please select a test in the test tree.</body></html>");
-		}
-		else
-		{
-			strTestName = ptWrapXml->testDescription_getName();
-
-			strPage  = wxT("<html><body>\n");
-			strPage += wxT("<h1><a href=\"mtd://");
-			strPage += strTestName;
-			strPage += wxT("\">");
-			strPage += strTestName;
-			strPage += wxT("</a></h1>Version ");
-			strPage += ptWrapXml->testDescription_getVersion();
-			strPage += wxT("<p>");
-
-			strPage += wxT("<table border=1><tr><th>Subtest</th><th>Version</th></tr><tbody>");
-
-			// append all subitems to the list
-			uiSubTestCnt = ptWrapXml->testDescription_getTestCnt();
-			uiCnt = 0;
-			while( uiCnt<uiSubTestCnt )
-			{
-				fOk = ptWrapXml->testDescription_setTest(uiCnt);
-				if( fOk!=true )
-				{
-					wxLogError(_("failed to query subtest!"));
-					break;
-				}
-
-				strSubTestName = ptWrapXml->test_getName();
-
-				strPage += wxT("<tr><td>");
-				strPage += wxT("<a href=\"mtd://") + strTestName + wxT('#') + strSubTestName + wxT("\">");
-				strPage += strSubTestName;
-				strPage += wxT("</a></td><td>");
-				strPage += ptWrapXml->test_getVersion();
-				strPage += wxT("</td></tr>");
-
-				// next item
-				++uiCnt;
-			}
-
-			strPage += wxT("</tbody></table></body></html>");
-		}
+		strPage = wxT(	"<html><lua>\n"
+				"	local strPage\n"
+				"	local testDesc\n"
+				"	local testName\n"
+				"	local pageTitle\n"
+				"	local subTestName\n"
+				"\n"
+				"\n"
+				"	testDesc = muhkuh.GetSelectedTest()\n"
+				"	if testDesc then\n"
+				"		testName = testDesc:testDescription_getName()\n"
+				"		pageTitle = \"Test Details for \" .. testName\n"
+				"	else\n"
+				"		pageTitle = \"Test Details\"\n"
+				"	end\n"
+				"\n"
+				"	strPage =            \"<head>\\n\"\n"
+				"	strPage = strPage .. \"<meta name=\\\"Keywords\\\" content=\\\"Muhkuh\\\">\\n\"\n"
+				"	strPage = strPage .. \"<meta name=\\\"Author\\\" content=\\\"\" .. _G.__MUHKUH_VERSION .. \"\\\">\\n\"\n"
+				"	strPage = strPage .. \"<meta name=\\\"Description\\\" content=\\\"\" .. pageTitle .. \"\\\">\\n\"\n"
+				"	strPage = strPage .. \"<title>\" .. pageTitle .. \"</title>\\n\"\n"
+				"	strPage = strPage .. \"</head><body>\\n\"\n"
+				"\n"
+				"\n"
+				"	if testDesc then\n"
+				"		strPage = strPage .. \"<h1><a href=\\\"mtd://\" .. testName .. \"\\\">\" .. testName .. \"</a></h1>\\n\"\n"
+				"		strPage = strPage .. \"Version \" .. testDesc:testDescription_getVersion()\n"
+				"		strPage = strPage .. \"<p>\\n\"\n"
+				"\n"
+				"		strPage = strPage .. \"<table border=1><tr><th>Subtest</th><th>Version</th></tr><tbody>\\n\"\n"
+				"\n"
+				"		for iCnt = 0 , testDesc:testDescription_getTestCnt()-1 do\n"
+				"			if testDesc:testDescription_setTest(iCnt)~=true then\n"
+				"				strPage = strPage .. \"<tr><td>Error:</td><td>Failed to query subtest!</td><tr>\\n\"\n"
+				"				break\n"
+				"			else\n"
+				"				subTestName = testDesc:test_getName()\n"
+				"\n"
+				"				strPage = strPage .. \"<tr><td>\"\n"
+				"				strPage = strPage .. \"<a href=\\\"mtd://\" .. testName .. \"#\" .. subTestName .. \"\\\">\" .. subTestName .. \"</a>\"\n"
+				"				strPage = strPage .. \"</td><td>\"\n"
+				"				strPage = strPage .. testDesc:test_getVersion()\n"
+				"				strPage = strPage .. \"</td></tr>\\n\"\n"
+				"			end\n"
+				"		end\n"
+				"\n"
+				"		strPage = strPage .. \"</tbody></table>\\n\"\n"
+				"	else\n"
+				"		strPage = strPage .. \"<h1>\" .. pageTitle .. \"</h1>\\n\"\n"
+				"		strPage = strPage .. \"No test selected.<p>Please select a test in the test tree.\"\n"
+				"	end\n"
+				"\n"
+				"	strPage = strPage .. \"</body>\\n\"\n"
+				"\n"
+				"\n"
+				"	return strPage\n"
+				"</lua></html>\n"
+		);
 	}
 	else
 	{
@@ -799,6 +810,9 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 			// show welcome and details page
 			reloadWelcomePage();
 			reloadDetailsPage(NULL);
+
+			// add all help books
+			m_ptHelp->AddBook(wxFileName("muhkuh.htb"), true);
 
 			if( m_fShowStartupTips==true && m_tipProvider!=NULL )
 			{
@@ -2410,6 +2424,35 @@ muhkuh_plugin_instance *muhkuh_mainFrame::luaGetNextPlugin(void)
 }
 
 
+muhkuh_wrap_xml *muhkuh_mainFrame::luaGetSelectedTest(void)
+{
+	wxTreeItemId itemId;
+	const testTreeItemData *ptItemData;
+	muhkuh_wrap_xml *ptWrapXml;
+	wxListItem listItem;
+
+
+	// get item data structure
+	ptWrapXml = NULL;
+
+	// get selected item from the tree
+	if( m_treeCtrl!=NULL )
+	{
+		itemId = m_treeCtrl->GetSelection();
+		if( itemId.IsOk() )
+		{
+			ptItemData = (const testTreeItemData*)m_treeCtrl->GetItemData(itemId);
+			if( ptItemData!=NULL )
+			{
+				ptWrapXml = ptItemData->getXmlDescription();
+			}
+		}
+	}
+
+	return ptWrapXml;
+}
+
+
 wxString muhkuh_mainFrame::htmlTag_lua(const wxString &strLuaCode)
 {
 	wxString strHtmlData;
@@ -2434,13 +2477,11 @@ wxString muhkuh_mainFrame::local_htmlTag_lua(const wxString &strLuaCode)
 	int iTopPost;
 	int iResult;
 	int iLineNr;
+	int iResultType;
 	wxString strHtmlCode;
 	wxString strMsg;
 	wxString strErrorMsg;
-	
 
-
-	wxLogMessage(wxT("Lua code: ") + strLuaCode);
 
 	if( m_ptLuaState!=NULL && m_ptLuaState->Ok()==true )
 	{
@@ -2467,7 +2508,16 @@ wxString muhkuh_mainFrame::local_htmlTag_lua(const wxString &strLuaCode)
 			iTopPost = m_ptLuaState->lua_GetTop();
 			if( iTopPre<iTopPost )
 			{
-				strHtmlCode = m_ptLuaState->GetwxStringType(0);
+				// check return type
+				iResultType = m_ptLuaState->wxluaT_Type(0);
+				if( (iResultType==WXLUA_TBOOLEAN) || (iResultType==WXLUA_TNUMBER) || (iResultType==WXLUA_TSTRING) || (iResultType==WXLUA_TINTEGER) )
+				{
+					strHtmlCode = m_ptLuaState->GetwxStringType(0);
+				}
+				else
+				{
+					strHtmlCode = _("html lua tag: invalid return type");
+				}
 			}
 		}
 		m_ptLuaState->lua_SetTop(iTopPre);
@@ -2566,5 +2616,20 @@ muhkuh_plugin_instance *GetNextPlugin(void)
 	}
 
 	return ptInstance;
+}
+
+
+muhkuh_wrap_xml *GetSelectedTest(void)
+{
+	muhkuh_wrap_xml *ptTest = NULL;
+
+
+	if( g_ptMainFrame!=NULL )
+	{
+		// yes, the mainframe exists -> call the GetNextPlugin function there
+		ptTest = g_ptMainFrame->luaGetSelectedTest();
+	}
+
+	return ptTest;
 }
 
