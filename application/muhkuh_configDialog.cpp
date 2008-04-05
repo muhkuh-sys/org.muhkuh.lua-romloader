@@ -90,7 +90,7 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 		{
 			if( iColonPos>0 )
 			{
-				m_astrLuaPaths.Add( strLuaIncludePath.Left(iColonPos-1) );
+				m_astrLuaPaths.Add( strLuaIncludePath.Left(iColonPos) );
 			}
 			strLuaIncludePath = strLuaIncludePath.Mid(iColonPos+1);
 		}
