@@ -1,7 +1,7 @@
 
-%function unsigned long band(unsigned long a, unsigned long b)
-%function unsigned long bor(unsigned long a, unsigned long b)
-%function unsigned long bxor(unsigned long a, unsigned long b)
-%function unsigned long bshl(unsigned long a, unsigned long b)
-%function unsigned long bshr(unsigned long a, unsigned long b)
-%function unsigned long bnot(unsigned long a)
+%function double band(double a, double b)
+%function double bor(double a, double b)
+%function double bxor(double a, double b)
+%function double lshift(double a, double b)
+%function double rshift(double a, double b)
+%function double bnot(double a)

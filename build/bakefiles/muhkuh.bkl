@@ -33,6 +33,7 @@
 		<include>$(SRCDIR)/application</include>
 		<dirname>$(SRCDIR)/bin</dirname>
 		<sources>
+			application/bit_lua_interface.cpp
 			application/growbuffer.cpp
 			application/license.cpp
 			application/muhkuh_aboutDialog.cpp
@@ -49,6 +50,8 @@
 			application/muhkuh_repository_manager.cpp
 			application/muhkuh_wrap_xml.cpp
 			application/readFsFile.cpp
+			plugins/_luaif/bit_lua.cpp
+			plugins/_luaif/bit_lua_bind.cpp
 			plugins/_luaif/muhkuh_lua.cpp
 			plugins/_luaif/muhkuh_lua_bind.cpp
 		</sources>

@@ -1073,46 +1073,55 @@ bool muhkuh_mainFrame::initLuaState(void)
 		}
 		else
 		{
-			// init the lua bindings for all plugins
-			iResult = m_ptPluginManager->initLuaBindings(m_ptLuaState);
-			if( iResult!=0 )
+			// init the muhkuh bit lua bindings
+			fResult = wxLuaBinding_bit_lua_init();
+			if( fResult!=true )
 			{
-				wxLogError(_("Failed to init plugin bindings"));
-				fResult = false;
+				// failed to init the muhkuh bit lua bindings
+				wxLogError(_("Failed to init the muhkuh_bit_lua bindings"));
 			}
 			else
 			{
-				// create the lua state
-				fResult = m_ptLuaState->Create(this, wxID_ANY);
-				if( fResult!=true )
+				// init the lua bindings for all plugins
+				iResult = m_ptPluginManager->initLuaBindings(m_ptLuaState);
+				if( iResult!=0 )
 				{
-					wxLogError(_("Failed to create a new lua state"));
+					wxLogError(_("Failed to init plugin bindings"));
+					fResult = false;
 				}
-				
 				else
 				{
-					// is the state valid?
-					fResult = m_ptLuaState->Ok();
+					// create the lua state
+					fResult = m_ptLuaState->Create(this, wxID_ANY);
 					if( fResult!=true )
 					{
-						wxLogError(_("Strange lua state"));
+						wxLogError(_("Failed to create a new lua state"));
 					}
 					else
 					{
-						// set the package path
-						wxLogMessage(wxT("Lua path:") + m_strLuaIncludePath);
-
-						m_ptLuaState->lua_GetGlobal(wxT("package"));
-						if( m_ptLuaState->lua_IsNoneOrNil(-1)==true )
+						// is the state valid?
+						fResult = m_ptLuaState->Ok();
+						if( fResult!=true )
 						{
-							wxLogError(_("Failed to get the global 'package'"));
+							wxLogError(_("Strange lua state"));
 						}
-						m_ptLuaState->lua_PushString(m_strLuaIncludePath);
-						m_ptLuaState->lua_SetField(-2, wxT("path"));
+						else
+						{
+							// set the package path
+							wxLogMessage(wxT("Lua path:") + m_strLuaIncludePath);
 
-						// set the lua version
-						m_ptLuaState->lua_PushString(m_strVersion.ToAscii());
-						m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_VERSION"));
+							m_ptLuaState->lua_GetGlobal(wxT("package"));
+							if( m_ptLuaState->lua_IsNoneOrNil(-1)==true )
+							{
+								wxLogError(_("Failed to get the global 'package'"));
+							}
+							m_ptLuaState->lua_PushString(m_strLuaIncludePath);
+							m_ptLuaState->lua_SetField(-2, wxT("path"));
+
+							// set the lua version
+							m_ptLuaState->lua_PushString(m_strVersion.ToAscii());
+							m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_VERSION"));
+						}
 					}
 				}
 			}
