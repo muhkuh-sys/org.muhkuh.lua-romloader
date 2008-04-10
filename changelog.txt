@@ -1,5 +1,25 @@
 Changelog
 
+Muhkuh 1.0.162
+
+ * fixed: write08 function in openocd wrote nothing
+ * fixed: all but the last lua include path were truncated by one char in config dialog
+
+Muhkuh 1.0.160
+
+ * add 'GetSelectedTest' to muhkuh lua interface
+ * check lua html tag return value
+ * convert builtin details page to lua html
+ * various windows fixes
+ * fix lua interface to doubles to prevent value clipping
+ * keep valid lua state between tests
+ * added lua scripting for html pages
+ * add application config page
+ * replace folder icon from art provider with famfamfam icon
+ * added lua config page, set lua include path and lua startup code from config
+ * changed contact email in about dialog to sf account
+
+
 Muhkuh 1.0.142
 
  * save config dialog position and size
