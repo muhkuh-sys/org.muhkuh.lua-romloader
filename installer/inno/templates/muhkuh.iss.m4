@@ -104,6 +104,7 @@ include(muhkuh.version)
 `Source: "plugins\romloader\usb\win\driver\netx_bootmonitor.inf"; DestDir: "{app}\driver\romloader_usb"; Components: plugin_romloader_usb'
 `'
 `Source: "bin\openocd.dll";                     DestDir: "{app}\application\plugins"; Components: plugin_romloader_openocd'
+`Source: "bin\openocd_netx50_jtagkey_win.xml";  DestDir: "{app}\application\plugins"; Components: plugin_romloader_openocd'
 `Source: "bin\openocd_netx500_jtagkey_win.xml"; DestDir: "{app}\application\plugins"; Components: plugin_romloader_openocd'
 `Source: "bin\openocd_nxhx50_win.xml";          DestDir: "{app}\application\plugins"; Components: plugin_romloader_openocd'
 `'
