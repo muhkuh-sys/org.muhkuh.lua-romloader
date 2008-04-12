@@ -38,8 +38,8 @@
 			application/license.cpp
 			application/muhkuh_aboutDialog.cpp
 			application/muhkuh_app.cpp
-			application/muhkuh_configDialog.cpp
 			application/muhkuh_config_reposEntryDialog.cpp
+			application/muhkuh_configDialog.cpp
 			application/muhkuh_dirlistbox.cpp
 			application/muhkuh_htmltag_lua.cpp
 			application/muhkuh_icons.cpp
@@ -55,6 +55,30 @@
 			plugins/_luaif/muhkuh_lua.cpp
 			plugins/_luaif/muhkuh_lua_bind.cpp
 		</sources>
+		<headers>
+			application/bit_lua_interface.h
+			application/growbuffer.h
+			application/license.h
+			application/muhkuh_aboutDialog.h
+			application/muhkuh_app.h
+			application/muhkuh_config_reposEntryDialog.h
+			application/muhkuh_configDialog.h
+			application/muhkuh_dirlistbox.h
+			application/muhkuh_icons.h
+			application/muhkuh_id.h
+			application/muhkuh_lua_interface.h
+			application/muhkuh_mainFrame.h
+			application/muhkuh_plugin.h
+			application/muhkuh_plugin_manager.h
+			application/muhkuh_repository.h
+			application/muhkuh_repository_manager.h
+			application/muhkuh_testTreeItemData.h
+			application/muhkuh_version.h
+			application/muhkuh_wrap_xml.h
+			application/readFsFile.h
+			plugins/_luaif/bit_wxlua_bindings.h
+			plugins/_luaif/muhkuh_wxlua_bindings.h
+		</headers>
 		<win32-res>application/muhkuh.rc</win32-res>
 
 		<wxlua-lib>wxluasocket</wxlua-lib>
@@ -93,6 +117,12 @@
 			plugins/romloader/usb/_luaif/romloader_usb_lua.cpp
 			plugins/romloader/usb/_luaif/romloader_usb_lua_bind.cpp
 		</sources>
+		<headers>
+			plugins/romloader/romloader.h
+			plugins/romloader/usb/romloader_usb_io.h
+			plugins/romloader/usb/romloader_usb_main.h
+			plugins/romloader/usb/_luaif/romloader_usb_wxlua_bindings.h
+		</headers>
 		<if cond="TARGETING_WIN32=='1'">
 			<include>$(SRCDIR)/plugins/romloader/usb/win/include</include>
 			<lib-path>$(SRCDIR)/plugins/romloader/usb/win/lib/msvc</lib-path>
@@ -138,6 +168,11 @@
 			plugins/romloader/baka/_luaif/romloader_baka_lua.cpp
 			plugins/romloader/baka/_luaif/romloader_baka_lua_bind.cpp
 		</sources>
+		<headers>
+			plugins/romloader/romloader.h
+			plugins/romloader/baka/romloader_baka_main.h
+			plugins/romloader/baka/_luaif/romloader_baka_wxlua_bindings.h
+		</headers>
 
 		<wxlua-lib>wxluasocket</wxlua-lib>
 		<wxlua-lib>wxluadebug</wxlua-lib>
@@ -182,6 +217,11 @@
 			plugins/romloader/openocd/_luaif/romloader_openocd_lua.cpp
 			plugins/romloader/openocd/_luaif/romloader_openocd_lua_bind.cpp
 		</sources>
+		<headers>
+			plugins/romloader/romloader.h
+			plugins/romloader/openocd/romloader_openocd_main.h
+			plugins/romloader/openocd/_luaif/romloader_openocd_wxlua_bindings.h
+		</headers>
 		<!-- openocd helper -->
 		<sources>
 			plugins/romloader/openocd/openocd/helper/binarybuffer.c
@@ -320,20 +360,32 @@
 		<include>$(SRCDIR)/plugins/romloader/uart</include>
 		<sources>
 			plugins/romloader/romloader.cpp
-			plugins/romloader/uart/romloader_uart_main.cpp
 			plugins/romloader/uart/romloader_uart_device.cpp
+			plugins/romloader/uart/romloader_uart_main.cpp
 			plugins/romloader/uart/_luaif/romloader_uart_lua.cpp
 			plugins/romloader/uart/_luaif/romloader_uart_lua_bind.cpp
 		</sources>
+		<headers>
+			plugins/romloader/romloader.h
+			plugins/romloader/uart/romloader_uart_device.h
+			plugins/romloader/uart/romloader_uart_main.h
+			plugins/romloader/uart/_luaif/romloader_uart_wxlua_bindings.h
+		</headers>
 		<if cond="TARGETING_WIN32=='1'">
 			<sources>
 				plugins/romloader/uart/romloader_uart_device_win.cpp
 			</sources>
+			<headers>
+				plugins/romloader/uart/romloader_uart_device_win.h
+			</headers>
 		</if>
 		<if cond="TARGETING_UNIX=='1'">
 			<sources>
 				plugins/romloader/uart/romloader_uart_device_linux.cpp
 			</sources>
+			<headers>
+				plugins/romloader/uart/romloader_uart_device_linux.h
+			</headers>
 		</if>
 
 		<wxlua-lib>wxluasocket</wxlua-lib>
