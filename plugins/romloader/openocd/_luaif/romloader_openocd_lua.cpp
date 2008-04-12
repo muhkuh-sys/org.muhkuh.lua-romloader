@@ -94,6 +94,40 @@ static int LUACALL wxLua_romloader_disconnect(lua_State *L)
     return 0;
 }
 
+static wxLuaArgType s_wxluatypeArray_wxLua_romloader_get_chiptyp[] = { &wxluatype_romloader, NULL };
+static int LUACALL wxLua_romloader_get_chiptyp(lua_State *L);
+static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_get_chiptyp[1] = {{ wxLua_romloader_get_chiptyp, WXLUAMETHOD_METHOD, 1, 1, s_wxluatypeArray_wxLua_romloader_get_chiptyp }};
+//  ROMLOADER_CHIPTYP get_chiptyp()
+static int LUACALL wxLua_romloader_get_chiptyp(lua_State *L)
+{
+    // get this
+    romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
+    // call get_chiptyp
+    ROMLOADER_CHIPTYP returns = (self->get_chiptyp());
+    // push the result number
+    lua_pushnumber(L, returns);
+
+    return 1;
+}
+
+static wxLuaArgType s_wxluatypeArray_wxLua_romloader_get_chiptyp_name[] = { &wxluatype_romloader, &wxluatype_TINTEGER, NULL };
+static int LUACALL wxLua_romloader_get_chiptyp_name(lua_State *L);
+static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_get_chiptyp_name[1] = {{ wxLua_romloader_get_chiptyp_name, WXLUAMETHOD_METHOD, 2, 2, s_wxluatypeArray_wxLua_romloader_get_chiptyp_name }};
+//  wxString get_chiptyp_name(ROMLOADER_CHIPTYP tChiptyp)
+static int LUACALL wxLua_romloader_get_chiptyp_name(lua_State *L)
+{
+    // ROMLOADER_CHIPTYP tChiptyp
+    ROMLOADER_CHIPTYP tChiptyp = (ROMLOADER_CHIPTYP)wxlua_getintegertype(L, 2);
+    // get this
+    romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
+    // call get_chiptyp_name
+    wxString returns = (self->get_chiptyp_name(tChiptyp));
+    // push the result string
+    wxlua_pushwxString(L, returns);
+
+    return 1;
+}
+
 static wxLuaArgType s_wxluatypeArray_wxLua_romloader_get_name[] = { &wxluatype_romloader, NULL };
 static int LUACALL wxLua_romloader_get_name(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_get_name[1] = {{ wxLua_romloader_get_name, WXLUAMETHOD_METHOD, 1, 1, s_wxluatypeArray_wxLua_romloader_get_name }};
@@ -104,6 +138,40 @@ static int LUACALL wxLua_romloader_get_name(lua_State *L)
     romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call get_name
     wxString returns = (self->get_name());
+    // push the result string
+    wxlua_pushwxString(L, returns);
+
+    return 1;
+}
+
+static wxLuaArgType s_wxluatypeArray_wxLua_romloader_get_romcode[] = { &wxluatype_romloader, NULL };
+static int LUACALL wxLua_romloader_get_romcode(lua_State *L);
+static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_get_romcode[1] = {{ wxLua_romloader_get_romcode, WXLUAMETHOD_METHOD, 1, 1, s_wxluatypeArray_wxLua_romloader_get_romcode }};
+//  ROMLOADER_ROMCODE get_romcode()
+static int LUACALL wxLua_romloader_get_romcode(lua_State *L)
+{
+    // get this
+    romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
+    // call get_romcode
+    ROMLOADER_ROMCODE returns = (self->get_romcode());
+    // push the result number
+    lua_pushnumber(L, returns);
+
+    return 1;
+}
+
+static wxLuaArgType s_wxluatypeArray_wxLua_romloader_get_romcode_name[] = { &wxluatype_romloader, &wxluatype_TINTEGER, NULL };
+static int LUACALL wxLua_romloader_get_romcode_name(lua_State *L);
+static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_get_romcode_name[1] = {{ wxLua_romloader_get_romcode_name, WXLUAMETHOD_METHOD, 2, 2, s_wxluatypeArray_wxLua_romloader_get_romcode_name }};
+//  wxString get_romcode_name(ROMLOADER_ROMCODE tRomcode)
+static int LUACALL wxLua_romloader_get_romcode_name(lua_State *L)
+{
+    // ROMLOADER_ROMCODE tRomcode
+    ROMLOADER_ROMCODE tRomcode = (ROMLOADER_ROMCODE)wxlua_getintegertype(L, 2);
+    // get this
+    romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
+    // call get_romcode_name
+    wxString returns = (self->get_romcode_name(tRomcode));
     // push the result string
     wxlua_pushwxString(L, returns);
 
@@ -351,7 +419,11 @@ wxLuaBindMethod romloader_methods[] = {
     { "connect", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_romloader_connect, 1, NULL },
     { "delete", WXLUAMETHOD_METHOD|WXLUAMETHOD_DELETE, s_wxluafunc_wxLua_romloader_delete, 1, NULL },
     { "disconnect", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_romloader_disconnect, 1, NULL },
+    { "get_chiptyp", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_romloader_get_chiptyp, 1, NULL },
+    { "get_chiptyp_name", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_romloader_get_chiptyp_name, 1, NULL },
     { "get_name", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_romloader_get_name, 1, NULL },
+    { "get_romcode", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_romloader_get_romcode, 1, NULL },
+    { "get_romcode_name", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_romloader_get_romcode_name, 1, NULL },
     { "get_typ", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_romloader_get_typ, 1, NULL },
     { "is_connected", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_romloader_is_connected, 1, NULL },
     { "read_data08", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_romloader_read_data08, 1, NULL },

@@ -87,6 +87,16 @@ romloader_baka_lua_dataTypeTable =
     Name = "Propagation_state",
     ValueType = "enum",
   },
+  ROMLOADER_CHIPTYP = {
+    IsNumber = true,
+    Name = "ROMLOADER_CHIPTYP",
+    ValueType = "enum",
+  },
+  ROMLOADER_ROMCODE = {
+    IsNumber = true,
+    Name = "ROMLOADER_ROMCODE",
+    ValueType = "enum",
+  },
   WXTYPE = {
     IsNumber = true,
     Name = "WXTYPE",

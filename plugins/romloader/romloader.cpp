@@ -29,6 +29,8 @@ romloader::romloader(wxString strName, wxString strTyp, const romloader_function
  , m_pvHandle(pvHandle)
  , m_fn_close(fn_close)
  , m_ptLuaState(ptLuaState)
+ , m_tChiptyp(ROMLOADER_CHIPTYP_UNKNOWN)
+ , m_tRomcode(ROMLOADER_ROMCODE_UNKNOWN)
 {
 	wxString strDebug;
 
@@ -416,4 +418,134 @@ void romloader::call(double dNetxAddress, double dParameterR0, lua_State *L, int
 		}
 	}
 }
+
+
+ROMLOADER_CHIPTYP romloader::get_chiptyp(void)
+{
+	return m_tChiptyp;
+}
+
+
+ROMLOADER_ROMCODE romloader::get_romcode(void)
+{
+	return m_tRomcode;
+}
+
+
+wxString romloader::get_chiptyp_name(ROMLOADER_CHIPTYP tChiptyp)
+{
+	wxString strChiptyp;
+
+
+	switch( tChiptyp )
+	{
+	case ROMLOADER_CHIPTYP_NETX500:
+		strChiptyp = wxT("netX500");
+		break;
+	case ROMLOADER_CHIPTYP_NETX100:
+		strChiptyp = wxT("netX100");
+		break;
+	case ROMLOADER_CHIPTYP_NETX50:
+		strChiptyp = wxT("netX50");
+		break;
+	case ROMLOADER_CHIPTYP_UNKNOWN:
+		strChiptyp = _("unknown chip");
+		break;
+	}
+
+	return strChiptyp;
+}
+
+
+wxString romloader::get_romcode_name(ROMLOADER_ROMCODE tRomcode)
+{
+	wxString strRomcode;
+
+
+	switch( tRomcode )
+	{
+	case ROMLOADER_ROMCODE_ABOOT:
+		strRomcode = wxT("ABoot");
+		break;
+	case ROMLOADER_ROMCODE_HBOOT:
+		strRomcode = wxT("HBoot");
+		break;
+	case ROMLOADER_ROMCODE_UNKNOWN:
+		strRomcode = _("unknown romcode");
+		break;
+	}
+
+	return strRomcode;
+}
+
+
+bool romloader::detect_chiptyp(void)
+{
+	unsigned long ulResetVector;
+	const tRomloader_ResetId *ptRstCnt, *ptRstEnd;
+	unsigned long ulVersionAddr;
+	unsigned long ulVersion;
+	wxString strChiptyp;
+	wxString strRomcode;
+	wxString strMsg;
+	bool fResult;
+
+
+	m_tChiptyp = ROMLOADER_CHIPTYP_UNKNOWN;
+	m_tRomcode = ROMLOADER_ROMCODE_UNKNOWN;
+
+	// read the reset vector at 0x00000000
+	ulResetVector = read_data32(0);
+	wxLogMessage(wxT("romloader_uart(%p): reset vector: 0x%08X"), this, ulResetVector);
+
+	// match the reset vector to all known chipfamilies
+	ptRstCnt = atResIds;
+	ptRstEnd = ptRstCnt + (sizeof(atResIds)/sizeof(atResIds[0]));
+	ulVersionAddr = 0xffffffff;
+	while( ptRstCnt<ptRstEnd )
+	{
+		if( ptRstCnt->ulResetVector==ulResetVector )
+		{
+			ulVersionAddr = ptRstCnt->ulVersionAddress;
+			// read version address
+			ulVersion = read_data32(ulVersionAddr);
+			wxLogMessage(wxT("romloader_uart(%p): version value: 0x%08X"), this, ulVersion);
+			if( ptRstCnt->ulVersionValue==ulVersion )
+			{
+				// found chip!
+				m_tChiptyp = ptRstCnt->tChiptyp;
+				m_tRomcode = ptRstCnt->tRomcode;
+				break;
+			}
+		}
+		++ptRstCnt;
+	}
+
+	// found something?
+	fResult = ( m_tChiptyp!=ROMLOADER_CHIPTYP_UNKNOWN && m_tRomcode!=ROMLOADER_ROMCODE_UNKNOWN );
+
+	if( fResult!=true )
+	{
+		wxLogError(wxT("romloader(%p): unknown chip!"), this);
+	}
+	else
+	{
+		strChiptyp = get_chiptyp_name(m_tChiptyp);
+		strRomcode = get_romcode_name(m_tRomcode);
+
+		strMsg.Printf(_("found chip %s with romcode %s"), strChiptyp.fn_str(), strRomcode.fn_str());
+		wxLogMessage(wxT("romloader(%p): ") + strMsg, this);
+	}
+
+	return fResult;
+}
+
+
+const tRomloader_ResetId romloader::atResIds[3] =
+{
+	{ 0xea080001,	0x00200008,	0x00001000,	ROMLOADER_CHIPTYP_NETX500,	ROMLOADER_ROMCODE_ABOOT },	// aboot netx500
+	{ 0xea080001,	0x00200008,	0x00000000,	ROMLOADER_CHIPTYP_NETX100,	ROMLOADER_ROMCODE_ABOOT },	// aboot netx500
+	{ 0xeac83ffc,	0x08200008,	0x00002001,	ROMLOADER_CHIPTYP_NETX50,	ROMLOADER_ROMCODE_HBOOT }	// hboot netx50
+};
+
 

@@ -247,13 +247,63 @@ romloader_uart::~romloader_uart(void)
 }
 
 
+bool romloader_uart::chip_init(void)
+{
+	bool fResult;
+
+
+	switch( m_tChiptyp )
+	{
+	case ROMLOADER_CHIPTYP_NETX500:
+	case ROMLOADER_CHIPTYP_NETX100:
+		switch( m_tRomcode )
+		{
+		case ROMLOADER_ROMCODE_ABOOT:
+			// aboot does not set the serial vectors
+			write_data32(0x10001ff0, 0);
+			write_data32(0x10001ff4, 0);
+			write_data32(0x10001ff8, 0);
+			write_data32(0x10001ffc, 0);
+			break;
+		case ROMLOADER_ROMCODE_HBOOT:
+			// hboot needs no special init
+			fResult = true;
+			break;
+		case ROMLOADER_ROMCODE_UNKNOWN:
+			fResult = false;
+			break;
+		}
+		break;
+
+	case ROMLOADER_CHIPTYP_NETX50:
+		switch( m_tRomcode )
+		{
+		case ROMLOADER_ROMCODE_ABOOT:
+			// this is an unknown combination
+			fResult = false;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT:
+			// hboot needs no special init
+			fResult = true;
+			break;
+		case ROMLOADER_ROMCODE_UNKNOWN:
+			fResult = false;
+			break;
+		}
+		break;
+
+	case ROMLOADER_CHIPTYP_UNKNOWN:
+		fResult = false;
+		break;
+	}
+
+	return fResult;
+}
+
+
 void romloader_uart::connect(void)
 {
 	bool fOpened;
-	unsigned long ulResetVector;
-	const tResetId *ptRstCnt, *ptRstEnd;
-	unsigned long ulVersionAddr;
-	unsigned long ulVersion;
 
 
 	if( m_ptUartDev!=NULL && m_fIsConnected==false )
@@ -265,40 +315,15 @@ void romloader_uart::connect(void)
 		}
 		else if( m_ptUartDev->IdentifyLoader()!=true )
 		{
-			wxLogError(wxT("romloader_uart(%p): failed to open device!"), this);
+			wxLogError(wxT("romloader_uart(%p): failed to identify loader!"), this);
+		}
+		else if( detect_chiptyp()!=true )
+		{
+			wxLogError(wxT("romloader_uart(%p): failed to detect chiptyp!"), this);
 		}
 		else
 		{
-			// read the reset vector at 0x00000000
-			ulResetVector = read_data32(0);
-
-			// match the reset vector to all known chipfamilies
-			ptRstCnt = atResIds;
-			ptRstEnd = ptRstCnt + (sizeof(atResIds)/sizeof(atResIds[0]));
-			ulVersionAddr = 0xffffffff;
-			while( ptRstCnt<ptRstEnd )
-			{
-				if( ptRstCnt->ulResetVector==ulResetVector )
-				{
-					ulVersionAddr = ptRstCnt->ulVersionAddress;
-					break;
-				}
-				++ptRstCnt;
-			}
-
-			// found something?
-			if( ulVersionAddr==0xffffffff )
-			{
-				wxLogError(wxT("romloader_uart(%p): unknown reset vector: 0x%08X!"), this, ulResetVector);
-			}
-			else
-			{
-				// read version address
-				ulVersion = read_data32(ulVersionAddr);
-				wxLogMessage(wxT("romloader_uart(%p): version value: 0x%08X!"), this, ulVersion);
-
-				m_fIsConnected = true;
-			}
+			m_fIsConnected = chip_init();
 		}
 	}
 }
@@ -1032,13 +1057,4 @@ void romloader_uart::call(double dNetxAddress, double dParameterR0, lua_State *L
 		}
 	}
 }
-
-
-const tResetId romloader_uart::atResIds[3] =
-{
-	{ 0xea080001,	0x00200008 },	// aboot netx500 / netx100
-	{ 0xea080002,	0x00200008 },	// hboot netx500
-	{ 0xeac83ffc,	0x08200008 }	// hboot netx50
-};
-
 

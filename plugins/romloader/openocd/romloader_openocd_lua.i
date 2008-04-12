@@ -3,6 +3,18 @@
 
 %include "../romloader_openocd_main.h"
 %include "../../romloader.h"
+%enum ROMLOADER_CHIPTYP
+ ROMLOADER_CHIPTYP_UNKNOWN
+ ROMLOADER_CHIPTYP_NETX500
+ ROMLOADER_CHIPTYP_NETX100
+ ROMLOADER_CHIPTYP_NETX50
+%endenum
+%enum ROMLOADER_ROMCODE
+ ROMLOADER_ROMCODE_UNKNOWN
+ ROMLOADER_ROMCODE_ABOOT
+ ROMLOADER_ROMCODE_HBOOT
+%endenum
+
 // The romloader class defines the connection to a single netx device in
 // "boot" mode. It can not be created directly, but is returned by the
 // function "SelectNetx".
@@ -13,10 +25,12 @@
  void disconnect()
  // returns the connection state of the device
  bool is_connected()
+
  // returns the device name
  wxString get_name()
  // returns the device typ
  wxString get_typ()
+
  // read a byte (8bit) from the netx to the pc
  double read_data08(double dNetxAddress)
  // read a word (16bit) from the netx to the pc
@@ -37,5 +51,12 @@
 
  // call routine
  void call(double dNetxAddress, double dParameterR0, LuaFunction fnCallback, voidptr_long vplCallbackUserData)
+
+ // get chiptyp and romcode version
+ ROMLOADER_CHIPTYP get_chiptyp()
+ wxString get_chiptyp_name(ROMLOADER_CHIPTYP tChiptyp)
+ ROMLOADER_ROMCODE get_romcode()
+ wxString get_romcode_name(ROMLOADER_ROMCODE tRomcode)
+
 %endclass
 %function %gc romloader *romloader_openocd_create(voidptr_long pvHandle)

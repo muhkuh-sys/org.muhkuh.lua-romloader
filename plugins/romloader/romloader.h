@@ -69,6 +69,33 @@ typedef int (*romloader_fn_call)(void *pvHandle, unsigned long ulNetxAddress, un
 
 /*-----------------------------------*/
 
+typedef enum
+{
+	ROMLOADER_CHIPTYP_UNKNOWN			= 0,
+	ROMLOADER_CHIPTYP_NETX500			= 1,
+	ROMLOADER_CHIPTYP_NETX100			= 2,
+	ROMLOADER_CHIPTYP_NETX50			= 3
+} ROMLOADER_CHIPTYP;
+
+
+typedef enum
+{
+	ROMLOADER_ROMCODE_UNKNOWN			= 0,
+	ROMLOADER_ROMCODE_ABOOT				= 1,
+	ROMLOADER_ROMCODE_HBOOT				= 2
+} ROMLOADER_ROMCODE;
+
+
+typedef struct
+{
+	unsigned long ulResetVector;
+	unsigned long ulVersionAddress;
+	unsigned long ulVersionValue;
+	ROMLOADER_CHIPTYP tChiptyp;
+	ROMLOADER_ROMCODE tRomcode;
+} tRomloader_ResetId;
+
+
 typedef struct
 {
 	romloader_fn_connect		fn_connect;
@@ -127,7 +154,20 @@ public:
 
 	// call routine
 	virtual void call(double dNetxAddress, double dParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+
+	// get chiptyp and romcode version
+	virtual ROMLOADER_CHIPTYP get_chiptyp(void);
+	virtual wxString get_chiptyp_name(ROMLOADER_CHIPTYP tChiptyp);
+	virtual ROMLOADER_ROMCODE get_romcode(void);
+	virtual wxString get_romcode_name(ROMLOADER_ROMCODE tRomcode);
+
 // *** lua interface end ***
+
+protected:
+	bool detect_chiptyp(void);
+
+	ROMLOADER_CHIPTYP m_tChiptyp;
+	ROMLOADER_ROMCODE m_tRomcode;
 
 private:
 	wxString m_strName;
@@ -138,6 +178,8 @@ private:
 	muhkuh_plugin_fn_close_instance m_fn_close;
 	// the lua state
 	wxLuaState *m_ptLuaState;
+
+	static const tRomloader_ResetId atResIds[3];
 };
 
 /*-----------------------------------*/

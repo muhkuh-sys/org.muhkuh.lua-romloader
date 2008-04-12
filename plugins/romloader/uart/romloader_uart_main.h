@@ -52,12 +52,6 @@ extern "C"
 	WXEXPORT romloader *romloader_uart_create(void *pvHandle);
 }
 
-typedef struct
-{
-	unsigned long ulResetVector;
-	unsigned long ulVersionAddress;
-} tResetId;
-
 
 typedef void (*romloader_uart_plugin_fn_close_instance)(wxString &strInterface);
 
@@ -99,14 +93,13 @@ public:
 // *** lua interface end ***
 
 private:
+	bool chip_init(void);
 	bool callback(lua_State *L, int iLuaCallbackTag, unsigned long ulProgressData, void *pvCallbackUserData);
 	unsigned int crc16(unsigned int uCrc, unsigned int uData);
 	int write_data(wxString &strData, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 	bool parseDumpLine(const char *pcLine, size_t sizLineLen, unsigned long ulAddress, unsigned long ulElements, unsigned char *pucBuffer);
 
 	bool m_fIsConnected;
-
-	static const tResetId atResIds[3];
 
 	romloader_uart_device *m_ptUartDev;
 
