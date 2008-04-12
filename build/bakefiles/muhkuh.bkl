@@ -378,6 +378,7 @@
 			<headers>
 				plugins/romloader/uart/romloader_uart_device_win.h
 			</headers>
+			<sys-lib>setupapi</sys-lib>
 		</if>
 		<if cond="TARGETING_UNIX=='1'">
 			<sources>
