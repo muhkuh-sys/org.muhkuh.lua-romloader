@@ -7,6 +7,10 @@ cd baka
 cpp -o romloader_baka_lua.i -P -CC romloader_baka_lua.in
 lua -e"rulesFilename=\"romloader_baka_rules.lua\"" ../../genwxbind.lua 
 cd ..
+cd uart
+cpp -o romloader_uart_lua.i -P -CC romloader_uart_lua.in
+lua -e"rulesFilename=\"romloader_uart_rules.lua\"" ../../genwxbind.lua 
+cd ..
 cd usb
 cpp -o romloader_usb_lua.i -P -CC romloader_usb_lua.in
 lua -e"rulesFilename=\"romloader_usb_rules.lua\"" ../../genwxbind.lua 
