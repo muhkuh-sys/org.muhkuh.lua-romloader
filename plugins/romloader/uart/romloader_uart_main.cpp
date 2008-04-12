@@ -264,6 +264,7 @@ bool romloader_uart::chip_init(void)
 			write_data32(0x10001ff4, 0);
 			write_data32(0x10001ff8, 0);
 			write_data32(0x10001ffc, 0);
+			fResult = true;
 			break;
 		case ROMLOADER_ROMCODE_HBOOT:
 			// hboot needs no special init
