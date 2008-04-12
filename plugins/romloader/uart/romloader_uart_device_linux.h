@@ -19,14 +19,13 @@
  ***************************************************************************/
 
 #include <wx/wx.h>
-#include <vector>
+
 #include <termios.h>
 
 
 #ifndef __ROMLOADER_UART_DEVICE_LINUX_H__
 #define __ROMLOADER_UART_DEVICE_LINUX_H__
 
-#include "../romloader.h"
 #include "romloader_uart_device.h"
 
 
