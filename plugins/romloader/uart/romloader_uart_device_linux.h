@@ -45,8 +45,6 @@ public:
 	bool			Flush(void);
 	unsigned long		Peek(void);
 
-	bool WaitForResponse(wxString &strData, size_t sizMaxLen, unsigned long ulTimeout);
-
 	static bool		scanSysFs(wxArrayString *ptArray);
 	static void		ScanForPorts(wxArrayString *ptArray);
 
