@@ -112,14 +112,12 @@
 		<include>$(SRCDIR)/plugins/romloader/usb</include>
 		<sources>
 			plugins/romloader/romloader.cpp
-			plugins/romloader/usb/romloader_usb_io.cpp
 			plugins/romloader/usb/romloader_usb_main.cpp
 			plugins/romloader/usb/_luaif/romloader_usb_lua.cpp
 			plugins/romloader/usb/_luaif/romloader_usb_lua_bind.cpp
 		</sources>
 		<headers>
 			plugins/romloader/romloader.h
-			plugins/romloader/usb/romloader_usb_io.h
 			plugins/romloader/usb/romloader_usb_main.h
 			plugins/romloader/usb/_luaif/romloader_usb_wxlua_bindings.h
 		</headers>
