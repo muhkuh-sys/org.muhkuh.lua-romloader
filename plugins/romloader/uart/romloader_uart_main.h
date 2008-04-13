@@ -94,8 +94,6 @@ public:
 
 private:
 	bool chip_init(void);
-	bool callback(lua_State *L, int iLuaCallbackTag, unsigned long ulProgressData, void *pvCallbackUserData);
-	unsigned int crc16(unsigned int uCrc, unsigned int uData);
 	int write_data(wxString &strData, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 	bool parseDumpLine(const char *pcLine, size_t sizLineLen, unsigned long ulAddress, unsigned long ulElements, unsigned char *pucBuffer);
 
@@ -107,6 +105,9 @@ private:
 
 	wxString m_strInterface;
 	wxString m_strTyp;
+
+	// formatted name for log message
+	wxString m_strMe;
 };
 
 

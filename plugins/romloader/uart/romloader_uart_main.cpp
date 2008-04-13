@@ -227,7 +227,9 @@ romloader_uart::romloader_uart(wxString strName, wxString strTyp, const romloade
  , m_ptUartDev(NULL)
  , m_fn_uart_close(fn_close)
 {
-	wxLogMessage(wxT("romloader_uart(%p): constructor"), this);
+	m_strMe.Printf(wxT("romloader_uart(%p): "), this);
+
+	wxLogMessage(m_strMe + wxT("constructor"));
 
 	m_strInterface = strName;
 	m_strTyp = strTyp;
@@ -238,7 +240,7 @@ romloader_uart::romloader_uart(wxString strName, wxString strTyp, const romloade
 
 romloader_uart::~romloader_uart(void)
 {
-	wxLogMessage(wxT("romloader_uart(%p): destructor"), this);
+	wxLogMessage(m_strMe + wxT("destructor"));
 
 	if( m_fn_uart_close!=NULL )
 	{
@@ -304,27 +306,27 @@ bool romloader_uart::chip_init(void)
 
 void romloader_uart::connect(void)
 {
-	bool fOpened;
-
-
 	if( m_ptUartDev!=NULL && m_fIsConnected==false )
 	{
-		fOpened = m_ptUartDev->Open();
-		if( fOpened!=true )
+		if( m_ptUartDev->Open()!=true )
 		{
-			wxLogError(wxT("romloader_uart(%p): failed to open device!"), this);
+			wxLogError(m_strMe + wxT("failed to open device!"));
 		}
 		else if( m_ptUartDev->IdentifyLoader()!=true )
 		{
-			wxLogError(wxT("romloader_uart(%p): failed to identify loader!"), this);
+			wxLogError(m_strMe + wxT("failed to identify loader!"));
 		}
 		else if( detect_chiptyp()!=true )
 		{
-			wxLogError(wxT("romloader_uart(%p): failed to detect chiptyp!"), this);
+			wxLogError(m_strMe + wxT("failed to detect chiptyp!"));
+		}
+		else if( chip_init()!=true )
+		{
+			wxLogError(m_strMe + wxT("failed to init chip!"));
 		}
 		else
 		{
-			m_fIsConnected = chip_init();
+			m_fIsConnected = true;
 		}
 	}
 }
@@ -343,7 +345,7 @@ void romloader_uart::disconnect(void)
 
 bool romloader_uart::is_connected(void) const
 {
-	wxLogMessage(wxT("romloader_uart(%p): is_connected: %s"), this, m_fIsConnected?wxT("true"):wxT("false"));
+	wxLogMessage(m_strMe + wxT("is_connected: %s"), m_fIsConnected?wxT("true"):wxT("false"));
 
 	return m_fIsConnected;
 }
@@ -369,38 +371,38 @@ double romloader_uart::read_data08(double dNetxAddress)
 	// send command
 	if( m_ptUartDev->SendCommand(strCmd, 1000)!=true )
 	{
-		wxLogError(wxT("failed to send dump command to device"));
+		wxLogError(m_strMe + wxT("failed to send dump command to device"));
 	}
 	// get the response line
 	else if( m_ptUartDev->GetLine(strResponse, "\r\n", 1000)!=true )
 	{
-		wxLogError(wxT("failed to get dump response from device"));
+		wxLogError(m_strMe + wxT("failed to get dump response from device"));
 	}
 	else if( reDumpResponse.Matches(strResponse)!=true )
 	{
-		wxLogError(wxT("strange response from device:") + strResponse);
+		wxLogError(m_strMe + wxT("strange response from device:") + strResponse);
 	}
 	else
 	{
 		strHexValue = reDumpResponse.GetMatch(strResponse, 1);
 		if( strHexValue.ToULong(&ulValue, 16)!=true )
 		{
-			wxLogError(wxT("failed to extract address from response:") + strResponse);
+			wxLogError(m_strMe + wxT("failed to extract address from response:") + strResponse);
 		}
 		else if( ulValue!=ulNetxAddress )
 		{
-			wxLogError(wxT("address does not match request:") + strResponse);
+			wxLogError(m_strMe + wxT("address does not match request:") + strResponse);
 		}
 		else
 		{
 			strHexValue = reDumpResponse.GetMatch(strResponse, 2);
 			if( strHexValue.ToULong(&ulValue, 16)!=true )
 			{
-				wxLogError(wxT("failed to extract value from response:") + strResponse);
+				wxLogError(m_strMe + wxT("failed to extract value from response:") + strResponse);
 			}
 			else
 			{
-				wxLogMessage(wxT("romloader_uart(%p): read_data08 from %08lx: %08lx"), this, ulNetxAddress, ulValue);
+				wxLogMessage(m_strMe + wxT("read_data08 from %08lx: %08lx"), ulNetxAddress, ulValue);
 			}
 		}
 	}
@@ -408,7 +410,7 @@ double romloader_uart::read_data08(double dNetxAddress)
 	// wait for prompt
 	if( m_ptUartDev->WaitForResponse(strResponse, 65536, 1024)==false )
 	{
-		wxLogError(wxT("failed to get a command prompt!"));
+		wxLogError(m_strMe + wxT("failed to get a command prompt!"));
 	}
 
 	return (unsigned char)ulValue;
@@ -435,38 +437,38 @@ double romloader_uart::read_data16(double dNetxAddress)
 	// send command
 	if( m_ptUartDev->SendCommand(strCmd, 1000)!=true )
 	{
-		wxLogError(wxT("failed to send dump command to device"));
+		wxLogError(m_strMe + wxT("failed to send dump command to device"));
 	}
 	// get the response line
 	else if( m_ptUartDev->GetLine(strResponse, "\r\n", 1000)!=true )
 	{
-		wxLogError(wxT("failed to get dump response from device"));
+		wxLogError(m_strMe + wxT("failed to get dump response from device"));
 	}
 	else if( reDumpResponse.Matches(strResponse)!=true )
 	{
-		wxLogError(wxT("strange response from device:") + strResponse);
+		wxLogError(m_strMe + wxT("strange response from device:") + strResponse);
 	}
 	else
 	{
 		strHexValue = reDumpResponse.GetMatch(strResponse, 1);
 		if( strHexValue.ToULong(&ulValue, 16)!=true )
 		{
-			wxLogError(wxT("failed to extract address from response:") + strResponse);
+			wxLogError(m_strMe + wxT("failed to extract address from response:") + strResponse);
 		}
 		else if( ulValue!=ulNetxAddress )
 		{
-			wxLogError(wxT("address does not match request:") + strResponse);
+			wxLogError(m_strMe + wxT("address does not match request:") + strResponse);
 		}
 		else
 		{
 			strHexValue = reDumpResponse.GetMatch(strResponse, 2);
 			if( strHexValue.ToULong(&ulValue, 16)!=true )
 			{
-				wxLogError(wxT("failed to extract value from response:") + strResponse);
+				wxLogError(m_strMe + wxT("failed to extract value from response:") + strResponse);
 			}
 			else
 			{
-				wxLogMessage(wxT("romloader_uart(%p): read_data16 from %08lx: %08lx"), this, ulNetxAddress, ulValue);
+				wxLogMessage(m_strMe + wxT("read_data16 from %08lx: %08lx"), ulNetxAddress, ulValue);
 			}
 		}
 	}
@@ -474,7 +476,7 @@ double romloader_uart::read_data16(double dNetxAddress)
 	// wait for prompt
 	if( m_ptUartDev->WaitForResponse(strResponse, 65536, 1024)==false )
 	{
-		wxLogError(wxT("failed to get a command prompt!"));
+		wxLogError(m_strMe + wxT("failed to get a command prompt!"));
 	}
 
 	return (unsigned short)ulValue;
@@ -501,38 +503,38 @@ double romloader_uart::read_data32(double dNetxAddress)
 	// send command
 	if( m_ptUartDev->SendCommand(strCmd, 1000)!=true )
 	{
-		wxLogError(wxT("failed to send dump command to device"));
+		wxLogError(m_strMe + wxT("failed to send dump command to device"));
 	}
 	// get the response line
 	else if( m_ptUartDev->GetLine(strResponse, "\r\n", 1000)!=true )
 	{
-		wxLogError(wxT("failed to get dump response from device"));
+		wxLogError(m_strMe + wxT("failed to get dump response from device"));
 	}
 	else if( reDumpResponse.Matches(strResponse)!=true )
 	{
-		wxLogError(wxT("strange response from device:") + strResponse);
+		wxLogError(m_strMe + wxT("strange response from device:") + strResponse);
 	}
 	else
 	{
 		strHexValue = reDumpResponse.GetMatch(strResponse, 1);
 		if( strHexValue.ToULong(&ulValue, 16)!=true )
 		{
-			wxLogError(wxT("failed to extract address from response:") + strResponse);
+			wxLogError(m_strMe + wxT("failed to extract address from response:") + strResponse);
 		}
 		else if( ulValue!=ulNetxAddress )
 		{
-			wxLogError(wxT("address does not match request:") + strResponse);
+			wxLogError(m_strMe + wxT("address does not match request:") + strResponse);
 		}
 		else
 		{
 			strHexValue = reDumpResponse.GetMatch(strResponse, 2);
 			if( strHexValue.ToULong(&ulValue, 16)!=true )
 			{
-				wxLogError(wxT("failed to extract value from response:") + strResponse);
+				wxLogError(m_strMe + wxT("failed to extract value from response:") + strResponse);
 			}
 			else
 			{
-				wxLogMessage(wxT("romloader_uart(%p): read_data32 from %08lx: %08lx"), this, ulNetxAddress, ulValue);
+				wxLogMessage(m_strMe + wxT("read_data32 from %08lx: %08lx"), ulNetxAddress, ulValue);
 			}
 		}
 	}
@@ -540,7 +542,7 @@ double romloader_uart::read_data32(double dNetxAddress)
 	// wait for prompt
 	if( m_ptUartDev->WaitForResponse(strResponse, 65536, 1024)==false )
 	{
-		wxLogError(wxT("failed to get a command prompt!"));
+		wxLogError(m_strMe + wxT("failed to get a command prompt!"));
 	}
 
 	return ulValue;
@@ -564,17 +566,17 @@ bool romloader_uart::parseDumpLine(const char *pcLine, size_t sizLineLen, unsign
 	// is enough input data left?
 	if( sizLineLen<(10+ulElements*3) )
 	{
-		wxLogError(wxT("strange response from netx!"));
+		wxLogError(m_strMe + wxT("strange response from netx!"));
 	}
 	// get the address
 	iMatches = sscanf(pcLine, "%8lX: ", &ulResultAddress);
 	if( iMatches!=1 )
 	{
-		wxLogError(wxT("strange response from netx!"));
+		wxLogError(m_strMe + wxT("strange response from netx!"));
 	}
 	if( ulResultAddress!=ulAddress )
 	{
-		wxLogError(wxT("response does not match request!"));
+		wxLogError(m_strMe + wxT("response does not match request!"));
 	}
 	// advance parse ptr to data part of the line
 	pcLine += 10;
@@ -586,7 +588,7 @@ bool romloader_uart::parseDumpLine(const char *pcLine, size_t sizLineLen, unsign
 		iMatches = sscanf(pcLine, "%2X ", &uiByte);
 		if( iMatches!=1 )
 		{
-			wxLogError(wxT("strange response from netx!"));
+			wxLogError(m_strMe + wxT("strange response from netx!"));
 			break;
 		}
 		// advance parse ptr to data part of the line
@@ -624,7 +626,7 @@ wxString romloader_uart::read_image(double dNetxAddress, double dSize, lua_State
 	ulNetxAddress = (unsigned long)dNetxAddress;
 	ulSize = (unsigned long)dSize;
 
-	wxLogMessage(wxT("romloader_uart(%p): read_image from 0x%08lx, len=0x%08lx"), this, ulNetxAddress, ulSize);
+	wxLogMessage(m_strMe + wxT("read_image from 0x%08lx, len=0x%08lx"), ulNetxAddress, ulSize);
 
 	// construct the command
 	strCommand.Printf(wxT("DUMP %08lX %08lX BYTE"), ulNetxAddress, ulSize);
@@ -632,14 +634,14 @@ wxString romloader_uart::read_image(double dNetxAddress, double dSize, lua_State
 	// send command
 	if( m_ptUartDev->SendCommand(strCommand, 1000)!=true )
 	{
-		wxLogError(wxT("failed to send dump command to device"));
+		wxLogError(m_strMe + wxT("failed to send dump command to device"));
 	}
 	else
 	{
 		pucData = (unsigned char*)malloc(ulSize);
 		if( pucData==NULL )
 		{
-			wxLogError(wxT("failed to alloc %d bytes of input buffer!"), ulSize);
+			wxLogError(m_strMe + wxT("failed to alloc %d bytes of input buffer!"), ulSize);
 		}
 		pucDataCnt = pucData;
 		// parse the result
@@ -650,7 +652,7 @@ wxString romloader_uart::read_image(double dNetxAddress, double dSize, lua_State
 			// get the response line
 			if( m_ptUartDev->GetLine(strResponse, "\r\n", 1000)!=true )
 			{
-				wxLogError(wxT("failed to get dump response from device"));
+				wxLogError(m_strMe + wxT("failed to get dump response from device"));
 				break;
 			}
 			else
@@ -686,7 +688,7 @@ wxString romloader_uart::read_image(double dNetxAddress, double dSize, lua_State
 	// wait for prompt
 	if( m_ptUartDev->WaitForResponse(strResponse, 65536, 1024)==false )
 	{
-		wxLogError(wxT("failed to get a command prompt!"));
+		wxLogError(m_strMe + wxT("failed to get a command prompt!"));
 	}
 
 	return strData;
@@ -710,16 +712,16 @@ void romloader_uart::write_data08(double dNetxAddress, double dData)
 	// send command
 	if( m_ptUartDev->SendCommand(strCmd, 1000)!=true )
 	{
-		wxLogError(wxT("failed to send fill command to device"));
+		wxLogError(m_strMe + wxT("failed to send fill command to device"));
 	}
 
 	// wait for prompt
 	if( m_ptUartDev->WaitForResponse(strResponse, 65536, 1024)==false )
 	{
-		wxLogError(wxT("failed to get a command prompt!"));
+		wxLogError(m_strMe + wxT("failed to get a command prompt!"));
 	}
 
-	wxLogMessage(wxT("romloader_uart(%p): write_data08 %08lx=%02x"), this, ulNetxAddress, ucData);
+	wxLogMessage(m_strMe + wxT("write_data08 %08lx=%02x"), ulNetxAddress, ucData);
 }
 
 
@@ -739,16 +741,16 @@ void romloader_uart::write_data16(double dNetxAddress, double dData)
 	// send command
 	if( m_ptUartDev->SendCommand(strCmd, 1000)!=true )
 	{
-		wxLogError(wxT("failed to send fill command to device"));
+		wxLogError(m_strMe + wxT("failed to send fill command to device"));
 	}
 
 	// wait for prompt
 	if( m_ptUartDev->WaitForResponse(strResponse, 65536, 1024)==false )
 	{
-		wxLogError(wxT("failed to get a command prompt!"));
+		wxLogError(m_strMe + wxT("failed to get a command prompt!"));
 	}
 
-	wxLogMessage(wxT("romloader_uart(%p): write_data16 %08lx=%04x"), this, ulNetxAddress, usData);
+	wxLogMessage(m_strMe + wxT("write_data16 %08lx=%04x"), ulNetxAddress, usData);
 }
 
 
@@ -768,104 +770,16 @@ void romloader_uart::write_data32(double dNetxAddress, double dData)
 	// send command
 	if( m_ptUartDev->SendCommand(strCmd, 1000)!=true )
 	{
-		wxLogError(wxT("failed to send fill command to device"));
+		wxLogError(m_strMe + wxT("failed to send fill command to device"));
 	}
 
 	// wait for prompt
 	if( m_ptUartDev->WaitForResponse(strResponse, 65536, 1024)==false )
 	{
-		wxLogError(wxT("failed to get a command prompt!"));
+		wxLogError(m_strMe + wxT("failed to get a command prompt!"));
 	}
 
-	wxLogMessage(wxT("romloader_uart(%p): write_data32 %08lx=%08lx"), this, ulNetxAddress, ulData);
-}
-
-
-bool romloader_uart::callback(lua_State *L, int iLuaCallbackTag, unsigned long ulProgressData, void *pvCallbackUserData)
-{
-	bool fStillRunning;
-	int iOldTopOfStack;
-	int iResult;
-	int iLuaType;
-	wxString strMsg;
-
-
-	// check lua state and callback tag
-	if( L!=NULL && iLuaCallbackTag!=0 )
-	{
-		// get the current stack position
-		iOldTopOfStack = lua_gettop(L);
-		// push the function tag on the stack
-		lua_rawgeti(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
-		// push the arguments on the stack
-		lua_pushnumber(L, ulProgressData);
-		lua_pushnumber(L, (long)pvCallbackUserData);
-		// call the function
-		iResult = lua_pcall(L, 2, 1, 0);
-		if( iResult!=0 )
-		{
-			switch( iResult )
-			{
-			case LUA_ERRRUN:
-				strMsg = wxT("runtime error");
-				break;
-			case LUA_ERRMEM:
-				strMsg = wxT("memory allocation error");
-				break;
-			default:
-				strMsg.Printf(wxT("unknown errorcode: %d"), iResult);
-				break;
-			}
-			wxLogError(wxT("callback function failed: ") + strMsg);
-			strMsg = wxlua_getstringtype(L, -1);
-			wxLogError(strMsg);
-			wxLogError(wxT("cancel operation"));
-			fStillRunning = false;
-		}
-		else
-		{
-			// get the function's return value
-			iLuaType = lua_type(L, -1);
-			if( wxlua_iswxluatype(iLuaType, WXLUA_TBOOLEAN)==false )
-			{
-				wxLogError(wxT("callback function returned a non-boolean type!"));
-				fStillRunning = false;
-			}
-			else
-			{
-				if( iLuaType==LUA_TNUMBER )
-				{
-					iResult = lua_tonumber(L, -1);
-				}
-				else
-				{
-					iResult = lua_toboolean(L, -1);
-				}
-				fStillRunning = (iResult!=0);
-			}
-		}
-		// return old stack top
-		lua_settop(L, iOldTopOfStack);
-	}
-	else
-	{
-		// no callback function -> keep running
-		fStillRunning = true;
-	}
-
-	return fStillRunning;
-}
-
-
-unsigned int romloader_uart::crc16(unsigned int uCrc, unsigned int uData)
-{
-	uCrc  = (uCrc >> 8) | ((uCrc & 0xff) << 8);
-	uCrc ^= uData;
-	uCrc ^= (uCrc & 0xff) >> 4;
-	uCrc ^= (uCrc & 0x0f) << 12;
-	uCrc ^= ((uCrc & 0xff) << 4) << 1;
-
-	return uCrc;
+	wxLogMessage(m_strMe + wxT("write_data32 %08lx=%08lx"), ulNetxAddress, ulData);
 }
 
 
@@ -901,7 +815,7 @@ int romloader_uart::write_data(wxString &strData, unsigned long ulLoadAdr, lua_S
 	// send command
 	if( m_ptUartDev->SendCommand(strCommand, 1000)!=true )
 	{
-		wxLogError(wxT("failed to send fill command to device"));
+		wxLogError(m_strMe + wxT("failed to send fill command to device"));
 	}
 	else
 	{
@@ -933,12 +847,12 @@ int romloader_uart::write_data(wxString &strData, unsigned long ulLoadAdr, lua_S
 			if( m_ptUartDev->Peek()!=0 )
 			{
 				// error message
-				wxLogError(wxT("received error during transmission!"));
+				wxLogError(m_strMe + wxT("received error during transmission!"));
 				iResult = -3;
 				// wait for prompt
 				if( m_ptUartDev->WaitForResponse(strResponse, 65536, 1024)==false )
 				{
-					wxLogError(wxT("failed to get a command prompt!"));
+					wxLogError(m_strMe + wxT("failed to get a command prompt!"));
 				}
 			}
 
@@ -966,7 +880,7 @@ void romloader_uart::write_image(double dNetxAddress, wxString strData, lua_Stat
 
 	ulNetxAddress = (unsigned long)dNetxAddress;
 
-	wxLogMessage(wxT("romloader_uart(%p): write_image %08lx"), this, ulNetxAddress);
+	wxLogMessage(m_strMe + wxT("write_image %08lx"), ulNetxAddress);
 
 	// expect error
 	iResult = -1;
@@ -975,7 +889,7 @@ void romloader_uart::write_image(double dNetxAddress, wxString strData, lua_Stat
 	iResult = write_data(strData, ulNetxAddress, L, iLuaCallbackTag, pvCallbackUserData);
 	if( iResult!=0 )
 	{
-		wxLogError(wxT("failed to send command!"));
+		wxLogError(m_strMe + wxT("failed to send command!"));
 //		wxLogError( romloader_uart_getErrorString(tResult) );
 	}
 	else
@@ -983,7 +897,7 @@ void romloader_uart::write_image(double dNetxAddress, wxString strData, lua_Stat
 		// get the response
 		if( m_ptUartDev->WaitForResponse(strResponse, 65536, 1024)==false )
 		{
-			wxLogError(wxT("failed to get a command prompt!"));
+			wxLogError(m_strMe + wxT("failed to get a command prompt!"));
 		}
 	}
 }
@@ -1005,21 +919,21 @@ void romloader_uart::call(double dNetxAddress, double dParameterR0, lua_State *L
 	ulNetxAddress = (unsigned long)dNetxAddress;
 	ulParameterR0 = (unsigned long)dParameterR0;
 
-	wxLogMessage(wxT("romloader_uart(%p): call %08x(%08x)"), this, ulNetxAddress, ulParameterR0);
+	wxLogMessage(m_strMe + wxT("call %08x(%08x)"), ulNetxAddress, ulParameterR0);
 
 	// construct the "call" command
 	strCommand.Printf(wxT("CALL %08lX %08X"), ulNetxAddress, ulParameterR0);
 	// send command
 	if( m_ptUartDev->SendCommand(strCommand, 1000)!=true )
 	{
-		wxLogError(wxT("failed to send call command to device"));
+		wxLogError(m_strMe + wxT("failed to send call command to device"));
 	}
 	else
 	{
 		pucBuf = (unsigned char*)malloc(sizBufLen);
 		if( pucBuf==NULL )
 		{
-			wxLogError(wxT("failed to alloc %d bytes for receive buffer"), sizBufLen);
+			wxLogError(m_strMe + wxT("failed to alloc %d bytes for receive buffer"), sizBufLen);
 		}
 		else
 		{
