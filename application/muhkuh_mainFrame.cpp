@@ -2217,7 +2217,7 @@ wxString muhkuh_mainFrame::luaLoad(wxString strFileName)
 			}
 
 			// show the error message
-			wxLogError(strMsg);
+			m_ptLuaState->wxlua_Error(strMsg);
 		}
 		else
 		{
@@ -2233,7 +2233,7 @@ wxString muhkuh_mainFrame::luaLoad(wxString strFileName)
 			}
 			else
 			{
-				wxLogError(_("lua load: failed to read file"));
+				m_ptLuaState->wxlua_Error(_("lua load: failed to read file"));
 			}
 			delete ptGrowBuffer;
 		}
@@ -2312,7 +2312,7 @@ void muhkuh_mainFrame::luaInclude(wxString strFileName, wxString strChunkName)
 					}
 
 					// show the error message
-					wxLogError(strMsg);
+					m_ptLuaState->wxlua_Error(strMsg);
 				}
 				else
 				{
@@ -2354,7 +2354,7 @@ void muhkuh_mainFrame::luaInclude(wxString strFileName, wxString strChunkName)
 					}
 					else
 					{
-						wxLogError(_("lua include: failed to read file"));
+						m_ptLuaState->wxlua_Error(_("lua include: failed to read file"));
 					}
 					delete ptGrowBuffer;
 				}
