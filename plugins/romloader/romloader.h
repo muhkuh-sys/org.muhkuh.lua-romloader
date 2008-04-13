@@ -165,6 +165,11 @@ public:
 
 protected:
 	bool detect_chiptyp(void);
+	unsigned int crc16(unsigned int uCrc, unsigned int uData);
+	bool callback(lua_State *L, int iLuaCallbackTag, unsigned long ulProgressData, void *pvCallbackUserData);
+
+	// the lua state
+	wxLuaState *m_ptLuaState;
 
 	ROMLOADER_CHIPTYP m_tChiptyp;
 	ROMLOADER_ROMCODE m_tRomcode;
@@ -176,8 +181,6 @@ private:
 	void *m_pvHandle;
 
 	muhkuh_plugin_fn_close_instance m_fn_close;
-	// the lua state
-	wxLuaState *m_ptLuaState;
 
 	static const tRomloader_ResetId atResIds[3];
 };

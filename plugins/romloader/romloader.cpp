@@ -549,3 +549,90 @@ const tRomloader_ResetId romloader::atResIds[3] =
 };
 
 
+unsigned int romloader::crc16(unsigned int uCrc, unsigned int uData)
+{
+	uCrc  = (uCrc >> 8) | ((uCrc & 0xff) << 8);
+	uCrc ^= uData;
+	uCrc ^= (uCrc & 0xff) >> 4;
+	uCrc ^= (uCrc & 0x0f) << 12;
+	uCrc ^= ((uCrc & 0xff) << 4) << 1;
+
+	return uCrc;
+}
+
+
+bool romloader::callback(lua_State *L, int iLuaCallbackTag, unsigned long ulProgressData, void *pvCallbackUserData)
+{
+	bool fStillRunning;
+	int iOldTopOfStack;
+	int iResult;
+	int iLuaType;
+	wxString strMsg;
+
+
+	// check lua state and callback tag
+	if( L!=NULL && iLuaCallbackTag!=0 )
+	{
+		// get the current stack position
+		iOldTopOfStack = lua_gettop(L);
+		// push the function tag on the stack
+		lua_rawgeti(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
+		// push the arguments on the stack
+		lua_pushnumber(L, ulProgressData);
+		lua_pushnumber(L, (long)pvCallbackUserData);
+		// call the function
+		iResult = lua_pcall(L, 2, 1, 0);
+		if( iResult!=0 )
+		{
+			switch( iResult )
+			{
+			case LUA_ERRRUN:
+				strMsg = wxT("runtime error");
+				break;
+			case LUA_ERRMEM:
+				strMsg = wxT("memory allocation error");
+				break;
+			default:
+				strMsg.Printf(wxT("unknown errorcode: %d"), iResult);
+				break;
+			}
+			wxLogError(wxT("callback function failed: ") + strMsg);
+			strMsg = wxlua_getstringtype(L, -1);
+			wxLogError(strMsg);
+			wxLogError(wxT("cancel operation"));
+			fStillRunning = false;
+		}
+		else
+		{
+			// get the function's return value
+			iLuaType = lua_type(L, -1);
+			if( wxlua_iswxluatype(iLuaType, WXLUA_TBOOLEAN)==false )
+			{
+				wxLogError(wxT("callback function returned a non-boolean type!"));
+				fStillRunning = false;
+			}
+			else
+			{
+				if( iLuaType==LUA_TNUMBER )
+				{
+					iResult = lua_tonumber(L, -1);
+				}
+				else
+				{
+					iResult = lua_toboolean(L, -1);
+				}
+				fStillRunning = (iResult!=0);
+			}
+		}
+		// return old stack top
+		lua_settop(L, iOldTopOfStack);
+	}
+	else
+	{
+		// no callback function -> keep running
+		fStillRunning = true;
+	}
+
+	return fStillRunning;
+}
+
