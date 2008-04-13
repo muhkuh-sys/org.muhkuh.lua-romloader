@@ -374,34 +374,79 @@ end
 
 
 m_stdCallProgressDialog = nil
+m_stdCallMessageBuffer = ""
+m_stdCallLastMessage = ""
 
-function stdCallCallback(ulProgress, ulCallbackId)
+function stdCallGetMessage(strNewChars)
+	local strMsg
+	local iIdx;
+
+
+	-- append new message to buffer
+	m_stdCallMessageBuffer = m_stdCallMessageBuffer .. strNewChars
+
+	-- is already a complete line in the buffer?
+	iIdx = m_stdCallMessageBuffer:find("[\n\r]")
+	if iIdx then
+		-- cut off the first line
+		strMsg = m_stdCallMessageBuffer:sub(1, iIdx-1)
+		m_stdCallMessageBuffer = m_stdCallMessageBuffer:sub(iIdx+1)
+	end
+
+	return strMsg
+end
+
+
+function stdCallCallback(strMessage, ulCallbackId)
 	local fIsRunning
 	local strMsg
 
 
+	-- append new message to buffer
+	strMsg = stdCallGetMessage(strMessage)
+	if strMsg then
+		print("stdCall: " .. strMsg)
+		m_stdCallLastMessage = strMsg
+	end
+
 	if m_stdCallProgressDialog==nil then
 		fIsRunning = false
 	else
-		if ulProgress==0 then
-			strMsg = "executing function..."
-		else
-			strMsg = string.format("read %d bytes", ulProgress)
-		end
 		-- NOTE: wxLua does not bind the "Pulse" method yet :(
-		fIsRunning = m_stdCallProgressDialog:Update(0,strMsg)
+		fIsRunning = m_stdCallProgressDialog:Update(0, m_stdCallLastMessage)
 	end
 
 	return fIsRunning
 end
 
+
 local function stdCallCloseProgress()
+	local strMsg
+
 	if m_stdCallProgressDialog~=nil then
 		m_stdCallProgressDialog:Close()
 		m_stdCallProgressDialog:Destroy()
 		m_stdCallProgressDialog = nil
 	end
+
+	-- print the rest of the buffer
+	repeat do
+		strMsg = stdCallGetMessage("")
+		if strMsg then
+			print("stdCall: " .. strMsg)
+		end
+	end until not strMsg
+
+	-- does the buffer contain data without trailing newline?
+	if m_stdCallMessageBuffer:len()>0 then
+		-- yes -> print this
+		print("stdCall: " .. m_stdCallMessageBuffer)
+	end
+
+	m_stdCallMessageBuffer = ""
+	m_stdCallLastMessage = ""
 end
+
 
 function stdCall(parent, plugin, ulNetxAddress, ulParameterR0)
 	m_stdCallProgressDialog = wx.wxProgressDialog(	"Executing function...",
@@ -409,6 +454,8 @@ function stdCall(parent, plugin, ulNetxAddress, ulParameterR0)
 							100,
 							parent,
 							wx.wxPD_AUTO_HIDE+wx.wxPD_CAN_ABORT)
+	m_stdCallMessageBuffer = ""
+	m_stdCallLastMessage = ""
 	plugin:call(ulNetxAddress, ulParameterR0, tester.stdCallCallback, 0)
 	stdCallCloseProgress()
 end

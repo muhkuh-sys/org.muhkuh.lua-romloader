@@ -561,14 +561,15 @@ unsigned int romloader::crc16(unsigned int uCrc, unsigned int uData)
 }
 
 
-bool romloader::callback(lua_State *L, int iLuaCallbackTag, unsigned long ulProgressData, void *pvCallbackUserData)
+
+bool romloader::callback_long(lua_State *L, int iLuaCallbackTag, long lProgressData, void *pvCallbackUserData)
 {
 	bool fStillRunning;
 	int iOldTopOfStack;
-	int iResult;
-	int iLuaType;
-	wxString strMsg;
 
+
+	// default value
+	fStillRunning = false;
 
 	// check lua state and callback tag
 	if( L!=NULL && iLuaCallbackTag!=0 )
@@ -578,7 +579,50 @@ bool romloader::callback(lua_State *L, int iLuaCallbackTag, unsigned long ulProg
 		// push the function tag on the stack
 		lua_rawgeti(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
 		// push the arguments on the stack
-		lua_pushnumber(L, ulProgressData);
+		lua_pushnumber(L, lProgressData);
+		fStillRunning = callback_common(L, pvCallbackUserData, iOldTopOfStack);
+	}
+
+	return fStillRunning;
+}
+
+
+bool romloader::callback_string(lua_State *L, int iLuaCallbackTag, wxString strProgressData, void *pvCallbackUserData)
+{
+	bool fStillRunning;
+	int iOldTopOfStack;
+
+
+	// default value
+	fStillRunning = false;
+
+	// check lua state and callback tag
+	if( L!=NULL && iLuaCallbackTag!=0 )
+	{
+		// get the current stack position
+		iOldTopOfStack = lua_gettop(L);
+		// push the function tag on the stack
+		lua_rawgeti(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
+		// push the arguments on the stack
+		lua_pushlstring(L, strProgressData.fn_str(), strProgressData.Len());
+		fStillRunning = callback_common(L, pvCallbackUserData, iOldTopOfStack);
+	}
+
+	return fStillRunning;
+}
+
+
+bool romloader::callback_common(lua_State *L, void *pvCallbackUserData, int iOldTopOfStack)
+{
+	bool fStillRunning;
+	int iResult;
+	int iLuaType;
+	wxString strMsg;
+
+
+	// check lua state and callback tag
+	if( L!=NULL )
+	{
 		lua_pushnumber(L, (long)pvCallbackUserData);
 		// call the function
 		iResult = lua_pcall(L, 2, 1, 0);
@@ -632,6 +676,9 @@ bool romloader::callback(lua_State *L, int iLuaCallbackTag, unsigned long ulProg
 		// no callback function -> keep running
 		fStillRunning = true;
 	}
+
+	// allow gui updates
+	wxTheApp->Yield();
 
 	return fStillRunning;
 }

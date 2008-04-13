@@ -1047,7 +1047,7 @@ tNetxUsbState romloader_usb::usb_load(const char *pcData, size_t sizDataLen, uns
 	unsigned char aucBufRec[64];
 	size_t sizChunkSize;
 	bool fIsRunning;
-	unsigned long ulBytesProcessed;
+	long lBytesProcessed;
 
 
 	pucDataCnt = (const unsigned char*)pcData;
@@ -1069,7 +1069,7 @@ tNetxUsbState romloader_usb::usb_load(const char *pcData, size_t sizDataLen, uns
 	{
 		// now send the data part
 		pucDataCnt = (const unsigned char*)pcData;
-		ulBytesProcessed = 0;
+		lBytesProcessed = 0;
 		while( pucDataCnt<pucDataEnd )
 		{
 			// get the size of the next data chunk
@@ -1082,7 +1082,7 @@ tNetxUsbState romloader_usb::usb_load(const char *pcData, size_t sizDataLen, uns
 			memcpy(aucBufSend+1, pucDataCnt, sizChunkSize);
 			aucBufSend[0] = sizChunkSize+1;
 
-			fIsRunning = callback(L, iLuaCallbackTag, ulBytesProcessed, pvCallbackUserData);
+			fIsRunning = callback_long(L, iLuaCallbackTag, lBytesProcessed, pvCallbackUserData);
 			if( fIsRunning!=true )
 			{
 				tResult = netxUsbState_Cancel;
@@ -1095,7 +1095,7 @@ tNetxUsbState romloader_usb::usb_load(const char *pcData, size_t sizDataLen, uns
 				break;
 			}
 			pucDataCnt += sizChunkSize;
-			ulBytesProcessed += sizChunkSize;
+			lBytesProcessed += sizChunkSize;
 		}
 
 		if( pucDataCnt==pucDataEnd )
@@ -1111,18 +1111,12 @@ tNetxUsbState romloader_usb::usb_load(const char *pcData, size_t sizDataLen, uns
 tNetxUsbState romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	tNetxUsbState tResult;
-	unsigned int uiCrc;
 	wxString strCommand;
 	unsigned char aucSend[64];
 	unsigned char aucRec[64];
-	unsigned int uiLinelen;
-	unsigned char *pucData;
-	unsigned char *pucDataNew;
-	unsigned int uiDataLen;
-	unsigned int uiDataLenNew;
-	unsigned int uiDataLenAlloc;
 	bool fIsRunning;
 	wxString strResponse;
+	wxString strCallbackData;
 	size_t sizChunkRead;
 	unsigned char *pucBuf;
 	unsigned char *pucCnt, *pucEnd;
@@ -1147,7 +1141,8 @@ tNetxUsbState romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long
 				do
 				{
 					// execute callback
-					fIsRunning = callback(L, iLuaCallbackTag, 0, pvCallbackUserData);
+					fIsRunning = callback_string(L, iLuaCallbackTag, strCallbackData, pvCallbackUserData);
+					strCallbackData.Empty();
 					if( fIsRunning!=true )
 					{
 						tResult = netxUsbState_Cancel;
@@ -1156,28 +1151,30 @@ tNetxUsbState romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long
 					{
 						// look for data from netx
 						tResult = libusb_readBlock(aucRec, 64, 200);
-					}
-				} while( tResult==netxUsbState_Timeout );
-
-				if( tResult==netxUsbState_Ok )
-				{
-					tResult = netxUsbState_Timeout;
-
-					// received netx data, check for prompt
-					sizChunkRead = aucRec[0];
-					if( sizChunkRead>1 && sizChunkRead<=64 )
-					{
-						// print data
-						wxLogMessage(wxString::From8BitData((const char*)(aucRec+1), sizChunkRead-1));
-
-						// last packet has '\n>' at the end
-						if( sizChunkRead>2 && aucRec[sizChunkRead-2]=='\n' && aucRec[sizChunkRead-1]=='>' )
+						if( tResult==netxUsbState_Ok )
 						{
-							tResult = netxUsbState_Ok;
+							tResult = netxUsbState_Timeout;
+
+							// received netx data, check for prompt
+							sizChunkRead = aucRec[0];
+							if( sizChunkRead>1 && sizChunkRead<=64 )
+							{
+								// get data
+								// NOTE: use Append to make a real copy
+								strCallbackData.Append( wxString::From8BitData((const char*)(aucRec+1), sizChunkRead-1) );
+
+								// last packet has '\n>' at the end
+								if( sizChunkRead>2 && aucRec[sizChunkRead-2]=='\n' && aucRec[sizChunkRead-1]=='>' )
+								{
+									// send the rest of the data
+									callback_string(L, iLuaCallbackTag, strCallbackData, pvCallbackUserData);
+									tResult = netxUsbState_Ok;
+								}
+							}
 							break;
 						}
 					}
-				}
+				} while( tResult==netxUsbState_Timeout );
 			}
 		} while( tResult==netxUsbState_Timeout );
 	}

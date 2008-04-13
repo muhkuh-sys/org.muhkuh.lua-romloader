@@ -935,7 +935,7 @@ int romloader_uart::write_data(wxString &strData, unsigned long ulLoadAdr, lua_S
 				sizChunkSize = sizMaxChunkSize;
 			}
 
-			fIsRunning = callback(L, iLuaCallbackTag, sizDataCnt, pvCallbackUserData);
+			fIsRunning = callback_long(L, iLuaCallbackTag, sizDataCnt, pvCallbackUserData);
 			if( fIsRunning!=true )
 			{
 				strErrorMsg = wxT("operation canceled!");
@@ -1018,6 +1018,7 @@ void romloader_uart::call(double dNetxAddress, double dParameterR0, lua_State *L
 	unsigned long ulParameterR0;
 	wxString strCommand;
 	wxString strErrorMsg;
+	wxString strCallbackData;
 	bool fIsRunning;
 	unsigned long ulChunkRead;
 	unsigned char *pucBuf;
@@ -1055,15 +1056,18 @@ void romloader_uart::call(double dNetxAddress, double dParameterR0, lua_State *L
 			do
 			{
 				// execute callback
-				fIsRunning = callback(L, iLuaCallbackTag, 0, pvCallbackUserData);
+				fIsRunning = callback_string(L, iLuaCallbackTag, strCallbackData, pvCallbackUserData);
+				strCallbackData.Empty();
 				if( fIsRunning==true )
 				{
 					// look for data from netx
 					ulChunkRead = m_ptUartDev->RecvRaw(pucBuf, sizBufLen, 200);
 					if( ulChunkRead>0 )
 					{
-						// print data
-						wxLogMessage(wxString::From8BitData((const char*)pucBuf, ulChunkRead));
+						// get data
+						// NOTE: use Append to make a real copy
+						strCallbackData.Append( wxString::From8BitData((const char*)pucBuf, ulChunkRead) );
+
 						// scan data for command prompt
 						pucCnt = pucBuf;
 						pucEnd = pucCnt + ulChunkRead;
@@ -1074,6 +1078,9 @@ void romloader_uart::call(double dNetxAddress, double dParameterR0, lua_State *L
 							aucSbuf[2] = *(pucCnt++);
 							if( aucSbuf[0]=='\r' && aucSbuf[1]=='\n' && aucSbuf[2]=='>' )
 							{
+								// send the rest of the data
+								callback_string(L, iLuaCallbackTag, strCallbackData, pvCallbackUserData);
+								// call has finished
 								fIsRunning = false;
 								fOk = true;
 								break;
