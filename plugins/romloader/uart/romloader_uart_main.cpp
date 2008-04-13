@@ -306,6 +306,8 @@ bool romloader_uart::chip_init(void)
 
 void romloader_uart::connect(void)
 {
+	wxLogMessage(m_strMe + wxT("connect"));
+
 	if( m_ptUartDev!=NULL && m_fIsConnected==false )
 	{
 		if( m_ptUartDev->Open()!=true )
@@ -334,6 +336,8 @@ void romloader_uart::connect(void)
 
 void romloader_uart::disconnect(void)
 {
+	wxLogMessage(m_strMe + wxT("disconnect"));
+
 	if( m_ptUartDev!=NULL )
 	{
 		m_ptUartDev->Close();
@@ -791,12 +795,15 @@ int romloader_uart::write_data(wxString &strData, unsigned long ulLoadAdr, lua_S
 	size_t sizChunkSize;
 	bool fIsRunning;
 	unsigned long ulBytesProcessed;
-	const size_t sizMaxChunkSize = 64;
+	size_t sizMaxChunkSize;
 	int iResult;
 	wxString strResponse;
+	unsigned long ulSent;
 
 
 	iResult = -1;
+
+	sizMaxChunkSize = m_ptUartDev->GetMaxBlockSize();
 
 	// get the data length
 	sizDataLen = strData.Length();
@@ -810,12 +817,12 @@ int romloader_uart::write_data(wxString &strData, unsigned long ulLoadAdr, lua_S
 	}
 
 	// generate load command
-
 	strCommand.Printf(wxT("LOAD %08lX %08X %04X"), ulLoadAdr, sizDataLen, uiCrc);
+
 	// send command
 	if( m_ptUartDev->SendCommand(strCommand, 1000)!=true )
 	{
-		wxLogError(m_strMe + wxT("failed to send fill command to device"));
+		wxLogError(m_strMe + wxT("failed to send load command to device"));
 	}
 	else
 	{
@@ -833,13 +840,16 @@ int romloader_uart::write_data(wxString &strData, unsigned long ulLoadAdr, lua_S
 			fIsRunning = callback(L, iLuaCallbackTag, sizDataCnt, pvCallbackUserData);
 			if( fIsRunning!=true )
 			{
+				wxLogMessage(m_strMe + wxT("operation canceled!"));
 				iResult = -2;
 				break;
 			}
 
 			// send data chunk
-			if( m_ptUartDev->SendRaw((const unsigned char*)strData.Mid(sizDataCnt, sizChunkSize).To8BitData(), sizChunkSize, 1000)!=sizChunkSize )
+			ulSent = m_ptUartDev->SendRaw((const unsigned char*)strData.Mid(sizDataCnt, sizChunkSize).To8BitData(), sizChunkSize, 1000);
+			if( ulSent!=sizChunkSize )
 			{
+				wxLogMessage(m_strMe + wxT("failed to send %d bytes: %d"), sizChunkSize, ulSent);
 				break;
 			}
 
@@ -889,8 +899,7 @@ void romloader_uart::write_image(double dNetxAddress, wxString strData, lua_Stat
 	iResult = write_data(strData, ulNetxAddress, L, iLuaCallbackTag, pvCallbackUserData);
 	if( iResult!=0 )
 	{
-		wxLogError(m_strMe + wxT("failed to send command!"));
-//		wxLogError( romloader_uart_getErrorString(tResult) );
+		wxLogError(m_strMe + wxT("failed to write image!"));
 	}
 	else
 	{
@@ -945,7 +954,7 @@ void romloader_uart::call(double dNetxAddress, double dParameterR0, lua_State *L
 				if( fIsRunning==true )
 				{
 					// look for data from netx
-					ulChunkRead = m_ptUartDev->RecvRaw(pucBuf, sizBufLen, 500);
+					ulChunkRead = m_ptUartDev->RecvRaw(pucBuf, sizBufLen, 200);
 					if( ulChunkRead>0 )
 					{
 						// print data

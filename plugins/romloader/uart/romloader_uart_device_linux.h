@@ -49,7 +49,7 @@ public:
 	static void		ScanForPorts(wxArrayString *ptArray);
 
 protected:
-	unsigned long GetMaxBlockSize(void) { return 64; }
+	unsigned long GetMaxBlockSize(void) { return 4096; }
 
 	int m_hPort;
 	struct termios m_tOldAttribs;

@@ -101,10 +101,56 @@ bool romloader_uart_device_linux::Open(void)
 
 unsigned long romloader_uart_device_linux::SendRaw(const unsigned char *pbData, unsigned long ulDataLen, unsigned long ulTimeout)
 {
+	ssize_t ssizBytesWritten;
+	size_t sizChunk;
 	unsigned long ulBytesWritten;
+	int iErrno;
 
 
-	ulBytesWritten = write(m_hPort, pbData, ulDataLen); 
+	ulBytesWritten = 0;
+	do
+	{
+		sizChunk = ulDataLen - ulBytesWritten;
+		ssizBytesWritten = write(m_hPort, pbData + ulBytesWritten, sizChunk);
+		if( ssizBytesWritten==-1 )
+		{
+			iErrno = errno;
+			if( iErrno==0 )
+			{
+				wxLogMessage(wxT("Spurious write error detected, write returns -1, but errno is 0."));
+				ssizBytesWritten = 0;
+			}
+			else if( iErrno==EAGAIN )
+			{
+				// flush device
+				wxLogMessage(wxT("device is busy, flushing..."));
+				if( tcdrain(m_hPort)==0 )
+				{
+					ssizBytesWritten = 0;
+				}
+				else
+				{
+					iErrno = errno;
+					wxLogError(wxT("flush failed with errno: %d, strerror: %s"), iErrno, strerror(iErrno));
+				}
+			}
+			else
+			{
+				wxLogError(wxT("romloader_uart_device_linux(%p): failed to write %d bytes at offset %d of %d total"), this, sizChunk, ulBytesWritten, ulDataLen);
+				wxLogError(wxT("write failed with result: %d, errno: %d, strerror: %s"), ssizBytesWritten, iErrno, strerror(iErrno));
+				break;
+			}
+		}
+		else if( ssizBytesWritten<0 || ssizBytesWritten>sizChunk )
+		{
+			iErrno = errno;
+			wxLogError(wxT("romloader_uart_device_linux(%p): failed to write %d bytes at offset %d of %d total, result: %d"), this, sizChunk, ulBytesWritten, ulDataLen, ssizBytesWritten);
+			wxLogError(wxT("write failed with result: %d, errno: %d, strerror: %s"), ssizBytesWritten, iErrno, strerror(iErrno));
+			break;
+		}
+		ulBytesWritten += ssizBytesWritten;
+	} while( ulBytesWritten<ulDataLen );
+	
 	return ulBytesWritten;
 }
 
