@@ -25,6 +25,10 @@
 #include <wx/wx.h>
 #include <wx/regex.h>
 
+#ifdef __WINDOWS__
+	#define ETIMEDOUT 116
+#endif
+
 /*-------------------------------------*/
 
 static muhkuh_plugin_desc plugin_desc =
