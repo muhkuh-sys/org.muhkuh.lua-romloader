@@ -1,0 +1,4 @@
+<MuhkuhPluginConfig name="Bootloader netX500/100/50 Uart" so="bootloader_uart" id="romloader_uart">
+	<Cfg>
+	</Cfg>
+</MuhkuhPluginConfig>
