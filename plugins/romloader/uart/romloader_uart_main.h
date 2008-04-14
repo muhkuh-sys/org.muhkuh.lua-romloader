@@ -96,6 +96,7 @@ private:
 	bool chip_init(void);
 	int write_data(wxString &strData, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData, wxString &strErrorMsg);
 	bool parseDumpLine(const char *pcLine, size_t sizLineLen, unsigned long ulAddress, unsigned long ulElements, unsigned char *pucBuffer, wxString &strErrorMsg);
+  unsigned int buildCrc(const char *pcData, size_t sizDataLen);
 
 	bool m_fIsConnected;
 

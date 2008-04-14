@@ -883,6 +883,26 @@ void romloader_uart::write_data32(double dNetxAddress, double dData)
 }
 
 
+unsigned int romloader_uart::buildCrc(const char *pcData, size_t sizDataLen)
+{
+  const unsigned char *pucCnt;
+  const unsigned char *pucEnd;
+  unsigned int uiCrc;
+
+
+  pucCnt = (const unsigned char*)pcData;
+  pucEnd = pucCnt + sizDataLen;
+
+  uiCrc = 0xffff;
+  while(pucCnt<pucEnd)
+  {
+    uiCrc = crc16(uiCrc, *(pucCnt++));
+  }
+
+  return uiCrc;
+}
+
+
 int romloader_uart::write_data(wxString &strData, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData, wxString &strErrorMsg)
 {
 	size_t sizDataCnt, sizDataLen;
@@ -895,6 +915,7 @@ int romloader_uart::write_data(wxString &strData, unsigned long ulLoadAdr, lua_S
 	int iResult;
 	wxString strResponse;
 	unsigned long ulSent;
+	unsigned long ulPeek;
 
 
 	// assume success
@@ -906,15 +927,11 @@ int romloader_uart::write_data(wxString &strData, unsigned long ulLoadAdr, lua_S
 	sizDataLen = strData.Length();
 
 	// generate crc checksum
-	uiCrc = 0xffff;
-	// loop over all bytes
-	for(sizDataCnt=0; sizDataCnt<sizDataLen; ++sizDataCnt)
-	{
-		uiCrc = crc16(uiCrc, strData[sizDataCnt]);
-	}
+	uiCrc = buildCrc(strData.fn_str(), strData.Len());
 
 	// generate load command
 	strCommand.Printf(wxT("LOAD %08lX %08X %04X"), ulLoadAdr, sizDataLen, uiCrc);
+	wxLogMessage(m_strMe + wxT("Command: ") + strCommand);
 
 	// send command
 	if( m_ptUartDev->SendCommand(strCommand, 1000)!=true )
@@ -928,6 +945,24 @@ int romloader_uart::write_data(wxString &strData, unsigned long ulLoadAdr, lua_S
 		sizDataCnt = 0;
 		while( sizDataCnt<sizDataLen )
 		{
+			// check for response
+			ulPeek = m_ptUartDev->Peek();
+			if( ulPeek!=0 )
+			{
+				// error message
+				strErrorMsg.Printf(wxT("received error during transmission, peek reported %d"), ulPeek);
+				iResult = -3;
+				// get netx message
+				if( m_ptUartDev->WaitForResponse(strResponse, 65536, 1024)==false )
+				{
+					strErrorMsg.Append(wxT(" failed to get netx response!"));
+				}
+				else
+				{
+				  wxLogMessage(wxT("netx response: ") + strResponse);
+				}
+			}
+
 			// get the size of the next data chunk
 			sizChunkSize = sizDataLen - sizDataCnt;
 			if( sizChunkSize>sizMaxChunkSize )
@@ -950,19 +985,6 @@ int romloader_uart::write_data(wxString &strData, unsigned long ulLoadAdr, lua_S
 				strErrorMsg.Printf(wxT("failed to send %d bytes: %d"), sizChunkSize, ulSent);
 				iResult = -1;
 				break;
-			}
-
-			// check for response
-			if( m_ptUartDev->Peek()!=0 )
-			{
-				// error message
-				strErrorMsg = wxT("received error during transmission!");
-				iResult = -3;
-				// wait for prompt
-				if( m_ptUartDev->WaitForResponse(strResponse, 65536, 1024)==false )
-				{
-					strErrorMsg.Append(wxT(" failed to get a command prompt!"));
-				}
 			}
 
 			sizDataCnt += sizChunkSize;
