@@ -986,6 +986,13 @@ int romloader_uart::write_data(wxString &strData, unsigned long ulLoadAdr, lua_S
 				iResult = -1;
 				break;
 			}
+	    // flush the port to get all data out
+	    if( m_ptUartDev->Flush()!=true )
+	    {
+				strErrorMsg = wxT("failed to flush the port");
+				iResult = -1;
+				break;
+	    }
 
 			sizDataCnt += sizChunkSize;
 		}

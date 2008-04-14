@@ -52,7 +52,7 @@ public:
   static unsigned long  ScanForPorts(wxArrayString *ptArray);
 
 protected:
-  unsigned long GetMaxBlockSize(void) { return 64; }
+  unsigned long GetMaxBlockSize(void) { return 4096; }
 
   void              CheckComEvents(DWORD dwEventMask);
   DWORD             CheckComState();
