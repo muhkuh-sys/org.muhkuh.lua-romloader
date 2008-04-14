@@ -1,9 +1,23 @@
 Changelog
 
-Muhkuh 1.0.162
+Muhkuh 1.0.189
 
  * fixed: write08 function in openocd wrote nothing
  * fixed: all but the last lua include path were truncated by one char in config dialog
+ * added custom bitlib again to fix unsigned 32bit clipping problems for good
+ * add license and changelog to windows installer, move application to 'application' subfolder in install dir 
+ * added muhkuh uninstaller icons
+ * removed secmem and utils lua scripts
+ * added windows driver for romloader_usb to installer
+ * new plugin: romloader_uart for linux and windows
+ * code cleanups in romloader_usb
+ * add chiptyp and romcode detection to romloader plugin and lua interface
+ * new message interface for call function
+ * pass errors from muhkuh_load and muhkuh_include to lua
+ * romloader_uart: set blocksize on linux to 4096, more debug output, use platform specific chunk size, fixed SendRaw for linux
+ * romloader_uart: fixed load routine for usbser.sys on xp
+ * display messages from device in tester.stdCall
+
 
 Muhkuh 1.0.160
 
