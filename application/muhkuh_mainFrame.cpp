@@ -114,6 +114,7 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
  , m_tipProvider(NULL)
  , m_welcomeHtml(NULL)
  , m_testDetailsHtml(NULL)
+ , m_fRunningTestIsAutostart(false)
 {
 	wxLog *pOldLogTarget;
 	wxFileName cfgName;
@@ -552,12 +553,15 @@ void muhkuh_mainFrame::read_config(void)
 	iMainFrameW = pConfig->Read(wxT("w"), 640);
 	iMainFrameH = pConfig->Read(wxT("h"), 480);
 	strPerspective = pConfig->Read(wxT("perspective"), wxEmptyString);
-	fWelcomePageIsVisible = pConfig->Read(wxT("showwelcome"), true);
-	fTestDetailsPageIsVisible = pConfig->Read(wxT("showtestdetails"), true);
-	m_fShowStartupTips = pConfig->Read(wxT("showtips"), true);
+	pConfig->Read(wxT("showwelcome"), &fWelcomePageIsVisible, true);
+	pConfig->Read(wxT("showtestdetails"), &fTestDetailsPageIsVisible, true);
+	pConfig->Read(wxT("showtips"), &m_fShowStartupTips, true);
 	m_sizStartupTipsIdx = pConfig->Read(wxT("tipidx"), (long)0);
 	m_strWelcomePageFile = pConfig->Read(wxT("welcomepage"), wxEmptyString);
 	m_strDetailsPageFile = pConfig->Read(wxT("detailspage"), wxEmptyString);
+	pConfig->Read(wxT("autostart"), &m_fAutoStart, false);
+	pConfig->Read(wxT("autoexit"), &m_fAutoExit, false);
+	m_strAutoStartTest = pConfig->Read(wxT("autostarttest"), wxEmptyString);
 
 	// get lua settings
 	pConfig->SetPath(wxT("/Lua"));
@@ -667,17 +671,20 @@ void muhkuh_mainFrame::write_config(void)
 	}
 
 	pConfig->SetPath(wxT("/MainFrame"));
-	pConfig->Write(wxT("x"), (long)iMainFrameX);
-	pConfig->Write(wxT("y"), (long)iMainFrameY);
-	pConfig->Write(wxT("w"), (long)iMainFrameW);
-	pConfig->Write(wxT("h"), (long)iMainFrameH);
-	pConfig->Write(wxT("perspective"), strPerspective);
-	pConfig->Write(wxT("showwelcome"), fWelcomePageIsVisible);
-	pConfig->Write(wxT("showtestdetails"), fTestDetailsPageIsVisible);
-	pConfig->Write(wxT("showtips"), m_fShowStartupTips);
-	pConfig->Write(wxT("tipidx"), (long)m_sizStartupTipsIdx);
-	pConfig->Write(wxT("welcomepage"), m_strWelcomePageFile);
-	pConfig->Write(wxT("detailspage"), m_strDetailsPageFile);
+	pConfig->Write(wxT("x"),		(long)iMainFrameX);
+	pConfig->Write(wxT("y"),		(long)iMainFrameY);
+	pConfig->Write(wxT("w"),		(long)iMainFrameW);
+	pConfig->Write(wxT("h"),		(long)iMainFrameH);
+	pConfig->Write(wxT("perspective"),	strPerspective);
+	pConfig->Write(wxT("showwelcome"),	fWelcomePageIsVisible);
+	pConfig->Write(wxT("showtestdetails"),	fTestDetailsPageIsVisible);
+	pConfig->Write(wxT("showtips"),		m_fShowStartupTips);
+	pConfig->Write(wxT("tipidx"),		(long)m_sizStartupTipsIdx);
+	pConfig->Write(wxT("welcomepage"),	m_strWelcomePageFile);
+	pConfig->Write(wxT("detailspage"),	m_strDetailsPageFile);
+	pConfig->Write(wxT("autostart"),	m_fAutoStart);
+	pConfig->Write(wxT("autoexit"),		m_fAutoExit);
+	pConfig->Write(wxT("autostarttest"),	m_strAutoStartTest);
 	pConfig->SetPath(wxT("/"));
 
 	// get lua settings
@@ -821,6 +828,14 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 
 			iRepositoryIndex = m_ptRepositoryManager->GetActiveRepository();
 			scanTests(iRepositoryIndex);
+
+			if( m_fAutoStart==true && m_strAutoStartTest.IsEmpty()!=true )
+			{
+				wxHtmlLinkEvent tHtmlLinkEvent(muhkuh_mainFrame_TestDetails_id, wxHtmlLinkInfo(wxT("mtd://") + m_strAutoStartTest));
+				tHtmlLinkEvent.SetEventObject(this);
+				m_fRunningTestIsAutostart = true;
+				GetEventHandler()->ProcessEvent(tHtmlLinkEvent);
+			}
 		}
 
 		// show the number of loaded tests
@@ -938,7 +953,7 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 	ptTmpRepositoryManager = new muhkuh_repository_manager(m_ptRepositoryManager);
 
 	// show config dialog
-	cfgDlg = new muhkuh_configDialog(this, m_strApplicationPath, m_strWelcomePageFile, m_strDetailsPageFile, ptTmpPluginManager, ptTmpRepositoryManager, m_strLuaIncludePath, m_strLuaStartupCode);
+	cfgDlg = new muhkuh_configDialog(this, m_strApplicationPath, m_strWelcomePageFile, m_strDetailsPageFile, ptTmpPluginManager, ptTmpRepositoryManager, m_strLuaIncludePath, m_strLuaStartupCode, m_fAutoStart, m_fAutoExit, m_strAutoStartTest);
 	if( cfgDlg->ShowModal()==wxID_OK )
 	{
 		m_strLuaIncludePath = cfgDlg->GetLuaIncludePath();
@@ -950,6 +965,10 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 		wxLogDebug(wxT("New Welcome Page File: ") + m_strWelcomePageFile);
 		m_strDetailsPageFile = cfgDlg->GetDetailsPageFile();
 		wxLogDebug(wxT("New Details Page File: ") + m_strDetailsPageFile);
+
+		m_fAutoStart = cfgDlg->GetAutostartEnable();
+		m_fAutoExit = cfgDlg->GetAutoexitEnable();
+		m_strAutoStartTest = cfgDlg->GetAutostartTest();
 
 		clearLuaState();
 
@@ -1235,6 +1254,22 @@ void muhkuh_mainFrame::finishTest(void)
 		// delete the panel
 		delete m_testPanel;
 		m_testPanel = NULL;
+	}
+
+	// was this an autostart test?
+	if( m_fRunningTestIsAutostart==true )
+	{
+		// autostart test has finished
+		m_fRunningTestIsAutostart = false;
+
+		// yes -> check for auto exit
+		if( m_fAutoExit==true )
+		{
+			// autoexit -> send quit event
+			wxCommandEvent tCommandEvent(wxEVT_COMMAND_MENU_SELECTED, wxID_EXIT);
+			tCommandEvent.SetEventObject( this );
+			GetEventHandler()->ProcessEvent(tCommandEvent);
+		}
 	}
 }
 

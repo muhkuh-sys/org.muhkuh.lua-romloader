@@ -245,6 +245,11 @@ private:
 	// the details page file
 	wxString m_strDetailsPageFile;
 
+	bool m_fAutoStart;
+	bool m_fAutoExit;
+	wxString m_strAutoStartTest;
+	bool m_fRunningTestIsAutostart;
+
 	// the locale object
 	wxLocale m_locale;
 

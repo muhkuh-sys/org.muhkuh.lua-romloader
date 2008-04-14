@@ -49,7 +49,7 @@ public:
 class muhkuh_configDialog : public wxDialog
 {
 public:
-	muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, wxString strWelcomeFile, wxString strDetailsFile, muhkuh_plugin_manager *ptPluginManager, muhkuh_repository_manager *ptRepositoryManager, wxString strLuaIncludePath, wxString strLuaStartupCode);
+	muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, wxString strWelcomeFile, wxString strDetailsFile, muhkuh_plugin_manager *ptPluginManager, muhkuh_repository_manager *ptRepositoryManager, wxString strLuaIncludePath, wxString strLuaStartupCode, bool fAutostartEnabled, bool fAutoexitEnabled, wxString strAutostartTest);
 	~muhkuh_configDialog(void);
 
 	void OnRadioWelcomeBuiltIn(wxCommandEvent &event);
@@ -59,6 +59,8 @@ public:
 
 	void OnBrowseStartPageButton(wxCommandEvent &event);
 	void OnBrowseDetailPageButton(wxCommandEvent &event);
+
+	void OnCheckAutostart(wxCommandEvent &event);
 
 	void OnNewRepositoryButton(wxCommandEvent &event);
 	void OnEditRepositoryButton(wxCommandEvent &event);
@@ -87,12 +89,18 @@ public:
 	wxString GetLuaIncludePath(void) const;
 	wxString GetLuaStartupCode(void) const;
 
+	bool GetAutostartEnable(void) const;
+	bool GetAutoexitEnable(void) const;
+	wxString GetAutostartTest(void) const;
+
 private:
 	void createControls(void);
 	wxPanel *createControls_application(wxWindow *ptParent);
 	wxPanel *createControls_repository(wxWindow *ptParent);
 	wxPanel *createControls_plugin(wxWindow *ptParent);
 	wxPanel *createControls_lua(wxWindow *ptParent);
+
+	void switchAutostartElements(bool fEnabled);
 
 	void ShowNewRepository(long lIdx);
 	void ShowNewPlugin(long lIdx);
@@ -136,7 +144,10 @@ private:
 	wxTextCtrl *m_ptStartupCodeText;
 	wxToolBar *m_luaPathToolBar;
 	muhkuh_dirlistbox *m_ptPathListBox;
-
+	wxCheckBox *m_ptCheckAutostart;
+	wxCheckBox *m_ptCheckAutoexit;
+	wxTextCtrl *m_ptTextAutostartTest;
+	wxBitmapButton *m_ptButtonBrowseAutostartTest;
     DECLARE_EVENT_TABLE()
 };
 
