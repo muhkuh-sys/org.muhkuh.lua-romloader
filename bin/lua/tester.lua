@@ -269,14 +269,24 @@ function getCommonPlugin(pattern)
 
 
 	if not m_commonPlugin then
-		m_commonPlugin = select_plugin.SelectPlugin(pattern)
-		if m_commonPlugin then
-			m_commonPlugin:connect()
+		local plugin = select_plugin.SelectPlugin(pattern)
+		if plugin then
+			print("tester.getCommonPlugin: trying to connect")
+			local fOk, strError = pcall(plugin.connect, plugin)
+			if fOk then
+				print("connected")
+				m_commonPlugin = plugin
+			else
+				print(strError)
+				print("could not connect")
+				print(debug.traceback())
+			end
 		end
 	end
+
 	return m_commonPlugin
 end
-
+ 
 function closeCommonPlugin()
 	if m_commonPlugin then
 		m_commonPlugin:disconnect()
