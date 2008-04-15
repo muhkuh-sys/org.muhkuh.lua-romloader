@@ -167,13 +167,6 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	// use pane 1 for menu and toolbar help
 	SetStatusBarPane(0);
 
-	// set the muhkuh icon
-	m_frameIcons.AddIcon(muhkuh_016_xpm);
-	m_frameIcons.AddIcon(muhkuh_032_xpm);
-	m_frameIcons.AddIcon(muhkuh_064_xpm);
-	m_frameIcons.AddIcon(muhkuh_128_xpm);
-	SetIcons(m_frameIcons);
-
 	// create the menu bar
 	createMenu();
 
@@ -193,13 +186,29 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	// this is for debug, it's a lot more noisy
 	wxLog::SetLogLevel(wxLOG_Debug);
 
-	// set the window title
-	SetTitle(m_strVersion);
-
 	wxLogMessage(_("application started"));
 
 	// read the config
 	read_config();
+
+	// set the window title
+	SetTitle(m_strApplicationTitle);
+
+  // set the application icon
+  if( m_strApplicationIcon.IsEmpty()==true )
+  {
+	  // set the muhkuh icon
+	  m_frameIcons.AddIcon(muhkuh_016_xpm);
+	  m_frameIcons.AddIcon(muhkuh_032_xpm);
+	  m_frameIcons.AddIcon(muhkuh_064_xpm);
+	  m_frameIcons.AddIcon(muhkuh_128_xpm);
+  }
+  else
+  {
+    // load a custom icon
+    m_frameIcons.AddIcon(m_strApplicationIcon, wxBITMAP_TYPE_ICO);
+  }
+	SetIcons(m_frameIcons);
 
 	// create the tip provider
 	createTipProvider();
@@ -231,6 +240,9 @@ muhkuh_mainFrame::~muhkuh_mainFrame(void)
 	{
 		delete m_tipProvider;
 	}
+
+	// force idle state
+	setState(muhkuh_mainFrame_state_idle);
 
 	finishTest();
 	clearLuaState();
@@ -562,6 +574,8 @@ void muhkuh_mainFrame::read_config(void)
 	pConfig->Read(wxT("autostart"), &m_fAutoStart, false);
 	pConfig->Read(wxT("autoexit"), &m_fAutoExit, false);
 	m_strAutoStartTest = pConfig->Read(wxT("autostarttest"), wxEmptyString);
+  m_strApplicationTitle = pConfig->Read(wxT("customtitle"), m_strVersion);
+  m_strApplicationIcon = pConfig->Read(wxT("customicon"), wxEmptyString);
 
 	// get lua settings
 	pConfig->SetPath(wxT("/Lua"));
@@ -685,6 +699,9 @@ void muhkuh_mainFrame::write_config(void)
 	pConfig->Write(wxT("autostart"),	m_fAutoStart);
 	pConfig->Write(wxT("autoexit"),		m_fAutoExit);
 	pConfig->Write(wxT("autostarttest"),	m_strAutoStartTest);
+  pConfig->Write(wxT("customtitle"), m_strApplicationTitle);
+  pConfig->Write(wxT("customicon"), m_strApplicationIcon);
+
 	pConfig->SetPath(wxT("/"));
 
 	// get lua settings
@@ -894,15 +911,25 @@ void muhkuh_mainFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
 		break;
 
 	case muhkuh_mainFrame_state_testing:
-		iResult = wxMessageBox(_("A test is still running. Are you sure you want to cancel it?"), m_strRunningTestName, wxYES_NO, this);
+	  // a test is still running
+	  if( m_fRunningTestIsAutostart==false )
+	  {
+	    // ask for confirmation
+		  iResult = wxMessageBox(_("A test is still running. Are you sure you want to cancel it?"), m_strRunningTestName, wxYES_NO, this);
+		}
+		else
+		{
+		  // always close the autostart test
+		  iResult = wxYES;
+		}
 		if( iResult==wxYES )
 		{
 			wxLogMessage(_("Script canceled on user request!"));
 
-			finishTest();
-
 			// test done -> go back to idle state
 			setState(muhkuh_mainFrame_state_idle);
+
+			finishTest();
 
 			// close the application
 			fCloseApp = true;
