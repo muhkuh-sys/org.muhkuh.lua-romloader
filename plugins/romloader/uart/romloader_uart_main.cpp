@@ -287,6 +287,16 @@ bool romloader_uart::chip_init(void)
 			break;
 		case ROMLOADER_ROMCODE_HBOOT:
 			// hboot needs no special init
+			// netx50 needs sdram fix
+			wxLogMessage(wxT("running netx50 sdram fix..."));
+			write_data32(0x1c005830, 0x00000001);
+			write_data32(0x1c005104, 0xbffffffc);
+			write_data32(0x1c00510c, 0x00480001);
+			write_data32(0x1c005110, 0x00000001);
+			wxLogMessage(wxT("netx50 sdram fix ok!"));
+			write_data32(0x1c00510c, 0);
+			write_data32(0x1c005110, 0);
+			write_data32(0x1c005830, 0);
 			fResult = true;
 			break;
 		case ROMLOADER_ROMCODE_UNKNOWN:
