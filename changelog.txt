@@ -1,6 +1,6 @@
 Changelog
 
-Muhkuh 1.0.189
+Muhkuh 1.0.196
 
  * fixed: write08 function in openocd wrote nothing
  * fixed: all but the last lua include path were truncated by one char in config dialog
@@ -17,6 +17,11 @@ Muhkuh 1.0.189
  * romloader_uart: set blocksize on linux to 4096, more debug output, use platform specific chunk size, fixed SendRaw for linux
  * romloader_uart: fixed load routine for usbser.sys on xp
  * display messages from device in tester.stdCall
+ * new config option to autostart and -exit a test
+ * new config option to set a custom application title and icon
+ * added uart plugin to the windows installer
+ * added netx50 sdram fix to romloader_uart chipinit
+ * tester.lua: protect call to plugin connect
 
 
 Muhkuh 1.0.160
