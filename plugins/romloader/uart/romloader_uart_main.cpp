@@ -712,6 +712,13 @@ wxString romloader_uart::read_image(double dNetxAddress, double dSize, lua_State
 			ulExpectedAddress = ulNetxAddress;
 			while( ulBytesLeft>0 )
 			{
+				fOk = callback_long(L, iLuaCallbackTag, ulSize-ulBytesLeft, pvCallbackUserData);
+			  if( fOk!=true )
+			  {
+				  strErrorMsg = wxT("operation canceled!");
+				  break;
+			  }
+
 				// get the response line
 				if( m_ptUartDev->GetLine(strResponse, "\r\n", 1000)!=true )
 				{
