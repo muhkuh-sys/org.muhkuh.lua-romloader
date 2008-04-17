@@ -411,7 +411,8 @@ bool romloader_uart_device::IdentifyLoader(void)
 	}
 	else
 	{
-		if( ucData=='\f' )
+	  // this should be '\f', but the first bits might be trashed
+		if( ucData<0x20 )
 		{
 			// this seems to be the welcome message
 
@@ -442,6 +443,10 @@ bool romloader_uart_device::IdentifyLoader(void)
 					else if( abData[0]!='>' )
 					{
 						wxLogMessage(wxT("strange or no response from device, seems to be no netx"));
+					}
+					else if( ulLength==1 )
+					{
+					  fResult = true;
 					}
 					else if( ulLength==2 && abData[1]=='#' )
 					{
