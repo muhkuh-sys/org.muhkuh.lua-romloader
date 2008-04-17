@@ -242,6 +242,11 @@ romloader_uart::~romloader_uart(void)
 {
 	wxLogMessage(m_strMe + wxT("destructor"));
 
+  if( m_fIsConnected==true )
+  {
+    disconnect();
+  }
+
 	if( m_fn_uart_close!=NULL )
 	{
 		m_fn_uart_close(m_strInterface);
@@ -346,6 +351,7 @@ void romloader_uart::connect(void)
 
 		if( m_fIsConnected!=true )
 		{
+			m_ptUartDev->Close();
 			wxLogError(m_strMe + strErrorMsg);
 			m_ptLuaState->wxlua_Error(strErrorMsg);
 		}
