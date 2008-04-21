@@ -19,14 +19,19 @@
  ***************************************************************************/
 
 #include <wx/wx.h>
+#include <wx/thread.h>
 
 #include <termios.h>
+#include <unistd.h>
 
 
 #ifndef __ROMLOADER_UART_DEVICE_LINUX_H__
 #define __ROMLOADER_UART_DEVICE_LINUX_H__
 
 #include "romloader_uart_device.h"
+
+
+class rxThread;
 
 
 class romloader_uart_device_linux : public romloader_uart_device
@@ -48,6 +53,7 @@ public:
 	static bool		scanSysFs(wxArrayString *ptArray);
 	static void		ScanForPorts(wxArrayString *ptArray);
 
+	wxCondition *m_ptConditionRxDataAvail;
 protected:
 	unsigned long GetMaxBlockSize(void) { return 4096; }
 
@@ -57,6 +63,21 @@ protected:
 private:
 	PFN_PROGRESS_CALLBACK m_pfnProgressCallback;
 	void *m_pvCallbackUserData;
+	rxThread *m_ptRxThread;
+	wxMutex mutexRxDataAvail;
 };
+
+
+class rxThread : public wxThread
+{
+public:
+	rxThread(int hPort, romloader_uart_device_linux *ptParent);
+	ExitCode Entry(void);
+
+private:
+	int m_hPort;
+	romloader_uart_device_linux *m_ptParent;
+};
+
 
 #endif	/* __ROMLOADER_UART_DEVICE_LINUX_H__ */

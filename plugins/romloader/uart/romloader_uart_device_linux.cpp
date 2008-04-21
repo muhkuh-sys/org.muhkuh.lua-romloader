@@ -24,8 +24,12 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
+#include <time.h>
+
 
 #include "romloader_uart_device_linux.h"
 
@@ -33,24 +37,20 @@
 romloader_uart_device_linux::romloader_uart_device_linux(wxString strPortName)
   : romloader_uart_device(strPortName)
   , m_hPort(-1)
+  , m_ptConditionRxDataAvail(NULL)
+  , m_ptRxThread(NULL)
 {
+	m_ptConditionRxDataAvail = new wxCondition(mutexRxDataAvail);
 }
 
 romloader_uart_device_linux::~romloader_uart_device_linux()
 {
 	Close();
-}
 
-
-void romloader_uart_device_linux::Close(void)
-{
-	// Check if RX Thread is running, and terminate it
-	if( m_hPort!=-1 )
+	// free the conditions
+	if( m_ptConditionRxDataAvail!=NULL )
 	{
-		tcsetattr(m_hPort, TCSANOW, &m_tOldAttribs);
-		close(m_hPort);
-
-		m_hPort = -1;
+		delete m_ptConditionRxDataAvail;
 	}
 }
 
@@ -61,6 +61,8 @@ bool romloader_uart_device_linux::Open(void)
 	const wxChar *pcFilename;
 	int iRes;
 	struct termios tNewAttribs = {0};
+	pid_t pidRx;
+	int iRxExitCode;
 
 
 	// expect failure
@@ -68,6 +70,12 @@ bool romloader_uart_device_linux::Open(void)
 
 	// close any open connection
 	Close();
+
+	// lock the "data available" mutex
+	mutexRxDataAvail.Lock();
+
+	// create the cards
+	initCards();
 
 	// try to open the connection
 	m_hPort = open(m_strPortName.fn_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
@@ -92,10 +100,42 @@ bool romloader_uart_device_linux::Open(void)
 
 		iRes = tcsetattr(m_hPort, TCSAFLUSH, &tNewAttribs);
 
+		// create a new receive thread
+		m_ptRxThread = new rxThread(m_hPort, this);
+		m_ptRxThread->Create();
+//		m_ptRxThread->SetPriority(WXTHREAD_MAX_PRIORITY);
+		m_ptRxThread->Run();
+
 		fResult = true;
 	}
 
 	return fResult;
+}
+
+
+void romloader_uart_device_linux::Close(void)
+{
+	pid_t pidTerm;
+	int iStatus;
+
+
+	if( m_hPort!=-1 )
+	{
+		tcsetattr(m_hPort, TCSANOW, &m_tOldAttribs);
+		close(m_hPort);
+
+		m_hPort = -1;
+	}
+
+	// stop rx thread
+	if( m_ptRxThread!=NULL )
+	{
+		m_ptRxThread->Wait();
+		delete m_ptRxThread;
+	}
+
+	// delete the cards
+	deleteCards();
 }
 
 
@@ -157,61 +197,70 @@ unsigned long romloader_uart_device_linux::SendRaw(const unsigned char *pbData, 
 
 unsigned long romloader_uart_device_linux::RecvRaw(unsigned char *pbData, unsigned long ulDataLen, unsigned long ulTimeout)
 {
-	fd_set tRead;
+	unsigned long ulTimeLeft;
+	size_t sizDataLeft;
+	wxCondError tCondErr;
+	size_t sizRead;
+	struct timeval tStartTime;
 	struct timeval tTimeout;
-	ssize_t sizRet;
-	int iSelect;
-	size_t sizBytesLeft;
+	struct timeval tEndTime;
+	struct timeval tTime;
+	struct timeval tTimeLeft;
+	int iRes;
 
 
-	// clear the descriptor list
-	FD_ZERO(&tRead);
-	// add the tty handle to the descriptor list
-	FD_SET(m_hPort, &tRead);
+	sizDataLeft = ulDataLen;
 
-	// init the timeout structure
-	tTimeout.tv_sec  = ulTimeout / 1000;
-	tTimeout.tv_usec = (ulTimeout % 1000) * 1000;
-
-	// no bytes read yet
-	sizBytesLeft = ulDataLen;
-	// loop until all requested bytes are received or the timeout strikes
-	do
+	// get start time
+	iRes = gettimeofday(&tStartTime, NULL);
+	if( iRes!=0 )
 	{
-		// wait for data on the tty
-		iSelect = select(m_hPort + 1, &tRead, NULL, NULL, &tTimeout);
-		if( iSelect==-1 )
-		{
-			// failed to get data -> maybe tty was destroyed (e.g. usb plugged out)
-			return 0;
-		}
-		else if( iSelect==0 )
-		{
-			// select timed out
-			break;
-		}
-		else
-		{
-			// some bytes received
-			sizRet = read(m_hPort, pbData, sizBytesLeft);
-			if( sizRet<0 )
-			{
-				// read error!
-				return 0;
-			}
-			else
-			{
-				// NOTE: accept 0 bytes here, it might happen that select triggers but no data present
+		wxLogError(wxT("gettimeofday failed with result %d, errno: %d (%s)"), iRes, errno, strerror(errno));
+	}
+	else
+	{
+		// set timeout structure
+		tTimeout.tv_sec = (ulTimeout/1000);
+		tTimeout.tv_usec = (ulTimeout%1000) * 1000;
+		timeradd(&tStartTime, &tTimeout, &tEndTime);
 
-				// really received some bytes now
-				sizBytesLeft -= sizRet;
-				pbData += sizRet;
-			}
-		}
-	} while( sizBytesLeft>0 && (tTimeout.tv_sec|tTimeout.tv_usec)!=0 );
+		do
+		{
+			sizRead = readCards(pbData, sizDataLeft);
+			sizDataLeft -= sizRead;
+			if( sizDataLeft>0 )
+			{
+				// get new timeout value
+				iRes = gettimeofday(&tTime, NULL);
+				if( iRes!=0 )
+				{
+					wxLogError(wxT("gettimeofday failed with result %d, errno: %d (%s)"), iRes, errno, strerror(errno));
+					break;
+				}
+				// get time difference
+				timersub(&tEndTime, &tTime, &tTimeLeft);
+				if( timerisset(&tTimeLeft)==0 )
+				{
+					break;
+				}
+				else
+				{
+					// convert diff to ms
+					ulTimeout = tTimeLeft.tv_sec*1000 + tTimeLeft.tv_usec/1000;
+				}
 
-	// return the number of read bytes
-	return ulDataLen-sizBytesLeft;
+				// wait for data
+				tCondErr = m_ptConditionRxDataAvail->WaitTimeout(ulTimeout);
+				if( tCondErr!=wxCOND_NO_ERROR )
+				{
+					// timeout
+					break;
+				}
+			}
+		} while( sizDataLeft>0 );
+	}
+
+	return ulDataLen - sizDataLeft;
 }
 
 
@@ -221,34 +270,9 @@ unsigned long romloader_uart_device_linux::RecvRaw(unsigned char *pbData, unsign
 /*****************************************************************************/
 unsigned long romloader_uart_device_linux::Peek(void)
 {
-  fd_set          tRead;
-  struct timeval  tTimeout;
-  unsigned long   ulRet     = 0;
-
-  FD_ZERO(&tRead);
-  FD_SET(m_hPort, &tRead);
-
-  tTimeout.tv_sec  = 0;
-  tTimeout.tv_usec = 0;
-
-  int iSelect = select(m_hPort + 1, &tRead, NULL, NULL, &tTimeout);
-
-  if(-1 == iSelect)
-  {
-    wxASSERT(false);
-  } else if(0 == iSelect)
-  {
-    // Timeout
-  } else
-  {
-    /* we must have received a char */
-
-    // TODO: How to get the number of pending chars
-    ulRet = 1;
-  }
-
-  return ulRet;
+	return getCardSize();
 }
+
 
 /*****************************************************************************/
 /*! Flushes any pending data
@@ -359,5 +383,79 @@ bool romloader_uart_device_linux::Cancel()
 {
   //TODO: How to cancel a pending transfer
   return true;
+}
+
+
+
+
+
+
+
+rxThread::rxThread(int hPort, romloader_uart_device_linux *ptParent)
+ : wxThread(wxTHREAD_JOINABLE)
+ , m_hPort(hPort)
+ , m_ptParent(ptParent)
+{
+	
+}
+
+wxThread::ExitCode rxThread::Entry(void)
+{
+	bool fDestroy;
+	fd_set tRead;
+	struct timeval tTimeout;
+	size_t sizRead;
+	size_t sizWrite;
+	int iSelect;
+	int iExitCode;
+	const size_t sizBufSize = 1024;
+	unsigned char aucBuf[sizBufSize];
+
+
+	fDestroy = false;
+	iExitCode = EXIT_SUCCESS;
+
+	// loop until all requested bytes are received or the timeout strikes
+	do
+	{
+		// clear the descriptor list
+		FD_ZERO(&tRead);
+		// add the tty handle to the descriptor list
+		FD_SET(m_hPort, &tRead);
+
+		tTimeout.tv_sec = 0;
+		tTimeout.tv_usec = 100000;
+
+		// wait for data on the tty
+		iSelect = select(m_hPort + 1, &tRead, NULL, NULL, &tTimeout);
+		if( iSelect==-1 )
+		{
+			// failed to get data -> maybe tty was destroyed (e.g. usb plugged out)
+			fDestroy = true;
+		}
+		else if( iSelect==1 )
+		{
+			// receive some bytes
+			sizRead = read(m_hPort, aucBuf, sizBufSize);
+			// NOTE: accept 0 bytes here, it might happen that select triggers but no data present
+			if( sizRead<0 )
+			{
+				fDestroy = true;
+			}
+			else
+			{
+				// put the received data into the cards
+				m_ptParent->writeCards(aucBuf, sizRead);
+
+				m_ptParent->m_ptConditionRxDataAvail->Signal();
+			}
+		}
+		else
+		{
+			fDestroy = TestDestroy();
+		}
+	} while( fDestroy==false );
+
+	return (wxThread::ExitCode)iExitCode;
 }
 

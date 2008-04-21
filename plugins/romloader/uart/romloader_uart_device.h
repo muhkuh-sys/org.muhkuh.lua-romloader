@@ -33,7 +33,7 @@ class romloader_uart_device
 {
 public:
 	romloader_uart_device(wxString strPortName);
-
+	~romloader_uart_device(void);
 
 	/* low level interface is platform specific */
 	virtual bool Open(void) = 0;
@@ -58,11 +58,36 @@ public:
 
 	static unsigned int CalcCrc16(unsigned int uiCrc, unsigned int uiData);
 
+
+	static const size_t mc_sizCardSize = 16384;
+	struct sBufferCard;
+
+	typedef struct sBufferCard
+	{
+		unsigned char *pucEnd;
+		unsigned char *pucRead;
+		unsigned char *pucWrite;
+		sBufferCard *ptNext;
+		unsigned char aucData[mc_sizCardSize];
+	} tBufferCard;
+
+
+	void initCards(void);
+	void deleteCards(void);
+	void writeCards(const unsigned char *pucBuffer, size_t sizBufferSize);
+	size_t readCards(unsigned char *pucBuffer, size_t sizBufferSize);
+	size_t getCardSize(void) const;
+
+
 protected:
 	wxString m_strPortName;
 
+	tBufferCard *m_ptFirstCard;
+	tBufferCard *m_ptLastCard;
+	wxCriticalSection m_cCardLock;
 
 private:
+	size_t readCardData(unsigned char *pucBuffer, size_t sizBufferSize);
 
 };
 

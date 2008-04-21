@@ -26,7 +26,211 @@
 
 romloader_uart_device::romloader_uart_device(wxString strPortName)
  : m_strPortName(strPortName)
-{ 
+ , m_ptFirstCard(NULL)
+ , m_ptLastCard(NULL)
+{
+}
+
+
+romloader_uart_device::~romloader_uart_device(void)
+{
+	deleteCards();
+}
+
+
+void romloader_uart_device::initCards(void)
+{
+	tBufferCard *ptCard;
+
+
+	if( m_ptFirstCard!=NULL )
+	{
+		deleteCards();
+	}
+
+	ptCard = new tBufferCard;
+	ptCard->pucEnd = ptCard->aucData + mc_sizCardSize;
+	ptCard->pucRead = ptCard->aucData;
+	ptCard->pucWrite = ptCard->aucData;
+	ptCard->ptNext = NULL;
+
+	m_ptFirstCard = ptCard;
+	m_ptLastCard = ptCard;
+}
+
+
+void romloader_uart_device::deleteCards(void)
+{
+	tBufferCard *ptCard;
+	tBufferCard *ptNextCard;
+	wxCriticalSectionLocker locker(m_cCardLock);
+
+
+	ptCard = m_ptFirstCard;
+	while( ptCard!=NULL )
+	{
+		ptNextCard = ptCard->ptNext;
+		delete ptCard;
+		ptCard = ptNextCard;
+	}
+	m_ptFirstCard = NULL;
+	m_ptLastCard = NULL;
+}
+
+
+void romloader_uart_device::writeCards(const unsigned char *pucBuffer, size_t sizBufferSize)
+{
+	size_t sizLeft;
+	size_t sizChunk;
+	tBufferCard *ptCard;
+	wxCriticalSectionLocker locker(m_cCardLock);
+
+
+	sizLeft = sizBufferSize;
+	while( sizLeft>0 )
+	{
+		// get free space in the current card
+		sizChunk = m_ptLastCard->pucEnd - m_ptLastCard->pucWrite;
+		// no more space -> create a new card
+		if( sizChunk==0 )
+		{
+			ptCard = new tBufferCard;
+			ptCard->pucEnd = ptCard->aucData + mc_sizCardSize;
+			ptCard->pucRead = ptCard->aucData;
+			ptCard->pucWrite = ptCard->aucData;
+			ptCard->ptNext = NULL;
+			// append new card
+			m_ptLastCard->ptNext = ptCard;
+			// close old card
+			m_ptLastCard->pucWrite = NULL;
+			// set the new last pointer
+			m_ptLastCard = ptCard;
+			// the new card is empty
+			sizChunk = mc_sizCardSize;
+		}
+		// limit chunk to request size
+		if( sizChunk>sizLeft )
+		{
+			sizChunk = sizLeft;
+		}
+		// copy data
+		memcpy(m_ptLastCard->pucWrite, pucBuffer, sizChunk);
+		// advance pointer
+		m_ptLastCard->pucWrite += sizChunk;
+		pucBuffer += sizChunk;
+		sizLeft -= sizChunk;
+	}
+}
+
+
+size_t romloader_uart_device::readCards(unsigned char *pucBuffer, size_t sizBufferSize)
+{
+	size_t sizRead;
+	size_t sizLeft;
+
+
+	sizLeft = sizBufferSize;
+	do
+	{
+		sizRead = readCardData(pucBuffer, sizLeft);
+		pucBuffer += sizRead;
+		sizLeft -= sizRead;
+	} while( sizRead!=0 && sizLeft>0 );
+
+	return sizBufferSize-sizLeft;
+}
+
+
+size_t romloader_uart_device::readCardData(unsigned char *pucBuffer, size_t sizBufferSize)
+{
+	size_t sizRead;
+	tBufferCard *ptOldCard;
+	tBufferCard *ptNewCard;
+
+
+	if( m_ptFirstCard==NULL )
+	{
+		sizRead = 0;
+	}
+	else if( m_ptFirstCard->pucWrite!=NULL )
+	{
+		// the first card is used by the write part -> lock the cards
+		wxCriticalSectionLocker locker(m_cCardLock);
+
+		// get the number of bytes left in this card
+		sizRead = m_ptFirstCard->pucWrite - m_ptFirstCard->pucRead;
+		if( sizRead>sizBufferSize )
+		{
+			sizRead = sizBufferSize;
+		}
+		// card can be empty
+		if( sizRead>0 )
+		{
+			// copy the data
+			memcpy(pucBuffer, m_ptFirstCard->pucRead, sizRead);
+			// advance the read pointer
+			m_ptFirstCard->pucRead += sizRead;
+		}
+	}
+	else
+	{
+		// the first card is not used by the write part
+
+		// get the number of bytes left in this card
+		sizRead = m_ptFirstCard->pucEnd - m_ptFirstCard->pucRead;
+		if( sizRead>sizBufferSize )
+		{
+			sizRead = sizBufferSize;
+		}
+		// card can be empty for overlapping buffer grow
+		if( sizRead>0 )
+		{
+			// copy the data
+			memcpy(pucBuffer, m_ptFirstCard->pucRead, sizRead);
+			// advance the read pointer
+			m_ptFirstCard->pucRead += sizRead;
+		}
+		// reached the end of the buffer?
+		if( m_ptFirstCard->pucRead>=m_ptFirstCard->pucEnd )
+		{
+			// card is empty, move on to next card
+			ptNewCard = m_ptFirstCard->ptNext;
+			if( ptNewCard!=NULL )
+			{
+				// remember the empty card
+				ptOldCard = m_ptFirstCard;
+				// move to the new first card
+				m_ptFirstCard = ptNewCard;
+				// delete the empty card
+				delete ptOldCard;
+			}
+		}
+	}
+
+	return sizRead;
+}
+
+
+size_t romloader_uart_device::getCardSize(void) const
+{
+	size_t sizData;
+	tBufferCard *ptCard;
+
+
+	sizData = 0;
+	ptCard = m_ptFirstCard;
+	while( ptCard!=NULL )
+	{
+		if( ptCard->pucWrite==NULL )
+		{
+			sizData += m_ptFirstCard->pucEnd - m_ptFirstCard->pucRead;
+		}
+		else
+		{
+			sizData += m_ptFirstCard->pucWrite - m_ptFirstCard->pucRead;
+		}
+		ptCard = ptCard->ptNext;
+	}
 }
 
 
