@@ -231,6 +231,8 @@ size_t romloader_uart_device::getCardSize(void) const
 		}
 		ptCard = ptCard->ptNext;
 	}
+
+  return sizData;
 }
 
 
