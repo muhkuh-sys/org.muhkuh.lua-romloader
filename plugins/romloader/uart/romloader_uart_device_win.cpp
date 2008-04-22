@@ -47,8 +47,6 @@ romloader_uart_device_win::romloader_uart_device_win(wxString strPortName)
   , m_hComStateThread(NULL)
   , m_hTxEmpty(NULL)
   , m_hNewRxEvent(NULL)
-  , m_pbRxBuffer(NULL)
-  , m_ulRxBufferLen(0)
 {
   m_hTxEmpty    = CreateEvent(NULL, FALSE, FALSE, NULL);
   m_hNewRxEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -109,15 +107,7 @@ void romloader_uart_device_win::CheckComEvents(DWORD dwEventMask)
 
     if ( dwBytesRead > 0 )
     {
-      //lock access to buffer, while resizing buffer
-      wxCriticalSectionLocker locker(m_cRxBufferLock);
-
-      unsigned long ulNewLen = m_ulRxBufferLen + dwBytesRead;
-
-      //resize receive buffer to new length
-      m_pbRxBuffer = (unsigned char*)realloc(m_pbRxBuffer, ulNewLen);
-      memcpy(&m_pbRxBuffer[m_ulRxBufferLen], pbBuffer, dwBytesRead);
-      m_ulRxBufferLen = ulNewLen;
+      writeCards(pbBuffer, dwBytesRead);
 
       // Signal read function that new data is available
       ::SetEvent(m_hNewRxEvent);
@@ -268,7 +258,7 @@ bool romloader_uart_device_win::Flush(void)
 /*****************************************************************************/
 unsigned long romloader_uart_device_win::Peek(void)
 {
-	return m_ulRxBufferLen;
+	return getCardSize();
 }
 
 
@@ -282,41 +272,39 @@ unsigned long romloader_uart_device_win::Peek(void)
 unsigned long romloader_uart_device_win::RecvRaw(unsigned char *pbData, unsigned long ulDataLen, unsigned long ulTimeout)
 {
   unsigned long  ulCharsReceived = 0;
-  long           lStartTime      = (long)GetTickCount();
+  long           lStartTime;
+  unsigned long  ulDiffTime;
+  size_t         sizLeft;
+  size_t         sizRead;
+  DWORD          dwWaitResult;
 
+
+  lStartTime = (long)GetTickCount();
   do
   {
-    unsigned long ulDiffTime = GetTickCount() - lStartTime;
+    sizLeft = ulDataLen - ulCharsReceived;
+    sizRead = readCards(pbData+ulCharsReceived, sizLeft);
+    ulCharsReceived += sizRead;
 
-    // Lock Access to RX buffer
-    m_cRxBufferLock.Enter();
-
-    unsigned long ulReadLen = __min(m_ulRxBufferLen,
-                                    ulDataLen - ulCharsReceived);
-
-    //if data is available, copy them from the RX buffer and resize RX buffer
-    if(ulReadLen > 0)
-    {
-      memcpy(&pbData[ulCharsReceived], m_pbRxBuffer, ulReadLen);
-      
-      memmove(m_pbRxBuffer, m_pbRxBuffer + ulReadLen, m_ulRxBufferLen - ulReadLen);
-  
-      m_ulRxBufferLen -= ulReadLen;
-      m_pbRxBuffer     = (unsigned char*)realloc(m_pbRxBuffer, m_ulRxBufferLen);
-    }
-
-    //unlock access to RX buffer (allows RX Thread to place data in the buffer
-    m_cRxBufferLock.Leave();
-
-    ulCharsReceived += ulReadLen;
-
+    // check for timeout
+    ulDiffTime = GetTickCount() - lStartTime;
     if(ulDiffTime >= ulTimeout)
+    {
+      // timeout!
       break;
+    }
 
     //sleep if we are not finished yet, to allow RX thread to run, if data is available
     if(ulCharsReceived != ulDataLen)
-      Sleep(1);
-
+    {
+      // wait for new data to arrive
+      dwWaitResult = ::WaitForSingleObject(m_hNewRxEvent, ulTimeout-ulDiffTime);
+      if( dwWaitResult!=WAIT_OBJECT_0 )
+      {
+        // timeout or error -> no new data arrived
+        break;
+      }
+    }
   } while(ulCharsReceived != ulDataLen);
 
   return ulCharsReceived;
@@ -347,12 +335,8 @@ void romloader_uart_device_win::Close(void)
     m_hPort = INVALID_HANDLE_VALUE;
   }
 
-  //Free pending RX Buffer
-  m_cRxBufferLock.Enter();
-  m_ulRxBufferLen = 0;
-  free(m_pbRxBuffer);
-  m_pbRxBuffer = NULL;
-  m_cRxBufferLock.Leave();
+	// delete the cards
+	deleteCards();
 }
 
 /*****************************************************************************/
@@ -369,6 +353,9 @@ bool romloader_uart_device_win::Open()
   {
     Close();
   }
+
+	// create the cards
+	initCards();
 
   wxString strName(m_strPortName);
   // append windows specific prefix

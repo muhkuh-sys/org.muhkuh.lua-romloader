@@ -64,10 +64,6 @@ protected:
   HANDLE            m_hTxEmpty;       /**< Handle to the TX Empty event being signalled, when all data has been written */
   HANDLE            m_hNewRxEvent;    /**< Handle to the new RX Data available event */
   
-  unsigned char*    m_pbRxBuffer;     /**< Receive data buffer */
-  unsigned long     m_ulRxBufferLen;  /**< Length of receive data available */
-  wxCriticalSection m_cRxBufferLock;  /**< Critical section to lock access to RX buffer */
-
 private:
 	PFN_PROGRESS_CALLBACK m_pfnProgressCallback;
 	void *m_pvCallbackUserData;
