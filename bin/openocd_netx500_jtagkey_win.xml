@@ -1,0 +1,31 @@
+<MuhkuhPluginConfig name="OpenOCD netX500 JTagKey" so="openocd" id="romloader_openocd_netx500_jtagkey">
+	<Cfg>
+		<Init>
+			interface ft2232
+			ft2232_device_desc "Amontec JTAGkey A"
+			ft2232_layout "jtagkey"
+			ft2232_vid_pid 0x0403 0xcff8
+			jtag_speed 1
+			reset_config trst_and_srst
+			jtag_device 4 0x1 0xf 0xe
+			jtag_nsrst_delay 100
+			jtag_ntrst_delay 100
+			daemon_startup reset
+			target arm926ejs little run_and_init 0 arm920t
+			arm7_9 dcc_downloads disable
+			run_and_halt_time 0 500
+		</Init>
+		<Run>
+			bp 0x200000 4 hw
+			reg cpsr 0xd3
+			reg r13_svc 0x10000200
+			reg lr_svc 0x200000
+			arm926ejs cp15 0 0 7 7 0
+			arm926ejs cp15 0 4 7 10 0
+			arm926ejs cp15 0 0 8 7 0
+			arm926ejs cp15 0 0 1 0 0x00050078
+			arm926ejs cp15 0 0 9 1 0x10000001
+			target_request debugmsgs enable
+		</Run>
+	</Cfg>
+</MuhkuhPluginConfig>
