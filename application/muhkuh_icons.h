@@ -37,9 +37,8 @@ extern const char *icon_famfamfam_silk_accept[174];
 extern const char *icon_famfamfam_silk_application_form_edit[155];
 extern const char *icon_famfamfam_silk_arrow_down[82];
 extern const char *icon_famfamfam_silk_arrow_up[82];
-extern const char *icon_famfamfam_silk_bullet_green[55];
-extern const char *icon_famfamfam_silk_bullet_yellow[55];
 extern const char *icon_famfamfam_silk_cancel[124];
+extern const char *icon_famfamfam_silk_cross[137];
 extern const char *icon_famfamfam_silk_database[107];
 extern const char *icon_famfamfam_silk_database_add[126];
 extern const char *icon_famfamfam_silk_database_delete[136];
@@ -63,6 +62,7 @@ extern const char *icon_famfamfam_silk_plugin_disabled[78];
 extern const char *icon_famfamfam_silk_plugin_go[169];
 extern const char *icon_famfamfam_silk_script[181];
 extern const char *icon_famfamfam_silk_tag_blue[107];
+extern const char *icon_famfamfam_silk_tick[100];
 extern const char *icon_famfamfam_silk_wrench[127];
 
 //-------------------------------------

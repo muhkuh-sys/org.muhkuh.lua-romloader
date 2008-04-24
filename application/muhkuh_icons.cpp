@@ -30,8 +30,7 @@
 #include "icons/famfamfam_silk_icons_v013/application_form_edit.xpm"
 #include "icons/famfamfam_silk_icons_v013/arrow_down.xpm"
 #include "icons/famfamfam_silk_icons_v013/arrow_up.xpm"
-#include "icons/famfamfam_silk_icons_v013/bullet_green.xpm"
-#include "icons/famfamfam_silk_icons_v013/bullet_yellow.xpm"
+#include "icons/famfamfam_silk_icons_v013/cross.xpm"
 #include "icons/famfamfam_silk_icons_v013/cancel.xpm"
 #include "icons/famfamfam_silk_icons_v013/database.xpm"
 #include "icons/famfamfam_silk_icons_v013/database_add.xpm"
@@ -56,6 +55,7 @@
 #include "icons/famfamfam_silk_icons_v013/plugin_go.xpm"
 #include "icons/famfamfam_silk_icons_v013/script.xpm"
 #include "icons/famfamfam_silk_icons_v013/tag_blue.xpm"
+#include "icons/famfamfam_silk_icons_v013/tick.xpm"
 #include "icons/famfamfam_silk_icons_v013/wrench.xpm"
 
 #include "icons/lua/lua.xpm"

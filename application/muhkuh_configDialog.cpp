@@ -385,8 +385,8 @@ wxPanel *muhkuh_configDialog::createControls_plugin(wxWindow *ptParent)
 
 	// create imagelist for 5 images with 16x16 pixels
 	ptPluginImageList = new wxImageList(16, 16, true, 5);
-	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_bullet_yellow) );
-	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_bullet_green) );
+	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_cross) );
+	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_tick) );
 	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_exclamation) );
 	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_key) );
 	ptPluginImageList->Add( wxIcon(icon_famfamfam_silk_tag_blue) );
