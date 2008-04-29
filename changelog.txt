@@ -1,24 +1,11 @@
 Changelog
 
-Bootwizard 1.0.1988
+Muhkuh 1.0.213
 
- * fixed progress window
- * use scaled progress value instead of recreating the progress dialog
- * mark progress messages for the dialog with '#'
- * show spi flash status only in debug build
- * "all" checkbox is now disabled, and is set for erase and unset for read. the length textbox is enabled for flash read, and disabled for erase.
- * new handler for address/length text controls
- * address controls are now disabled in flash/verify mode
- * new progress call routine
- * fixed device recognition and display
- * fixed DST_EXTBUS and DST_SRB address ranges, merged DST_EXTBUS0...3 into DST_EXTBUS
- * moved parflash in netx 500 dest devices to netx 50
- * fixed config dialog error messages
- * fixed bootimage length calculation, now padding binaries to a multiple of 4 bytes.
- * added bootwizard icon
- * improved src/dest device and flash device/flasher sdram selection
- * fixed checkching files which are no bootimages
- * write config and quickstart actions after leaving the dialog
+ * added some demos for the romloader plugins
+ * replace config dialog icons for enabled/disabled plugins with tick and cross
+ * added windows driver for hischer usb cdc devices
+ * rewrote linux and windows romloader uart routines
 
 
 Muhkuh 1.0.202
