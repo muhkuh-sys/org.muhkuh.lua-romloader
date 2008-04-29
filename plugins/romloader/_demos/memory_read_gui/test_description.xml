@@ -1,0 +1,7 @@
+<TestDescription name="Memory Read Gui" version="1">
+	<Code>
+		muhkuh.include("read_write_gui.lua", "read_write_gui")
+		read_write_gui.run()
+		muhkuh.TestHasFinished()
+	</Code>
+</TestDescription>
