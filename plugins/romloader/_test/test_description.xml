@@ -3,13 +3,13 @@
 		require("serialnr")
 		require("tester")
 		if serialnr.run(20000, 10)==false then
-		-- cancel
-		muhkuh.TestHasFinished()
+			-- cancel
+			muhkuh.TestHasFinished()
 		else
-		print(__MUHKUH_PARAMETERS.BoardCount)
-		print(__MUHKUH_PARAMETERS.SerialNumber)
-		print(__MUHKUH_PARAMETERS.ProductionDate)
-		tester.run()
+			print(__MUHKUH_PARAMETERS.BoardCount)
+			print(__MUHKUH_PARAMETERS.SerialNumber)
+			print(__MUHKUH_PARAMETERS.ProductionDate)
+			tester.run()
 		end
 	</Code>
 

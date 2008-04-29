@@ -1,0 +1,67 @@
+<TestDescription name="Memory Read Tester" version="1">
+	<Code>
+		require("serialnr")
+		require("tester")
+		if serialnr.run(20000, 10)==false then
+			-- cancel
+			muhkuh.TestHasFinished()
+		else
+			print(__MUHKUH_PARAMETERS.BoardCount)
+			print(__MUHKUH_PARAMETERS.SerialNumber)
+			print(__MUHKUH_PARAMETERS.ProductionDate)
+			tester.run()
+		end
+	</Code>
+
+
+	<Test name="Read Reset Vector" version="1">
+		<Code>
+			plugin = tester.getCommonPlugin()
+			if not plugin then
+				print("no netx selected, test canceled!")
+				return __MUHKUH_TEST_RESULT_CANCEL
+			end
+
+			-- read and display some netX memory
+			local value
+			local address
+
+			-- show the reset vector
+			address = 0
+			value = plugin:read_data32(address)
+			print(string.format("the resetvector at 0x%08x is 0x%08x", address, value))
+
+			return __MUHKUH_TEST_RESULT_OK
+		</Code>
+	</Test>
+
+	<Test name="Read Version Register" version="1">
+		<Code>
+			plugin = tester.getCommonPlugin()
+			if not plugin then
+				print("no netx selected, test canceled!")
+				return __MUHKUH_TEST_RESULT_CANCEL
+			end
+
+			-- read and display some netX memory
+			local value
+			local address
+
+			-- show the netx version register
+			local chiptyp = plugin:get_chiptyp()
+			if chiptyp==muhkuh.ROMLOADER_CHIPTYP_NETX50 then
+				address = 0x1c000034
+			elseif chiptyp==muhkuh.ROMLOADER_CHIPTYP_NETX500 or chiptyp==muhkuh.ROMLOADER_CHIPTYP_NETX100 then
+				address = 0x00100034
+			else
+				print("Unknown chiptyp:", chiptyp)
+				return __MUHKUH_TEST_RESULT_FAIL
+			end
+
+			value = plugin:read_data32(address)
+			print(string.format("the version register at 0x%08x is 0x%08x", address, value))
+
+			return __MUHKUH_TEST_RESULT_OK
+		</Code>
+	</Test>
+</TestDescription>
