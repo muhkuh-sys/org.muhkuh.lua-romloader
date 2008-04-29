@@ -121,6 +121,7 @@ include(muhkuh.version)
 `Source: "bin\lua\serialnr.lua";             DestDir: "{app}\application\lua"; Components: lua_scripts'
 `Source: "bin\lua\tester.lua";               DestDir: "{app}\application\lua"; Components: lua_scripts'
 `'
+`Source: "plugins\romloader\_demos\memory_read_gui\read_write_gui.lua";       DestDir: "{app}\demos\memory_read_gui";     Components: demos'
 `Source: "plugins\romloader\_demos\memory_read_gui\test_description.xml";     DestDir: "{app}\demos\memory_read_gui";     Components: demos'
 `Source: "plugins\romloader\_demos\memory_read_simple\test_description.xml";  DestDir: "{app}\demos\memory_read_simple";  Components: demos'
 `Source: "plugins\romloader\_demos\memory_read_tester\test_description.xml";  DestDir: "{app}\demos\memory_read_tester";  Components: demos'
