@@ -1,0 +1,321 @@
+<TestDescription name="Romloader Test" version="1257">
+	<Code>
+		require("serialnr")
+		require("tester")
+		if serialnr.run(20000, 10)==false then
+		-- cancel
+		muhkuh.TestHasFinished()
+		else
+		print(__MUHKUH_PARAMETERS.BoardCount)
+		print(__MUHKUH_PARAMETERS.SerialNumber)
+		print(__MUHKUH_PARAMETERS.ProductionDate)
+		tester.run()
+		end
+	</Code>
+
+
+	<Test name="Memory Access" version="1">
+		<!-- memory testarea -->
+		<Parameter name="testarea">0x00010000</Parameter>
+		<!-- testarea size -->
+		<Parameter name="testsize">0x00000080</Parameter>
+
+		<Code>
+			local plugin
+			local testarea
+			local testsize
+			local function test32(address, value)
+				local readback
+				local fIsOk
+				print(string.format("write data:    0x%08X = 0x%08X", address, value))
+				plugin:write_data32(address, value)
+				readback = plugin:read_data32(address)
+				print(string.format("readback data: 0x%08X = 0x%08X", address, readback))
+				fIsOk = (value==readback)
+				if not fIsOk then
+					print("*** Error: Readback does not match written value ***")
+				end
+				return fIsOk
+			end
+			local function test16(address, value)
+				local readback
+				local fIsOk
+				print(string.format("write data:    0x%08X = 0x%04X", address, value))
+				plugin:write_data16(address, value)
+				readback = plugin:read_data16(address)
+				print(string.format("readback data: 0x%08X = 0x%04X", address, readback))
+				fIsOk = (value==readback)
+				if not fIsOk then
+					print("*** Error: Readback does not match written value ***")
+				end
+				return fIsOk
+			end
+			local function test08(address, value)
+				local readback
+				local fIsOk
+				print(string.format("write data:    0x%08X = 0x%02X", address, value))
+				plugin:write_data08(address, value)
+				readback = plugin:read_data08(address)
+				print(string.format("readback data: 0x%08X = 0x%02X", address, readback))
+				fIsOk = (value==readback)
+				if not fIsOk then
+					print("*** Error: Readback does not match written value ***")
+				end
+				return fIsOk
+			end
+			local function get_rnd_data(len)
+				local data = ""
+				for i=1,len do
+					data = data .. string.char(math.random(0,255))
+				end
+				return data
+			end
+
+
+			-- get the test parameters
+			testarea = tonumber(__MUHKUH_TEST_PARAMETER["testarea"])
+			testsize = tonumber(__MUHKUH_TEST_PARAMETER["testsize"])
+
+			plugin = tester.getCommonPlugin()
+			if not plugin then
+				print("no netx selected, test canceled!")
+				return __MUHKUH_TEST_RESULT_CANCEL
+			end
+
+			print("---------------------------------------")
+			print(" test 32 bit access")
+			if not test32(testarea, 0x00000000) then return __MUHKUH_TEST_RESULT_FAIL end
+			if not test32(testarea, 0x000000FF) then return __MUHKUH_TEST_RESULT_FAIL end
+			if not test32(testarea, 0x0000FF00) then return __MUHKUH_TEST_RESULT_FAIL end
+			if not test32(testarea, 0x00FF0000) then return __MUHKUH_TEST_RESULT_FAIL end
+			if not test32(testarea, 0xFF000000) then return __MUHKUH_TEST_RESULT_FAIL end
+			print("Ok!")
+			print(" ")
+
+			print("---------------------------------------")
+			print(" test 16 bit access")
+			if not test16(testarea, 0x0000) then return __MUHKUH_TEST_RESULT_FAIL end
+			if not test16(testarea, 0x00FF) then return __MUHKUH_TEST_RESULT_FAIL end
+			if not test16(testarea, 0xFF00) then return __MUHKUH_TEST_RESULT_FAIL end
+			print("Ok!")
+			print(" ")
+
+			print("---------------------------------------")
+			print(" test 8 bit access")
+			if not test08(testarea, 0x00) then return __MUHKUH_TEST_RESULT_FAIL end
+			if not test08(testarea, 0xFF) then return __MUHKUH_TEST_RESULT_FAIL end
+			print("Ok!")
+			print(" ")
+
+			print("---------------------------------------")
+			print(" range test, write32")
+			data = get_rnd_data(testsize)
+			print("Writing data in 32 bit chunks:")
+			tester.hexdump(data,16)
+			for i=0,data:len()/4-1 do
+				local value
+				local address
+				value = data:byte(i*4+1) + 0x00000100*data:byte(i*4+2) + 0x00010000*data:byte(i*4+3) + 0x01000000*data:byte(i*4+4)
+				address = testarea + i*4
+				print(string.format("write data:    0x%08X = 0x%08X", address, value))
+				plugin:write_data32(address, value)
+			end
+			data_readback = tester.stdRead(tester.getPanel(), plugin, testarea, data:len())
+			print("Readback data:")
+			tester.hexdump(data_readback,16)
+			if data~=data_readback then
+				print("Readback data does not match written values!")
+				return __MUHKUH_TEST_RESULT_FAIL
+			end
+			print("Ok!")
+			print(" ")
+
+			print("---------------------------------------")
+			print(" range test, write16")
+			data = get_rnd_data(testsize)
+			print("Writing data in 16 bit chunks:")
+			tester.hexdump(data,16)
+			for i=0,data:len()/2-1 do
+				local value
+				local address
+				value = data:byte(i*2+1) + 0x00000100*data:byte(i*2+2)
+				address = testarea + i*2
+				print(string.format("write data:    0x%08X = 0x%04X", address, value))
+				plugin:write_data16(address, value)
+			end
+			data_readback = tester.stdRead(tester.getPanel(), plugin, testarea, data:len())
+			print("Readback data:")
+			tester.hexdump(data_readback,16)
+			if data~=data_readback then
+				print("Readback data does not match written values!")
+				return __MUHKUH_TEST_RESULT_FAIL
+			end
+			print("Ok!")
+			print(" ")
+
+			print("---------------------------------------")
+			print(" range test, write08")
+			data = get_rnd_data(testsize)
+			print("Writing data in 8 bit chunks:")
+			tester.hexdump(data,16)
+			for i=0,data:len()-1 do
+				local value
+				local address
+				value = data:byte(i+1)
+				address = testarea + i
+				print(string.format("write data:    0x%08X = 0x%02X", address, value))
+				plugin:write_data08(address, value)
+			end
+			data_readback = tester.stdRead(tester.getPanel(), plugin, testarea, data:len())
+			print("Readback data:")
+			tester.hexdump(data_readback,16)
+			if data~=data_readback then
+				print("Readback data does not match written values!")
+				return __MUHKUH_TEST_RESULT_FAIL
+			end
+			print("Ok!")
+			print(" ")
+
+			print("---------------------------------------")
+			print(" range test, read32")
+			data = get_rnd_data(testsize)
+			print("Writing image:")
+			tester.hexdump(data,16)
+			tester.stdWrite(tester.getPanel(), plugin, testarea, data)
+			data_readback = ""
+			for i=0,data:len()/4-1 do
+				local value
+				local address
+				address = testarea + i*4
+				value = plugin:read_data32(address, value)
+				print(string.format("read data: 0x%08X = 0x%08X", address, value))
+				data_readback = data_readback .. string.char( bit.band(            value,      0xff) )
+				data_readback = data_readback .. string.char( bit.band( bit.rshift(value,  8), 0xff) )
+				data_readback = data_readback .. string.char( bit.band( bit.rshift(value, 16), 0xff) )
+				data_readback = data_readback .. string.char( bit.band( bit.rshift(value, 24), 0xff) )
+			end
+			print("Readback data:")
+			tester.hexdump(data_readback,16)
+			if data~=data_readback then
+				print("Readback data does not match written values!")
+				return __MUHKUH_TEST_RESULT_FAIL
+			end
+			print("Ok!")
+			print(" ")
+
+			print("---------------------------------------")
+			print(" range test, read16")
+			data = get_rnd_data(testsize)
+			print("Writing image:")
+			tester.hexdump(data,16)
+			tester.stdWrite(tester.getPanel(), plugin, testarea, data)
+			data_readback = ""
+			for i=0,data:len()/2-1 do
+				local value
+				local address
+				address = testarea + i*2
+				value = plugin:read_data16(address, value)
+				print(string.format("read data: 0x%08X = 0x%04X", address, value))
+				data_readback = data_readback .. string.char( bit.band(            value,      0xff) )
+				data_readback = data_readback .. string.char( bit.band( bit.rshift(value,  8), 0xff) )
+			end
+			print("Readback data:")
+			tester.hexdump(data_readback,16)
+			if data~=data_readback then
+				print("Readback data does not match written values!")
+				return __MUHKUH_TEST_RESULT_FAIL
+			end
+			print("Ok!")
+			print(" ")
+
+			print("---------------------------------------")
+			print(" range test, read08")
+			data = get_rnd_data(testsize)
+			print("Writing image:")
+			tester.hexdump(data,16)
+			tester.stdWrite(tester.getPanel(), plugin, testarea, data)
+			data_readback = ""
+			for i=0,data:len()-1 do
+				local value
+				local address
+				address = testarea + i
+				value = plugin:read_data08(address, value)
+				print(string.format("read data: 0x%08X = 0x%02X", address, value))
+				data_readback = data_readback .. string.char( bit.band(            value,      0xff) )
+			end
+			print("Readback data:")
+			tester.hexdump(data_readback,16)
+			if data~=data_readback then
+				print("Readback data does not match written values!")
+				return __MUHKUH_TEST_RESULT_FAIL
+			end
+			print("Ok!")
+			print(" ")
+
+			-- all tests ok
+			return __MUHKUH_TEST_RESULT_OK
+		</Code>
+	</Test>
+
+	<Test name="Code execution" version="1255">
+		<Code>
+			local plugin
+			local testBinary
+			local netx
+
+
+			plugin = tester.getCommonPlugin()
+			if not plugin then
+				print("no netx selected, test canceled!")
+				return __MUHKUH_TEST_RESULT_CANCEL
+			end
+
+			netx = plugin:get_chiptyp()
+			print("Found " .. plugin:get_chiptyp_name(netx) .. " with " .. plugin:get_romcode_name(plugin:get_romcode()))
+
+			if netx==muhkuh.ROMLOADER_CHIPTYP_NETX50 then
+				-- upload the test binary
+				testBinary = muhkuh.load("netxtest_nx50.bin")
+				tester.stdWrite(tester.getPanel(), plugin, 0x08008000, testBinary)
+
+				-- set the parameter
+				plugin:write_data32(0x08017000, 0xffffffff)
+				plugin:write_data32(0x08017004, 0x12345678)
+				plugin:write_data32(0x08017008, 0x00000000)
+				tester.stdCall(tester.getPanel(), plugin, 0x08008000, 0x08017000)
+
+				-- get the result
+				ulValue = plugin:read_data32(0x08017000)
+			elseif netx==muhkuh.ROMLOADER_CHIPTYP_NETX500 or netx==muhkuh.ROMLOADER_CHIPTYP_NETX100 then
+				-- upload the test binary
+				testBinary = muhkuh.load("netxtest_nx500.bin")
+				tester.stdWrite(tester.getPanel(), plugin, 0x00008000, testBinary)
+
+				-- set the parameter
+				plugin:write_data32(0x00017000, 0xffffffff)
+				plugin:write_data32(0x00017004, 0x12345678)
+				plugin:write_data32(0x00017008, 0x00000000)
+				tester.stdCall(tester.getPanel(), plugin, 0x00008000, 0x00017000)
+			
+				-- get the result
+				ulValue = plugin:read_data32(0x00017000)
+			else
+				print("Unknown chiptyp:", netx)
+				return __MUHKUH_TEST_RESULT_FAIL
+			end
+
+			if ulValue==0 then
+				ulValue = plugin:read_data32(0x00017008)
+				if ulValue==0x12345678 then
+					return __MUHKUH_TEST_RESULT_OK
+				else
+					return __MUHKUH_TEST_RESULT_FAIL
+				end
+			else
+				return __MUHKUH_TEST_RESULT_FAIL
+			end
+		</Code>
+	</Test>
+
+</TestDescription>
+

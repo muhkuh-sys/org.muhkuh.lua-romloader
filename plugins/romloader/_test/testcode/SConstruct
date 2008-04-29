@@ -1,0 +1,58 @@
+import netx
+
+
+netxtest_defines_netx500 = ['__NETX500']
+netxtest_defines_netx50  = ['__NETX50']
+
+netxtest_includes_netx500 = ['./netx500']
+netxtest_includes_netx50  = ['./netx50']
+
+
+# ----------------------------------------------------------------
+# ------------------- Common Sources -----------------------------
+# ----------------------------------------------------------------
+
+netxtest_common_c = Split("""
+	./main.c
+	./netx_consoleapp.c
+	./uprintf.c
+""")
+
+netxtest_common_s = Split("""
+	./init_netx_test.s
+""")
+
+# ----------------------------------------------------------------
+# ---------------- Sources for netx500 ---------------------------
+# ----------------------------------------------------------------
+
+netxtest_netx500_c = Split("""
+	./netx500/netx_io_areas.c
+""")
+
+# ----------------------------------------------------------------
+# ---------------- Sources for netx50 ----------------------------
+# ----------------------------------------------------------------
+
+netxtest_netx50_c  = Split("""
+	./netx50/netx_io_areas.c
+""")
+
+# ----------------------------------------------------------------
+# ---------------- Build all versions --------------------
+# ----------------------------------------------------------------
+
+netxtest_nx500_files = netx.netx500_compile_arm(netxtest_common_c + netxtest_common_s + netxtest_netx500_c, netxtest_includes_netx500, netxtest_defines_netx500, 'output/netxtest_nx500')
+
+netxtest_nx50_files  = netx.netx50_compile_arm( netxtest_common_c + netxtest_common_s + netxtest_netx50_c,  netxtest_includes_netx50,  netxtest_defines_netx50,  'output/netxtest_nx50')
+
+
+netxtest_nx500_elf = netx.netx500_makeelf(netxtest_nx500_files, 'output/netxtest_nx500', 'netxtest_nx500.elf', '', '', 'netx500/netx_test.ld')
+
+netxtest_nx50_elf  = netx.netx50_makeelf( netxtest_nx50_files,  'output/netxtest_nx50',  'netxtest_nx50.elf',  '', '', 'netx50/netx_test.ld')
+
+
+netx.arm_env.Oc('netxtest_nx500.bin', netxtest_nx500_elf)
+
+netx.arm_env.Oc('netxtest_nx50.bin', netxtest_nx50_elf)
+
