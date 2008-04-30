@@ -1,0 +1,160 @@
+<?xml version="1.0" ?>
+<makefile>
+	<!-- ================================================================== -->
+	<!--                     The romloader openocd plugin                   -->
+	<!-- ================================================================== -->
+
+	<module id="plugin_romloader_openocd" template="wxlua">
+		<dllname>openocd</dllname>
+		<threading>multi</threading>
+		<dirname>$(SRCDIR)/bin</dirname>
+		<include>$(SRCDIR)</include>
+		<include>$(SRCDIR)/plugins/romloader/openocd</include>
+		<include>$(SRCDIR)/plugins/romloader/openocd/openocd</include>
+		<include>$(SRCDIR)/plugins/romloader/openocd/openocd/helper</include>
+		<include>$(SRCDIR)/plugins/romloader/openocd/openocd/jtag</include>
+		<include>$(SRCDIR)/plugins/romloader/openocd/openocd/target</include>
+		<include>$(SRCDIR)/plugins/romloader/openocd/openocd/xsvf</include>
+		<define>HAVE_CONFIG_H</define>
+		<define>PKGLIBDIR="."</define>
+		<sources>
+			plugins/romloader/romloader.cpp
+			plugins/romloader/openocd/romloader_openocd_main.cpp
+			plugins/romloader/openocd/_luaif/romloader_openocd_lua.cpp
+			plugins/romloader/openocd/_luaif/romloader_openocd_lua_bind.cpp
+		</sources>
+		<headers>
+			plugins/romloader/romloader.h
+			plugins/romloader/openocd/romloader_openocd_main.h
+			plugins/romloader/openocd/_luaif/romloader_openocd_wxlua_bindings.h
+		</headers>
+		<!-- openocd helper -->
+		<sources>
+			plugins/romloader/openocd/openocd/helper/binarybuffer.c
+			plugins/romloader/openocd/openocd/helper/command.c
+			plugins/romloader/openocd/openocd/helper/configuration.c
+			plugins/romloader/openocd/openocd/helper/fileio.c
+			plugins/romloader/openocd/openocd/helper/interpreter.c
+			plugins/romloader/openocd/openocd/helper/log.c
+			plugins/romloader/openocd/openocd/helper/replacements.c
+			plugins/romloader/openocd/openocd/helper/time_support.c
+		</sources>
+		<headers>
+			plugins/romloader/openocd/openocd/helper/binarybuffer.h
+			plugins/romloader/openocd/openocd/helper/command.h
+			plugins/romloader/openocd/openocd/helper/configuration.h
+			plugins/romloader/openocd/openocd/helper/fileio.h
+			plugins/romloader/openocd/openocd/helper/interpreter.h
+			plugins/romloader/openocd/openocd/helper/log.h
+			plugins/romloader/openocd/openocd/helper/replacements.h
+			plugins/romloader/openocd/openocd/helper/time_support.h
+			plugins/romloader/openocd/openocd/helper/types.h
+		</headers>
+		<!-- openocd jtag -->
+		<sources>
+			plugins/romloader/openocd/openocd/jtag/ft2232.c
+			plugins/romloader/openocd/openocd/jtag/jtag.c
+		</sources>
+		<headers>
+			plugins/romloader/openocd/openocd/jtag/jtag.h
+		</headers>
+		<!-- openocd target -->
+		<sources>
+			plugins/romloader/openocd/openocd/target/algorithm.c
+			plugins/romloader/openocd/openocd/target/arm720t.c
+			plugins/romloader/openocd/openocd/target/arm7_9_common.c
+			plugins/romloader/openocd/openocd/target/arm7tdmi.c
+			plugins/romloader/openocd/openocd/target/arm920t.c
+			plugins/romloader/openocd/openocd/target/arm926ejs.c
+			plugins/romloader/openocd/openocd/target/arm966e.c
+			plugins/romloader/openocd/openocd/target/arm9tdmi.c
+			plugins/romloader/openocd/openocd/target/arm_disassembler.c
+			plugins/romloader/openocd/openocd/target/arm_jtag.c
+			plugins/romloader/openocd/openocd/target/arm_simulator.c
+			plugins/romloader/openocd/openocd/target/armv4_5.c
+			plugins/romloader/openocd/openocd/target/armv4_5_cache.c
+			plugins/romloader/openocd/openocd/target/armv4_5_mmu.c
+			plugins/romloader/openocd/openocd/target/armv7m.c
+			plugins/romloader/openocd/openocd/target/breakpoints.c
+			plugins/romloader/openocd/openocd/target/cortex_m3.c
+			plugins/romloader/openocd/openocd/target/cortex_swjdp.c
+			plugins/romloader/openocd/openocd/target/embeddedice.c
+			plugins/romloader/openocd/openocd/target/etb.c
+			plugins/romloader/openocd/openocd/target/etm.c
+			plugins/romloader/openocd/openocd/target/etm_dummy.c
+			plugins/romloader/openocd/openocd/target/image.c
+			plugins/romloader/openocd/openocd/target/register.c
+			plugins/romloader/openocd/openocd/target/target.c
+			plugins/romloader/openocd/openocd/target/target_request.c
+			plugins/romloader/openocd/openocd/target/trace.c
+			plugins/romloader/openocd/openocd/target/xscale.c
+		</sources>
+		<headers>
+			plugins/romloader/openocd/openocd/target/algorithm.h
+			plugins/romloader/openocd/openocd/target/arm720t.h
+			plugins/romloader/openocd/openocd/target/arm7_9_common.h
+			plugins/romloader/openocd/openocd/target/arm7tdmi.h
+			plugins/romloader/openocd/openocd/target/arm920t.h
+			plugins/romloader/openocd/openocd/target/arm926ejs.h
+			plugins/romloader/openocd/openocd/target/arm966e.h
+			plugins/romloader/openocd/openocd/target/arm9tdmi.h
+			plugins/romloader/openocd/openocd/target/arm_disassembler.h
+			plugins/romloader/openocd/openocd/target/arm_jtag.h
+			plugins/romloader/openocd/openocd/target/arm_simulator.h
+			plugins/romloader/openocd/openocd/target/armv4_5_cache.h
+			plugins/romloader/openocd/openocd/target/armv4_5.h
+			plugins/romloader/openocd/openocd/target/armv4_5_mmu.h
+			plugins/romloader/openocd/openocd/target/armv7m.h
+			plugins/romloader/openocd/openocd/target/breakpoints.h
+			plugins/romloader/openocd/openocd/target/cortex_m3.h
+			plugins/romloader/openocd/openocd/target/cortex_swjdp.h
+			plugins/romloader/openocd/openocd/target/embeddedice.h
+			plugins/romloader/openocd/openocd/target/etb.h
+			plugins/romloader/openocd/openocd/target/etm_dummy.h
+			plugins/romloader/openocd/openocd/target/etm.h
+			plugins/romloader/openocd/openocd/target/image.h
+			plugins/romloader/openocd/openocd/target/register.h
+			plugins/romloader/openocd/openocd/target/target.h
+			plugins/romloader/openocd/openocd/target/trace.h
+			plugins/romloader/openocd/openocd/target/xscale.h
+		</headers>
+		<!-- openocd xsvf -->
+		<sources>
+			plugins/romloader/openocd/openocd/xsvf/xsvf.c
+		</sources>
+		<headers>
+			plugins/romloader/openocd/openocd/xsvf/xsvf.h
+		</headers>
+
+		<if cond="TARGETING_WIN32=='1'">
+			<include>$(SRCDIR)/plugins/romloader/openocd/openocd/win/include</include>
+			<lib-path>$(SRCDIR)/plugins/romloader/openocd/openocd/win/lib/msvc</lib-path>
+			<sys-lib>ftd2xx</sys-lib>
+		</if>
+		<if cond="TARGETING_UNIX=='1'">
+			<sys-lib>ftdi</sys-lib>
+		</if>
+
+		<wxlua-lib>wxluasocket</wxlua-lib>
+		<wxlua-lib>wxluadebug</wxlua-lib>
+		<wxlua-lib>wxbindxrc</wxlua-lib>
+		<wxlua-lib>wxbindhtml</wxlua-lib>
+		<wxlua-lib>wxbindadv</wxlua-lib>
+		<wxlua-lib>wxbindaui</wxlua-lib>
+		<wxlua-lib>wxbindnet</wxlua-lib>
+		<wxlua-lib>wxbindxml</wxlua-lib>
+		<wxlua-lib>wxbindcore</wxlua-lib>
+		<wxlua-lib>wxbindbase</wxlua-lib>
+		<wxlua-lib>wxlua</wxlua-lib>
+		<wxlua-lib>lua</wxlua-lib>
+
+		<wx-lib>xrc</wx-lib>
+		<wx-lib>html</wx-lib>
+		<wx-lib>adv</wx-lib>
+		<wx-lib>aui</wx-lib>
+		<wx-lib>net</wx-lib>
+		<wx-lib>xml</wx-lib>
+		<wx-lib>core</wx-lib>
+		<wx-lib>base</wx-lib>
+	</module>
+</makefile>

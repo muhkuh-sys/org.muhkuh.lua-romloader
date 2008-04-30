@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+<makefile>
+	<!-- ================================================================== -->
+	<!--                     The common muhkuh settings                     -->
+	<!-- ================================================================== -->
+
+	<using module="pkgconfig"/>
+
+	<!-- This is required because it contains the definitions of a lot of utils -->
+	<include file="wxluabase.bkl"/>
+
+	<!-- Set Lua include and libdir to env var on win platforms -->
+	<if cond="TARGETING_WIN32=='1'">
+		<set var="WXLUA_BASEDIR">$(DOLLAR)($(ENV_VAR)WXLUA)</set>
+		<set var="LUA_INCLUDE_DIR_DEFAULT">$(WXLUA_BASEDIR)\modules\lua\include</set>
+		<set var="LUA_LIB_DIR_DEFAULT">$(WXLUA_BASEDIR)\modules\lua\lib</set>
+		<set var="LUA_INCLUDE_DIR">$(LUA_INCLUDE_DIR_DEFAULT)</set>
+		<set var="LUA_LIB_DIR">$(LUA_LIB_DIR_DEFAULT)</set>
+	</if>
+	<!-- for all other platforms -->
+	<if cond="TARGETING_WIN32=='0'">
+		<set var="WXLUA_BASEDIR">$(SRCDIR)</set>
+	</if>
+	<!-- set lib postfix for gnu platform -->
+	<if cond="FORMAT=='gnu'">
+		<set var="WXLIBPOSTFIX">$(DOLLAR)(shell echo `$(WX_CONFIG) --selected-config` `$(WX_CONFIG) --basename` | sed 's/^\([^-]\+\)[^ ]\+ wx_\1\([u|d]*\)/\2/')</set>
+	</if>
+</makefile>

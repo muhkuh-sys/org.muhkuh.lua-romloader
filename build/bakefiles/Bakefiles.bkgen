@@ -46,5 +46,5 @@
 
 	<!-- Directories where unix makefiles should go: -->
 	<add-flags formats="gnu">-o$(INPUT_FILE_DIR)/../../makefile.unx -DSRCDIR=.</add-flags>
-	<add-flags formats="autoconf">-o$(INPUT_FILE_DIR)/../../Makefile.in -DAUTOCONF_MACROS_FILE=../autoconf/autoconf_inc.m4 -DSRCDIR=..</add-flags>
+	<add-flags formats="autoconf">-o$(INPUT_FILE_DIR)/../../Makefile.in -DAUTOCONF_MACROS_FILE=../autoconf/autoconf_inc.m4 -DSRCDIR=.</add-flags>
 </bakefile-gen>

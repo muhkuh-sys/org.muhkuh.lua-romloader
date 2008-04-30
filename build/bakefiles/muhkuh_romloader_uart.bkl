@@ -1,0 +1,66 @@
+<?xml version="1.0" ?>
+<makefile>
+	<!-- ================================================================== -->
+	<!--                     The romloader uart plugin                      -->
+	<!-- ================================================================== -->
+
+	<module id="plugin_romloader_uart" template="wxlua">
+		<dllname>bootloader_uart</dllname>
+		<threading>multi</threading>
+		<dirname>$(SRCDIR)/bin</dirname>
+		<include>$(SRCDIR)</include>
+		<include>$(SRCDIR)/plugins/romloader/uart</include>
+		<sources>
+			plugins/romloader/romloader.cpp
+			plugins/romloader/uart/romloader_uart_device.cpp
+			plugins/romloader/uart/romloader_uart_main.cpp
+			plugins/romloader/uart/_luaif/romloader_uart_lua.cpp
+			plugins/romloader/uart/_luaif/romloader_uart_lua_bind.cpp
+		</sources>
+		<headers>
+			plugins/romloader/romloader.h
+			plugins/romloader/uart/romloader_uart_device.h
+			plugins/romloader/uart/romloader_uart_main.h
+			plugins/romloader/uart/_luaif/romloader_uart_wxlua_bindings.h
+		</headers>
+		<if cond="TARGETING_WIN32=='1'">
+			<sources>
+				plugins/romloader/uart/romloader_uart_device_win.cpp
+			</sources>
+			<headers>
+				plugins/romloader/uart/romloader_uart_device_win.h
+			</headers>
+			<sys-lib>setupapi</sys-lib>
+		</if>
+		<if cond="TARGETING_UNIX=='1'">
+			<sources>
+				plugins/romloader/uart/romloader_uart_device_linux.cpp
+			</sources>
+			<headers>
+				plugins/romloader/uart/romloader_uart_device_linux.h
+			</headers>
+		</if>
+
+		<wxlua-lib>wxluasocket</wxlua-lib>
+		<wxlua-lib>wxluadebug</wxlua-lib>
+		<wxlua-lib>wxbindxrc</wxlua-lib>
+		<wxlua-lib>wxbindhtml</wxlua-lib>
+		<wxlua-lib>wxbindadv</wxlua-lib>
+		<wxlua-lib>wxbindaui</wxlua-lib>
+		<wxlua-lib>wxbindnet</wxlua-lib>
+		<wxlua-lib>wxbindxml</wxlua-lib>
+		<wxlua-lib>wxbindcore</wxlua-lib>
+		<wxlua-lib>wxbindbase</wxlua-lib>
+		<wxlua-lib>wxlua</wxlua-lib>
+		<wxlua-lib>lua</wxlua-lib>
+
+		<wx-lib>xrc</wx-lib>
+		<wx-lib>html</wx-lib>
+		<wx-lib>adv</wx-lib>
+		<wx-lib>aui</wx-lib>
+		<wx-lib>net</wx-lib>
+		<wx-lib>xml</wx-lib>
+		<wx-lib>core</wx-lib>
+		<wx-lib>base</wx-lib>
+	</module>
+</makefile>
