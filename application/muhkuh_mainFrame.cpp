@@ -549,6 +549,7 @@ void muhkuh_mainFrame::read_config(void)
 	bool fWelcomePageIsVisible;
 	bool fTestDetailsPageIsVisible;
 	int iPageIdx;
+	bool fWinMaximized;
 
 
 	// get the config
@@ -564,6 +565,7 @@ void muhkuh_mainFrame::read_config(void)
 	iMainFrameY = pConfig->Read(wxT("y"), 50);
 	iMainFrameW = pConfig->Read(wxT("w"), 640);
 	iMainFrameH = pConfig->Read(wxT("h"), 480);
+  pConfig->Read(wxT("maximized"), &fWinMaximized, false);
 	strPerspective = pConfig->Read(wxT("perspective"), wxEmptyString);
 	pConfig->Read(wxT("showwelcome"), &fWelcomePageIsVisible, true);
 	pConfig->Read(wxT("showtestdetails"), &fTestDetailsPageIsVisible, true);
@@ -594,6 +596,8 @@ void muhkuh_mainFrame::read_config(void)
 
 	// set window properties
 	SetSize(iMainFrameX, iMainFrameY, iMainFrameW, iMainFrameH);
+		// set fullscreen mode
+	Maximize(fWinMaximized);
 	if( strPerspective.IsEmpty()==false )
 	{
 		m_auiMgr.LoadPerspective(strPerspective,true);
@@ -642,7 +646,7 @@ void muhkuh_mainFrame::write_config(void)
 	int iPageIdx;
 	bool fWelcomePageIsVisible;
 	bool fTestDetailsPageIsVisible;
-
+	bool fWinMaximized;
 
 
 	pConfig = wxConfigBase::Get();
@@ -650,6 +654,27 @@ void muhkuh_mainFrame::write_config(void)
 	{
 		return;
 	}
+
+	fWinMaximized = IsMaximized();
+
+	// save the frame position
+	// if the frame is minimized, take the initial values
+	if( IsIconized()==true )
+	{
+		// restore from iconized state
+		Iconize(false);
+	}
+	if( IsFullScreen()==true )
+	{
+		// restore from fullscreen state
+		ShowFullScreen(false);
+	}
+	if( IsMaximized()==true )
+	{
+		// restore from maximized state
+		Maximize(false);
+	}
+	Update();
 
 	// save the frame position
 	GetPosition(&iMainFrameX, &iMainFrameY);
@@ -689,6 +714,7 @@ void muhkuh_mainFrame::write_config(void)
 	pConfig->Write(wxT("y"),		(long)iMainFrameY);
 	pConfig->Write(wxT("w"),		(long)iMainFrameW);
 	pConfig->Write(wxT("h"),		(long)iMainFrameH);
+  pConfig->Write(wxT("maximized"), fWinMaximized);
 	pConfig->Write(wxT("perspective"),	strPerspective);
 	pConfig->Write(wxT("showwelcome"),	fWelcomePageIsVisible);
 	pConfig->Write(wxT("showtestdetails"),	fTestDetailsPageIsVisible);
