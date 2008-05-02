@@ -170,10 +170,12 @@ void romloader_uart_close_instance(wxString &strInterface)
 	int iIdx;
 
 
+	wxLogMessage(wxT("romloader_uart: close instance ") + strInterface);
+
 	iIdx = astrBusyDevices.Index(strInterface, true, false);
 	if( iIdx==wxNOT_FOUND )
 	{
-		wxLogMessage(wxT("close request for unknown interface: ") + strInterface);
+		wxLogMessage(wxT("romloader_uart: close request for unknown interface: ") + strInterface);
 	}
 	else
 	{
