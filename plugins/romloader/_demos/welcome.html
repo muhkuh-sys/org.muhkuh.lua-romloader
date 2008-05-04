@@ -1,0 +1,27 @@
+<html>
+	<head>
+		<title>Welcome</title>
+	</head>
+	<body>
+		<h1>Welcome to <lua>return _G.__MUHKUH_VERSION</lua></h1>
+		<p>Some quick docs:</p>
+		<ul>
+		<li>See the "Test Tree" on the left side and the "Message Log" below? Both are important parts of the application. Resize the components by dragging the grey separators between the elements. Drag the title of an element to rearrange the window order.</li>
+		<li>Power up your netX board and set it to "Bootmode". The yellow SYS led must be blinking. Now connect the board with a USB or UART cable to the PC.</li>
+		<li>Looking for drivers? Try the "drivers" folder in the application directory.</li>
+		<li>Doubleclick the "Memory Read Gui" entry in the test tree. The plugin selecor appears. If your board is connected to COM port <i>x</i>, doubleclick the "COM<i>x</i>" entry. If you are using USB, doubleclick the line starting with "romloader_usb_...".</li>
+		<li>The Demo window appears.</li>
+		<li>Reading: Enter the netX address in decimal (e.g. 16) or hexadecimal (e.g. 0x10) in the upper field. Click the "Read" button to read the memory. The result is shown in the "Value" field.</li>
+		<li>Writing: Enter the address in the upper field and the value in the lower field. Click the "Write" button to write the value.</li>
+		<li><b>Please Note:</b> Don't modify random locations in the netX memory, especially not if the netX is connected to something like a big fat motor on your desk. You might activate some IO lines just by chance and drill a hole in your head!</li>
+		</ul>
+		<br>
+		<p>If you are bored with the "Memory Read gui"...</p>
+		<ul>
+		<li>Select another repository from the "Repository Selector". Please note that you have to quit any running example to change the repository.</li>
+		<li>The "Memory Read Simple" example just reads some fixed memory locations and prints the result to the "Message Log". Look for Messages like "the resetvector at 0x00000000 is 0xea080001". This script is a good starting point for your modifications. Go to the application directory and enter the subfolder "demos\memory_read_simple". Open the file "test_description.xml" in a texteditor and start hacking. After you saved the file press 'Ctrl-R' in the Muhkuh application to reload the script.</li>
+		<li>The "Memory Read Tester" is the memory read example in production test style. Details on this will follow soon...</li>
+		<li>The "Romloader Test" is a plugin conformance test for the romloader class.</li>
+		</ul>	
+	</body>
+</html>

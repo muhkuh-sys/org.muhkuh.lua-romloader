@@ -1,9 +1,9 @@
-Muhkuh 1.0.123
+Muhkuh 1.0.228
 -----------------------------------------------------------------------------
 
 Muhkuh is a powerful and flexible test tool for hardware designs. Plugins are used to access the device under test or the testing equipment. Testcases are written in Lua and can be easily extended by the plugins.
 
-This is the first release on Sourceforge. Many things are still missing - like documentation, so I guess this one only for my brave beta-testers. Thanks guys, you are doing a great job!
+This is a beta-release. Many things are still missing - like documentation, so I guess this one only for my brave testers. Thanks guys, you are doing a great job!
 
 
 
@@ -124,10 +124,7 @@ Linux with configure:
  8. Building the release version of Muhkuh:
 
  % ./bootstrap
- % mkdir build_gtk_release
- % cd build_gtk_release
- % ../configure --disable-debug --disable-unicode --enable-shared
- % make
+ % make -f makefile.unx
 
 
 
@@ -178,7 +175,29 @@ Windows with MSVS2007:
  nmake -f makefile.vc BUILD=debug UNICODE=0 SHARED=1 WX_SHARED=1
 
 
- 7. Open the Visual Studio Command Prompt, then move to the Muhkuh source.
+ 7. Create a new environment variable with the name "WXLUA" which contains the path to the extracted wxLua Sources.
+ Example:
+
+ I extracted the wxLua snapshot to "C:\SourceCode\wxLua". I set the environment variable "WXLUA" to "C:\SourceCode\wxLua", so that a "dir %WXLUA% shows the following result:
+
+ C:\>dir /B %WXLUA%
+ apps
+ art
+ bin
+ bindings
+ build
+ configure
+ CVS
+ distrib
+ docs
+ lib
+ Makefile.in
+ modules
+ samples
+ util
+
+
+ 8. Open the Visual Studio Command Prompt, then move to the Muhkuh source.
  Compile Muhkuh in release mode:
 
  nmake -f makefile.vc BUILD=release

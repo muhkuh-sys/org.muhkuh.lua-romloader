@@ -1,7 +1,17 @@
 Changelog
 
-Muhkuh 1.0.213
+Muhkuh 1.0.228
 
+ * fixed: invalid window size is saved if the application is closed in maximized or iconized state
+ * fixed: if the the custom application title is empty, the default title is written to the config file
+ * fixed gen_src_distrib script to new gen_version scripts, added more output
+ * split up installer script into separate components
+ * romloader_uart: more debug output
+ * use uninstall icon in windows start menu
+ * added system dlls to windows installer
+ * split up bakefile
+ * added batchfile for windows to copy the wxwidgets, wxlua and system dlls to the bin directory
+ * fixed read_memory_gui installer
  * added some demos for the romloader plugins
  * replace config dialog icons for enabled/disabled plugins with tick and cross
  * added windows driver for hischer usb cdc devices
