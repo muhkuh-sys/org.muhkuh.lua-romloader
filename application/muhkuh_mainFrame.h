@@ -250,9 +250,9 @@ private:
 	wxString m_strAutoStartTest;
 	bool m_fRunningTestIsAutostart;
 
-  // the application title
-  wxString m_strApplicationTitle;
-  wxString m_strApplicationIcon;
+	// the application title
+	wxString m_strApplicationTitle;
+	wxString m_strApplicationIcon;
 
 	// the locale object
 	wxLocale m_locale;

@@ -192,22 +192,31 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	read_config();
 
 	// set the window title
-	SetTitle(m_strApplicationTitle);
+	if( m_strApplicationTitle.IsEmpty()==true )
+	{
+		// no custom title -> use the version string
+		SetTitle(m_strVersion);
+	}
+	else
+	{
+		// show the custom title
+		SetTitle(m_strApplicationTitle);
+	}
 
-  // set the application icon
-  if( m_strApplicationIcon.IsEmpty()==true )
-  {
-	  // set the muhkuh icon
-	  m_frameIcons.AddIcon(muhkuh_016_xpm);
-	  m_frameIcons.AddIcon(muhkuh_032_xpm);
-	  m_frameIcons.AddIcon(muhkuh_064_xpm);
-	  m_frameIcons.AddIcon(muhkuh_128_xpm);
-  }
-  else
-  {
-    // load a custom icon
-    m_frameIcons.AddIcon(m_strApplicationIcon, wxBITMAP_TYPE_ICO);
-  }
+	// set the application icon
+	if( m_strApplicationIcon.IsEmpty()==true )
+	{
+		// set the muhkuh icon
+		m_frameIcons.AddIcon(muhkuh_016_xpm);
+		m_frameIcons.AddIcon(muhkuh_032_xpm);
+		m_frameIcons.AddIcon(muhkuh_064_xpm);
+		m_frameIcons.AddIcon(muhkuh_128_xpm);
+	}
+	else
+	{
+		// load a custom icon
+		m_frameIcons.AddIcon(m_strApplicationIcon, wxBITMAP_TYPE_ICO);
+	}
 	SetIcons(m_frameIcons);
 
 	// create the tip provider
@@ -576,8 +585,8 @@ void muhkuh_mainFrame::read_config(void)
 	pConfig->Read(wxT("autostart"), &m_fAutoStart, false);
 	pConfig->Read(wxT("autoexit"), &m_fAutoExit, false);
 	m_strAutoStartTest = pConfig->Read(wxT("autostarttest"), wxEmptyString);
-  m_strApplicationTitle = pConfig->Read(wxT("customtitle"), m_strVersion);
-  m_strApplicationIcon = pConfig->Read(wxT("customicon"), wxEmptyString);
+	m_strApplicationTitle = pConfig->Read(wxT("customtitle"), wxEmptyString);
+	m_strApplicationIcon = pConfig->Read(wxT("customicon"), wxEmptyString);
 
 	// get lua settings
 	pConfig->SetPath(wxT("/Lua"));
@@ -725,8 +734,8 @@ void muhkuh_mainFrame::write_config(void)
 	pConfig->Write(wxT("autostart"),	m_fAutoStart);
 	pConfig->Write(wxT("autoexit"),		m_fAutoExit);
 	pConfig->Write(wxT("autostarttest"),	m_strAutoStartTest);
-  pConfig->Write(wxT("customtitle"), m_strApplicationTitle);
-  pConfig->Write(wxT("customicon"), m_strApplicationIcon);
+	pConfig->Write(wxT("customtitle"), m_strApplicationTitle);
+	pConfig->Write(wxT("customicon"), m_strApplicationIcon);
 
 	pConfig->SetPath(wxT("/"));
 
