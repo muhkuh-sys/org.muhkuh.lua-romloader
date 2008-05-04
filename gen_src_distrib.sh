@@ -44,7 +44,8 @@ if !(mkdir $CHECKOUT_DIR); then
 fi
 
 # checkout
-if !(svn -q co $REPOSITORY $CHECKOUT_DIR); then
+echo checking out trunk...
+if !(svn co $REPOSITORY $CHECKOUT_DIR); then
 	echo failed to checkout repository from $REPOSITORY to $CHECKOUT_DIR
 	exit;
 fi
@@ -56,8 +57,8 @@ if !(cd $CHECKOUT_DIR && ./bootstrap.sh); then
 fi
 
 # generate the version
-if !(cd $CHECKOUT_DIR && ./gen_version.bat); then
-	echo failed to run gen_version.bat script
+if !(cd $CHECKOUT_DIR && ./gen_version.sh); then
+	echo failed to run gen_version.sh script
 	exit;
 fi
 
