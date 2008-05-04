@@ -92,10 +92,12 @@ BEGIN_EVENT_TABLE(muhkuh_mainFrame, wxFrame)
 	EVT_BUTTON(muhkuh_mainFrame_cancelTestButton_id,		muhkuh_mainFrame::OnTestCancel)
 	EVT_AUINOTEBOOK_PAGE_CLOSE(muhkuh_mainFrame_Notebook_id,	muhkuh_mainFrame::OnNotebookPageClose)
 	EVT_AUI_PANE_CLOSE(muhkuh_mainFrame::OnPaneClose)
+
+	EVT_MOVE(muhkuh_mainFrame::OnMove)
+	EVT_SIZE(muhkuh_mainFrame::OnSize)
 END_EVENT_TABLE()
 
 /*
-	EVT_SIZE(muhkuh_mainFrame::OnSize)
 	EVT_LUA_DEBUG_HOOK(wxID_ANY,				muhkuh_mainFrame::OnLuaDebugHook)
 */
 
@@ -570,11 +572,11 @@ void muhkuh_mainFrame::read_config(void)
 
 	// get mainframe position and size
 	pConfig->SetPath(wxT("/MainFrame"));
-	iMainFrameX = pConfig->Read(wxT("x"), 50);
-	iMainFrameY = pConfig->Read(wxT("y"), 50);
-	iMainFrameW = pConfig->Read(wxT("w"), 640);
-	iMainFrameH = pConfig->Read(wxT("h"), 480);
-  pConfig->Read(wxT("maximized"), &fWinMaximized, false);
+	m_framePosition.x = pConfig->Read(wxT("x"), 50);
+	m_framePosition.y = pConfig->Read(wxT("y"), 50);
+	m_frameSize.SetWidth( pConfig->Read(wxT("w"), 640) );
+	m_frameSize.SetHeight( pConfig->Read(wxT("h"), 480) );
+	pConfig->Read(wxT("maximized"), &fWinMaximized, false);
 	strPerspective = pConfig->Read(wxT("perspective"), wxEmptyString);
 	pConfig->Read(wxT("showwelcome"), &fWelcomePageIsVisible, true);
 	pConfig->Read(wxT("showtestdetails"), &fTestDetailsPageIsVisible, true);
@@ -604,9 +606,10 @@ void muhkuh_mainFrame::read_config(void)
 	m_repositoryCombo->Select(m_ptRepositoryManager->GetActiveRepository());
 
 	// set window properties
-	SetSize(iMainFrameX, iMainFrameY, iMainFrameW, iMainFrameH);
-		// set fullscreen mode
+	SetSize(m_framePosition.x, m_framePosition.y, m_frameSize.GetWidth(), m_frameSize.GetHeight());
+	// set fullscreen mode
 	Maximize(fWinMaximized);
+	// set perspective
 	if( strPerspective.IsEmpty()==false )
 	{
 		m_auiMgr.LoadPerspective(strPerspective,true);
@@ -650,7 +653,6 @@ void muhkuh_mainFrame::read_config(void)
 void muhkuh_mainFrame::write_config(void)
 {
 	wxConfigBase *pConfig;
-	int iMainFrameX, iMainFrameY, iMainFrameW, iMainFrameH;
 	wxString strPerspective;
 	int iPageIdx;
 	bool fWelcomePageIsVisible;
@@ -667,27 +669,6 @@ void muhkuh_mainFrame::write_config(void)
 	fWinMaximized = IsMaximized();
 
 	// save the frame position
-	// if the frame is minimized, take the initial values
-	if( IsIconized()==true )
-	{
-		// restore from iconized state
-		Iconize(false);
-	}
-	if( IsFullScreen()==true )
-	{
-		// restore from fullscreen state
-		ShowFullScreen(false);
-	}
-	if( IsMaximized()==true )
-	{
-		// restore from maximized state
-		Maximize(false);
-	}
-	Update();
-
-	// save the frame position
-	GetPosition(&iMainFrameX, &iMainFrameY);
-	GetSize(&iMainFrameW, &iMainFrameH);
 	strPerspective = m_auiMgr.SavePerspective();
 
 	// save tip provider data
@@ -719,11 +700,11 @@ void muhkuh_mainFrame::write_config(void)
 	}
 
 	pConfig->SetPath(wxT("/MainFrame"));
-	pConfig->Write(wxT("x"),		(long)iMainFrameX);
-	pConfig->Write(wxT("y"),		(long)iMainFrameY);
-	pConfig->Write(wxT("w"),		(long)iMainFrameW);
-	pConfig->Write(wxT("h"),		(long)iMainFrameH);
-  pConfig->Write(wxT("maximized"), fWinMaximized);
+	pConfig->Write(wxT("x"),		(long)m_framePosition.x);
+	pConfig->Write(wxT("y"),		(long)m_framePosition.y);
+	pConfig->Write(wxT("w"),		(long)m_frameSize.GetWidth());
+	pConfig->Write(wxT("h"),		(long)m_frameSize.GetHeight());
+	pConfig->Write(wxT("maximized"),	fWinMaximized);
 	pConfig->Write(wxT("perspective"),	strPerspective);
 	pConfig->Write(wxT("showwelcome"),	fWelcomePageIsVisible);
 	pConfig->Write(wxT("showtestdetails"),	fTestDetailsPageIsVisible);
@@ -734,8 +715,8 @@ void muhkuh_mainFrame::write_config(void)
 	pConfig->Write(wxT("autostart"),	m_fAutoStart);
 	pConfig->Write(wxT("autoexit"),		m_fAutoExit);
 	pConfig->Write(wxT("autostarttest"),	m_strAutoStartTest);
-	pConfig->Write(wxT("customtitle"), m_strApplicationTitle);
-	pConfig->Write(wxT("customicon"), m_strApplicationIcon);
+	pConfig->Write(wxT("customtitle"),	m_strApplicationTitle);
+	pConfig->Write(wxT("customicon"),	m_strApplicationIcon);
 
 	pConfig->SetPath(wxT("/"));
 
@@ -2248,6 +2229,28 @@ void muhkuh_mainFrame::OnMtdLinkClicked(wxHtmlLinkEvent &event)
 	else
 	{
 		event.Skip();
+	}
+}
+
+
+void muhkuh_mainFrame::OnMove(wxMoveEvent &event)
+{
+	// is the frame in normal state?
+	if( IsIconized()==false && IsFullScreen()==false && IsMaximized()==false )
+	{
+		// frame is in normal state -> remember the position
+		m_framePosition = event.GetPosition();
+	}
+}
+
+
+void muhkuh_mainFrame::OnSize(wxSizeEvent &event)
+{
+	// is the frame in normal state?
+	if( IsIconized()==false && IsFullScreen()==false && IsMaximized()==false )
+	{
+		// frame is in normal state -> remember size
+		m_frameSize = event.GetSize();
 	}
 }
 

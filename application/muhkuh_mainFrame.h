@@ -103,6 +103,9 @@ public:
 	void OnNotebookPageClose(wxAuiNotebookEvent &event);
 	void OnPaneClose(wxAuiManagerEvent &event);
 
+	void OnMove(wxMoveEvent &event);
+	void OnSize(wxSizeEvent &event);
+
 	// the lua functions
 	void luaTestHasFinished(void);
 	wxString luaLoad(wxString strFileName);
@@ -256,6 +259,10 @@ private:
 
 	// the locale object
 	wxLocale m_locale;
+
+	// frame size and position
+	wxPoint m_framePosition;
+	wxSize m_frameSize;
 
     DECLARE_EVENT_TABLE()
 };
