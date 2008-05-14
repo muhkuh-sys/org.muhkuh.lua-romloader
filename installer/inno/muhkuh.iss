@@ -6,9 +6,32 @@
 #define InstallerName "muhkuh_"+AppVersion+"_setup"
 
 #define SourceDir "..\.."
+#define OutputDir "."
 
 ; include the common muhkuh settings
 #include "muhkuh_common.iss"
+
+
+[Setup]
+DefaultDirName={pf}\{#AppName}
+DefaultGroupName={#AppName}
+
+; misc info
+AppPublisher=Muhkuh team
+AppPublisherURL=http://muhkuh.sourceforge.net/
+AppSupportURL=http://www.sourceforge.net/projects/muhkuh
+AppUpdatesURL=http://www.sourceforge.net/projects/muhkuh
+VersionInfoCopyright=Copyright (C) 2008, Muhkuh team
+AppCopyright=Copyright (C) 2008, Muhkuh team
+
+InfoBeforeFile=changelog.txt
+
+; icon stuff
+SetupIconFile=icons\custom\muhkuh.ico
+
+[Messages]
+BeveledLabel=Muhkuh
+
 
 ; include the components
 #include "muhkuh_app.iss"
