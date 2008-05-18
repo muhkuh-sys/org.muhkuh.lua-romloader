@@ -21,6 +21,75 @@
 module("muhkuh_system", package.seeall)
 
 
+
+-----------------------------------------------------------------------------
+-- get_matching_node
+--   Get the first child of a node with the name 'strName'.
+--
+-- Parameter:
+--   node : search this xml node's children
+--   strName : name of the child node (note: no wildcarts or regexp, it's the
+--             plain name)
+--
+-- Returns:
+--   xml node of the first matching child node or nil if no matching node
+--   could be found
+--
+local function get_matching_node(node, strName)
+	local xml_iter
+	local xml_found = nil
+
+
+	xml_iter = node
+	-- loop over all nodes
+	while xml_iter~=nil do
+		if xml_iter:GetType()==wx.wxXML_ELEMENT_NODE and xml_iter:GetName()==strName then
+			xml_found = xml_iter
+			break
+		else
+			xml_iter = xml_iter:GetNext()
+		end
+	end
+
+	-- return the node or nil
+	return xml_found
+end
+
+-----------------------------------------------------------------------------
+-- get_node_contents
+--   Get the contents of the first child textnode.
+--
+-- Parameter:
+--   node : search this xml node's children
+--
+-- Returns:
+--   Textnode's contents as string
+--   nil on error
+--
+local function get_node_contents(node, strName)
+	local xml_iter
+	local xml_found = nil
+	local typ
+	local strText = nil
+
+
+	xml_iter = node:GetChildren()
+	-- loop over all nodes
+	while xml_iter~=nil do
+		typ = xml_iter:GetType()
+		if typ==wx.wxXML_TEXT_NODE or typ==wx.wxXML_CDATA_SECTION_NODE then
+			strText = xml_iter:GetContent()
+			break
+		else
+			xml_iter = xml_iter:GetNext()
+		end
+	end
+
+	-- return the node or nil
+	return strText
+end
+
+
 -----------------------------------------------------------------------------
 -- parse_code
 --   Find the "Code" child of a node and return the contents as a string.
@@ -34,31 +103,21 @@ module("muhkuh_system", package.seeall)
 --   nil on error
 --
 local function parse_code(parent_node)
-	local node
 	local foundNode
 	local code
 
 
 	-- look for the first node named "Code"
-	node = parent_node:GetChildren()
-	foundNode = nil
-	while node~=nil
-	do
-		if node:GetType()==wx.wxXML_ELEMENT_NODE and node:GetName()=="Code" then
-			foundNode = node
-			break
-		end
-		node = node:GetNext()
-	end
+	foundNode = get_matching_node(parent_node:GetChildren(), "Code")
 
-	-- not found (node is nil) ?
+	-- found node?
 	if not foundNode then
+		-- no
 		print("muhkuh_system error: code node not found!")
-		return nil
+	else
+		-- yes -> get the code
+		code = get_node_contents(foundNode)
 	end
-
-	-- get the code
-	code = foundNode:GetChildren():GetContent()
 
 	return code
 end
@@ -100,7 +159,7 @@ local function parse_parameters(parent_node)
 				break
 			end
 			-- get parameter value
-			strParameterValue = node:GetChildren():GetContent()
+			strParameterValue = get_node_contents(node)
 			if strParameterValue==nil or strParameterValue=="" then
 				print("muhkuh_system error: Parameter node has no value")
 				parameters = nil
@@ -173,6 +232,305 @@ local function parse_test(node)
 end
 
 
+
+
+
+
+
+local function get_imported_startup_code(node)
+	local strName
+	local strVersion
+	local strCode = [[
+		require("serialnr")
+		require("tester")
+		if serialnr.run(20000, 10)==false then
+			-- cancel
+			muhkuh.TestHasFinished()
+		end
+		tester.run()
+			]]
+
+
+	-- get the name
+	strName = node:GetPropVal("name", "")
+	if strName=="" then
+		print("muhkuh_system error: missing name attribute")
+		return nil
+	end
+
+	-- get the version
+	strVersion = node:GetPropVal("version", "")
+	if strVersion=="" then
+		print("muhkuh_system error: missing version attribute")
+		return nil
+	end
+
+	return { name=strName, version=strVersion, code=strCode, parameter={} }
+end
+
+
+local translate_cmd =
+{
+	{ s = "fill (%x+) (%x+) byte",		r = "\t\t\tplugin:write_data08(0x%1, 0x%2)"},
+	{ s = "fill (%x+) (%x+) word",		r = "\t\t\tplugin:write_data16(0x%1, 0x%2)"},
+	{ s = "fill (%x+) (%x+) long",		r = "\t\t\tplugin:write_data32(0x%1, 0x%2)"},
+	{ s = "fill (%x+) (%x+)",		r = "\t\t\tplugin:write_data32(0x%1, 0x%2)"},
+
+	{ s = "dump (%x+)",			r = "\t\t\tulValue = plugin:read_data32(0x%1)"},
+
+	{ s = "!l ([^ ]+) (%x+)",		r = "\t\t\tbin = muhkuh.load(\"%1\")\n\t\t\ttester.stdWrite(panel, plugin, 0x%2, bin)"},
+
+	{ s = "call (%x+) (%x+)",		r = "\t\t\ttester.stdCall(panel, plugin, 0x%1, 0x%2)"}
+}
+
+local function translate_step_cmd(parent_node, aCode)
+	local fResult
+	local foundNode
+	local strCmd
+	local strCode
+	local iMatches
+
+
+	fResult = nil
+
+	-- look for the first node named "Cmd"
+	foundNode = get_matching_node(parent_node:GetChildren(), "Cmd")
+
+	-- found node?
+	if not foundNode then
+		-- no
+		print("muhkuh_system error: Cmd node not found!")
+	else
+		-- yes -> get the command
+		strCmd = get_node_contents(foundNode)
+
+		-- translate the command
+		for i,p in pairs(translate_cmd) do
+			strCode, iMatches = string.gsub(strCmd, p.s, p.r)
+			if iMatches>0 then
+				break
+			end
+		end
+		if iMatches<=0 then
+			print("muhkuh_system error: unknown command: " .. strCmd)
+		else
+			table.insert(aCode, strCode)
+			fResult = true
+		end
+	end
+
+	return fResult
+end
+
+
+local function translate_step_response(parent_node, aCode)
+	local fResult
+	local node
+	local responseNode
+	local foundNode
+	local strCanAbort
+	local fCanAbort
+	local strText
+
+
+	fResult = nil
+
+	-- look for the first node named "Response"
+	responseNode = get_matching_node(parent_node:GetChildren(), "Response")
+
+	-- not found (node is nil) ?
+	if responseNode then
+		-- look for the first node named "RegExp"
+		foundNode = get_matching_node(responseNode:GetChildren(), "RegExp")
+		if not foundNode then
+			print("muhkuh_system error: Response node has no RegExp!")
+			return nil
+		end
+
+		-- check retpos attribute for default value
+		strVal = foundNode:GetPropVal("retpos", "1")
+		if strVal~="1" then
+			print("muhkuh_system error: strange retpos in RegExp: " .. strVal)
+			return nil
+		end
+
+		strVal = get_node_contents(foundNode)
+		if not strVal:match("%^%[0%-9a%-fA%-F%]%{8%}%[ \\t%]%*\\:%[ \\t%]%*%(%[0%-9a%-fA%-F%]%{8%}%)") then
+			print("muhkuh_system error: strange regular expression in RegExp: '" .. strVal .. "'")
+			return nil
+		end
+
+
+		-- look for the first node named "Match"
+		foundNode = get_matching_node(responseNode:GetChildren(), "Match")
+		if not foundNode then
+			print("muhkuh_system error: Response node has no Match!")
+			return nil
+		end
+
+		strVal = get_node_contents(foundNode)
+		if not strVal:match("00000000") then
+			print("muhkuh_system error: strange value in Match: " .. strVal)
+			return nil
+		end
+
+		-- generate code
+		table.insert(aCode, "if ulValue~=0 then")
+		table.insert(aCode, "\treturn __MUHKUH_TEST_RESULT_FAIL")
+		table.insert(aCode, "end")
+	end
+
+	return true
+end
+
+
+local function translate_step_interaction(parent_node, aCode)
+	local fResult
+	local node
+	local foundNode
+	local strCanAbort
+	local fCanAbort
+	local strText
+
+
+	fResult = nil
+
+	-- look for the first node named "Interaction"
+	foundNode = get_matching_node(parent_node:GetChildren(), "Interaction")
+	-- found node?
+	if foundNode then
+		-- yes -> can the interaction cancel the test?
+		strCanAbort = foundNode:GetPropVal("Abort", "0")
+		if strCanAbort=="1" then
+			fCanAbort = true
+		else
+			fCanAbort = false
+		end
+
+		-- get the command
+		strText = get_node_contents(foundNode)
+
+		-- generate code
+		table.insert(aCode, "strMsg = [["..strText.."]]")
+		table.insert(aCode, "iResult = wx.wxMessageBox(strMsg, \"Interaction required\", wx.wxOK + wx.wxCANCEL + wx.wxICON_INFORMATION, panel)")
+		if fCanAbort then
+			table.insert(aCode, "if iResult==wx.wxCANCEL then")
+			table.insert(aCode, "\tprint(\"user pressed cancel\")")
+			table.insert(aCode, "\treturn __MUHKUH_TEST_RESULT_FAIL")
+			table.insert(aCode, "end")
+		end
+	end
+
+	return true
+end
+
+
+local function translate_step(parent_node, aCode)
+	local fResult
+
+
+	-- translate the command
+	fResult = translate_step_cmd(parent_node, aCode)
+	if not fResult then
+		print("muhkuh_system error: failed to translate command")
+	else
+		-- translate the response
+		fResult = translate_step_response(parent_node, aCode)
+		if not fResult then
+			print("muhkuh_system error: failed to translate response")
+		else
+			-- translate the interaction
+			fResult = translate_step_interaction(parent_node, aCode)
+			if not fResult then
+				print("muhkuh_system error: failed to translate interaction")
+			end
+		end
+	end
+
+	return fResult
+end
+
+
+local function import_steps(parent_node)
+	local aCode = {}
+	local node
+	local strAllCode
+
+
+	-- start with common code
+	table.insert(aCode, "\t\t\tlocal plugin")
+	table.insert(aCode, "\t\t\tlocal panel")
+	table.insert(aCode, "\t\t\tlocal ulValue")
+	table.insert(aCode, "\t\t\tlocal iResult")
+	table.insert(aCode, "\t\t\tlocal strMsg")
+	table.insert(aCode, "")
+	table.insert(aCode, "")
+	table.insert(aCode, "\t\t\tpanel = tester.getPanel()")
+	table.insert(aCode, "")
+	table.insert(aCode, "\t\t\tplugin = tester.getCommonPlugin()")
+	table.insert(aCode, "\t\t\tif not plugin then")
+	table.insert(aCode, "\t\t\t\tprint(\"no netx selected, test canceled!\")")
+	table.insert(aCode, "\t\t\t\treturn __MUHKUH_TEST_RESULT_CANCEL")
+	table.insert(aCode, "\t\t\tend")
+
+	-- get all parameters
+	node = parent_node:GetChildren()
+	while node~=nil
+	do
+		if node:GetType()==wx.wxXML_ELEMENT_NODE and node:GetName()=="Step" then
+			if not translate_step(node, aCode) then
+				print("muhkuh_system error: failed to translate step")
+				return nil
+			end
+		end
+
+		node = node:GetNext()
+	end
+
+	-- add exit code
+	table.insert(aCode, "\treturn __MUHKUH_TEST_RESULT_OK")
+
+	-- concat all table entries
+	strAllCode = table.concat(aCode, "\n")
+
+	print("muhkuh_system: complete code:")
+	print(strAllCode)
+
+	return strAllCode
+end
+
+
+local function import_old_test(node)
+	local strName
+	local strVersion
+	local strCode
+
+
+	-- get the name
+	strName = node:GetPropVal("name", "")
+	if strName=="" then
+		print("muhkuh_system error: missing name attribute")
+		return nil
+	end
+
+	-- get the version
+	strVersion = node:GetPropVal("version", "")
+	if strVersion=="" then
+		print("muhkuh_system error: missing version attribute")
+		return nil
+	end
+
+	-- import the old steps
+	strCode = import_steps(node)
+	if not strCode then
+		print("muhkuh_system error: failed to import the steps")
+		return nil
+	end
+
+	return { name=strName, version=strVersion, code=strCode, parameter={} }
+end
+
+
 -----------------------------------------------------------------------------
 -- parse_xml
 --   Parse a complete xml file
@@ -186,7 +544,6 @@ end
 --
 local function parse_xml()
 	local rootNode
-	local node
 	local foundNode
 	local test
 	local tests = {}
@@ -194,45 +551,56 @@ local function parse_xml()
 
 	-- look for the first root node named "TestDescription"
 	rootNode = __MUHKUH_TEST_XML:GetRoot()
-	node = rootNode
-	foundNode = nil
-	while node~=nil
-	do
-		if node:GetType()==wx.wxXML_ELEMENT_NODE and node:GetName()=="TestDescription" then
-			foundNode = node
-			break
-		end
-		node = node:GetNext()
-	end
-
-	-- not found (node is nil) ?
+	foundNode = get_matching_node(rootNode, "TestDescription")
+	-- found node?
 	if not foundNode then
 		print("muhkuh_system error: no TestDescription node found")
 		return nil
 	end
 
-	-- parse the test description
+	-- parse the TestDescription Code node
 	test = parse_test(foundNode)
-	if not test then
-		print("muhkuh_system error: failed to get TestDescription code")
-		return nil
-	end
-	table.insert(tests, test)
+	if test then
+		table.insert(tests, test)
 
-	-- get all tests
-	node = rootNode:GetChildren()
-	while node~=nil
-	do
-		if node:GetType()==wx.wxXML_ELEMENT_NODE and node:GetName()=="Test" then
-			test = parse_test(node)
-			if not test then
-				print("muhkuh_system error: failed to read Test node")
-				return nil
+		-- get all tests
+		node = rootNode:GetChildren()
+		while node~=nil
+		do
+			if node:GetType()==wx.wxXML_ELEMENT_NODE and node:GetName()=="Test" then
+				test = parse_test(node)
+				if not test then
+					print("muhkuh_system error: failed to read Test node")
+					return nil
+				end
+
+				table.insert(tests, test)
 			end
-
-			table.insert(tests, test)
+			node = node:GetNext()
 		end
-		node = node:GetNext()
+	else
+		-- failed to get code node, is this a test with old syntax?
+		print("muhkuh_system error: failed to get TestDescription code, trying to import old syntax")
+
+		-- get the startup code for imported tests
+		test = get_imported_startup_code(foundNode)
+		table.insert(tests, test)
+
+		-- get all tests
+		node = rootNode:GetChildren()
+		while node~=nil
+		do
+			if node:GetType()==wx.wxXML_ELEMENT_NODE and node:GetName()=="Test" then
+				test = import_old_test(node)
+				if not test then
+					print("muhkuh_system error: failed to import old Test node")
+					return nil
+				end
+
+				table.insert(tests, test)
+			end
+			node = node:GetNext()
+		end
 	end
 
 	return tests
@@ -256,13 +624,12 @@ function boot_xml()
 	alltests = parse_xml()
 	if not alltests then
 		wx.wxMessageBox("Failed to parse the XML file. Please send the log to the developer.", "Parse Error", wx.wxOK+wx.wxICON_ERROR, wx.NULL)
-		return
+		muhkuh.TestHasFinished()
+	else
+		-- set the global variable
+		_G.__MUHKUH_ALL_TESTS = alltests
+		-- run the main code
+		assert(loadstring(alltests[1].code))()
 	end
-
-
-	-- set the global variable
-	_G.__MUHKUH_ALL_TESTS = alltests
-	-- run the main code
-	assert(loadstring(alltests[1].code))()
 end
 
