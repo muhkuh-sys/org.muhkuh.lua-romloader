@@ -1,4 +1,14 @@
-Changelog
+Changelog for Muhkuh
+
+
+Muhkuh 1.0.235
+
+ * fixed chip detection for netX100
+ * add libusb dll to application directory to allow proper plugin startup before driver installation
+ * move installer misc info from common to project iss file
+ * muhkuh_system: code cleanups and more comments
+ * new auto-import function for old hilscher xml test syntax
+
 
 Muhkuh 1.0.228
 
@@ -109,3 +119,4 @@ Muhkuh 1.0.121
  * added lua secmem module to parse the public areas of Hilscher Security memory
  * added lua mmio module for netx50
  * set default value for lua hexdump function
+
