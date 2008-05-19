@@ -286,7 +286,8 @@ function getCommonPlugin(pattern)
 
 	return m_commonPlugin
 end
- 
+
+
 function closeCommonPlugin()
 	if m_commonPlugin then
 		m_commonPlugin:disconnect()
@@ -335,9 +336,12 @@ function stdWrite(parent, plugin, ulNetxAddress, strData)
 							parent,
 							wx.wxPD_AUTO_HIDE+wx.wxPD_CAN_ABORT+wx.wxPD_ESTIMATED_TIME+wx.wxPD_REMAINING_TIME+wx.wxPD_ELAPSED_TIME)
 
-	plugin:write_image(ulNetxAddress, strData, tester.stdWriteCallback, 0)
-
+	local fOK, strMsg = pcall(plugin.write_image, plugin, ulNetxAddress, strData, tester.stdWriteCallback, 0)
+	if not fOK then
+		print("plugin.write_image:" .. (strMsg or "unknown error"))
+	end
 	stdWriteCloseProgress()
+	return fOK, strMsg
 end
 
 
@@ -374,11 +378,13 @@ function stdRead(parent, plugin, ulNetxAddress, ulLength)
 							m_stdReadMax,
 							parent,
 							wx.wxPD_AUTO_HIDE+wx.wxPD_CAN_ABORT+wx.wxPD_ESTIMATED_TIME+wx.wxPD_REMAINING_TIME+wx.wxPD_ELAPSED_TIME)
-
-	strData = plugin:read_image(ulNetxAddress, ulLength, tester.stdReadCallback, 0)
-
+	--strData = plugin:read_image(ulNetxAddress, ulLength, tester.stdReadCallback, 0)
+	local fOK, strData = pcall(plugin.read_image, plugin, ulNetxAddress, ulLength, tester.stdReadCallback, 0)
+	if not fOK then
+		print("plugin.read_image:" .. (strData or "unknown error"))
+		return nil, fOK, strData
+	end
 	stdReadCloseProgress()
-
 	return strData
 end
 
@@ -466,8 +472,14 @@ function stdCall(parent, plugin, ulNetxAddress, ulParameterR0)
 							wx.wxPD_AUTO_HIDE+wx.wxPD_CAN_ABORT)
 	m_stdCallMessageBuffer = ""
 	m_stdCallLastMessage = ""
-	plugin:call(ulNetxAddress, ulParameterR0, tester.stdCallCallback, 0)
+	
+	--plugin:call(ulNetxAddress, ulParameterR0, tester.stdCallCallback, 0)
+	local fOK, strMsg = pcall(plugin.call, plugin, ulNetxAddress, ulParameterR0, tester.stdCallCallback, 0)
+	if not fOK then
+		print("plugin.call:" .. (strMsg or "unknown error"))
+	end
 	stdCallCloseProgress()
+	return fOK, strMsg
 end
 
 ---------------------------------------
