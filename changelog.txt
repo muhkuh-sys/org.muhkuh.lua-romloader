@@ -1,8 +1,10 @@
 Changelog for Muhkuh
 
 
-Muhkuh 1.0.235
+Muhkuh 1.0.237
 
+ * delete common plugin if the connection could not established
+ * protect tester.stdRead, tester.stdWrite and tester.stdCall with pcall
  * fixed chip detection for netX100
  * add libusb dll to application directory to allow proper plugin startup before driver installation
  * move installer misc info from common to project iss file

@@ -277,6 +277,7 @@ function getCommonPlugin(pattern)
 				print("connected")
 				m_commonPlugin = plugin
 			else
+				plugin:delete()
 				print(strError)
 				print("could not connect")
 				print(debug.traceback())
