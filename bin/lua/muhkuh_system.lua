@@ -331,6 +331,8 @@ local function translate_step_response(parent_node, aCode)
 	local strCanAbort
 	local fCanAbort
 	local strText
+	local strMatch
+	local iMatch
 
 
 	fResult = nil
@@ -369,13 +371,25 @@ local function translate_step_response(parent_node, aCode)
 		end
 
 		strVal = get_node_contents(foundNode)
-		if not strVal:match("00000000") then
+		if not strVal then
+			print("muhkuh_system error: Match node has no data!")
+			return nil
+		end
+
+		strMatch = strVal:match("(%x+)")
+		if not strMatch then
+			print("muhkuh_system error: strange value in Match: " .. strVal)
+			return nil
+		end
+
+		iMatch = tonumber(strMatch, 16)
+		if not iMatch then
 			print("muhkuh_system error: strange value in Match: " .. strVal)
 			return nil
 		end
 
 		-- generate code
-		table.insert(aCode, "if ulValue~=0 then")
+		table.insert(aCode, string.format("if ulValue~=0x%08X then", iMatch))
 		table.insert(aCode, "\treturn __MUHKUH_TEST_RESULT_FAIL")
 		table.insert(aCode, "end")
 	end
@@ -516,8 +530,7 @@ local function import_old_test(node)
 	-- get the version
 	strVersion = node:GetPropVal("version", "")
 	if strVersion=="" then
-		print("muhkuh_system error: missing version attribute")
-		return nil
+		print("muhkuh_system warning: missing version attribute")
 	end
 
 	-- import the old steps
