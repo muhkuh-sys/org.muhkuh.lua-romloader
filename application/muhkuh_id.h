@@ -50,6 +50,10 @@ enum
 	muhkuh_mainFrame_menuTestCancel,
 	muhkuh_mainFrame_menuTestRescan,
 
+	muhkuh_brokenPluginDialog_ButtonDisable,
+	muhkuh_brokenPluginDialog_ButtonIgnore,
+	muhkuh_brokenPluginDialog_ButtonConfig,
+
 	muhkuh_configDialog_TreeBook,
 	muhkuh_configDialog_RadioWelcomeBuiltIn,
 	muhkuh_configDialog_RadioWelcomeFile,

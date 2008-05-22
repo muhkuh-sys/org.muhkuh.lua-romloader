@@ -26,49 +26,58 @@
 
 
 muhkuh_plugin::muhkuh_plugin(void)
- : m_strPluginCfgPath(wxEmptyString)
+ : m_fPluginIsOk(false)
  , m_fPluginIsEnabled(false)
  , m_ptLuaState(NULL)
  , m_ptCfgNode(NULL)
  , m_strInitError(wxEmptyString)
 {
+	// set prefix for messages
+	setMe();
+
 	memset(&m_tPluginIf, 0, sizeof(muhkuh_plugin_interface));
 }
 
 
 muhkuh_plugin::muhkuh_plugin(wxString strPluginCfgPath)
- : m_strPluginCfgPath(wxEmptyString)
+ : m_fPluginIsOk(false)
  , m_fPluginIsEnabled(false)
  , m_ptLuaState(NULL)
  , m_ptCfgNode(NULL)
  , m_strInitError(wxEmptyString)
 {
+	// set prefix for messages
+	setMe();
+
 	memset(&m_tPluginIf, 0, sizeof(muhkuh_plugin_interface));
 
-	/* try to open the plugin */
+	// try to open the plugin
 	Load(strPluginCfgPath);
 }
 
 
 muhkuh_plugin::muhkuh_plugin(const muhkuh_plugin *ptCloneMe)
- : m_strPluginCfgPath(wxEmptyString)
+ : m_fPluginIsOk(false)
  , m_fPluginIsEnabled(false)
  , m_ptLuaState(NULL)
  , m_ptCfgNode(NULL)
  , m_strInitError(wxEmptyString)
 {
+	// set prefix for messages
+	setMe();
+
 	memset(&m_tPluginIf, 0, sizeof(muhkuh_plugin_interface));
 
-	/* copy the enable flag */
+	// copy the enable flag
 	m_fPluginIsEnabled = ptCloneMe->m_fPluginIsEnabled;
 
-	/* try to open the plugin */
+	// try to open the plugin
 	Load(ptCloneMe->m_strPluginCfgPath);
 }
 
 
 muhkuh_plugin::muhkuh_plugin(wxConfigBase *pConfig)
- : m_strPluginCfgPath(wxEmptyString)
+ : m_fPluginIsOk(false)
  , m_fPluginIsEnabled(false)
  , m_ptLuaState(NULL)
  , m_ptCfgNode(NULL)
@@ -78,21 +87,23 @@ muhkuh_plugin::muhkuh_plugin(wxConfigBase *pConfig)
 	wxString strPath;
 
 
+	// set prefix for messages
+	setMe();
+
 	memset(&m_tPluginIf, 0, sizeof(muhkuh_plugin_interface));
 
-	/* try to get the settings */
+	// try to get the settings
 	fReadOk = pConfig->Read(wxT("path"), &strPath);
 	if( fReadOk==false )
 	{
-		showInitError(_("missing path information in the application config file"), wxEmptyString);
-
+		setInitError(_("missing path information in the application config file"), wxEmptyString);
 	}
 	else
 	{
 		fReadOk = pConfig->Read(wxT("enable"), &m_fPluginIsEnabled, false);
 		if( fReadOk==false )
 		{
-			wxLogWarning(_("missing 'enable' entry in application config file, defaulting to 'disabled'"));
+			wxLogWarning(m_strMe + _("missing 'enable' entry in application config file, defaulting to 'disabled'"));
 		}
 		Load(strPath);
 	}
@@ -106,24 +117,24 @@ muhkuh_plugin::~muhkuh_plugin(void)
 }
 
 
-void muhkuh_plugin::showInitError(wxString strMessage, wxString strPath)
+void muhkuh_plugin::setMe(void)
 {
-	wxFileName tFileName;
+	m_strMe.Printf("muhkuh_plugin(%p) :", this);
+}
+
+
+void muhkuh_plugin::setInitError(wxString strMessage, wxString strPath)
+{
 	wxString strMsg;
-	wxString strTitle;
 
 
-	// build caption for the messagebox
-	tFileName.Assign(strPath, wxPATH_NATIVE);
-	strTitle.Printf(_("Plugin '%s' failed to load!"), tFileName.GetName().fn_str());
 	// build errormessage
 	m_strInitError.Printf(_("The plugin '%s' failed to load: %s"), strPath.fn_str(), strMessage.fn_str());
-	// build the message for the dialog
-	strMsg.Printf(_("The plugin '%s' failed to load, it will be disabled: %s"), strPath.fn_str(), strMessage.fn_str());
 	// show message in logfile
-	wxLogError(m_strInitError);
-	// show error in messagebox
-	wxMessageBox(strMsg, strTitle, wxICON_ERROR, NULL);
+	wxLogError(m_strMe + m_strInitError);
+
+	// the plugin state is "not ok"
+	m_fPluginIsOk = false;
 }
 
 
@@ -139,19 +150,20 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 	wxString strSoName;
 	wxString strId;
 	wxFileName cFileName;
+	wxString strXmlCfgPath;
 
 
-	/* expect failure */
+	// expect failure
 	fResult = false;
 
-	/* clear config node */
+	// clear config node
 	m_ptCfgNode = NULL;
 
-	/* open the xml document */
+	// open the xml document
 	fResult = cFile.Open(strXmlPath, wxFile::read);
 	if( fResult!=true )
 	{
-		showInitError(_("failed to open the xml file"), strXmlPath);
+		setInitError(_("failed to open the xml file"), strXmlPath);
 	}
 	else
 	{
@@ -160,11 +172,11 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 		if( fResult!=true )
 		{
 			// failed to load the xml file
-			showInitError(_("failed to load the plugin config from the input stream"), strXmlPath);
+			setInitError(_("failed to load the plugin config from the input stream"), strXmlPath);
 		}
 		else
 		{
-			/* look for root node */
+			// look for root node
 			ptNode = m_xmldoc.GetRoot();
 			while( ptNode!=NULL && ptNode->GetType()!=wxXML_ELEMENT_NODE && ptNode->GetName()!=wxT("MuhkuhPluginConfig") )
 			{
@@ -173,7 +185,7 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 			// found node?
 			if( ptNode==NULL )
 			{
-				showInitError(_("Root node 'MuhkuhPluginConfig' not found. Is this really a Muhkuh plugin config?"), strXmlPath);
+				setInitError(_("Root node 'MuhkuhPluginConfig' not found. Is this really a Muhkuh plugin config?"), strXmlPath);
 				fResult = false;
 			}
 			else
@@ -183,27 +195,27 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 				// get name attribute
 				if( ptNode->GetPropVal(wxT("name"), &strCfgName)!=true )
 				{
-					showInitError(_("Root node 'MuhkuhPluginConfig' has no 'name' attribute!"), strXmlPath);
+					setInitError(_("Root node 'MuhkuhPluginConfig' has no 'name' attribute!"), strXmlPath);
 				}
 				else if( strCfgName.IsEmpty()!=false )
 				{
-					showInitError(_("The 'name' attribute is empty!"), strXmlPath);
+					setInitError(_("The 'name' attribute is empty!"), strXmlPath);
 				}
 				else if( ptNode->GetPropVal(wxT("so"), &strSoName)!=true )
 				{
-					showInitError(_("Root node 'MuhkuhPluginConfig' has no 'so' attribute!"), strXmlPath);
+					setInitError(_("Root node 'MuhkuhPluginConfig' has no 'so' attribute!"), strXmlPath);
 				}
 				else if( strSoName.IsEmpty()!=false )
 				{
-					showInitError(_("The 'so' attribute is empty!"), strXmlPath);
+					setInitError(_("The 'so' attribute is empty!"), strXmlPath);
 				}
 				else if( ptNode->GetPropVal(wxT("id"), &strId)!=true )
 				{
-					showInitError(_("Root node 'MuhkuhPluginConfig' has no 'id' attribute!"), strXmlPath);
+					setInitError(_("Root node 'MuhkuhPluginConfig' has no 'id' attribute!"), strXmlPath);
 				}
 				else if( strId.IsEmpty()!=false )
 				{
-					showInitError(_("The 'id' attribute is empty!"), strXmlPath);
+					setInitError(_("The 'id' attribute is empty!"), strXmlPath);
 				}
 				else
 				{
@@ -216,7 +228,7 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 					// found node?
 					if( ptCfgNode==NULL )
 					{
-						showInitError(_("Node 'Cfg' not found."), strXmlPath);
+						setInitError(_("Node 'Cfg' not found."), strXmlPath);
 					}
 					else
 					{
@@ -225,7 +237,8 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 						m_ptCfgNode = ptCfgNode;
 						// get the directory of the xml file
 						cFileName.Assign(strXmlPath);
-						m_strXmlCfgPath = cFileName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR, wxPATH_NATIVE);
+						// save path to xml config to build a relative path to the dll later
+						strXmlCfgPath = cFileName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR, wxPATH_NATIVE);
 						// assign the so name
 						cFileName.Assign(strSoName);
 						// if the so has no extension, set the standard one for the platform
@@ -235,7 +248,7 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 						}
 						if( cFileName.IsRelative()==true )
 						{
-							cFileName.Normalize(wxPATH_NORM_ALL, m_strXmlCfgPath, wxPATH_NATIVE);
+							cFileName.Normalize(wxPATH_NORM_ALL, strXmlCfgPath, wxPATH_NATIVE);
 						}
 						m_strSoName = cFileName.GetFullPath(wxPATH_NATIVE);
 						m_strPluginId = strId;
@@ -245,7 +258,7 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 			}
 		}
 
-		/* delete xml input stream */
+		// delete xml input stream
 		delete ptFileInputStream;
 	}
 
@@ -268,17 +281,17 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 	const muhkuh_plugin_desc *ptDesc;
 
 
-	wxLogMessage(_("loading plugin '%s'"), strPluginCfgPath.fn_str());
+	wxLogMessage(m_strMe + _("loading plugin '%s'"), strPluginCfgPath.fn_str());
 
-	/* do not open a plugin twice */
+	// do not open a plugin twice
 	if( m_tPluginIf.tHandle!=NULL )
 	{
-		wxLogError(_("...plugin is already open"));
+		wxLogError(m_strMe + _("...plugin is already open"));
 		fResult = false;
 	}
 	else
 	{
-		/* plugin is not open yet, accept new name */
+		// plugin is not open yet, accept new name
 		m_strPluginCfgPath = strPluginCfgPath;
 
 		// init plugin description with defaults
@@ -289,22 +302,22 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 		tPluginDesc.tVersion.uiVersionMinor = 0;
 		tPluginDesc.tVersion.uiVersionSub = 0;
 
-		/* open plugin xml config */
+		// open plugin xml config
 		fResult = openXml(strPluginCfgPath);
 		if( fResult!=true )
 		{
-			// NOTE: do not use 'showInitError' here. this errormessage is just a summary. 'openXml' provided the details already.
-			wxLogError(_("failed to read plugin xml config"));
+			// NOTE: do not use 'setInitError' here. this errormessage is just a summary. 'openXml' provided the details already.
+			wxLogError(m_strMe + _("failed to read plugin xml config"));
 		}
 		else
 		{
-			/* try to open the plugin */
+			// try to open the plugin
 
 			fResult = open(m_strSoName);
 			if( fResult!=true )
 			{
-				// NOTE: do not use 'showInitError' here. this errormessage is just a summary. 'open' provided the details already.
-				wxLogError(_("...failed to open the plugin "));
+				// NOTE: do not use 'setInitError' here. this errormessage is just a summary. 'open' provided the details already.
+				wxLogError(m_strMe + _("...failed to open the plugin "));
 			}
 			else
 			{
@@ -312,22 +325,22 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 				iResult = fn_init(ptLogTarget, m_ptCfgNode, m_strPluginId);
 				if( iResult!=0 )
 				{
-					strMsg.Printf(_("...plugin init failed with errorcode %d"), iResult);
-					showInitError(strMsg, strPluginCfgPath);
+					strMsg.Printf(_("Plugin init failed with errorcode %d"), iResult);
+					setInitError(strMsg, strPluginCfgPath);
 					fResult = false;
 				}
 				else
 				{
-					/* get the description */
+					// get the description
 					ptDesc = m_tPluginIf.uSym.tFn.fn_get_desc();
 					if( ptDesc==NULL )
 					{
-						showInitError(_("Failed to get plugin description"), strPluginCfgPath);
+						setInitError(_("Failed to get plugin description"), strPluginCfgPath);
 						fResult = false;
 					}
 					else
 					{
-						/* copy the structure elements */
+						// copy the structure elements
 						if( ptDesc->strPluginName.IsEmpty()!=false )
 						{
 							tPluginDesc.strPluginName = _("missing name");
@@ -338,13 +351,16 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 						}
 						tPluginDesc.strPluginId = ptDesc->strPluginId;
 						tPluginDesc.tVersion = ptDesc->tVersion;
+
+						// plugin is ready to use now
+						m_fPluginIsOk = true;
 					}
 				}
 
 				if( fResult!=true )
 				{
-					/* close the plugin */
-					wxLogMessage(_("closing plugin '%s'"), strPluginCfgPath.fn_str());
+					// close the plugin
+					wxLogMessage(m_strMe + _("closing plugin '%s'"), strPluginCfgPath.fn_str());
 					close();
 				}
 			}
@@ -355,9 +371,9 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 }
 
 
-bool muhkuh_plugin::IsOk(void)
+bool muhkuh_plugin::IsOk(void) const
 {
-	return (m_tPluginIf.tHandle!=NULL);
+	return m_fPluginIsOk;
 }
 
 
@@ -389,16 +405,22 @@ void muhkuh_plugin::write_config(wxConfigBase *pConfig)
 int muhkuh_plugin::fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId)
 {
 	int iResult;
+	wxString strMsg;
 
 
-	/* check for loaded plugin */
+	// check for loaded plugin
 	if( m_tPluginIf.tHandle!=NULL && m_tPluginIf.uSym.tFn.fn_init!=NULL )
 	{
 		iResult = m_tPluginIf.uSym.tFn.fn_init(ptLogTarget, ptCfgNode, strPluginId);
+		if( iResult!=0 )
+		{
+			strMsg.Printf(_("failed to init plugin, fn_init returned: %d"), iResult);
+			setInitError(strMsg, m_strCfgName);
+		}
 	}
 	else
 	{
-		/* plugin is not open, return some general error */
+		// plugin is not open, return some general error
 		iResult = -1;
 	}
 
@@ -409,16 +431,22 @@ int muhkuh_plugin::fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &s
 int muhkuh_plugin::fn_init_lua(wxLuaState *ptLuaState)
 {
 	int iResult;
+	wxString strMsg;
 
 
-	/* check for loaded plugin */
+	// check for loaded plugin
 	if( m_tPluginIf.tHandle!=NULL && m_tPluginIf.uSym.tFn.fn_init_lua!=NULL )
 	{
 		iResult = m_tPluginIf.uSym.tFn.fn_init_lua(ptLuaState);
+		if( iResult!=0 )
+		{
+			strMsg.Printf(_("failed to init plugin lua bindings, fn_init_lua returned: %d"), iResult);
+			setInitError(strMsg, m_strCfgName);
+		}
 	}
 	else
 	{
-		/* plugin is not open, return some general error */
+		// plugin is not open, return some general error
 		iResult = -1;
 	}
 
@@ -431,14 +459,14 @@ int muhkuh_plugin::fn_leave(void)
 	int iResult;
 
 
-	/* check for loaded plugin */
+	// check for loaded plugin
 	if( m_tPluginIf.tHandle!=NULL && m_tPluginIf.uSym.tFn.fn_leave!=NULL )
 	{
 		iResult = m_tPluginIf.uSym.tFn.fn_leave();
 	}
 	else
 	{
-		/* plugin is not open, return some general error */
+		// plugin is not open, return some general error
 		iResult = -1;
 	}
 
@@ -446,7 +474,7 @@ int muhkuh_plugin::fn_leave(void)
 }
 
 
-const muhkuh_plugin_desc *muhkuh_plugin::fn_get_desc(void)
+const muhkuh_plugin_desc *muhkuh_plugin::fn_get_desc(void) const
 {
 	return &tPluginDesc;
 }
@@ -457,14 +485,14 @@ int muhkuh_plugin::fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pv
 	int iResult;
 
 
-	/* check for loaded plugin */
+	// check for loaded plugin
 	if( m_fPluginIsEnabled==true && m_tPluginIf.tHandle!=NULL && m_tPluginIf.uSym.tFn.fn_detect_interfaces!=NULL )
 	{
 		iResult = m_tPluginIf.uSym.tFn.fn_detect_interfaces(pvInterfaceList);
 	}
 	else
 	{
-		/* plugin is not open, return some general error */
+		// plugin is not open, return some general error
 		iResult = -1;
 	}
 
@@ -509,9 +537,9 @@ bool muhkuh_plugin::open(wxString strPluginPath)
 	wxDllType tDllHandle;
 
 
-	/* try to open a plugin */
+	// try to open a plugin
 
-	/* init result structure */
+	// init result structure
 	tDllHandle = NULL;
 
 	fileName.Assign(strPluginPath, wxPATH_NATIVE);
@@ -520,62 +548,52 @@ bool muhkuh_plugin::open(wxString strPluginPath)
 	if( fileName.IsOk()==false )
 	{
 		// path is not correct
-		showInitError(_("failed to set path, IsOK returned false"), strPluginPath);
+		setInitError(_("failed to set path, IsOK returned false"), strPluginPath);
 	}
 	else
 	{
-// this does not work with win98
-//		// does the path point to a directory?
-//		if( fileName.IsFileExecutable()==false )
-//		{
-//			// no, the path does not point to a directory
-//			wxLogError(wxT("the path does not point to an executable file"));
-//		}
-//		else
-//		{
-			strFullPath = fileName.GetFullPath();
-			fDllLoaded = dll.Load(strFullPath, wxDL_DEFAULT);
-			if( fDllLoaded==false )
+		strFullPath = fileName.GetFullPath();
+		fDllLoaded = dll.Load(strFullPath, wxDL_DEFAULT);
+		if( fDllLoaded==false )
+		{
+			strMsg.Printf(_("failed to load the shared object from '%s'"), strFullPath.fn_str());
+			setInitError(strMsg, strPluginPath);
+		}
+		else
+		{
+			// loop over all symbols in the list and enter them in the struct
+			ptCnt = atPluginSymbolOffsets;
+			ptEnd = ptCnt + (sizeof(atPluginSymbolOffsets)/sizeof(atPluginSymbolOffsets[0]));
+			pvPtr = NULL;
+			while( ptCnt<ptEnd )
 			{
-				strMsg.Printf(_("failed to load the shared object from '%s'"), strFullPath.fn_str());
-				showInitError(strMsg, strPluginPath);
+				pvPtr = dll.GetSymbol(ptCnt->pcSymbolName);
+				if( pvPtr==NULL )
+				{
+					strMsg.Printf(_("failed to get symbol '%s' from shared object '%s'"), ptCnt->pcSymbolName, strFullPath.fn_str());
+					setInitError(strMsg, strPluginPath);
+					break;
+				}
+				m_tPluginIf.uSym.apv[ptCnt->sizOffset] = pvPtr;
+
+				// next symbol
+				++ptCnt;
+			};
+
+			// check for error (pvPtr is NULL)
+			if( pvPtr!=NULL )
+			{
+				// pvPtr is not NULL, this means all symbols were loaded
+
+				// get handle for the dll
+				tDllHandle = dll.Detach();
 			}
 			else
 			{
-				/* loop over all symbols in the list and enter them in the struct */
-				ptCnt = atPluginSymbolOffsets;
-				ptEnd = ptCnt + (sizeof(atPluginSymbolOffsets)/sizeof(atPluginSymbolOffsets[0]));
-				pvPtr = NULL;
-				while( ptCnt<ptEnd )
-				{
-					pvPtr = dll.GetSymbol(ptCnt->pcSymbolName);
-					if( pvPtr==NULL )
-					{
-						strMsg.Printf(_("failed to get symbol '%s' from shared object '%s'"), ptCnt->pcSymbolName, strFullPath.fn_str());
-						showInitError(strMsg, strPluginPath);
-						break;
-					}
-					m_tPluginIf.uSym.apv[ptCnt->sizOffset] = pvPtr;
-
-					/* next symbol */
-					++ptCnt;
-				};
-
-				/* check for error (pvPtr is NULL) */
-				if( pvPtr!=NULL )
-				{
-					/* pvPtr is not NULL, this means all symbols were loaded */
-
-					/* get handle for the dll */
-					tDllHandle = dll.Detach();
-				}
-				else
-				{
-					/* unload the dll */
-					dll.Unload();
-				}
+				// unload the dll
+				dll.Unload();
 			}
-//		}
+		}
 	}
 
 	m_tPluginIf.tHandle = tDllHandle;

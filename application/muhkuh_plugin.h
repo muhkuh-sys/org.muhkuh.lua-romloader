@@ -21,7 +21,7 @@
 
 #include <vector>
 
-#include <wx/wx.h>
+#include <wx/defs.h>
 #include <wx/confbase.h>
 #include <wx/dynlib.h>
 #include <wx/filename.h>
@@ -45,8 +45,7 @@ public:
 
 	wxString GetConfigName(void) const;
 
-	bool Load(wxString strPluginCfgPath);
-	bool IsOk(void);
+	bool IsOk(void) const;
 	wxString GetInitError(void) const;
 
 	void SetEnable(bool fPluginIsEnabled);
@@ -54,8 +53,10 @@ public:
 
 	void write_config(wxConfigBase *pConfig);
 
+	bool Load(wxString strPluginCfgPath);
+
 	int fn_init_lua(wxLuaState *ptLuaState);
-	const muhkuh_plugin_desc *fn_get_desc(void);
+	const muhkuh_plugin_desc *fn_get_desc(void) const;
 	int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList);
 
 	typedef struct
@@ -65,6 +66,9 @@ public:
 	} muhkuh_plugin_symbol_offset_t;
 
 private:
+	// set prefix for messages
+	void setMe(void);
+
 	bool openXml(wxString strXmlPath);
 	bool open(wxString strPluginPath);
 	void close(void);
@@ -72,27 +76,39 @@ private:
 	int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId);
 	int fn_leave(void);
 
-	void showInitError(wxString strMessage, wxString strPath);
+	void setInitError(wxString strMessage, wxString strPath);
 
 
+	// list of symbols for the plugin interface
 	static const muhkuh_plugin_symbol_offset_t atPluginSymbolOffsets[];
 
 	muhkuh_plugin_desc tPluginDesc;
 
-	wxString m_strPluginCfgPath;
 	bool m_fPluginIsEnabled;
 	muhkuh_plugin_interface m_tPluginIf;
 
 	wxLuaState *m_ptLuaState;
 
+	// full path to the plugins xml configuration
+	wxString m_strPluginCfgPath;
+	// the xml configuration
 	wxXmlDocument m_xmldoc;
+	// plugin name from the xml config (defaults to m_strPluginCfgPath)
 	wxString m_strCfgName;
+	// config node for the plugin settings (here the plugin reads/writes the settings)
 	wxXmlNode *m_ptCfgNode;
+	// complete path to the plugin dll
 	wxString m_strSoName;
+	// plugin id from the config xml
 	wxString m_strPluginId;
-	wxString m_strXmlCfgPath;
 
+	// plugin state
+	bool m_fPluginIsOk;
+	// init error
 	wxString m_strInitError;
+
+	// prefix for messages
+	wxString m_strMe;
 };
 
 

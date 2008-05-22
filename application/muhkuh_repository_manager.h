@@ -21,7 +21,7 @@
 
 #include <vector>
 
-#include <wx/wx.h>
+#include <wx/defs.h>
 #include <wx/dynlib.h>
 #include <wx/filename.h>
 
@@ -49,13 +49,12 @@ public:
 
 	size_t GetRepositoryCount(void) const;
 	wxString GetStringRepresentation(size_t sizIdx) const;
-	wxBitmap GetBitmap(size_t sizIdx) const;
-	int GetImageListIndex(size_t sizIdx) const;
+	muhkuh_repository::REPOSITORY_TYP_E GetTyp(size_t sizIdx) const;
 
 	void read_config(wxConfigBase *pConfig);
 	void write_config(wxConfigBase *pConfig);
 
-	bool createTestlist(size_t sizIdx, wxProgressDialog *ptScannerProgress);
+	bool createTestlist(size_t sizIdx, pfnTestlistProgress pfnCallback, void *pvCallbackUser);
 	size_t getTestlistCount(size_t sizIdx) const;
 	wxString getTestlistPrintUrl(size_t sizRepositoryIdx, size_t sizTestIdx) const;
 	wxString getTestlistBaseUrl(size_t sizRepositoryIdx, size_t sizTestIdx) const;

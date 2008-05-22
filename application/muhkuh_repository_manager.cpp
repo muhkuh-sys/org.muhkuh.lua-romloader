@@ -19,14 +19,11 @@
  ***************************************************************************/
 
 
-//#include <wx/dir.h>
-//#include <wx/filename.h>
-#include <wx/filesys.h>
-//#include <wx/stdpaths.h>
-//#include <wx/txtstrm.h>
-//#include <wx/url.h>
-
 #include "muhkuh_repository_manager.h"
+
+#include <wx/filesys.h>
+#include <wx/log.h>
+
 
 
 muhkuh_repository_manager::muhkuh_repository_manager(void)
@@ -216,52 +213,26 @@ wxString muhkuh_repository_manager::GetStringRepresentation(size_t sizIdx) const
 }
 
 
-wxBitmap muhkuh_repository_manager::GetBitmap(size_t sizIdx) const
+muhkuh_repository::REPOSITORY_TYP_E muhkuh_repository_manager::GetTyp(size_t sizIdx) const
 {
 	std::vector<muhkuh_repository*>::const_iterator iter;
 	muhkuh_repository *ptRepository;
-	wxBitmap tBitmap;
-
+	muhkuh_repository::REPOSITORY_TYP_E tTyp = muhkuh_repository::REPOSITORY_TYP_UNDEFINED;
 
 	/* check input parameter */
 	if( sizIdx>=m_ptRepositories->size() )
 	{
-		wxLogError(_("muhkuh_repository_manager::GetBitmap : idx %d is out of range, ignoring request"), sizIdx);
+		wxLogError(_("muhkuh_repository_manager::GetStringRepresentation : idx %d is out of range, ignoring request"), sizIdx);
 	}
 	else
 	{
 		iter = m_ptRepositories->begin();
 		iter += sizIdx;
 		ptRepository = *iter;
-		tBitmap = ptRepository->GetBitmap();
+		tTyp = ptRepository->GetTyp();
 	}
 
-	return tBitmap;
-}
-
-
-int muhkuh_repository_manager::GetImageListIndex(size_t sizIdx) const
-{
-	std::vector<muhkuh_repository*>::const_iterator iter;
-	muhkuh_repository *ptRepository;
-	int iResult;
-
-
-	/* check input parameter */
-	if( sizIdx>=m_ptRepositories->size() )
-	{
-		wxLogError(_("muhkuh_repository_manager::GetBitmap : idx %d is out of range, ignoring request"), sizIdx);
-		iResult = 0;
-	}
-	else
-	{
-		iter = m_ptRepositories->begin();
-		iter += sizIdx;
-		ptRepository = *iter;
-		iResult = ptRepository->GetImageListIndex();
-	}
-
-	return iResult;
+	return tTyp;
 }
 
 
@@ -365,7 +336,7 @@ void muhkuh_repository_manager::clearAllRepositories(void)
 }
 
 
-bool muhkuh_repository_manager::createTestlist(size_t sizIdx, wxProgressDialog *ptScannerProgress)
+bool muhkuh_repository_manager::createTestlist(size_t sizIdx, pfnTestlistProgress pfnCallback, void *pvCallbackUser)
 {
 	bool fResult;
 	muhkuh_repository *ptRepoCfg;
@@ -383,7 +354,7 @@ bool muhkuh_repository_manager::createTestlist(size_t sizIdx, wxProgressDialog *
 		ptRepoCfg = *iter;
 
 		// call the scan routine
-		fResult = ptRepoCfg->createTestlist(ptScannerProgress);
+		fResult = ptRepoCfg->createTestlist(pfnCallback, pvCallbackUser);
 	}
 
 	return fResult;

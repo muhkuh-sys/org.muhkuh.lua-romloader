@@ -119,6 +119,9 @@ public:
 	static wxString htmlTag_lua(const wxString &strLuaCode);
 	wxString local_htmlTag_lua(const wxString &strLuaCode);
 
+	static bool repositoryScannerCallback(void *pvUser, wxString strMessage, int iProgressPos, int iProgressMax);
+	static const int m_iRepositoryProgressMax = 10000;
+
 	// main frame status
 	typedef enum {
 		muhkuh_mainFrame_state_scanning = 0,
@@ -165,6 +168,8 @@ private:
 	wxString loadHtmlString(wxString strFileUrl);
 	void reloadWelcomePage(void);
 	void reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml);
+
+	bool check_plugins(void);
 
 	// main frame controls
 	wxAuiManager m_auiMgr;

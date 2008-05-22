@@ -21,15 +21,16 @@
 
 #include <vector>
 
-#include <wx/wx.h>
-#include <wx/artprov.h>
+#include <wx/defs.h>
 #include <wx/fileconf.h>
-#include <wx/imaglist.h>
-#include <wx/progdlg.h>
 
 
 #ifndef __MUHKUH_REPOSITORY_H__
 #define __MUHKUH_REPOSITORY_H__
+
+
+// progress callback for testlist creation
+typedef bool (*pfnTestlistProgress)(void *pvUser, wxString strMessage, int iProgressPos, int iProgressMax);
 
 
 class muhkuh_repository
@@ -63,25 +64,20 @@ public:
 	bool GetSelected(void) const;
 
 	wxString GetStringRepresentation(void) const;
-	wxBitmap GetBitmap(void) const;
-	static wxBitmap GetBitmap(REPOSITORY_TYP_E eTyp);
-	static wxImageList *CreateNewImageList(void);
-	static int GetImageListIndex(REPOSITORY_TYP_E eTyp);
-	int GetImageListIndex(void) const;
 
 	static muhkuh_repository *CreateFromConfig(wxConfigBase *pConfig, int iIndex);
 	void write_config(wxConfigBase *pConfig) const;
 
-	bool createTestlist(wxProgressDialog *ptScannerProgress);
+	bool createTestlist(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
 	size_t getTestlistCount(void) const;
 	wxString getTestlistPrintUrl(size_t sizTestIdx) const;
 	wxString getTestlistBaseUrl(size_t sizTestIdx) const;
 	wxString getTestlistXmlUrl(size_t sizTestIdx) const;
 
 private:
-	bool createTestlist_local(wxProgressDialog *ptScannerProgress);
-	bool createTestlist_url(wxProgressDialog *ptScannerProgress);
-	bool createTestlist_singlexml(wxProgressDialog *ptScannerProgress);
+	bool createTestlist_local(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
+	bool createTestlist_url(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
+	bool createTestlist_singlexml(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
 
 	wxString m_strName;			// user defined name
 	REPOSITORY_TYP_E m_eTyp;		// typ of this repository

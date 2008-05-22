@@ -347,7 +347,16 @@ wxPanel *muhkuh_configDialog::createControls_repository(wxWindow *ptParent)
 
 
 	// create the imagelist
-	ptRepoImageList = muhkuh_repository::CreateNewImageList();
+	// NOTE: this must match the image selection in 'get_imagelist_index'
+	ptRepoImageList = new wxImageList(16, 16, true, 4);
+	// add 'undefined' bitmap
+	ptRepoImageList->Add(icon_famfamfam_silk_exclamation);
+	// add 'dirscan' bitmap
+	ptRepoImageList->Add(icon_famfamfam_silk_folder_table);
+	// add 'filelist' bitmap
+	ptRepoImageList->Add(icon_famfamfam_silk_database);
+	// add 'singlexml' bitmap
+	ptRepoImageList->Add(icon_famfamfam_silk_script);
 
 	// create the repository page
 	ptRepositoryPanel = new wxPanel(ptParent);
@@ -552,6 +561,8 @@ void muhkuh_configDialog::OnEditRepositoryButton(wxCommandEvent &WXUNUSED(event)
 	long lRepositoryIdx;
 	muhkuh_config_reposEntryDialog *ptEntryDialog;
 	muhkuh_repository *ptRepos;
+	int iItemImage;
+	muhkuh_repository::REPOSITORY_TYP_E eTyp;
 
 
 	// get the selected item
@@ -573,7 +584,8 @@ void muhkuh_configDialog::OnEditRepositoryButton(wxCommandEvent &WXUNUSED(event)
 			{
 				// update the item
 				m_repositoryTree->SetItemText(tItem, ptRepos->GetStringRepresentation());
-				m_repositoryTree->SetItemImage(tItem, ptRepos->GetImageListIndex());
+				// get bitmap for the entry
+				m_repositoryTree->SetItemImage(tItem, iItemImage);
 			}
 			ptEntryDialog->Destroy();
 		}
@@ -771,7 +783,7 @@ void muhkuh_configDialog::SetPluginButtons(wxTreeItemId tItem)
 			fPluginIsEnabled = m_ptPluginManager->GetEnable(lPluginIdx);
 
 			fPluginCanBeEnabled = fPluginSelected && fPluginIsOk && !fPluginIsEnabled;
-			fPluginCanBeDisabled = fPluginSelected && fPluginIsOk && fPluginIsEnabled;
+			fPluginCanBeDisabled = fPluginSelected && fPluginIsEnabled;
 		}
 	}
 
@@ -787,13 +799,15 @@ void muhkuh_configDialog::ShowNewRepository(long lIdx)
 	treeItemIdData *ptData;
 	int iImageIdx;
 	wxString strName;
+	muhkuh_repository::REPOSITORY_TYP_E eTyp;
 
 
 	// append all plugins to the root item
 	tRootItem = m_repositoryTree->GetRootItem();
 
 	strName = m_ptRepositoryManager->GetStringRepresentation(lIdx);
-	iImageIdx = m_ptRepositoryManager->GetImageListIndex(lIdx);
+	eTyp = m_ptRepositoryManager->GetTyp(lIdx);
+	iImageIdx = get_imagelist_index(eTyp);
 	ptData = new treeItemIdData(lIdx);
 
 	m_repositoryTree->AppendItem(tRootItem, strName, iImageIdx, -1, ptData);
@@ -1300,3 +1314,28 @@ void muhkuh_configDialog::switchAutostartElements(bool fEnabled)
 	m_ptButtonBrowseAutostartTest->Enable(fEnabled);
 }
 
+
+int muhkuh_configDialog::get_imagelist_index(muhkuh_repository::REPOSITORY_TYP_E eTyp)
+{
+	int iItemImage;
+
+
+	// NOTE: this must match the imagelist init in 'createControls_repository'
+	switch( eTyp )
+	{
+	case muhkuh_repository::REPOSITORY_TYP_DIRSCAN:
+		iItemImage = 1;
+		break;
+	case muhkuh_repository::REPOSITORY_TYP_FILELIST:
+		iItemImage = 2;
+		break;
+	case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
+		iItemImage = 3;
+		break;
+	default:
+		iItemImage = 0;
+		break;
+	}
+
+	return iItemImage;
+}

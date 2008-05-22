@@ -21,7 +21,7 @@
 
 #include <vector>
 
-#include <wx/wx.h>
+#include <wx/defs.h>
 #include <wx/dynlib.h>
 #include <wx/filename.h>
 
@@ -56,9 +56,9 @@ public:
 	void read_config(wxConfigBase *pConfig);
 	void write_config(wxConfigBase *pConfig);
 
-	int initLuaBindings(wxLuaState *ptLuaState);
+	bool initLuaBindings(wxLuaState *ptLuaState);
 
-	bool ScanPlugins(wxString strPattern);
+	void ScanPlugins(wxString strPattern, wxLuaState *ptLuaState);
 	muhkuh_plugin_instance *GetNextPlugin(void);
 	void ClearAllMatches(void);
 
@@ -69,12 +69,12 @@ public:
 	} muhkuh_plugin_symbol_offset_t;
 
 private:
+	// set prefix for messages
+	void setMe(void);
+
 	bool open_plugin(wxString strPluginName, muhkuh_plugin_interface *ptPluginIf);
 	void closeAllPlugins(void);
 	void close_plugin(muhkuh_plugin_interface *ptPluginIf);
-
-	void disableBrokenPlugin(muhkuh_plugin *ptPlugin, wxString strPluginName, wxString strError);
-
 
 	static const muhkuh_plugin_symbol_offset_t atPluginSymbolOffsets[6];
 
@@ -85,6 +85,9 @@ private:
 	std::vector<muhkuh_plugin_instance*> *m_ptMatchingPlugins;
 	// iterator for instance scan
 	std::vector<muhkuh_plugin_instance*>::const_iterator m_cMatchingPluginsIter;
+
+	// prefix for messages
+	wxString m_strMe;
 };
 
 

@@ -25,6 +25,7 @@
 #include "growbuffer.h"
 #include "muhkuh_version.h"
 #include "muhkuh_aboutDialog.h"
+#include "muhkuh_brokenPluginDialog.h"
 #include "muhkuh_lua_interface.h"
 #include "muhkuh_mainFrame.h"
 #include "muhkuh_configDialog.h"
@@ -228,8 +229,6 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	m_eInitState  = MAINFRAME_INIT_STATE_CONFIGURED;
 
 	InitDialog();
-
-	initLuaState();
 
 	g_ptMainFrame = this;
 }
@@ -847,6 +846,8 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 			// NOTE: this must be the first statement in this case, or it will be executed with every idle event
 			m_eInitState = MAINFRAME_INIT_STATE_SCANNED;
 
+			initLuaState();
+
 			// show welcome and details page
 			reloadWelcomePage();
 			reloadDetailsPage(NULL);
@@ -868,6 +869,10 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 				tHtmlLinkEvent.SetEventObject(this);
 				m_fRunningTestIsAutostart = true;
 				GetEventHandler()->ProcessEvent(tHtmlLinkEvent);
+			}
+			else
+			{
+				check_plugins();
 			}
 		}
 
@@ -1083,7 +1088,6 @@ void muhkuh_mainFrame::OnTestExecute(wxCommandEvent& WXUNUSED(event))
 bool muhkuh_mainFrame::initLuaState(void)
 {
 	bool fResult;
-	int iResult;
 	wxLuaBindingList *ptBindings;
 
 
@@ -1145,11 +1149,10 @@ bool muhkuh_mainFrame::initLuaState(void)
 			else
 			{
 				// init the lua bindings for all plugins
-				iResult = m_ptPluginManager->initLuaBindings(m_ptLuaState);
-				if( iResult!=0 )
+				fResult = m_ptPluginManager->initLuaBindings(m_ptLuaState);
+				if( fResult!=true )
 				{
 					wxLogError(_("Failed to init plugin bindings"));
-					fResult = false;
 				}
 				else
 				{
@@ -1222,6 +1225,64 @@ void muhkuh_mainFrame::clearLuaState(void)
 }
 
 
+bool muhkuh_mainFrame::check_plugins(void)
+{
+	std::vector<unsigned long> v_plugins;
+	std::vector<unsigned long>::const_iterator v_iter;
+	muhkuh_brokenPluginDialog *ptBrokenPluginDlg;
+	unsigned long ulCnt;
+	unsigned long ulMax;
+	bool fPluginOk;
+	int iResult;
+	bool fContinueOperation;
+
+
+	// default is to continue a pending operation
+	fContinueOperation = true;
+
+	if( m_ptPluginManager!=NULL )
+	{
+		// loop over all plugins
+		ulCnt = 0;
+		ulMax = m_ptPluginManager->getPluginCount();
+		while( ulCnt<ulMax )
+		{
+			if( m_ptPluginManager->GetEnable(ulCnt) )
+			{
+				// get the plugin status
+				fPluginOk = m_ptPluginManager->IsOk(ulCnt);
+				if( fPluginOk!=true )
+				{
+					v_plugins.push_back(ulCnt);
+				}
+			}
+
+			// next plugin
+			++ulCnt;
+		}
+	}
+
+	// found any broken plugins?
+	if( v_plugins.size()!=0 )
+	{
+		// yes -> prompt the user what to do
+		ptBrokenPluginDlg = new muhkuh_brokenPluginDialog(this, &v_plugins, m_ptPluginManager);
+		iResult = ptBrokenPluginDlg->ShowModal();
+		if( iResult==muhkuh_brokenPluginDialog_ButtonConfig )
+		{
+			// show config menu
+			wxCommandEvent exec_event(wxEVT_COMMAND_MENU_SELECTED, wxID_PREFERENCES);
+			wxPostEvent( this, exec_event );
+
+			// the config menu is shown, don't continue an operation like "start test"
+			fContinueOperation = false;
+		}
+	}
+
+	return fContinueOperation;
+}
+
+
 void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex)
 {
 	bool fResult;
@@ -1233,47 +1294,52 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	int iLineNr;
 
 
-	m_strRunningTestName = ptTestData->testDescription_getName();
-	m_sizRunningTest_RepositoryIdx = ptTestData->getRepositoryIndex();
-	m_sizRunningTest_TestIdx = ptTestData->getTestIndex();
-
-	strDebug.Printf(wxT("execute test '") + m_strRunningTestName + wxT("', index %d"), uiIndex);
-	wxLogMessage(strDebug);
-
-	if( m_ptLuaState!=NULL && m_ptLuaState->Ok()==true )
+	// check all plugins for state ok before executing the test
+	fResult = check_plugins();
+	if( fResult==true )
 	{
-		// create a new panel for the test
-		m_testPanel = new wxPanel(this);
-		m_notebook->AddPage(m_testPanel, m_strRunningTestName, true);
+		m_strRunningTestName = ptTestData->testDescription_getName();
+		m_sizRunningTest_RepositoryIdx = ptTestData->getRepositoryIndex();
+		m_sizRunningTest_TestIdx = ptTestData->getTestIndex();
 
-		// set some global vars
+		strDebug.Printf(wxT("execute test '") + m_strRunningTestName + wxT("', index %d"), uiIndex);
+		wxLogMessage(strDebug);
 
-		// set the xml document
-		m_ptLuaState->wxluaT_PushUserDataType(ptTestData->getXmlDocument(), wxluatype_wxXmlDocument, false);
-		m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_XML"));
-		// set the selected test index
-		m_ptLuaState->lua_PushNumber(uiIndex);
-		m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_INDEX"));
-		// set the panel
-		m_ptLuaState->wxluaT_PushUserDataType(m_testPanel, wxluatype_wxPanel, false);
-		m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_PANEL"));
-
-		// set state to 'testing'
-		// NOTE: this must be done before the call to 'RunString', or the state will not change before the first idle event
-		setState(muhkuh_mainFrame_state_testing);
-
-		// set the log marker
-		luaSetLogMarker();
-
-		iGetTop = m_ptLuaState->lua_GetTop();
-		iResult = m_ptLuaState->RunString(m_strLuaStartupCode, wxT("system boot"));
-		if( iResult!=0 )
+		if( m_ptLuaState!=NULL && m_ptLuaState->Ok()==true )
 		{
-			wxlua_errorinfo(m_ptLuaState->GetLuaState(), iResult, iGetTop, &strErrorMsg, &iLineNr);
-			strMsg.Printf(_("error %d in line %d: ") + strErrorMsg, iResult, iLineNr);
-			wxLogError(strMsg);
-			finishTest();
-			setState(muhkuh_mainFrame_state_idle);
+			// create a new panel for the test
+			m_testPanel = new wxPanel(this);
+			m_notebook->AddPage(m_testPanel, m_strRunningTestName, true);
+
+			// set some global vars
+
+			// set the xml document
+			m_ptLuaState->wxluaT_PushUserDataType(ptTestData->getXmlDocument(), wxluatype_wxXmlDocument, false);
+			m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_XML"));
+			// set the selected test index
+			m_ptLuaState->lua_PushNumber(uiIndex);
+			m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_INDEX"));
+			// set the panel
+			m_ptLuaState->wxluaT_PushUserDataType(m_testPanel, wxluatype_wxPanel, false);
+			m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_PANEL"));
+
+			// set state to 'testing'
+			// NOTE: this must be done before the call to 'RunString', or the state will not change before the first idle event
+			setState(muhkuh_mainFrame_state_testing);
+
+			// set the log marker
+			luaSetLogMarker();
+
+			iGetTop = m_ptLuaState->lua_GetTop();
+			iResult = m_ptLuaState->RunString(m_strLuaStartupCode, wxT("system boot"));
+			if( iResult!=0 )
+			{
+				wxlua_errorinfo(m_ptLuaState->GetLuaState(), iResult, iGetTop, &strErrorMsg, &iLineNr);
+				strMsg.Printf(_("error %d in line %d: ") + strErrorMsg, iResult, iLineNr);
+				wxLogError(strMsg);
+				finishTest();
+				setState(muhkuh_mainFrame_state_idle);
+			}
 		}
 	}
 }
@@ -1319,6 +1385,8 @@ void muhkuh_mainFrame::finishTest(void)
 
 void muhkuh_mainFrame::updateRepositoryCombo(void)
 {
+	muhkuh_repository::REPOSITORY_TYP_E eTyp;
+	const char **ppcXpm;
 	wxString strReposEntry;
 	wxBitmap tRepoBitmap;
 	size_t sizCnt, sizMax;
@@ -1331,7 +1399,23 @@ void muhkuh_mainFrame::updateRepositoryCombo(void)
 		// get string representation of the new entry
 		strReposEntry = m_ptRepositoryManager->GetStringRepresentation(sizCnt);
 		// get bitmap for the entry
-		tRepoBitmap = m_ptRepositoryManager->GetBitmap(sizCnt);
+		eTyp = m_ptRepositoryManager->GetTyp(sizCnt);
+		switch( eTyp )
+		{
+		case muhkuh_repository::REPOSITORY_TYP_DIRSCAN:
+			ppcXpm = icon_famfamfam_silk_folder_table;
+			break;
+		case muhkuh_repository::REPOSITORY_TYP_FILELIST:
+			ppcXpm = icon_famfamfam_silk_database;
+			break;
+		case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
+			ppcXpm = icon_famfamfam_silk_script;
+			break;
+		default:
+			ppcXpm = icon_famfamfam_silk_exclamation;
+			break;
+		}
+		tRepoBitmap = wxBitmap(ppcXpm);
 		// add to combo box
 		m_repositoryCombo->Append(strReposEntry, tRepoBitmap);
 	}
@@ -1611,7 +1695,7 @@ void muhkuh_mainFrame::scanTests(int iActiveRepositoryIdx)
 		);
 
 		// create the testlist
-		bRes = m_ptRepositoryManager->createTestlist(iActiveRepositoryIdx, m_scannerProgress);
+		bRes = m_ptRepositoryManager->createTestlist(iActiveRepositoryIdx, muhkuh_mainFrame::repositoryScannerCallback, m_scannerProgress);
 
 		// destroy the progress dialog, it's not possible to update the max count
 		m_scannerProgress->Destroy();
@@ -1985,7 +2069,7 @@ void muhkuh_mainFrame::OnNotebookPageClose(wxAuiNotebookEvent &event)
 		// is the test still running?
 		if( m_state==muhkuh_mainFrame_state_testing )
 		{
-			iResult = wxMessageBox(_("Are you sure you want to quit this test?"), m_strRunningTestName, wxYES_NO, this);
+			iResult = wxMessageBox(_("Are you sure you want to cancel this test?"), m_strRunningTestName, wxYES_NO, this);
 			if( iResult!=wxYES )
 			{
 				event.Veto();
@@ -2487,19 +2571,13 @@ wxString muhkuh_mainFrame::luaGetMarkedLog(void)
 void muhkuh_mainFrame::luaScanPlugins(wxString strPattern)
 {
 	wxString strMsg;
-	bool fResult;
 
 
 	// does a plugin manager exist?
 	if( m_ptPluginManager!=NULL )
 	{
 		// search
-		fResult = m_ptPluginManager->ScanPlugins(strPattern);
-		if( fResult!=true )
-		{
-			strMsg.Printf(_("failed to compile the regex pattern: "), strPattern.fn_str());
-			m_ptLuaState->wxlua_Error(strMsg);
-		}
+		m_ptPluginManager->ScanPlugins(strPattern, m_ptLuaState);
 	}
 	else
 	{
@@ -2740,5 +2818,42 @@ muhkuh_wrap_xml *GetSelectedTest(void)
 	}
 
 	return ptTest;
+}
+
+
+
+bool muhkuh_mainFrame::repositoryScannerCallback(void *pvUser, wxString strMessage, int iProgressPos, int iProgressMax)
+{
+	bool fScannerIsRunning;
+	wxProgressDialog *ptScannerProgress;
+	double dProgress;
+
+
+	if( pvUser!=NULL )
+	{
+		ptScannerProgress = (wxProgressDialog*)pvUser;
+
+		if( iProgressPos<0 || iProgressMax<0 )
+		{
+			// mo pos or max -> pulse the dialog
+			fScannerIsRunning = ptScannerProgress->Pulse(strMessage, NULL);
+		}
+		else
+		{
+			// set new position
+			dProgress = ((double)m_iRepositoryProgressMax * (double)iProgressPos) / (double)iProgressMax;
+			fScannerIsRunning = ptScannerProgress->Update((int)dProgress, strMessage, NULL);
+		}
+	}
+	else
+	{
+		// no progress dialog
+		fScannerIsRunning = true;
+	}
+
+	// update gui for new scanner message
+	wxTheApp->Yield();
+
+	return fScannerIsRunning;
 }
 

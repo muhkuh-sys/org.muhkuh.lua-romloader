@@ -118,6 +118,8 @@ private:
 
 	void luaIncludePathUpdateButtons(int iSelection);
 
+	int get_imagelist_index(muhkuh_repository::REPOSITORY_TYP_E eTyp);
+
 
 	muhkuh_repository_manager *m_ptRepositoryManager;
 	muhkuh_plugin_manager *m_ptPluginManager;

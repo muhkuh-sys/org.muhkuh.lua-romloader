@@ -19,15 +19,17 @@
  ***************************************************************************/
 
 
+#include "muhkuh_repository.h"
+
 #include <wx/dir.h>
 #include <wx/filename.h>
 #include <wx/filesys.h>
+#include <wx/log.h>
 #include <wx/stdpaths.h>
 #include <wx/txtstrm.h>
 #include <wx/url.h>
 
 #include "muhkuh_icons.h"
-#include "muhkuh_repository.h"
 
 
 muhkuh_repository::muhkuh_repository(wxString strName)
@@ -166,98 +168,6 @@ wxString muhkuh_repository::GetStringRepresentation(void) const
 }
 
 
-wxBitmap muhkuh_repository::GetBitmap(void) const
-{
-	return GetBitmap(m_eTyp);
-}
-
-
-wxBitmap muhkuh_repository::GetBitmap(REPOSITORY_TYP_E eTyp)
-{
-	const char **ppcXpm;
-
-
-	// append the typ
-	switch( eTyp )
-	{
-	case REPOSITORY_TYP_DIRSCAN:
-		ppcXpm = icon_famfamfam_silk_folder_table;
-		break;
-	case REPOSITORY_TYP_FILELIST:
-		ppcXpm = icon_famfamfam_silk_database;
-		break;
-	case REPOSITORY_TYP_SINGLEXML:
-		ppcXpm = icon_famfamfam_silk_script;
-		break;
-	default:
-		ppcXpm = icon_famfamfam_silk_exclamation;
-		break;
-	}
-
-	return wxBitmap(ppcXpm);
-}
-
-
-wxImageList *muhkuh_repository::CreateNewImageList(void)
-{
-	wxImageList *ptImageList;
-	wxBitmap bitmap;
-
-
-	// create the new empty list and reserve space for 4 icons
-	ptImageList = new wxImageList(16, 16, true, 4);
-
-	// NOTE: if you change the order or amount of icons here, you must also change the GetImageListIndex function
-	// add 'undefined' bitmap
-	bitmap = muhkuh_repository::GetBitmap(muhkuh_repository::REPOSITORY_TYP_UNDEFINED);
-	ptImageList->Add(bitmap);
-	// add 'dirscan' bitmap
-	bitmap = muhkuh_repository::GetBitmap(muhkuh_repository::REPOSITORY_TYP_DIRSCAN);
-	ptImageList->Add(bitmap);
-	// add 'filelist' bitmap
-	bitmap = muhkuh_repository::GetBitmap(muhkuh_repository::REPOSITORY_TYP_FILELIST);
-	ptImageList->Add(bitmap);
-	// add 'singlexml' bitmap
-	bitmap = muhkuh_repository::GetBitmap(muhkuh_repository::REPOSITORY_TYP_SINGLEXML);
-	ptImageList->Add(bitmap);
-
-	// return the new imagelist
-	return ptImageList;
-}
-
-
-int muhkuh_repository::GetImageListIndex(REPOSITORY_TYP_E eTyp)
-{
-	int iIdx;
-
-
-	switch( eTyp )
-	{
-	case REPOSITORY_TYP_DIRSCAN:
-		iIdx = 1;
-		break;
-	case REPOSITORY_TYP_FILELIST:
-		iIdx = 2;
-		break;
-	case REPOSITORY_TYP_SINGLEXML:
-		iIdx = 3;
-		break;
-	case REPOSITORY_TYP_UNDEFINED:
-	default:
-		iIdx = 0;
-		break;
-	}
-
-	return iIdx;
-}
-
-
-int muhkuh_repository::GetImageListIndex(void) const
-{
-	return GetImageListIndex(m_eTyp);
-}
-
-
 muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, int iIndex)
 {
 	wxString strName;
@@ -361,7 +271,7 @@ void muhkuh_repository::write_config(wxConfigBase *pConfig) const
 }
 
 
-bool muhkuh_repository::createTestlist(wxProgressDialog *ptScannerProgress)
+bool muhkuh_repository::createTestlist(pfnTestlistProgress pfnCallback, void *pvCallbackUser)
 {
 	bool fResult;
 
@@ -373,7 +283,7 @@ bool muhkuh_repository::createTestlist(wxProgressDialog *ptScannerProgress)
 	switch( m_eTyp )
 	{
 	case muhkuh_repository::REPOSITORY_TYP_DIRSCAN:
-		fResult = createTestlist_local(ptScannerProgress);
+		fResult = createTestlist_local(pfnCallback, pvCallbackUser);
 		if( fResult==false )
 		{
 			wxLogError(_("failed to scan the test directory"));
@@ -381,7 +291,7 @@ bool muhkuh_repository::createTestlist(wxProgressDialog *ptScannerProgress)
 		break;
 
 	case muhkuh_repository::REPOSITORY_TYP_FILELIST:
-		fResult = createTestlist_url(ptScannerProgress);
+		fResult = createTestlist_url(pfnCallback, pvCallbackUser);
 		if( fResult==false )
 		{
 			wxLogError(_("failed to open the repository"));
@@ -389,7 +299,7 @@ bool muhkuh_repository::createTestlist(wxProgressDialog *ptScannerProgress)
 		break;
 
 	case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
-		fResult = createTestlist_singlexml(ptScannerProgress);
+		fResult = createTestlist_singlexml(pfnCallback, pvCallbackUser);
 		if( fResult==false )
 		{
 			wxLogError(_("failed to open the repository"));
@@ -497,7 +407,7 @@ wxString muhkuh_repository::getTestlistXmlUrl(size_t sizTestIdx) const
 }
 
 
-bool muhkuh_repository::createTestlist_local(wxProgressDialog *ptScannerProgress)
+bool muhkuh_repository::createTestlist_local(pfnTestlistProgress pfnCallback, void *pvCallbackUser)
 {
 	wxString strProgressMessage;
 	wxFileName fileName;
@@ -513,9 +423,7 @@ bool muhkuh_repository::createTestlist_local(wxProgressDialog *ptScannerProgress
 
 	// no idea how long the scanning will take -> set to pulse (that's 'unknown time remaining)
 	strProgressMessage.Printf(_("scanning local folder '%s' for tests..."), m_strLocation.fn_str());
-	fScannerIsRunning = ptScannerProgress->Pulse(strProgressMessage, NULL);
-	// update gui for new scanner message
-	wxTheApp->Yield();
+	fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
 	if( fScannerIsRunning==true )
 	{
 		// move to the folder where muhkuh is stored
@@ -559,9 +467,7 @@ bool muhkuh_repository::createTestlist_local(wxProgressDialog *ptScannerProgress
 		strFilename = fileSystem.FindFirst(m_strExtension, wxFILE);
 		while( fScannerIsRunning==true && strFilename.IsEmpty()==false )
 		{
-			fScannerIsRunning = ptScannerProgress->Pulse(strProgressMessage, NULL);
-			// update gui for new scanner message
-			wxTheApp->Yield();
+			fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
 
 			// convert to url
 			strUrl = wxFileSystem::FileNameToURL(strFilename);
@@ -576,7 +482,7 @@ bool muhkuh_repository::createTestlist_local(wxProgressDialog *ptScannerProgress
 }
 
 
-bool muhkuh_repository::createTestlist_url(wxProgressDialog *ptScannerProgress)
+bool muhkuh_repository::createTestlist_url(pfnTestlistProgress pfnCallback, void *pvCallbackUser)
 {
 	wxString strLocation;
 	wxURL filelistUrl;
@@ -592,6 +498,7 @@ bool muhkuh_repository::createTestlist_url(wxProgressDialog *ptScannerProgress)
 	bool fScannerIsRunning;
 	wxArrayString astrTmpPathNames;
 	size_t sizCnt;
+	size_t sizMax;
 
 
 	// clear any old tests
@@ -602,9 +509,7 @@ bool muhkuh_repository::createTestlist_url(wxProgressDialog *ptScannerProgress)
 
 	// no idea how long the scanning will take -> set to pulse (that's 'unknown time remaining)
 	strProgressMessage.Printf(_("scanning repository '%s' for tests..."), m_strLocation.fn_str());
-	fScannerIsRunning = ptScannerProgress->Pulse(strProgressMessage, NULL);
-	// update gui for new scanner message
-	wxTheApp->Yield();
+	fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
 
 	if( fScannerIsRunning==true )
 	{
@@ -641,7 +546,7 @@ bool muhkuh_repository::createTestlist_url(wxProgressDialog *ptScannerProgress)
 			}
 
 			// show the error message
-			wxMessageBox(strMessage, _("Invalid URL"), wxOK|wxICON_ERROR);
+			wxLogError(strMessage);
 			fScannerIsRunning = false;
 		}
 		else
@@ -653,8 +558,7 @@ bool muhkuh_repository::createTestlist_url(wxProgressDialog *ptScannerProgress)
 			ptFsFile = fileSystem.OpenFile(strLocation);
 			if( ptFsFile==NULL )
 			{
-				strMessage.Printf(_("Failed to open filelist at '%s'"), strLocation.fn_str());
-				wxMessageBox(strMessage, _("Error!"), wxOK|wxICON_ERROR);
+				wxLogError(_("Failed to open filelist at '%s'"), strLocation.fn_str());
 				fScannerIsRunning = false;
 			}
 			else
@@ -676,24 +580,21 @@ bool muhkuh_repository::createTestlist_url(wxProgressDialog *ptScannerProgress)
 
 					// check for cancel button
 					strProgressMessage.Printf(_("receiving '%s'"), strFilename.fn_str());
-					fScannerIsRunning = ptScannerProgress->Pulse(strProgressMessage, NULL);
-					// update gui for new scanner message
-					wxTheApp->Yield();
+					fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
 				}
 				delete ptTextInputStream;
 				delete ptFsFile;
 
 				// normalize the paths and convert to url
 				sizCnt = 0;
-				while( fScannerIsRunning==true && sizCnt<astrTmpPathNames.GetCount() )
+				sizMax = astrTmpPathNames.GetCount();
+				while( fScannerIsRunning==true && sizCnt<sizMax )
 				{
 					strFilename = astrTmpPathNames.Item(sizCnt++);
 
 					// check for cancel button
 					strProgressMessage.Printf(_("checking '%s'"), strFilename.fn_str());
-					fScannerIsRunning = ptScannerProgress->Pulse(strProgressMessage, NULL);
-					// update gui for new scanner message
-					wxTheApp->Yield();
+					fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, sizCnt, sizMax);
 
 					// set initial path, that's important for relative paths (almost all filelists)
 					fileSystem.ChangePathTo(strLocation, false);
@@ -720,7 +621,7 @@ bool muhkuh_repository::createTestlist_url(wxProgressDialog *ptScannerProgress)
 }
 
 
-bool muhkuh_repository::createTestlist_singlexml(wxProgressDialog *ptScannerProgress)
+bool muhkuh_repository::createTestlist_singlexml(pfnTestlistProgress pfnCallback, void *pvCallbackUser)
 {
 	wxString strProgressMessage;
 	wxFileName fileName;
@@ -736,9 +637,8 @@ bool muhkuh_repository::createTestlist_singlexml(wxProgressDialog *ptScannerProg
 
 	// no idea how long the scanning will take -> set to pulse (that's 'unknown time remaining)
 	strProgressMessage.Printf(_("scanning single xml file '%s'..."), m_strLocation.fn_str());
-	fScannerIsRunning = ptScannerProgress->Pulse(strProgressMessage, NULL);
-	// update gui for new scanner message
-	wxTheApp->Yield();
+	fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
+
 	if( fScannerIsRunning==true )
 	{
 		// move to the folder where muhkuh is stored
