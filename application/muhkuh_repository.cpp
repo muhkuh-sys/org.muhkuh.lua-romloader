@@ -37,12 +37,23 @@ muhkuh_repository::muhkuh_repository(wxString strName)
  , m_eTyp(REPOSITORY_TYP_UNDEFINED)
  , m_fSelected(false)
 {
+	// set prefix for messages
+	setMe();
 }
 
 
 muhkuh_repository::muhkuh_repository(const muhkuh_repository *ptRepository)
 {
+	// set prefix for messages
+	setMe();
+
 	Assign(ptRepository);
+}
+
+
+void muhkuh_repository::setMe(void)
+{
+	m_strMe.Printf("muhkuh_repository(%p) :", this);
 }
 
 
@@ -176,7 +187,11 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 	wxString strLocation;
 	wxString strExtension;
 	muhkuh_repository *ptRepoCfg;
+	wxString strMe;
 
+
+	// set prefix for messages
+	strMe = wxT("muhkuh_repository: ");
 
 	// no item created yet
 	ptRepoCfg = NULL;
@@ -193,7 +208,7 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 	// the name must not be empty
 	if( strName.IsEmpty() )
 	{
-		wxLogWarning(_("repository entry %d has no name, ignore entry"), iIndex);
+		wxLogWarning(strMe + _("repository entry %d has no name, ignore entry"), iIndex);
 	}
 	else
 	{
@@ -204,11 +219,11 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 			// the dirscan typ must have a location and an extension
 			if( strLocation.IsEmpty() )
 			{
-				wxLogWarning(_("repository entry %d has no location, ignore entry"), iIndex);
+				wxLogWarning(strMe + _("repository entry %d has no location, ignore entry"), iIndex);
 			}
 			else if( strExtension.IsEmpty() )
 			{
-				wxLogWarning(_("repository entry %d has no extension, ignore entry"), iIndex);
+				wxLogWarning(strMe + _("repository entry %d has no extension, ignore entry"), iIndex);
 			}
 			else
 			{
@@ -222,7 +237,7 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 			// the filelist typ must have a location
 			if( strLocation.IsEmpty() )
 			{
-				wxLogWarning(_("repository entry %d has no location, ignore entry"), iIndex);
+				wxLogWarning(strMe + _("repository entry %d has no location, ignore entry"), iIndex);
 			}
 			else
 			{
@@ -236,7 +251,7 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 			// the filelist typ must have a location
 			if( strLocation.IsEmpty() )
 			{
-				wxLogWarning(_("repository entry %d has no location, ignore entry"), iIndex);
+				wxLogWarning(strMe + _("repository entry %d has no location, ignore entry"), iIndex);
 			}
 			else
 			{
@@ -248,7 +263,7 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 
 		default:
 			// here end up all unknown types, show an errormessage
-			wxLogWarning(_("repository entry %d has invalid typ, ignore entry"), iIndex);
+			wxLogWarning(strMe + _("repository entry %d has invalid typ, ignore entry"), iIndex);
 			break;
 		}
 	}
@@ -286,7 +301,7 @@ bool muhkuh_repository::createTestlist(pfnTestlistProgress pfnCallback, void *pv
 		fResult = createTestlist_local(pfnCallback, pvCallbackUser);
 		if( fResult==false )
 		{
-			wxLogError(_("failed to scan the test directory"));
+			wxLogError(m_strMe + _("failed to scan the test directory"));
 		}
 		break;
 
@@ -294,7 +309,7 @@ bool muhkuh_repository::createTestlist(pfnTestlistProgress pfnCallback, void *pv
 		fResult = createTestlist_url(pfnCallback, pvCallbackUser);
 		if( fResult==false )
 		{
-			wxLogError(_("failed to open the repository"));
+			wxLogError(m_strMe + _("failed to open the repository"));
 		}
 		break;
 
@@ -302,7 +317,7 @@ bool muhkuh_repository::createTestlist(pfnTestlistProgress pfnCallback, void *pv
 		fResult = createTestlist_singlexml(pfnCallback, pvCallbackUser);
 		if( fResult==false )
 		{
-			wxLogError(_("failed to open the repository"));
+			wxLogError(m_strMe + _("failed to open the repository"));
 		}
 		break;
 
@@ -436,21 +451,21 @@ bool muhkuh_repository::createTestlist_local(pfnTestlistProgress pfnCallback, vo
 		if( !fileName.IsOk() )
 		{
 			// path is not correct
-			wxLogError(_("failed to set path, IsOK returned false"));
+			wxLogError(m_strMe + _("failed to set path, IsOK returned false"));
 			return false;
 		}
 		// does the path point to a directory?
 		if( !fileName.IsDir() )
 		{
 			// no, the path does not point to a directory
-			wxLogError(_("the path does not point to a directory"));
+			wxLogError(m_strMe + _("the path does not point to a directory"));
 			return false;
 		}
 		// does the directory exist?
 		if( !fileName.DirExists() )
 		{
 			// no, the directory does not exist
-			wxLogError(_("the directory does not exist"));
+			wxLogError(m_strMe + _("the directory does not exist"));
 			return false;
 		}
 
@@ -458,7 +473,7 @@ bool muhkuh_repository::createTestlist_local(pfnTestlistProgress pfnCallback, vo
 		strCompletePath = fileName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR);
 		// convert path to url
 		strUrl = wxFileSystem::FileNameToURL(strCompletePath);
-		wxLogDebug(_("scanning testdescriptions at '%s'"), strUrl.fn_str());
+		wxLogDebug(m_strMe + _("scanning testdescriptions at '%s'"), strUrl.fn_str());
 
 		// set path
 		fileSystem.ChangePathTo(strUrl, true);
@@ -471,7 +486,7 @@ bool muhkuh_repository::createTestlist_local(pfnTestlistProgress pfnCallback, vo
 
 			// convert to url
 			strUrl = wxFileSystem::FileNameToURL(strFilename);
-			wxLogDebug(_("found '%s'"), strUrl.fn_str());
+			wxLogDebug(m_strMe + _("found '%s'"), strUrl.fn_str());
 			astrTestList.Add(strUrl);
 			strFilename = fileSystem.FindNext();
 		}
@@ -546,7 +561,7 @@ bool muhkuh_repository::createTestlist_url(pfnTestlistProgress pfnCallback, void
 			}
 
 			// show the error message
-			wxLogError(strMessage);
+			wxLogError(m_strMe + strMessage);
 			fScannerIsRunning = false;
 		}
 		else
@@ -558,7 +573,7 @@ bool muhkuh_repository::createTestlist_url(pfnTestlistProgress pfnCallback, void
 			ptFsFile = fileSystem.OpenFile(strLocation);
 			if( ptFsFile==NULL )
 			{
-				wxLogError(_("Failed to open filelist at '%s'"), strLocation.fn_str());
+				wxLogError(m_strMe + _("Failed to open filelist at '%s'"), strLocation.fn_str());
 				fScannerIsRunning = false;
 			}
 			else
@@ -601,12 +616,12 @@ bool muhkuh_repository::createTestlist_url(pfnTestlistProgress pfnCallback, void
 					ptFsFile = fileSystem.OpenFile(strFilename);
 					if( ptFsFile==NULL )
 					{
-						wxLogError(_("failed to open '%s' from filelist."), strFilename.fn_str());
+						wxLogError(m_strMe + _("failed to open '%s' from filelist."), strFilename.fn_str());
 					}
 					else
 					{
 						strUrl = ptFsFile->GetLocation();
-						wxLogMessage(_("found '%s'"), strUrl.fn_str());
+						wxLogMessage(m_strMe + _("found '%s'"), strUrl.fn_str());
 						astrTestList.Add(strUrl);
 						// delete the fsfile
 						delete ptFsFile;
@@ -651,14 +666,14 @@ bool muhkuh_repository::createTestlist_singlexml(pfnTestlistProgress pfnCallback
 		if( fileName.IsOk()!=true )
 		{
 			// path is not correct
-			wxLogError(_("failed to set path, IsOK returned false"));
+			wxLogError(m_strMe + _("failed to set path, IsOK returned false"));
 			return false;
 		}
 		// does the path point to a file (i.e. not a directory)?
 		if( fileName.IsDir()!=false )
 		{
 			// no, the path points to a directory
-			wxLogError(_("the path does not point to a file"));
+			wxLogError(m_strMe + _("the path does not point to a file"));
 			return false;
 		}
 // this does not work with win98
@@ -674,7 +689,7 @@ bool muhkuh_repository::createTestlist_singlexml(pfnTestlistProgress pfnCallback
 		strCompletePath = fileName.GetFullPath(wxPATH_NATIVE);
 		// convert path to url
 		strUrl = wxFileSystem::FileNameToURL(strCompletePath);
-		wxLogDebug(_("found '%s'"), strUrl.fn_str());
+		wxLogDebug(m_strMe + _("found '%s'"), strUrl.fn_str());
 		astrTestList.Add(strUrl);
 	}
 

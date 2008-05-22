@@ -30,6 +30,9 @@ muhkuh_repository_manager::muhkuh_repository_manager(void)
  : m_ptRepositories(NULL)
  , m_sizActiveRepositoryIdx(wxNOT_FOUND)
 {
+	// set prefix for messages
+	setMe();
+
 	// create the repository list
 	m_ptRepositories = new std::vector<muhkuh_repository*>;
 }
@@ -45,6 +48,9 @@ muhkuh_repository_manager::muhkuh_repository_manager(const muhkuh_repository_man
 	muhkuh_repository *ptNewRepos;
 	int iCnt;
 
+
+	// set prefix for messages
+	setMe();
 
 	// clone the repository list
 	m_ptRepositories = new std::vector<muhkuh_repository*>;
@@ -77,6 +83,12 @@ muhkuh_repository_manager::~muhkuh_repository_manager(void)
 		clearAllRepositories();
 		delete m_ptRepositories;
 	}
+}
+
+
+void muhkuh_repository_manager::setMe(void)
+{
+	m_strMe.Printf("muhkuh_repository_manager(%p) :", this);
 }
 
 
@@ -199,7 +211,7 @@ wxString muhkuh_repository_manager::GetStringRepresentation(size_t sizIdx) const
 	/* check input parameter */
 	if( sizIdx>=m_ptRepositories->size() )
 	{
-		wxLogError(_("muhkuh_repository_manager::GetStringRepresentation : idx %d is out of range, ignoring request"), sizIdx);
+		wxLogError(m_strMe + wxT("GetStringRepresentation : ") + _("idx %d is out of range, ignoring request"), sizIdx);
 	}
 	else
 	{
@@ -222,7 +234,7 @@ muhkuh_repository::REPOSITORY_TYP_E muhkuh_repository_manager::GetTyp(size_t siz
 	/* check input parameter */
 	if( sizIdx>=m_ptRepositories->size() )
 	{
-		wxLogError(_("muhkuh_repository_manager::GetStringRepresentation : idx %d is out of range, ignoring request"), sizIdx);
+		wxLogError(m_strMe + wxT("GetTyp : ") + _("idx %d is out of range, ignoring request"), sizIdx);
 	}
 	else
 	{
@@ -267,7 +279,7 @@ void muhkuh_repository_manager::removeRepository(size_t sizIdx)
 	/* check input parameter */
 	if( sizIdx>=m_ptRepositories->size() )
 	{
-		wxLogError(_("muhkuh_repository_manager::removeRepository : idx %ld is out of range, ignoring request"), sizIdx);
+		wxLogError(m_strMe + wxT("removeRepository : ") + _("idx %ld is out of range, ignoring request"), sizIdx);
 	}
 	else
 	{
@@ -302,7 +314,7 @@ muhkuh_repository *muhkuh_repository_manager::GetRepository(size_t sizIdx)
 	/* check input parameter */
 	if( sizIdx>=m_ptRepositories->size() )
 	{
-		wxLogError(_("muhkuh_repository_manager::GetRepository : idx %d is out of range, ignoring request"), sizIdx);
+		wxLogError(m_strMe + wxT("GetRepository : ") + _("idx %d is out of range, ignoring request"), sizIdx);
 		ptRepository = NULL;
 	}
 	else

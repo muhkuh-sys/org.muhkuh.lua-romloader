@@ -75,6 +75,9 @@ public:
 	wxString getTestlistXmlUrl(size_t sizTestIdx) const;
 
 private:
+	// set prefix for messages
+	void setMe(void);
+
 	bool createTestlist_local(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
 	bool createTestlist_url(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
 	bool createTestlist_singlexml(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
@@ -88,6 +91,9 @@ private:
 
 	// the tests found in this repository
 	wxArrayString astrTestList;
+
+	// prefix for messages
+	wxString m_strMe;
 };
 
 

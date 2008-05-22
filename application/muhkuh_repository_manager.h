@@ -61,6 +61,9 @@ public:
 	wxString getTestlistXmlUrl(size_t sizRepositoryIdx, size_t sizTestIdx) const;
 
 private:
+	// set prefix for messages
+	void setMe(void);
+
 	void clearAllRepositories(void);
 
 
@@ -69,6 +72,9 @@ private:
 
 	// the active repository
 	size_t m_sizActiveRepositoryIdx;
+
+	// prefix for messages
+	wxString m_strMe;
 };
 
 
