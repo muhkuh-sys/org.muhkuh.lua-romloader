@@ -16,6 +16,7 @@
 			application/license.cpp
 			application/muhkuh_aboutDialog.cpp
 			application/muhkuh_app.cpp
+			application/muhkuh_brokenPluginDialog.cpp
 			application/muhkuh_config_reposEntryDialog.cpp
 			application/muhkuh_configDialog.cpp
 			application/muhkuh_dirlistbox.cpp
@@ -39,6 +40,7 @@
 			application/license.h
 			application/muhkuh_aboutDialog.h
 			application/muhkuh_app.h
+			application/muhkuh_brokenPluginDialog.h
 			application/muhkuh_config_reposEntryDialog.h
 			application/muhkuh_configDialog.h
 			application/muhkuh_dirlistbox.h
