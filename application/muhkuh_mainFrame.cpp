@@ -2229,15 +2229,10 @@ void muhkuh_mainFrame::OnMtdLinkClicked(wxHtmlLinkEvent &event)
 								parentId = searchId;
 								break;
 							}
-							else if( iCmp<0 )
+							else
 							{
 								// move to next child
 								searchId = m_treeCtrl->GetNextChild(parentId, searchCookie);
-							}
-							else
-							{
-								// the item can't appear anymore because of the sort order
-								break;
 							}
 						} while( searchId.IsOk()==true );
 					}
