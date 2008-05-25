@@ -40,6 +40,7 @@ private:
 	bool m_fCfgShowHelp;
 	bool m_fCfgShowVersion;
 	wxString m_strCfgConfigFile;
+	wxString m_strExePath;
 
 	// the plugin manager
 	muhkuh_plugin_manager *m_ptPluginManager;

@@ -131,9 +131,6 @@ muhkuh_regApp::muhkuh_regApp(void)
 
 	// create the repository manager
 	m_ptRepositoryManager = new muhkuh_repository_manager();
-
-
-	clearSettings();
 }
 
 
@@ -168,7 +165,11 @@ void muhkuh_regApp::clearSettings(void)
 	cfgName.Assign(wxStandardPaths::Get().GetExecutablePath());
 	cfgName.SetFullName(wxT("Muhkuh.cfg"));
 
-	m_strCfgConfigFile = cfgName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR, wxPATH_NATIVE);
+	// get the exe path
+	m_strExePath = cfgName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR, wxPATH_NATIVE);
+
+	m_strCfgConfigFile = cfgName.GetFullPath(wxPATH_NATIVE);
+	wxLogMessage(wxT("default cfg file: ") + m_strCfgConfigFile);
 }
 
 
@@ -227,11 +228,19 @@ int muhkuh_regApp::open_config_file(void)
 {
 	wxFileConfig *ptConfig;
 	wxFileName cfgName;
+	wxString strCfgFileName;
 
 
 	// get the config
-	cfgName.SetFullName(m_strCfgConfigFile);
-	ptConfig = new wxFileConfig(wxT(MUHKUH_APPLICATION_NAME), wxT(MUHKUH_APPLICATION_NAME " team"), cfgName.GetFullPath(), cfgName.GetFullPath(), wxCONFIG_USE_LOCAL_FILE);
+	cfgName.Assign(m_strCfgConfigFile);
+	if( cfgName.IsRelative()==true )
+	{
+		cfgName.MakeAbsolute(m_strExePath);
+	}
+	strCfgFileName = cfgName.GetFullPath();
+	wxLogMessage(wxT("using cfg file: ") + strCfgFileName);
+
+	ptConfig = new wxFileConfig(wxT(MUHKUH_APPLICATION_NAME), wxT(MUHKUH_APPLICATION_NAME " team"), strCfgFileName, strCfgFileName, wxCONFIG_USE_LOCAL_FILE);
 	wxConfigBase::Set(ptConfig);
 	ptConfig->SetRecordDefaults();
 
