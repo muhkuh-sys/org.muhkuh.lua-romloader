@@ -639,6 +639,8 @@ int muhkuh_regApp::register_plugin(wxArrayString &aParam)
 			}
 		}
 	}
+
+	return iRes;
 }
 
 

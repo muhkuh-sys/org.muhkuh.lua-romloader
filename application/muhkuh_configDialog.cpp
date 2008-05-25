@@ -350,13 +350,13 @@ wxPanel *muhkuh_configDialog::createControls_repository(wxWindow *ptParent)
 	// NOTE: this must match the image selection in 'get_imagelist_index'
 	ptRepoImageList = new wxImageList(16, 16, true, 4);
 	// add 'undefined' bitmap
-	ptRepoImageList->Add(icon_famfamfam_silk_exclamation);
+	ptRepoImageList->Add( wxIcon(icon_famfamfam_silk_exclamation) );
 	// add 'dirscan' bitmap
-	ptRepoImageList->Add(icon_famfamfam_silk_folder_table);
+	ptRepoImageList->Add( wxIcon(icon_famfamfam_silk_folder_table) );
 	// add 'filelist' bitmap
-	ptRepoImageList->Add(icon_famfamfam_silk_database);
+	ptRepoImageList->Add( wxIcon(icon_famfamfam_silk_database) );
 	// add 'singlexml' bitmap
-	ptRepoImageList->Add(icon_famfamfam_silk_script);
+	ptRepoImageList->Add( wxIcon(icon_famfamfam_silk_script) );
 
 	// create the repository page
 	ptRepositoryPanel = new wxPanel(ptParent);
@@ -585,6 +585,8 @@ void muhkuh_configDialog::OnEditRepositoryButton(wxCommandEvent &WXUNUSED(event)
 				// update the item
 				m_repositoryTree->SetItemText(tItem, ptRepos->GetStringRepresentation());
 				// get bitmap for the entry
+				eTyp = ptRepos->GetTyp();
+				iItemImage = get_imagelist_index(eTyp);
 				m_repositoryTree->SetItemImage(tItem, iItemImage);
 			}
 			ptEntryDialog->Destroy();
