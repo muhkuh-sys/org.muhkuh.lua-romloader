@@ -180,7 +180,7 @@ void muhkuh_regApp::cleanUp(void)
 
 void muhkuh_regApp::showVersion(void)
 {
-	printf(PACKAGE " " VERSION "\n");
+	printf(REGKUH_APPLICATION_NAME " " REGKUH_VERSION_STRING "\n");
 	printf("Copyright (c) 2008, the Muhkuh team.\n");
 	printf("There is NO warranty.  You may redistribute this software\n");
 	printf("under the terms of the GNU General Public License.\n");
