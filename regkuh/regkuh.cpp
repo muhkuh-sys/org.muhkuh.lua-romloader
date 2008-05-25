@@ -43,7 +43,6 @@
 static const wxCmdLineEntryDesc cmdLineDesc[] =
 {
 	{ wxCMD_LINE_OPTION, wxT("c"), wxT("config-file"), _T("use the specified configuration file instead of the default Muhkuh.cfg"), wxCMD_LINE_VAL_STRING },
-	{ wxCMD_LINE_OPTION, wxT("a"), wxT("app-dir"), _T("set the application directory, default is the current working dir"), wxCMD_LINE_VAL_STRING },
 
 	{ wxCMD_LINE_SWITCH, wxT("v"), wxT("verbose"), _T("be verbose") },
 	{ wxCMD_LINE_SWITCH, wxT("h"), wxT("help"), _T("display this help and exit.") },
@@ -165,11 +164,11 @@ void muhkuh_regApp::clearSettings(void)
 	m_fCfgShowHelp = false;
 	m_fCfgShowVersion = false;
 
-	// get the default application path
-	cfgName.Assign(wxStandardPaths::Get().GetExecutablePath());
-	m_strCfgAppPath = cfgName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR, wxPATH_NATIVE);
 	// get the default config file
-	m_strCfgConfigFile = wxT("Muhkuh.cfg");
+	cfgName.Assign(wxStandardPaths::Get().GetExecutablePath());
+	cfgName.SetFullName(wxT("Muhkuh.cfg"));
+
+	m_strCfgConfigFile = cfgName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR, wxPATH_NATIVE);
 }
 
 
@@ -218,11 +217,6 @@ int muhkuh_regApp::parse_args(void)
 	if( ptParser->Found(wxT("c"), &strVal)==true )
 	{
 		m_strCfgConfigFile = strVal;
-	}
-
-	if( ptParser->Found(wxT("a"), &strVal)==true )
-	{
-		m_strCfgAppPath = strVal;
 	}
 
 	return EXIT_SUCCESS;
