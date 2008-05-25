@@ -18,6 +18,10 @@
 			application/muhkuh_repository_manager.cpp
 			regkuh/regkuh.cpp
 		</sources>
+		<headers>
+			regkuh/regkuh.h
+		</headers>
+		<win32-res>regkuh/regkuh.rc</win32-res>
 
 		<wxlua-lib>wxluasocket</wxlua-lib>
 		<wxlua-lib>wxluadebug</wxlua-lib>
@@ -31,5 +35,4 @@
 		<wx-lib>xml</wx-lib>
 		<wx-lib>base</wx-lib>
 	</exe>
-
 </makefile>
