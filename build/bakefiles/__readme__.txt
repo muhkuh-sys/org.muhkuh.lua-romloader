@@ -1,6 +1,5 @@
-This directory holds all bakefile related stuff. Thanks to wxLua a special
-version of bakefile is needed (frm-bakefile) to generate the files. :(
-Get it here: http://wxlua.sourceforge.net/bakefile/
+This directory holds all bakefile related stuff. You need bakefile 0.2.3 or
+later.
 
 Run 'bakefile_gen' in this directory to generate all makefiles and projects.
 
@@ -19,7 +18,7 @@ these lines:
 major and minor. The example above is from wxLua version 2.8.4 .
 If you want to compile Muhkuh with a different wxLua version than the one
 specified in 'wxluabase.bkl' copy the following files from your wxLua source
-tree. It is very imprtant that you do this after building wxLua as
+tree. It is very important that you do this after building wxLua as
 'options.bkl' is generated during the build process.
 
 	build/bakefiles/mac_bundles.bkl
