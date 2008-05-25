@@ -1,0 +1,35 @@
+<?xml version="1.0" ?>
+<makefile>
+	<!-- ================================================================== -->
+	<!--                     The muhkuh reg application                     -->
+	<!-- ================================================================== -->
+
+	<exe id="regkuh" template="wxlua">
+		<app-type>console</app-type>
+		<threading>multi</threading>
+		<include>$(SRCDIR)</include>
+		<include>$(SRCDIR)/application</include>
+		<include>$(SRCDIR)/regkuh</include>
+		<dirname>$(SRCDIR)/bin</dirname>
+		<sources>
+			application/muhkuh_plugin.cpp
+			application/muhkuh_plugin_manager.cpp
+			application/muhkuh_repository.cpp
+			application/muhkuh_repository_manager.cpp
+			regkuh/regkuh.cpp
+		</sources>
+
+		<wxlua-lib>wxluasocket</wxlua-lib>
+		<wxlua-lib>wxluadebug</wxlua-lib>
+		<wxlua-lib>wxbindnet</wxlua-lib>
+		<wxlua-lib>wxbindxml</wxlua-lib>
+		<wxlua-lib>wxbindbase</wxlua-lib>
+		<wxlua-lib>wxlua</wxlua-lib>
+		<wxlua-lib>lua</wxlua-lib>
+
+		<wx-lib>net</wx-lib>
+		<wx-lib>xml</wx-lib>
+		<wx-lib>base</wx-lib>
+	</exe>
+
+</makefile>
