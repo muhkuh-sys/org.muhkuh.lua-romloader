@@ -1,5 +1,16 @@
 Changelog for Muhkuh
 
+Muhkuh 1.0.250
+
+ * add new installer helper application "regkuh"
+ * fixed: some tests are not found when executed with an mtd link
+ * add instance to messages from repository and repository manager
+ * add broken plugin diaog to bakefile
+ * removed gui components from plugin, plugin manager, repository and repository manager
+ * allow disabling broken plugins in config menu
+ * check plugin state at application start and before test execution
+ * fixed test importer for matches != 0 and missing version attributes
+
 
 Muhkuh 1.0.237
 
