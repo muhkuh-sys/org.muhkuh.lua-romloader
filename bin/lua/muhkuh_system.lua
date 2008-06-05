@@ -634,6 +634,14 @@ function boot_xml()
 	local alltests = nil
 
 
+	-- add support for old style bitlib
+	if not bit.bshl then
+		bit.bshl = bit.lshift
+	end
+	if not bit.bshr then
+		bit.bshr = bit.rshift
+	end
+
 	alltests = parse_xml()
 	if not alltests then
 		wx.wxMessageBox("Failed to parse the XML file. Please send the log to the developer.", "Parse Error", wx.wxOK+wx.wxICON_ERROR, wx.NULL)
