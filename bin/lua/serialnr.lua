@@ -162,7 +162,7 @@ function run(iSerialNo, iBoardCount)
 	-- get year number without century
 	strYear = dToday:Format("%y")
 	-- get week number
-	strWeek = dToday:Format("%W")
+	strWeek = tostring(tonumber(dToday:Format("%W")) + 1)
 
 	-- create the controls
 	createControls()
