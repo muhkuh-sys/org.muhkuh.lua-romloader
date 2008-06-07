@@ -1312,7 +1312,7 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 
 		if( m_ptLuaState!=NULL && m_ptLuaState->Ok()==true )
 		{
-			strDebug.Printf(wxT("./clientkuh -c Muhkuh.cfg -i %d file:/home/Benten/Coding/netx/muhkuh/trunk/nxdb500-sys_demo/test_description.xml"), m_sizRunningTest_TestIdx);
+			strDebug.Printf(wxT("./serverkuh -c Muhkuh.cfg -i %d file:/home/Benten/Coding/netx/muhkuh/trunk/nxdb500-sys_demo/test_description.xml"), m_sizRunningTest_TestIdx);
 			wxLogMessage(wxT("debug command: ") + strDebug);
 			wxLuaDebuggerBase::SetProgramName(strDebug);
 

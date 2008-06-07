@@ -1,65 +1,73 @@
 <?xml version="1.0" ?>
 <makefile>
 	<!-- ================================================================== -->
-	<!--                     The muhkuh application                         -->
+	<!--                     The muhkuh gui client                          -->
 	<!-- ================================================================== -->
 
-	<exe id="muhkuh" template="wxlua">
+	<exe id="serverkuh" template="wxlua">
 		<app-type>gui</app-type>
 		<threading>multi</threading>
 		<include>$(SRCDIR)</include>
 		<include>$(SRCDIR)/application</include>
+		<include>$(SRCDIR)/serverkuh</include>
 		<dirname>$(SRCDIR)/bin</dirname>
+
+		<!-- the clientkuh parts -->
+		<sources>
+			serverkuh/serverkuh_app.cpp
+			serverkuh/serverkuh_icons.cpp
+			serverkuh/serverkuh_mainFrame.cpp
+		</sources>
+		<headers>
+			serverkuh/serverkuh_app.h
+			serverkuh/serverkuh_icons.h
+			serverkuh/serverkuh_id.h
+			serverkuh/serverkuh_version.h
+		</headers>
+
+		<!-- the common muhkuh parts -->
 		<sources>
 			application/bit_lua_interface.cpp
 			application/growbuffer.cpp
 			application/license.cpp
-			application/muhkuh_aboutDialog.cpp
-			application/muhkuh_app.cpp
 			application/muhkuh_brokenPluginDialog.cpp
-			application/muhkuh_config_reposEntryDialog.cpp
-			application/muhkuh_configDialog.cpp
-			application/muhkuh_dirlistbox.cpp
-			application/muhkuh_htmltag_lua.cpp
-			application/muhkuh_icons.cpp
-			application/muhkuh_mainFrame.cpp
 			application/muhkuh_plugin.cpp
 			application/muhkuh_plugin_manager.cpp
-			application/muhkuh_repository.cpp
-			application/muhkuh_repository_manager.cpp
 			application/muhkuh_wrap_xml.cpp
 			application/readFsFile.cpp
-			plugins/_luaif/bit_lua.cpp
-			plugins/_luaif/bit_lua_bind.cpp
-			plugins/_luaif/muhkuh_lua.cpp
-			plugins/_luaif/muhkuh_lua_bind.cpp
 		</sources>
 		<headers>
 			application/bit_lua_interface.h
 			application/growbuffer.h
 			application/license.h
-			application/muhkuh_aboutDialog.h
-			application/muhkuh_app.h
 			application/muhkuh_brokenPluginDialog.h
-			application/muhkuh_config_reposEntryDialog.h
-			application/muhkuh_configDialog.h
-			application/muhkuh_dirlistbox.h
-			application/muhkuh_icons.h
-			application/muhkuh_id.h
 			application/muhkuh_lua_interface.h
 			application/muhkuh_mainFrame.h
 			application/muhkuh_plugin.h
 			application/muhkuh_plugin_manager.h
-			application/muhkuh_repository.h
-			application/muhkuh_repository_manager.h
-			application/muhkuh_testTreeItemData.h
-			application/muhkuh_version.h
 			application/muhkuh_wrap_xml.h
 			application/readFsFile.h
+		</headers>
+
+		<!-- the lua bit functions -->
+		<sources>
+			plugins/_luaif/bit_lua.cpp
+			plugins/_luaif/bit_lua_bind.cpp
+		</sources>
+		<headers>
 			plugins/_luaif/bit_wxlua_bindings.h
+		</headers>
+
+		<!-- the muhkuh lua bindings -->
+		<sources>
+			plugins/_luaif/muhkuh_lua.cpp
+			plugins/_luaif/muhkuh_lua_bind.cpp
+		</sources>
+		<headers>
 			plugins/_luaif/muhkuh_wxlua_bindings.h
 		</headers>
-		<win32-res>application/muhkuh.rc</win32-res>
+
+		<win32-res>serverkuh/serverkuh.rc</win32-res>
 
 		<wxlua-lib>wxluasocket</wxlua-lib>
 		<wxlua-lib>wxluadebug</wxlua-lib>
