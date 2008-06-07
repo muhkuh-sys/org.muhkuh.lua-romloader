@@ -51,6 +51,7 @@ WXLUA_DECLARE_BIND_WXXML
 WXLUA_DECLARE_BIND_WXXRC
 WXLUA_DECLARE_BIND_WXHTML
 WXLUA_DECLARE_BIND_WXAUI
+WXLUA_DECLARE_BIND_WXSTC
 
 muhkuh_mainFrame *g_ptMainFrame;
 
@@ -114,6 +115,7 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
  , m_ptRepositoryManager(NULL)
  , m_ptHelp(NULL)
  , m_testPanel(NULL)
+ , m_debuggerPanel(NULL)
  , m_tipProvider(NULL)
  , m_welcomeHtml(NULL)
  , m_testDetailsHtml(NULL)
@@ -592,6 +594,7 @@ void muhkuh_mainFrame::read_config(void)
 	// get lua settings
 	pConfig->SetPath(wxT("/Lua"));
 	m_strLuaIncludePath = pConfig->Read(wxT("includepaths"), wxT("lua/?.lua"));
+	m_strLuaDebuggerCode = pConfig->Read(wxT("debuggercode"), wxT("require(\"muhkuh_debugger\")\nmuhkuh_debugger.init()\n"));
 	m_strLuaStartupCode = pConfig->Read(wxT("startupcode"), wxT("require(\"muhkuh_system\")\nmuhkuh_system.boot_xml()\n"));
 
 	// get all plugins
@@ -722,6 +725,7 @@ void muhkuh_mainFrame::write_config(void)
 	// get lua settings
 	pConfig->SetPath(wxT("/Lua"));
 	pConfig->Write(wxT("includepaths"), m_strLuaIncludePath);
+	pConfig->Write(wxT("debuggercode"), m_strLuaDebuggerCode);
 	pConfig->Write(wxT("startupcode"), m_strLuaStartupCode);
 	pConfig->SetPath(wxT("/"));
 
@@ -1129,7 +1133,8 @@ bool muhkuh_mainFrame::initLuaState(void)
 		WXLUA_IMPLEMENT_BIND_WXXRC
 		WXLUA_IMPLEMENT_BIND_WXHTML
 		WXLUA_IMPLEMENT_BIND_WXAUI
-	
+		WXLUA_IMPLEMENT_BIND_WXSTC
+
 		// init the muhkuh lua bindings
 		fResult = wxLuaBinding_muhkuh_lua_init();
 		if( fResult!=true )
@@ -1307,9 +1312,19 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 
 		if( m_ptLuaState!=NULL && m_ptLuaState->Ok()==true )
 		{
+			strDebug.Printf(wxT("./clientkuh -c Muhkuh.cfg -i %d file:/home/Benten/Coding/netx/muhkuh/trunk/nxdb500-sys_demo/test_description.xml"), m_sizRunningTest_TestIdx);
+			wxLogMessage(wxT("debug command: ") + strDebug);
+			wxLuaDebuggerBase::SetProgramName(strDebug);
+
+
+
+
 			// create a new panel for the test
 			m_testPanel = new wxPanel(this);
 			m_notebook->AddPage(m_testPanel, m_strRunningTestName, true);
+			// create a new panel for the debugger
+			m_debuggerPanel = new wxPanel(this);
+			m_notebook->AddPage(m_debuggerPanel, _("Debugger"), false);
 
 			// set some global vars
 
@@ -1319,9 +1334,12 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 			// set the selected test index
 			m_ptLuaState->lua_PushNumber(uiIndex);
 			m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_INDEX"));
-			// set the panel
+			// set the test panel
 			m_ptLuaState->wxluaT_PushUserDataType(m_testPanel, wxluatype_wxPanel, false);
 			m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_PANEL"));
+			// set the debugger panel
+			m_ptLuaState->wxluaT_PushUserDataType(m_debuggerPanel, wxluatype_wxPanel, false);
+			m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_DEBUGGER_PANEL"));
 
 			// set state to 'testing'
 			// NOTE: this must be done before the call to 'RunString', or the state will not change before the first idle event
@@ -1331,7 +1349,7 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 			luaSetLogMarker();
 
 			iGetTop = m_ptLuaState->lua_GetTop();
-			iResult = m_ptLuaState->RunString(m_strLuaStartupCode, wxT("system boot"));
+			iResult = m_ptLuaState->RunString(m_strLuaDebuggerCode, wxT("system boot"));
 			if( iResult!=0 )
 			{
 				wxlua_errorinfo(m_ptLuaState->GetLuaState(), iResult, iGetTop, &strErrorMsg, &iLineNr);
@@ -1363,6 +1381,18 @@ void muhkuh_mainFrame::finishTest(void)
 		// delete the panel
 		delete m_testPanel;
 		m_testPanel = NULL;
+	}
+	if( m_debuggerPanel!=NULL )
+	{
+		// does the pannel still exist?
+		iPanelIdx = m_notebook->GetPageIndex(m_debuggerPanel);
+		if( iPanelIdx!=wxNOT_FOUND )
+		{
+			m_notebook->RemovePage(iPanelIdx);
+		}
+		// delete the panel
+		delete m_debuggerPanel;
+		m_debuggerPanel = NULL;
 	}
 
 	// was this an autostart test?
@@ -2302,7 +2332,6 @@ void muhkuh_mainFrame::OnMtdLinkClicked(wxHtmlLinkEvent &event)
 					}
 				}
 			}
-			
 		}
 	}
 	else

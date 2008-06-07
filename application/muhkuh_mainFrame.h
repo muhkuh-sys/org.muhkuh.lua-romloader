@@ -50,6 +50,7 @@
 
 #include <wxlua/include/wxlua.h>
 #include <wxluasocket/include/wxldserv.h>
+#include <wxluasocket/include/wxldtarg.h>
 #include "plugins/_luaif/muhkuh_wxlua_bindings.h"
 #include "plugins/_luaif/bit_wxlua_bindings.h"
 
@@ -202,6 +203,8 @@ private:
 	wxLuaState *m_ptLuaState;
 	// the test panel
 	wxPanel *m_testPanel;
+	// the debugger panel
+	wxPanel *m_debuggerPanel;
 	// the log marker for the scripts
 	wxTextPos m_tLogMarker;
 
@@ -247,6 +250,8 @@ private:
 	wxString m_strLuaIncludePath;
 	// lua startup code
 	wxString m_strLuaStartupCode;
+	// lua debugger startup code
+	wxString m_strLuaDebuggerCode;
 
 	// the welcome page file
 	wxString m_strWelcomePageFile;
