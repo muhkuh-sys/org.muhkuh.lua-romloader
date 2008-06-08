@@ -584,11 +584,13 @@ bool serverkuh_mainFrame::initLuaState(void)
 							if( m_ptDebugClientSocket->IsConnected()==true )
 							{
 								wxLogMessage(_("client connected!"));
+								m_dbg_mode = DBGMODE_StepInto;
 							}
 							else
 							{
 								m_ptDebugClientSocket->Close();
 								wxLogMessage(_("client failed to connect!"));
+								m_dbg_mode = DBGMODE_Run;
 							}
 						}
 					}
@@ -828,34 +830,111 @@ struct lua_Debug {
 void serverkuh_mainFrame::OnLuaDebug(wxLuaEvent &event)
 {
 	lua_Debug tDbg = {0};
-	wxString strFileName;
 
 
-//	event.m_wxlState.lua_GetInfo("Sln", &tDbg);
-	m_ptLuaState->lua_GetStack(0, &tDbg);
-	m_ptLuaState->lua_GetInfo("Sln", &tDbg);
-
-	if( m_ptDebugClientSocket->IsConnected()==true )
+	switch( event.m_lua_Debug->event )
 	{
-		// write the command
-		dbg_write_u08(MUHDBG_InterpreterHalted);
-		// write the name
-		dbg_write_achar(tDbg.name);
-		dbg_write_achar(tDbg.namewhat);
-		dbg_write_achar(tDbg.what);
-		dbg_write_achar(tDbg.source);
-		dbg_write_int(tDbg.currentline);
-		dbg_write_int(tDbg.nups);
-		dbg_write_int(tDbg.linedefined);
-		dbg_write_int(tDbg.lastlinedefined);
+	case LUA_HOOKCALL:
+		// TODO: count frames if in step over mode
+		break;
+
+	case LUA_HOOKRET:
+	case LUA_HOOKTAILRET:
+		// TODO: dec frames in step over mode
+		break;
+
+	case LUA_HOOKLINE:
+		// are we in step mode?
+		if( m_dbg_mode!=DBGMODE_Run )
+		{
+			m_ptLuaState->lua_GetStack(0, &tDbg);
+			m_ptLuaState->lua_GetInfo("Sln", &tDbg);
+
+			if( m_ptDebugClientSocket->IsConnected()==true )
+			{
+				// write the command
+				dbg_write_u08(MUHDBG_InterpreterHalted);
+				// write the name
+				dbg_write_achar(tDbg.name);
+				dbg_write_achar(tDbg.namewhat);
+				dbg_write_achar(tDbg.what);
+				dbg_write_achar(tDbg.source);
+				dbg_write_int(tDbg.currentline);
+				dbg_write_int(tDbg.nups);
+				dbg_write_int(tDbg.linedefined);
+				dbg_write_int(tDbg.lastlinedefined);
+			}
+
+			dbg_get_step_command();
+		}
 	}
+}
+
+
+void serverkuh_mainFrame::dbg_get_step_command(void)
+{
+	bool fContinueExecution;
+
+
+	// wait until a step, run or exit command was received
+	do
+	{
+		fContinueExecution = dbg_get_command();
+	} while( fContinueExecution==false );
+}
+
+
+bool serverkuh_mainFrame::dbg_get_command(void)
+{
+	bool fContinueExecution;
+	unsigned char ucPacketTyp;
+
+
+	fContinueExecution = false;
+
+	// wait for a command
+	m_ptDebugClientSocket->Read(&ucPacketTyp, 1);
+	if( m_ptDebugClientSocket->LastCount()==1 )
+	{
+		switch( ucPacketTyp )
+		{
+		case MUHDBG_CmdStepInto:
+			m_dbg_mode = DBGMODE_StepInto;
+			fContinueExecution = true;
+			break;
+
+		case MUHDBG_CmdStepOver:
+			m_dbg_mode = DBGMODE_StepOver;
+			fContinueExecution = true;
+			break;
+
+		case MUHDBG_CmdStepOut:
+			m_dbg_mode = DBGMODE_StepOut;
+			fContinueExecution = true;
+			break;
+
+		case MUHDBG_CmdContinue:
+			m_dbg_mode = DBGMODE_Run;
+			fContinueExecution = true;
+			break;
+
+		case MUHDBG_CmdBreak:
+			m_dbg_mode = DBGMODE_StepInto;
+			break;
+
+		default:
+			wxLogError(_("received strange packet: 0x%02x"), ucPacketTyp);
+			break;
+		}
+	}
+
+	return fContinueExecution;
 }
 
 
 void serverkuh_mainFrame::dbg_write_u08(unsigned char ucData)
 {
 	m_ptDebugClientSocket->Write(&ucData, 1);
-	wxLogMessage(_("LastCount: %d"), m_ptDebugClientSocket->LastCount());
 }
 
 

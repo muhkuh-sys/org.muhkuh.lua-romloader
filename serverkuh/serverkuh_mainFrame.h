@@ -58,6 +58,7 @@ extern "C"
 	#include <lualib.h>
 }
 
+
 //-------------------------------------
 // Define the main frame
 
@@ -115,7 +116,8 @@ private:
 	void dbg_write_int(int iData);
 	void dbg_write_achar(const char *pcData);
 
-
+	void dbg_get_step_command(void);
+	bool dbg_get_command(void);
 
 
 	// main frame init state
@@ -125,6 +127,14 @@ private:
 		MAINFRAME_INIT_STATE_CONFIGURED,
 		MAINFRAME_INIT_STATE_RUNNING
 	} MAINFRAME_INIT_STATE_E;
+
+	typedef enum
+	{
+		DBGMODE_Run			= 0,
+		DBGMODE_StepInto		= 1,
+		DBGMODE_StepOver		= 2,
+		DBGMODE_StepOut			= 3
+	} tDBGMODE;
 
 	// state of the init process
 	MAINFRAME_INIT_STATE_E m_eInitState;
@@ -148,6 +158,8 @@ private:
 	long m_lDebugServerPort;
 	// the debug client socket
 	wxSocketClient *m_ptDebugClientSocket;
+	// the debug mode
+	tDBGMODE m_dbg_mode;
 	// the lua state
 	wxLuaState *m_ptLuaState;
 	// the test panel

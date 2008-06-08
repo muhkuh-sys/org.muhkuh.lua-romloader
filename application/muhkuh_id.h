@@ -90,6 +90,12 @@ enum
 	muhkuh_dirlistbox_BrowseButton,
 	muhkuh_dirlistbox_TextCtrl,
 
+	muhkuh_debugger_buttonStepInto,
+	muhkuh_debugger_buttonStepOver,
+	muhkuh_debugger_buttonStepOut,
+	muhkuh_debugger_buttonContinue,
+	muhkuh_debugger_buttonBreak,
+
 	muhkuh_scanner_thread_event,
 	muhkuh_tester_thread_event,
 	muhkuh_mainFrame_testFinish_event,
