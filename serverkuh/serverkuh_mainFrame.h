@@ -111,6 +111,12 @@ private:
 
 	bool check_plugins(void);
 
+	void dbg_write_u08(unsigned char ucData);
+	void dbg_write_int(int iData);
+	void dbg_write_achar(const char *pcData);
+
+
+
 
 	// main frame init state
 	typedef enum

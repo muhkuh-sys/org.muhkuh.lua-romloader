@@ -175,6 +175,12 @@ private:
 
 	bool check_plugins(void);
 
+	bool dbg_read_string(wxString &strData);
+	bool dbg_read_int(int *piData);
+
+	void dbg_packet_InterpreterHalted(void);
+
+
 	// main frame controls
 	wxAuiManager m_auiMgr;
 	// the default perspective

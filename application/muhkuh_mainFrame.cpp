@@ -26,6 +26,7 @@
 #include "muhkuh_version.h"
 #include "muhkuh_aboutDialog.h"
 #include "muhkuh_brokenPluginDialog.h"
+#include "muhkuh_debug_messages.h"
 #include "muhkuh_lua_interface.h"
 #include "muhkuh_mainFrame.h"
 #include "muhkuh_configDialog.h"
@@ -101,9 +102,6 @@ BEGIN_EVENT_TABLE(muhkuh_mainFrame, wxFrame)
 	EVT_SIZE(muhkuh_mainFrame::OnSize)
 END_EVENT_TABLE()
 
-/*
-	EVT_LUA_DEBUG_HOOK(wxID_ANY,				muhkuh_mainFrame::OnLuaDebugHook)
-*/
 
 muhkuh_mainFrame::muhkuh_mainFrame(void)
  : wxFrame(NULL, wxID_ANY, wxEmptyString)
@@ -1331,8 +1329,7 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 			{
 				wxLogError(_("failed to set service port!"));
 			}
-//			m_ptDebugSocketServer = new wxSocketServer(tIpAdr, wxSOCKET_WAITALL|wxSOCKET_REUSEADDR);
-			m_ptDebugSocketServer = new wxSocketServer(tIpAdr);
+			m_ptDebugSocketServer = new wxSocketServer(tIpAdr, wxSOCKET_WAITALL|wxSOCKET_REUSEADDR);
 			if( m_ptDebugSocketServer!=NULL && m_ptDebugSocketServer->IsOk()==true )
 			{
 				m_ptDebugSocketServer->SetEventHandler(*this, muhkuh_debugServerSocket_event);
@@ -1437,13 +1434,11 @@ void muhkuh_mainFrame::finishTest(void)
 	{
 		m_ptDebugSocketServer->Destroy();
 		m_ptDebugSocketServer = NULL;
-		wxSafeYield();
 	}
 	if( m_ptDebugConnection!=NULL )
 	{
 		m_ptDebugConnection->Destroy();
 		m_ptDebugConnection = NULL;
-		wxSafeYield();
 	}
 
 	// was this an autostart test?
@@ -1490,6 +1485,7 @@ void muhkuh_mainFrame::OnDebugServerSocket(wxSocketEvent &event)
 void muhkuh_mainFrame::OnDebugConnectionSocket(wxSocketEvent &event)
 {
 	wxSocketNotify tEventTyp;
+	unsigned char ucPacketTyp;
 
 
 	tEventTyp = event.GetSocketEvent();
@@ -1497,6 +1493,24 @@ void muhkuh_mainFrame::OnDebugConnectionSocket(wxSocketEvent &event)
 	{
 	case wxSOCKET_INPUT:
 		wxLogMessage(_("wxSOCKET_INPUT"));
+
+		m_ptDebugConnection->SetNotify(wxSOCKET_LOST_FLAG);
+
+		m_ptDebugConnection->Read(&ucPacketTyp, 1);
+		if( m_ptDebugConnection->LastCount()==1 )
+		{
+			switch(ucPacketTyp)
+			{
+			case MUHDBG_InterpreterHalted:
+				dbg_packet_InterpreterHalted();
+				break;
+
+			default:
+				wxLogError(_("received strange debug packet: 0x%02x"), ucPacketTyp);
+				break;
+			}
+		}
+		m_ptDebugConnection->SetNotify(wxSOCKET_LOST_FLAG|wxSOCKET_INPUT_FLAG);
 		break;
 
 	case wxSOCKET_LOST:
@@ -1506,6 +1520,95 @@ void muhkuh_mainFrame::OnDebugConnectionSocket(wxSocketEvent &event)
 		break;
 	}
 }
+
+
+bool muhkuh_mainFrame::dbg_read_string(wxString &strData)
+{
+	wxUint32 u32LastRead;
+	size_t sizLen;
+	char *pcBuf;
+	bool fOk;
+
+
+	fOk = false;
+
+	strData.Empty();
+
+	m_ptDebugConnection->Read(&sizLen, sizeof(sizLen));
+	u32LastRead = m_ptDebugConnection->LastCount();
+	if( u32LastRead==sizeof(sizLen) )
+	{
+		if( sizLen==0 )
+		{
+			fOk = true;
+		}
+		else
+		{
+			pcBuf = new char[sizLen];
+			m_ptDebugConnection->Read(pcBuf, sizLen);
+			u32LastRead = m_ptDebugConnection->LastCount();
+			if( u32LastRead==sizLen )
+			{
+				strData = wxString::From8BitData(pcBuf, sizLen);
+				fOk = true;
+			}
+			delete[] pcBuf;
+		}
+	}
+
+	return fOk;
+}
+
+
+bool muhkuh_mainFrame::dbg_read_int(int *piData)
+{
+	wxUint32 u32LastRead;
+	bool fOk;
+
+
+	fOk = false;
+
+	m_ptDebugConnection->Read(piData, sizeof(int));
+	u32LastRead = m_ptDebugConnection->LastCount();
+	if( u32LastRead==sizeof(int) )
+	{
+		fOk = true;
+	}
+
+	return fOk;
+}
+
+
+void muhkuh_mainFrame::dbg_packet_InterpreterHalted(void)
+{
+	wxString strName;
+	wxString strNameWhat;
+	wxString strWhat;
+	wxString strSource;
+	int iCurrentLine;
+	int iNUps;
+	int iLineDefined;
+	int iLastLineDefined;
+
+
+	if(	dbg_read_string(strName)==true &&
+		dbg_read_string(strNameWhat)==true &&
+		dbg_read_string(strWhat)==true &&
+		dbg_read_string(strSource)==true &&
+		dbg_read_int(&iCurrentLine)==true &&
+		dbg_read_int(&iNUps)==true &&
+		dbg_read_int(&iLineDefined)==true &&
+		dbg_read_int(&iLastLineDefined)==true
+	  )
+	{
+		wxLogMessage(_("Debug: %s:%s:%s:%s:%d:%d:%d:%d"), strName.fn_str(), strNameWhat.fn_str(), strWhat.fn_str(), strSource.fn_str(), iCurrentLine, iNUps, iLineDefined, iLastLineDefined);
+	}
+	else
+	{
+		wxLogError(_("Error reading the InterpreterHalted packet"));
+	}
+}
+
 
 
 void muhkuh_mainFrame::updateRepositoryCombo(void)

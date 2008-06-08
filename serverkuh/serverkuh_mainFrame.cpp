@@ -27,6 +27,7 @@
 #include "application/muhkuh_lua_interface.h"
 #include "application/readFsFile.h"
 #include "application/muhkuh_brokenPluginDialog.h"
+#include "application/muhkuh_debug_messages.h"
 
 #include "serverkuh_icons.h"
 #include "serverkuh_id.h"
@@ -564,7 +565,7 @@ bool serverkuh_mainFrame::initLuaState(void)
 							m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_VERSION"));
 
 							m_ptLuaState->SetLuaDebugHook(LUA_MASKCALL|LUA_MASKRET|LUA_MASKLINE, 0, 0, true);
-							m_ptDebugClientSocket = new wxSocketClient();
+							m_ptDebugClientSocket = new wxSocketClient(wxSOCKET_WAITALL);
 							m_ptDebugClientSocket->SetEventHandler(*this, muhkuh_debugClientSocket_event);
 							m_ptDebugClientSocket->SetNotify(wxSOCKET_CONNECTION_FLAG|wxSOCKET_INPUT_FLAG|wxSOCKET_LOST_FLAG);
 							m_ptDebugClientSocket->Notify(true);
@@ -834,9 +835,55 @@ void serverkuh_mainFrame::OnLuaDebug(wxLuaEvent &event)
 	m_ptLuaState->lua_GetStack(0, &tDbg);
 	m_ptLuaState->lua_GetInfo("Sln", &tDbg);
 
-//	wxLogMessage(wxT("Debug %s:%s:%s:%s:%d:%d:%d:%d"), tDbg.name, tDbg.namewhat, tDbg.what, tDbg.source, tDbg.currentline, tDbg.linedefined, tDbg.lastlinedefined);
+	if( m_ptDebugClientSocket->IsConnected()==true )
+	{
+		// write the command
+		dbg_write_u08(MUHDBG_InterpreterHalted);
+		// write the name
+		dbg_write_achar(tDbg.name);
+		dbg_write_achar(tDbg.namewhat);
+		dbg_write_achar(tDbg.what);
+		dbg_write_achar(tDbg.source);
+		dbg_write_int(tDbg.currentline);
+		dbg_write_int(tDbg.nups);
+		dbg_write_int(tDbg.linedefined);
+		dbg_write_int(tDbg.lastlinedefined);
+	}
 }
 
+
+void serverkuh_mainFrame::dbg_write_u08(unsigned char ucData)
+{
+	m_ptDebugClientSocket->Write(&ucData, 1);
+	wxLogMessage(_("LastCount: %d"), m_ptDebugClientSocket->LastCount());
+}
+
+
+void serverkuh_mainFrame::dbg_write_int(int iData)
+{
+	m_ptDebugClientSocket->Write(&iData, sizeof(int));
+}
+
+
+void serverkuh_mainFrame::dbg_write_achar(const char *pcData)
+{
+	size_t sizStrLen;
+
+
+	if( pcData==NULL )
+	{
+		sizStrLen = 0;
+	}
+	else
+	{
+		sizStrLen = strlen(pcData);
+	}
+	m_ptDebugClientSocket->Write(&sizStrLen, sizeof(size_t));
+	if( sizStrLen!=0 )
+	{
+		m_ptDebugClientSocket->Write(pcData, sizStrLen);
+	}
+}
 
 void serverkuh_mainFrame::OnLuaPrint(wxLuaEvent &event)
 {
