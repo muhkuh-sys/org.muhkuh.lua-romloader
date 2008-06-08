@@ -43,7 +43,6 @@ WXIMPORT int wxluatype_wxXmlDocument;
 WXIMPORT int wxluatype_wxPanel;
 
 WXLUA_DECLARE_BIND_WXLUA
-WXLUA_DECLARE_BIND_WXLUASOCKET
 WXLUA_DECLARE_BIND_WXBASE
 WXLUA_DECLARE_BIND_WXCORE
 WXLUA_DECLARE_BIND_WXADV
@@ -69,6 +68,8 @@ BEGIN_EVENT_TABLE(serverkuh_mainFrame, wxFrame)
 
 	EVT_MOVE(serverkuh_mainFrame::OnMove)
 	EVT_SIZE(serverkuh_mainFrame::OnSize)
+
+	EVT_SOCKET(muhkuh_debugClientSocket_event,			serverkuh_mainFrame::OnDebugSocket)
 END_EVENT_TABLE()
 
 serverkuh_mainFrame::serverkuh_mainFrame(wxCmdLineParser *ptParser)
@@ -78,6 +79,7 @@ serverkuh_mainFrame::serverkuh_mainFrame(wxCmdLineParser *ptParser)
  , m_ptPluginManager(NULL)
  , m_ptWrapXml(NULL)
  , m_eInitState(MAINFRAME_INIT_STATE_UNCONFIGURED)
+ , m_ptDebugClientSocket(NULL)
 {
 	wxString strConfigFileName;
 	wxFileName cfgName;
@@ -475,6 +477,7 @@ bool serverkuh_mainFrame::initLuaState(void)
 {
 	bool fResult;
 	wxLuaBindingList *ptBindings;
+	wxIPV4address tIpAdr;
 
 
 	// expect success
@@ -493,7 +496,6 @@ bool serverkuh_mainFrame::initLuaState(void)
 	{
 		// init the standard lua bindings
 		WXLUA_IMPLEMENT_BIND_WXLUA
-		WXLUA_IMPLEMENT_BIND_WXLUASOCKET
 		WXLUA_IMPLEMENT_BIND_WXBASE
 		WXLUA_IMPLEMENT_BIND_WXCORE
 		WXLUA_IMPLEMENT_BIND_WXADV
@@ -562,23 +564,31 @@ bool serverkuh_mainFrame::initLuaState(void)
 							m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_VERSION"));
 
 							m_ptLuaState->SetLuaDebugHook(LUA_MASKCALL|LUA_MASKRET|LUA_MASKLINE, 0, 0, true);
+							m_ptDebugClientSocket = new wxSocketClient();
+							m_ptDebugClientSocket->SetEventHandler(*this, muhkuh_debugClientSocket_event);
+							m_ptDebugClientSocket->SetNotify(wxSOCKET_CONNECTION_FLAG|wxSOCKET_INPUT_FLAG|wxSOCKET_LOST_FLAG);
+							m_ptDebugClientSocket->Notify(true);
 
-/*
-							// connect to the debugger
-							if( m_lDebugServerPort!=-1 )
+							if( tIpAdr.Hostname(m_strDebugServerName)==false )
 							{
-								m_ptDebugTarget = new wxLuaDebugTarget(m_ptLuaState, m_strDebugServerName, m_lDebugServerPort);
-								if( m_ptDebugTarget!=NULL )
-								{
-									m_ptDebugTarget->Run();
-									wxLogMessage(_("Connected to debug server '%s', port %d."), m_strDebugServerName.fn_str(), m_lDebugServerPort);
-								}
-								else
-								{
-									wxLogError(_("Failed to connect to debug server '%s', port %d!"), m_strDebugServerName.fn_str(), m_lDebugServerPort);
-								}
+								wxLogError(_("failed to set hostname!"));
 							}
-*/
+							if( tIpAdr.Service(m_lDebugServerPort)==false )
+							{
+								wxLogError(_("failed to set port!"));
+							}
+							m_ptDebugClientSocket->Connect(tIpAdr, false);
+							m_ptDebugClientSocket->WaitOnConnect(100);
+
+							if( m_ptDebugClientSocket->IsConnected()==true )
+							{
+								wxLogMessage(_("client connected!"));
+							}
+							else
+							{
+								m_ptDebugClientSocket->Close();
+								wxLogMessage(_("client failed to connect!"));
+							}
 						}
 					}
 				}
@@ -603,15 +613,15 @@ void serverkuh_mainFrame::clearLuaState(void)
 	// plugins which are already gone after a config change
 	ptBindings = wxLuaBinding::GetBindingList();
 	ptBindings->Clear();
-/*
+
 	// disconnect from any debug server
-	if( m_ptDebugTarget!=NULL )
+	if( m_ptDebugClientSocket!=NULL )
 	{
-		m_ptDebugTarget->Stop();
-		delete m_ptDebugTarget;
-		m_ptDebugTarget = NULL;
+		m_ptDebugClientSocket->Destroy();
+		m_ptDebugClientSocket = NULL;
+		wxSafeYield();
 	}
-*/
+
 	if( m_ptLuaState!=NULL )
 	{
 		ptLuaState = m_ptLuaState;
@@ -753,12 +763,7 @@ void serverkuh_mainFrame::OnIdle(wxIdleEvent &event)
 		// NOTE: this must be the first statement in this case, or it will be executed with every idle event
 		m_eInitState = MAINFRAME_INIT_STATE_RUNNING;
 
-		// create debug client
-		// TODO...
-
-		initLuaState();
-
-//		// add all help books
+//		// TODO: add all help books
 //		m_ptHelp->AddBook(wxFileName("muhkuh.htb"), true);
 
 		fOk = scanFileXml(m_strTestXmlUrl);
@@ -829,7 +834,7 @@ void serverkuh_mainFrame::OnLuaDebug(wxLuaEvent &event)
 	m_ptLuaState->lua_GetStack(0, &tDbg);
 	m_ptLuaState->lua_GetInfo("Sln", &tDbg);
 
-	wxLogMessage(wxT("Debug %s:%s:%s:%s:%d:%d:%d:%d"), tDbg.name, tDbg.namewhat, tDbg.what, tDbg.source, tDbg.currentline, tDbg.linedefined, tDbg.lastlinedefined);
+//	wxLogMessage(wxT("Debug %s:%s:%s:%s:%d:%d:%d:%d"), tDbg.name, tDbg.namewhat, tDbg.what, tDbg.source, tDbg.currentline, tDbg.linedefined, tDbg.lastlinedefined);
 }
 
 
@@ -863,6 +868,28 @@ void serverkuh_mainFrame::OnSize(wxSizeEvent &event)
 	{
 		// frame is in normal state -> remember size
 		m_frameSize = event.GetSize();
+	}
+}
+
+
+void serverkuh_mainFrame::OnDebugSocket(wxSocketEvent &event)
+{
+	wxSocketNotify tEventTyp;
+
+
+	tEventTyp = event.GetSocketEvent();
+	switch( tEventTyp )
+	{
+	case wxSOCKET_INPUT:
+		wxLogMessage("wxSOCKET_INPUT");
+		break;
+
+	case wxSOCKET_LOST:
+		wxLogMessage("wxSOCKET_LOST");
+		break;
+
+	case wxSOCKET_CONNECTION:
+		wxLogMessage("wxSOCKET_CONNECTION");
 	}
 }
 
@@ -958,7 +985,7 @@ wxString serverkuh_mainFrame::luaLoad(wxString strFileName)
 }
 
 
-void serverkuh_mainFrame::luaInclude(wxString strFileName, wxString strChunkName)
+void serverkuh_mainFrame::luaInclude(wxString strFileName)
 {
 	wxString strMsg;
 	wxString strErrorMsg;
@@ -985,94 +1012,85 @@ void serverkuh_mainFrame::luaInclude(wxString strFileName, wxString strChunkName
 		}
 		else
 		{
-			if( strChunkName.IsEmpty()==true )
+			strFileUrl = m_strTestBaseUrl + wxFileName::GetPathSeparator() + strFileName;
+			wxLogMessage(_("lua include: searching '%s'"), strFileUrl.fn_str());
+			urlError = filelistUrl.SetURL(strFileUrl);
+			if( urlError!=wxURL_NOERR )
 			{
-				// the chunkname parameter is invalid
-				strMsg = _("lua include failed: empty chunkname");
+				// this was no valid url
+				strMsg.Printf(_("lua include: invalid URL '%s': "), strFileUrl.fn_str());
+				// try to show some details
+				switch( urlError )
+				{
+				case wxURL_SNTXERR:
+					strMsg += _("Syntax error in the URL string.");
+					break;
+				case wxURL_NOPROTO:
+					strMsg += _("Found no protocol which can get this URL.");
+					break;
+				case wxURL_NOHOST:
+					strMsg += _("An host name is required for this protocol.");
+					break;
+				case wxURL_NOPATH:
+					strMsg += _("A path is required for this protocol.");
+					break;
+				case wxURL_CONNERR:
+					strMsg += _("Connection error.");
+					break;
+				case wxURL_PROTOERR:
+					strMsg += _("An error occurred during negotiation. (should never happen!)");
+					break;
+				default:
+					strMsg += _("unknown errorcode");
+					break;
+				}
+
+				// show the error message
 				m_ptLuaState->wxlua_Error(strMsg);
 			}
 			else
 			{
-				strFileUrl = m_strTestBaseUrl + wxFileName::GetPathSeparator() + strFileName;
-				wxLogMessage(_("lua include: searching '%s'"), strFileUrl.fn_str());
-				urlError = filelistUrl.SetURL(strFileUrl);
-				if( urlError!=wxURL_NOERR )
+				ptGrowBuffer = new growbuffer(65536);
+				fResult = readFsFile(ptGrowBuffer, strFileUrl);
+				if( fResult==true )
 				{
-					// this was no valid url
-					strMsg.Printf(_("lua include: invalid URL '%s': "), strFileUrl.fn_str());
-					// try to show some details
-					switch( urlError )
+					sizDataSize = ptGrowBuffer->getSize();
+					pucData = ptGrowBuffer->getData();
+
+					iGetTop = m_ptLuaState->lua_GetTop();
+					iResult = m_ptLuaState->luaL_LoadBuffer((const char*)pucData, sizDataSize, strFileUrl.ToAscii());
+					switch( iResult )
 					{
-					case wxURL_SNTXERR:
-						strMsg += _("Syntax error in the URL string.");
+					case 0:
+						// ok, the function is on the stack -> execute the new code with no arguments and no return values
+						wxLogMessage(_("lua_include: file loaded, executing code"));
+						m_ptLuaState->lua_Call(0,0);
 						break;
-					case wxURL_NOPROTO:
-						strMsg += _("Found no protocol which can get this URL.");
+
+					case LUA_ERRSYNTAX:
+						wxlua_errorinfo(m_ptLuaState->GetLuaState(), iResult, iGetTop, &strErrorMsg, &iLineNr);
+						strMsg.Printf(_("error %d in line %d: ") + strErrorMsg, iResult, iLineNr);
+						wxLogError(strMsg);
+						strMsg = _("syntax error during pre-compilation");
+						m_ptLuaState->wxlua_Error(strMsg);
 						break;
-					case wxURL_NOHOST:
-						strMsg += _("An host name is required for this protocol.");
+
+					case LUA_ERRMEM:
+						strMsg = _("memory allocation error");
+						m_ptLuaState->wxlua_Error(strMsg);
 						break;
-					case wxURL_NOPATH:
-						strMsg += _("A path is required for this protocol.");
-						break;
-					case wxURL_CONNERR:
-						strMsg += _("Connection error.");
-						break;
-					case wxURL_PROTOERR:
-						strMsg += _("An error occurred during negotiation. (should never happen!)");
-						break;
+
 					default:
-						strMsg += _("unknown errorcode");
+						strMsg.Printf(_("Unknown error message from luaL_LoadBuffer: 0x%x"), iResult);
+						m_ptLuaState->wxlua_Error(strMsg);
 						break;
 					}
-
-					// show the error message
-					m_ptLuaState->wxlua_Error(strMsg);
 				}
 				else
 				{
-					ptGrowBuffer = new growbuffer(65536);
-					fResult = readFsFile(ptGrowBuffer, strFileUrl);
-					if( fResult==true )
-					{
-						sizDataSize = ptGrowBuffer->getSize();
-						pucData = ptGrowBuffer->getData();
-
-						iGetTop = m_ptLuaState->lua_GetTop();
-						iResult = m_ptLuaState->luaL_LoadBuffer((const char*)pucData, sizDataSize, strChunkName.ToAscii());
-						switch( iResult )
-						{
-						case 0:
-							// ok, the function is on the stack -> execute the new code with no arguments and no return values
-							wxLogMessage(_("lua_include: file loaded, executing code"));
-							m_ptLuaState->lua_Call(0,0);
-							break;
-
-						case LUA_ERRSYNTAX:
-							wxlua_errorinfo(m_ptLuaState->GetLuaState(), iResult, iGetTop, &strErrorMsg, &iLineNr);
-							strMsg.Printf(_("error %d in line %d: ") + strErrorMsg, iResult, iLineNr);
-							wxLogError(strMsg);
-							strMsg = _("syntax error during pre-compilation");
-							m_ptLuaState->wxlua_Error(strMsg);
-							break;
-
-						case LUA_ERRMEM:
-							strMsg = _("memory allocation error");
-							m_ptLuaState->wxlua_Error(strMsg);
-							break;
-
-						default:
-							strMsg.Printf(_("Unknown error message from luaL_LoadBuffer: 0x%x"), iResult);
-							m_ptLuaState->wxlua_Error(strMsg);
-							break;
-						}
-					}
-					else
-					{
-						m_ptLuaState->wxlua_Error(_("lua include: failed to read file"));
-					}
-					delete ptGrowBuffer;
+					m_ptLuaState->wxlua_Error(_("lua include: failed to read file"));
 				}
+				delete ptGrowBuffer;
 			}
 		}
 	}
@@ -1181,13 +1199,13 @@ wxString load(wxString strFileName)
 }
 
 
-void include(wxString strFileName, wxString strChunkName)
+void include(wxString strFileName)
 {
 	// does the mainframe exist?
 	if( g_ptMainFrame!=NULL )
 	{
 		// yes, the mainframe exists -> call the luaLoadFile function there
-		g_ptMainFrame->luaInclude(strFileName, strChunkName);
+		g_ptMainFrame->luaInclude(strFileName);
 	}
 }
 

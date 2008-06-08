@@ -42,7 +42,6 @@ WXIMPORT int wxluatype_wxXmlDocument;
 WXIMPORT int wxluatype_wxPanel;
 
 WXLUA_DECLARE_BIND_WXLUA
-WXLUA_DECLARE_BIND_WXLUASOCKET
 WXLUA_DECLARE_BIND_WXBASE
 WXLUA_DECLARE_BIND_WXCORE
 WXLUA_DECLARE_BIND_WXADV
@@ -95,6 +94,9 @@ BEGIN_EVENT_TABLE(muhkuh_mainFrame, wxFrame)
 	EVT_AUINOTEBOOK_PAGE_CLOSE(muhkuh_mainFrame_Notebook_id,	muhkuh_mainFrame::OnNotebookPageClose)
 	EVT_AUI_PANE_CLOSE(muhkuh_mainFrame::OnPaneClose)
 
+	EVT_SOCKET(muhkuh_debugServerSocket_event,			muhkuh_mainFrame::OnDebugServerSocket)
+	EVT_SOCKET(muhkuh_debugConnectionSocket_event,			muhkuh_mainFrame::OnDebugConnectionSocket)
+
 	EVT_MOVE(muhkuh_mainFrame::OnMove)
 	EVT_SIZE(muhkuh_mainFrame::OnSize)
 END_EVENT_TABLE()
@@ -116,6 +118,9 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
  , m_ptHelp(NULL)
  , m_testPanel(NULL)
  , m_debuggerPanel(NULL)
+ , m_lServerPid(0)
+ , m_ptDebugSocketServer(NULL)
+ , m_ptDebugConnection(NULL)
  , m_tipProvider(NULL)
  , m_welcomeHtml(NULL)
  , m_testDetailsHtml(NULL)
@@ -126,6 +131,10 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	wxFileConfig *ptConfig;
 	int iLanguage;
 
+
+	// TODO: get this fron the config file
+	// *** DEBUG ***
+	m_usDebugServerPort = 3000;
 
 	// get the application path
 	cfgName.Assign(wxStandardPaths::Get().GetExecutablePath());
@@ -1124,7 +1133,6 @@ bool muhkuh_mainFrame::initLuaState(void)
 	{
 		// init the standard lua bindings
 		WXLUA_IMPLEMENT_BIND_WXLUA
-		WXLUA_IMPLEMENT_BIND_WXLUASOCKET
 		WXLUA_IMPLEMENT_BIND_WXBASE
 		WXLUA_IMPLEMENT_BIND_WXCORE
 		WXLUA_IMPLEMENT_BIND_WXADV
@@ -1295,8 +1303,10 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	wxString strMsg;
 	wxString strErrorMsg;
 	wxString strDebug;
+	wxString strServerCmd;
 	int iGetTop;
 	int iLineNr;
+	wxIPV4address tIpAdr;
 
 
 	// check all plugins for state ok before executing the test
@@ -1312,52 +1322,79 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 
 		if( m_ptLuaState!=NULL && m_ptLuaState->Ok()==true )
 		{
-			strDebug.Printf(wxT("./serverkuh -c Muhkuh.cfg -i %d file:/home/Benten/Coding/netx/muhkuh/trunk/nxdb500-sys_demo/test_description.xml"), m_sizRunningTest_TestIdx);
-			wxLogMessage(wxT("debug command: ") + strDebug);
-			wxLuaDebuggerBase::SetProgramName(strDebug);
-
-
-
-
-			// create a new panel for the test
-			m_testPanel = new wxPanel(this);
-			m_notebook->AddPage(m_testPanel, m_strRunningTestName, true);
-			// create a new panel for the debugger
-			m_debuggerPanel = new wxPanel(this);
-			m_notebook->AddPage(m_debuggerPanel, _("Debugger"), false);
-
-			// set some global vars
-
-			// set the xml document
-			m_ptLuaState->wxluaT_PushUserDataType(ptTestData->getXmlDocument(), wxluatype_wxXmlDocument, false);
-			m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_XML"));
-			// set the selected test index
-			m_ptLuaState->lua_PushNumber(uiIndex);
-			m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_INDEX"));
-			// set the test panel
-			m_ptLuaState->wxluaT_PushUserDataType(m_testPanel, wxluatype_wxPanel, false);
-			m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_PANEL"));
-			// set the debugger panel
-			m_ptLuaState->wxluaT_PushUserDataType(m_debuggerPanel, wxluatype_wxPanel, false);
-			m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_DEBUGGER_PANEL"));
-
-			// set state to 'testing'
-			// NOTE: this must be done before the call to 'RunString', or the state will not change before the first idle event
-			setState(muhkuh_mainFrame_state_testing);
-
-			// set the log marker
-			luaSetLogMarker();
-
-			iGetTop = m_ptLuaState->lua_GetTop();
-			iResult = m_ptLuaState->RunString(m_strLuaDebuggerCode, wxT("system boot"));
-			if( iResult!=0 )
+			// create the debug socket server
+			if( tIpAdr.AnyAddress()==false )
 			{
-				wxlua_errorinfo(m_ptLuaState->GetLuaState(), iResult, iGetTop, &strErrorMsg, &iLineNr);
-				strMsg.Printf(_("error %d in line %d: ") + strErrorMsg, iResult, iLineNr);
-				wxLogError(strMsg);
-				finishTest();
-				setState(muhkuh_mainFrame_state_idle);
+				wxLogError(_("failed to set local addr!"));
 			}
+			if( tIpAdr.Service(m_usDebugServerPort)==false )
+			{
+				wxLogError(_("failed to set service port!"));
+			}
+//			m_ptDebugSocketServer = new wxSocketServer(tIpAdr, wxSOCKET_WAITALL|wxSOCKET_REUSEADDR);
+			m_ptDebugSocketServer = new wxSocketServer(tIpAdr);
+			if( m_ptDebugSocketServer!=NULL && m_ptDebugSocketServer->IsOk()==true )
+			{
+				m_ptDebugSocketServer->SetEventHandler(*this, muhkuh_debugServerSocket_event);
+				m_ptDebugSocketServer->SetNotify(wxSOCKET_CONNECTION_FLAG);
+				m_ptDebugSocketServer->Notify(true);
+
+				// create a new panel for the test
+				m_testPanel = new wxPanel(this);
+				m_notebook->AddPage(m_testPanel, m_strRunningTestName, true);
+				// create a new panel for the debugger
+				m_debuggerPanel = new wxPanel(this);
+				m_notebook->AddPage(m_debuggerPanel, _("Debugger"), false);
+
+				// set some global vars
+
+				// set the xml document
+				m_ptLuaState->wxluaT_PushUserDataType(ptTestData->getXmlDocument(), wxluatype_wxXmlDocument, false);
+				m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_XML"));
+				// set the selected test index
+				m_ptLuaState->lua_PushNumber(uiIndex);
+				m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_INDEX"));
+				// set the test panel
+				m_ptLuaState->wxluaT_PushUserDataType(m_testPanel, wxluatype_wxPanel, false);
+				m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_PANEL"));
+				// set the debugger panel
+				m_ptLuaState->wxluaT_PushUserDataType(m_debuggerPanel, wxluatype_wxPanel, false);
+				m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_DEBUGGER_PANEL"));
+
+				// set state to 'testing'
+				// NOTE: this must be done before the call to 'RunString', or the state will not change before the first idle event
+				setState(muhkuh_mainFrame_state_testing);
+
+				strServerCmd.Printf(wxT("./serverkuh -c Muhkuh.cfg -i %d -dlocalhost:%d file:/home/Benten/Coding/netx/muhkuh/trunk/nxdb500-sys_demo/test_description.xml"), m_sizRunningTest_TestIdx, m_usDebugServerPort);
+				wxLogMessage(wxT("starting server: ") + strServerCmd);
+
+				m_lServerPid = wxExecute(strServerCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, NULL);
+				if( m_lServerPid==0 )
+				{
+					strMsg.Printf(_("Failed to start the server with command: %s"), strServerCmd.fn_str());
+					wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
+				}
+				else
+				{
+					// set the log marker
+					luaSetLogMarker();
+
+					iGetTop = m_ptLuaState->lua_GetTop();
+					iResult = m_ptLuaState->RunString(m_strLuaDebuggerCode, wxT("system boot"));
+					if( iResult!=0 )
+					{
+						wxlua_errorinfo(m_ptLuaState->GetLuaState(), iResult, iGetTop, &strErrorMsg, &iLineNr);
+						strMsg.Printf(_("error %d in line %d: ") + strErrorMsg, iResult, iLineNr);
+						wxLogError(strMsg);
+						finishTest();
+						setState(muhkuh_mainFrame_state_idle);
+					}
+				}
+			}
+		}
+		else
+		{
+			wxLogError(_("server is not listening!"));
 		}
 	}
 }
@@ -1395,6 +1432,20 @@ void muhkuh_mainFrame::finishTest(void)
 		m_debuggerPanel = NULL;
 	}
 
+	// close the debug server socket
+	if( m_ptDebugSocketServer!=NULL )
+	{
+		m_ptDebugSocketServer->Destroy();
+		m_ptDebugSocketServer = NULL;
+		wxSafeYield();
+	}
+	if( m_ptDebugConnection!=NULL )
+	{
+		m_ptDebugConnection->Destroy();
+		m_ptDebugConnection = NULL;
+		wxSafeYield();
+	}
+
 	// was this an autostart test?
 	if( m_fRunningTestIsAutostart==true )
 	{
@@ -1409,6 +1460,50 @@ void muhkuh_mainFrame::finishTest(void)
 			tCommandEvent.SetEventObject( this );
 			GetEventHandler()->ProcessEvent(tCommandEvent);
 		}
+	}
+}
+
+
+void muhkuh_mainFrame::OnDebugServerSocket(wxSocketEvent &event)
+{
+	wxSocketNotify tEventTyp;
+
+
+	tEventTyp = event.GetSocketEvent();
+	if( tEventTyp==wxSOCKET_CONNECTION && m_ptDebugSocketServer!=NULL && m_ptDebugConnection==NULL )
+	{
+		// accept the socket connection
+		m_ptDebugConnection = m_ptDebugSocketServer->Accept(false);
+		if( m_ptDebugConnection!=NULL )
+		{
+			m_ptDebugConnection->SetEventHandler(*this, muhkuh_debugConnectionSocket_event);
+			m_ptDebugConnection->SetNotify(wxSOCKET_INPUT_FLAG|wxSOCKET_LOST_FLAG);
+			m_ptDebugConnection->Notify(true);
+
+			// connection established!
+			wxLogMessage(_("connected to debug client!"));
+		}
+	}
+}
+
+
+void muhkuh_mainFrame::OnDebugConnectionSocket(wxSocketEvent &event)
+{
+	wxSocketNotify tEventTyp;
+
+
+	tEventTyp = event.GetSocketEvent();
+	switch( tEventTyp )
+	{
+	case wxSOCKET_INPUT:
+		wxLogMessage(_("wxSOCKET_INPUT"));
+		break;
+
+	case wxSOCKET_LOST:
+		wxLogMessage(wxT("wxSOCKET_LOST"));
+		finishTest();
+		setState(muhkuh_mainFrame_state_idle);
+		break;
 	}
 }
 
@@ -1607,15 +1702,22 @@ void muhkuh_mainFrame::OnTestCancel(wxCommandEvent& WXUNUSED(event))
 	int iResult;
 
 
-	iResult = wxMessageBox(_("Are you sure you want to cancel this test?"), m_strRunningTestName, wxYES_NO, this);
-	if( iResult==wxYES )
+	// is a test running?
+	if( m_lServerPid!=0 )
 	{
-		wxLogMessage(_("Script canceled on user request!"));
+		iResult = wxMessageBox(_("Are you sure you want to cancel this test?"), m_strRunningTestName, wxYES_NO, this);
+		if( iResult==wxYES )
+		{
+			wxLogMessage(_("Script canceled on user request!"));
 
-		finishTest();
+			// try to kill the process
+			wxProcess::Kill(m_lServerPid, wxSIGKILL, wxKILL_CHILDREN);
 
-		// test done -> go back to idle state
-		setState(muhkuh_mainFrame_state_idle);
+			finishTest();
+
+			// test done -> go back to idle state
+			setState(muhkuh_mainFrame_state_idle);
+		}
 	}
 }
 
@@ -2451,7 +2553,7 @@ wxString muhkuh_mainFrame::luaLoad(wxString strFileName)
 }
 
 
-void muhkuh_mainFrame::luaInclude(wxString strFileName, wxString strChunkName)
+void muhkuh_mainFrame::luaInclude(wxString strFileName)
 {
 	wxString strMsg;
 	wxString strErrorMsg;
@@ -2478,94 +2580,85 @@ void muhkuh_mainFrame::luaInclude(wxString strFileName, wxString strChunkName)
 		}
 		else
 		{
-			if( strChunkName.IsEmpty()==true )
+			strFileUrl = m_ptRepositoryManager->getTestlistBaseUrl(m_sizRunningTest_RepositoryIdx, m_sizRunningTest_TestIdx) + wxFileName::GetPathSeparator() + strFileName;
+			wxLogMessage(_("lua include: searching '%s'"), strFileUrl.fn_str());
+			urlError = filelistUrl.SetURL(strFileUrl);
+			if( urlError!=wxURL_NOERR )
 			{
-				// the chunkname parameter is invalid
-				strMsg = _("lua include failed: empty chunkname");
+				// this was no valid url
+				strMsg.Printf(_("lua include: invalid URL '%s': "), strFileUrl.fn_str());
+				// try to show some details
+				switch( urlError )
+				{
+				case wxURL_SNTXERR:
+					strMsg += _("Syntax error in the URL string.");
+					break;
+				case wxURL_NOPROTO:
+					strMsg += _("Found no protocol which can get this URL.");
+					break;
+				case wxURL_NOHOST:
+					strMsg += _("An host name is required for this protocol.");
+					break;
+				case wxURL_NOPATH:
+					strMsg += _("A path is required for this protocol.");
+					break;
+				case wxURL_CONNERR:
+					strMsg += _("Connection error.");
+					break;
+				case wxURL_PROTOERR:
+					strMsg += _("An error occurred during negotiation. (should never happen!)");
+					break;
+				default:
+					strMsg += _("unknown errorcode");
+					break;
+				}
+
+				// show the error message
 				m_ptLuaState->wxlua_Error(strMsg);
 			}
 			else
 			{
-				strFileUrl = m_ptRepositoryManager->getTestlistBaseUrl(m_sizRunningTest_RepositoryIdx, m_sizRunningTest_TestIdx) + wxFileName::GetPathSeparator() + strFileName;
-				wxLogMessage(_("lua include: searching '%s'"), strFileUrl.fn_str());
-				urlError = filelistUrl.SetURL(strFileUrl);
-				if( urlError!=wxURL_NOERR )
+				ptGrowBuffer = new growbuffer(65536);
+				fResult = readFsFile(ptGrowBuffer, strFileUrl);
+				if( fResult==true )
 				{
-					// this was no valid url
-					strMsg.Printf(_("lua include: invalid URL '%s': "), strFileUrl.fn_str());
-					// try to show some details
-					switch( urlError )
+					sizDataSize = ptGrowBuffer->getSize();
+					pucData = ptGrowBuffer->getData();
+
+					iGetTop = m_ptLuaState->lua_GetTop();
+					iResult = m_ptLuaState->luaL_LoadBuffer((const char*)pucData, sizDataSize, strFileUrl.ToAscii());
+					switch( iResult )
 					{
-					case wxURL_SNTXERR:
-						strMsg += _("Syntax error in the URL string.");
+					case 0:
+						// ok, the function is on the stack -> execute the new code with no arguments and no return values
+						wxLogMessage(_("lua_include: file loaded, executing code"));
+						m_ptLuaState->lua_Call(0,0);
 						break;
-					case wxURL_NOPROTO:
-						strMsg += _("Found no protocol which can get this URL.");
+
+					case LUA_ERRSYNTAX:
+						wxlua_errorinfo(m_ptLuaState->GetLuaState(), iResult, iGetTop, &strErrorMsg, &iLineNr);
+						strMsg.Printf(_("error %d in line %d: ") + strErrorMsg, iResult, iLineNr);
+						wxLogError(strMsg);
+						strMsg = _("syntax error during pre-compilation");
+						m_ptLuaState->wxlua_Error(strMsg);
 						break;
-					case wxURL_NOHOST:
-						strMsg += _("An host name is required for this protocol.");
+
+					case LUA_ERRMEM:
+						strMsg = _("memory allocation error");
+						m_ptLuaState->wxlua_Error(strMsg);
 						break;
-					case wxURL_NOPATH:
-						strMsg += _("A path is required for this protocol.");
-						break;
-					case wxURL_CONNERR:
-						strMsg += _("Connection error.");
-						break;
-					case wxURL_PROTOERR:
-						strMsg += _("An error occurred during negotiation. (should never happen!)");
-						break;
+
 					default:
-						strMsg += _("unknown errorcode");
+						strMsg.Printf(_("Unknown error message from luaL_LoadBuffer: 0x%x"), iResult);
+						m_ptLuaState->wxlua_Error(strMsg);
 						break;
 					}
-
-					// show the error message
-					m_ptLuaState->wxlua_Error(strMsg);
 				}
 				else
 				{
-					ptGrowBuffer = new growbuffer(65536);
-					fResult = readFsFile(ptGrowBuffer, strFileUrl);
-					if( fResult==true )
-					{
-						sizDataSize = ptGrowBuffer->getSize();
-						pucData = ptGrowBuffer->getData();
-
-						iGetTop = m_ptLuaState->lua_GetTop();
-						iResult = m_ptLuaState->luaL_LoadBuffer((const char*)pucData, sizDataSize, strChunkName.ToAscii());
-						switch( iResult )
-						{
-						case 0:
-							// ok, the function is on the stack -> execute the new code with no arguments and no return values
-							wxLogMessage(_("lua_include: file loaded, executing code"));
-							m_ptLuaState->lua_Call(0,0);
-							break;
-
-						case LUA_ERRSYNTAX:
-							wxlua_errorinfo(m_ptLuaState->GetLuaState(), iResult, iGetTop, &strErrorMsg, &iLineNr);
-							strMsg.Printf(_("error %d in line %d: ") + strErrorMsg, iResult, iLineNr);
-							wxLogError(strMsg);
-							strMsg = _("syntax error during pre-compilation");
-							m_ptLuaState->wxlua_Error(strMsg);
-							break;
-
-						case LUA_ERRMEM:
-							strMsg = _("memory allocation error");
-							m_ptLuaState->wxlua_Error(strMsg);
-							break;
-
-						default:
-							strMsg.Printf(_("Unknown error message from luaL_LoadBuffer: 0x%x"), iResult);
-							m_ptLuaState->wxlua_Error(strMsg);
-							break;
-						}
-					}
-					else
-					{
-						m_ptLuaState->wxlua_Error(_("lua include: failed to read file"));
-					}
-					delete ptGrowBuffer;
+					m_ptLuaState->wxlua_Error(_("lua include: failed to read file"));
 				}
+				delete ptGrowBuffer;
 			}
 		}
 	}
@@ -2768,13 +2861,13 @@ wxString load(wxString strFileName)
 }
 
 
-void include(wxString strFileName, wxString strChunkName)
+void include(wxString strFileName)
 {
 	// does the mainframe exist?
 	if( g_ptMainFrame!=NULL )
 	{
 		// yes, the mainframe exists -> call the luaLoadFile function there
-		g_ptMainFrame->luaInclude(strFileName, strChunkName);
+		g_ptMainFrame->luaInclude(strFileName);
 	}
 }
 

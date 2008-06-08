@@ -92,7 +92,10 @@ enum
 
 	muhkuh_scanner_thread_event,
 	muhkuh_tester_thread_event,
-	muhkuh_mainFrame_testFinish_event
+	muhkuh_mainFrame_testFinish_event,
+
+	muhkuh_debugServerSocket_event,
+	muhkuh_debugConnectionSocket_event,
 };
 
 #endif	// __MUHKUH_ID_H__

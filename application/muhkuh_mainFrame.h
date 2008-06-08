@@ -104,13 +104,16 @@ public:
 	void OnNotebookPageClose(wxAuiNotebookEvent &event);
 	void OnPaneClose(wxAuiManagerEvent &event);
 
+	void OnDebugServerSocket(wxSocketEvent &event);
+	void OnDebugConnectionSocket(wxSocketEvent &event);
+
 	void OnMove(wxMoveEvent &event);
 	void OnSize(wxSizeEvent &event);
 
 	// the lua functions
 	void luaTestHasFinished(void);
 	wxString luaLoad(wxString strFileName);
-	void luaInclude(wxString strFileName, wxString strChunkName);
+	void luaInclude(wxString strFileName);
 	void luaSetLogMarker(void);
 	wxString luaGetMarkedLog(void);
 	void luaScanPlugins(wxString strPattern);
@@ -205,6 +208,13 @@ private:
 	wxPanel *m_testPanel;
 	// the debugger panel
 	wxPanel *m_debuggerPanel;
+	// the process id of the server task
+	long m_lServerPid;
+	// the debug server port
+	unsigned short m_usDebugServerPort;
+	// the debug server socket
+	wxSocketServer *m_ptDebugSocketServer;
+	wxSocketBase *m_ptDebugConnection;
 	// the log marker for the scripts
 	wxTextPos m_tLogMarker;
 

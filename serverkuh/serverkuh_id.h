@@ -92,7 +92,9 @@ enum
 
 	muhkuh_scanner_thread_event,
 	muhkuh_tester_thread_event,
-	muhkuh_mainFrame_testFinish_event
+	muhkuh_mainFrame_testFinish_event,
+
+	muhkuh_debugClientSocket_event,
 };
 
 #endif	// __SERVERKUH_ID_H__

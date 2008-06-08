@@ -32,7 +32,7 @@
 void TestHasFinished(void);
 
 wxString load(wxString strFileName);
-void include(wxString strFileName, wxString strChunkName);
+void include(wxString strFileName);
 
 void setLogMarker(void);
 wxString getMarkedLog(void);

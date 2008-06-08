@@ -144,20 +144,18 @@ static int LUACALL wxLua_function_getMarkedLog(lua_State *L)
 }
 static wxLuaBindCFunc s_wxluafunc_wxLua_function_getMarkedLog[1] = {{ wxLua_function_getMarkedLog, WXLUAMETHOD_CFUNCTION, 0, 0, g_wxluaargtypeArray_None }};
 
-static wxLuaArgType s_wxluatypeArray_wxLua_function_include[] = { &wxluatype_TSTRING, &wxluatype_TSTRING, NULL };
-// %function void include(wxString strFileName, wxString strChunkName)
+static wxLuaArgType s_wxluatypeArray_wxLua_function_include[] = { &wxluatype_TSTRING, NULL };
+// %function void include(wxString strFileName)
 static int LUACALL wxLua_function_include(lua_State *L)
 {
-    // wxString strChunkName
-    wxString strChunkName = wxlua_getwxStringtype(L, 2);
     // wxString strFileName
     wxString strFileName = wxlua_getwxStringtype(L, 1);
     // call include
-    include(strFileName, strChunkName);
+    include(strFileName);
 
     return 0;
 }
-static wxLuaBindCFunc s_wxluafunc_wxLua_function_include[1] = {{ wxLua_function_include, WXLUAMETHOD_CFUNCTION, 2, 2, s_wxluatypeArray_wxLua_function_include }};
+static wxLuaBindCFunc s_wxluafunc_wxLua_function_include[1] = {{ wxLua_function_include, WXLUAMETHOD_CFUNCTION, 1, 1, s_wxluatypeArray_wxLua_function_include }};
 
 static wxLuaArgType s_wxluatypeArray_wxLua_function_load[] = { &wxluatype_TSTRING, NULL };
 // %override wxLua_function_load

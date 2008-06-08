@@ -26,7 +26,7 @@
 %function void TestHasFinished()
 
 %function wxString load(wxString strFileName)
-%function void include(wxString strFileName, wxString strChunkName)
+%function void include(wxString strFileName)
 
 %function void setLogMarker()
 %function wxString getMarkedLog()

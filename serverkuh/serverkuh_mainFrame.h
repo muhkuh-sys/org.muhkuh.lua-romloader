@@ -80,10 +80,12 @@ public:
 	void OnLuaPrint(wxLuaEvent &event);
 	void OnLuaError(wxLuaEvent &event);
 
+	void OnDebugSocket(wxSocketEvent &event);
+
 	// the lua functions
 	void luaTestHasFinished(void);
 	wxString luaLoad(wxString strFileName);
-	void luaInclude(wxString strFileName, wxString strChunkName);
+	void luaInclude(wxString strFileName);
 	void luaSetLogMarker(void);
 	wxString luaGetMarkedLog(void);
 	void luaScanPlugins(wxString strPattern);
@@ -138,6 +140,8 @@ private:
 	wxString m_strDebugServerName;
 	// the debug server port
 	long m_lDebugServerPort;
+	// the debug client socket
+	wxSocketClient *m_ptDebugClientSocket;
 	// the lua state
 	wxLuaState *m_ptLuaState;
 	// the test panel
