@@ -1066,7 +1066,7 @@ local function runTest(iBoardIdx, iTestIdx)
 		m_runningBoard = iBoardIdx
 		m_runningTest = iTestIdx
 		print("running test '"..test.name.."'")
-		testfn,luaresult = loadstring(test.code)
+		testfn,luaresult = loadstring(test.code, "@@"..tostring(iTestIdx))
 		if not testfn then
 			print("failed to compile test code:", luaresult)
 			testresult = __MUHKUH_TEST_RESULT_FATALERROR

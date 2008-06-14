@@ -650,7 +650,7 @@ function boot_xml()
 		-- set the global variable
 		_G.__MUHKUH_ALL_TESTS = alltests
 		-- run the main code
-		assert(loadstring(alltests[1].code))()
+		assert(loadstring(alltests[1].code, "@@0"))()
 	end
 end
 
