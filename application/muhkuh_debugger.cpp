@@ -122,7 +122,7 @@ void muhkuh_debugger::OnDebuggerStepOut(wxCommandEvent &event)
 {
 	if( m_ptDebugConnection!=NULL && m_ptDebugConnection->IsConnected()==true )
 	{
-		dbg_write_u08(MUHDBG_CmdStepOver);
+		dbg_write_u08(MUHDBG_CmdStepOut);
 	}
 }
 
@@ -393,6 +393,25 @@ void muhkuh_debugger::OnDebugConnectionSocket(wxSocketEvent &event)
 }
 
 
+bool muhkuh_debugger::dbg_read_u08(unsigned char *pucData)
+{
+	wxUint32 u32LastRead;
+	bool fOk;
+
+
+	fOk = false;
+
+	m_ptDebugConnection->Read(pucData, sizeof(unsigned char));
+	u32LastRead = m_ptDebugConnection->LastCount();
+	if( u32LastRead==sizeof(unsigned char) )
+	{
+		fOk = true;
+	}
+
+	return fOk;
+}
+
+
 bool muhkuh_debugger::dbg_read_string(wxString &strData)
 {
 	wxUint32 u32LastRead;
@@ -464,6 +483,7 @@ void muhkuh_debugger::dbg_write_int(int iData)
 
 void muhkuh_debugger::dbg_packet_InterpreterHalted(void)
 {
+	unsigned char ucStatus;
 	wxString strName;
 	wxString strNameWhat;
 	wxString strWhat;
@@ -480,101 +500,115 @@ void muhkuh_debugger::dbg_packet_InterpreterHalted(void)
 	wxFile tFile;
 
 
-	if(	dbg_read_string(strName)==true &&
-		dbg_read_string(strNameWhat)==true &&
-		dbg_read_string(strWhat)==true &&
-		dbg_read_string(strSource)==true &&
-		dbg_read_int(&iCurrentLine)==true &&
-		dbg_read_int(&iNUps)==true &&
-		dbg_read_int(&iLineDefined)==true &&
-		dbg_read_int(&iLastLineDefined)==true
-	  )
+	if( dbg_read_u08(&ucStatus)==true )
 	{
-		wxLogMessage(_("Debug: %s:%s:%s:%s:%d:%d:%d:%d"), strName.fn_str(), strNameWhat.fn_str(), strWhat.fn_str(), strSource.fn_str(), iCurrentLine, iNUps, iLineDefined, iLastLineDefined);
-
-
-		m_ptDebugEditor->Clear();
-		m_ptDebugEditor->ClearAll();
-		m_ptDebugEditor->MarkerDeleteAll(DBGEDIT_Marker_BreakPoint);
-		m_ptDebugEditor->MarkerDeleteAll(DBGEDIT_Marker_CurrentLine);
-
-		if( strSource.StartsWith(wxT("@"), &strSourceFile)==true )
+		if( ucStatus==0 )
 		{
-			// test for next '@'
-			if( strSourceFile.StartsWith(wxT("@"), &strTestIndex)==true )
+			if(	dbg_read_string(strName)==true &&
+				dbg_read_string(strNameWhat)==true &&
+				dbg_read_string(strWhat)==true &&
+				dbg_read_string(strSource)==true &&
+				dbg_read_int(&iCurrentLine)==true &&
+				dbg_read_int(&iNUps)==true &&
+				dbg_read_int(&iLineDefined)==true &&
+				dbg_read_int(&iLastLineDefined)==true
+			)
 			{
-				// this is the index to a code section in the test description
-				// TODO: build a suitable name for the tab
-				// TODO: get the source code from the xml wrapper
-				strSourceCode = "this comes from code index " + strTestIndex;
-			}
-			else
-			{
-				tFileName.Assign(strSourceFile);
-				if( tFileName.IsAbsolute(wxPATH_NATIVE)==false )
-				{
-					tFileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE);
-				}
-				if( tFileName.FileExists()==true && tFileName.IsFileReadable()==true )
-				{
-					// read the complete file
-					if( tFile.Open(strSourceFile, wxFile::read)==true )
-					{
-						char *pucData;
-						wxFileOffset fileSize;
+				wxLogMessage(_("Debug: %s:%s:%s:%s:%d:%d:%d:%d"), strName.fn_str(), strNameWhat.fn_str(), strWhat.fn_str(), strSource.fn_str(), iCurrentLine, iNUps, iLineDefined, iLastLineDefined);
 
-						fileSize = tFile.Length();
-						if( fileSize>0 )
-						{
-							pucData = new char[fileSize];
-							if( tFile.Read(pucData, fileSize)==fileSize )
-							{
-								strSourceCode = wxString::From8BitData(pucData, fileSize);
-							}
-							else
-							{
-								strSourceCode = "Read error, failed to read file!!!";
-							}
-							delete[] pucData;
-						}
+
+				m_ptDebugEditor->Clear();
+				m_ptDebugEditor->ClearAll();
+				m_ptDebugEditor->MarkerDeleteAll(DBGEDIT_Marker_BreakPoint);
+				m_ptDebugEditor->MarkerDeleteAll(DBGEDIT_Marker_CurrentLine);
+
+				if( strSource.StartsWith(wxT("@"), &strSourceFile)==true )
+				{
+					// test for next '@'
+					if( strSourceFile.StartsWith(wxT("@"), &strTestIndex)==true )
+					{
+						// this is the index to a code section in the test description
+						// TODO: build a suitable name for the tab
+						// TODO: get the source code from the xml wrapper
+						strSourceCode = "this comes from code index " + strTestIndex;
 					}
 					else
 					{
-						strSourceCode = "Failed to open file!!!";
+						tFileName.Assign(strSourceFile);
+						if( tFileName.IsAbsolute(wxPATH_NATIVE)==false )
+						{
+							tFileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE);
+						}
+						if( tFileName.FileExists()==true && tFileName.IsFileReadable()==true )
+						{
+							// read the complete file
+							if( tFile.Open(strSourceFile, wxFile::read)==true )
+							{
+								char *pucData;
+								wxFileOffset fileSize;
+
+								fileSize = tFile.Length();
+								if( fileSize>0 )
+								{
+									pucData = new char[fileSize];
+									if( tFile.Read(pucData, fileSize)==fileSize )
+									{
+										strSourceCode = wxString::From8BitData(pucData, fileSize);
+									}
+									else
+									{
+										strSourceCode = "Read error, failed to read file!!!";
+									}
+									delete[] pucData;
+								}
+							}
+							else
+							{
+								strSourceCode = "Failed to open file!!!";
+							}
+						}
+						else
+						{
+							strSourceCode = "Whaa, no source code found!!!";
+						}
 					}
 				}
 				else
 				{
-					strSourceCode = "Whaa, no source code found!!!";
+					strSourceCode = strSource;
 				}
+				m_ptDebugEditor->AppendText(strSourceCode);
+
+				if( iCurrentLine>0 )
+				{
+					m_ptDebugEditor->MarkerAdd(iCurrentLine-1, DBGEDIT_Marker_CurrentLine);
+					m_ptDebugEditor->GotoLine(iCurrentLine-1);
+				}
+
+
+
+				dbg_fillStackWindow();
+			}
+			else
+			{
+				wxLogError(_("Error reading the InterpreterHalted packet"));
 			}
 		}
 		else
 		{
-			strSourceCode = strSource;
+			wxLogError(_("status is not ok!"));
 		}
-		m_ptDebugEditor->AppendText(strSourceCode);
-
-		if( iCurrentLine>0 )
-		{
-			m_ptDebugEditor->MarkerAdd(iCurrentLine-1, DBGEDIT_Marker_CurrentLine);
-			m_ptDebugEditor->GotoLine(iCurrentLine-1);
-		}
-
-
-
-		dbg_fillStackWindow(iNUps);
 	}
 	else
 	{
-		wxLogError(_("Error reading the InterpreterHalted packet"));
+		wxLogError(_("failed to read status"));
 	}
 }
 
 
-void muhkuh_debugger::dbg_fillStackWindow(int iFrames)
+void muhkuh_debugger::dbg_fillStackWindow(void)
 {
-	int iCnt;
+	unsigned char ucState;
 	wxString strName;
 	wxString strNameWhat;
 	wxString strWhat;
@@ -583,6 +617,8 @@ void muhkuh_debugger::dbg_fillStackWindow(int iFrames)
 	int iNUps;
 	int iLineDefined;
 	int iLastLineDefined;
+	int iStackCnt;
+	long lListCnt;
 	wxString strItem;
 	wxListItem tFunctionItem;
 	wxListItem tLineItem;
@@ -602,60 +638,87 @@ void muhkuh_debugger::dbg_fillStackWindow(int iFrames)
 	tLineItem.SetAlign(wxLIST_FORMAT_RIGHT);
 	tLineItem.SetColumn(2);
 
-	// loop over all stack frames and show them
-	for(iCnt=0; iCnt<=iFrames; ++iCnt)
+	iStackCnt	= 0;
+	lListCnt	= 0;
+
+	do
 	{
-		
-		dbg_write_u08(MUHDBG_CmdGetFrame);
-		dbg_write_int(iCnt);
-
-		if(	dbg_read_string(strName)==true &&
-			dbg_read_string(strNameWhat)==true &&
-			dbg_read_string(strWhat)==true &&
-			dbg_read_string(strSource)==true &&
-			dbg_read_int(&iCurrentLine)==true &&
-			dbg_read_int(&iNUps)==true &&
-			dbg_read_int(&iLineDefined)==true &&
-			dbg_read_int(&iLastLineDefined)==true
-	  	)
+		dbg_write_u08(MUHDBG_CmdGetStack);
+		dbg_write_int(iStackCnt);
+		if( dbg_read_u08(&ucState)==true )
 		{
-			wxLogMessage(_("Debug: Fill Stack window: %s:%s:%s:%s:%d:%d:%d:%d"), strName.fn_str(), strNameWhat.fn_str(), strWhat.fn_str(), strSource.fn_str(), iCurrentLine, iNUps, iLineDefined, iLastLineDefined);
-
-			if( strWhat.Cmp(wxT("Lua"))==0 || strWhat.Cmp(wxT("main"))==0 )
+			if( ucState==0 )
 			{
-				// insert item
-				if( strName.IsEmpty()==true )
+				if(	dbg_read_string(strName)==true &&
+					dbg_read_string(strNameWhat)==true &&
+					dbg_read_string(strWhat)==true &&
+					dbg_read_string(strSource)==true &&
+					dbg_read_int(&iCurrentLine)==true &&
+					dbg_read_int(&iNUps)==true &&
+					dbg_read_int(&iLineDefined)==true &&
+					dbg_read_int(&iLastLineDefined)==true
+				)
 				{
-					strItem = _("chunk");
+					wxLogMessage(_("Debug: Fill Stack window: %s:%s:%s:%s:%d:%d:%d:%d"), strName.fn_str(), strNameWhat.fn_str(), strWhat.fn_str(), strSource.fn_str(), iCurrentLine, iNUps, iLineDefined, iLastLineDefined);
+
+					if( strWhat.Cmp(wxT("Lua"))==0 || strWhat.Cmp(wxT("main"))==0 )
+					{
+						// insert item
+						if( strName.IsEmpty()==true )
+						{
+							strItem = _("chunk");
+						}
+						else
+						{
+							strItem = strName;
+						}
+						lIdx = m_ptDebugStackWindow->InsertItem(lListCnt, strItem);
+
+						if( strName.IsEmpty()==true )
+						{
+							tFunctionItem.SetText(_("no function name"));
+							tFunctionItem.SetTextColour(*wxLIGHT_GREY);
+							tFunctionItem.SetFont(*wxITALIC_FONT);
+						}
+						else
+						{
+							tFunctionItem.SetText(strName);
+							tFunctionItem.SetTextColour(*wxBLACK);
+							tFunctionItem.SetFont(*wxNORMAL_FONT);
+						}
+						tFunctionItem.SetId(lIdx);
+						m_ptDebugStackWindow->SetItem(tFunctionItem);
+
+						strItem.Printf("%d", iCurrentLine);
+						tLineItem.SetText(strItem);
+						tLineItem.SetId(lIdx);
+						m_ptDebugStackWindow->SetItem(tLineItem);
+
+						++lListCnt;
+					}
+					++iStackCnt;
 				}
 				else
 				{
-					strItem = strName;
+					// error, failed to reveice data!
+					break;
 				}
-				lIdx = m_ptDebugStackWindow->InsertItem(iCnt, strItem);
-
-				if( strName.IsEmpty()==true )
-				{
-					tFunctionItem.SetText(_("no function name"));
-					tFunctionItem.SetTextColour(*wxLIGHT_GREY);
-					tFunctionItem.SetFont(*wxITALIC_FONT);
-				}
-				else
-				{
-					tFunctionItem.SetText(strName);
-					tFunctionItem.SetTextColour(*wxBLACK);
-					tFunctionItem.SetFont(*wxNORMAL_FONT);
-				}
-				tFunctionItem.SetId(lIdx);
-				m_ptDebugStackWindow->SetItem(tFunctionItem);
-
-				strItem.Printf("%d", iCurrentLine);
-				tLineItem.SetText(strItem);
-				tLineItem.SetId(lIdx);
-				m_ptDebugStackWindow->SetItem(tLineItem);
+			}
+			else
+			{
+				// status is not 0 -> either error or end of list
+				break;
 			}
 		}
-	}
+		else
+		{
+			// error, failed to receive status
+			break;
+		}
+	// limit to max. 100 stack entries
+	} while( lListCnt<100 );
+
+	// TODO: if lListCnt is >=100, show message "display more frames"
 }
 
 

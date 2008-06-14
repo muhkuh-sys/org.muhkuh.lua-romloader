@@ -58,6 +58,7 @@ private:
 	void create_controls(void);
 	wxStyledTextCtrl *create_debugger_editor(wxString strCaption);
 
+	bool dbg_read_u08(unsigned char *pucData);
 	bool dbg_read_string(wxString &strData);
 	bool dbg_read_int(int *piData);
 
@@ -65,7 +66,7 @@ private:
 	void dbg_write_int(int iData);
 
 	void dbg_packet_InterpreterHalted(void);
-	void dbg_fillStackWindow(int iFrames);
+	void dbg_fillStackWindow(void);
 
 
 	// debugger gui elements

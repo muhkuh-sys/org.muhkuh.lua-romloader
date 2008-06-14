@@ -119,7 +119,7 @@ private:
 	void dbg_write_int(int iData);
 	void dbg_write_achar(const char *pcData);
 
-	void dbg_get_frame(int iUp);
+	void dbg_get_stack(int iLevel);
 
 	void dbg_get_step_command(void);
 	bool dbg_get_command(void);

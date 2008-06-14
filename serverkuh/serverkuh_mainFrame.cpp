@@ -876,6 +876,7 @@ void serverkuh_mainFrame::OnLuaDebug(wxLuaEvent &event)
 			{
 				fPauseExec = true;
 			}
+			break;
 		}
 	}
 
@@ -884,7 +885,7 @@ void serverkuh_mainFrame::OnLuaDebug(wxLuaEvent &event)
 	{
 		// write the command
 		dbg_write_u08(MUHDBG_InterpreterHalted);
-		dbg_get_frame(0);
+		dbg_get_stack(0);
 		dbg_get_step_command();
 	}
 }
@@ -948,12 +949,11 @@ bool serverkuh_mainFrame::dbg_get_command(void)
 			m_dbg_mode = DBGMODE_StepInto;
 			break;
 
-		case MUHDBG_CmdGetFrame:
+		case MUHDBG_CmdGetStack:
 			fOk = dbg_read_int(&iPar);
 			if( fOk==true )
 			{
-				wxLogMessage(wxT("CmdGetFrame: %d"), iPar);
-				dbg_get_frame(iPar);
+				dbg_get_stack(iPar);
 			}
 			else
 			{
@@ -971,25 +971,44 @@ bool serverkuh_mainFrame::dbg_get_command(void)
 }
 
 
-void serverkuh_mainFrame::dbg_get_frame(int iUp)
+void serverkuh_mainFrame::dbg_get_stack(int iLevel)
 {
+	int iResult;
+	unsigned char ucStatus;
 	lua_Debug tDbg = {0};
 
 
-	m_ptLuaState->lua_GetStack(iUp, &tDbg);
-	m_ptLuaState->lua_GetInfo("Slnu", &tDbg);
-
 	if( m_ptDebugClientSocket->IsConnected()==true )
 	{
-		// write the name
-		dbg_write_achar(tDbg.name);
-		dbg_write_achar(tDbg.namewhat);
-		dbg_write_achar(tDbg.what);
-		dbg_write_achar(tDbg.source);
-		dbg_write_int(tDbg.currentline);
-		dbg_write_int(tDbg.nups);
-		dbg_write_int(tDbg.linedefined);
-		dbg_write_int(tDbg.lastlinedefined);
+		ucStatus = 1;
+		iResult = m_ptLuaState->lua_GetStack(iLevel, &tDbg);
+		if( iResult==1 )
+		{
+			iResult = m_ptLuaState->lua_GetInfo("Slnu", &tDbg);
+			if( iResult!=0 )
+			{
+				ucStatus = 0;
+
+				// write status
+				dbg_write_u08(ucStatus);
+
+				// write all debug info
+				dbg_write_achar(tDbg.name);
+				dbg_write_achar(tDbg.namewhat);
+				dbg_write_achar(tDbg.what);
+				dbg_write_achar(tDbg.source);
+				dbg_write_int(tDbg.currentline);
+				dbg_write_int(tDbg.nups);
+				dbg_write_int(tDbg.linedefined);
+				dbg_write_int(tDbg.lastlinedefined);
+			}
+		}
+
+		if( ucStatus!=0 )
+		{
+			// write status
+			dbg_write_u08(ucStatus);
+		}
 	}
 }
 
