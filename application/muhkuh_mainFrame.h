@@ -32,7 +32,6 @@
 #include <wx/listctrl.h>
 #include <wx/progdlg.h>
 #include <wx/splitter.h>
-#include <wx/stc/stc.h>
 #include <wx/tipdlg.h>
 
 
@@ -40,6 +39,7 @@
 #define __MUHKUH_MAINFRAME_H__
 
 #include "muhkuh_id.h"
+#include "muhkuh_debugger.h"
 #include "muhkuh_plugin_manager.h"
 #include "muhkuh_repository_manager.h"
 #include "muhkuh_testTreeItemData.h"
@@ -105,15 +105,6 @@ public:
 	void OnNotebookPageClose(wxAuiNotebookEvent &event);
 	void OnPaneClose(wxAuiManagerEvent &event);
 
-	void OnDebugServerSocket(wxSocketEvent &event);
-	void OnDebugConnectionSocket(wxSocketEvent &event);
-
-	void OnDebuggerStepInto(wxCommandEvent &event);
-	void OnDebuggerStepOver(wxCommandEvent &event);
-	void OnDebuggerStepOut(wxCommandEvent &event);
-	void OnDebuggerContinue(wxCommandEvent &event);
-	void OnDebuggerBreak(wxCommandEvent &event);
-
 	void OnMove(wxMoveEvent &event);
 	void OnSize(wxSizeEvent &event);
 
@@ -121,8 +112,6 @@ public:
 	void luaTestHasFinished(void);
 	wxString luaLoad(wxString strFileName);
 	void luaInclude(wxString strFileName);
-	void luaSetLogMarker(void);
-	wxString luaGetMarkedLog(void);
 	void luaScanPlugins(wxString strPattern);
 	muhkuh_plugin_instance *luaGetNextPlugin(void);
 	muhkuh_wrap_xml *luaGetSelectedTest(void);
@@ -147,12 +136,6 @@ public:
 		MAINFRAME_INIT_STATE_CONFIGURED,
 		MAINFRAME_INIT_STATE_SCANNED
 	} MAINFRAME_INIT_STATE_E;
-
-	typedef enum
-	{
-		DBGEDIT_Marker_BreakPoint	= 1,
-		DBGEDIT_Marker_CurrentLine	= 2
-	} tDBGEDIT_Marker;
 
 private:
 	void init_lua(void);
@@ -188,16 +171,6 @@ private:
 
 	bool check_plugins(void);
 
-	void create_debugger_controls(void);
-	wxStyledTextCtrl *create_debugger_editor(wxString strCaption);
-
-	bool dbg_read_string(wxString &strData);
-	bool dbg_read_int(int *piData);
-	void dbg_write_u08(unsigned char ucData);
-
-	void dbg_packet_InterpreterHalted(void);
-
-
 	// main frame controls
 	wxAuiManager m_auiMgr;
 	// the default perspective
@@ -213,14 +186,6 @@ private:
 	wxButton *m_buttonCancelTest;
 	wxMenuBar *m_menuBar;
 
-	// debugger gui elements
-	wxAuiManager *m_ptDebugAuiManager;
-	wxAuiNotebook *m_ptDebugSourceNotebook;
-	wxTextCtrl *m_ptDebugStackWindow;
-	wxTextCtrl *m_ptDebugWatchWindow;
-	wxToolBar *m_ptDebugToolBar;
-	wxStyledTextCtrl *m_ptDebugEditor;
-
 	// log target for all plugins
 	wxLog *m_pLogTarget;
 
@@ -235,19 +200,12 @@ private:
 
 	// the lua state
 	wxLuaState *m_ptLuaState;
-//	// the test panel
-//	wxPanel *m_testPanel;
 	// the debugger panel
-	wxPanel *m_debuggerPanel;
+	muhkuh_debugger *m_debuggerPanel;
 	// the process id of the server task
 	long m_lServerPid;
 	// the debug server port
 	unsigned short m_usDebugServerPort;
-	// the debug server socket
-	wxSocketServer *m_ptDebugSocketServer;
-	wxSocketBase *m_ptDebugConnection;
-	// the log marker for the scripts
-	wxTextPos m_tLogMarker;
 
 	// main frame state
 	muhkuh_mainFrame_state m_state;

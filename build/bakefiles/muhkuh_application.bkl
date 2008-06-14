@@ -19,6 +19,7 @@
 			application/muhkuh_brokenPluginDialog.cpp
 			application/muhkuh_config_reposEntryDialog.cpp
 			application/muhkuh_configDialog.cpp
+			application/muhkuh_debugger.cpp
 			application/muhkuh_dirlistbox.cpp
 			application/muhkuh_htmltag_lua.cpp
 			application/muhkuh_icons.cpp

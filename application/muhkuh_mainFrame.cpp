@@ -20,7 +20,6 @@
 
 
 #include <wx/stdpaths.h>
-#include <wx/tokenzr.h>
 #include <wx/url.h>
 
 #include "growbuffer.h"
@@ -96,15 +95,6 @@ BEGIN_EVENT_TABLE(muhkuh_mainFrame, wxFrame)
 	EVT_AUINOTEBOOK_PAGE_CLOSE(muhkuh_mainFrame_Notebook_id,	muhkuh_mainFrame::OnNotebookPageClose)
 	EVT_AUI_PANE_CLOSE(muhkuh_mainFrame::OnPaneClose)
 
-	EVT_SOCKET(muhkuh_debugServerSocket_event,			muhkuh_mainFrame::OnDebugServerSocket)
-	EVT_SOCKET(muhkuh_debugConnectionSocket_event,			muhkuh_mainFrame::OnDebugConnectionSocket)
-
-	EVT_TOOL(muhkuh_debugger_buttonStepInto,			muhkuh_mainFrame::OnDebuggerStepInto)
-	EVT_TOOL(muhkuh_debugger_buttonStepOver,			muhkuh_mainFrame::OnDebuggerStepOver)
-	EVT_TOOL(muhkuh_debugger_buttonStepOut,				muhkuh_mainFrame::OnDebuggerStepOut)
-	EVT_TOOL(muhkuh_debugger_buttonContinue,			muhkuh_mainFrame::OnDebuggerContinue)
-	EVT_TOOL(muhkuh_debugger_buttonBreak,				muhkuh_mainFrame::OnDebuggerBreak)
-
 	EVT_MOVE(muhkuh_mainFrame::OnMove)
 	EVT_SIZE(muhkuh_mainFrame::OnSize)
 END_EVENT_TABLE()
@@ -124,8 +114,6 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 // , m_testPanel(NULL)
  , m_debuggerPanel(NULL)
  , m_lServerPid(0)
- , m_ptDebugSocketServer(NULL)
- , m_ptDebugConnection(NULL)
  , m_tipProvider(NULL)
  , m_welcomeHtml(NULL)
  , m_testDetailsHtml(NULL)
@@ -1311,7 +1299,6 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	wxString strServerCmd;
 	int iGetTop;
 	int iLineNr;
-	wxIPV4address tIpAdr;
 
 
 	// check all plugins for state ok before executing the test
@@ -1327,79 +1314,23 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 
 		if( m_ptLuaState!=NULL && m_ptLuaState->Ok()==true )
 		{
-			// create the debug socket server
-			if( tIpAdr.AnyAddress()==false )
+			// create a new panel for the debugger
+			m_debuggerPanel = new muhkuh_debugger(this, m_strApplicationPath, m_usDebugServerPort);
+			m_notebook->AddPage(m_debuggerPanel, m_strRunningTestName, true);
+
+			// set state to 'testing'
+			// NOTE: this must be done before the call to 'RunString', or the state will not change before the first idle event
+			setState(muhkuh_mainFrame_state_testing);
+
+			strServerCmd.Printf(wxT("./serverkuh -c Muhkuh.cfg -i %d -dlocalhost:%d file:/home/Benten/Coding/netx/muhkuh/trunk/nxdb500-sys_demo/test_description.xml"), m_sizRunningTest_TestIdx, m_usDebugServerPort);
+			wxLogMessage(wxT("starting server: ") + strServerCmd);
+
+			m_lServerPid = wxExecute(strServerCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, NULL);
+			if( m_lServerPid==0 )
 			{
-				wxLogError(_("failed to set local addr!"));
+				strMsg.Printf(_("Failed to start the server with command: %s"), strServerCmd.fn_str());
+				wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
 			}
-			if( tIpAdr.Service(m_usDebugServerPort)==false )
-			{
-				wxLogError(_("failed to set service port!"));
-			}
-			m_ptDebugSocketServer = new wxSocketServer(tIpAdr, wxSOCKET_WAITALL|wxSOCKET_REUSEADDR);
-			if( m_ptDebugSocketServer!=NULL && m_ptDebugSocketServer->IsOk()==true )
-			{
-				m_ptDebugSocketServer->SetEventHandler(*this, muhkuh_debugServerSocket_event);
-				m_ptDebugSocketServer->SetNotify(wxSOCKET_CONNECTION_FLAG);
-				m_ptDebugSocketServer->Notify(true);
-
-//				// create a new panel for the test
-//				m_testPanel = new wxPanel(this);
-//				m_notebook->AddPage(m_testPanel, m_strRunningTestName, true);
-				// create a new panel for the debugger
-				m_debuggerPanel = new wxPanel(this);
-				m_notebook->AddPage(m_debuggerPanel, m_strRunningTestName, false);
-
-//				// set some global vars
-//
-//				// set the xml document
-//				m_ptLuaState->wxluaT_PushUserDataType(ptTestData->getXmlDocument(), wxluatype_wxXmlDocument, false);
-//				m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_XML"));
-//				// set the selected test index
-//				m_ptLuaState->lua_PushNumber(uiIndex);
-//				m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_TEST_INDEX"));
-//				// set the test panel
-//				m_ptLuaState->wxluaT_PushUserDataType(m_testPanel, wxluatype_wxPanel, false);
-//				m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_PANEL"));
-//				// set the debugger panel
-//				m_ptLuaState->wxluaT_PushUserDataType(m_debuggerPanel, wxluatype_wxPanel, false);
-//				m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_DEBUGGER_PANEL"));
-
-				// set state to 'testing'
-				// NOTE: this must be done before the call to 'RunString', or the state will not change before the first idle event
-				setState(muhkuh_mainFrame_state_testing);
-
-				strServerCmd.Printf(wxT("./serverkuh -c Muhkuh.cfg -i %d -dlocalhost:%d file:/home/Benten/Coding/netx/muhkuh/trunk/nxdb500-sys_demo/test_description.xml"), m_sizRunningTest_TestIdx, m_usDebugServerPort);
-				wxLogMessage(wxT("starting server: ") + strServerCmd);
-
-				m_lServerPid = wxExecute(strServerCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, NULL);
-				if( m_lServerPid==0 )
-				{
-					strMsg.Printf(_("Failed to start the server with command: %s"), strServerCmd.fn_str());
-					wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
-				}
-				else
-				{
-					create_debugger_controls();
-//					// set the log marker
-//					luaSetLogMarker();
-//
-//					iGetTop = m_ptLuaState->lua_GetTop();
-//					iResult = m_ptLuaState->RunString(m_strLuaDebuggerCode, wxT("system boot"));
-//					if( iResult!=0 )
-//					{
-//						wxlua_errorinfo(m_ptLuaState->GetLuaState(), iResult, iGetTop, &strErrorMsg, &iLineNr);
-//						strMsg.Printf(_("error %d in line %d: ") + strErrorMsg, iResult, iLineNr);
-//						wxLogError(strMsg);
-//						finishTest();
-//						setState(muhkuh_mainFrame_state_idle);
-//					}
-				}
-			}
-		}
-		else
-		{
-			wxLogError(_("server is not listening!"));
 		}
 	}
 }
@@ -1437,18 +1368,6 @@ void muhkuh_mainFrame::finishTest(void)
 		m_debuggerPanel = NULL;
 	}
 
-	// close the debug server socket
-	if( m_ptDebugSocketServer!=NULL )
-	{
-		m_ptDebugSocketServer->Destroy();
-		m_ptDebugSocketServer = NULL;
-	}
-	if( m_ptDebugConnection!=NULL )
-	{
-		m_ptDebugConnection->Destroy();
-		m_ptDebugConnection = NULL;
-	}
-
 	// was this an autostart test?
 	if( m_fRunningTestIsAutostart==true )
 	{
@@ -1465,239 +1384,6 @@ void muhkuh_mainFrame::finishTest(void)
 		}
 	}
 }
-
-
-void muhkuh_mainFrame::OnDebugServerSocket(wxSocketEvent &event)
-{
-	wxSocketNotify tEventTyp;
-
-
-	tEventTyp = event.GetSocketEvent();
-	if( tEventTyp==wxSOCKET_CONNECTION && m_ptDebugSocketServer!=NULL && m_ptDebugConnection==NULL )
-	{
-		// accept the socket connection
-		m_ptDebugConnection = m_ptDebugSocketServer->Accept(false);
-		if( m_ptDebugConnection!=NULL )
-		{
-			m_ptDebugConnection->SetEventHandler(*this, muhkuh_debugConnectionSocket_event);
-			m_ptDebugConnection->SetNotify(wxSOCKET_INPUT_FLAG|wxSOCKET_LOST_FLAG);
-			m_ptDebugConnection->Notify(true);
-
-			// connection established!
-			wxLogMessage(_("connected to debug client!"));
-		}
-	}
-}
-
-
-void muhkuh_mainFrame::OnDebugConnectionSocket(wxSocketEvent &event)
-{
-	wxSocketNotify tEventTyp;
-	unsigned char ucPacketTyp;
-
-
-	tEventTyp = event.GetSocketEvent();
-	switch( tEventTyp )
-	{
-	case wxSOCKET_INPUT:
-		wxLogMessage(_("wxSOCKET_INPUT"));
-
-		m_ptDebugConnection->SetNotify(wxSOCKET_LOST_FLAG);
-
-		m_ptDebugConnection->Read(&ucPacketTyp, 1);
-		if( m_ptDebugConnection->LastCount()==1 )
-		{
-			switch(ucPacketTyp)
-			{
-			case MUHDBG_InterpreterHalted:
-				dbg_packet_InterpreterHalted();
-				break;
-
-			default:
-				wxLogError(_("received strange debug packet: 0x%02x"), ucPacketTyp);
-				break;
-			}
-		}
-		m_ptDebugConnection->SetNotify(wxSOCKET_LOST_FLAG|wxSOCKET_INPUT_FLAG);
-		break;
-
-	case wxSOCKET_LOST:
-		wxLogMessage(wxT("wxSOCKET_LOST"));
-		finishTest();
-		setState(muhkuh_mainFrame_state_idle);
-		break;
-	}
-}
-
-
-bool muhkuh_mainFrame::dbg_read_string(wxString &strData)
-{
-	wxUint32 u32LastRead;
-	size_t sizLen;
-	char *pcBuf;
-	bool fOk;
-
-
-	fOk = false;
-
-	strData.Empty();
-
-	m_ptDebugConnection->Read(&sizLen, sizeof(sizLen));
-	u32LastRead = m_ptDebugConnection->LastCount();
-	if( u32LastRead==sizeof(sizLen) )
-	{
-		if( sizLen==0 )
-		{
-			fOk = true;
-		}
-		else
-		{
-			pcBuf = new char[sizLen];
-			m_ptDebugConnection->Read(pcBuf, sizLen);
-			u32LastRead = m_ptDebugConnection->LastCount();
-			if( u32LastRead==sizLen )
-			{
-				strData = wxString::From8BitData(pcBuf, sizLen);
-				fOk = true;
-			}
-			delete[] pcBuf;
-		}
-	}
-
-	return fOk;
-}
-
-
-bool muhkuh_mainFrame::dbg_read_int(int *piData)
-{
-	wxUint32 u32LastRead;
-	bool fOk;
-
-
-	fOk = false;
-
-	m_ptDebugConnection->Read(piData, sizeof(int));
-	u32LastRead = m_ptDebugConnection->LastCount();
-	if( u32LastRead==sizeof(int) )
-	{
-		fOk = true;
-	}
-
-	return fOk;
-}
-
-
-void muhkuh_mainFrame::dbg_write_u08(unsigned char ucData)
-{
-	m_ptDebugConnection->Write(&ucData, 1);
-}
-
-
-void muhkuh_mainFrame::dbg_packet_InterpreterHalted(void)
-{
-	wxString strName;
-	wxString strNameWhat;
-	wxString strWhat;
-	wxString strSource;
-	int iCurrentLine;
-	int iNUps;
-	int iLineDefined;
-	int iLastLineDefined;
-	wxString strSourceCode;
-	wxString strSourceFile;
-	wxString strFullName;
-	wxString strTestIndex;
-	wxFileName tFileName;
-	wxFile tFile;
-
-
-	if(	dbg_read_string(strName)==true &&
-		dbg_read_string(strNameWhat)==true &&
-		dbg_read_string(strWhat)==true &&
-		dbg_read_string(strSource)==true &&
-		dbg_read_int(&iCurrentLine)==true &&
-		dbg_read_int(&iNUps)==true &&
-		dbg_read_int(&iLineDefined)==true &&
-		dbg_read_int(&iLastLineDefined)==true
-	  )
-	{
-		wxLogMessage(_("Debug: %s:%s:%s:%s:%d:%d:%d:%d"), strName.fn_str(), strNameWhat.fn_str(), strWhat.fn_str(), strSource.fn_str(), iCurrentLine, iNUps, iLineDefined, iLastLineDefined);
-
-
-		m_ptDebugEditor->Clear();
-		m_ptDebugEditor->ClearAll();
-		m_ptDebugEditor->MarkerDeleteAll(DBGEDIT_Marker_BreakPoint);
-		m_ptDebugEditor->MarkerDeleteAll(DBGEDIT_Marker_CurrentLine);
-
-		if( strSource.StartsWith(wxT("@"), &strSourceFile)==true )
-		{
-			// test for next '@'
-			if( strSourceFile.StartsWith(wxT("@"), &strTestIndex)==true )
-			{
-				// this is the index to a code section in the test description
-				// TODO: build a suitable name for the tab
-				// TODO: get the source code from the xml wrapper
-				strSourceCode = "this comes from code index " + strTestIndex;
-			}
-			else
-			{
-				tFileName.Assign(strSourceFile);
-				if( tFileName.IsAbsolute(wxPATH_NATIVE)==false )
-				{
-					tFileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE);
-				}
-				if( tFileName.FileExists()==true && tFileName.IsFileReadable()==true )
-				{
-					// read the complete file
-					if( tFile.Open(strSourceFile, wxFile::read)==true )
-					{
-						char *pucData;
-						wxFileOffset fileSize;
-
-						fileSize = tFile.Length();
-						if( fileSize>0 )
-						{
-							pucData = new char[fileSize];
-							if( tFile.Read(pucData, fileSize)==fileSize )
-							{
-								strSourceCode = wxString::From8BitData(pucData, fileSize);
-							}
-							else
-							{
-								strSourceCode = "Read error, failed to read file!!!";
-							}
-							delete[] pucData;
-						}
-					}
-					else
-					{
-						strSourceCode = "Failed to open file!!!";
-					}
-				}
-				else
-				{
-					strSourceCode = "Whaa, no source code found!!!";
-				}
-			}
-		}
-		else
-		{
-			strSourceCode = strSource;
-		}
-		m_ptDebugEditor->AppendText(strSourceCode);
-
-		if( iCurrentLine>0 )
-		{
-			m_ptDebugEditor->MarkerAdd(iCurrentLine-1, DBGEDIT_Marker_CurrentLine);
-			m_ptDebugEditor->GotoLine(iCurrentLine-1);
-		}
-	}
-	else
-	{
-		wxLogError(_("Error reading the InterpreterHalted packet"));
-	}
-}
-
 
 
 void muhkuh_mainFrame::updateRepositoryCombo(void)
@@ -2651,233 +2337,6 @@ void muhkuh_mainFrame::OnSize(wxSizeEvent &event)
 }
 
 
-void muhkuh_mainFrame::OnDebuggerStepInto(wxCommandEvent &event)
-{
-	if( m_ptDebugConnection!=NULL && m_ptDebugConnection->IsConnected()==true )
-	{
-		dbg_write_u08(MUHDBG_CmdStepInto);
-	}
-}
-
-
-void muhkuh_mainFrame::OnDebuggerStepOver(wxCommandEvent &event)
-{
-	if( m_ptDebugConnection!=NULL && m_ptDebugConnection->IsConnected()==true )
-	{
-		dbg_write_u08(MUHDBG_CmdStepOver);
-	}
-}
-
-
-void muhkuh_mainFrame::OnDebuggerStepOut(wxCommandEvent &event)
-{
-	if( m_ptDebugConnection!=NULL && m_ptDebugConnection->IsConnected()==true )
-	{
-		dbg_write_u08(MUHDBG_CmdStepOver);
-	}
-}
-
-
-void muhkuh_mainFrame::OnDebuggerContinue(wxCommandEvent &event)
-{
-	if( m_ptDebugConnection!=NULL && m_ptDebugConnection->IsConnected()==true )
-	{
-		dbg_write_u08(MUHDBG_CmdContinue);
-	}
-}
-
-
-void muhkuh_mainFrame::OnDebuggerBreak(wxCommandEvent &event)
-{
-	if( m_ptDebugConnection!=NULL && m_ptDebugConnection->IsConnected()==true )
-	{
-		dbg_write_u08(MUHDBG_CmdBreak);
-	}
-}
-
-
-void muhkuh_mainFrame::create_debugger_controls(void)
-{
-	wxAuiPaneInfo paneInfo;
-	long lStyle;
-
-
-	// create the aui manager
-	m_ptDebugAuiManager = new wxAuiManager(m_debuggerPanel);
-
-	// add the source notebook
-	m_ptDebugSourceNotebook = new wxAuiNotebook(m_debuggerPanel, wxID_ANY);
-	paneInfo.Name(wxT("source"));
-	paneInfo.CaptionVisible(false);
-	paneInfo.Center();
-	paneInfo.Position(0);
-	m_ptDebugAuiManager->AddPane(m_ptDebugSourceNotebook, paneInfo);
-
-	// create the repository toolbar
-	m_ptDebugToolBar = new wxToolBar(m_debuggerPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize,  wxTB_HORIZONTAL|wxNO_BORDER|wxTB_TEXT);
-	m_ptDebugToolBar->AddTool(muhkuh_debugger_buttonStepInto, _("Step Into"), muhkuh_016_xpm, wxNullBitmap, wxITEM_NORMAL, _("Step Into the next statement"));
-	m_ptDebugToolBar->AddTool(muhkuh_debugger_buttonStepOver, _("Step Over"), muhkuh_016_xpm, wxNullBitmap, wxITEM_NORMAL, _("Step Over the next statement"));
-	m_ptDebugToolBar->AddTool(muhkuh_debugger_buttonStepOut,  _("Step Out"), muhkuh_016_xpm, wxNullBitmap, wxITEM_NORMAL, _("Step Out of the current function"));
-	m_ptDebugToolBar->AddTool(muhkuh_debugger_buttonContinue, _("Continue"), muhkuh_016_xpm, wxNullBitmap, wxITEM_NORMAL, _("Continue execution"));
-	m_ptDebugToolBar->AddTool(muhkuh_debugger_buttonBreak,    _("Break"), muhkuh_016_xpm, wxNullBitmap, wxITEM_NORMAL, _("Interrupt a running program"));
-	m_ptDebugToolBar->Realize();
-	paneInfo.Name(wxT("toolbar"));
-	paneInfo.CaptionVisible(true);
-	paneInfo.Caption(_("Debugger Tools"));
-	paneInfo.Top();
-	paneInfo.Position(0);
-	m_ptDebugAuiManager->AddPane(m_ptDebugToolBar, paneInfo);
-
-	// add the stack window
-	lStyle = wxTE_MULTILINE|wxSUNKEN_BORDER|wxTE_READONLY;
-	m_ptDebugStackWindow = new wxTextCtrl(m_debuggerPanel, wxID_ANY, _("This will be the stack window someday."), wxDefaultPosition, wxDefaultSize, lStyle);
-	paneInfo.Name(wxT("stack"));
-	paneInfo.CaptionVisible(true);
-	paneInfo.Caption(_("Stack"));
-	paneInfo.Bottom();
-	paneInfo.Position(0);
-	m_ptDebugAuiManager->AddPane(m_ptDebugStackWindow, paneInfo);
-
-	// add the watch window
-	lStyle = wxTE_MULTILINE | wxSUNKEN_BORDER | wxTE_READONLY;
-	m_ptDebugWatchWindow = new wxTextCtrl(m_debuggerPanel, wxID_ANY, "This will be the watch window someday.", wxDefaultPosition, wxDefaultSize, lStyle);
-	paneInfo.Name(wxT("watch"));
-	paneInfo.CaptionVisible(true);
-	paneInfo.Caption(_("Watch"));
-	paneInfo.Bottom();
-	paneInfo.Position(1);
-	m_ptDebugAuiManager->AddPane(m_ptDebugWatchWindow, paneInfo);
-
-	m_ptDebugAuiManager->Update();
-
-
-	// add demo editor to the notebook
-	m_ptDebugEditor = create_debugger_editor(wxT("chunk"));
-}
-
-
-wxStyledTextCtrl *muhkuh_mainFrame::create_debugger_editor(wxString strCaption)
-{
-	wxStyledTextCtrl *ptEditor;
-	int iCnt;
-	const wxFont *ptFont;
-	const wxFont *ptFontItalic;
-
-
-	ptFont = wxNORMAL_FONT;
-	ptFontItalic = wxITALIC_FONT;
-
-	ptEditor = new wxStyledTextCtrl(m_debuggerPanel);
-
-	ptEditor->SetBufferedDraw(true);
-	ptEditor->StyleClearAll();
-
-//	ptEditor->SetFont(*ptFont);
-//	ptEditor->StyleSetFont(wxSTC_STYLE_DEFAULT, *ptFont);
-//	for(iCnt=0; iCnt<33; ++iCnt)
-//	{
-//		ptEditor->StyleSetFont(iCnt, ptFont);
-//	}
-
-	ptEditor->StyleSetForeground(0,  wxColour(128, 128, 128));	// White space
-	ptEditor->StyleSetForeground(1,  wxColour(0,   127, 0));	// Block Comment
-//	ptEditor->StyleSetFont(1, ptFontItalic);
-	// ptEditor->StyleSetUnderline(1, false);
-	ptEditor->StyleSetForeground(2,  wxColour(0,   127, 0));	// Line Comment
-//	ptEditor->StyleSetFont(2, m_fontItalic);			// Doc. Comment
-	// ptEditor->StyleSetUnderline(2, false);
-	ptEditor->StyleSetForeground(3,  wxColour(127, 127, 127));	// Number
-	ptEditor->StyleSetForeground(4,  wxColour(0,   127, 127));	// Keyword
-	ptEditor->StyleSetForeground(5,  wxColour(0,   0,   127));	// Double quoted string
-	ptEditor->StyleSetBold(5,  true);
-	// ptEditor->StyleSetUnderline(5, false);
-	ptEditor->StyleSetForeground(6,  wxColour(127, 0,   127));	// Single quoted string
-	ptEditor->StyleSetForeground(7,  wxColour(127, 0,   127));	// not used
-	ptEditor->StyleSetForeground(8,  wxColour(0,   127, 127));	// Literal strings
-	ptEditor->StyleSetForeground(9,  wxColour(127, 127, 0));	// Preprocessor
-	ptEditor->StyleSetForeground(10, wxColour(0,   0,   0));	// Operators
-	// ptEditor->StyleSetBold(10, true);
-	ptEditor->StyleSetForeground(11, wxColour(0,   0,   0));	// Identifiers
-	ptEditor->StyleSetForeground(12, wxColour(0,   0,   0));	// Unterminated strings
-	ptEditor->StyleSetBackground(12, wxColour(224, 192, 224));
-	ptEditor->StyleSetBold(12, true);
-	ptEditor->StyleSetEOLFilled(12, true);
-
-	ptEditor->StyleSetForeground(13, wxColour(0,   0,  95));	// Keyword 2 highlighting styles
-	ptEditor->StyleSetForeground(14, wxColour(0,   95, 0));	// Keyword 3
-	ptEditor->StyleSetForeground(15, wxColour(127, 0,  0));	// Keyword 4
-	ptEditor->StyleSetForeground(16, wxColour(127, 0,  95));	// Keyword 5
-	ptEditor->StyleSetForeground(17, wxColour(35,  95, 175));	// Keyword 6
-	ptEditor->StyleSetForeground(18, wxColour(0,   127, 127));	// Keyword 7
-	ptEditor->StyleSetBackground(18, wxColour(240, 255, 255));	// Keyword 8
-
-	ptEditor->StyleSetForeground(19, wxColour(0,   127, 127));
-	ptEditor->StyleSetBackground(19, wxColour(224, 255, 255));
-	ptEditor->StyleSetForeground(20, wxColour(0,   127, 127));
-	ptEditor->StyleSetBackground(20, wxColour(192, 255, 255));
-	ptEditor->StyleSetForeground(21, wxColour(0,   127, 127));
-	ptEditor->StyleSetBackground(21, wxColour(176, 255, 255));
-	ptEditor->StyleSetForeground(22, wxColour(0,   127, 127));
-	ptEditor->StyleSetBackground(22, wxColour(160, 255, 255));
-	ptEditor->StyleSetForeground(23, wxColour(0,   127, 127));
-	ptEditor->StyleSetBackground(23, wxColour(144, 255, 255));
-	ptEditor->StyleSetForeground(24, wxColour(0,   127, 127));
-	ptEditor->StyleSetBackground(24, wxColour(128, 155, 255));
-
-	ptEditor->StyleSetForeground(32, wxColour(224, 192, 224));	// Line number
-	ptEditor->StyleSetBackground(33, wxColour(192, 192, 192));	// Brace highlight
-	ptEditor->StyleSetForeground(34, wxColour(0,   0,   255));
-	ptEditor->StyleSetBold(34, true);				// Brace incomplete highlight
-	ptEditor->StyleSetForeground(35, wxColour(255, 0,   0));
-	ptEditor->StyleSetBold(35, true);				// Indentation guides
-	ptEditor->StyleSetForeground(37, wxColour(192, 192, 192));
-	ptEditor->StyleSetBackground(37, wxColour(255, 255, 255));
-
-	ptEditor->SetUseTabs(false);
-	ptEditor->SetTabWidth(4);
-	ptEditor->SetIndent(4);
-	ptEditor->SetIndentationGuides(true);
-
-	ptEditor->SetVisiblePolicy(wxSTC_VISIBLE_SLOP, 3);
-	// ptEditor->SetXCaretPolicy(wxSTC_CARET_SLOP, 10);
-	// ptEditor->SetYCaretPolicy(wxSTC_CARET_SLOP, 3);
-
-	ptEditor->SetMarginWidth(0, ptEditor->TextWidth(32, "99999_"));	// line # margin
-
-	ptEditor->SetMarginWidth(1, 16);				// marker margin
-	ptEditor->SetMarginType(1, wxSTC_MARGIN_SYMBOL);
-	ptEditor->SetMarginSensitive(1, true);
-
-	ptEditor->MarkerDefine(DBGEDIT_Marker_BreakPoint,	wxSTC_MARK_ROUNDRECT, *wxWHITE, *wxRED);
-	ptEditor->MarkerDefine(DBGEDIT_Marker_CurrentLine,	wxSTC_MARK_ARROW,     *wxBLACK, *wxGREEN);
-
-	ptEditor->SetMarginWidth(2, 16);				// fold margin
-	ptEditor->SetMarginType(2, wxSTC_MARGIN_SYMBOL);
-	ptEditor->SetMarginMask(2, wxSTC_MASK_FOLDERS);
-	ptEditor->SetMarginSensitive(2, true);
-
-	ptEditor->SetFoldFlags(wxSTC_FOLDFLAG_LINEBEFORE_CONTRACTED|wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
-
-	ptEditor->SetProperty("fold", "1");
-	ptEditor->SetProperty("fold.compact", "1");
-	ptEditor->SetProperty("fold.comment", "1");
-
-// 	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDEROPEN,    wxSTC_MARK_BOXMINUS, wxWHITE, wxLIGHT_GREY);
-// 	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDER,        wxSTC_MARK_BOXPLUS,  wxWHITE, wxColour(128, 128, 128));
-// 	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDERSUB,     wxSTC_MARK_VLINE,    wxWHITE, wxColour(128, 128, 128));
-// 	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDERTAIL,    wxSTC_MARK_LCORNER,  wxWHITE, wxColour(128, 128, 128));
-// 	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDEREND,     wxSTC_MARK_BOXPLUSCONNECTED,  wxWHITE, wxColour(128, 128, 128));
-// 	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDEROPENMID, wxSTC_MARK_BOXMINUSCONNECTED, wxWHITE, wxColour(128, 128, 128));
-// 	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDERMIDTAIL, wxSTC_MARK_TCORNER,  wxWHITE, wxColour(128, 128, 128));
-
-//	SetupKeywords(ptEditor, true);
-
-	m_ptDebugSourceNotebook->AddPage(ptEditor, strCaption, false);
-
-	return ptEditor;
-}
-
-
 void muhkuh_mainFrame::luaTestHasFinished(void)
 {
 	m_fTestHasFinished = true;
@@ -3078,26 +2537,6 @@ void muhkuh_mainFrame::luaInclude(wxString strFileName)
 }
 
 
-void muhkuh_mainFrame::luaSetLogMarker(void)
-{
-	m_tLogMarker = m_textCtrl->GetLastPosition();
-}
-
-
-wxString muhkuh_mainFrame::luaGetMarkedLog(void)
-{
-	wxTextPos tEndPos;
-	wxString strLogData;
-
-
-	tEndPos = m_textCtrl->GetLastPosition();
-	strLogData = m_textCtrl->GetRange(m_tLogMarker, tEndPos);
-	m_tLogMarker = tEndPos;
-
-	return strLogData;
-}
-
-
 void muhkuh_mainFrame::luaScanPlugins(wxString strPattern)
 {
 	wxString strMsg;
@@ -3282,32 +2721,6 @@ void include(wxString strFileName)
 		// yes, the mainframe exists -> call the luaLoadFile function there
 		g_ptMainFrame->luaInclude(strFileName);
 	}
-}
-
-
-void setLogMarker(void)
-{
-	// does the mainframe exist?
-	if( g_ptMainFrame!=NULL )
-	{
-		// yes, the mainframe exists -> call the luaLoadFile function there
-		g_ptMainFrame->luaSetLogMarker();
-	}
-}
-
-
-wxString getMarkedLog(void)
-{
-	wxString strData;
-
-
-	// does the mainframe exist?
-	if( g_ptMainFrame!=NULL )
-	{
-		// yes, the mainframe exists -> call the luaLoadFile function there
-		strData = g_ptMainFrame->luaGetMarkedLog();
-	}
-	return strData;
 }
 
 

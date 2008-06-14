@@ -28,6 +28,9 @@
 %function wxString load(wxString strFileName)
 %function void include(wxString strFileName)
 
+%function void setLogMarker()
+%function wxString getMarkedLog()
+
 %function void ScanPlugins(wxString strPattern)
 %function %gc muhkuh_plugin_instance *GetNextPlugin()
 

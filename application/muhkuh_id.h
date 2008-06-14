@@ -95,6 +95,7 @@ enum
 	muhkuh_debugger_buttonStepOut,
 	muhkuh_debugger_buttonContinue,
 	muhkuh_debugger_buttonBreak,
+	muhkuh_debugger_stackList,
 
 	muhkuh_scanner_thread_event,
 	muhkuh_tester_thread_event,

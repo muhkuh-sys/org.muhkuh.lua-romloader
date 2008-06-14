@@ -31,6 +31,7 @@ typedef enum
 	MUHDBG_CmdStepOut				= 3,
 	MUHDBG_CmdContinue				= 4,
 	MUHDBG_CmdBreak					= 5,
+	MUHDBG_CmdGetFrame				= 6,
 } tMUHDBG;
 
 

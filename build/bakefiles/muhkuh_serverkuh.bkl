@@ -60,11 +60,11 @@
 
 		<!-- the muhkuh lua bindings -->
 		<sources>
-			plugins/_luaif/muhkuh_lua.cpp
-			plugins/_luaif/muhkuh_lua_bind.cpp
+			plugins/_luaif/serverkuh_lua.cpp
+			plugins/_luaif/serverkuh_lua_bind.cpp
 		</sources>
 		<headers>
-			plugins/_luaif/muhkuh_wxlua_bindings.h
+			plugins/_luaif/serverkuh_wxlua_bindings.h
 		</headers>
 
 		<win32-res>serverkuh/serverkuh.rc</win32-res>

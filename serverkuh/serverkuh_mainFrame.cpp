@@ -508,7 +508,7 @@ bool serverkuh_mainFrame::initLuaState(void)
 		WXLUA_IMPLEMENT_BIND_WXSTC
 
 		// init the muhkuh lua bindings
-		fResult = wxLuaBinding_muhkuh_lua_init();
+		fResult = wxLuaBinding_serverkuh_lua_init();
 		if( fResult!=true )
 		{
 			// failed to init the muhkuh lua bindings
@@ -830,7 +830,6 @@ struct lua_Debug {
 void serverkuh_mainFrame::OnLuaDebug(wxLuaEvent &event)
 {
 	bool fPauseExec;
-	lua_Debug tDbg = {0};
 
 
 	// assume to continue
@@ -883,24 +882,9 @@ void serverkuh_mainFrame::OnLuaDebug(wxLuaEvent &event)
 
 	if( fPauseExec==true )
 	{
-		m_ptLuaState->lua_GetStack(0, &tDbg);
-		m_ptLuaState->lua_GetInfo("Sln", &tDbg);
-
-		if( m_ptDebugClientSocket->IsConnected()==true )
-		{
-			// write the command
-			dbg_write_u08(MUHDBG_InterpreterHalted);
-			// write the name
-			dbg_write_achar(tDbg.name);
-			dbg_write_achar(tDbg.namewhat);
-			dbg_write_achar(tDbg.what);
-			dbg_write_achar(tDbg.source);
-			dbg_write_int(tDbg.currentline);
-			dbg_write_int(tDbg.nups);
-			dbg_write_int(tDbg.linedefined);
-			dbg_write_int(tDbg.lastlinedefined);
-		}
-
+		// write the command
+		dbg_write_u08(MUHDBG_InterpreterHalted);
+		dbg_get_frame(0);
 		dbg_get_step_command();
 	}
 }
@@ -923,6 +907,8 @@ bool serverkuh_mainFrame::dbg_get_command(void)
 {
 	bool fContinueExecution;
 	unsigned char ucPacketTyp;
+	bool fOk;
+	int iPar;
 
 
 	fContinueExecution = false;
@@ -962,6 +948,19 @@ bool serverkuh_mainFrame::dbg_get_command(void)
 			m_dbg_mode = DBGMODE_StepInto;
 			break;
 
+		case MUHDBG_CmdGetFrame:
+			fOk = dbg_read_int(&iPar);
+			if( fOk==true )
+			{
+				wxLogMessage(wxT("CmdGetFrame: %d"), iPar);
+				dbg_get_frame(iPar);
+			}
+			else
+			{
+				wxLogError(_("failed to receive int parameter for GetFrame command!"));
+			}
+			break;
+
 		default:
 			wxLogError(_("received strange packet: 0x%02x"), ucPacketTyp);
 			break;
@@ -969,6 +968,86 @@ bool serverkuh_mainFrame::dbg_get_command(void)
 	}
 
 	return fContinueExecution;
+}
+
+
+void serverkuh_mainFrame::dbg_get_frame(int iUp)
+{
+	lua_Debug tDbg = {0};
+
+
+	m_ptLuaState->lua_GetStack(iUp, &tDbg);
+	m_ptLuaState->lua_GetInfo("Slnu", &tDbg);
+
+	if( m_ptDebugClientSocket->IsConnected()==true )
+	{
+		// write the name
+		dbg_write_achar(tDbg.name);
+		dbg_write_achar(tDbg.namewhat);
+		dbg_write_achar(tDbg.what);
+		dbg_write_achar(tDbg.source);
+		dbg_write_int(tDbg.currentline);
+		dbg_write_int(tDbg.nups);
+		dbg_write_int(tDbg.linedefined);
+		dbg_write_int(tDbg.lastlinedefined);
+	}
+}
+
+
+bool serverkuh_mainFrame::dbg_read_string(wxString &strData)
+{
+	wxUint32 u32LastRead;
+	size_t sizLen;
+	char *pcBuf;
+	bool fOk;
+
+
+	fOk = false;
+
+	strData.Empty();
+
+	m_ptDebugClientSocket->Read(&sizLen, sizeof(sizLen));
+	u32LastRead = m_ptDebugClientSocket->LastCount();
+	if( u32LastRead==sizeof(sizLen) )
+	{
+		if( sizLen==0 )
+		{
+			fOk = true;
+		}
+		else
+		{
+			pcBuf = new char[sizLen];
+			m_ptDebugClientSocket->Read(pcBuf, sizLen);
+			u32LastRead = m_ptDebugClientSocket->LastCount();
+			if( u32LastRead==sizLen )
+			{
+				strData = wxString::From8BitData(pcBuf, sizLen);
+				fOk = true;
+			}
+			delete[] pcBuf;
+		}
+	}
+
+	return fOk;
+}
+
+
+bool serverkuh_mainFrame::dbg_read_int(int *piData)
+{
+	wxUint32 u32LastRead;
+	bool fOk;
+
+
+	fOk = false;
+
+	m_ptDebugClientSocket->Read(piData, sizeof(int));
+	u32LastRead = m_ptDebugClientSocket->LastCount();
+	if( u32LastRead==sizeof(int) )
+	{
+		fOk = true;
+	}
+
+	return fOk;
 }
 
 

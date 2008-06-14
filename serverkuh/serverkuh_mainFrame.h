@@ -50,7 +50,7 @@
 #include <wxlua/include/wxlua.h>
 #include <wxluasocket/include/wxldserv.h>
 #include <wxluasocket/include/wxldtarg.h>
-#include "plugins/_luaif/muhkuh_wxlua_bindings.h"
+#include "plugins/_luaif/serverkuh_wxlua_bindings.h"
 #include "plugins/_luaif/bit_wxlua_bindings.h"
 
 extern "C"
@@ -112,9 +112,14 @@ private:
 
 	bool check_plugins(void);
 
+	bool dbg_read_string(wxString &strData);
+	bool dbg_read_int(int *piData);
+
 	void dbg_write_u08(unsigned char ucData);
 	void dbg_write_int(int iData);
 	void dbg_write_achar(const char *pcData);
+
+	void dbg_get_frame(int iUp);
 
 	void dbg_get_step_command(void);
 	bool dbg_get_command(void);
