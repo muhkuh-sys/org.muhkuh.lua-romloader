@@ -829,44 +829,79 @@ struct lua_Debug {
 #endif
 void serverkuh_mainFrame::OnLuaDebug(wxLuaEvent &event)
 {
+	bool fPauseExec;
 	lua_Debug tDbg = {0};
 
+
+	// assume to continue
+	fPauseExec = false;
 
 	switch( event.m_lua_Debug->event )
 	{
 	case LUA_HOOKCALL:
-		// TODO: count frames if in step over mode
+		// count frames if in step over mode
+		if( m_dbg_mode==DBGMODE_StepOver || m_dbg_mode==DBGMODE_StepOut )
+		{
+			++m_uiDbgFrameLevel;
+		}
 		break;
 
 	case LUA_HOOKRET:
 	case LUA_HOOKTAILRET:
-		// TODO: dec frames in step over mode
+		// dec frames in step over mode
+		if( m_dbg_mode==DBGMODE_StepOver || m_dbg_mode==DBGMODE_StepOut )
+		{
+			if( m_uiDbgFrameLevel>0 )
+			{
+				--m_uiDbgFrameLevel;
+			}
+		}
 		break;
 
 	case LUA_HOOKLINE:
-		// are we in step mode?
-		if( m_dbg_mode!=DBGMODE_Run )
+		switch( m_dbg_mode )
 		{
-			m_ptLuaState->lua_GetStack(0, &tDbg);
-			m_ptLuaState->lua_GetInfo("Sln", &tDbg);
+		case DBGMODE_Run:
+			// do not stop
+			break;
 
-			if( m_ptDebugClientSocket->IsConnected()==true )
+		case DBGMODE_StepInto:
+			// always stop
+			fPauseExec = true;
+			break;
+
+		case DBGMODE_StepOver:
+		case DBGMODE_StepOut:
+			// stop if execution if the requested level is reached
+			if( m_uiDbgFrameLevel==0 )
 			{
-				// write the command
-				dbg_write_u08(MUHDBG_InterpreterHalted);
-				// write the name
-				dbg_write_achar(tDbg.name);
-				dbg_write_achar(tDbg.namewhat);
-				dbg_write_achar(tDbg.what);
-				dbg_write_achar(tDbg.source);
-				dbg_write_int(tDbg.currentline);
-				dbg_write_int(tDbg.nups);
-				dbg_write_int(tDbg.linedefined);
-				dbg_write_int(tDbg.lastlinedefined);
+				fPauseExec = true;
 			}
-
-			dbg_get_step_command();
 		}
+	}
+
+
+	if( fPauseExec==true )
+	{
+		m_ptLuaState->lua_GetStack(0, &tDbg);
+		m_ptLuaState->lua_GetInfo("Sln", &tDbg);
+
+		if( m_ptDebugClientSocket->IsConnected()==true )
+		{
+			// write the command
+			dbg_write_u08(MUHDBG_InterpreterHalted);
+			// write the name
+			dbg_write_achar(tDbg.name);
+			dbg_write_achar(tDbg.namewhat);
+			dbg_write_achar(tDbg.what);
+			dbg_write_achar(tDbg.source);
+			dbg_write_int(tDbg.currentline);
+			dbg_write_int(tDbg.nups);
+			dbg_write_int(tDbg.linedefined);
+			dbg_write_int(tDbg.lastlinedefined);
+		}
+
+		dbg_get_step_command();
 	}
 }
 
@@ -904,12 +939,17 @@ bool serverkuh_mainFrame::dbg_get_command(void)
 			break;
 
 		case MUHDBG_CmdStepOver:
+			// new mode is 'step over the next line'
 			m_dbg_mode = DBGMODE_StepOver;
+			// init frame level to 0 (stay on this level)
+			m_uiDbgFrameLevel = 0;
 			fContinueExecution = true;
 			break;
 
 		case MUHDBG_CmdStepOut:
 			m_dbg_mode = DBGMODE_StepOut;
+			// init frame level to 1 (go one level up)
+			m_uiDbgFrameLevel = 1;
 			fContinueExecution = true;
 			break;
 

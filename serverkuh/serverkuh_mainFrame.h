@@ -160,6 +160,8 @@ private:
 	wxSocketClient *m_ptDebugClientSocket;
 	// the debug mode
 	tDBGMODE m_dbg_mode;
+	// debug frame count
+	unsigned int m_uiDbgFrameLevel;
 	// the lua state
 	wxLuaState *m_ptLuaState;
 	// the test panel
