@@ -21,6 +21,12 @@ cpp -o romloader_openocd_lua.i -P -CC romloader_openocd_lua.in
 lua -e"rulesFilename=\"romloader_openocd_rules.lua\"" ../../genwxbind.lua 
 cd ..
 cd ..
+cd dpm
+cd netx5
+cpp -o dpm_netx5_lua.i -P -CC dpm_netx5_lua.in
+lua -e"rulesFilename=\"dpm_netx5_rules.lua\"" ../../genwxbind.lua 
+cd ..
+cd ..
 echo Done muhkuh wraps
 
 
