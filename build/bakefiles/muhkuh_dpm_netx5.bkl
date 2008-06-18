@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+<makefile>
+	<!-- ================================================================== -->
+	<!--                     The netx5 dpm plugin                           -->
+	<!-- ================================================================== -->
+
+<!-- the netx5 dpm plugin is win only at the moment -->
+<if cond="TARGETING_WIN32=='1'">
+	<module id="plugin_dpm_netx5" template="wxlua">
+		<dllname>dpm_netx5</dllname>
+		<threading>multi</threading>
+		<dirname>$(SRCDIR)/bin</dirname>
+		<include>$(SRCDIR)</include>
+		<include>$(SRCDIR)/plugins/dpm/netx5</include>
+		<sources>
+			plugins/dpm/dpm.cpp
+			plugins/dpm/netx5/dpm_netx5_main.cpp
+			plugins/dpm/netx5/_luaif/dpm_netx5_lua.cpp
+			plugins/dpm/netx5/_luaif/dpm_netx5_lua_bind.cpp
+		</sources>
+		<headers>
+			plugins/dpm/dpm.h
+			plugins/dpm/netx5/dpm_netx5_main.h
+			plugins/dpm/netx5/_lua/dpm_netx5_wxlua_bindings.h
+		</headers>
+
+		<wxlua-lib>wxluasocket</wxlua-lib>
+		<wxlua-lib>wxluadebug</wxlua-lib>
+		<wxlua-lib>wxbindxrc</wxlua-lib>
+		<wxlua-lib>wxbindhtml</wxlua-lib>
+		<wxlua-lib>wxbindadv</wxlua-lib>
+		<wxlua-lib>wxbindaui</wxlua-lib>
+		<wxlua-lib>wxbindnet</wxlua-lib>
+		<wxlua-lib>wxbindxml</wxlua-lib>
+		<wxlua-lib>wxbindcore</wxlua-lib>
+		<wxlua-lib>wxbindbase</wxlua-lib>
+		<wxlua-lib>wxlua</wxlua-lib>
+		<wxlua-lib>lua</wxlua-lib>
+
+		<wx-lib>xrc</wx-lib>
+		<wx-lib>html</wx-lib>
+		<wx-lib>adv</wx-lib>
+		<wx-lib>aui</wx-lib>
+		<wx-lib>net</wx-lib>
+		<wx-lib>xml</wx-lib>
+		<wx-lib>core</wx-lib>
+		<wx-lib>base</wx-lib>
+	</module>
+</if>
+</makefile>
