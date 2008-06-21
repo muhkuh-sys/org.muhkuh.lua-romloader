@@ -909,7 +909,7 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 	}
 
 	// get the Lua Memory in kilobytes
-	if( m_ptLuaState!=NULL )
+	if( m_ptLuaState!=NULL && m_ptLuaState->Ok()==true )
 	{
 		iLuaMemKb = m_ptLuaState->lua_GetGCCount();
 		strMemStatus.Printf(_("Lua uses %d kilobytes"), iLuaMemKb);
@@ -1206,6 +1206,7 @@ bool muhkuh_mainFrame::initLuaState(void)
 void muhkuh_mainFrame::clearLuaState(void)
 {
 	wxLuaBindingList *ptBindings;
+	wxLuaState *ptLuaState;
 
 
 	// clear any plugin scans
@@ -1218,16 +1219,18 @@ void muhkuh_mainFrame::clearLuaState(void)
 
 	if( m_ptLuaState!=NULL )
 	{
-		if( m_ptLuaState->Ok()==true )
-		{
-			m_ptLuaState->CloseLuaState(true);
-			m_ptLuaState->Destroy();
-			wxSafeYield();
-		}
-		delete m_ptLuaState;
-	
+		ptLuaState = m_ptLuaState;
 		m_ptLuaState = NULL;
+
+		if( ptLuaState->Ok()==true )
+		{
+			ptLuaState->CloseLuaState(true);
+			ptLuaState->Destroy();
+		}
+		delete ptLuaState;
 	}
+
+	wxSafeYield();
 }
 
 
@@ -1343,18 +1346,6 @@ void muhkuh_mainFrame::finishTest(void)
 
 	wxLogMessage(_("Test '%s' finished, cleaning up..."), m_strRunningTestName.fn_str());
 
-//	if( m_testPanel!=NULL )
-//	{
-//		// does the pannel still exist?
-//		iPanelIdx = m_notebook->GetPageIndex(m_testPanel);
-//		if( iPanelIdx!=wxNOT_FOUND )
-//		{
-//			m_notebook->RemovePage(iPanelIdx);
-//		}
-//		// delete the panel
-//		delete m_testPanel;
-//		m_testPanel = NULL;
-//	}
 	if( m_debuggerPanel!=NULL )
 	{
 		// does the pannel still exist?
