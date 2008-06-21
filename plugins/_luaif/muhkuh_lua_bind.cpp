@@ -122,16 +122,6 @@ static int LUACALL wxLua_function_ScanPlugins(lua_State *L)
 }
 static wxLuaBindCFunc s_wxluafunc_wxLua_function_ScanPlugins[1] = {{ wxLua_function_ScanPlugins, WXLUAMETHOD_CFUNCTION, 1, 1, s_wxluatypeArray_wxLua_function_ScanPlugins }};
 
-// %function void TestHasFinished()
-static int LUACALL wxLua_function_TestHasFinished(lua_State *L)
-{
-    // call TestHasFinished
-    TestHasFinished();
-
-    return 0;
-}
-static wxLuaBindCFunc s_wxluafunc_wxLua_function_TestHasFinished[1] = {{ wxLua_function_TestHasFinished, WXLUAMETHOD_CFUNCTION, 0, 0, g_wxluaargtypeArray_None }};
-
 static wxLuaArgType s_wxluatypeArray_wxLua_function_include[] = { &wxluatype_TSTRING, NULL };
 // %function void include(wxString strFileName)
 static int LUACALL wxLua_function_include(lua_State *L)
@@ -173,7 +163,6 @@ wxLuaBindMethod* wxLuaGetFunctionList_muhkuh_lua(size_t &count)
         { "GetNextPlugin", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_GetNextPlugin, 1, NULL },
         { "GetSelectedTest", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_GetSelectedTest, 1, NULL },
         { "ScanPlugins", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_ScanPlugins, 1, NULL },
-        { "TestHasFinished", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_TestHasFinished, 1, NULL },
         { "include", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_include, 1, NULL },
         { "load", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_load, 1, NULL },
 

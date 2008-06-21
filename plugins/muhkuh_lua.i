@@ -23,8 +23,6 @@
 %endclass
 
 
-%function void TestHasFinished()
-
 %function wxString load(wxString strFileName)
 %function void include(wxString strFileName)
 
