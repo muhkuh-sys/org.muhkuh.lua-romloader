@@ -29,8 +29,6 @@
 #define __MUHKUH_LUA_INTERFACE_H__
 
 
-void TestHasFinished(void);
-
 wxString load(wxString strFileName);
 void include(wxString strFileName);
 

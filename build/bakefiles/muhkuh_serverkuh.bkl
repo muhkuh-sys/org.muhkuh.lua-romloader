@@ -22,6 +22,7 @@
 			serverkuh/serverkuh_app.h
 			serverkuh/serverkuh_icons.h
 			serverkuh/serverkuh_id.h
+			serverkuh/serverkuh_lua_interface.h
 			serverkuh/serverkuh_version.h
 		</headers>
 
@@ -41,7 +42,6 @@
 			application/growbuffer.h
 			application/license.h
 			application/muhkuh_brokenPluginDialog.h
-			application/muhkuh_lua_interface.h
 			application/muhkuh_mainFrame.h
 			application/muhkuh_plugin.h
 			application/muhkuh_plugin_manager.h

@@ -105,11 +105,12 @@ public:
 	void OnNotebookPageClose(wxAuiNotebookEvent &event);
 	void OnPaneClose(wxAuiManagerEvent &event);
 
+	void OnServerProcessTerminate(wxProcessEvent &event);
+
 	void OnMove(wxMoveEvent &event);
 	void OnSize(wxSizeEvent &event);
 
 	// the lua functions
-	void luaTestHasFinished(void);
 	wxString luaLoad(wxString strFileName);
 	void luaInclude(wxString strFileName);
 	void luaScanPlugins(wxString strPattern);
@@ -206,6 +207,8 @@ private:
 	long m_lServerPid;
 	// the debug server port
 	unsigned short m_usDebugServerPort;
+	// the server process notification
+	muhkuh_server_process *m_ptServerProcess;
 
 	// main frame state
 	muhkuh_mainFrame_state m_state;
@@ -233,9 +236,6 @@ private:
 	wxTipProvider *m_tipProvider;
 	bool m_fShowStartupTips;
 	size_t m_sizStartupTipsIdx;
-
-	// finish flag for tests
-	volatile bool m_fTestHasFinished;
 
 	// path settings
 	wxString m_strApplicationPath;

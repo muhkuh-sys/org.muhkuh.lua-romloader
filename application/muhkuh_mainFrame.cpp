@@ -95,6 +95,8 @@ BEGIN_EVENT_TABLE(muhkuh_mainFrame, wxFrame)
 	EVT_AUINOTEBOOK_PAGE_CLOSE(muhkuh_mainFrame_Notebook_id,	muhkuh_mainFrame::OnNotebookPageClose)
 	EVT_AUI_PANE_CLOSE(muhkuh_mainFrame::OnPaneClose)
 
+	EVT_END_PROCESS(muhkuh_serverProcess_terminate,			muhkuh_mainFrame::OnServerProcessTerminate)
+
 	EVT_MOVE(muhkuh_mainFrame::OnMove)
 	EVT_SIZE(muhkuh_mainFrame::OnSize)
 END_EVENT_TABLE()
@@ -114,6 +116,7 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 // , m_testPanel(NULL)
  , m_debuggerPanel(NULL)
  , m_lServerPid(0)
+ , m_ptServerProcess(NULL)
  , m_tipProvider(NULL)
  , m_welcomeHtml(NULL)
  , m_testDetailsHtml(NULL)
@@ -162,6 +165,9 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 
 	// create the repository manager
 	m_ptRepositoryManager = new muhkuh_repository_manager();
+
+	// create the server process notifier
+	m_ptServerProcess = new muhkuh_server_process(this, muhkuh_serverProcess_terminate);
 
 	// build version string
 	m_strVersion.Printf(wxT(MUHKUH_APPLICATION_NAME) wxT(" v%d.%d.%d"), MUHKUH_VERSION_MAJ, MUHKUH_VERSION_MIN, MUHKUH_VERSION_SUB);
@@ -260,6 +266,12 @@ muhkuh_mainFrame::~muhkuh_mainFrame(void)
 
 	finishTest();
 	clearLuaState();
+
+	// delete the server notifier
+	if( m_ptServerProcess!=NULL )
+	{
+		delete m_ptServerProcess;
+	}
 
 	// delete the plugin manager
 	if( m_ptPluginManager!=NULL )
@@ -756,7 +768,6 @@ void muhkuh_mainFrame::setState(muhkuh_mainFrame_state tNewState)
 		break;
 
 	case muhkuh_mainFrame_state_testing:
-		m_fTestHasFinished = true;
 		break;
 	}
 
@@ -806,7 +817,6 @@ void muhkuh_mainFrame::setState(muhkuh_mainFrame_state tNewState)
 		break;
 
 	case muhkuh_mainFrame_state_testing:
-		m_fTestHasFinished = false;
 		m_buttonCancelTest->Enable(true);
 		m_menuBar->Enable(muhkuh_mainFrame_menuTestCancel, true);
 		m_menuBar->Enable(muhkuh_mainFrame_menuViewWelcomePage, false);
@@ -894,26 +904,16 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 		break;
 
 	case muhkuh_mainFrame_state_testing:
-		// check for finish
-		if( m_fTestHasFinished==true )
-		{
-			// test done -> go back to idle state
-			setState(muhkuh_mainFrame_state_idle);
-			finishTest();
-		}
-		else
-		{
-			strStatus.Printf(_("Test '%s' in progress..."), m_strRunningTestName.fn_str());
-
-			// get the Lua Memory in kilobytes
-			if( m_ptLuaState!=NULL )
-			{
-				iLuaMemKb = m_ptLuaState->lua_GetGCCount();
-				strMemStatus.Printf(_("Lua uses %d kilobytes"), iLuaMemKb);
-				strStatus += strMemStatus;
-			}
-		}
+		strStatus.Printf(_("Test '%s' in progress..."), m_strRunningTestName.fn_str());
 		break;
+	}
+
+	// get the Lua Memory in kilobytes
+	if( m_ptLuaState!=NULL )
+	{
+		iLuaMemKb = m_ptLuaState->lua_GetGCCount();
+		strMemStatus.Printf(_("Lua uses %d kilobytes"), iLuaMemKb);
+		strStatus += strMemStatus;
 	}
 
 	// set the status text
@@ -1325,7 +1325,7 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 			strServerCmd.Printf(wxT("./serverkuh -c Muhkuh.cfg -i %d -dlocalhost:%d %s"), uiIndex, m_usDebugServerPort, strXmlUrl.fn_str());
 			wxLogMessage(wxT("starting server: ") + strServerCmd);
 
-			m_lServerPid = wxExecute(strServerCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, NULL);
+			m_lServerPid = wxExecute(strServerCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, m_ptServerProcess);
 			if( m_lServerPid==0 )
 			{
 				strMsg.Printf(_("Failed to start the server with command: %s"), strServerCmd.fn_str());
@@ -1590,6 +1590,7 @@ void muhkuh_mainFrame::OnTestCancel(wxCommandEvent& WXUNUSED(event))
 
 			// try to kill the process
 			wxProcess::Kill(m_lServerPid, wxSIGKILL, wxKILL_CHILDREN);
+			m_lServerPid = 0;
 
 			finishTest();
 
@@ -2134,6 +2135,26 @@ void muhkuh_mainFrame::OnPaneClose(wxAuiManagerEvent &event)
 }
 
 
+void muhkuh_mainFrame::OnServerProcessTerminate(wxProcessEvent &event)
+{
+	int iPid;
+
+
+	iPid = event.GetPid();
+	if( iPid==m_lServerPid )
+	{
+		wxLogMessage(_("The server terminated with returncode %d."), event.GetExitCode());
+		m_lServerPid = 0;
+		setState(muhkuh_mainFrame_state_idle);
+		finishTest();
+	}
+	else
+	{
+		wxLogWarning(_("Ignoring terminate event from unknown process %d!"), iPid);
+	}
+}
+
+
 void muhkuh_mainFrame::OnLuaPrint(wxLuaEvent &event)
 {
 	wxLogMessage( event.GetString() );
@@ -2334,12 +2355,6 @@ void muhkuh_mainFrame::OnSize(wxSizeEvent &event)
 		// frame is in normal state -> remember size
 		m_frameSize = event.GetSize();
 	}
-}
-
-
-void muhkuh_mainFrame::luaTestHasFinished(void)
-{
-	m_fTestHasFinished = true;
 }
 
 
@@ -2684,17 +2699,6 @@ wxString muhkuh_mainFrame::local_htmlTag_lua(const wxString &strLuaCode)
 	}
 
 	return strHtmlCode;
-}
-
-
-void TestHasFinished(void)
-{
-	// does the mainframe exist?
-	if( g_ptMainFrame!=NULL )
-	{
-		// yes, the mainframe exists -> call the luaTestHasFinished function there
-		g_ptMainFrame->luaTestHasFinished();
-	}
 }
 
 

@@ -103,6 +103,8 @@ enum
 
 	muhkuh_debugServerSocket_event,
 	muhkuh_debugConnectionSocket_event,
+
+	muhkuh_serverProcess_terminate,
 };
 
 #endif	// __MUHKUH_ID_H__

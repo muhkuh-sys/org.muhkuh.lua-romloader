@@ -27,8 +27,20 @@
 #include <wx/aui/aui.h>
 #include <wx/intl.h>
 #include <wx/listctrl.h>
+#include <wx/process.h>
 #include <wx/socket.h>
 #include <wx/stc/stc.h>
+
+
+class muhkuh_server_process : public wxProcess
+{
+public:
+	muhkuh_server_process(wxEvtHandler *parent, int id)
+	: wxProcess(parent, id)
+	{
+	}
+};
+
 
 class muhkuh_debugger: public wxPanel
 {
