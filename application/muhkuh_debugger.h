@@ -26,6 +26,7 @@
 
 #include <wx/aui/aui.h>
 #include <wx/intl.h>
+#include <wx/listctrl.h>
 #include <wx/socket.h>
 #include <wx/stc/stc.h>
 

@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 
+#include <wx/fileconf.h>
 #include <wx/stdpaths.h>
 #include <wx/url.h>
 

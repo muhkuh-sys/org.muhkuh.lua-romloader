@@ -9,6 +9,12 @@
 		<threading>multi</threading>
 		<include>$(SRCDIR)</include>
 		<include>$(SRCDIR)/application</include>
+
+		<!-- add wxpack's contrib path to the include paths on win platforms -->
+		<if cond="TARGETING_WIN32=='1'">
+			<include>$(DOLLAR)($(ENV_VAR)WXWIN)/contrib/include</include>
+		</if>
+
 		<dirname>$(SRCDIR)/bin</dirname>
 		<sources>
 			application/bit_lua_interface.cpp
@@ -76,6 +82,7 @@
 		<wxlua-lib>wxlua</wxlua-lib>
 		<wxlua-lib>lua</wxlua-lib>
 
+		<wx-lib>stc</wx-lib>
 		<wx-lib>xrc</wx-lib>
 		<wx-lib>html</wx-lib>
 		<wx-lib>adv</wx-lib>
