@@ -33,6 +33,9 @@
 #include <wx/stc/stc.h>
 
 
+#include "muhkuh_wrap_xml.h"
+
+
 class muhkuh_debugger_document
 {
 public:
@@ -66,7 +69,7 @@ public:
 class muhkuh_debugger: public wxPanel
 {
 public:
-	muhkuh_debugger(wxWindow *ptParent, wxString &strApplicationPath, unsigned short usDebugServerPort);
+	muhkuh_debugger(wxWindow *ptParent, wxString &strApplicationPath, unsigned short usDebugServerPort, muhkuh_wrap_xml *ptXml);
 	~muhkuh_debugger();
 
 	void OnDebugServerSocket(wxSocketEvent &event);
@@ -132,6 +135,9 @@ private:
 	// the debug server socket
 	wxSocketServer *m_ptDebugSocketServer;
 	wxSocketBase *m_ptDebugConnection;
+
+	// the test's xml description
+	muhkuh_wrap_xml *m_ptXml;
 
 	tMuhkuhDocumentHash m_docHash;
 

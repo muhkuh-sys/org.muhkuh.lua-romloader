@@ -29,12 +29,14 @@ typedef struct
 {
 	wxString strName;
 	wxString strVersion;			// version string
+	wxString strCode;
 } tTesterXml_Test;
 
 typedef struct
 {
 	wxString strName;			// name of the testdescription
 	wxString strVersion;			// version string
+	wxString strCode;
 	unsigned int uiTests;			// number of tests
 	tTesterXml_Test *ptTests;
 } tTesterXml_TestDescription;
@@ -54,15 +56,18 @@ public:
 
 	wxString testDescription_getName(void) const;
 	wxString testDescription_getVersion(void) const;
+	wxString testDescription_getCode(void) const;
 	unsigned int testDescription_getTestCnt(void) const;
 	bool testDescription_setTest(unsigned int uiTestIdx);
 
 	wxString test_getName(void) const;
 	wxString test_getVersion(void) const;
+	wxString test_getCode(void) const;
 
 private:
 	bool readTestDescription(wxXmlDocument *xmldoc);
 	bool readTest(wxXmlNode *xml_parent, tTesterXml_TestDescription *ptTestDesc);
+	bool readCodeNode(wxXmlNode *xml_parent, wxString &strCode);
 
 	wxXmlDocument *m_xml_doc;
 

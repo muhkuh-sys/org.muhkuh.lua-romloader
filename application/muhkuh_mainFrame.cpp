@@ -1317,7 +1317,7 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 		if( m_ptLuaState!=NULL && m_ptLuaState->Ok()==true )
 		{
 			// create a new panel for the debugger
-			m_debuggerPanel = new muhkuh_debugger(this, m_strApplicationPath, m_usDebugServerPort);
+			m_debuggerPanel = new muhkuh_debugger(this, m_strApplicationPath, m_usDebugServerPort, ptTestData);
 			m_notebook->AddPage(m_debuggerPanel, m_strRunningTestName, true);
 
 			// set state to 'testing'

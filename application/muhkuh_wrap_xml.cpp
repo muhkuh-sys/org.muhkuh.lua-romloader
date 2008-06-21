@@ -151,6 +151,19 @@ wxString muhkuh_wrap_xml::testDescription_getVersion(void) const
 }
 
 
+wxString muhkuh_wrap_xml::testDescription_getCode(void) const
+{
+	// does a testdescription exist?
+	if( m_ptTestDescription==NULL )
+	{
+		return wxEmptyString;
+	}
+
+	// yes -> get the name
+	return m_ptTestDescription->strCode;
+}
+
+
 unsigned int muhkuh_wrap_xml::testDescription_getTestCnt(void) const
 {
 	// does a testdescription exist?
@@ -211,6 +224,19 @@ wxString muhkuh_wrap_xml::test_getVersion(void) const
 }
 
 
+wxString muhkuh_wrap_xml::test_getCode(void) const
+{
+	// does a testdescription exist?
+	if( m_ptTest==NULL )
+	{
+		return wxEmptyString;
+	}
+
+	// yes -> get the name
+	return m_ptTest->strCode;
+}
+
+
 bool muhkuh_wrap_xml::readTestDescription(wxXmlDocument *xmldoc)
 {
 	wxXmlNode *xml_testdesc;
@@ -238,6 +264,13 @@ bool muhkuh_wrap_xml::readTestDescription(wxXmlDocument *xmldoc)
 
 	// get the testdescription name
 	if( xml_testdesc->GetPropVal(wxT("name"), &ptTestDesc->strName)==false )
+	{
+		delete ptTestDesc;
+		return false;
+	}
+
+	// read the code node
+	if( readCodeNode(xml_testdesc, ptTestDesc->strCode)==false )
 	{
 		delete ptTestDesc;
 		return false;
@@ -304,7 +337,14 @@ bool muhkuh_wrap_xml::readTest(wxXmlNode *xml_parent, tTesterXml_TestDescription
 					delete[] ptTests;
 					return false;
 				}
-				
+
+				// read the code node
+				if( readCodeNode(xml_test_cnt, tc->strCode)==false )
+				{
+					delete[] ptTests;
+					return false;
+				}
+
 				// get the test version
 				// NOTE: this is optional to support older tests
 				if( xml_test_cnt->GetPropVal(wxT("version"), &tc->strVersion)==false )
@@ -326,5 +366,36 @@ bool muhkuh_wrap_xml::readTest(wxXmlNode *xml_parent, tTesterXml_TestDescription
 	ptTestDesc->uiTests = ulTestCnt;
 
 	return true;
+}
+
+
+bool muhkuh_wrap_xml::readCodeNode(wxXmlNode *xml_parent, wxString &strCode)
+{
+	wxXmlNode *ptNode;
+	bool fResult;
+
+
+	// expect failure
+	fResult = false;
+
+	// look for the first root node named "TestDescription"
+	ptNode = xml_parent->GetChildren();
+	while( ptNode!=NULL )
+	{
+		if( ptNode->GetType()==wxXML_ELEMENT_NODE && ptNode->GetName()==wxT("Code") )
+		{
+			break;
+		}
+		ptNode = ptNode->GetNext();
+	}
+	// found Code node (node is not NULL) ?
+	if( ptNode!=NULL )
+	{
+		// get the node contents
+		strCode = ptNode->GetNodeContent();
+		fResult = true;
+	}
+
+	return fResult;
 }
 

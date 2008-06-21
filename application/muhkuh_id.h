@@ -90,6 +90,7 @@ enum
 	muhkuh_dirlistbox_BrowseButton,
 	muhkuh_dirlistbox_TextCtrl,
 
+	muhkuh_debugger_notebook,
 	muhkuh_debugger_buttonStepInto,
 	muhkuh_debugger_buttonStepOver,
 	muhkuh_debugger_buttonStepOut,

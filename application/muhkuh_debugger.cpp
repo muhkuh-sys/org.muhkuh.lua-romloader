@@ -239,10 +239,11 @@ const char *muhkuh_debugger::acSyntaxhl4 =
 
 
 
-muhkuh_debugger::muhkuh_debugger(wxWindow *ptParent, wxString &strApplicationPath, unsigned short usDebugServerPort)
+muhkuh_debugger::muhkuh_debugger(wxWindow *ptParent, wxString &strApplicationPath, unsigned short usDebugServerPort, muhkuh_wrap_xml *ptXml)
  : wxPanel(ptParent)
  , m_strApplicationPath(strApplicationPath)
  , m_usDebugServerPort(usDebugServerPort)
+ , m_ptXml(ptXml)
  , m_ptDebugSocketServer(NULL)
  , m_ptDebugConnection(NULL)
 {
@@ -362,6 +363,7 @@ void muhkuh_debugger::OnNotebookPageClose(wxAuiNotebookEvent &event)
 			wxLogMessage("delete editor %p", ptWin);
 			break;
 		}
+		++it;
 	}
 }
 
@@ -585,6 +587,7 @@ bool muhkuh_debugger::editor_get_source_document(wxString strSource, muhkuh_debu
 	bool fResult;
 	wxString strSourceFile;
 	wxString strTestIndex;
+	unsigned long ulTestIdx;
 	wxString strFullName;
 	wxFileName tFileName;
 	wxFile tFile;
@@ -603,8 +606,18 @@ bool muhkuh_debugger::editor_get_source_document(wxString strSource, muhkuh_debu
 			// TODO:build a suitable name for the tab
 			ptDoc->m_strSourceFileName = strSource;
 
-			// TODO: get the source code from the xml wrapper
-			ptDoc->m_strSourceCode = "this comes from code index " + strTestIndex;
+			// get the source code from the xml wrapper
+			if( strTestIndex.ToULong(&ulTestIdx)==true )
+			{
+				if( ulTestIdx==0 )
+				{
+					ptDoc->m_strSourceCode = m_ptXml->testDescription_getCode();
+				}
+				else if( m_ptXml->testDescription_setTest(ulTestIdx)==true )
+				{
+					ptDoc->m_strSourceCode = m_ptXml->test_getCode();
+				}
+			}
 		}
 		else
 		{
@@ -878,6 +891,7 @@ void muhkuh_debugger::dbg_packet_InterpreterHalted(void)
 	int iLineDefined;
 	int iLastLineDefined;
 	wxStyledTextCtrl *ptEditor;
+	tMuhkuhDocumentHash::iterator it;
 
 
 	if( dbg_read_u08(&ucStatus)==true )
@@ -896,14 +910,18 @@ void muhkuh_debugger::dbg_packet_InterpreterHalted(void)
 			{
 				wxLogMessage(_("Debug: %s:%s:%s:%s:%d:%d:%d:%d"), strName.fn_str(), strNameWhat.fn_str(), strWhat.fn_str(), strSource.fn_str(), iCurrentLine, iNUps, iLineDefined, iLastLineDefined);
 
+				// clear all "current line" markers
+				it = m_docHash.begin();
+				while( it!=m_docHash.end() )
+				{
+					ptEditor = it->second.m_ptEditor;
+					ptEditor->MarkerDeleteAll(DBGEDIT_Marker_CurrentLine);
+					++it;
+				}
+
 				ptEditor = editor_get_document(strSource);
 				if( ptEditor!=NULL )
 				{
-//					ptEditor->Clear();
-//					ptEditor->ClearAll();
-//					ptEditor->MarkerDeleteAll(DBGEDIT_Marker_BreakPoint);
-					ptEditor->MarkerDeleteAll(DBGEDIT_Marker_CurrentLine);
-
 					if( iCurrentLine>0 )
 					{
 						ptEditor->MarkerAdd(iCurrentLine-1, DBGEDIT_Marker_CurrentLine);
