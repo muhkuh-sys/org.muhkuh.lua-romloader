@@ -1294,8 +1294,7 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	bool fResult;
 	int iResult;
 	wxString strMsg;
-	wxString strErrorMsg;
-	wxString strDebug;
+	wxString strXmlUrl;
 	wxString strServerCmd;
 	int iGetTop;
 	int iLineNr;
@@ -1309,8 +1308,8 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 		m_sizRunningTest_RepositoryIdx = ptTestData->getRepositoryIndex();
 		m_sizRunningTest_TestIdx = ptTestData->getTestIndex();
 
-		strDebug.Printf(wxT("execute test '") + m_strRunningTestName + wxT("', index %d"), uiIndex);
-		wxLogMessage(strDebug);
+		strMsg.Printf(wxT("execute test '") + m_strRunningTestName + wxT("', index %d"), uiIndex);
+		wxLogMessage(strMsg);
 
 		if( m_ptLuaState!=NULL && m_ptLuaState->Ok()==true )
 		{
@@ -1322,7 +1321,8 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 			// NOTE: this must be done before the call to 'RunString', or the state will not change before the first idle event
 			setState(muhkuh_mainFrame_state_testing);
 
-			strServerCmd.Printf(wxT("./serverkuh -c Muhkuh.cfg -i %d -dlocalhost:%d file:/home/Benten/Coding/netx/muhkuh/trunk/nxdb500-sys_demo/test_description.xml"), m_sizRunningTest_TestIdx, m_usDebugServerPort);
+			strXmlUrl = m_ptRepositoryManager->getTestlistXmlUrl(m_sizRunningTest_RepositoryIdx, m_sizRunningTest_TestIdx);
+			strServerCmd.Printf(wxT("./serverkuh -c Muhkuh.cfg -i %d -dlocalhost:%d %s"), uiIndex, m_usDebugServerPort, strXmlUrl.fn_str());
 			wxLogMessage(wxT("starting server: ") + strServerCmd);
 
 			m_lServerPid = wxExecute(strServerCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, NULL);
