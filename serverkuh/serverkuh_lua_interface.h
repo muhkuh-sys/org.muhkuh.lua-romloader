@@ -25,8 +25,8 @@
 #include "muhkuh_wrap_xml.h"
 
 
-#ifndef __MUHKUH_LUA_INTERFACE_H__
-#define __MUHKUH_LUA_INTERFACE_H__
+#ifndef __SERVERKUH_LUA_INTERFACE_H__
+#define __SERVERKUH_LUA_INTERFACE_H__
 
 
 void TestHasFinished(void);
@@ -42,5 +42,5 @@ muhkuh_plugin_instance *GetNextPlugin(void);
 
 muhkuh_wrap_xml *GetSelectedTest();
 
-#endif	// __MUHKUH_LUA_INTERFACE_H__
+#endif	// __SERVERKUH_LUA_INTERFACE_H__
 
