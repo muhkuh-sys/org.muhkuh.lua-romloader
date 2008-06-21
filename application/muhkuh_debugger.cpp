@@ -43,6 +43,200 @@ BEGIN_EVENT_TABLE(muhkuh_debugger, wxPanel)
 END_EVENT_TABLE()
 
 
+const char *muhkuh_debugger::acSyntaxhl0 =
+{
+	"and "
+	"break "
+	"do "
+	"else "
+	"elseif "
+	"end "
+	"false "
+	"for "
+	"function "
+	"if "
+	"in "
+	"local "
+	"nil "
+	"not "
+	"or "
+	"repeat "
+	"return "
+	"then "
+	"true "
+	"until "
+	"while"
+};
+
+
+const char *muhkuh_debugger::acSyntaxhl1 =
+{
+	"_VERSION "
+	"assert "
+	"collectgarbage "
+	"dofile "
+	"error "
+	"gcinfo "
+	"loadfile "
+	"loadstring "
+	"print "
+	"rawget "
+	"rawset "
+	"require "
+	"tonumber "
+	"tostring "
+	"type "
+	"unpack"
+};
+
+
+const char *muhkuh_debugger::acSyntaxhl2 =
+{
+	"_G "
+	"getfenv "
+	"getmetatable "
+	"ipairs "
+	"loadlib "
+	"next "
+	"pairs "
+	"pcall "
+	"rawequal "
+	"setfenv "
+	"setmetatable "
+	"xpcall "
+	"string "
+	"table "
+	"math "
+	"coroutine "
+	"io "
+	"os "
+	"debug "
+	"load "
+	"module "
+	"select"
+};
+
+
+const char *muhkuh_debugger::acSyntaxhl3 =
+{
+	"string.byte "
+	"string.char "
+	"string.dump "
+	"string.find "
+	"string.len "
+	"string.lower "
+	"string.rep "
+	"string.sub "
+	"string.upper "
+	"string.format "
+	"string.gfind "
+	"string.gsub "
+	"table.concat "
+	"table.foreach "
+	"table.foreachi "
+	"table.getn "
+	"table.sort "
+	"table.insert "
+	"table.remove "
+	"table.setn "
+	"math.abs "
+	"math.acos "
+	"math.asin "
+	"math.atan "
+	"math.atan2 "
+	"math.ceil "
+	"math.cos "
+	"math.deg "
+	"math.exp "
+	"math.floor "
+	"math.frexp "
+	"math.ldexp "
+	"math.log "
+	"math.log10 "
+	"math.max "
+	"math.min "
+	"math.mod "
+	"math.pi "
+	"math.pow "
+	"math.rad "
+	"math.random "
+	"math.randomseed "
+	"math.sin "
+	"math.sqrt "
+	"math.tan "
+	"string.gmatch "
+	"string.match "
+	"string.reverse "
+	"table.maxn "
+	"math.cosh "
+	"math.fmod "
+	"math.modf "
+	"math.sinh "
+	"math.tanh "
+	"math.huge"
+};
+
+
+const char *muhkuh_debugger::acSyntaxhl4 =
+{
+	"coroutine.create "
+	"coroutine.resume "
+	"coroutine.status "
+	"coroutine.wrap "
+	"coroutine.yield "
+	"io.close "
+	"io.flush "
+	"io.input "
+	"io.lines "
+	"io.open "
+	"io.output "
+	"io.read "
+	"io.tmpfile "
+	"io.type "
+	"io.write "
+	"io.stdin "
+	"io.stdout "
+	"io.stderr "
+	"os.clock "
+	"os.date "
+	"os.difftime "
+	"os.execute "
+	"os.exit "
+	"os.getenv "
+	"os.remove "
+	"os.rename "
+	"os.setlocale "
+	"os.time "
+	"os.tmpname "
+	"coroutine.running "
+	"package.cpath "
+	"package.loaded "
+	"package.loadlib "
+	"package.path "
+	"package.preload "
+	"package.seeall "
+	"io.popen "
+	"debug.debug "
+	"debug.getfenv "
+	"debug.gethook "
+	"debug.getinfo "
+	"debug.getlocal "
+	"debug.getmetatable "
+	"debug.getregistry "
+	"debug.getupvalue "
+	"debug.setfenv "
+	"debug.sethook "
+	"debug.setlocal "
+	"debug.setmetatable "
+	"debug.setupvalue "
+	"debug.traceback"
+};
+
+
+
+
+
+
 muhkuh_debugger::muhkuh_debugger(wxWindow *ptParent, wxString &strApplicationPath, unsigned short usDebugServerPort)
  : wxPanel(ptParent)
  , m_strApplicationPath(strApplicationPath)
@@ -262,8 +456,8 @@ wxStyledTextCtrl *muhkuh_debugger::create_debugger_editor(wxString strCaption)
 	ptEditor->StyleSetEOLFilled(12, true);
 
 	ptEditor->StyleSetForeground(13, wxColour(0,   0,  95));	// Keyword 2 highlighting styles
-	ptEditor->StyleSetForeground(14, wxColour(0,   95, 0));	// Keyword 3
-	ptEditor->StyleSetForeground(15, wxColour(127, 0,  0));	// Keyword 4
+	ptEditor->StyleSetForeground(14, wxColour(0,   95, 0));		// Keyword 3
+	ptEditor->StyleSetForeground(15, wxColour(127, 0,  0));		// Keyword 4
 	ptEditor->StyleSetForeground(16, wxColour(127, 0,  95));	// Keyword 5
 	ptEditor->StyleSetForeground(17, wxColour(35,  95, 175));	// Keyword 6
 	ptEditor->StyleSetForeground(18, wxColour(0,   127, 127));	// Keyword 7
@@ -291,9 +485,9 @@ wxStyledTextCtrl *muhkuh_debugger::create_debugger_editor(wxString strCaption)
 	ptEditor->StyleSetForeground(37, wxColour(192, 192, 192));
 	ptEditor->StyleSetBackground(37, wxColour(255, 255, 255));
 
-	ptEditor->SetUseTabs(false);
-	ptEditor->SetTabWidth(4);
-	ptEditor->SetIndent(4);
+	ptEditor->SetUseTabs(true);
+	ptEditor->SetTabWidth(8);
+	ptEditor->SetIndent(8);
 	ptEditor->SetIndentationGuides(true);
 
 	ptEditor->SetVisiblePolicy(wxSTC_VISIBLE_SLOP, 3);
@@ -320,19 +514,46 @@ wxStyledTextCtrl *muhkuh_debugger::create_debugger_editor(wxString strCaption)
 	ptEditor->SetProperty("fold.compact", "1");
 	ptEditor->SetProperty("fold.comment", "1");
 
-// 	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDEROPEN,    wxSTC_MARK_BOXMINUS, wxWHITE, wxLIGHT_GREY);
-// 	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDER,        wxSTC_MARK_BOXPLUS,  wxWHITE, wxColour(128, 128, 128));
-// 	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDERSUB,     wxSTC_MARK_VLINE,    wxWHITE, wxColour(128, 128, 128));
-// 	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDERTAIL,    wxSTC_MARK_LCORNER,  wxWHITE, wxColour(128, 128, 128));
-// 	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDEREND,     wxSTC_MARK_BOXPLUSCONNECTED,  wxWHITE, wxColour(128, 128, 128));
-// 	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDEROPENMID, wxSTC_MARK_BOXMINUSCONNECTED, wxWHITE, wxColour(128, 128, 128));
-// 	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDERMIDTAIL, wxSTC_MARK_TCORNER,  wxWHITE, wxColour(128, 128, 128));
+	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDEROPEN,	wxSTC_MARK_BOXMINUS,		0x00ffffff, 0x00808080);
+	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDER,		wxSTC_MARK_BOXPLUS,		0x00ffffff, 0x00808080);
+	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDERSUB,		wxSTC_MARK_VLINE,		0x00ffffff, 0x00808080);
+	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDERTAIL,	wxSTC_MARK_LCORNER,		0x00ffffff, 0x00808080);
+	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDEREND,		wxSTC_MARK_BOXPLUSCONNECTED,	0x00ffffff, 0x00808080);
+	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDEROPENMID,	wxSTC_MARK_BOXMINUSCONNECTED,	0x00ffffff, 0x00808080);
+	ptEditor->MarkerDefine(wxSTC_MARKNUM_FOLDERMIDTAIL,	wxSTC_MARK_TCORNER,		0x00ffffff, 0x00808080);
 
-//	SetupKeywords(ptEditor, true);
+	editor_set_syntaxhl(ptEditor);
 
 	m_ptDebugSourceNotebook->AddPage(ptEditor, strCaption, false);
 
 	return ptEditor;
+}
+
+
+void muhkuh_debugger::editor_set_syntaxhl(wxStyledTextCtrl *ptEditor)
+{
+	ptEditor->SetLexer(wxSTC_LEX_LUA);
+
+	ptEditor->SetKeyWords(0, acSyntaxhl0);
+	ptEditor->SetKeyWords(1, acSyntaxhl1);
+	ptEditor->SetKeyWords(2, acSyntaxhl2);
+	ptEditor->SetKeyWords(3, acSyntaxhl3);
+	ptEditor->SetKeyWords(4, acSyntaxhl4);
+/*
+        -- Get the items in the global "wx" table for autocompletion
+        if not wxkeywords then
+            local keyword_table = {}
+            for index, value in pairs(wx) do
+                table.insert(keyword_table, "wx."..index.." ")
+            end
+
+            table.sort(keyword_table)
+            wxkeywords = table.concat(keyword_table)
+        end
+
+        editor:SetKeyWords(5, wxkeywords)
+*/
+	ptEditor->Colourise(0, -1);
 }
 
 

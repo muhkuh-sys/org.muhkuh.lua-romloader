@@ -70,6 +70,7 @@ private:
 
 	void create_controls(void);
 	wxStyledTextCtrl *create_debugger_editor(wxString strCaption);
+	void editor_set_syntaxhl(wxStyledTextCtrl *ptEditor);
 
 	bool dbg_read_u08(unsigned char *pucData);
 	bool dbg_read_string(wxString &strData);
@@ -80,6 +81,13 @@ private:
 
 	void dbg_packet_InterpreterHalted(void);
 	void dbg_fillStackWindow(void);
+
+
+	static const char *acSyntaxhl0;
+	static const char *acSyntaxhl1;
+	static const char *acSyntaxhl2;
+	static const char *acSyntaxhl3;
+	static const char *acSyntaxhl4;
 
 
 	// debugger gui elements
