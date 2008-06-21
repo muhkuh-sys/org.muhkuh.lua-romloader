@@ -154,16 +154,9 @@ void muhkuh_debugger::create_controls(void)
 	// create the aui manager
 	m_ptDebugAuiManager = new wxAuiManager(this);
 
-	// add the source notebook
-	m_ptDebugSourceNotebook = new wxAuiNotebook(this, wxID_ANY);
-	paneInfo.Name(wxT("source"));
-	paneInfo.CaptionVisible(false);
-	paneInfo.Center();
-	paneInfo.Position(0);
-	m_ptDebugAuiManager->AddPane(m_ptDebugSourceNotebook, paneInfo);
-
-	// create the repository toolbar
+	// create the debug toolbar
 	m_ptDebugToolBar = new wxToolBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,  wxTB_HORIZONTAL|wxNO_BORDER|wxTB_TEXT);
+	m_ptDebugToolBar->SetToolBitmapSize( wxSize(16,16) );
 	m_ptDebugToolBar->AddTool(muhkuh_debugger_buttonStepInto, _("Step Into"), muhkuh_016_xpm, wxNullBitmap, wxITEM_NORMAL, _("Step Into the next statement"));
 	m_ptDebugToolBar->AddTool(muhkuh_debugger_buttonStepOver, _("Step Over"), muhkuh_016_xpm, wxNullBitmap, wxITEM_NORMAL, _("Step Over the next statement"));
 	m_ptDebugToolBar->AddTool(muhkuh_debugger_buttonStepOut,  _("Step Out"), muhkuh_016_xpm, wxNullBitmap, wxITEM_NORMAL, _("Step Out of the current function"));
@@ -175,7 +168,18 @@ void muhkuh_debugger::create_controls(void)
 	paneInfo.Caption(_("Debugger Tools"));
 	paneInfo.Top();
 	paneInfo.Position(0);
+	paneInfo.BestSize( m_ptDebugToolBar->GetBestSize() );
+	paneInfo.Resizable(false);
 	m_ptDebugAuiManager->AddPane(m_ptDebugToolBar, paneInfo);
+
+	// add the source notebook
+	m_ptDebugSourceNotebook = new wxAuiNotebook(this, wxID_ANY);
+	paneInfo.Name(wxT("source"));
+	paneInfo.CaptionVisible(false);
+	paneInfo.Center();
+	paneInfo.Position(0);
+	paneInfo.Resizable(true);
+	m_ptDebugAuiManager->AddPane(m_ptDebugSourceNotebook, paneInfo);
 
 	// add the stack window
 	lStyle = wxLC_REPORT|wxLC_ALIGN_LEFT|wxLC_SINGLE_SEL|wxLC_HRULES;
@@ -188,6 +192,7 @@ void muhkuh_debugger::create_controls(void)
 	paneInfo.Caption(_("Stack"));
 	paneInfo.Bottom();
 	paneInfo.Position(0);
+	paneInfo.Resizable(true);
 	m_ptDebugAuiManager->AddPane(m_ptDebugStackWindow, paneInfo);
 
 	// add the watch window
@@ -198,6 +203,7 @@ void muhkuh_debugger::create_controls(void)
 	paneInfo.Caption(_("Watch"));
 	paneInfo.Bottom();
 	paneInfo.Position(1);
+	paneInfo.Resizable(true);
 	m_ptDebugAuiManager->AddPane(m_ptDebugWatchWindow, paneInfo);
 
 	m_ptDebugAuiManager->Update();
