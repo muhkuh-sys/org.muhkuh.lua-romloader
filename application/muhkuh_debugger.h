@@ -25,11 +25,32 @@
 #include <wx/wx.h>
 
 #include <wx/aui/aui.h>
+#include <wx/hashmap.h>
 #include <wx/intl.h>
 #include <wx/listctrl.h>
 #include <wx/process.h>
 #include <wx/socket.h>
 #include <wx/stc/stc.h>
+
+
+class muhkuh_debugger_document
+{
+public:
+	// hash value
+	wxString m_strHash;
+
+	// filename of the sourcecode, can be empty for chunks
+	wxString m_strSourceFileName;
+
+	// sourcecode, this is either the file contents or the chunk itself
+	wxString m_strSourceCode;
+
+	// the editor component
+	wxStyledTextCtrl *m_ptEditor;
+};
+
+
+WX_DECLARE_STRING_HASH_MAP(muhkuh_debugger_document, tMuhkuhDocumentHash);
 
 
 class muhkuh_server_process : public wxProcess
@@ -57,6 +78,8 @@ public:
 	void OnDebuggerContinue(wxCommandEvent &event);
 	void OnDebuggerBreak(wxCommandEvent &event);
 
+	void OnNotebookPageClose(wxAuiNotebookEvent &event);
+
 
 	typedef enum
 	{
@@ -71,6 +94,9 @@ private:
 	void create_controls(void);
 	wxStyledTextCtrl *create_debugger_editor(wxString strCaption);
 	void editor_set_syntaxhl(wxStyledTextCtrl *ptEditor);
+	bool editor_get_source_document(wxString strSource, muhkuh_debugger_document *ptDoc);
+	wxStyledTextCtrl *editor_get_document(wxString strSource);
+
 
 	bool dbg_read_u08(unsigned char *pucData);
 	bool dbg_read_string(wxString &strData);
@@ -96,7 +122,6 @@ private:
 	wxListCtrl *m_ptDebugStackWindow;
 	wxTextCtrl *m_ptDebugWatchWindow;
 	wxToolBar *m_ptDebugToolBar;
-	wxStyledTextCtrl *m_ptDebugEditor;
 
 	// the application path
 	wxString m_strApplicationPath;
@@ -108,6 +133,7 @@ private:
 	wxSocketServer *m_ptDebugSocketServer;
 	wxSocketBase *m_ptDebugConnection;
 
+	tMuhkuhDocumentHash m_docHash;
 
     DECLARE_EVENT_TABLE()
 };

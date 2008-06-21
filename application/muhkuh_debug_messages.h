@@ -32,7 +32,10 @@ typedef enum
 	MUHDBG_CmdContinue				= 4,
 	MUHDBG_CmdBreak					= 5,
 	MUHDBG_CmdGetStack				= 6,
+	MUHDBG_CmdGetLocal				= 7,
+	MUHDBG_CmdGetUpValue				= 8,
 } tMUHDBG;
 
 
 #endif	// __MUHKUH_DEBUG_MESSAGES_H__
+

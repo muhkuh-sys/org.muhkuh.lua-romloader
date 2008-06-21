@@ -40,6 +40,8 @@ BEGIN_EVENT_TABLE(muhkuh_debugger, wxPanel)
 	EVT_TOOL(muhkuh_debugger_buttonStepOut,				muhkuh_debugger::OnDebuggerStepOut)
 	EVT_TOOL(muhkuh_debugger_buttonContinue,			muhkuh_debugger::OnDebuggerContinue)
 	EVT_TOOL(muhkuh_debugger_buttonBreak,				muhkuh_debugger::OnDebuggerBreak)
+
+	EVT_AUINOTEBOOK_PAGE_CLOSE(muhkuh_debugger_notebook,		muhkuh_debugger::OnNotebookPageClose)
 END_EVENT_TABLE()
 
 
@@ -339,6 +341,31 @@ void muhkuh_debugger::OnDebuggerBreak(wxCommandEvent &event)
 }
 
 
+void muhkuh_debugger::OnNotebookPageClose(wxAuiNotebookEvent &event)
+{
+	int iSelection;
+	wxWindow *ptWin;
+	tMuhkuhDocumentHash::iterator it;
+
+
+	// get the selected Page
+	iSelection = event.GetSelection();
+	ptWin = m_ptDebugSourceNotebook->GetPage(iSelection);
+
+	// loop over all sources
+	it = m_docHash.begin();
+	while( it!=m_docHash.end() )
+	{
+		if( it->second.m_ptEditor==ptWin )
+		{
+			m_docHash.erase(it);
+			wxLogMessage("delete editor %p", ptWin);
+			break;
+		}
+	}
+}
+
+
 void muhkuh_debugger::create_controls(void)
 {
 	wxAuiPaneInfo paneInfo;
@@ -367,7 +394,7 @@ void muhkuh_debugger::create_controls(void)
 	m_ptDebugAuiManager->AddPane(m_ptDebugToolBar, paneInfo);
 
 	// add the source notebook
-	m_ptDebugSourceNotebook = new wxAuiNotebook(this, wxID_ANY);
+	m_ptDebugSourceNotebook = new wxAuiNotebook(this, muhkuh_debugger_notebook);
 	paneInfo.Name(wxT("source"));
 	paneInfo.CaptionVisible(false);
 	paneInfo.Center();
@@ -401,10 +428,6 @@ void muhkuh_debugger::create_controls(void)
 	m_ptDebugAuiManager->AddPane(m_ptDebugWatchWindow, paneInfo);
 
 	m_ptDebugAuiManager->Update();
-
-
-	// add demo editor to the notebook
-	m_ptDebugEditor = create_debugger_editor(wxT("chunk"));
 }
 
 
@@ -554,6 +577,141 @@ void muhkuh_debugger::editor_set_syntaxhl(wxStyledTextCtrl *ptEditor)
         editor:SetKeyWords(5, wxkeywords)
 */
 	ptEditor->Colourise(0, -1);
+}
+
+
+bool muhkuh_debugger::editor_get_source_document(wxString strSource, muhkuh_debugger_document *ptDoc)
+{
+	bool fResult;
+	wxString strSourceFile;
+	wxString strTestIndex;
+	wxString strFullName;
+	wxFileName tFileName;
+	wxFile tFile;
+
+
+	// expect success
+	fResult = true;
+
+	if( strSource.StartsWith(wxT("@"), &strSourceFile)==true )
+	{
+		// test for next '@'
+		if( strSourceFile.StartsWith(wxT("@"), &strTestIndex)==true )
+		{
+			// this is the index to a code section in the test description
+
+			// TODO:build a suitable name for the tab
+			ptDoc->m_strSourceFileName = strSource;
+
+			// TODO: get the source code from the xml wrapper
+			ptDoc->m_strSourceCode = "this comes from code index " + strTestIndex;
+		}
+		else
+		{
+			// use the filename as source file name
+			ptDoc->m_strSourceFileName = strSourceFile;
+
+			// this is a real file, get the absolute path
+			tFileName.Assign(strSourceFile);
+			if( tFileName.IsAbsolute(wxPATH_NATIVE)==false )
+			{
+				tFileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE);
+			}
+			if( tFileName.FileExists()==true && tFileName.IsFileReadable()==true )
+			{
+				strFullName = tFileName.GetFullPath(wxPATH_NATIVE);
+
+				// read the complete file
+				if( tFile.Open(strFullName, wxFile::read)==true )
+				{
+					char *pucData;
+					wxFileOffset fileSize;
+
+					fileSize = tFile.Length();
+					if( fileSize>0 )
+					{
+						pucData = new char[fileSize];
+						if( tFile.Read(pucData, fileSize)==fileSize )
+						{
+							ptDoc->m_strSourceCode = wxString::From8BitData(pucData, fileSize);
+						}
+						else
+						{
+							ptDoc->m_strSourceCode = "Read error, failed to read file!!!";
+							fResult = false;
+						}
+						delete[] pucData;
+					}
+				}
+				else
+				{
+					ptDoc->m_strSourceCode = "Failed to open file!!!";
+					fResult = false;
+				}
+			}
+			else
+			{
+				ptDoc->m_strSourceCode = "Whaa, no source code found!!!";
+				fResult = false;
+			}
+		}
+	}
+	else
+	{
+		// this is a chunk
+
+		// no filename
+		ptDoc->m_strSourceFileName = _("chunk");
+
+		// the sourcecode
+		ptDoc->m_strSourceCode = strSource;
+	}
+
+	return fResult;
+}
+
+
+wxStyledTextCtrl *muhkuh_debugger::editor_get_document(wxString strSource)
+{
+	wxString strHash;
+	wxStyledTextCtrl *ptEditor;
+	muhkuh_debugger_document tDoc;
+	muhkuh_debugger_document *ptDoc;
+	bool fResult;
+	tMuhkuhDocumentHash::iterator it;
+
+
+	// is the document already open?
+	it = m_docHash.find(strSource);
+	if( it==m_docHash.end() )
+	{
+		// no -> create a new document
+		tDoc.m_ptEditor = NULL;
+		tDoc.m_strHash = strSource;
+
+		fResult = editor_get_source_document(strSource, &tDoc);
+		if( fResult==true )
+		{
+			// create the editor
+			ptEditor = create_debugger_editor(tDoc.m_strSourceFileName);
+			if( ptEditor!=NULL )
+			{
+				ptEditor->AppendText(tDoc.m_strSourceCode);
+				tDoc.m_ptEditor = ptEditor;
+
+				wxLogMessage("created new editor %p with caption %s", ptEditor, tDoc.m_strSourceFileName.fn_str());
+			}
+		}
+
+		// insert the new document in the hash
+		m_docHash[strSource] = tDoc;
+	}
+	else
+	{
+		ptEditor = it->second.m_ptEditor;
+	}
+
+	return ptEditor;
 }
 
 
@@ -719,12 +877,7 @@ void muhkuh_debugger::dbg_packet_InterpreterHalted(void)
 	int iNUps;
 	int iLineDefined;
 	int iLastLineDefined;
-	wxString strSourceCode;
-	wxString strSourceFile;
-	wxString strFullName;
-	wxString strTestIndex;
-	wxFileName tFileName;
-	wxFile tFile;
+	wxStyledTextCtrl *ptEditor;
 
 
 	if( dbg_read_u08(&ucStatus)==true )
@@ -743,76 +896,20 @@ void muhkuh_debugger::dbg_packet_InterpreterHalted(void)
 			{
 				wxLogMessage(_("Debug: %s:%s:%s:%s:%d:%d:%d:%d"), strName.fn_str(), strNameWhat.fn_str(), strWhat.fn_str(), strSource.fn_str(), iCurrentLine, iNUps, iLineDefined, iLastLineDefined);
 
-
-				m_ptDebugEditor->Clear();
-				m_ptDebugEditor->ClearAll();
-				m_ptDebugEditor->MarkerDeleteAll(DBGEDIT_Marker_BreakPoint);
-				m_ptDebugEditor->MarkerDeleteAll(DBGEDIT_Marker_CurrentLine);
-
-				if( strSource.StartsWith(wxT("@"), &strSourceFile)==true )
+				ptEditor = editor_get_document(strSource);
+				if( ptEditor!=NULL )
 				{
-					// test for next '@'
-					if( strSourceFile.StartsWith(wxT("@"), &strTestIndex)==true )
-					{
-						// this is the index to a code section in the test description
-						// TODO: build a suitable name for the tab
-						// TODO: get the source code from the xml wrapper
-						strSourceCode = "this comes from code index " + strTestIndex;
-					}
-					else
-					{
-						tFileName.Assign(strSourceFile);
-						if( tFileName.IsAbsolute(wxPATH_NATIVE)==false )
-						{
-							tFileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE);
-						}
-						if( tFileName.FileExists()==true && tFileName.IsFileReadable()==true )
-						{
-							// read the complete file
-							if( tFile.Open(strSourceFile, wxFile::read)==true )
-							{
-								char *pucData;
-								wxFileOffset fileSize;
+//					ptEditor->Clear();
+//					ptEditor->ClearAll();
+//					ptEditor->MarkerDeleteAll(DBGEDIT_Marker_BreakPoint);
+					ptEditor->MarkerDeleteAll(DBGEDIT_Marker_CurrentLine);
 
-								fileSize = tFile.Length();
-								if( fileSize>0 )
-								{
-									pucData = new char[fileSize];
-									if( tFile.Read(pucData, fileSize)==fileSize )
-									{
-										strSourceCode = wxString::From8BitData(pucData, fileSize);
-									}
-									else
-									{
-										strSourceCode = "Read error, failed to read file!!!";
-									}
-									delete[] pucData;
-								}
-							}
-							else
-							{
-								strSourceCode = "Failed to open file!!!";
-							}
-						}
-						else
-						{
-							strSourceCode = "Whaa, no source code found!!!";
-						}
+					if( iCurrentLine>0 )
+					{
+						ptEditor->MarkerAdd(iCurrentLine-1, DBGEDIT_Marker_CurrentLine);
+						ptEditor->GotoLine(iCurrentLine-1);
 					}
 				}
-				else
-				{
-					strSourceCode = strSource;
-				}
-				m_ptDebugEditor->AppendText(strSourceCode);
-
-				if( iCurrentLine>0 )
-				{
-					m_ptDebugEditor->MarkerAdd(iCurrentLine-1, DBGEDIT_Marker_CurrentLine);
-					m_ptDebugEditor->GotoLine(iCurrentLine-1);
-				}
-
-
 
 				dbg_fillStackWindow();
 			}
