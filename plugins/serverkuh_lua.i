@@ -1,5 +1,5 @@
 
-%include "application/muhkuh_lua_interface.h"
+%include "serverkuh/serverkuh_lua_interface.h"
 
 
 %class %noclassinfo muhkuh_plugin_instance

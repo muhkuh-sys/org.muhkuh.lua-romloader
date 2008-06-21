@@ -40,7 +40,7 @@ extern WXLUA_NO_DLLIMPEXP bool wxLuaBinding_serverkuh_lua_init();
 // Includes
 // ---------------------------------------------------------------------------
 
-#include "application/muhkuh_lua_interface.h"
+#include "serverkuh/serverkuh_lua_interface.h"
 
 // ---------------------------------------------------------------------------
 // Lua Tag Method Values and Tables for each Class
