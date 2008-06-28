@@ -892,6 +892,7 @@ void muhkuh_debugger::dbg_packet_InterpreterHalted(void)
 	int iLastLineDefined;
 	wxStyledTextCtrl *ptEditor;
 	tMuhkuhDocumentHash::iterator it;
+	size_t sizPageIdx;
 
 
 	if( dbg_read_u08(&ucStatus)==true )
@@ -922,6 +923,13 @@ void muhkuh_debugger::dbg_packet_InterpreterHalted(void)
 				ptEditor = editor_get_document(strSource);
 				if( ptEditor!=NULL )
 				{
+					// show the source
+					sizPageIdx = m_ptDebugSourceNotebook->GetPageIndex(ptEditor);
+					if( sizPageIdx!=wxNOT_FOUND )
+					{
+						m_ptDebugSourceNotebook->SetSelection(sizPageIdx);
+					}
+
 					if( iCurrentLine>0 )
 					{
 						ptEditor->MarkerAdd(iCurrentLine-1, DBGEDIT_Marker_CurrentLine);
