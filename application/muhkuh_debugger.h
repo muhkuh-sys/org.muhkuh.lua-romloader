@@ -31,6 +31,7 @@
 #include <wx/process.h>
 #include <wx/socket.h>
 #include <wx/stc/stc.h>
+#include <wx/treectrl.h>
 
 
 #include "muhkuh_wrap_xml.h"
@@ -110,7 +111,7 @@ private:
 
 	void dbg_packet_InterpreterHalted(void);
 	void dbg_fillStackWindow(void);
-
+	void dbg_fillWatchWindow(void);
 
 	static const char *acSyntaxhl0;
 	static const char *acSyntaxhl1;
@@ -123,7 +124,7 @@ private:
 	wxAuiManager *m_ptDebugAuiManager;
 	wxAuiNotebook *m_ptDebugSourceNotebook;
 	wxListCtrl *m_ptDebugStackWindow;
-	wxTextCtrl *m_ptDebugWatchWindow;
+	wxTreeCtrl *m_ptDebugWatchWindow;
 	wxToolBar *m_ptDebugToolBar;
 
 	// the application path

@@ -120,10 +120,14 @@ private:
 	void dbg_write_achar(const char *pcData);
 
 	void dbg_get_stack(int iLevel);
+	void dbg_get_locals(int iLevel);
+	void dbg_get_upvalue(int iLevel, int iIndex);
 
 	void dbg_get_step_command(void);
 	bool dbg_get_command(void);
 
+	wxString dbg_getStackValue(int iIndex);
+	wxString dbg_dumpTable(int iIndex);
 
 	// main frame init state
 	typedef enum

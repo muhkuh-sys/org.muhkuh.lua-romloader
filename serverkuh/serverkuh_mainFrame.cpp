@@ -623,7 +623,6 @@ void serverkuh_mainFrame::clearLuaState(void)
 	{
 		m_ptDebugClientSocket->Destroy();
 		m_ptDebugClientSocket = NULL;
-		wxSafeYield();
 	}
 
 	if( m_ptLuaState!=NULL )
@@ -635,10 +634,11 @@ void serverkuh_mainFrame::clearLuaState(void)
 		{
 			ptLuaState->CloseLuaState(true);
 			ptLuaState->Destroy();
-			wxSafeYield();
 		}
 		delete ptLuaState;
 	}
+
+	wxSafeYield();
 }
 
 
@@ -792,7 +792,7 @@ void serverkuh_mainFrame::OnIdle(wxIdleEvent &event)
 	strStatus.Printf(_("Test '%s' in progress..."), m_strTestName.fn_str());
 
 	// get the Lua Memory in kilobytes
-	if( m_ptLuaState!=NULL )
+	if( m_ptLuaState!=NULL && m_ptLuaState->Ok()==true )
 	{
 		iLuaMemKb = m_ptLuaState->lua_GetGCCount();
 		strMemStatus.Printf(_("Lua uses %d kilobytes"), iLuaMemKb);
@@ -812,22 +812,6 @@ void serverkuh_mainFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
 }
 
 
-#if 0
-struct lua_Debug {
-  int event;
-  const char *name;     /* (n) */
-  const char *namewhat; /* (n) `global', `local', `field', `method' */
-  const char *what;     /* (S) `Lua', `C', `main', `tail' */
-  const char *source;   /* (S) */
-  int currentline;      /* (l) */
-  int nups;             /* (u) number of upvalues */
-  int linedefined;      /* (S) */
-  int lastlinedefined;  /* (S) */
-  char short_src[LUA_IDSIZE]; /* (S) */
-  /* private part */
-  int i_ci;  /* active function */
-};
-#endif
 void serverkuh_mainFrame::OnLuaDebug(wxLuaEvent &event)
 {
 	bool fPauseExec;
@@ -910,7 +894,8 @@ bool serverkuh_mainFrame::dbg_get_command(void)
 	bool fContinueExecution;
 	unsigned char ucPacketTyp;
 	bool fOk;
-	int iPar;
+	int iLevel;
+	int iIndex;
 
 
 	fContinueExecution = false;
@@ -951,14 +936,42 @@ bool serverkuh_mainFrame::dbg_get_command(void)
 			break;
 
 		case MUHDBG_CmdGetStack:
-			fOk = dbg_read_int(&iPar);
+			fOk = dbg_read_int(&iLevel);
 			if( fOk==true )
 			{
-				dbg_get_stack(iPar);
+				dbg_get_stack(iLevel);
 			}
 			else
 			{
 				wxLogError(_("failed to receive int parameter for GetFrame command!"));
+			}
+			break;
+
+		case MUHDBG_CmdGetLocal:
+			fOk = dbg_read_int(&iLevel);
+			if( fOk==true )
+			{
+				dbg_get_locals(iLevel);
+			}
+			else
+			{
+				wxLogError(_("failed to receive int parameter for GetLocal command!"));
+			}
+			break;
+
+		case MUHDBG_CmdGetUpValue:
+			fOk = dbg_read_int(&iLevel);
+			if( fOk==true )
+			{
+				fOk = dbg_read_int(&iIndex);
+				if( fOk==true )
+				{
+					dbg_get_upvalue(iLevel, iIndex);
+				}
+			}
+			else
+			{
+				wxLogError(_("failed to receive int parameter for GetUpValue command!"));
 			}
 			break;
 
@@ -1011,6 +1024,181 @@ void serverkuh_mainFrame::dbg_get_stack(int iLevel)
 			dbg_write_u08(ucStatus);
 		}
 	}
+}
+
+
+void serverkuh_mainFrame::dbg_get_locals(int iLevel)
+{
+	int iResult;
+	wxString strValue;
+	unsigned char ucStatus;
+	lua_Debug tDbg = {0};
+	int iLuaType;
+	int iIndex;
+
+
+	if( m_ptDebugClientSocket->IsConnected()==true )
+	{
+		// TODO: create a temp state here to prevent stack modifications in the original
+//		L = wxlState.GetLuaState();
+		iResult = m_ptLuaState->lua_GetStack(iLevel, &tDbg);
+		if( iResult==1 )
+		{
+			iIndex = 1;
+			do
+			{
+				strValue = m_ptLuaState->lua_GetLocal(&tDbg, iIndex);
+				dbg_write_achar(strValue);
+
+				if( strValue.IsEmpty()==false )
+				{
+					// get the value from the stack
+					iLuaType = m_ptLuaState->lua_Type(-1);
+					strValue = m_ptLuaState->lua_TypeName(iLuaType);
+					dbg_write_achar(strValue);
+
+					// get the typ
+					strValue = dbg_getStackValue(-1);
+					dbg_write_achar(strValue);
+
+					// remove the value from the stack
+					m_ptLuaState->lua_Pop(1);
+				}
+				else
+				{
+					break;
+				}
+				// next local
+				++iIndex;
+			} while( 1 );
+		}
+		else
+		{
+			dbg_write_achar(wxEmptyString);
+		}
+	}
+}
+
+
+wxString serverkuh_mainFrame::dbg_getStackValue(int iIndex)
+{
+	int iTyp;
+	int iVal;
+	double dVal;
+	wxString strValue;
+	const void *pvVal;
+
+
+	iTyp = m_ptLuaState->lua_Type(iIndex);
+	switch( iTyp )
+	{
+	case LUA_TNONE:
+		strValue = wxEmptyString;
+		break;
+
+	case LUA_TNIL:
+		strValue = wxT("nil");
+		break;
+
+	case LUA_TBOOLEAN:
+		// NOTE: ToBoolean returns int
+		iVal = m_ptLuaState->lua_ToBoolean(iIndex);
+		if( iVal==0 )
+		{
+			strValue = wxT("false");
+		}
+		else
+		{
+			strValue = wxT("true");
+		}
+		break;
+
+	case LUA_TLIGHTUSERDATA:
+		pvVal = m_ptLuaState->lua_ToUserdata(iIndex);
+		strValue.Printf("%p", pvVal);
+		break;
+
+	case LUA_TNUMBER:
+		dVal = m_ptLuaState->lua_ToNumber(iIndex);
+		strValue.Printf("%f", dVal);
+		break;
+
+	case LUA_TSTRING:
+		strValue = m_ptLuaState->lua_TowxString(iIndex);
+		break;
+
+	case LUA_TTABLE:
+		// don't recurse here, just return a summary
+		// strValue = dbg_dumpTable(iIndex);
+		pvVal = m_ptLuaState->lua_ToPointer(iIndex);
+		strValue.Printf("%p", pvVal);
+		break;
+
+	case LUA_TFUNCTION:
+		strValue = "some function...";
+		break;
+
+	case LUA_TUSERDATA:
+		pvVal = m_ptLuaState->lua_ToUserdata(iIndex);
+		strValue.Printf("%p", pvVal);
+		break;
+
+	case LUA_TTHREAD:
+		pvVal = m_ptLuaState->lua_ToPointer(iIndex);
+		strValue.Printf("%p", pvVal);
+		break;
+
+	default:
+		strValue.Printf("unknown type: %d", iTyp);
+		break;
+	}
+
+	return strValue;
+}
+
+
+wxString serverkuh_mainFrame::dbg_dumpTable(int iIndex)
+{
+	bool fResult;
+	wxString strKey;
+	wxString strValue;
+	wxString strDump;
+
+
+	// is the index really a table?
+	fResult = m_ptLuaState->lua_IsTable(iIndex);
+	if( fResult!=true )
+	{
+		// no table
+		// TODO: return some errormsg
+	}
+	else
+	{
+		// ok, it's a table, dump it
+
+		// push a nil, this is the first value
+		m_ptLuaState->lua_PushNil();
+		// loop over all entries
+		while( m_ptLuaState->lua_Next(iIndex-1)!=0 )
+		{
+			// NOTE: key is now at stack -2, value at stack -1
+
+			strKey = dbg_getStackValue(-2);
+			strValue = dbg_getStackValue(-1);
+			strDump += strKey + wxT(" : ") + strValue + wxT("\n");
+
+			// remove the value from the stack
+			// NOTE: do not remove the key, it is necessary to get the next table line
+			m_ptLuaState->lua_Pop(1);
+		}
+	}
+
+	return strDump;
+}
+
+void serverkuh_mainFrame::dbg_get_upvalue(int iLevel, int iIndex)
+{
+
 }
 
 

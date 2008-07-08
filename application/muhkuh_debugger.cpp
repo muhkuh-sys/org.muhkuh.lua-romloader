@@ -419,8 +419,8 @@ void muhkuh_debugger::create_controls(void)
 	m_ptDebugAuiManager->AddPane(m_ptDebugStackWindow, paneInfo);
 
 	// add the watch window
-	lStyle = wxTE_MULTILINE | wxSUNKEN_BORDER | wxTE_READONLY;
-	m_ptDebugWatchWindow = new wxTextCtrl(this, wxID_ANY, "This will be the watch window someday.", wxDefaultPosition, wxDefaultSize, lStyle);
+	lStyle = wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_FULL_ROW_HIGHLIGHT | wxTR_HIDE_ROOT | wxTR_SINGLE | wxTR_HAS_VARIABLE_ROW_HEIGHT;
+	m_ptDebugWatchWindow = new wxTreeCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, lStyle);
 	paneInfo.Name(wxT("watch"));
 	paneInfo.CaptionVisible(true);
 	paneInfo.Caption(_("Watch"));
@@ -938,6 +938,7 @@ void muhkuh_debugger::dbg_packet_InterpreterHalted(void)
 				}
 
 				dbg_fillStackWindow();
+				dbg_fillWatchWindow();
 			}
 			else
 			{
@@ -1071,4 +1072,40 @@ void muhkuh_debugger::dbg_fillStackWindow(void)
 	// TODO: if lListCnt is >=100, show message "display more frames"
 }
 
+
+void muhkuh_debugger::dbg_fillWatchWindow(void)
+{
+	wxTreeItemId tRootId;
+	wxString strName;
+	wxString strTyp;
+	wxString strValue;
+
+
+	// clear all elements in the tree ctrl
+	m_ptDebugWatchWindow->DeleteAllItems();
+
+	// create a new empty root node
+	tRootId = m_ptDebugWatchWindow->AddRoot(wxT("watch root"));
+
+	// get the first level of locales
+	dbg_write_u08(MUHDBG_CmdGetLocal);
+	dbg_write_int(0);
+
+	do
+	{
+		// get the name, this is empty for end of list
+		if( dbg_read_string(strName)==true )
+		{
+			if( strName.IsEmpty()==false )
+			{
+				// get typ and value
+				if( dbg_read_string(strTyp)==true && dbg_read_string(strValue)==true )
+				{
+					// add the new node to the tree
+					m_ptDebugWatchWindow->AppendItem(tRootId, strName + wxT(" (") + strTyp + wxT(") = ") + strValue);
+				}
+			}
+		}
+	} while( strName.IsEmpty()==false );
+}
 
