@@ -216,9 +216,17 @@ serverkuh_mainFrame::serverkuh_mainFrame(wxCmdLineParser *ptParser)
 	{
 		iLastColon = 0;
 	}
+	else
+	{
+		++iLastColon;
+	}
 	if( iLastSlash==wxNOT_FOUND )
 	{
 		iLastSlash = 0;
+	}
+	else
+	{
+		++iLastSlash;
 	}
 	iLastValid = (iLastColon>iLastSlash) ? iLastColon : iLastSlash;
 	m_strTestBaseUrl = m_strTestXmlUrl.Left(iLastValid);
@@ -1378,7 +1386,8 @@ wxString serverkuh_mainFrame::luaLoad(wxString strFileName)
 	}
 	else
 	{
-		strFileUrl = m_strTestBaseUrl + wxFileName::GetPathSeparator() + strFileName;
+//		strFileUrl = m_strTestBaseUrl + wxFileName::GetPathSeparator() + strFileName;
+		strFileUrl = m_strTestBaseUrl + strFileName;
 		wxLogMessage(_("lua load: searching '%s'"), strFileUrl.fn_str());
 		urlError = filelistUrl.SetURL(strFileUrl);
 		if( urlError!=wxURL_NOERR )
@@ -1465,7 +1474,8 @@ void serverkuh_mainFrame::luaInclude(wxString strFileName)
 		}
 		else
 		{
-			strFileUrl = m_strTestBaseUrl + wxFileName::GetPathSeparator() + strFileName;
+//			strFileUrl = m_strTestBaseUrl + wxFileName::GetPathSeparator() + strFileName;
+			strFileUrl = m_strTestBaseUrl + strFileName;
 			wxLogMessage(_("lua include: searching '%s'"), strFileUrl.fn_str());
 			urlError = filelistUrl.SetURL(strFileUrl);
 			if( urlError!=wxURL_NOERR )
