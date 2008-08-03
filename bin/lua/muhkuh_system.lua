@@ -1,21 +1,21 @@
 -----------------------------------------------------------------------------
---   Copyright (C) 2008 by Christoph Thelen                                --
---   doc_bacardi@users.sourceforge.net                                     --
---                                                                         --
---   This program is free software; you can redistribute it and/or modify  --
---   it under the terms of the GNU General Public License as published by  --
---   the Free Software Foundation; either version 2 of the License, or     --
---   (at your option) any later version.                                   --
---                                                                         --
---   This program is distributed in the hope that it will be useful,       --
---   but WITHOUT ANY WARRANTY; without even the implied warranty of        --
---   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         --
---   GNU General Public License for more details.                          --
---                                                                         --
---   You should have received a copy of the GNU General Public License     --
---   along with this program; if not, write to the                         --
---   Free Software Foundation, Inc.,                                       --
---   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             --
+-- Copyright (C) 2008 by Christoph Thelen                               <br/>
+-- <a href="mailto:doc_bacardi@users.sourceforge.net">doc_bacardi@users.sourceforge.net</a><br/>
+--                                                                      <br/>
+-- This program is free software; you can redistribute it and/or modify <br/>
+-- it under the terms of the GNU General Public License as published by <br/>
+-- the Free Software Foundation; either version 2 of the License, or    <br/>
+-- (at your option) any later version.                                  <br/>
+--                                                                      <br/>
+-- This program is distributed in the hope that it will be useful,      <br/>
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of       <br/>
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        <br/>
+-- GNU General Public License for more details.                         <br/>
+--                                                                      <br/>
+-- You should have received a copy of the GNU General Public License    <br/>
+-- along with this program; if not, write to the                        <br/>
+-- Free Software Foundation, Inc.,                                      <br/>
+-- 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.            <br/>
 -----------------------------------------------------------------------------
 
 module("muhkuh_system", package.seeall)
@@ -23,17 +23,12 @@ module("muhkuh_system", package.seeall)
 
 
 -----------------------------------------------------------------------------
--- get_matching_node
---   Get the first child of a node with the name 'strName'.
+-- @description Get the first child of a node with the name 'strName'.
 --
--- Parameter:
---   node : search this xml node's children
---   strName : name of the child node (note: no wildcarts or regexp, it's the
---             plain name)
+-- @param node search this xml node's children
+-- @param strName name of the child node (note: no wildcarts or regexp, it's the plain name)
 --
--- Returns:
---   xml node of the first matching child node or nil if no matching node
---   could be found
+-- @return xml node of the first matching child node or <code>nil</code> if no matching node could be found
 --
 local function get_matching_node(node, strName)
 	local xml_iter
@@ -56,15 +51,11 @@ local function get_matching_node(node, strName)
 end
 
 -----------------------------------------------------------------------------
--- get_node_contents
---   Get the contents of the first child textnode.
+-- @description Get the contents of the first child textnode.
 --
--- Parameter:
---   node : search this xml node's children
+-- @param node search this xml node's children
 --
--- Returns:
---   Textnode's contents as string
---   nil on error
+-- @return Textnode's contents as string, <code>nil</code> on error
 --
 local function get_node_contents(node, strName)
 	local xml_iter
@@ -91,16 +82,11 @@ end
 
 
 -----------------------------------------------------------------------------
--- parse_code
---   Find the "Code" child of a node and return the contents as a string.
---   The "Code" node is mandatory.
+-- @description Find the "Code" child of a node and return the contents as a string. The "Code" node is mandatory.
 --
--- Parameter:
---   parent_node : node containing the "Code" child
+-- @param parent_node node containing the "Code" child
 --
--- Returns:
---   string with code node contents on success
---   nil on error
+-- @return string with code node contents on success, <code>nil</code> on error
 --
 local function parse_code(parent_node)
 	local foundNode
@@ -124,16 +110,11 @@ end
 
 
 -----------------------------------------------------------------------------
--- parse_parameters
---   Find and parse all "Parameter" child of a node and return the contents as a string.
---   "Parameter" nodes are optional.
+-- @description Find and parse all "Parameter" child of a node and return the contents as a string. "Parameter" nodes are optional.
 --
--- Parameter:
---   parent_node : node containing the "Parameter" children
+-- @param parent_node node containing the "Parameter" children
 --
--- Returns:
---   table with the parameter names as keys and the parameter values as values
---   nil on error
+-- @return table with the parameter names as keys and the parameter values as values, <code>nil</code> on error
 --
 local function parse_parameters(parent_node)
 	local parameters = {}
@@ -183,15 +164,11 @@ end
 
 
 -----------------------------------------------------------------------------
--- parse_test
---   Parse a "Test" node.
+-- @description Parse a "Test" node.
 --
--- Parameter:
---   node : The "Test" node.
+-- @param node The "Test" node.
 --
--- Returns:
---   table with name, version, code and parameters
---   nil on error
+-- @return table with name, version, code and parameters, <code>nil</code> on error
 --
 local function parse_test(node)
 	local strName
@@ -514,6 +491,12 @@ local function import_steps(parent_node)
 end
 
 
+-----------------------------------------------------------------------------
+-- @description Import a subtest with old xml command syntax.
+--
+-- @param node Xml node of the old test description.
+-- @return table with the converted subtest, <code>nil</code> on error
+--
 local function import_old_test(node)
 	local strName
 	local strVersion
@@ -545,15 +528,9 @@ end
 
 
 -----------------------------------------------------------------------------
--- parse_xml
---   Parse a complete xml file
+-- @description Parse a complete xml file
 --
--- Parameter:
---   -
---
--- Returns:
---   table with all tests
---   nil on error
+-- @return table with all tests, <code>nil</code> on error
 --
 local function parse_xml()
 	local rootNode
@@ -621,14 +598,7 @@ end
 
 
 -----------------------------------------------------------------------------
--- boot_xml
---   Boot a test from a xml description.
---
--- Parameter:
---   -
---
--- Returns:
---   -
+-- @description Boot a test from a xml description.
 --
 function boot_xml()
 	local alltests = nil
