@@ -647,6 +647,141 @@ double romloader_usb::read_data32(double dNetxAddress)
 }
 
 
+bool romloader_usb::parseDumpLine(const char *pcLine, size_t sizLineLen, unsigned long ulAddress, unsigned long ulElements, unsigned char *pucBuffer, wxString &strErrorMsg)
+{
+	bool fResult;
+	int iMatches;
+	unsigned long ulResultAddress;
+	unsigned long ulResultData;
+	unsigned long ulChunkCnt;
+	unsigned int uiByte;
+	char cByte;
+
+
+	// expect success
+	fResult = true;
+
+	// is enough input data left?
+	if( sizLineLen<(10+ulElements*3) )
+	{
+		strErrorMsg = wxT("strange response from netx!");
+		fResult = false;
+	}
+	else
+	{
+		// get the address
+		iMatches = sscanf(pcLine, "%8lX: ", &ulResultAddress);
+		if( iMatches!=1 )
+		{
+			strErrorMsg = wxT("strange response from netx!");
+			fResult = false;
+		}
+		else if( ulResultAddress!=ulAddress )
+		{
+			strErrorMsg = wxT("response does not match request!");
+			fResult = false;
+		}
+		else
+		{
+			// advance parse ptr to data part of the line
+			pcLine += 10;
+			// get all bytes
+			ulChunkCnt = ulElements;
+			while( ulChunkCnt!=0 )
+			{
+				// get one hex digit
+				iMatches = sscanf(pcLine, "%2X ", &uiByte);
+				if( iMatches!=1 )
+				{
+					strErrorMsg = wxT("strange response from netx!");
+					fResult = false;
+					break;
+				}
+				// advance parse ptr to data part of the line
+				pcLine += 3;
+				*(pucBuffer++) = (char)uiByte;
+				// one number processed
+				--ulChunkCnt;
+			}
+		}
+	}
+
+	return fResult;
+}
+
+
+tNetxUsbState romloader_usb::getLine(wxString &strData)
+{
+	int iEolCnt;
+	size_t sizStartPos;
+	char c;
+	tNetxUsbState tResult;
+
+
+	tResult = netxUsbState_Ok;
+
+	strData.Empty();
+
+	do
+	{
+		// save start position
+		sizStartPos = sizBufPos;
+
+		// no eol found yet
+		iEolCnt = 0;
+
+		// look for eol in current buffer
+		while( sizBufPos<sizBufLen )
+		{
+			c = acBuf[sizBufPos];
+			if( c==0x0a || c==0x0d)
+			{
+				++iEolCnt;
+			}
+			else if( iEolCnt>0 )
+			{
+				strData.Append(wxString::From8BitData(acBuf+sizStartPos, sizBufPos-sizStartPos-iEolCnt));
+				break;
+			}
+			++sizBufPos;
+		}
+
+		// get beginning of string
+		if( iEolCnt==0 && sizStartPos<sizBufPos )
+		{
+			strData.Append(wxString::From8BitData(acBuf+sizStartPos, sizBufPos-sizStartPos));
+		}
+
+		// get more data
+		if( iEolCnt==0 || strData.IsEmpty()==true )
+		{
+			acBuf[0] = 0x00;
+			tResult = libusb_exchange((const unsigned char*)acBuf, (unsigned char*)acBuf);
+			if( tResult!=netxUsbState_Ok )
+			{
+				strData = wxT("failed to receive command response: ") + usb_getErrorString(tResult);
+				break;
+			}
+			else
+			{
+				sizBufLen = acBuf[0];
+				if( sizBufLen==0 )
+				{
+					fEof = true;
+					iEolCnt = 1;
+					break;
+				}
+				else
+				{
+					sizBufPos = 1;
+				}
+			}
+		}
+	} while( iEolCnt!=0 );
+
+	return tResult;
+}
+
 /* read a byte array from the netx to the pc */
 wxString romloader_usb::read_image(double dNetxAddress, double dSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
@@ -658,6 +793,11 @@ wxString romloader_usb::read_image(double dNetxAddress, double dSize, lua_State 
 	wxString strErrorMsg;
 	wxString strResponse;
 	wxString strData;
+	unsigned char *pucData;
+	unsigned char *pucDataCnt;
+	unsigned long ulBytesLeft;
+	unsigned long ulExpectedAddress;
+	unsigned long ulChunkSize;
 
 
 	ulNetxAddress = (unsigned long)dNetxAddress;
@@ -677,20 +817,93 @@ wxString romloader_usb::read_image(double dNetxAddress, double dSize, lua_State 
 	}
 	else
 	{
-		// get the response
-		tResult = usb_getNetxData(strResponse, L, iLuaCallbackTag, pvCallbackUserData);
-		if( tResult!=netxUsbState_Ok )
+		// init the buffer
+		sizBufLen = 0;
+		sizBufPos = 0;
+		fEof = false;
+
+		// alloc buffer
+		pucData = (unsigned char*)malloc(ulSize);
+		if( pucData==NULL )
 		{
-			strErrorMsg = wxT("failed to receive command response: ") + usb_getErrorString(tResult);
+			strErrorMsg.Printf(wxT("failed to alloc %d bytes of input buffer!"), ulSize);
 		}
 		else
 		{
-			fOk = parseDump(strResponse.To8BitData(), strResponse.Len(), ulNetxAddress, ulSize, strData);
+			pucDataCnt = pucData;
+			// parse the result
+			ulBytesLeft = ulSize;
+			ulExpectedAddress = ulNetxAddress;
+			while( ulBytesLeft>0 )
+			{
+				fOk = callback_long(L, iLuaCallbackTag, ulSize-ulBytesLeft, pvCallbackUserData);
+				if( fOk!=true )
+				{
+					strErrorMsg = wxT("operation canceled!");
+					break;
+				}
+
+				// get the response line
+				tResult = getLine(strResponse);
+				if( tResult!=netxUsbState_Ok )
+				{
+					fOk = false;
+					strErrorMsg = wxT("failed to get dump response from device");
+					break;
+				}
+				else if( fEof==true )
+				{
+					fOk = false;
+					strErrorMsg = wxT("not enough data received from device");
+					break;
+				}
+				else
+				{
+					wxLogMessage(wxT("received line: ") + strResponse);
+
+					// get the number of expected bytes in the next row
+					ulChunkSize = 16;
+					if( ulChunkSize>ulBytesLeft )
+					{
+						ulChunkSize = ulBytesLeft;
+					}
+					fOk = parseDumpLine(strResponse.To8BitData(), strResponse.Len(), ulExpectedAddress, ulChunkSize, pucDataCnt, strErrorMsg);
+					if( fOk!=true )
+					{
+						break;
+					}
+					else
+					{
+						ulBytesLeft -= ulChunkSize;
+						// inc address
+						ulExpectedAddress += ulChunkSize;
+						// inc buffer ptr
+						pucDataCnt += ulChunkSize;
+					}
+				}
+			}
+
+			if( fOk==true )
+			{
+				// get data
+				strData = wxString::From8BitData((const char*)pucData, ulSize);
+
+				// wait for prompt
+				tResult = usb_getNetxData(strResponse, NULL, 0, NULL);
+				if( tResult!=netxUsbState_Ok )
+				{
+					strData = wxT("failed to receive command response: ") + usb_getErrorString(tResult);
+					fOk = false;
+				}
+			}
+
 			if( fOk!=true )
 			{
 				strErrorMsg = strData;
 				strData.Empty();
 			}
+
+			free(pucData);
 		}
 	}
 
@@ -922,119 +1135,6 @@ void romloader_usb::call(double dNetxAddress, double dParameterR0, lua_State *L,
 
 
 /*-------------------------------------*/
-
-
-bool romloader_usb::parseDump(const char *pcDump, size_t sizDumpLen, unsigned long ulAddress, unsigned long ulSize, wxString &strData)
-{
-	int iMatches;
-	unsigned long ulResultAddress;
-	unsigned long ulResultData;
-	unsigned long ulBytesLeft;
-	unsigned long ulChunkSize;
-	unsigned long ulChunkCnt;
-	unsigned long ulExpectedAddress;
-	const char *pcParsePtr;
-	const char *pcEndPtr;
-	unsigned int uiByte;
-	char cEol;
-	bool fOk;
-	wxString strErrorMsg;
-
-
-	// expect failure
-	fOk = false;
-
-	// clear output data
-	strData.Empty();
-	strData.Alloc(ulSize);
-
-	// parse the result
-	ulBytesLeft = ulSize;
-	ulExpectedAddress = ulAddress;
-	pcParsePtr = pcDump;
-	pcEndPtr = pcParsePtr + sizDumpLen;
-	while( pcParsePtr<pcEndPtr && ulBytesLeft!=0 )
-	{
-		// get the number of expected bytes in the next row
-		ulChunkSize = 16;
-		if( ulChunkSize>ulBytesLeft )
-		{
-			ulChunkSize = ulBytesLeft;
-		}
-
-		// is enough input data left?
-		if( (pcParsePtr+10+ulChunkSize*3)>=pcEndPtr )
-		{
-			strErrorMsg = wxT("dump too short!");
-			break;
-		}
-
-		// get the address
-		iMatches = sscanf(pcParsePtr, "%8lX: ", &ulResultAddress);
-		if( iMatches!=1 )
-		{
-			strErrorMsg.Printf(wxT("failed to parse dump address at offset %d: '%s'"), pcParsePtr-pcDump, pcDump);
-			break;
-		}
-		if( ulResultAddress!=ulExpectedAddress )
-		{
-			strErrorMsg.Printf(wxT("response address does not match request at offset %d: '%s'"), pcParsePtr-pcDump, pcDump);
-			break;
-		}
-
-		// advance parse ptr to data part of the line
-		pcParsePtr += 10;
-		// get all bytes
-		ulChunkCnt = ulChunkSize;
-		while( ulChunkCnt!=0 )
-		{
-			// get one hex digit
-			iMatches = sscanf(pcParsePtr, "%2X ", &uiByte);
-			if( iMatches!=1 )
-			{
-				strErrorMsg.Printf(wxT("failed to parse hex digits at offset %d: '%s'"), pcParsePtr-pcDump, pcDump);
-				break;
-			}
-			strData.Append((char)uiByte);
-			// advance parse ptr to data part of the line
-			pcParsePtr += 3;
-			// one number processed
-			--ulChunkCnt;
-		}
-		ulBytesLeft -= ulChunkSize;
-		// inc address
-		ulExpectedAddress += ulChunkSize;
-		// were all bytes processed?
-		if( ulChunkCnt!=0 )
-		{
-			// no -> stop processing
-			break;
-		}
-		// skip over the rest of the line
-		while( pcParsePtr<pcEndPtr )
-		{
-			cEol = *(pcParsePtr++);
-			if( cEol==0x00 || cEol==0x0a )
-			{
-				break;
-			}
-		}
-	}
-
-	// all bytes received?
-	if( ulBytesLeft==0 )
-	{
-		// ok!
-		fOk = true;
-	}
-	else
-	{
-		wxLogError(m_strMe + strErrorMsg);
-		strData = strErrorMsg;
-	}
-
-	return fOk;
-}
 
 
 tNetxUsbState romloader_usb::usb_load(const char *pcData, size_t sizDataLen, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)

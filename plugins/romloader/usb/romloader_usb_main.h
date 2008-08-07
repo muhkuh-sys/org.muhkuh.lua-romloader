@@ -101,7 +101,9 @@ private:
 	bool chip_init(void);
 
 	int write_data(wxString &strData, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
-	bool parseDump(const char *pcDump, size_t sizDumpLen, unsigned long ulAddress, unsigned long ulSize, wxString &strData);
+	bool parseDumpLine(const char *pcLine, size_t sizLineLen, unsigned long ulAddress, unsigned long ulElements, unsigned char *pucBuffer, wxString &strErrorMsg);
+
+	tNetxUsbState getLine(wxString &strData);
 
 	tNetxUsbState usb_executeCommand(wxString strCommand, wxString &strResponse);
 	tNetxUsbState usb_load(const char *pcData, size_t sizDataLen, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
@@ -140,6 +142,12 @@ private:
 
 	// handle to the USB device or NULL for unconnected
 	usb_dev_handle *m_ptUsbDevHandle;
+
+	// buffer for the read_image command
+	size_t sizBufLen;
+	size_t sizBufPos;
+	bool fEof;
+	char acBuf[64];
 };
 
 /*-----------------------------------*/
