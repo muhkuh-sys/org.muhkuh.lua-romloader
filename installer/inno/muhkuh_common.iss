@@ -14,7 +14,7 @@ SourceDir={#SourceDir}
 OutputDir={#OutputDir}
 
 AllowNoIcons=yes
-;ChangesAssociations=yes
+ChangesAssociations=yes
 LicenseFile=docs\gpl-2.0.txt
 
 
