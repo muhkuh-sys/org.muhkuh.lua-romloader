@@ -55,5 +55,5 @@ Source: "changelog.txt";    DestDir: "{app}\docs"; Components: muhkuh
 Root: HKCR; Subkey: ".mtd"; ValueType: string; ValueName: ""; ValueData: "MuhkuhTestDesctiption"; Flags: uninsdeletevalue
 Root: HKCR; Subkey: "MuhkuhTestDesctiption"; ValueType: string; ValueName: ""; ValueData: "Muhkuh Test Description"; Flags: uninsdeletekey
 Root: HKCR; Subkey: "MuhkuhTestDesctiption\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\application\serverkuh.exe,0"
-Root: HKCR; Subkey: "MuhkuhTestDesctiption\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\application\serverkuh.exe"" ""-c"" ""{app}\application\Muhkuh.cfg"" ""-i"" ""0"" ""%1"""
+Root: HKCR; Subkey: "MuhkuhTestDesctiption\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\application\serverkuh.exe"" ""-c"" ""{app}\application\Muhkuh.cfg"" ""-i"" ""0"" ""%1#zip:test_description.xml"""
 
