@@ -740,11 +740,16 @@ tNetxUsbState romloader_usb::getLine(wxString &strData)
 			}
 			else if( iEolCnt>0 )
 			{
-				strData.Append(wxString::From8BitData(acBuf+sizStartPos, sizBufPos-sizStartPos-iEolCnt));
 				break;
 			}
 			++sizBufPos;
 		}
+
+    // get end of string
+    if( iEolCnt>0 )
+    {
+      strData.Append(wxString::From8BitData(acBuf+sizStartPos, sizBufPos-sizStartPos-iEolCnt));
+    }
 
 		// get beginning of string
 		if( iEolCnt==0 && sizStartPos<sizBufPos )
@@ -777,7 +782,7 @@ tNetxUsbState romloader_usb::getLine(wxString &strData)
 				}
 			}
 		}
-	} while( iEolCnt!=0 );
+	} while( iEolCnt==0 );
 
 	return tResult;
 }
@@ -859,8 +864,6 @@ wxString romloader_usb::read_image(double dNetxAddress, double dSize, lua_State 
 				}
 				else
 				{
-					wxLogMessage(wxT("received line: ") + strResponse);
-
 					// get the number of expected bytes in the next row
 					ulChunkSize = 16;
 					if( ulChunkSize>ulBytesLeft )
