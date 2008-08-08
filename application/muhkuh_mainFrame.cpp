@@ -1024,6 +1024,8 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 		m_fAutoExit = cfgDlg->GetAutoexitEnable();
 		m_strAutoStartTest = cfgDlg->GetAutostartTest();
 
+		write_config();
+
 		clearLuaState();
 
 		// copy tmp plugin manager over current one
@@ -1316,16 +1318,17 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 
 		if( m_ptLuaState!=NULL && m_ptLuaState->Ok()==true )
 		{
-			// create a new panel for the debugger
-			m_debuggerPanel = new muhkuh_debugger(this, m_strApplicationPath, m_usDebugServerPort, ptTestData);
-			m_notebook->AddPage(m_debuggerPanel, m_strRunningTestName, true);
+//			// create a new panel for the debugger
+//			m_debuggerPanel = new muhkuh_debugger(this, m_strApplicationPath, m_usDebugServerPort, ptTestData);
+//			m_notebook->AddPage(m_debuggerPanel, m_strRunningTestName, true);
 
 			// set state to 'testing'
 			// NOTE: this must be done before the call to 'RunString', or the state will not change before the first idle event
 			setState(muhkuh_mainFrame_state_testing);
 
 			strXmlUrl = m_ptRepositoryManager->getTestlistXmlUrl(m_sizRunningTest_RepositoryIdx, m_sizRunningTest_TestIdx);
-			strServerCmd.Printf(wxT("./serverkuh -c Muhkuh.cfg -i %d -dlocalhost:%d %s"), uiIndex, m_usDebugServerPort, strXmlUrl.fn_str());
+//			strServerCmd.Printf(wxT("./serverkuh -c Muhkuh.cfg -i %d -dlocalhost:%d %s"), uiIndex, m_usDebugServerPort, strXmlUrl.fn_str());
+			strServerCmd.Printf(wxT("./serverkuh -c Muhkuh.cfg -i %d %s"), uiIndex, strXmlUrl.fn_str());
 			wxLogMessage(wxT("starting server: ") + strServerCmd);
 
 			m_lServerPid = wxExecute(strServerCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, m_ptServerProcess);
