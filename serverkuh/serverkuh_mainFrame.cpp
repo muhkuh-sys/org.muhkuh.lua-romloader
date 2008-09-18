@@ -483,11 +483,58 @@ bool serverkuh_mainFrame::scanFileXml(wxString &strXmlUrl)
 }
 
 
+bool serverkuh_mainFrame::dbg_enable(void)
+{
+	bool fResult;
+	wxIPV4address tIpAdr;
+
+
+	// expect failure
+	fResult = false;
+
+	m_ptDebugClientSocket = new wxSocketClient(wxSOCKET_WAITALL);
+	m_ptDebugClientSocket->SetEventHandler(*this, muhkuh_debugClientSocket_event);
+	m_ptDebugClientSocket->SetNotify(wxSOCKET_CONNECTION_FLAG|wxSOCKET_INPUT_FLAG|wxSOCKET_LOST_FLAG);
+	m_ptDebugClientSocket->Notify(true);
+
+	if( tIpAdr.Hostname(m_strDebugServerName)==false )
+	{
+		wxLogError(_("failed to set debug server's hostname!"));
+	}
+	else if( tIpAdr.Service(m_lDebugServerPort)==false )
+	{
+		wxLogError(_("failed to set debug server's port!"));
+	}
+	else
+	{
+		m_ptDebugClientSocket->Connect(tIpAdr, false);
+		m_ptDebugClientSocket->WaitOnConnect(100);
+
+		if( m_ptDebugClientSocket->IsConnected()!=true )
+		{
+			m_ptDebugClientSocket->Close();
+			wxLogMessage(_("failed to connect to the debug server!"));
+		}
+		else
+		{
+			wxLogMessage(_("connected to the debug server!"));
+
+			m_ptLuaState->SetLuaDebugHook(LUA_MASKCALL|LUA_MASKRET|LUA_MASKLINE, 0, 0, true);
+
+			m_dbg_mode = DBGMODE_StepInto;
+
+			fResult = true;
+		}
+	}
+
+	return fResult;
+}
+
+
 bool serverkuh_mainFrame::initLuaState(void)
 {
 	bool fResult;
 	wxLuaBindingList *ptBindings;
-	wxIPV4address tIpAdr;
 
 
 	// expect success
@@ -573,33 +620,10 @@ bool serverkuh_mainFrame::initLuaState(void)
 							m_ptLuaState->lua_PushString(m_strVersion.ToAscii());
 							m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_VERSION"));
 
-							m_ptLuaState->SetLuaDebugHook(LUA_MASKCALL|LUA_MASKRET|LUA_MASKLINE, 0, 0, true);
-							m_ptDebugClientSocket = new wxSocketClient(wxSOCKET_WAITALL);
-							m_ptDebugClientSocket->SetEventHandler(*this, muhkuh_debugClientSocket_event);
-							m_ptDebugClientSocket->SetNotify(wxSOCKET_CONNECTION_FLAG|wxSOCKET_INPUT_FLAG|wxSOCKET_LOST_FLAG);
-							m_ptDebugClientSocket->Notify(true);
-
-							if( tIpAdr.Hostname(m_strDebugServerName)==false )
+							// only create debug hooks and connection if debug server is set
+							if( m_strDebugServerName.IsEmpty()==false )
 							{
-								wxLogError(_("failed to set hostname!"));
-							}
-							if( tIpAdr.Service(m_lDebugServerPort)==false )
-							{
-								wxLogError(_("failed to set port!"));
-							}
-							m_ptDebugClientSocket->Connect(tIpAdr, false);
-							m_ptDebugClientSocket->WaitOnConnect(100);
-
-							if( m_ptDebugClientSocket->IsConnected()==true )
-							{
-								wxLogMessage(_("client connected!"));
-								m_dbg_mode = DBGMODE_StepInto;
-							}
-							else
-							{
-								m_ptDebugClientSocket->Close();
-								wxLogMessage(_("client failed to connect!"));
-								m_dbg_mode = DBGMODE_Run;
+								dbg_enable();
 							}
 						}
 					}
@@ -1137,9 +1161,9 @@ wxString serverkuh_mainFrame::dbg_getStackValue(int iIndex)
 
 	case LUA_TTABLE:
 		// don't recurse here, just return a summary
-		// strValue = dbg_dumpTable(iIndex);
-		pvVal = m_ptLuaState->lua_ToPointer(iIndex);
-		strValue.Printf("%p", pvVal);
+		strValue = dbg_dumpTable(iIndex);
+		//pvVal = m_ptLuaState->lua_ToPointer(iIndex);
+		//strValue.Printf("%p", pvVal);
 		break;
 
 	case LUA_TFUNCTION:
@@ -1178,6 +1202,7 @@ wxString serverkuh_mainFrame::dbg_dumpTable(int iIndex)
 	if( fResult!=true )
 	{
 		// no table
+		strDump = wxT("not a table");
 		// TODO: return some errormsg
 	}
 	else

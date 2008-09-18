@@ -112,6 +112,8 @@ private:
 
 	bool check_plugins(void);
 
+	bool dbg_enable(void);
+
 	bool dbg_read_string(wxString &strData);
 	bool dbg_read_int(int *piData);
 
