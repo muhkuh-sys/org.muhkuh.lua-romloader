@@ -36,24 +36,64 @@ muhkuh_repository::muhkuh_repository(wxString strName)
  : m_strName(strName)
  , m_eTyp(REPOSITORY_TYP_UNDEFINED)
  , m_fSelected(false)
+ , m_ptTestData(NULL)
 {
 	// set prefix for messages
 	setMe();
+
+	// create the test list
+	m_ptTestData = new std::vector<tTestData*>;
 }
 
 
 muhkuh_repository::muhkuh_repository(const muhkuh_repository *ptRepository)
+ : m_ptTestData(NULL)
 {
 	// set prefix for messages
 	setMe();
+
+	// create the test list
+	m_ptTestData = new std::vector<tTestData*>;
 
 	Assign(ptRepository);
 }
 
 
+muhkuh_repository::~muhkuh_repository(void)
+{
+	if( m_ptTestData!=NULL )
+	{
+		removeAllTests();
+		delete m_ptTestData;
+	}
+}
+
 void muhkuh_repository::setMe(void)
 {
 	m_strMe.Printf("muhkuh_repository(%p) :", this);
+}
+
+
+void muhkuh_repository::removeAllTests(void)
+{
+	std::vector<tTestData*>::const_iterator iter;
+	tTestData *ptTestData;
+
+
+	if( m_ptTestData!=NULL )
+	{
+		// loop over all tests
+		iter = m_ptTestData->begin();
+		while( iter!=m_ptTestData->end() )
+		{
+			ptTestData = *iter;
+			delete ptTestData;
+			// next entry
+			++iter;
+		}
+		// clear the complete list
+		m_ptTestData->clear();
+	}
 }
 
 
@@ -83,6 +123,8 @@ void muhkuh_repository::SetDirscan(wxString strLocation, wxString strExtension)
 	m_strLocation = strLocation;
 	// set extension
 	m_strExtension = strExtension;
+	// no xml pattern in this configuration
+	m_strXmlPattern.Clear();
 }
 
 
@@ -94,6 +136,8 @@ void muhkuh_repository::SetFilelist(wxString strLocation)
 	m_strLocation = strLocation;
 	// no extension in this configuration
 	m_strExtension.Clear();
+	// no xml pattern in this configuration
+	m_strXmlPattern.Clear();
 }
 
 
@@ -105,6 +149,21 @@ void muhkuh_repository::SetSingleXml(wxString strLocation)
 	m_strLocation = strLocation;
 	// no extension in this configuration
 	m_strExtension.Clear();
+	// no xml pattern in this configuration
+	m_strXmlPattern.Clear();
+}
+
+
+void muhkuh_repository::SetAllLocal(wxString strLocation, wxString strExtension, wxString strXmlPattern)
+{
+	// set repository typ
+	m_eTyp = REPOSITORY_TYP_ALLLOCAL;
+	// set location
+	m_strLocation = strLocation;
+	// set extension
+	m_strExtension = strExtension;
+	// set xml pattern
+	m_strXmlPattern = strXmlPattern;
 }
 
 
@@ -168,6 +227,9 @@ wxString muhkuh_repository::GetStringRepresentation(void) const
 	case REPOSITORY_TYP_SINGLEXML:
 		strDetails.Printf(_("single xml file from '%s'"), m_strLocation.fn_str());
 		break;
+	case REPOSITORY_TYP_ALLLOCAL:
+		strDetails.Printf(_("all local files from '%s'"), m_strLocation.fn_str());
+		break;
 	default:
 		strDetails = _("unknown typ");
 		break;
@@ -186,6 +248,7 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 	REPOSITORY_TYP_E eTyp;
 	wxString strLocation;
 	wxString strExtension;
+	wxString strXmlPattern;
 	muhkuh_repository *ptRepoCfg;
 	wxString strMe;
 
@@ -202,6 +265,7 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 	eTyp = (REPOSITORY_TYP_E)iRepoTyp;
 	strLocation = pConfig->Read(wxT("location"), wxEmptyString);
 	strExtension = pConfig->Read(wxT("extension"), wxEmptyString);
+	strXmlPattern = pConfig->Read(wxT("xmlpattern"), wxEmptyString);
 
 	// check settings
 
@@ -248,7 +312,7 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 			break;
 
 		case REPOSITORY_TYP_SINGLEXML:
-			// the filelist typ must have a location
+			// the singlexml typ must have a location
 			if( strLocation.IsEmpty() )
 			{
 				wxLogWarning(strMe + _("repository entry %d has no location, ignore entry"), iIndex);
@@ -258,6 +322,28 @@ muhkuh_repository *muhkuh_repository::CreateFromConfig(wxConfigBase *pConfig, in
 				// the settings are ok, create a new item
 				ptRepoCfg = new muhkuh_repository(strName);
 				ptRepoCfg->SetSingleXml(strLocation);
+			}
+			break;
+
+		case REPOSITORY_TYP_ALLLOCAL:
+			// the alllocal typ must have a location, an extension and an xml pattern
+			if( strLocation.IsEmpty() )
+			{
+				wxLogWarning(strMe + _("repository entry %d has no location, ignore entry"), iIndex);
+			}
+			else if( strExtension.IsEmpty() )
+			{
+				wxLogWarning(strMe + _("repository entry %d has no extension, ignore entry"), iIndex);
+			}
+			else if( strXmlPattern.IsEmpty() )
+			{
+				wxLogWarning(strMe + _("repository entry %d has no xml pattern, ignore entry"), iIndex);
+			}
+			else
+			{
+				// the settings are ok, create a new item
+				ptRepoCfg = new muhkuh_repository(strName);
+				ptRepoCfg->SetAllLocal(strLocation, strExtension, strXmlPattern);
 			}
 			break;
 
@@ -283,6 +369,7 @@ void muhkuh_repository::write_config(wxConfigBase *pConfig) const
 	pConfig->Write(wxT("typ"), lRepoTyp);
 	pConfig->Write(wxT("location"), m_strLocation);
 	pConfig->Write(wxT("extension"), m_strExtension);
+	pConfig->Write(wxT("xmlpattern"), m_strXmlPattern);
 }
 
 
@@ -298,7 +385,7 @@ bool muhkuh_repository::createTestlist(pfnTestlistProgress pfnCallback, void *pv
 	switch( m_eTyp )
 	{
 	case muhkuh_repository::REPOSITORY_TYP_DIRSCAN:
-		fResult = createTestlist_local(pfnCallback, pvCallbackUser);
+		fResult = createTestlist_dirscan(pfnCallback, pvCallbackUser);
 		if( fResult==false )
 		{
 			wxLogError(m_strMe + _("failed to scan the test directory"));
@@ -306,7 +393,7 @@ bool muhkuh_repository::createTestlist(pfnTestlistProgress pfnCallback, void *pv
 		break;
 
 	case muhkuh_repository::REPOSITORY_TYP_FILELIST:
-		fResult = createTestlist_url(pfnCallback, pvCallbackUser);
+		fResult = createTestlist_filelist(pfnCallback, pvCallbackUser);
 		if( fResult==false )
 		{
 			wxLogError(m_strMe + _("failed to open the repository"));
@@ -321,6 +408,14 @@ bool muhkuh_repository::createTestlist(pfnTestlistProgress pfnCallback, void *pv
 		}
 		break;
 
+	case muhkuh_repository::REPOSITORY_TYP_ALLLOCAL:
+		fResult = createTestlist_alllocal(pfnCallback, pvCallbackUser);
+		if( fResult==false )
+		{
+			wxLogError(m_strMe + _("failed to scan the directory"));
+		}
+		break;
+
 	default:
 		fResult = false;
 		break;
@@ -332,19 +427,31 @@ bool muhkuh_repository::createTestlist(pfnTestlistProgress pfnCallback, void *pv
 
 size_t muhkuh_repository::getTestlistCount(void) const
 {
-	return astrTestList.GetCount();
+	size_t sizTests;
+
+
+	sizTests = 0;
+	if( m_ptTestData!=NULL )
+	{
+		sizTests = m_ptTestData->size();
+	}
+	return sizTests;
 }
 
 
 wxString muhkuh_repository::getTestlistPrintUrl(size_t sizTestIdx) const
 {
 	wxString strResult;
+	std::vector<tTestData*>::const_iterator iter;
+	tTestData *ptTestData;
 
 
 	// check test index
-	if( sizTestIdx>=0 && sizTestIdx<astrTestList.GetCount() )
+	if( m_ptTestData!=NULL && sizTestIdx>=0 && sizTestIdx<m_ptTestData->size() )
 	{
-		strResult  = astrTestList.Item(sizTestIdx);
+		iter = m_ptTestData->begin() + sizTestIdx;
+		ptTestData = *iter;
+		strResult  = ptTestData->strPrintUrl;
 	}
 
 	return strResult;
@@ -354,37 +461,16 @@ wxString muhkuh_repository::getTestlistPrintUrl(size_t sizTestIdx) const
 wxString muhkuh_repository::getTestlistBaseUrl(size_t sizTestIdx) const
 {
 	wxString strResult;
-	wxFileName filename;
-	int iLastSlash;
+	std::vector<tTestData*>::const_iterator iter;
+	tTestData *ptTestData;
 
 
 	// check test index
-	if( sizTestIdx>=0 && sizTestIdx<astrTestList.GetCount() )
+	if( m_ptTestData!=NULL && sizTestIdx>=0 && sizTestIdx<m_ptTestData->size() )
 	{
-		switch( m_eTyp )
-		{
-		case muhkuh_repository::REPOSITORY_TYP_DIRSCAN:
-		case muhkuh_repository::REPOSITORY_TYP_FILELIST:
-			// dirscan and filelist tests are packed mtd's
-			strResult  = astrTestList.Item(sizTestIdx);
-			strResult += wxT("#zip:");
-			break;
-
-		case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
-			// single xml points directly to the xml file
-			strResult = astrTestList.Item(sizTestIdx);
-			// get position of last slash
-			iLastSlash = strResult.Find(wxT('/'), true);
-			if( iLastSlash!=wxNOT_FOUND )
-			{
-				// cut off lastt path element (that's the xml description)
-				strResult.Truncate(iLastSlash);
-			}
-			break;
-
-		default:
-			break;
-		}
+		iter = m_ptTestData->begin() + sizTestIdx;
+		ptTestData = *iter;
+		strResult  = ptTestData->strBaseUrl;
 	}
 
 	return strResult;
@@ -394,35 +480,22 @@ wxString muhkuh_repository::getTestlistBaseUrl(size_t sizTestIdx) const
 wxString muhkuh_repository::getTestlistXmlUrl(size_t sizTestIdx) const
 {
 	wxString strResult;
+	std::vector<tTestData*>::const_iterator iter;
+	tTestData *ptTestData;
 
 
-	if( sizTestIdx>=0 && sizTestIdx<astrTestList.GetCount() )
+	if( m_ptTestData!=NULL && sizTestIdx>=0 && sizTestIdx<m_ptTestData->size() )
 	{
-		switch( m_eTyp )
-		{
-		case muhkuh_repository::REPOSITORY_TYP_DIRSCAN:
-		case muhkuh_repository::REPOSITORY_TYP_FILELIST:
-			// dirscan and filelist tests are packed mtd's
-			strResult  = astrTestList.Item(sizTestIdx);
-			strResult += wxT("#zip:");
-			strResult += wxT("test_description.xml");
-			break;
-
-		case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
-			// single xml points directly to the xml file
-			strResult = astrTestList.Item(sizTestIdx);
-			break;
-
-		default:
-			break;
-		}
+		iter = m_ptTestData->begin() + sizTestIdx;
+		ptTestData = *iter;
+		strResult = ptTestData->strTestDescriptionUrl;
 	}
 
 	return strResult;
 }
 
 
-bool muhkuh_repository::createTestlist_local(pfnTestlistProgress pfnCallback, void *pvCallbackUser)
+bool muhkuh_repository::createTestlist_dirscan(pfnTestlistProgress pfnCallback, void *pvCallbackUser)
 {
 	wxString strProgressMessage;
 	wxFileName fileName;
@@ -431,10 +504,11 @@ bool muhkuh_repository::createTestlist_local(pfnTestlistProgress pfnCallback, vo
 	wxString strUrl;
 	wxFileSystem fileSystem;
 	bool fScannerIsRunning;
+	tTestData *ptTestData;
 
 
 	// clear any old tests
-	astrTestList.Clear();
+	removeAllTests();
 
 	// no idea how long the scanning will take -> set to pulse (that's 'unknown time remaining)
 	strProgressMessage.Printf(_("scanning local folder '%s' for tests..."), m_strLocation.fn_str());
@@ -487,7 +561,14 @@ bool muhkuh_repository::createTestlist_local(pfnTestlistProgress pfnCallback, vo
 			// convert to url
 			strUrl = wxFileSystem::FileNameToURL(strFilename);
 			wxLogDebug(m_strMe + _("found '%s'"), strUrl.fn_str());
-			astrTestList.Add(strUrl);
+
+			ptTestData = new tTestData;
+			ptTestData->strPrintUrl = strUrl;
+			ptTestData->strBaseUrl = strUrl + wxT("#zip:");
+			ptTestData->strTestDescriptionUrl = strUrl + wxT("#zip:test_description.xml");
+			ptTestData->strPrePath.Clear();
+			m_ptTestData->push_back(ptTestData);
+
 			strFilename = fileSystem.FindNext();
 		}
 	}
@@ -497,7 +578,7 @@ bool muhkuh_repository::createTestlist_local(pfnTestlistProgress pfnCallback, vo
 }
 
 
-bool muhkuh_repository::createTestlist_url(pfnTestlistProgress pfnCallback, void *pvCallbackUser)
+bool muhkuh_repository::createTestlist_filelist(pfnTestlistProgress pfnCallback, void *pvCallbackUser)
 {
 	wxString strLocation;
 	wxURL filelistUrl;
@@ -514,10 +595,11 @@ bool muhkuh_repository::createTestlist_url(pfnTestlistProgress pfnCallback, void
 	wxArrayString astrTmpPathNames;
 	size_t sizCnt;
 	size_t sizMax;
+	tTestData *ptTestData;
 
 
 	// clear any old tests
-	astrTestList.Clear();
+	removeAllTests();
 
 	// get the repository location
 	strLocation = m_strLocation;
@@ -622,7 +704,14 @@ bool muhkuh_repository::createTestlist_url(pfnTestlistProgress pfnCallback, void
 					{
 						strUrl = ptFsFile->GetLocation();
 						wxLogMessage(m_strMe + _("found '%s'"), strUrl.fn_str());
-						astrTestList.Add(strUrl);
+
+						ptTestData = new tTestData;
+						ptTestData->strPrintUrl = strUrl;
+						ptTestData->strBaseUrl = strUrl + wxT("#zip:");
+						ptTestData->strTestDescriptionUrl = strUrl + wxT("#zip:test_description.xml");
+						ptTestData->strPrePath.Clear();
+						m_ptTestData->push_back(ptTestData);
+
 						// delete the fsfile
 						delete ptFsFile;
 					}
@@ -641,16 +730,17 @@ bool muhkuh_repository::createTestlist_singlexml(pfnTestlistProgress pfnCallback
 	wxString strProgressMessage;
 	wxFileName fileName;
 	wxString strFilename;
-	wxString strCompletePath;
 	wxString strUrl;
+	wxString strBaseUrl;
 	wxFileSystem fileSystem;
 	bool fScannerIsRunning;
+	tTestData *ptTestData;
 
 
 	// clear any old tests
-	astrTestList.Clear();
+	removeAllTests();
 
-	// no idea how long the scanning will take -> set to pulse (that's 'unknown time remaining)
+	// no idea how long the scanning will take -> set to pulse (that's "unknown time remaining")
 	strProgressMessage.Printf(_("scanning single xml file '%s'..."), m_strLocation.fn_str());
 	fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
 
@@ -685,14 +775,26 @@ bool muhkuh_repository::createTestlist_singlexml(pfnTestlistProgress pfnCallback
 //			return false;
 //		}
 
-		// the path seems to be ok
-		strCompletePath = fileName.GetFullPath(wxPATH_NATIVE);
 		// convert path to url
-		strUrl = wxFileSystem::FileNameToURL(strCompletePath);
+		strUrl = wxFileSystem::FileNameToURL( fileName.GetFullPath(wxPATH_NATIVE) );
+		strBaseUrl = wxFileSystem::FileNameToURL( fileName.GetPath(wxPATH_GET_VOLUME, wxPATH_NATIVE) );
 		wxLogDebug(m_strMe + _("found '%s'"), strUrl.fn_str());
-		astrTestList.Add(strUrl);
+
+		ptTestData = new tTestData;
+		ptTestData->strPrintUrl = strUrl;
+		ptTestData->strBaseUrl = strBaseUrl;
+		ptTestData->strTestDescriptionUrl = strUrl;
+		ptTestData->strPrePath.Clear();
+		m_ptTestData->push_back(ptTestData);
 	}
 
 	// completed the list if the scanner was not canceled
 	return fScannerIsRunning;
 }
+
+
+bool muhkuh_repository::createTestlist_alllocal(pfnTestlistProgress pfnCallback, void *pvCallbackUser)
+{
+
+}
+

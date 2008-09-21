@@ -42,12 +42,14 @@ public:
 		REPOSITORY_TYP_UNDEFINED		= -1,			// unconfigured repository object
 		REPOSITORY_TYP_DIRSCAN			= 0,			// scan a complete directory for one extension
 		REPOSITORY_TYP_FILELIST			= 1,			// get the testlist from a file
-		REPOSITORY_TYP_SINGLEXML		= 2			// use one single unpacked test
+		REPOSITORY_TYP_SINGLEXML		= 2,			// use one single unpacked test
+		REPOSITORY_TYP_ALLLOCAL			= 3			// mtd and xml files
 	} REPOSITORY_TYP_E;
 
 
 	muhkuh_repository(wxString strName);
 	muhkuh_repository(const muhkuh_repository *ptRepository);
+	~muhkuh_repository(void);
 
 	void Assign(const muhkuh_repository *ptRepository);
 
@@ -55,6 +57,7 @@ public:
 	void SetDirscan(wxString strLocation, wxString strExtension);
 	void SetFilelist(wxString strLocation);
 	void SetSingleXml(wxString strLocation);
+	void SetAllLocal(wxString strLocation, wxString strExtension, wxString strXmlPattern);
 	void SetSelected(bool fSelected);
 
 	wxString GetName(void) const;
@@ -70,27 +73,40 @@ public:
 
 	bool createTestlist(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
 	size_t getTestlistCount(void) const;
-	wxString getTestlistPrintUrl(size_t sizTestIdx) const;
-	wxString getTestlistBaseUrl(size_t sizTestIdx) const;
+	wxString getTestlistPrintUrl(size_t sizTestIdx) const;	// this is only needed for the scanner progress
+	wxString getTestlistBaseUrl(size_t sizTestIdx) const;	// used by lua_load and lua_include
 	wxString getTestlistXmlUrl(size_t sizTestIdx) const;
 
 private:
 	// set prefix for messages
 	void setMe(void);
 
-	bool createTestlist_local(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
-	bool createTestlist_url(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
+	void removeAllTests(void);
+
+	bool createTestlist_dirscan(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
+	bool createTestlist_filelist(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
 	bool createTestlist_singlexml(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
+	bool createTestlist_alllocal(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
+
+	typedef struct
+	{
+		wxString strPrintUrl;
+		wxString strBaseUrl;
+		wxString strTestDescriptionUrl;
+		wxString strPrePath;
+	} tTestData;
 
 	wxString m_strName;			// user defined name
 	REPOSITORY_TYP_E m_eTyp;		// typ of this repository
 	wxString m_strLocation;			// directory for dirscan typ or url of the filelist for filelist typ
 	wxString m_strExtension;		// dirscan only, that's the extension to look for
+	wxString m_strXmlPattern;		// alllocal only, pattern for the xml filenames
 
 	bool m_fSelected;			// flag for 'selected in the combo box, used to keep an item selected over a change of configration
 
 	// the tests found in this repository
-	wxArrayString astrTestList;
+	//wxArrayString astrTestList;
+	std::vector<tTestData*> *m_ptTestData;
 
 	// prefix for messages
 	wxString m_strMe;
