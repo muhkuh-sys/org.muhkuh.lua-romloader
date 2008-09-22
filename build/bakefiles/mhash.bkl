@@ -1,0 +1,63 @@
+<?xml version="1.0" ?>
+<makefile>
+	<!-- ================================================================== -->
+	<!--                           The mhash lib                            -->
+	<!-- ================================================================== -->
+
+	<lib id="mhash">
+		<libname>mhash</libname>
+
+		<threading>multi</threading>
+
+		<include>$(SRCDIR)/mhash-0.9.9/lib</include>
+		<include>$(SRCDIR)/mhash-0.9.9/include</include>
+
+		<dirname>$(SRCDIR)/bin</dirname>
+
+		<sources>
+			mhash-0.9.9/lib/keygen_asis.c
+			mhash-0.9.9/lib/crc32.c
+			mhash-0.9.9/lib/md2.c
+			mhash-0.9.9/lib/md4.c
+			mhash-0.9.9/lib/md5.c
+			mhash-0.9.9/lib/sha512_sha384.c
+			mhash-0.9.9/lib/adler32.c
+			mhash-0.9.9/lib/mhash.c
+			mhash-0.9.9/lib/tiger.c
+			mhash-0.9.9/lib/whirlpool.c
+			mhash-0.9.9/lib/gosthash.c
+			mhash-0.9.9/lib/keygen_hex.c
+			mhash-0.9.9/lib/keygen_s2k.c
+			mhash-0.9.9/lib/haval.c
+			mhash-0.9.9/lib/sha1.c
+			mhash-0.9.9/lib/ripemd.c
+			mhash-0.9.9/lib/stdfns.c
+			mhash-0.9.9/lib/sha256_sha224.c
+			mhash-0.9.9/lib/tiger_sboxes.c
+			mhash-0.9.9/lib/keygen_mcrypt.c
+			mhash-0.9.9/lib/snefru.c
+			mhash-0.9.9/lib/sha256.c
+			mhash-0.9.9/lib/keygen.c
+		</sources>
+		<headers>
+			mhash-0.9.9/lib/mhash_sha256_sha224.h
+			mhash-0.9.9/lib/mhash_snefru.h
+			mhash-0.9.9/lib/mhash_sha256.h
+			mhash-0.9.9/lib/mhash_tiger.h
+			mhash-0.9.9/lib/mhash_haval.h
+			mhash-0.9.9/lib/mhash_sha512_sha384.h
+			mhash-0.9.9/lib/mhash_int.h
+			mhash-0.9.9/lib/mhash_md2.h
+			mhash-0.9.9/lib/mhash_md4.h
+			mhash-0.9.9/lib/mhash_md5.h
+			mhash-0.9.9/lib/mhash_gost.h
+			mhash-0.9.9/lib/mhash_adler32.h
+			mhash-0.9.9/lib/mhash_sha1.h
+			mhash-0.9.9/lib/mhash_crc32.h
+			mhash-0.9.9/lib/mhash_ripemd.h
+			mhash-0.9.9/lib/mhash_whirlpool.h
+			mhash-0.9.9/lib/keygen.h
+			mhash-0.9.9/lib/libdefs.h
+		</headers>
+	</lib>
+</makefile>

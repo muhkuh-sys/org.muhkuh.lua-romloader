@@ -4,12 +4,17 @@
 	<!--                     The muhkuh gui client                          -->
 	<!-- ================================================================== -->
 
+	<!-- include the mhash library -->
+	<include file="mhash.bkl" once="1"/>
+
 	<exe id="serverkuh" template="wxlua">
 		<app-type>gui</app-type>
 		<threading>multi</threading>
 		<include>$(SRCDIR)</include>
 		<include>$(SRCDIR)/application</include>
 		<include>$(SRCDIR)/serverkuh</include>
+		<include>$(SRCDIR)/mhash-0.9.9/include</include>
+
 		<dirname>$(SRCDIR)/bin</dirname>
 
 		<!-- the clientkuh parts -->
@@ -56,6 +61,15 @@
 		</sources>
 		<headers>
 			plugins/_luaif/bit_wxlua_bindings.h
+		</headers>
+
+		<!-- the lua mhash functions -->
+		<sources>
+			plugins/_luaif/mhash_lua.cpp
+			plugins/_luaif/mhash_lua_bind.cpp
+		</sources>
+		<headers>
+			plugins/_luaif/mhash_wxlua_bindings.h
 		</headers>
 
 		<!-- the muhkuh lua bindings -->

@@ -26,6 +26,11 @@
 
 #include <wxlua/include/wxlua.h>
 
+extern "C"
+{
+  #include <mhash.h>
+}
+
 
 muhkuh_aboutDialog::muhkuh_aboutDialog(wxWindow* parent, const wxString &strVersion, wxIconBundle &frameIcons)
  : wxDialog(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU|wxCLOSE_BOX|wxMAXIMIZE_BOX|wxMINIMIZE_BOX)
@@ -99,7 +104,7 @@ void muhkuh_aboutDialog::setAbout(wxHtmlWindow *ptHtmlWin)
 	strMsg += _("Your friendly testtool with super cow powers!");
 	strMsg += wxT("<p>(c) 2007, the Muhkuh team<br>");
 	strMsg += wxT("<a href=\"http://muhkuh.sf.net\">http://muhkuh.sf.net</a><br>");
-	strMsg += wxT("<a href=\"http://www.sf.net\">http://www.sf.net/projects/muhkuh</a><p><br>");
+	strMsg += wxT("<a href=\"http://www.sf.net/projects/muhkuh\">http://www.sf.net/projects/muhkuh</a><p><br>");
 	strMsg += wxT("</center>");
 
 	strMsg += _("This version uses");
@@ -123,6 +128,10 @@ void muhkuh_aboutDialog::setAbout(wxHtmlWindow *ptHtmlWin)
 	strMsg += wxT("<li>");
 	strMsg += wxLUA_VERSION_STRING;
 	strMsg += wxT("<br><a href=\"http://wxlua.sf.net\">http://wxlua.sf.net</a></li>");
+
+	strMsg += wxT("<li>");
+	strMsg += wxT(PACKAGE_STRING);
+	strMsg += wxT("<br><a href=\"http://mhash.sf.net\">http://mhash.sf.net</a></li>");
 
 	strMsg += wxT("<li>Silk icon set 1.3 by Mark James<br><a href=\"http://www.famfamfam.com/lab/icons/silk/\">http://www.famfamfam.com/lab/icons/silk/</a></li>");
 
