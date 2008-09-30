@@ -21,6 +21,8 @@
 
 #include "mhash.h"
 
+#include <wx/wx.h>
+
 
 #ifndef __MHASH_LUA_INTERFACE_H__
 #define __MHASH_LUA_INTERFACE_H__
@@ -28,7 +30,10 @@
 class mhash_state
 {
 public:
-	mhash_state();
+	mhash_state(void);
+	mhash_state(hashid type);
+	mhash_state(mhash_state *ptMHash);
+
 	~mhash_state();
 
 	static double count(void);
@@ -40,17 +45,18 @@ public:
 
 	/* initializing prototypes */
 
+	void init(hashid type);
 //	MHASH mhash_init(hashid type);
-	void mhash_init(hashid type);
+//	void mhash_init(hashid type);
 
 	/* copy prototypes */
 
-	void mhash_cp(MHASH from);
+//	void mhash_cp(MHASH from);
 
 	/* update prototype */
 
-	bool mhash(const void *plaintext, double size);
-	bool mhash_o(const void *plaintext, double offset, double size);
+	bool mhash(const char *plaintext, double size);
+	bool mhash_o(const char *plaintext, double offset, double size);
 
 	/* finalizing prototype */
 

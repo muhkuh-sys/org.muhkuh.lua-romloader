@@ -65,72 +65,11 @@
 %endenum
 
 %class %noclassinfo mhash_state
-	
+	mhash_state()
+	mhash_state(hashid type)
+	mhash_state(mhash_state *ptMHash)
+
+	double count()
+	double get_block_size(hashid type)
+	wxString get_hash_name(hashid type)
 %endclass
-
-
-
-
-// information prototypes
-
-%function double mhash_count()
-%function double mhash_get_block_size(hashid type)
-%function wxString mhash_get_hash_name(hashid type)
-%function void mhash_free(void *ptr)
-
-%function wxString mhash_get_hash_name_static(hashid type)
-
-// initializing prototypes
-
-%function MHASH mhash_init(hashid type)
-
-// copy prototypes
-
-%function MHASH mhash_cp(MHASH from)
-
-%function bool mhash(MHASH thread, const void *plaintext, double size)
-
-// finalizing prototype
-
-%function void *mhash_end(MHASH thread)
-// %function void *mhash_end_m(MHASH thread, void *(*hash_malloc) (mutils_word32));
-%function void mhash_deinit(MHASH thread, void *result)
-
-/* informational */
-
-%function double mhash_get_hash_pblock(hashid type)
-%function hashid mhash_get_mhash_algo(MHASH tmp)
-
-/* HMAC */
-
-//%function MHASH mhash_hmac_init(const hashid type, void *key, mutils_word32 keysize, mutils_word32 block);
-//%function void *mhash_hmac_end_m(MHASH thread, void *(*hash_malloc) (mutils_word32));
-//%function void *mhash_hmac_end(MHASH thread);
-//%function mutils_boolean mhash_hmac_deinit(MHASH thread, void *result);
-
-/* Save state functions */
-
-//%function mutils_boolean mhash_save_state_mem(MHASH thread, void *mem, mutils_word32 *mem_size);
-//%function MHASH mhash_restore_state_mem(void *mem);
-
-/* Key generation functions */
-
-//%function mutils_error mhash_keygen(keygenid algorithm, hashid opt_algorithm,
-//			  mutils_word64 count,
-//			  void *keyword, mutils_word32 keysize,
-//			  void *salt, mutils_word32 saltsize,
-//			  mutils_word8 *password, mutils_word32 passwordlen);
-
-//%function mutils_error mhash_keygen_ext(keygenid algorithm, KEYGEN data,
-//			      void *keyword, mutils_word32 keysize,
-//			      mutils_word8 *password, mutils_word32 passwordlen);
-
-//%function mutils_word8 *mhash_get_keygen_name(keygenid type);
-
-//%function mutils_word32 mhash_get_keygen_salt_size(keygenid type);
-//%function mutils_word32 mhash_get_keygen_max_key_size(keygenid type);
-//%function mutils_word32 mhash_keygen_count(void);
-
-//%function mutils_boolean mhash_keygen_uses_salt(keygenid type);
-//%function mutils_boolean mhash_keygen_uses_count(keygenid type);
-//%function mutils_boolean mhash_keygen_uses_hash_algorithm(keygenid type);

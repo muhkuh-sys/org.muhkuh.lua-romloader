@@ -22,8 +22,27 @@
 #include "mhash_lua_interface.h"
 
 
-mhash_state::mhash_state();
-mhash_state::~mhash_state();
+mhash_state::mhash_state(void)
+{
+}
+
+
+mhash_state::mhash_state(hashid type)
+{
+	m_hMHash = mhash_init(type);
+}
+
+
+mhash_state::mhash_state(mhash_state *ptMHash)
+{
+	m_hMHash = mhash_cp(ptMHash->m_hMHash);
+}
+
+
+mhash_state::~mhash_state()
+{
+}
+
 
 double mhash_state::count(void)
 {
@@ -40,7 +59,7 @@ double mhash_state::get_block_size(hashid type)
 	double d;
 
 
-	d = (double)mhash_get_block_size();
+	d = (double)mhash_get_block_size(type);
 	return d;
 }
 
@@ -50,7 +69,7 @@ wxString mhash_state::get_hash_name(hashid type)
 	const char *pc;
 
 
-	pc = mhash_get_hash_name(type);
+	pc = (const char*)mhash_get_hash_name(type);
 	return wxString::FromAscii(pc);
 }
 
@@ -59,17 +78,17 @@ wxString mhash_state::get_hash_name(hashid type)
 
 //wxString mhash_state::get_hash_name_static(hashid type);
 
-void mhash_state::mhash_init(hashid type)
+void mhash_state::init(hashid type)
 {
 	m_hMHash = mhash_init(type);
 }
 
 /* copy prototypes */
 
-void mhash_state::mhash_cp(MHASH from)
-{
-	m_hMHash = mhash_cp(type);
-}
+// void mhash_state::mhash_cp(MHASH from)
+// {
+// 	m_hMHash = mhash_cp(from);
+// }
 
 /* update prototype */
 
