@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2007 by Christoph Thelen                                *
+ *   Copyright (C) 2007-2008 by Christoph Thelen                           *
  *   doc_bacardi@users.sourceforge.net                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -45,6 +45,7 @@ public:
 	void OnRadioDirscan(wxCommandEvent &event);
 	void OnRadioFilelist(wxCommandEvent &event);
 	void OnRadioSingleXml(wxCommandEvent &event);
+	void OnRadioAllLocal(wxCommandEvent &event);
 
 private:
 	void createControls(void);
@@ -64,6 +65,7 @@ private:
 	wxRadioButton *m_radioDirscan;
 	wxRadioButton *m_radioFilelist;
 	wxRadioButton *m_radioSingleXml;
+	wxRadioButton *m_radioAllLocal;
 
 	wxFlexGridSizer *m_repoNameGrid;
 	wxStaticText *m_labelRepoName;
@@ -90,6 +92,15 @@ private:
 	wxStaticText *m_labelSingleXmlLocation;
 	wxTextCtrl *m_textSingleXmlLocation;
 	wxBitmapButton *m_buttonSingleXmlLocation;
+
+	wxFlexGridSizer *m_allLocalGrid;
+	wxStaticText *m_labelAllLocalLocation;
+	wxTextCtrl *m_textAllLocalLocation;
+	wxBitmapButton *m_buttonAllLocalLocation;
+	wxStaticText *m_labelAllLocalTestExtension;
+	wxTextCtrl *m_textAllLocalTestExtension;
+	wxStaticText *m_labelAllLocalXmlPattern;
+	wxTextCtrl *m_textAllLocalXmlPattern;
 
 	wxBoxSizer *m_buttonSizer;
 	wxButton *m_buttonOk;

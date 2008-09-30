@@ -48,6 +48,7 @@ extern const char *icon_famfamfam_silk_door_out[197];
 extern const char *icon_famfamfam_silk_exclamation[147];
 extern const char *icon_famfamfam_silk_folder[143];
 extern const char *icon_famfamfam_silk_folder_add[149];
+extern const char *icon_famfamfam_silk_folder_database[174];
 extern const char *icon_famfamfam_silk_folder_delete[160];
 extern const char *icon_famfamfam_silk_folder_edit[170];
 extern const char *icon_famfamfam_silk_folder_table[170];

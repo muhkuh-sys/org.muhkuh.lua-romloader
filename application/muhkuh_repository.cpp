@@ -197,6 +197,12 @@ wxString muhkuh_repository::GetExtension(void) const
 }
 
 
+wxString muhkuh_repository::GetXmlPattern(void) const
+{
+	return m_strXmlPattern;
+}
+
+
 bool muhkuh_repository::GetSelected(void) const
 {
 	return m_fSelected;

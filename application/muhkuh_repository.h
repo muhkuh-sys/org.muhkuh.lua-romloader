@@ -64,6 +64,7 @@ public:
 	REPOSITORY_TYP_E GetTyp(void) const;
 	wxString GetLocation(void) const;
 	wxString GetExtension(void) const;
+	wxString GetXmlPattern(void) const;
 	bool GetSelected(void) const;
 
 	wxString GetStringRepresentation(void) const;

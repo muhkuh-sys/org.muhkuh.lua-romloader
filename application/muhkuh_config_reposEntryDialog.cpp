@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2007 by Christoph Thelen                                *
+ *   Copyright (C) 2007-2008 by Christoph Thelen                           *
  *   doc_bacardi@users.sourceforge.net                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -34,6 +34,7 @@ BEGIN_EVENT_TABLE(muhkuh_config_reposEntryDialog, wxDialog)
 	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioDirscan,		muhkuh_config_reposEntryDialog::OnRadioDirscan)
 	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioFilelist,		muhkuh_config_reposEntryDialog::OnRadioFilelist)
 	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioSingleXml,		muhkuh_config_reposEntryDialog::OnRadioSingleXml)
+	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioAllLocal,		muhkuh_config_reposEntryDialog::OnRadioAllLocal)
 END_EVENT_TABLE()
 
 
@@ -55,33 +56,52 @@ muhkuh_config_reposEntryDialog::muhkuh_config_reposEntryDialog(wxWindow *parent,
 
 	m_textRepoName->SetValue( m_ptRepos->GetName() );
 
+
+	m_textDirscanLocation->SetValue( strLocation );
+	m_textFilelistLocation->SetValue( strLocation );
+	m_textSingleXmlLocation->SetValue( strLocation );
+	m_textAllLocalLocation->SetValue( strLocation );
+
+	m_textTestExtension->SetValue( m_ptRepos->GetExtension() );
+	m_textAllLocalTestExtension->SetValue( m_ptRepos->GetExtension() );
+
+	m_textAllLocalXmlPattern->SetValue( m_ptRepos->GetXmlPattern() );
+
 	m_eTyp = m_ptRepos->GetTyp();
 	switch( m_eTyp )
 	{
 	case muhkuh_repository::REPOSITORY_TYP_DIRSCAN:
-		m_textDirscanLocation->SetValue( strLocation );
-		m_textTestExtension->SetValue( m_ptRepos->GetExtension() );
 		m_radioDirscan->SetValue(true);
 		m_radioFilelist->SetValue(false);
 		m_radioSingleXml->SetValue(false);
+		m_radioAllLocal->SetValue(false);
 		m_fDirscanUseRelativePaths = tFileName.IsRelative(wxPATH_NATIVE);
 		m_fSingleXmlUseRelativePaths = false;
 		break;
 
 	case muhkuh_repository::REPOSITORY_TYP_FILELIST:
-		m_textFilelistLocation->SetValue( strLocation );
 		m_radioDirscan->SetValue(false);
 		m_radioFilelist->SetValue(true);
 		m_radioSingleXml->SetValue(false);
+		m_radioAllLocal->SetValue(false);
 		m_fDirscanUseRelativePaths = false;
 		m_fSingleXmlUseRelativePaths = false;
 		break;
 
 	case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
-		m_textSingleXmlLocation->SetValue( strLocation );
 		m_radioDirscan->SetValue(false);
 		m_radioFilelist->SetValue(false);
 		m_radioSingleXml->SetValue(true);
+		m_radioAllLocal->SetValue(false);
+		m_fDirscanUseRelativePaths = false;
+		m_fSingleXmlUseRelativePaths = tFileName.IsRelative(wxPATH_NATIVE);
+		break;
+
+	case muhkuh_repository::REPOSITORY_TYP_ALLLOCAL:
+		m_radioDirscan->SetValue(false);
+		m_radioFilelist->SetValue(false);
+		m_radioSingleXml->SetValue(false);
+		m_radioAllLocal->SetValue(true);
 		m_fDirscanUseRelativePaths = false;
 		m_fSingleXmlUseRelativePaths = tFileName.IsRelative(wxPATH_NATIVE);
 		break;
@@ -91,6 +111,7 @@ muhkuh_config_reposEntryDialog::muhkuh_config_reposEntryDialog(wxWindow *parent,
 		m_radioDirscan->SetValue(true);
 		m_radioFilelist->SetValue(false);
 		m_radioSingleXml->SetValue(false);
+		m_radioAllLocal->SetValue(false);
 		m_textTestExtension->SetValue(wxT("*.mtd"));
 		m_fDirscanUseRelativePaths = false;
 		m_fSingleXmlUseRelativePaths = false;
@@ -203,6 +224,37 @@ void muhkuh_config_reposEntryDialog::createControls(void)
 	m_singleXmlGrid->AddSpacer(4);
 
 
+	m_radioAllLocal = new wxRadioButton(this, muhkuh_configReposEntryDialog_radioAllLocal, _("All Local Files"), wxDefaultPosition, wxDefaultSize, 0);
+	m_mainSizer->Add(m_radioAllLocal, 0, 0);
+
+	m_allLocalGrid = new wxFlexGridSizer(1, 4, 0, 0);
+	m_allLocalGrid->AddGrowableCol(2, 1);
+	m_mainSizer->Add(m_allLocalGrid, 0, wxEXPAND|wxLEFT, 32);
+
+	// fill the input grid
+	m_labelAllLocalLocation = new wxStaticText(this, wxID_ANY, _("Start Path :"));
+	m_textAllLocalLocation = new wxTextCtrl(this, wxID_ANY);
+	m_buttonAllLocalLocation = new wxBitmapButton(this, muhkuh_configReposEntryDialog_ButtonAllLocalLocationBrowse, icon_famfamfam_silk_folder);
+	m_allLocalGrid->Add(m_labelAllLocalLocation, 0, wxALIGN_CENTER_VERTICAL);
+	m_allLocalGrid->AddSpacer(4);
+	m_allLocalGrid->Add(m_textAllLocalLocation, 0, wxEXPAND);
+	m_allLocalGrid->Add(m_buttonAllLocalLocation);
+
+	m_labelAllLocalTestExtension = new wxStaticText(this, wxID_ANY, _("Test description extension :"));
+	m_textAllLocalTestExtension = new wxTextCtrl(this, wxID_ANY);
+	m_allLocalGrid->Add(m_labelAllLocalTestExtension, 0, wxALIGN_CENTER_VERTICAL);
+	m_allLocalGrid->AddSpacer(4);
+	m_allLocalGrid->Add(m_textAllLocalTestExtension, 0, wxEXPAND);
+	m_allLocalGrid->AddSpacer(4);
+
+	m_labelAllLocalXmlPattern = new wxStaticText(this, wxID_ANY, _("Xml Pattern :"));
+	m_textAllLocalXmlPattern = new wxTextCtrl(this, wxID_ANY);
+	m_allLocalGrid->Add(m_labelAllLocalXmlPattern, 0, wxALIGN_CENTER_VERTICAL);
+	m_allLocalGrid->AddSpacer(4);
+	m_allLocalGrid->Add(m_textAllLocalXmlPattern, 0, wxEXPAND);
+	m_allLocalGrid->AddSpacer(4);
+
+
 	// create the button sizer
 	m_buttonSizer = new wxBoxSizer(wxHORIZONTAL);
 	m_mainSizer->Add(m_buttonSizer, 0, wxEXPAND);
@@ -229,6 +281,7 @@ void muhkuh_config_reposEntryDialog::SwitchInputs(void)
 	bool fDirscanEndable;
 	bool fFilelistEndable;
 	bool fSingleXmlEnable;
+	bool fAllLocalEnable;
 
 
 	switch( m_eTyp )
@@ -237,24 +290,35 @@ void muhkuh_config_reposEntryDialog::SwitchInputs(void)
 		fDirscanEndable = true;
 		fFilelistEndable = false;
 		fSingleXmlEnable = false;
+		fAllLocalEnable = false;
 		break;
 
 	case muhkuh_repository::REPOSITORY_TYP_FILELIST:
 		fDirscanEndable = false;
 		fFilelistEndable = true;
 		fSingleXmlEnable = false;
+		fAllLocalEnable = false;
 		break;
 
 	case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
 		fDirscanEndable = false;
 		fFilelistEndable = false;
 		fSingleXmlEnable = true;
+		fAllLocalEnable = false;
+		break;
+
+	case muhkuh_repository::REPOSITORY_TYP_ALLLOCAL:
+		fDirscanEndable = false;
+		fFilelistEndable = false;
+		fSingleXmlEnable = false;
+		fAllLocalEnable = true;
 		break;
 
 	default:
 		fDirscanEndable = false;
 		fFilelistEndable = false;
 		fSingleXmlEnable = false;
+		fAllLocalEnable = false;
 		break;
 	};
 	
@@ -268,6 +332,11 @@ void muhkuh_config_reposEntryDialog::SwitchInputs(void)
 	m_textSingleXmlLocation->Enable(fSingleXmlEnable);
 	m_buttonSingleXmlLocation->Enable(fSingleXmlEnable);
 	m_checkSingleXmlUseRelativePaths->Enable(fSingleXmlEnable);
+
+	m_textAllLocalLocation->Enable(fAllLocalEnable);
+	m_buttonAllLocalLocation->Enable(fAllLocalEnable);
+	m_textAllLocalTestExtension->Enable(fAllLocalEnable);
+	m_textAllLocalXmlPattern->Enable(fAllLocalEnable);
 }
 
 
@@ -478,6 +547,13 @@ void muhkuh_config_reposEntryDialog::OnSingleXmlUseRelPaths(wxCommandEvent &even
 void muhkuh_config_reposEntryDialog::OnRadioSingleXml(wxCommandEvent &WXUNUSED(event))
 {
 	m_eTyp = muhkuh_repository::REPOSITORY_TYP_SINGLEXML;
+	SwitchInputs();
+}
+
+
+void muhkuh_config_reposEntryDialog::OnRadioAllLocal(wxCommandEvent &WXUNUSED(event))
+{
+	m_eTyp = muhkuh_repository::REPOSITORY_TYP_ALLLOCAL;
 	SwitchInputs();
 }
 

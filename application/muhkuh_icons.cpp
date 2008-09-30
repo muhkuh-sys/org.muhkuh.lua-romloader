@@ -41,6 +41,7 @@
 #include "icons/famfamfam_silk_icons_v013/exclamation.xpm"
 #include "icons/famfamfam_silk_icons_v013/folder.xpm"
 #include "icons/famfamfam_silk_icons_v013/folder_add.xpm"
+#include "icons/famfamfam_silk_icons_v013/folder_database.xpm"
 #include "icons/famfamfam_silk_icons_v013/folder_delete.xpm"
 #include "icons/famfamfam_silk_icons_v013/folder_edit.xpm"
 #include "icons/famfamfam_silk_icons_v013/folder_table.xpm"
