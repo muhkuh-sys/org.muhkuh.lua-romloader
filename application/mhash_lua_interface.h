@@ -27,6 +27,10 @@
 #ifndef __MHASH_LUA_INTERFACE_H__
 #define __MHASH_LUA_INTERFACE_H__
 
+
+wxString get_version(void);
+
+
 class mhash_state
 {
 public:
@@ -55,12 +59,12 @@ public:
 
 	/* update prototype */
 
-	bool mhash(const char *plaintext, double size);
-	bool mhash_o(const char *plaintext, double offset, double size);
+	void hash(const char *plaintext, double size);
+	void hash_o(const char *plaintext, double offset, double size);
 
 	/* finalizing prototype */
 
-	void *mhash_end(void);
+	wxString hash_end(void);
 //	void *mhash_end_m(MHASH thread, void *(*hash_malloc) (mutils_word32));
 //	void mhash_deinit(MHASH thread, void *result);
 
@@ -106,6 +110,8 @@ mutils_boolean mhash_keygen_uses_hash_algorithm(keygenid type);
 */
 
 private:
+	void deinit(void);
+
 	MHASH m_hMHash;
 };
 

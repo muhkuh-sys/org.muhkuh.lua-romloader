@@ -40,6 +40,8 @@ extern WXLUA_NO_DLLIMPEXP bool wxLuaBinding_mhash_lua_init();
 // Includes
 // ---------------------------------------------------------------------------
 
+#include "application/mhash_lua_interface.h"
+
 // ---------------------------------------------------------------------------
 // Lua Tag Method Values and Tables for each Class
 // ---------------------------------------------------------------------------

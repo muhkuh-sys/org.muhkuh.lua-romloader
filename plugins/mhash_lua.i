@@ -1,4 +1,6 @@
 
+%include "application/mhash_lua_interface.h"
+
 %enum hashid
 	MHASH_CRC32
 	MHASH_MD5
@@ -69,7 +71,14 @@
 	mhash_state(hashid type)
 	mhash_state(mhash_state *ptMHash)
 
-	double count()
-	double get_block_size(hashid type)
-	wxString get_hash_name(hashid type)
+	static wxString get_version()
+
+	static double count()
+	static double get_block_size(hashid type)
+	static wxString get_hash_name(hashid type)
+
+	void init(hashid type)
+	void hash(const char *plaintext, double size)
+	wxString hash_end()
 %endclass
+

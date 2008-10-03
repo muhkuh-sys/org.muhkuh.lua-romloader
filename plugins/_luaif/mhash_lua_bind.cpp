@@ -139,6 +139,18 @@ wxLuaBindObject* wxLuaGetObjectList_mhash_lua(size_t &count)
 // wxLuaGetFunctionList_mhash_lua() is called to register global functions
 // ---------------------------------------------------------------------------
 
+// %function wxString get_version()
+static int LUACALL wxLua_function_get_version(lua_State *L)
+{
+    // call get_version
+    wxString returns = (get_version());
+    // push the result string
+    wxlua_pushwxString(L, returns);
+
+    return 1;
+}
+static wxLuaBindCFunc s_wxluafunc_wxLua_function_get_version[1] = {{ wxLua_function_get_version, WXLUAMETHOD_CFUNCTION, 0, 0, g_wxluaargtypeArray_None }};
+
 // ---------------------------------------------------------------------------
 // wxLuaGetFunctionList_mhash_lua() is called to register global functions
 // ---------------------------------------------------------------------------
@@ -147,6 +159,7 @@ wxLuaBindMethod* wxLuaGetFunctionList_mhash_lua(size_t &count)
 {
     static wxLuaBindMethod functionList[] =
     {
+        { "get_version", WXLUAMETHOD_CFUNCTION, s_wxluafunc_wxLua_function_get_version, 1, NULL },
 
         { 0, 0, 0, 0 }, 
     };

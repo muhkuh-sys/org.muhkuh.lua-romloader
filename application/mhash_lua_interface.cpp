@@ -22,25 +22,51 @@
 #include "mhash_lua_interface.h"
 
 
-mhash_state::mhash_state(void)
+// static functions
+wxString get_version(void)
 {
+	return wxString::FromAscii(PACKAGE_STRING);
+}
+
+
+mhash_state::mhash_state(void)
+ : m_hMHash(NULL)
+{
+	wxLogMessage("mhash_state(void)");
 }
 
 
 mhash_state::mhash_state(hashid type)
+ : m_hMHash(NULL)
 {
+	wxLogMessage("mhash_state(hashid type)");
 	m_hMHash = mhash_init(type);
 }
 
 
 mhash_state::mhash_state(mhash_state *ptMHash)
+ : m_hMHash(NULL)
 {
+	wxLogMessage("mhash_state(mhash_state *ptMHash)");
 	m_hMHash = mhash_cp(ptMHash->m_hMHash);
 }
 
 
 mhash_state::~mhash_state()
 {
+	wxLogMessage("~mhash_state()");
+
+	deinit();
+}
+
+
+void mhash_state::deinit(void)
+{
+	if( m_hMHash!=NULL )
+	{
+		mhash_deinit(m_hMHash, NULL);
+		m_hMHash = NULL;
+	}
 }
 
 
@@ -67,50 +93,101 @@ double mhash_state::get_block_size(hashid type)
 wxString mhash_state::get_hash_name(hashid type)
 {
 	const char *pc;
+	wxString strName;
 
 
-	pc = (const char*)mhash_get_hash_name(type);
-	return wxString::FromAscii(pc);
+	// NOTE: use the static version here, the other one mallocs the string
+	pc = (const char*)mhash_get_hash_name_static(type);
+	if( pc!=NULL )
+	{
+		strName = wxString::FromAscii(pc);
+	}
+	return strName;
 }
 
-
-//void mhash_state::free(void *ptr);
-
-//wxString mhash_state::get_hash_name_static(hashid type);
 
 void mhash_state::init(hashid type)
 {
+	// clear any existing state
+	deinit();
+
+	// init new state
 	m_hMHash = mhash_init(type);
 }
 
-/* copy prototypes */
 
-// void mhash_state::mhash_cp(MHASH from)
-// {
-// 	m_hMHash = mhash_cp(from);
-// }
-
-/* update prototype */
-
-bool mhash_state::mhash(const char *plaintext, double size)
+void mhash_state::hash(const char *plaintext, double size)
 {
 	mutils_boolean mb;
 
 
-	mb = mhash(plaintext, size);
-	return (mb==MUTILS_TRUE);
+	if( m_hMHash==NULL )
+	{
+		wxLogError("the mhash state was not initialized!");
+	}
+	else
+	{
+		mb = mhash(m_hMHash, plaintext, size);
+		if( mb!=MUTILS_OK )
+		{
+			wxLogError("error hashing bytes: %d", mb);
+		}
+	}
 }
 
 
-bool mhash_state::mhash_o(const char *plaintext, double offset, double size)
+void mhash_state::hash_o(const char *plaintext, double offset, double size)
 {
 	mutils_boolean mb;
 	size_t sizOffset;
 
 
-	sizOffset = (size_t)offset;
-	mb = mhash(plaintext+sizOffset, size);
-	return (mb==MUTILS_TRUE);
+	if( m_hMHash==NULL )
+	{
+		wxLogError("the mhash state was not initialized!");
+	}
+	else
+	{
+		sizOffset = (size_t)offset;
+		mb = mhash(m_hMHash, plaintext+sizOffset, size);
+		if( mb!=MUTILS_OK )
+		{
+			wxLogError("error hashing bytes: %d", mb);
+		}
+	}
 }
 
+
+wxString mhash_state::hash_end(void)
+{
+	hashid tId;
+	size_t sizBlockSize;
+	void *pvHash;
+	const char *pcHash;
+	wxString strHash;
+
+
+	// get blocksize
+	if( m_hMHash==NULL )
+	{
+		wxLogError("the mhash state was not initialized!");
+	}
+	else
+	{
+		tId = mhash_get_mhash_algo(m_hMHash);
+		sizBlockSize = mhash_get_block_size(tId);
+		if( sizBlockSize!=0 )
+		{
+			pvHash = mhash_end(m_hMHash);
+			if( pvHash!=NULL )
+			{
+				pcHash = (const char*)pvHash;
+				strHash = wxString::From8BitData(pcHash, sizBlockSize);
+			}
+			m_hMHash = NULL;
+		}
+	}
+
+	return strHash;
+}
 

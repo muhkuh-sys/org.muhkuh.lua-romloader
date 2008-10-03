@@ -581,49 +581,59 @@ bool serverkuh_mainFrame::initLuaState(void)
 			}
 			else
 			{
-				// init the lua bindings for all plugins
-				fResult = m_ptPluginManager->initLuaBindings(m_ptLuaState);
+				// init the muhkuh mhash lua bindings
+				fResult = wxLuaBinding_mhash_lua_init();
 				if( fResult!=true )
 				{
-					wxLogError(_("Failed to init plugin bindings"));
+					// failed to init the muhkuh mhash lua bindings
+					wxLogError(_("Failed to init the muhkuh_mhash_lua bindings"));
 				}
 				else
 				{
-					// create the lua state
-					fResult = m_ptLuaState->Create(this, wxID_ANY);
+					// init the lua bindings for all plugins
+					fResult = m_ptPluginManager->initLuaBindings(m_ptLuaState);
 					if( fResult!=true )
 					{
-						wxLogError(_("Failed to create a new lua state"));
+						wxLogError(_("Failed to init plugin bindings"));
 					}
 					else
 					{
-						// is the state valid?
-						fResult = m_ptLuaState->Ok();
+						// create the lua state
+						fResult = m_ptLuaState->Create(this, wxID_ANY);
 						if( fResult!=true )
 						{
-							wxLogError(_("Strange lua state"));
+							wxLogError(_("Failed to create a new lua state"));
 						}
 						else
 						{
-							// set the package path
-							wxLogMessage(wxT("Lua path:") + m_strLuaIncludePath);
-
-							m_ptLuaState->lua_GetGlobal(wxT("package"));
-							if( m_ptLuaState->lua_IsNoneOrNil(-1)==true )
+							// is the state valid?
+							fResult = m_ptLuaState->Ok();
+							if( fResult!=true )
 							{
-								wxLogError(_("Failed to get the global 'package'"));
+								wxLogError(_("Strange lua state"));
 							}
-							m_ptLuaState->lua_PushString(m_strLuaIncludePath);
-							m_ptLuaState->lua_SetField(-2, wxT("path"));
-
-							// set the lua version
-							m_ptLuaState->lua_PushString(m_strVersion.ToAscii());
-							m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_VERSION"));
-
-							// only create debug hooks and connection if debug server is set
-							if( m_strDebugServerName.IsEmpty()==false )
+							else
 							{
-								dbg_enable();
+								// set the package path
+								wxLogMessage(wxT("Lua path:") + m_strLuaIncludePath);
+	
+								m_ptLuaState->lua_GetGlobal(wxT("package"));
+								if( m_ptLuaState->lua_IsNoneOrNil(-1)==true )
+								{
+									wxLogError(_("Failed to get the global 'package'"));
+								}
+								m_ptLuaState->lua_PushString(m_strLuaIncludePath);
+								m_ptLuaState->lua_SetField(-2, wxT("path"));
+	
+								// set the lua version
+								m_ptLuaState->lua_PushString(m_strVersion.ToAscii());
+								m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_VERSION"));
+	
+								// only create debug hooks and connection if debug server is set
+								if( m_strDebugServerName.IsEmpty()==false )
+								{
+									dbg_enable();
+								}
 							}
 						}
 					}

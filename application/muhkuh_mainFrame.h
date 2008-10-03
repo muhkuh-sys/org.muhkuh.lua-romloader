@@ -54,6 +54,7 @@
 #include <wxluasocket/include/wxldtarg.h>
 #include "plugins/_luaif/muhkuh_wxlua_bindings.h"
 #include "plugins/_luaif/bit_wxlua_bindings.h"
+#include "plugins/_luaif/mhash_wxlua_bindings.h"
 
 extern "C"
 {

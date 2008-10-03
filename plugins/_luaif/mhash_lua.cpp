@@ -78,6 +78,56 @@ static int LUACALL wxLua_mhash_state_get_hash_name(lua_State *L)
     return 1;
 }
 
+static wxLuaArgType s_wxluatypeArray_wxLua_mhash_state_hash[] = { &wxluatype_mhash_state, &wxluatype_TSTRING, &wxluatype_TNUMBER, NULL };
+static int LUACALL wxLua_mhash_state_hash(lua_State *L);
+static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_hash[1] = {{ wxLua_mhash_state_hash, WXLUAMETHOD_METHOD, 3, 3, s_wxluatypeArray_wxLua_mhash_state_hash }};
+// 	void hash(const char *plaintext, double size)
+static int LUACALL wxLua_mhash_state_hash(lua_State *L)
+{
+    // double size
+    double size = (double)wxlua_getnumbertype(L, 3);
+    // const char plaintext
+    wxCharBuffer plaintext = wxlua_getstringtype(L, 2);
+    // get this
+    mhash_state * self = (mhash_state *)wxluaT_getuserdatatype(L, 1, wxluatype_mhash_state);
+    // call hash
+    self->hash(plaintext, size);
+
+    return 0;
+}
+
+static wxLuaArgType s_wxluatypeArray_wxLua_mhash_state_hash_end[] = { &wxluatype_mhash_state, NULL };
+static int LUACALL wxLua_mhash_state_hash_end(lua_State *L);
+static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_hash_end[1] = {{ wxLua_mhash_state_hash_end, WXLUAMETHOD_METHOD, 1, 1, s_wxluatypeArray_wxLua_mhash_state_hash_end }};
+// 	wxString hash_end()
+static int LUACALL wxLua_mhash_state_hash_end(lua_State *L)
+{
+    // get this
+    mhash_state * self = (mhash_state *)wxluaT_getuserdatatype(L, 1, wxluatype_mhash_state);
+    // call hash_end
+    wxString returns = (self->hash_end());
+    // push the result string
+    wxlua_pushwxString(L, returns);
+
+    return 1;
+}
+
+static wxLuaArgType s_wxluatypeArray_wxLua_mhash_state_init[] = { &wxluatype_mhash_state, &wxluatype_TINTEGER, NULL };
+static int LUACALL wxLua_mhash_state_init(lua_State *L);
+static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_init[1] = {{ wxLua_mhash_state_init, WXLUAMETHOD_METHOD, 2, 2, s_wxluatypeArray_wxLua_mhash_state_init }};
+// 	void init(hashid type)
+static int LUACALL wxLua_mhash_state_init(lua_State *L)
+{
+    // hashid type
+    hashid type = (hashid)wxlua_getintegertype(L, 2);
+    // get this
+    mhash_state * self = (mhash_state *)wxluaT_getuserdatatype(L, 1, wxluatype_mhash_state);
+    // call init
+    self->init(type);
+
+    return 0;
+}
+
 static int LUACALL wxLua_mhash_state_constructor(lua_State *L);
 // static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_constructor[1] = {{ wxLua_mhash_state_constructor, WXLUAMETHOD_CONSTRUCTOR, 0, 0, g_wxluaargtypeArray_None }};
 // 	mhash_state()
@@ -140,6 +190,9 @@ wxLuaBindMethod mhash_state_methods[] = {
     { "count", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_mhash_state_count, 1, NULL },
     { "get_block_size", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_mhash_state_get_block_size, 1, NULL },
     { "get_hash_name", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_mhash_state_get_hash_name, 1, NULL },
+    { "hash", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_mhash_state_hash, 1, NULL },
+    { "hash_end", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_mhash_state_hash_end, 1, NULL },
+    { "init", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_mhash_state_init, 1, NULL },
 
     { "mhash_state", WXLUAMETHOD_CONSTRUCTOR, s_wxluafunc_wxLua_mhash_state_constructor_overload, s_wxluafunc_wxLua_mhash_state_constructor_overload_count, 0 },
 

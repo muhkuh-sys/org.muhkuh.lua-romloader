@@ -22,6 +22,11 @@
 #include <wx/stdpaths.h>
 #include <wx/url.h>
 
+
+// use the debugger
+//#define __ENABLE_DEBUGGER__
+
+
 #include "growbuffer.h"
 #include "muhkuh_version.h"
 #include "muhkuh_aboutDialog.h"
@@ -1156,44 +1161,54 @@ bool muhkuh_mainFrame::initLuaState(void)
 			}
 			else
 			{
-				// init the lua bindings for all plugins
-				fResult = m_ptPluginManager->initLuaBindings(m_ptLuaState);
+				// init the muhkuh mhash lua bindings
+				fResult = wxLuaBinding_mhash_lua_init();
 				if( fResult!=true )
 				{
-					wxLogError(_("Failed to init plugin bindings"));
+					// failed to init the muhkuh mhash lua bindings
+					wxLogError(_("Failed to init the muhkuh_mhash_lua bindings"));
 				}
 				else
 				{
-					// create the lua state
-					fResult = m_ptLuaState->Create(this, wxID_ANY);
+					// init the lua bindings for all plugins
+					fResult = m_ptPluginManager->initLuaBindings(m_ptLuaState);
 					if( fResult!=true )
 					{
-						wxLogError(_("Failed to create a new lua state"));
+						wxLogError(_("Failed to init plugin bindings"));
 					}
 					else
 					{
-						// is the state valid?
-						fResult = m_ptLuaState->Ok();
+						// create the lua state
+						fResult = m_ptLuaState->Create(this, wxID_ANY);
 						if( fResult!=true )
 						{
-							wxLogError(_("Strange lua state"));
+							wxLogError(_("Failed to create a new lua state"));
 						}
 						else
 						{
-							// set the package path
-							wxLogMessage(wxT("Lua path:") + m_strLuaIncludePath);
-
-							m_ptLuaState->lua_GetGlobal(wxT("package"));
-							if( m_ptLuaState->lua_IsNoneOrNil(-1)==true )
+							// is the state valid?
+							fResult = m_ptLuaState->Ok();
+							if( fResult!=true )
 							{
-								wxLogError(_("Failed to get the global 'package'"));
+								wxLogError(_("Strange lua state"));
 							}
-							m_ptLuaState->lua_PushString(m_strLuaIncludePath);
-							m_ptLuaState->lua_SetField(-2, wxT("path"));
-
-							// set the lua version
-							m_ptLuaState->lua_PushString(m_strVersion.ToAscii());
-							m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_VERSION"));
+							else
+							{
+								// set the package path
+								wxLogMessage(wxT("Lua path:") + m_strLuaIncludePath);
+	
+								m_ptLuaState->lua_GetGlobal(wxT("package"));
+								if( m_ptLuaState->lua_IsNoneOrNil(-1)==true )
+								{
+									wxLogError(_("Failed to get the global 'package'"));
+								}
+								m_ptLuaState->lua_PushString(m_strLuaIncludePath);
+								m_ptLuaState->lua_SetField(-2, wxT("path"));
+	
+								// set the lua version
+								m_ptLuaState->lua_PushString(m_strVersion.ToAscii());
+								m_ptLuaState->lua_SetGlobal(wxT("__MUHKUH_VERSION"));
+							}
 						}
 					}
 				}
@@ -1318,17 +1333,21 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 
 		if( m_ptLuaState!=NULL && m_ptLuaState->Ok()==true )
 		{
-//			// create a new panel for the debugger
-//			m_debuggerPanel = new muhkuh_debugger(this, m_strApplicationPath, m_usDebugServerPort, ptTestData);
-//			m_notebook->AddPage(m_debuggerPanel, m_strRunningTestName, true);
-
+#ifdef __ENABLE_DEBUGGER__
+			// create a new panel for the debugger
+			m_debuggerPanel = new muhkuh_debugger(this, m_strApplicationPath, m_usDebugServerPort, ptTestData);
+			m_notebook->AddPage(m_debuggerPanel, m_strRunningTestName, true);
+#endif
 			// set state to 'testing'
 			// NOTE: this must be done before the call to 'RunString', or the state will not change before the first idle event
 			setState(muhkuh_mainFrame_state_testing);
 
 			strXmlUrl = m_ptRepositoryManager->getTestlistXmlUrl(m_sizRunningTest_RepositoryIdx, m_sizRunningTest_TestIdx);
-//			strServerCmd.Printf(wxT("./serverkuh -c Muhkuh.cfg -i %d -dlocalhost:%d %s"), uiIndex, m_usDebugServerPort, strXmlUrl.fn_str());
+#ifdef __ENABLE_DEBUGGER__
+			strServerCmd.Printf(wxT("./serverkuh -c Muhkuh.cfg -i %d -dlocalhost:%d %s"), uiIndex, m_usDebugServerPort, strXmlUrl.fn_str());
+#else
 			strServerCmd.Printf(wxT("./serverkuh -c Muhkuh.cfg -i %d %s"), uiIndex, strXmlUrl.fn_str());
+#endif
 			wxLogMessage(wxT("starting server: ") + strServerCmd);
 
 			m_lServerPid = wxExecute(strServerCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, m_ptServerProcess);
@@ -1407,6 +1426,9 @@ void muhkuh_mainFrame::updateRepositoryCombo(void)
 			break;
 		case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
 			ppcXpm = icon_famfamfam_silk_script;
+			break;
+		case muhkuh_repository::REPOSITORY_TYP_ALLLOCAL:
+			ppcXpm = icon_famfamfam_silk_folder_database;
 			break;
 		default:
 			ppcXpm = icon_famfamfam_silk_exclamation;
