@@ -23,15 +23,14 @@
 
 #include <wx/wx.h>
 
+#include <wxlua/include/wxlua.h>
+
 
 #ifndef __MHASH_LUA_INTERFACE_H__
 #define __MHASH_LUA_INTERFACE_H__
 
 
-wxString get_version(void);
-
-
-class mhash_state
+class mhash_state : public wxObject
 {
 public:
 	mhash_state(void);
@@ -40,35 +39,15 @@ public:
 
 	~mhash_state();
 
+	static wxString get_version(void);
+
 	static double count(void);
 	static double get_block_size(hashid type);
 	static wxString get_hash_name(hashid type);
-//	static void mhash_free(void *ptr);
-
-//	static wxString get_hash_name_static(hashid type);
-
-	/* initializing prototypes */
 
 	void init(hashid type);
-//	MHASH mhash_init(hashid type);
-//	void mhash_init(hashid type);
-
-	/* copy prototypes */
-
-//	void mhash_cp(MHASH from);
-
-	/* update prototype */
-
-	void hash(const char *plaintext, double size);
-	void hash_o(const char *plaintext, double offset, double size);
-
-	/* finalizing prototype */
-
+	void hash(lua_State *L, const char *pcPlaintext, double dSize, double dOffset);
 	wxString hash_end(void);
-//	void *mhash_end_m(MHASH thread, void *(*hash_malloc) (mutils_word32));
-//	void mhash_deinit(MHASH thread, void *result);
-
-	/* informational */
 
 	static double get_hash_pblock(hashid type);
 	static hashid get_mhash_algo(MHASH tmp);

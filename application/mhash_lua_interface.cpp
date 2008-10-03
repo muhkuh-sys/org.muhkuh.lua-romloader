@@ -22,13 +22,6 @@
 #include "mhash_lua_interface.h"
 
 
-// static functions
-wxString get_version(void)
-{
-	return wxString::FromAscii(PACKAGE_STRING);
-}
-
-
 mhash_state::mhash_state(void)
  : m_hMHash(NULL)
 {
@@ -67,6 +60,12 @@ void mhash_state::deinit(void)
 		mhash_deinit(m_hMHash, NULL);
 		m_hMHash = NULL;
 	}
+}
+
+
+wxString mhash_state::get_version(void)
+{
+	return wxString::FromAscii(PACKAGE_STRING);
 }
 
 
@@ -116,43 +115,27 @@ void mhash_state::init(hashid type)
 }
 
 
-void mhash_state::hash(const char *plaintext, double size)
+void mhash_state::hash(lua_State *L, const char *pcPlaintext, double dSize, double dOffset)
 {
-	mutils_boolean mb;
-
-
-	if( m_hMHash==NULL )
-	{
-		wxLogError("the mhash state was not initialized!");
-	}
-	else
-	{
-		mb = mhash(m_hMHash, plaintext, size);
-		if( mb!=MUTILS_OK )
-		{
-			wxLogError("error hashing bytes: %d", mb);
-		}
-	}
-}
-
-
-void mhash_state::hash_o(const char *plaintext, double offset, double size)
-{
-	mutils_boolean mb;
+	mutils_boolean tMb;
+	size_t sizSize;
 	size_t sizOffset;
+	wxString strErrorMsg;
 
 
 	if( m_hMHash==NULL )
 	{
-		wxLogError("the mhash state was not initialized!");
+		wxlua_error(L, _("mhash: the state was not initialized!"));
 	}
 	else
 	{
-		sizOffset = (size_t)offset;
-		mb = mhash(m_hMHash, plaintext+sizOffset, size);
-		if( mb!=MUTILS_OK )
+		sizSize = (size_t)dSize;
+		sizOffset = (size_t)dOffset;
+		tMb = mhash(m_hMHash, pcPlaintext+sizOffset, sizSize);
+		if( tMb!=MUTILS_OK )
 		{
-			wxLogError("error hashing bytes: %d", mb);
+			strErrorMsg.Printf(_("mhash: failed to hash %d bytes!"), sizSize);
+			wxlua_error(L, strErrorMsg);
 		}
 	}
 }

@@ -66,7 +66,7 @@
 	KEYGEN_S2K_ISALTED
 %endenum
 
-%class %noclassinfo mhash_state
+%class %delete mhash_state
 	mhash_state()
 	mhash_state(hashid type)
 	mhash_state(mhash_state *ptMHash)
@@ -78,7 +78,9 @@
 	static wxString get_hash_name(hashid type)
 
 	void init(hashid type)
-	void hash(const char *plaintext, double size)
+	void hash(wxString strData)
+	void hash(wxString strData, double size)
+	void hash(wxString strData, double size, double offset)
 	wxString hash_end()
 %endclass
 

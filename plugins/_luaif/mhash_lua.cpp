@@ -26,91 +26,197 @@
 // Lua MetaTable Tag for Class 'mhash_state'
 int wxluatype_mhash_state = WXLUA_TUNKNOWN;
 
-static wxLuaArgType s_wxluatypeArray_wxLua_mhash_state_count[] = { &wxluatype_mhash_state, NULL };
 static int LUACALL wxLua_mhash_state_count(lua_State *L);
-static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_count[1] = {{ wxLua_mhash_state_count, WXLUAMETHOD_METHOD, 1, 1, s_wxluatypeArray_wxLua_mhash_state_count }};
-// 	double count()
+static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_count[1] = {{ wxLua_mhash_state_count, WXLUAMETHOD_METHOD|WXLUAMETHOD_STATIC, 0, 0, g_wxluaargtypeArray_None }};
+// 	static double count()
 static int LUACALL wxLua_mhash_state_count(lua_State *L)
 {
-    // get this
-    mhash_state * self = (mhash_state *)wxluaT_getuserdatatype(L, 1, wxluatype_mhash_state);
     // call count
-    double returns = (self->count());
+    double returns = (mhash_state::count());
     // push the result number
     lua_pushnumber(L, returns);
 
     return 1;
 }
 
-static wxLuaArgType s_wxluatypeArray_wxLua_mhash_state_get_block_size[] = { &wxluatype_mhash_state, &wxluatype_TINTEGER, NULL };
+static wxLuaArgType s_wxluatypeArray_wxLua_mhash_state_delete[] = { &wxluatype_mhash_state, NULL };
+static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_delete[1] = {{ wxlua_userdata_delete, WXLUAMETHOD_METHOD|WXLUAMETHOD_DELETE, 1, 1, s_wxluatypeArray_wxLua_mhash_state_delete }};
+
+static wxLuaArgType s_wxluatypeArray_wxLua_mhash_state_get_block_size[] = { &wxluatype_TINTEGER, NULL };
 static int LUACALL wxLua_mhash_state_get_block_size(lua_State *L);
-static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_get_block_size[1] = {{ wxLua_mhash_state_get_block_size, WXLUAMETHOD_METHOD, 2, 2, s_wxluatypeArray_wxLua_mhash_state_get_block_size }};
-// 	double get_block_size(hashid type)
+static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_get_block_size[1] = {{ wxLua_mhash_state_get_block_size, WXLUAMETHOD_METHOD|WXLUAMETHOD_STATIC, 1, 1, s_wxluatypeArray_wxLua_mhash_state_get_block_size }};
+// 	static double get_block_size(hashid type)
 static int LUACALL wxLua_mhash_state_get_block_size(lua_State *L)
 {
     // hashid type
-    hashid type = (hashid)wxlua_getintegertype(L, 2);
-    // get this
-    mhash_state * self = (mhash_state *)wxluaT_getuserdatatype(L, 1, wxluatype_mhash_state);
+    hashid type = (hashid)wxlua_getintegertype(L, 1);
     // call get_block_size
-    double returns = (self->get_block_size(type));
+    double returns = (mhash_state::get_block_size(type));
     // push the result number
     lua_pushnumber(L, returns);
 
     return 1;
 }
 
-static wxLuaArgType s_wxluatypeArray_wxLua_mhash_state_get_hash_name[] = { &wxluatype_mhash_state, &wxluatype_TINTEGER, NULL };
+static wxLuaArgType s_wxluatypeArray_wxLua_mhash_state_get_hash_name[] = { &wxluatype_TINTEGER, NULL };
 static int LUACALL wxLua_mhash_state_get_hash_name(lua_State *L);
-static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_get_hash_name[1] = {{ wxLua_mhash_state_get_hash_name, WXLUAMETHOD_METHOD, 2, 2, s_wxluatypeArray_wxLua_mhash_state_get_hash_name }};
-// 	wxString get_hash_name(hashid type)
+static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_get_hash_name[1] = {{ wxLua_mhash_state_get_hash_name, WXLUAMETHOD_METHOD|WXLUAMETHOD_STATIC, 1, 1, s_wxluatypeArray_wxLua_mhash_state_get_hash_name }};
+// 	static wxString get_hash_name(hashid type)
 static int LUACALL wxLua_mhash_state_get_hash_name(lua_State *L)
 {
     // hashid type
-    hashid type = (hashid)wxlua_getintegertype(L, 2);
-    // get this
-    mhash_state * self = (mhash_state *)wxluaT_getuserdatatype(L, 1, wxluatype_mhash_state);
+    hashid type = (hashid)wxlua_getintegertype(L, 1);
     // call get_hash_name
-    wxString returns = (self->get_hash_name(type));
+    wxString returns = (mhash_state::get_hash_name(type));
     // push the result string
     wxlua_pushwxString(L, returns);
 
     return 1;
 }
 
-static wxLuaArgType s_wxluatypeArray_wxLua_mhash_state_hash[] = { &wxluatype_mhash_state, &wxluatype_TSTRING, &wxluatype_TNUMBER, NULL };
+static int LUACALL wxLua_mhash_state_get_version(lua_State *L);
+static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_get_version[1] = {{ wxLua_mhash_state_get_version, WXLUAMETHOD_METHOD|WXLUAMETHOD_STATIC, 0, 0, g_wxluaargtypeArray_None }};
+// 	static wxString get_version()
+static int LUACALL wxLua_mhash_state_get_version(lua_State *L)
+{
+    // call get_version
+    wxString returns = (mhash_state::get_version());
+    // push the result string
+    wxlua_pushwxString(L, returns);
+
+    return 1;
+}
+
+static wxLuaArgType s_wxluatypeArray_wxLua_mhash_state_hash[] = { &wxluatype_mhash_state, &wxluatype_TSTRING, NULL };
 static int LUACALL wxLua_mhash_state_hash(lua_State *L);
-static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_hash[1] = {{ wxLua_mhash_state_hash, WXLUAMETHOD_METHOD, 3, 3, s_wxluatypeArray_wxLua_mhash_state_hash }};
-// 	void hash(const char *plaintext, double size)
+// static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_hash[1] = {{ wxLua_mhash_state_hash, WXLUAMETHOD_METHOD, 2, 2, s_wxluatypeArray_wxLua_mhash_state_hash }};
+// %override wxLua_mhash_state_hash
 static int LUACALL wxLua_mhash_state_hash(lua_State *L)
 {
-    // double size
-    double size = (double)wxlua_getnumbertype(L, 3);
-    // const char plaintext
-    wxCharBuffer plaintext = wxlua_getstringtype(L, 2);
-    // get this
-    mhash_state * self = (mhash_state *)wxluaT_getuserdatatype(L, 1, wxluatype_mhash_state);
-    // call hash
-    self->hash(plaintext, size);
+	size_t sizLen;
+	const char *pcBuf;
+	double dData_Size;
+	mhash_state *ptSelf;
 
-    return 0;
+
+	// get the 'strData' parameter and it's size
+	pcBuf = lua_tolstring(L, 2, &sizLen);
+	dData_Size = (double)sizLen;
+
+	// get this
+	ptSelf = (mhash_state *)wxluaT_getuserdatatype(L, 1, wxluatype_mhash_state);
+
+	// call hash
+	ptSelf->hash(L, pcBuf, dData_Size, 0);
+
+	return 0;
 }
+
+
+static wxLuaArgType s_wxluatypeArray_wxLua_mhash_state_hash1[] = { &wxluatype_mhash_state, &wxluatype_TSTRING, &wxluatype_TNUMBER, NULL };
+static int LUACALL wxLua_mhash_state_hash1(lua_State *L);
+// static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_hash1[1] = {{ wxLua_mhash_state_hash1, WXLUAMETHOD_METHOD, 3, 3, s_wxluatypeArray_wxLua_mhash_state_hash1 }};
+// %override wxLua_mhash_state_hash1
+static int LUACALL wxLua_mhash_state_hash1(lua_State *L)
+{
+	size_t sizLen;
+	double dData_Size;
+	const char *pcBuf;
+	double dParam_Size;
+	mhash_state *ptSelf;
+
+
+	// get the 'strData' parameter and it's size
+	pcBuf = lua_tolstring(L, 2, &sizLen);
+	dData_Size = (double)sizLen;
+
+	// get the 'size' parameter
+	dParam_Size = (double)wxlua_getnumbertype(L, 3);
+
+	// check if the requested size exceeds the string
+	if( dParam_Size>dData_Size )
+	{
+		dParam_Size = dData_Size;
+	}
+
+	// get this
+	ptSelf = (mhash_state *)wxluaT_getuserdatatype(L, 1, wxluatype_mhash_state);
+
+	// call hash
+	ptSelf->hash(L, pcBuf, dParam_Size, 0);
+
+	return 0;
+}
+
+
+static wxLuaArgType s_wxluatypeArray_wxLua_mhash_state_hash2[] = { &wxluatype_mhash_state, &wxluatype_TSTRING, &wxluatype_TNUMBER, &wxluatype_TNUMBER, NULL };
+static int LUACALL wxLua_mhash_state_hash2(lua_State *L);
+// static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_hash2[1] = {{ wxLua_mhash_state_hash2, WXLUAMETHOD_METHOD, 4, 4, s_wxluatypeArray_wxLua_mhash_state_hash2 }};
+// %override wxLua_mhash_state_hash2
+static int LUACALL wxLua_mhash_state_hash2(lua_State *L)
+{
+	size_t sizLen;
+	double dData_Size;
+	const char *pcBuf;
+	double dParam_Size;
+	double dParam_Offset;
+	mhash_state *ptSelf;
+
+
+	// get the 'strData' parameter and it's size
+	pcBuf = lua_tolstring(L, 2, &sizLen);
+	dData_Size = (double)sizLen;
+
+	// get the 'size' parameter
+	dParam_Size = (double)wxlua_getnumbertype(L, 3);
+
+	// get the 'offset' parameter
+	dParam_Offset = (double)wxlua_getnumbertype(L, 4);
+
+	// check if the requested offset exceeds the data
+	if( dParam_Offset<dData_Size )
+	{
+		// offset is within data
+
+		// check if the requested size exceeds the string
+		if( dParam_Offset+dParam_Size>dData_Size )
+		{
+			dParam_Size = dData_Size - dParam_Offset;
+		}
+
+		// get this
+		ptSelf = (mhash_state *)wxluaT_getuserdatatype(L, 1, wxluatype_mhash_state);
+
+		// call hash
+		ptSelf->hash(L, pcBuf, dParam_Size, dParam_Offset);
+	}
+
+	return 0;
+}
+
 
 static wxLuaArgType s_wxluatypeArray_wxLua_mhash_state_hash_end[] = { &wxluatype_mhash_state, NULL };
 static int LUACALL wxLua_mhash_state_hash_end(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_hash_end[1] = {{ wxLua_mhash_state_hash_end, WXLUAMETHOD_METHOD, 1, 1, s_wxluatypeArray_wxLua_mhash_state_hash_end }};
-// 	wxString hash_end()
+// %override wxLua_mhash_state_hash_end
 static int LUACALL wxLua_mhash_state_hash_end(lua_State *L)
 {
-    // get this
-    mhash_state * self = (mhash_state *)wxluaT_getuserdatatype(L, 1, wxluatype_mhash_state);
-    // call hash_end
-    wxString returns = (self->hash_end());
-    // push the result string
-    wxlua_pushwxString(L, returns);
+	wxLuaState wxlState(L);
+	mhash_state *ptSelf;
+	wxString strHash;
 
-    return 1;
+	// get this
+	ptSelf = (mhash_state *)wxluaT_getuserdatatype(L, 1, wxluatype_mhash_state);
+
+	// call hash_end
+	strHash = ptSelf->hash_end();
+
+	// push the result string
+	wxlState.lua_PushLString(strHash, strHash.Len());
+
+	return 1;
 }
+
 
 static wxLuaArgType s_wxluatypeArray_wxLua_mhash_state_init[] = { &wxluatype_mhash_state, &wxluatype_TINTEGER, NULL };
 static int LUACALL wxLua_mhash_state_init(lua_State *L);
@@ -135,6 +241,8 @@ static int LUACALL wxLua_mhash_state_constructor(lua_State *L)
 {
     // call constructor
     mhash_state* returns = new mhash_state();
+    // add to tracked memory list
+    wxluaO_addgcobject(L, returns);
     // push the constructed class pointer
     wxluaT_pushuserdatatype(L, returns, wxluatype_mhash_state);
 
@@ -151,6 +259,8 @@ static int LUACALL wxLua_mhash_state_constructor1(lua_State *L)
     hashid type = (hashid)wxlua_getintegertype(L, 1);
     // call constructor
     mhash_state* returns = new mhash_state(type);
+    // add to tracked memory list
+    wxluaO_addgcobject(L, returns);
     // push the constructed class pointer
     wxluaT_pushuserdatatype(L, returns, wxluatype_mhash_state);
 
@@ -167,6 +277,8 @@ static int LUACALL wxLua_mhash_state_constructor2(lua_State *L)
     mhash_state * ptMHash = (mhash_state *)wxluaT_getuserdatatype(L, 1, wxluatype_mhash_state);
     // call constructor
     mhash_state* returns = new mhash_state(ptMHash);
+    // add to tracked memory list
+    wxluaO_addgcobject(L, returns);
     // push the constructed class pointer
     wxluaT_pushuserdatatype(L, returns, wxluatype_mhash_state);
 
@@ -174,6 +286,15 @@ static int LUACALL wxLua_mhash_state_constructor2(lua_State *L)
 }
 
 
+
+// function overload table
+static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_hash_overload[] =
+{
+    { wxLua_mhash_state_hash, WXLUAMETHOD_METHOD, 2, 2, s_wxluatypeArray_wxLua_mhash_state_hash },
+    { wxLua_mhash_state_hash1, WXLUAMETHOD_METHOD, 3, 3, s_wxluatypeArray_wxLua_mhash_state_hash1 },
+    { wxLua_mhash_state_hash2, WXLUAMETHOD_METHOD, 4, 4, s_wxluatypeArray_wxLua_mhash_state_hash2 },
+};
+static int s_wxluafunc_wxLua_mhash_state_hash_overload_count = sizeof(s_wxluafunc_wxLua_mhash_state_hash_overload)/sizeof(wxLuaBindCFunc);
 
 // function overload table
 static wxLuaBindCFunc s_wxluafunc_wxLua_mhash_state_constructor_overload[] =
@@ -187,10 +308,14 @@ static int s_wxluafunc_wxLua_mhash_state_constructor_overload_count = sizeof(s_w
 
 // Map Lua Class Methods to C Binding Functions
 wxLuaBindMethod mhash_state_methods[] = {
-    { "count", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_mhash_state_count, 1, NULL },
-    { "get_block_size", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_mhash_state_get_block_size, 1, NULL },
-    { "get_hash_name", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_mhash_state_get_hash_name, 1, NULL },
-    { "hash", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_mhash_state_hash, 1, NULL },
+    { "count", WXLUAMETHOD_METHOD|WXLUAMETHOD_STATIC, s_wxluafunc_wxLua_mhash_state_count, 1, NULL },
+    { "delete", WXLUAMETHOD_METHOD|WXLUAMETHOD_DELETE, s_wxluafunc_wxLua_mhash_state_delete, 1, NULL },
+    { "get_block_size", WXLUAMETHOD_METHOD|WXLUAMETHOD_STATIC, s_wxluafunc_wxLua_mhash_state_get_block_size, 1, NULL },
+    { "get_hash_name", WXLUAMETHOD_METHOD|WXLUAMETHOD_STATIC, s_wxluafunc_wxLua_mhash_state_get_hash_name, 1, NULL },
+    { "get_version", WXLUAMETHOD_METHOD|WXLUAMETHOD_STATIC, s_wxluafunc_wxLua_mhash_state_get_version, 1, NULL },
+
+    { "hash", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_mhash_state_hash_overload, s_wxluafunc_wxLua_mhash_state_hash_overload_count, 0 },
+
     { "hash_end", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_mhash_state_hash_end, 1, NULL },
     { "init", WXLUAMETHOD_METHOD, s_wxluafunc_wxLua_mhash_state_init, 1, NULL },
 
