@@ -130,6 +130,13 @@ Linux with configure:
 
 Windows with MSVS2007:
 
+ Get the prerequisites:
+ 
+ * libiconv, libintl, m4 and diffutils from http://sourceforge.net/projects/gnuwin32/
+ You will just need 'libiconv2.dll' from the libiconv package, 'libintl3.dll' from the libintl package, 'm4.exe' from the m4 package and 'cmp.exe' from the diffutils, it's safe to delete the rest. Copy the dll and exe files to the build directory (where bootstrap.bat is).
+ 
+ * the subversion commandline-binaries from http://subversion.tigris.org/
+ 
  There are 2 ways to compile Muhkuh with Microsoft Visual Studio 2007: the easy way using the precompiled wxPack, and the annoying way where you do it all yourself.
  So you might ask why compiling wxWidgets can be annoying with all the provided build scripts - there are even complete Visual Studio project files. The problem is: all my compile boxes build the wx_*_gl.dll, but not the import lib and I have no idea why. The wxLua build env depends on wx_*_gl.dll and there is no way to get it out of the build, but to edit the makefiles. That's the annoying part.
 
