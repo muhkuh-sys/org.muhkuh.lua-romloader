@@ -25,11 +25,11 @@
 	<!-- Formats to (not) generate                                          -->
 	<!-- ================================================================== -->
 
-	<disable-formats>dmars,cbx_unix,cbuilderx</disable-formats>
+	<disable-formats>autoconf,cbuilderx,cbx_unix,dmars,mingw</disable-formats>
 
 	<!-- List of output formats to generate: -->
 	<add-formats>
-		msvc6prj,msvs2003prj,msvs2005prj,autoconf,mingw,msvc,gnu
+		msvc6prj,msvs2003prj,msvs2005prj,msvc,gnu
 	</add-formats>
 
 
@@ -38,7 +38,6 @@
 	<!-- ================================================================== -->
 
 	<!-- Directories where msw makefiles should go: -->
-	<add-flags formats="mingw">-o$(INPUT_FILE_DIR)/../../makefile.gcc -DSRCDIR=.</add-flags>
 	<add-flags formats="msvc">-o$(INPUT_FILE_DIR)/../../makefile.vc -DSRCDIR=.</add-flags>
 	<add-flags formats="msvc6prj">-o$(INPUT_FILE_DIR)/../msvc6/muhkuh.sln -DSRCDIR=../..</add-flags>
 	<add-flags formats="msvs2003prj">-o$(INPUT_FILE_DIR)/../msvc7/muhkuh.sln -DSRCDIR=../..</add-flags>
@@ -46,5 +45,4 @@
 
 	<!-- Directories where unix makefiles should go: -->
 	<add-flags formats="gnu">-o$(INPUT_FILE_DIR)/../../makefile.unx -DSRCDIR=.</add-flags>
-	<add-flags formats="autoconf">-o$(INPUT_FILE_DIR)/../../Makefile.in -DAUTOCONF_MACROS_FILE=../autoconf/autoconf_inc.m4 -DSRCDIR=.</add-flags>
 </bakefile-gen>
