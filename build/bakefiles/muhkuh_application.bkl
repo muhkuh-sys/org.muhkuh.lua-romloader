@@ -4,15 +4,11 @@
 	<!--                     The muhkuh application                         -->
 	<!-- ================================================================== -->
 
-	<!-- include the mhash library -->
-	<include file="mhash.bkl" once="1"/>
-
 	<exe id="muhkuh" template="wxlua">
 		<app-type>gui</app-type>
 		<threading>multi</threading>
 		<include>$(SRCDIR)</include>
 		<include>$(SRCDIR)/application</include>
-		<include>$(SRCDIR)/mhash-0.9.9/include</include>
 
 		<!-- add wxpack's contrib path to the include paths on win platforms -->
 		<if cond="TARGETING_WIN32=='1'">
@@ -22,7 +18,6 @@
 		<dirname>$(SRCDIR)/bin</dirname>
 		<sources>
 			application/bit_lua_interface.cpp
-			application/mhash_lua_interface.cpp
 			application/growbuffer.cpp
 			application/license.cpp
 			application/muhkuh_aboutDialog.cpp
@@ -43,14 +38,11 @@
 			application/readFsFile.cpp
 			plugins/_luaif/bit_lua.cpp
 			plugins/_luaif/bit_lua_bind.cpp
-			plugins/_luaif/mhash_lua.cpp
-			plugins/_luaif/mhash_lua_bind.cpp
 			plugins/_luaif/muhkuh_lua.cpp
 			plugins/_luaif/muhkuh_lua_bind.cpp
 		</sources>
 		<headers>
 			application/bit_lua_interface.h
-			application/mhash_lua_interface.h
 			application/growbuffer.h
 			application/license.h
 			application/muhkuh_aboutDialog.h
@@ -72,12 +64,9 @@
 			application/muhkuh_wrap_xml.h
 			application/readFsFile.h
 			plugins/_luaif/bit_wxlua_bindings.h
-			plugins/_luaif/mhash_wxlua_bindings.h
 			plugins/_luaif/muhkuh_wxlua_bindings.h
 		</headers>
 		<win32-res>application/muhkuh.rc</win32-res>
-
-		<library>mhash</library>
 
 		<wxlua-lib>wxluasocket</wxlua-lib>
 		<wxlua-lib>wxluadebug</wxlua-lib>

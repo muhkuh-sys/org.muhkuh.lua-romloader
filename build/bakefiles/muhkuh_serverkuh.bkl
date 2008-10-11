@@ -4,16 +4,12 @@
 	<!--                     The muhkuh gui client                          -->
 	<!-- ================================================================== -->
 
-	<!-- include the mhash library -->
-	<include file="mhash.bkl" once="1"/>
-
 	<exe id="serverkuh" template="wxlua">
 		<app-type>gui</app-type>
 		<threading>multi</threading>
 		<include>$(SRCDIR)</include>
 		<include>$(SRCDIR)/application</include>
 		<include>$(SRCDIR)/serverkuh</include>
-		<include>$(SRCDIR)/mhash-0.9.9/include</include>
 
 		<dirname>$(SRCDIR)/bin</dirname>
 
@@ -34,7 +30,6 @@
 		<!-- the common muhkuh parts -->
 		<sources>
 			application/bit_lua_interface.cpp
-			application/mhash_lua_interface.cpp
 			application/growbuffer.cpp
 			application/license.cpp
 			application/muhkuh_brokenPluginDialog.cpp
@@ -45,7 +40,6 @@
 		</sources>
 		<headers>
 			application/bit_lua_interface.h
-			application/mhash_lua_interface.h
 			application/growbuffer.h
 			application/license.h
 			application/muhkuh_brokenPluginDialog.h
@@ -65,15 +59,6 @@
 			plugins/_luaif/bit_wxlua_bindings.h
 		</headers>
 
-		<!-- the lua mhash functions -->
-		<sources>
-			plugins/_luaif/mhash_lua.cpp
-			plugins/_luaif/mhash_lua_bind.cpp
-		</sources>
-		<headers>
-			plugins/_luaif/mhash_wxlua_bindings.h
-		</headers>
-
 		<!-- the muhkuh lua bindings -->
 		<sources>
 			plugins/_luaif/serverkuh_lua.cpp
@@ -84,8 +69,6 @@
 		</headers>
 
 		<win32-res>serverkuh/serverkuh.rc</win32-res>
-
-		<library>mhash</library>
 
 		<wxlua-lib>wxluasocket</wxlua-lib>
 		<wxlua-lib>wxluadebug</wxlua-lib>

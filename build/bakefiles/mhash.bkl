@@ -4,60 +4,75 @@
 	<!--                           The mhash lib                            -->
 	<!-- ================================================================== -->
 
-	<lib id="mhash">
-		<libname>mhash</libname>
+	<module id="mhash">
+		<dllname>mhash</dllname>
+
+		<dirname>$(SRCDIR)/bin/lua</dirname>
 
 		<threading>multi</threading>
 
-		<include>$(SRCDIR)/mhash-0.9.9/lib</include>
-		<include>$(SRCDIR)/mhash-0.9.9/include</include>
+		<debug-info>on</debug-info>
 
-		<dirname>$(SRCDIR)/bin</dirname>
+		<include>$(SRCDIR)/lua/lib/mhash</include>
+		<include>$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib</include>
+		<include>$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/include</include>
 
 		<sources>
-			mhash-0.9.9/lib/keygen_asis.c
-			mhash-0.9.9/lib/crc32.c
-			mhash-0.9.9/lib/md2.c
-			mhash-0.9.9/lib/md4.c
-			mhash-0.9.9/lib/md5.c
-			mhash-0.9.9/lib/sha512_sha384.c
-			mhash-0.9.9/lib/adler32.c
-			mhash-0.9.9/lib/mhash.c
-			mhash-0.9.9/lib/tiger.c
-			mhash-0.9.9/lib/whirlpool.c
-			mhash-0.9.9/lib/gosthash.c
-			mhash-0.9.9/lib/keygen_hex.c
-			mhash-0.9.9/lib/keygen_s2k.c
-			mhash-0.9.9/lib/haval.c
-			mhash-0.9.9/lib/sha1.c
-			mhash-0.9.9/lib/ripemd.c
-			mhash-0.9.9/lib/stdfns.c
-			mhash-0.9.9/lib/sha256_sha224.c
-			mhash-0.9.9/lib/tiger_sboxes.c
-			mhash-0.9.9/lib/keygen_mcrypt.c
-			mhash-0.9.9/lib/snefru.c
-			mhash-0.9.9/lib/sha256.c
-			mhash-0.9.9/lib/keygen.c
+			$(SRCDIR)/lua/lib/mhash/mhash_state.cpp
+			$(SRCDIR)/lua/lib/mhash/mhash_wrap.cxx
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/adler32.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/crc32.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/gosthash.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/haval.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/hilrom.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/keygen.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/keygen_asis.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/keygen_hex.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/keygen_mcrypt.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/keygen_s2k.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/md2.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/md4.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/md5.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/ripemd.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/sha1.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/sha256.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/sha256_sha224.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/sha512_sha384.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/snefru.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/stdfns.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/tiger.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/tiger_sboxes.c
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/whirlpool.c
 		</sources>
 		<headers>
-			mhash-0.9.9/lib/mhash_sha256_sha224.h
-			mhash-0.9.9/lib/mhash_snefru.h
-			mhash-0.9.9/lib/mhash_sha256.h
-			mhash-0.9.9/lib/mhash_tiger.h
-			mhash-0.9.9/lib/mhash_haval.h
-			mhash-0.9.9/lib/mhash_sha512_sha384.h
-			mhash-0.9.9/lib/mhash_int.h
-			mhash-0.9.9/lib/mhash_md2.h
-			mhash-0.9.9/lib/mhash_md4.h
-			mhash-0.9.9/lib/mhash_md5.h
-			mhash-0.9.9/lib/mhash_gost.h
-			mhash-0.9.9/lib/mhash_adler32.h
-			mhash-0.9.9/lib/mhash_sha1.h
-			mhash-0.9.9/lib/mhash_crc32.h
-			mhash-0.9.9/lib/mhash_ripemd.h
-			mhash-0.9.9/lib/mhash_whirlpool.h
-			mhash-0.9.9/lib/keygen.h
-			mhash-0.9.9/lib/libdefs.h
+			$(SRCDIR)/lua/lib/mhash/mhash_state.h
+			$(SRCDIR)/lua/lib/mhash/mhash_config.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/include/mhash.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/include/mutils/mglobal.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/include/mutils/mhash.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/include/mutils/mincludes.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/include/mutils/mtypes.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/include/mutils/mutils.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/keygen.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/libdefs.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_adler32.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_crc32.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_gost.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_haval.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_hilrom.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_int.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_md2.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_md4.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_md5.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_ripemd.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_sha1.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_sha256.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_sha256_sha224.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_sha512_sha384.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_snefru.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_tiger.h
+			$(SRCDIR)/lua/lib/mhash/mhash-0.9.9-hilrom/lib/mhash_whirlpool.h
 		</headers>
-	</lib>
+	</module>
 </makefile>
