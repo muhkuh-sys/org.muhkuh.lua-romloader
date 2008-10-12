@@ -29,6 +29,7 @@
 	<Code>
 		require("serialnr")
 		require("tester")
+		require("mhash")
 
 		-- define some helper functions for the pattern test
 		function hash_show_error(input, hash, expected)
@@ -98,13 +99,16 @@
 			end
 			print "Found mhash bindings."
 			
-			print("Found mhash version '" .. mhash.mhash_state.get_version() .. "'")
+			print("Found mhash version '" .. mhash.get_version() .. "'")
 			
 			-- print some info
-			hash_cnt = mhash.mhash_state.count()
+			hash_cnt = mhash.count()
 			print( string.format("this version of mhash knows %d hash types.", hash_cnt) )
 			for t=0,hash_cnt do
-				print( string.format("\t%d: %s (%d)", t, mhash.mhash_state.get_hash_name(t), mhash.mhash_state.get_block_size(t)) )
+				name = mhash.get_hash_name(t)
+				if name then
+					print( string.format("\t%d: %s (%d)", t, name, mhash.get_block_size(t)) )
+				end
 			end
 
 			return __MUHKUH_TEST_RESULT_OK
