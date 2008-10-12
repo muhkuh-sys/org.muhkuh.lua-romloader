@@ -8,7 +8,16 @@
 <if cond="TARGETING_WIN32=='1'">
 	<module id="plugin_dpm_netx5" template="wxlua">
 		<dllname>dpm_netx5</dllname>
+
+		<set var="__IS_DEBUG__">
+			<if cond="WX_DEBUG=='0'">off</if>
+			<if cond="WX_DEBUG=='1'">on</if>
+		</set>
 		<threading>multi</threading>
+		<runtime-libs>dynamic</runtime-libs>
+		<debug-info>$(__IS_DEBUG__)</debug-info>
+		<debug-runtime-libs>$(__IS_DEBUG__)</debug-runtime-libs>
+
 		<dirname>$(SRCDIR)/bin</dirname>
 		<include>$(SRCDIR)</include>
 		<include>$(SRCDIR)/plugins/dpm/netx5</include>

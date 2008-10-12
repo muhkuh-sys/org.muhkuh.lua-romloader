@@ -6,7 +6,16 @@
 
 	<exe id="regkuh" template="wxlua">
 		<app-type>console</app-type>
+
+		<set var="__IS_DEBUG__">
+			<if cond="WX_DEBUG=='0'">off</if>
+			<if cond="WX_DEBUG=='1'">on</if>
+		</set>
 		<threading>multi</threading>
+		<runtime-libs>dynamic</runtime-libs>
+		<debug-info>$(__IS_DEBUG__)</debug-info>
+		<debug-runtime-libs>$(__IS_DEBUG__)</debug-runtime-libs>
+
 		<include>$(SRCDIR)</include>
 		<include>$(SRCDIR)/application</include>
 		<include>$(SRCDIR)/regkuh</include>
