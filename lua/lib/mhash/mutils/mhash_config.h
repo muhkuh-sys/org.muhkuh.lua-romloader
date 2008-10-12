@@ -80,7 +80,7 @@
 #define HAVE_FSYNC 1
 
 /* Define to 1 if you have the <inttypes.h> header file. */
-#define HAVE_INTTYPES_H 1
+#undef HAVE_INTTYPES_H
 
 /* Define to 1 if you have the `dmalloc' library (-ldmalloc). */
 /* #undef HAVE_LIBDMALLOC */
@@ -108,7 +108,7 @@
 #define HAVE_MEMSET 1
 
 /* Define to 1 if you have the `mlock' function. */
-#define HAVE_MLOCK 1
+#undef HAVE_MLOCK
 
 /* Define to 1 if you have the `readdir' function. */
 #define HAVE_READDIR 1
@@ -129,10 +129,10 @@
 #define HAVE_STAT 1
 
 /* Define to 1 if stdbool.h conforms to C99. */
-#define HAVE_STDBOOL_H 1
+#undef HAVE_STDBOOL_H
 
 /* Define to 1 if you have the <stdint.h> header file. */
-#define HAVE_STDINT_H 1
+#undef HAVE_STDINT_H
 
 /* Define to 1 if you have the <stdio.h> header file. */
 #define HAVE_STDIO_H 1
@@ -141,7 +141,7 @@
 #define HAVE_STDLIB_H 1
 
 /* Define to 1 if you have the <strings.h> header file. */
-#define HAVE_STRINGS_H 1
+#undef HAVE_STRINGS_H
 
 /* Define to 1 if you have the <string.h> header file. */
 #define HAVE_STRING_H 1
@@ -153,7 +153,7 @@
 /* #undef HAVE_SYS_ENDIAN_H */
 
 /* Define to 1 if you have the <sys/mman.h> header file. */
-#define HAVE_SYS_MMAN_H 1
+#undef HAVE_SYS_MMAN_H
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #define HAVE_SYS_STAT_H 1
@@ -165,7 +165,7 @@
 #define HAVE_UMASK 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#define HAVE_UNISTD_H 1
+#undef HAVE_UNISTD_H
 
 /* Define to 1 if you have the `utime' function. */
 #define HAVE_UTIME 1
@@ -174,10 +174,10 @@
 #define HAVE_UTIME_H 1
 
 /* Define to 1 if you have the <values.h> header file. */
-#define HAVE_VALUES_H 1
+#undef HAVE_VALUES_H
 
 /* Define to 1 if the system has the type `_Bool'. */
-#define HAVE__BOOL 1
+#undef HAVE__BOOL
 
 /* "MHash Version" */
 #define MHASH_VERSION PROGRAM_VERSION

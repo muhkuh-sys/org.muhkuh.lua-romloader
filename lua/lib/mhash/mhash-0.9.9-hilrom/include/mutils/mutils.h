@@ -23,9 +23,9 @@
 
 #include <mutils/mincludes.h>
 
-#if defined(const)
+//#if defined(const)
 #define __const const
-#endif 
+//#endif 
 
 /*
  * The vast majority of user code won't care about mutils, so changes to
@@ -45,10 +45,10 @@
 
 #define TIGER_64BIT
 
-#define mutils_word64 uint64_t
-#define mutils_word32 uint32_t
-#define mutils_word16 uint16_t
-#define mutils_word8 uint8_t
+#define mutils_word64 unsigned long long
+#define mutils_word32 unsigned long
+#define mutils_word16 unsigned short
+#define mutils_word8 unsigned char
 
 #else /* Ok, we don't have the standard integer type definitions */
 
@@ -102,25 +102,25 @@ typedef unsigned char mutils_word8;
 typedef char mutils_boolean;
 #endif
 
-#if defined(false)
-#define MUTILS_FALSE (mutils_boolean) false
-#else
-#if defined(FALSE)
-#define MUTILS_FALSE (mutils_boolean) FALSE
-#else
+//#if defined(false)
+//#define MUTILS_FALSE (mutils_boolean) false
+//#else
+//#if defined(FALSE)
+//#define MUTILS_FALSE (mutils_boolean) FALSE
+//#else
 #define MUTILS_FALSE (mutils_boolean) 0
-#endif /* FALSE */
-#endif /* false */
+//#endif /* FALSE */
+//#endif /* false */
 
-#if defined(true)
-#define MUTILS_TRUE (mutils_boolean) true
-#else
-#if defined(TRUE)
-#define MUTILS_TRUE (mutils_boolean) TRUE
-#else
+//#if defined(true)
+//#define MUTILS_TRUE (mutils_boolean) true
+//#else
+//#if defined(TRUE)
+//#define MUTILS_TRUE (mutils_boolean) TRUE
+//#else
 #define MUTILS_TRUE (mutils_boolean) -1
-#endif /* TRUE */
-#endif /* true */
+//#endif /* TRUE */
+//#endif /* true */
 
 /*
  * Other than OK, the only defined values should be for a category of error.
