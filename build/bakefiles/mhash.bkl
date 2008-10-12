@@ -7,7 +7,7 @@
 	<module id="mhash">
 		<dllname>mhash</dllname>
 
-		<dirname>$(SRCDIR)/bin/lua</dirname>
+		<dirname>$(SRCDIR)/bin</dirname>
 
 		<set var="__IS_DEBUG__">
 			<if cond="WX_DEBUG=='0'">off</if>
