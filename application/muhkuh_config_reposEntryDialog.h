@@ -40,8 +40,10 @@ public:
 	void OnOkButton(wxCommandEvent &event);
 	void OnBrowseDirscanLocationButton(wxCommandEvent &event);
 	void OnBrowseSingleXmlLocationButton(wxCommandEvent &event);
+	void OnBrowseAllLocalLocationButton(wxCommandEvent &event);
 	void OnDirscanUseRelPaths(wxCommandEvent &event);
 	void OnSingleXmlUseRelPaths(wxCommandEvent &event);
+	void OnAllLocalUseRelPaths(wxCommandEvent &event);
 	void OnRadioDirscan(wxCommandEvent &event);
 	void OnRadioFilelist(wxCommandEvent &event);
 	void OnRadioSingleXml(wxCommandEvent &event);
@@ -51,6 +53,7 @@ private:
 	void createControls(void);
 	bool adaptDirscanLocation(wxString strFileName);
 	bool adaptSingleXmlLocation(wxString strFileName);
+	bool adaptAllLocalLocation(wxString strFileName);
 	void SwitchInputs(void);
 
 	muhkuh_repository *m_ptRepos;
@@ -59,6 +62,7 @@ private:
 
 	bool m_fDirscanUseRelativePaths;
 	bool m_fSingleXmlUseRelativePaths;
+	bool m_fAllLocalUseRelativePaths;
 
 	// the controls
 	wxBoxSizer *m_mainSizer;
@@ -90,17 +94,23 @@ private:
 
 	wxFlexGridSizer *m_singleXmlGrid;
 	wxStaticText *m_labelSingleXmlLocation;
+	wxStaticText *m_labelSingleXmlAppPath;
+	wxTextCtrl *m_textSingleXmlAppPath;
 	wxTextCtrl *m_textSingleXmlLocation;
 	wxBitmapButton *m_buttonSingleXmlLocation;
 
 	wxFlexGridSizer *m_allLocalGrid;
 	wxStaticText *m_labelAllLocalLocation;
 	wxTextCtrl *m_textAllLocalLocation;
+	wxStaticText *m_labelAllLocalAppPath;
+	wxTextCtrl *m_textAllLocalAppPath;
 	wxBitmapButton *m_buttonAllLocalLocation;
 	wxStaticText *m_labelAllLocalTestExtension;
 	wxTextCtrl *m_textAllLocalTestExtension;
 	wxStaticText *m_labelAllLocalXmlPattern;
 	wxTextCtrl *m_textAllLocalXmlPattern;
+	wxStaticText *m_labelAllLocalUseRelativePaths;
+	wxCheckBox *m_checkAllLocalUseRelativePaths;
 
 	wxBoxSizer *m_buttonSizer;
 	wxButton *m_buttonOk;

@@ -88,6 +88,7 @@ enum
 	muhkuh_configReposEntryDialog_ButtonAllLocalLocationBrowse,
 	muhkuh_configReposEntryDialog_CheckboxDirscanRelPaths,
 	muhkuh_configReposEntryDialog_CheckboxSingleXmlRelPaths,
+	muhkuh_configReposEntryDialog_CheckboxAllLocalRelPaths,
 
 	muhkuh_dirlistbox_BrowseButton,
 	muhkuh_dirlistbox_TextCtrl,

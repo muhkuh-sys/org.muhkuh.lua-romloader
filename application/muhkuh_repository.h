@@ -88,6 +88,7 @@ private:
 	bool createTestlist_filelist(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
 	bool createTestlist_singlexml(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
 	bool createTestlist_alllocal(pfnTestlistProgress pfnCallback, void *pvCallbackUser);
+	bool createTestlist_alllocal_scanDir(wxString strFolder, pfnTestlistProgress pfnCallback, void *pvCallbackUser);
 
 	typedef struct
 	{

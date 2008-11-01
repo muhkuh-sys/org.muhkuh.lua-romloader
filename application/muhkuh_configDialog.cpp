@@ -348,7 +348,7 @@ wxPanel *muhkuh_configDialog::createControls_repository(wxWindow *ptParent)
 
 	// create the imagelist
 	// NOTE: this must match the image selection in 'get_imagelist_index'
-	ptRepoImageList = new wxImageList(16, 16, true, 4);
+	ptRepoImageList = new wxImageList(16, 16, true, 5);
 	// add 'undefined' bitmap
 	ptRepoImageList->Add( wxIcon(icon_famfamfam_silk_exclamation) );
 	// add 'dirscan' bitmap
@@ -357,6 +357,8 @@ wxPanel *muhkuh_configDialog::createControls_repository(wxWindow *ptParent)
 	ptRepoImageList->Add( wxIcon(icon_famfamfam_silk_database) );
 	// add 'singlexml' bitmap
 	ptRepoImageList->Add( wxIcon(icon_famfamfam_silk_script) );
+	// add 'alllocal' bitmap
+	ptRepoImageList->Add( wxIcon(icon_famfamfam_silk_folder_database) );
 
 	// create the repository page
 	ptRepositoryPanel = new wxPanel(ptParent);
@@ -1322,6 +1324,9 @@ int muhkuh_configDialog::get_imagelist_index(muhkuh_repository::REPOSITORY_TYP_E
 	int iItemImage;
 
 
+	// this is the default value
+	iItemImage = 0;
+
 	// NOTE: this must match the imagelist init in 'createControls_repository'
 	switch( eTyp )
 	{
@@ -1334,8 +1339,8 @@ int muhkuh_configDialog::get_imagelist_index(muhkuh_repository::REPOSITORY_TYP_E
 	case muhkuh_repository::REPOSITORY_TYP_SINGLEXML:
 		iItemImage = 3;
 		break;
-	default:
-		iItemImage = 0;
+	case muhkuh_repository::REPOSITORY_TYP_ALLLOCAL:
+		iItemImage = 4;
 		break;
 	}
 

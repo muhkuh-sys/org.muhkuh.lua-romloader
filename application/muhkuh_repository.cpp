@@ -801,6 +801,170 @@ bool muhkuh_repository::createTestlist_singlexml(pfnTestlistProgress pfnCallback
 
 bool muhkuh_repository::createTestlist_alllocal(pfnTestlistProgress pfnCallback, void *pvCallbackUser)
 {
+	wxString strProgressMessage;
+	wxFileName fileName;
+	wxString strFilename;
+	wxString strCompletePath;
+	wxString strUrl;
+	wxFileSystem fileSystem;
+	bool fScannerIsRunning;
+	tTestData *ptTestData;
 
+
+	// clear any old tests
+	removeAllTests();
+
+	// no idea how long the scanning will take -> set to pulse (that's 'unknown time remaining)
+	strProgressMessage.Printf(_("scanning local folder '%s' for tests..."), m_strLocation.fn_str());
+	fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
+	if( fScannerIsRunning==true )
+	{
+		fScannerIsRunning = createTestlist_alllocal_scanDir(m_strLocation, pfnCallback, pvCallbackUser);
+	}
+
+	// completed the list if the scanner was not canceled
+	return fScannerIsRunning;
+}
+
+
+bool muhkuh_repository::createTestlist_alllocal_scanDir(wxString strFolder, pfnTestlistProgress pfnCallback, void *pvCallbackUser)
+{
+	bool fOk;
+	wxString strProgressMessage;
+	wxFileName fileName;
+	wxString strFilename;
+	wxString strCompletePath;
+	wxString strUrl;
+	wxString strBaseUrl;
+	wxFileSystem fileSystem;
+	bool fScannerIsRunning;
+	tTestData *ptTestData;
+	wxArrayString astrDirList;
+	size_t sizDirCnt;
+	size_t sizDirMax;
+
+
+	// expect error
+	fOk = false;
+
+	// set progress message for this folder
+	strProgressMessage.Printf(_("scanning local folder '%s' for tests..."), strFolder.fn_str());
+
+	// move to the folder where muhkuh is stored
+	// NOTE: this is important for relative paths
+	fileName.SetCwd(wxStandardPaths::Get().GetExecutablePath());
+	// change to new directory
+	fileName.AssignDir(strFolder);
+	// get the base url for this directory
+	strBaseUrl = wxFileSystem::FileNameToURL( fileName.GetPath(wxPATH_GET_VOLUME, wxPATH_NATIVE) );
+
+	// check the path
+	if( !fileName.IsOk() )
+	{
+		// path is not correct
+		wxLogError(m_strMe + _("failed to set path, IsOK returned false"));
+	}
+	// does the path point to a directory?
+	else if( !fileName.IsDir() )
+	{
+		// no, the path does not point to a directory
+		wxLogError(m_strMe + _("the path does not point to a directory"));
+	}
+	// does the directory exist?
+	else if( !fileName.DirExists() )
+	{
+		// no, the directory does not exist
+		wxLogError(m_strMe + _("the directory does not exist"));
+	}
+	else
+	{
+		// the path seems to be ok
+		strCompletePath = fileName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR);
+		// convert path to url
+		strUrl = wxFileSystem::FileNameToURL(strCompletePath);
+		wxLogDebug(m_strMe + _("scanning testdescriptions at '%s'"), strUrl.fn_str());
+
+		// set path
+		fileSystem.ChangePathTo(strUrl, true);
+
+		// scanner is running
+		fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
+
+		// loop over all files with the requested extension in the directory
+		strFilename = fileSystem.FindFirst(m_strExtension, wxFILE);
+		while( fScannerIsRunning==true && strFilename.IsEmpty()==false )
+		{
+			// convert to url
+			strUrl = wxFileSystem::FileNameToURL(strFilename);
+			wxLogDebug(m_strMe + _("found '%s'"), strUrl.fn_str());
+
+			ptTestData = new tTestData;
+			ptTestData->strPrintUrl = strUrl;
+			ptTestData->strBaseUrl = strUrl + wxT("#zip:");
+			ptTestData->strTestDescriptionUrl = strUrl + wxT("#zip:test_description.xml");
+			ptTestData->strPrePath.Clear();
+			m_ptTestData->push_back(ptTestData);
+
+			strFilename = fileSystem.FindNext();
+
+			fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
+		}
+
+		if( fScannerIsRunning==true )
+		{
+			// search for files which match the xml pattern
+			strFilename = fileSystem.FindFirst(m_strXmlPattern, wxFILE);
+			while( fScannerIsRunning==true && strFilename.IsEmpty()==false )
+			{
+				// convert to url
+				strUrl = wxFileSystem::FileNameToURL(strFilename);
+				wxLogDebug(m_strMe + _("found '%s'"), strUrl.fn_str());
+
+				ptTestData = new tTestData;
+				ptTestData->strPrintUrl = strUrl;
+				ptTestData->strBaseUrl = strBaseUrl;
+				ptTestData->strTestDescriptionUrl = strUrl;
+				ptTestData->strPrePath.Clear();
+				m_ptTestData->push_back(ptTestData);
+
+				strFilename = fileSystem.FindNext();
+
+				fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
+			}
+		}
+
+		if( fScannerIsRunning==true )
+		{
+			// dive into all directories
+			strFilename = fileSystem.FindFirst(wxT("*"), wxDIR);
+			while( fScannerIsRunning==true && strFilename.IsEmpty()==false )
+			{
+				// convert to url
+				//strUrl = wxFileSystem::FileNameToURL(strFilename);
+
+				// add the subdirectory to the searchlist
+				astrDirList.Add(strFilename);
+
+				// look for next directory if the user did not press cancel
+				if( fScannerIsRunning==true )
+				{
+					strFilename = fileSystem.FindNext();
+				}
+
+				fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
+			}
+			sizDirCnt = 0;
+			sizDirMax = astrDirList.Count();
+			while( sizDirCnt<sizDirMax && fScannerIsRunning==true )
+			{
+				fScannerIsRunning = createTestlist_alllocal_scanDir(astrDirList.Item(sizDirCnt), pfnCallback, pvCallbackUser);
+				++sizDirCnt;
+			}
+
+		}
+	}
+
+	// completed the list if the scanner was not canceled
+	return fScannerIsRunning;
 }
 
