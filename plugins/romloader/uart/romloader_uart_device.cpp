@@ -603,6 +603,7 @@ bool romloader_uart_device::IdentifyLoader(void)
 
 
 	// send knock sequence with 1 second timeout
+	wxLogMessage(wxT("sending knock sequence..."));
 	if( SendRaw(abKnock, 2, 1000)!=2 )
 	{
 		wxLogError(wxT("failed to send knock sequence to device"));
@@ -611,22 +612,24 @@ bool romloader_uart_device::IdentifyLoader(void)
 	{
 		wxLogError(wxT("failed to flush the knock sequence"));
 	}
-	else if( (ulLength=RecvRaw(&ucData, 1, 1000))!=1 )
+	else if( (ulLength=RecvRaw(&ucData, 1, 5000))!=1 )
 	{
-		wxLogMessage(wxT("strange or no response from device, seems to be no netx"));
+		wxLogMessage(wxT("failed to receive first char of knock response"));
 	}
 	else
 	{
-	  // this should be '\f', but the first bits might be trashed
+		wxLogMessage(wxT("received knock response: 0x%02x"), ucData);
+		// this should be '\f', but the first bits might be trashed
 		if( ucData<0x20 )
 		{
 			// this seems to be the welcome message
 
 			// receive the rest of the line
+			wxLogMessage(wxT("receive the rest of the knock response"));
 			fResult = GetLine(strResponse, "\r\n", 1000);
 			if( fResult!=true )
 			{
-				wxLogMessage(wxT("strange or no response from device, seems to be no netx"));
+				wxLogMessage(wxT("failed to receive the rest of the knock response"));
 			}
 			else
 			{
@@ -635,36 +638,42 @@ bool romloader_uart_device::IdentifyLoader(void)
 				if( fResult!=true )
 				{
 					// seems to be no netX bootloader
-					wxLogMessage(wxT("strange response from device, seems to be no netx"));
+					wxLogMessage(wxT("the knock response does not match the romloader message"));
+					wxLogMessage(wxT("received this response: '") + strResponse + wxT("'"));
 				}
 				else
 				{
 					// get prompt, the real console eats the first space, the usb console will echo it
 					fResult = false;
-					ulLength = RecvRaw(abData, 3, 200);
+					ulLength = RecvRaw(abData, 3, 1000);
 					if( ulLength==0 )
 					{
-						wxLogMessage(wxT("strange or no response from device, seems to be no netx"));
+						wxLogMessage(wxT("received no further data after romloader message"));
 					}
 					else if( abData[0]!='>' )
 					{
-						wxLogMessage(wxT("strange or no response from device, seems to be no netx"));
+						wxLogMessage(wxT("received strange response after romloader message"));
+						wxLogMessage(wxT("len: %d, data = 0x%02x, 0x%02x, 0x%02x"), ulLength, abData[0], abData[1], abData[2]);
 					}
 					else if( ulLength==1 )
 					{
-					  fResult = true;
+						wxLogMessage(wxT("ok, received prompt!"));
+						fResult = true;
 					}
 					else if( ulLength==2 && abData[1]=='#' )
 					{
+						wxLogMessage(wxT("ok, received hash!"));
 						fResult = true;
 					}
 					else if( ulLength==3 && abData[1]=='*' && abData[2]=='#' )
 					{
+						wxLogMessage(wxT("ok, received star and hash!"));
 						fResult = true;
 					}
 					else
 					{
-						wxLogMessage(wxT("strange or no response from device, seems to be no netx"));
+						wxLogMessage(wxT("received strange response after romloader message"));
+						wxLogMessage(wxT("len: %d, data = 0x%02x, 0x%02x, 0x%02x"), ulLength, abData[0], abData[1], abData[2]);
 					}
 				}
 			}
@@ -672,23 +681,28 @@ bool romloader_uart_device::IdentifyLoader(void)
 		// knock echoed -> this is the prompt
 		else if( ucData=='*' )
 		{
+			wxLogMessage(wxT("ok, received star!"));
+
 			// get rest of knock sequence
-			ulLength = RecvRaw(abData, 1, 100);
+			ulLength = RecvRaw(abData, 1, 1000);
 			if( ulLength==0 )
 			{
-				wxLogMessage(wxT("strange or no response from device, seems to be no netx"));
+				wxLogMessage(wxT("failed to receive response after the star"));
 			}
 			else if( abData[0]!='#' )
 			{
-				wxLogMessage(wxT("strange or no response from device, seems to be no netx"));
+				wxLogMessage(wxT("received strange response after the star: 0x%02x"), abData[0]);
 			}
 			else
 			{
+				wxLogMessage(wxT("ok, received hash!"));
 				fResult = true;
 			}
 		}
 		else if( ucData=='#' )
 		{
+			wxLogMessage(wxT("ok, received hash!"));
+
 			fResult = true;
 		}
 		else
@@ -700,7 +714,8 @@ bool romloader_uart_device::IdentifyLoader(void)
 	if( fResult==true )
 	{
 		// send enter
-		fResult = SendCommand(wxT(""), 100);
+		wxLogMessage(wxT("sending enter to netx"));
+		fResult = SendCommand(wxT(""), 1000);
 		if( fResult!=true )
 		{
 			wxLogError(wxT("failed to send enter to device"));
@@ -710,7 +725,7 @@ bool romloader_uart_device::IdentifyLoader(void)
 			fResult = WaitForResponse(strResponse, 65536, 1024);
 			if( fResult!=true )
 			{
-				wxLogMessage(wxT("strange or no response from device, seems to be no netx"));
+				wxLogMessage(wxT("failed to receive response after enter"));
 			}
 			else
 			{
