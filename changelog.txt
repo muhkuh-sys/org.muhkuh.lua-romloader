@@ -1,5 +1,7 @@
 Changelog for Muhkuh
 
+ * added tester_multifile.lua and utils.lua
+
 Muhkuh 1.0.250
 
  * add new installer helper application "regkuh"
