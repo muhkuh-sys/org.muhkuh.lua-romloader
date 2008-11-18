@@ -18,6 +18,13 @@
 --   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             --
 -----------------------------------------------------------------------------
 
+-- This version of tester.lua can be a memory hog, because it keeps all
+-- test logs in memory during a series of tests, and even keeps several
+-- copies: in the Muhkuh text log area, an internal copy, and embedded 
+-- in the results html page.
+-- If you experience memory problems or slow-down when testing large
+-- numbers of boards, try using "tester_multifile".
+
 module("tester", package.seeall)
 
 require("select_plugin")
@@ -266,8 +273,6 @@ muhkuh_test_failed_32_xpm = {
 
 function getCommonPlugin(pattern)
 	local pattern = pattern or ".*"
-
-
 	if not m_commonPlugin then
 		local plugin = select_plugin.SelectPlugin(pattern)
 		if plugin then
@@ -284,10 +289,8 @@ function getCommonPlugin(pattern)
 			end
 		end
 	end
-
 	return m_commonPlugin
 end
-
 
 function closeCommonPlugin()
 	if m_commonPlugin then
@@ -749,6 +752,15 @@ local function showTestReport(iBoardIdx)
 end
 
 
+-- Generate the test summary header for one board:
+--
+-- Board #1 Testdetails
+-- Status:        incomplete
+-- Serial number: 20000
+--
+-- testindex = board no
+-- test = test result structure for this board
+
 local function report_test_genHeader(testindex, test)
 	-- rebuild report for this entry
 	local iOk = 0
@@ -808,6 +820,26 @@ local function report_test_genHeader(testindex, test)
 end
 
 
+-- Generate the test summary details for one board:
+-- - a table listing all tests and their status
+-- - the log output for each test
+--
+-- -----------------------
+-- |Name       | Status  |
+-- -----------------------
+-- |Test 1 name| status  |
+-- ....
+-- -----------------------
+--
+-- Back to the summary
+-- 
+-- Log for <Test 1 name> 
+--  <Test 1 log>
+-- ...
+--
+-- testindex = board no
+-- test = test result structure for this board
+
 local function report_test_genDetails(testindex, test)
 	local strReportDetails = ""
 
@@ -845,6 +877,7 @@ local function report_test_genDetails(testindex, test)
 end
 
 
+-- update the test report HTML page
 local function updateTestReport(iCurrentBoard)
 	local report = ""
 	local iBoardsOk = 0
@@ -950,6 +983,8 @@ local function updateTestReport(iCurrentBoard)
 end
 
 
+-- Update the test selection combo box and the cow icons,
+-- update the HTML report page and show the line for board iBoardIdx in the summary
 local function moveToTest(iBoardIdx, iTestIdx)
 	local testresult
 	local iconidx
