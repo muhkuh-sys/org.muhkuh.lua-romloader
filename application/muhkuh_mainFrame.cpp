@@ -356,7 +356,6 @@ void muhkuh_mainFrame::createControls(void)
 	wxAuiPaneInfo paneInfo;
 	long style;
 	wxSize tSize;
-	int iSize;
 	wxListItem listItem;
 
 
@@ -487,11 +486,7 @@ void muhkuh_mainFrame::reloadWelcomePage(void)
 void muhkuh_mainFrame::reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml)
 {
 	wxString strTestName;
-	unsigned int uiSubTestCnt;
-	unsigned int uiCnt;
 	wxString strSubTestName;
-	bool fOk;
-	long lItemIdx;
 	wxString strPage;
 
 
@@ -574,7 +569,6 @@ void muhkuh_mainFrame::reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml)
 void muhkuh_mainFrame::read_config(void)
 {
 	wxConfigBase *pConfig;
-	int iMainFrameX, iMainFrameY, iMainFrameW, iMainFrameH;
 	wxString strPerspective;
 	bool fPaneIsVisible;
 	bool fWelcomePageIsVisible;
@@ -998,7 +992,6 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 	muhkuh_configDialog *cfgDlg;
 	muhkuh_plugin_manager *ptTmpPluginManager;
 	muhkuh_repository_manager *ptTmpRepositoryManager;
-	int iCnt;
 	int iNewSelection;
 	wxString strMessage;
 	wxBitmap tRepoBitmap;
@@ -1302,12 +1295,9 @@ bool muhkuh_mainFrame::check_plugins(void)
 void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex)
 {
 	bool fResult;
-	int iResult;
 	wxString strMsg;
 	wxString strXmlUrl;
 	wxString strServerCmd;
-	int iGetTop;
-	int iLineNr;
 
 
 	// check all plugins for state ok before executing the test
@@ -1843,7 +1833,7 @@ bool muhkuh_mainFrame::addTestTree(testTreeItemData *ptTestTreeItem)
 {
 	wxString strTestPath;
 	wxString strPathElement;
-	size_t sizCnt, sizLen, sizPos;
+	size_t sizCnt, sizLen;
 	wxTreeItemId itemId;
 	wxTreeItemId searchId;
 	wxTreeItemId prevId;

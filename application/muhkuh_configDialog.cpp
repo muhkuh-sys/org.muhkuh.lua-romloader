@@ -606,7 +606,6 @@ void muhkuh_configDialog::OnDeleteRepositoryButton(wxCommandEvent &WXUNUSED(even
 void muhkuh_configDialog::OnRepositorySelect(wxTreeEvent &event)
 {
 	wxTreeItemId tItem;
-	long lIdx;
 	bool fPluginSelected;
 	treeItemIdData *ptData;
 
@@ -827,7 +826,6 @@ void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 	wxString strName;
 	wxString strId;
 	wxString strVersion;
-	long lItemIdx;
 	treeItemIdData *ptData;
 
 
@@ -1152,7 +1150,6 @@ void muhkuh_configDialog::OnRemoveLuaIncludePathButton(wxCommandEvent &event)
 void muhkuh_configDialog::OnEditLuaIncludePathButton(wxCommandEvent &event)
 {
 	int iSelection;
-	int iCount;
 
 
 	iSelection = m_ptPathListBox->GetSelection();
