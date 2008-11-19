@@ -615,10 +615,8 @@ bool romloader_uart::parseDumpLine(const char *pcLine, size_t sizLineLen, unsign
 	bool fResult;
 	int iMatches;
 	unsigned long ulResultAddress;
-	unsigned long ulResultData;
 	unsigned long ulChunkCnt;
 	unsigned int uiByte;
-	char cByte;
 
 
 	// expect success
@@ -683,7 +681,6 @@ wxString romloader_uart::read_image(double dNetxAddress, double dSize, lua_State
 	wxString strErrorMsg;
 	unsigned char *pucData;
 	unsigned char *pucDataCnt;
-	bool fLineOk;
 	unsigned long ulExpectedAddress;
 	unsigned long ulBytesLeft;
 	unsigned long ulChunkSize;
@@ -936,7 +933,6 @@ int romloader_uart::write_data(wxString &strData, unsigned long ulLoadAdr, lua_S
 	wxString strCommand;
 	size_t sizChunkSize;
 	bool fIsRunning;
-	unsigned long ulBytesProcessed;
 	size_t sizMaxChunkSize;
 	int iResult;
 	wxString strResponse;
@@ -1031,8 +1027,6 @@ int romloader_uart::write_data(wxString &strData, unsigned long ulLoadAdr, lua_S
 void romloader_uart::write_image(double dNetxAddress, wxString strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	unsigned long ulNetxAddress;
-	unsigned char *pucData;
-	unsigned int uiDataLen;
 	wxString strResponse;
 	wxString strErrorMsg;
 	bool fOk;

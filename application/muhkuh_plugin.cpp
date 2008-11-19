@@ -144,7 +144,6 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 	wxFile cFile;
 	wxFileInputStream *ptFileInputStream;
 	wxXmlNode *ptNode;
-	wxXmlNode *ptSoNode;
 	wxXmlNode *ptCfgNode;
 	wxString strCfgName;
 	wxString strSoName;

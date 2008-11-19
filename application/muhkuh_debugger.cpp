@@ -689,7 +689,6 @@ wxStyledTextCtrl *muhkuh_debugger::editor_get_document(wxString strSource)
 	wxString strHash;
 	wxStyledTextCtrl *ptEditor;
 	muhkuh_debugger_document tDoc;
-	muhkuh_debugger_document *ptDoc;
 	bool fResult;
 	tMuhkuhDocumentHash::iterator it;
 
