@@ -14,3 +14,5 @@ Source: "plugins\romloader\_test\netxtest_nx500.bin";                        Des
 Source: "plugins\romloader\_demos\Muhkuh.cfg";                               DestDir: "{app}\application";               Components: demos
 Source: "plugins\romloader\_demos\welcome.html";                             DestDir: "{app}\application";               Components: demos
 
+Source: "plugins\_test\mhash\test_description.xml";                          DestDir: "{app}\demos\mhash_test";          Components: demos
+
