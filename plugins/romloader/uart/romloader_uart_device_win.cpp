@@ -81,47 +81,56 @@ DWORD romloader_uart_device_win::CheckComStateThread(void* pvParam)
 /*****************************************************************************/
 void romloader_uart_device_win::CheckComEvents(DWORD dwEventMask)
 {
-  if(dwEventMask & EV_RXCHAR)
-  {
-    //data is ready, fetch them from serial port
-    DWORD   dwBytesRead = 0;
-    DWORD   dwCommError = 0;
-    COMSTAT tComstat    = {0};
+	DWORD   dwBytesRead;
+	DWORD   dwCommError;
+	DWORD   dwBufferSize;
+	unsigned char *pucBuffer;
+	COMSTAT tComstat    = {0};
+
+
+  /* *** DEBUG *** Always check for a received char, EV_RXCHAR is not set sometimes and I don't know why! */
+//  if(dwEventMask & EV_RXCHAR)
+//  {
+	//data is ready, fetch them from serial port
+	dwBytesRead = 0;
+	dwCommError = 0;
     
-    ::ClearCommError(m_hPort, &dwCommError, &tComstat);
+	::ClearCommError(m_hPort, &dwCommError, &tComstat);
    
-    DWORD          dwBufferSize = tComstat.cbInQue;
-    unsigned char* pbBuffer     = new unsigned char[dwBufferSize];
-    memset(pbBuffer, 0, dwBufferSize);
+	dwBufferSize = tComstat.cbInQue;
+	if( dwBufferSize>0 )
+	{
+		pucBuffer = new unsigned char[dwBufferSize];
+		memset(pucBuffer, 0, dwBufferSize);
 
-    OVERLAPPED tovRead;
-    memset(&tovRead, 0, sizeof(tovRead));
-    tovRead.hEvent = ::CreateEvent(0,TRUE,0,0);
+		OVERLAPPED tovRead;
+		memset(&tovRead, 0, sizeof(tovRead));
+		tovRead.hEvent = ::CreateEvent(0,TRUE,0,0);
     
-    //get the data from the queue
-    BOOL fReadRet = ::ReadFile(m_hPort, pbBuffer, dwBufferSize, &dwBytesRead, &tovRead);
+		//get the data from the queue
+		BOOL fReadRet = ::ReadFile(m_hPort, pucBuffer, dwBufferSize, &dwBytesRead, &tovRead);
    
-    wxASSERT(fReadRet);
+		wxASSERT(fReadRet);
 
-    ::CloseHandle(tovRead.hEvent);
+		::CloseHandle(tovRead.hEvent);
 
-    if ( dwBytesRead > 0 )
-    {
-      writeCards(pbBuffer, dwBytesRead);
+		if ( dwBytesRead > 0 )
+		{
+			writeCards(pucBuffer, dwBytesRead);
 
-      // Signal read function that new data is available
-      ::SetEvent(m_hNewRxEvent);
-    }
+			// Signal read function that new data is available
+			::SetEvent(m_hNewRxEvent);
+		}
 
-    delete [] pbBuffer;
-
-  } 
+		delete[] pucBuffer;
+	}
+//  } 
   
-  if(dwEventMask & EV_TXEMPTY)
-  {
-    //Signal waiting thread data has been written
-    ::SetEvent(m_hTxEmpty);
-  }
+	if(dwEventMask & EV_TXEMPTY)
+	{
+		//Signal waiting thread data has been written
+		::SetEvent(m_hTxEmpty);
+	}
 }
 
 /*****************************************************************************/
@@ -139,6 +148,14 @@ DWORD romloader_uart_device_win::CheckComState()
   {
     DWORD dwEventMask     = 0;
     bool  fEventAvailable = false;
+    DWORD dwBla           = 0;
+
+    tOvWait.Internal     = 0;
+    tOvWait.InternalHigh = 0;
+    tOvWait.Offset       = 0;
+    tOvWait.OffsetHigh   = 0;
+
+    ::ResetEvent(tOvWait.hEvent);
 
     if(WaitCommEvent(m_hPort, &dwEventMask, &tOvWait))
     {
