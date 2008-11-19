@@ -90,7 +90,6 @@ serverkuh_mainFrame::serverkuh_mainFrame(wxCmdLineParser *ptParser)
 	int iLastColon;
 	int iLastSlash;
 	int iLastValid;
-	bool fOk;
 	int iColonPos;
 	wxString strDebugServerAndPort;
 	wxString strMsg;
@@ -258,7 +257,6 @@ void serverkuh_mainFrame::createControls(void)
 	wxAuiPaneInfo paneInfo;
 	long style;
 	wxSize tSize;
-	int iSize;
 	wxListItem listItem;
 
 
@@ -354,7 +352,6 @@ void serverkuh_mainFrame::initLogging(wxCmdLineParser *ptParser)
 void serverkuh_mainFrame::read_config(void)
 {
 	wxConfigBase *pConfig;
-	int iMainFrameX, iMainFrameY, iMainFrameW, iMainFrameH;
 	bool fWinMaximized;
 	wxString strPerspective;
 
@@ -436,7 +433,6 @@ bool serverkuh_mainFrame::scanFileXml(wxString &strXmlUrl)
 	wxInputStream *ptInputStream;
 	wxString strXmlData;
 	muhkuh_wrap_xml *ptWrapXml;
-	testTreeItemData *ptItemData;
 	wxString strTestName;
 	wxString strHelpFile;
 	wxString strMsg;
@@ -534,7 +530,6 @@ bool serverkuh_mainFrame::dbg_enable(void)
 bool serverkuh_mainFrame::initLuaState(void)
 {
 	bool fResult;
-	wxLuaBindingList *ptBindings;
 
 
 	// expect success
@@ -1063,7 +1058,6 @@ void serverkuh_mainFrame::dbg_get_locals(int iLevel)
 {
 	int iResult;
 	wxString strValue;
-	unsigned char ucStatus;
 	lua_Debug tDbg = {0};
 	int iLuaType;
 	int iIndex;
@@ -1650,12 +1644,6 @@ muhkuh_plugin_instance *serverkuh_mainFrame::luaGetNextPlugin(void)
 
 muhkuh_wrap_xml *serverkuh_mainFrame::luaGetSelectedTest(void)
 {
-	wxTreeItemId itemId;
-	const testTreeItemData *ptItemData;
-	muhkuh_wrap_xml *ptWrapXml;
-	wxListItem listItem;
-
-
 	// get item data structure
 	return m_ptWrapXml;
 }

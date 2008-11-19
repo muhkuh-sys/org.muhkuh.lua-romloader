@@ -205,7 +205,6 @@ void muhkuh_regApp::showHelp(void)
 
 int muhkuh_regApp::parse_args(void)
 {
-	int iCnt;
 	wxString strVal;
 
 
@@ -802,8 +801,6 @@ int muhkuh_regApp::autostart(wxArrayString &aParam)
 	bool fAutoExit;
 	size_t sizParamCount;
 	wxString strAutoexit;
-	long lIdx;
-	bool fIsOk;
 	wxConfigBase *ptConfig;
 
 
