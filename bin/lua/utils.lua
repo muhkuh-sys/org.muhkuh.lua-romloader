@@ -19,6 +19,14 @@
 -----------------------------------------------------------------------------
 module("utils", package.seeall)
 
+-- trace print command 
+m_fVerbose = true
+function tprint(...)
+	if m_fVerbose then 
+		print(unpack({...}))
+	end
+end
+
 ---------------------------------------
 -- getlocalfile
 --   Read a (possibly remote) file with muhkuh.load and write it to a temporary local file.
@@ -37,7 +45,7 @@ function getlocalfile(name, suffix)
 
 	if suffix then 
 		tmpfilename=tmpfilename .. "." .. suffix
-		print("---" .. tmpfilename .. "---")
+		tprint("---" .. tmpfilename .. "---")
 	end
 
 	bin = muhkuh.load(name)
@@ -71,14 +79,14 @@ end
 --   text : output from the command
 
 function runcommand(cmd)
-	print("Running command: ", cmd)
+	tprint("Running command: ", cmd)
 	local lRet, astrOutput, astrErrors = wx.wxExecuteStdoutStderr(cmd, wx.wxEXEC_SYNC)
 	local strOutput = astrOutput and table.concat(astrOutput, "\n") or ""
 	local strErrors = astrErrors and table.concat(astrErrors, "\n") or ""
 	local strOutput = strOutput .. strErrors
-	print("returncode " .. lRet)
-	print("Output:")
-	print(strOutput)
+	tprint("returncode " .. lRet)
+	tprint("Output:")
+	tprint(strOutput)
 	return lRet, strOutput
 end
 --[=[
@@ -118,7 +126,7 @@ function runLocalCopy(cmd, suffix, args)
 	local exetmpfile = utils.getlocalfile(cmd, suffix)
 	if not exetmpfile then
 		local msg = "file " .. cmd .. " not found"
-		print(msg)
+		tprint(msg)
 		return nil, msg
 	end	
 	local retVal, strOutput = utils.runcommand(exetmpfile ..  " " .. args)
@@ -134,7 +142,7 @@ end
 -- returns the file or nil, message
 
 function loadBin(strName)
-	print("reading file " .. strName)
+	tprint("reading file " .. strName)
 	local f = wx.wxFile(strName)
 	if not f:IsOpened() then 
 		return nil, "Cannot open file " .. strName 
@@ -143,10 +151,10 @@ function loadBin(strName)
 	local iLen = f:Length()
 	local iBytesRead, bin = f:Read(iLen)
 	f:Close()
-	print(iBytesRead .. " bytes read")
+	tprint(iBytesRead .. " bytes read")
 	if iBytesRead ~= iLen then
 		local msg = "Error reading file " .. strName
-		print(msg)
+		tprint(msg)
 		return nil, msg
 	else
 		return bin
@@ -172,7 +180,7 @@ end
 -- write binary file into string
 -- returns true or false, message
 function writeBin(strName, bin, accessMode)
-	print("writing to file " .. strName)
+	tprint("writing to file " .. strName)
 	local f = wx.wxFile(strName, accessMode or wx.wxFile.write)
 	if not f:IsOpened() then 
 		return false, "Error opening file " .. strName .. " for writing"
@@ -180,10 +188,10 @@ function writeBin(strName, bin, accessMode)
 
 	local iBytesWritten = f:Write(bin, bin:len())
 	f:Close()
-	print(iBytesWritten .. " bytes written")
+	tprint(iBytesWritten .. " bytes written")
 	if iBytesWritten ~= bin:len() then
 		msg = "Error while writing to file " .. strName
-		print(msg)
+		tprint(msg)
 		return false, msg
 	else
 		return true
@@ -216,20 +224,20 @@ end
 -- gets a local copy of a text file, reads its lines and removes the local file
 
 function load_localfile_lines(strFilename)
-	print("getting local copy of file "..strFilename)
+	tprint("getting local copy of file "..strFilename)
 	local lines = {}
 	local strLocalfile = utils.getlocalfile(strFilename)
 	if not strLocalfile then
 		print("failed to get a local copy of " .. strFilename)
 	else
-		print("reading local copy: "..strLocalfile)
+		tprint("reading local copy: "..strLocalfile)
 		for line in io.lines(strLocalfile) do
 			lines[#lines+1]=line
 		end
 		local res, msg = os.remove(strLocalfile)
 		if not res then print(msg) end
 	end
-	print(#lines .. " lines read")
+	tprint(#lines .. " lines read")
 	return lines
 end
 
@@ -241,7 +249,7 @@ end
 function createTempDir()
 	local tempfile = wx.wxFileName()
 	tempfile:AssignTempFileName("muhkuh_report")
-	print("tempfile: "..tempfile:GetFullPath())
+	tprint("tempfile: "..tempfile:GetFullPath())
 	
 	if not wx.wxRemoveFile(tempfile:GetFullPath()) then
 		return false, "failed to remove tmp file"
@@ -250,7 +258,7 @@ function createTempDir()
 	tempfile:AppendDir(tempfile:GetName())
 	tempfile:SetName("")
 	tempfile:ClearExt()
-	print("tempdir: "..tempfile:GetFullPath())
+	tprint("tempdir: "..tempfile:GetFullPath())
 	
 	if not tempfile:Mkdir() then
 		return false, "failed to make dir"
@@ -283,7 +291,7 @@ function removeTempDir()
 	while fFile do
 		m_tTempFileName:SetFullName(strName)
 		strFullPath = m_tTempFileName:GetFullPath()
-		print("removing file: " .. strFullPath)
+		tprint("removing file: " .. strFullPath)
 		if not wx.wxRemoveFile(strFullPath) then
 			return false, "error removing file"..strFullPath
 		end
@@ -294,9 +302,9 @@ function removeTempDir()
 	m_tTempFileName = nil
 	collectgarbage("collect")
 	
-	print("removing temp dir " .. strDirName)
+	tprint("removing temp dir " .. strDirName)
 	if wx.wxRmdir(strDirName) then
-		print("OK")
+		ptrint("OK")
 	else
 		return false, "failed to remove dir" .. strDirName
 	end
@@ -362,7 +370,7 @@ function deleteTempFile(strName, strExt)
 	m_tTempFileName:SetExt(strExt)
 	if m_tTempFileName:FileExists() then
 		local strFullPath = m_tTempFileName:GetFullPath()
-		print("removing file: " .. strFullPath)
+		tprint("removing file: " .. strFullPath)
 		if not wx.wxRemoveFile(strFullPath) then
 			return nil, "error removing file" .. strFullPath
 		end
