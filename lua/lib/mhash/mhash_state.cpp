@@ -71,14 +71,12 @@ const char *get_hash_name(hashid type)
 mhash_state::mhash_state(void)
  : m_hMHash(NULL)
 {
-	printf("mhash_state(void)");
 }
 
 
 mhash_state::mhash_state(hashid type)
  : m_hMHash(NULL)
 {
-	printf("mhash_state(hashid type)");
 	m_hMHash = mhash_init(type);
 }
 
@@ -86,15 +84,12 @@ mhash_state::mhash_state(hashid type)
 mhash_state::mhash_state(mhash_state *ptMHash)
  : m_hMHash(NULL)
 {
-	printf("mhash_state(mhash_state *ptMHash)");
 	m_hMHash = mhash_cp(ptMHash->m_hMHash);
 }
 
 
 mhash_state::~mhash_state()
 {
-	printf("~mhash_state()");
-
 	deinit();
 }
 
@@ -139,7 +134,6 @@ void mhash_state::hash(const char *pcData, size_t sizData, size_t sizLength, siz
 
 
 	// limit the input values
-	printf("1: %s %d %d %d\n", pcData, sizData, sizLength, sizOffset);
 	if( sizOffset<=sizData )
 	{
 		if( sizOffset+sizLength>sizData )
@@ -149,7 +143,6 @@ void mhash_state::hash(const char *pcData, size_t sizData, size_t sizLength, siz
 
 		if( m_hMHash!=NULL )
 		{
-			printf("2: %s %d %d %d\n", pcData, sizData, sizLength, sizOffset);
 			tMb = mhash(m_hMHash, pcData+sizOffset, sizLength);
 //			if( tMb!=MUTILS_OK )
 //			{
