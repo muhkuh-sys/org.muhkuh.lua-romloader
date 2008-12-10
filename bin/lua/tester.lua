@@ -553,15 +553,16 @@ local function changeMode(eNewMode)
 end
 
 
+-- generate a filename for the report:
+-- report_<name>_<first serial no>_<last serial no>
+-- if the test name has multiple components separated with slashes, 
+-- remove all but the last component
 local function createDefaultReportName()
-	local strReportName
-
-
-	-- start the report filename with "report_",
-	-- add the testname,
-	-- add start and end serial number
-	strReportName = "report_" .. m_strTestName .. string.format("_%05d_%05d", __MUHKUH_PARAMETERS.SerialNumber, __MUHKUH_PARAMETERS.SerialNumber+m_boardCnt-1)
-
+	local testName = wx.wxFileName(m_strTestName)
+	local strTestName = testName:GetFullName()
+	local strReportName = "report_" .. strTestName .. string.format("_%05d_%05d", 
+		__MUHKUH_PARAMETERS.SerialNumber, __MUHKUH_PARAMETERS.SerialNumber+m_boardCnt-1)
+	print(strReportName)
 	return strReportName
 end
 

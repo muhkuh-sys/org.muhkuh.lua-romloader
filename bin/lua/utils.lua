@@ -23,7 +23,7 @@ module("utils", package.seeall)
 m_fVerbose = true
 function tprint(...)
 	if m_fVerbose then 
-		print(unpack({...}))
+		print(...)
 	end
 end
 
@@ -304,7 +304,7 @@ function removeTempDir()
 	
 	tprint("removing temp dir " .. strDirName)
 	if wx.wxRmdir(strDirName) then
-		ptrint("OK")
+		tprint("OK")
 	else
 		return false, "failed to remove dir" .. strDirName
 	end
