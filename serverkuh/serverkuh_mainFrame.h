@@ -84,6 +84,7 @@ public:
 	void OnDebugSocket(wxSocketEvent &event);
 
 	// the lua functions
+  void setLuaArgs(char **argv, int argc);
 	void luaTestHasFinished(void);
 	wxString luaLoad(wxString strFileName);
 	void luaInclude(wxString strFileName);
@@ -219,6 +220,10 @@ private:
 	// frame size and position
 	wxPoint m_framePosition;
 	wxSize m_frameSize;
+
+  // command line args to be passed to the Lua script
+  char **m_argvLua;
+  int m_argcLua;
 
     DECLARE_EVENT_TABLE()
 };

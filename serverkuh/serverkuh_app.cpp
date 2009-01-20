@@ -57,13 +57,13 @@ const wxCmdLineEntryDesc cmdLineDesc[] =
 	{ wxCMD_LINE_OPTION, wxT("c"), wxT("config-file"), _T("use the specified configuration file instead of the default Muhkuh.cfg"), wxCMD_LINE_VAL_STRING },
 
 	{ wxCMD_LINE_OPTION, wxT("v"), wxT("verbose"), _T("set verbose level"), wxCMD_LINE_VAL_NUMBER },
-	{ wxCMD_LINE_SWITCH, wxT("h"), wxT("help"), _T("display this help and exit.") },
+	{ wxCMD_LINE_SWITCH, wxT("h"), wxT("help"), _T("display this help and exit.")},
 	{ wxCMD_LINE_OPTION, wxT("i"), wxT("index"), _T("execute single subtest"), wxCMD_LINE_VAL_NUMBER },
 	{ wxCMD_LINE_OPTION, wxT("d"), wxT("debug"), _T("set debug server"), wxCMD_LINE_VAL_STRING },
 
 	{ wxCMD_LINE_SWITCH, NULL, wxT("version"), _T("display version information and exit.") },
 
-	{ wxCMD_LINE_PARAM,  NULL, NULL, _T("test"), wxCMD_LINE_VAL_STRING, 0 },
+  { wxCMD_LINE_PARAM,  NULL, NULL, _T("test"), wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL},
 	{ wxCMD_LINE_NONE }
 };
 
@@ -78,7 +78,7 @@ void serverkuh_app::showHelp(wxCmdLineParser *ptParser)
 	// show general usage
 	ptParser->Usage();
 
-	printf(	"\n"
+	wxLogMessage(	"\n"
 		"Examples:\n"
 		"  regkuh -rp plugins/romloader_uart.xml\n"
 		"        register the romloader_uart plugin in the plugins folder.\n"
@@ -90,13 +90,14 @@ void serverkuh_app::showHelp(wxCmdLineParser *ptParser)
 
 void serverkuh_app::showVersion(void)
 {
-	printf(SERVERKUH_APPLICATION_NAME " " SERVERKUH_VERSION_STRING "\n");
-	printf("Copyright (c) 2008, the Muhkuh team.\n");
-	printf("There is NO warranty.  You may redistribute this software\n");
-	printf("under the terms of the GNU General Public License.\n");
-	printf("For more information about these matters, see the files named COPYING.\n");
+  wxLogMessage(
+	SERVERKUH_APPLICATION_NAME " " SERVERKUH_VERSION_STRING "\n"
+	"Copyright (c) 2008, the Muhkuh team.\n"
+	"There is NO warranty.  You may redistribute this software\n"
+	"under the terms of the GNU General Public License.\n"
+	"For more information about these matters, see the files named COPYING.\n"
+  );
 }
-
 
 bool serverkuh_app::OnInit()
 {
@@ -104,7 +105,7 @@ bool serverkuh_app::OnInit()
 	serverkuh_mainFrame *mainframe;
 	wxCmdLineParser tParser;
 	bool fOk;
-
+  int argcServerkuh;
 
 	mainframe = NULL;
 
@@ -132,13 +133,20 @@ bool serverkuh_app::OnInit()
 	SetVendorName(wxT(SERVERKUH_APPLICATION_NAME " team"));
 	SetAppName(wxT(SERVERKUH_APPLICATION_NAME));
 
-	tParser.SetCmdLine(argc, argv);
+  // if the command line contains a "--", we want to pass
+  // everything before it Serverkuh command line parser,
+  // and everything behind it to the Lua script
+  argcServerkuh = 0;
+  while(argcServerkuh < argc && strcmp("--", argv[argcServerkuh])!=0) argcServerkuh++;
+
+	tParser.SetCmdLine(argcServerkuh, argv);
 	tParser.SetSwitchChars(wxT("-"));
 	tParser.EnableLongOptions(true);
 	tParser.SetDesc(cmdLineDesc);
 	tParser.SetLogo(cmdLineLogo);
 
 	iRes = tParser.Parse(false);
+
 	if( iRes!=0 )
 	{
 		showHelp(&tParser);
@@ -148,16 +156,24 @@ bool serverkuh_app::OnInit()
 	{
 		showHelp(&tParser);
 		fOk = false;
-	}
-	else if( tParser.Found(wxT("version"))==true )
+  }
+  else if( tParser.Found(wxT("version"))==true )
 	{
 		showVersion();
 		fOk = false;
 	}
+  else if (tParser.GetParamCount()==0) {
+		showHelp(&tParser);
+  }
 	else
 	{
 		// create the muhkuh main frame
 		mainframe = new serverkuh_mainFrame(&tParser);
+
+    // set the parameters for Lua scripts
+    if (argcServerkuh+1 < argc) {
+      mainframe->setLuaArgs(argv + argcServerkuh + 1, argc - (argcServerkuh + 1));
+    }
 
 		// show the frame
 		mainframe->Show(true);

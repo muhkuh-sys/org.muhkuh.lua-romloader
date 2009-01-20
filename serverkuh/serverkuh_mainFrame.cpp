@@ -82,6 +82,8 @@ serverkuh_mainFrame::serverkuh_mainFrame(wxCmdLineParser *ptParser)
  , m_ptWrapXml(NULL)
  , m_eInitState(MAINFRAME_INIT_STATE_UNCONFIGURED)
  , m_ptDebugClientSocket(NULL)
+ , m_argvLua(NULL)
+ , m_argcLua(0)
 {
 	wxString strConfigFileName;
 	wxFileName cfgName;
@@ -527,6 +529,13 @@ bool serverkuh_mainFrame::dbg_enable(void)
 }
 
 
+
+void serverkuh_mainFrame::setLuaArgs(char **argv, int argc)
+{
+  m_argvLua = argv;
+  m_argcLua = argc;
+}
+
 bool serverkuh_mainFrame::initLuaState(void)
 {
 	bool fResult;
@@ -747,6 +756,14 @@ void serverkuh_mainFrame::executeTest(void)
 		if( m_ptLuaState!=NULL && m_ptLuaState->Ok()==true )
 		{
 			// set some global vars
+
+      // store command line args behind "--" in global Lua table "arg"
+      m_ptLuaState->lua_CreateTable(m_argcLua, 0);
+      for (int i=0; i<m_argcLua; i++) {
+        m_ptLuaState->lua_PushString(m_argvLua[i]);
+        m_ptLuaState->lua_RawSeti(-2, i+1);
+      }
+      m_ptLuaState->lua_SetGlobal(wxT("arg"));
 
 			// set the xml document
 			m_ptLuaState->wxluaT_PushUserDataType(m_ptWrapXml->getXmlDocument(), wxluatype_wxXmlDocument, false);
