@@ -26,6 +26,7 @@
 
 module("tester", package.seeall)
 require("utils")  -- for temp file handling
+require("select_plugin")
 
 
 -- prevent images from being gcd
