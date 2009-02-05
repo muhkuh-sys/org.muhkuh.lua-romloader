@@ -243,10 +243,44 @@ end
 
 
 ----------------------------------------------------------------------------
--- create temp dir
--- returns true or false and an error message
+-- create temp dir in the system temp directory.
+-- strDirName the name to use for the directory. Default is muhkuh_yyyymmdd_hhmmss
+-- If the directory exists, dirname_1, dirname_2 etc. are tried.
 
-function createTempDir()
+function createTempDir(strDirName)
+	
+	local tempfile = wx.wxFileName()
+	local standardPaths = wx.wxStandardPaths.Get()
+	local strTmpDir = standardPaths:GetTempDir()
+	strDirName = strDirName or os.date("muhkuh_%Y%m%d_%H%M%S")
+	
+	tempfile:AssignDir(strTmpDir)
+	tempfile:AppendDir(strDirName)
+	local cnt = 2
+	while not tempfile:Mkdir() do
+		tempfile:AssignDir(strTmpDir)
+		tempfile:AppendDir(strDirName .. "_" .. cnt)
+		cnt = cnt+1
+	end
+	tprint("tempdir: "..tempfile:GetFullPath())
+	
+	-- If the directory is not readable/writeable although
+	-- we just created it, there is a problem with the 
+	-- access privileges
+	if not tempfile:IsDirWritable() then
+		return false, "dir is not writable"
+	end
+	
+	if not tempfile:IsDirReadable() then
+		return false, "dir is not readable"
+	end
+	
+	m_tTempFileName = tempfile
+	return true
+end
+
+
+function createTempDir_old()
 	local tempfile = wx.wxFileName()
 	tempfile:AssignTempFileName("muhkuh_report")
 	tprint("tempfile: "..tempfile:GetFullPath())
