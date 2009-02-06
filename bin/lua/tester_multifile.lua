@@ -96,6 +96,7 @@ _G.__MUHKUH_TEST_RESULT_OK		= 1
 _G.__MUHKUH_TEST_RESULT_CANCEL		= 2
 _G.__MUHKUH_TEST_RESULT_FAIL		= -1
 _G.__MUHKUH_TEST_RESULT_FATALERROR	= -2
+_G.__MUHKUH_REPORT_PATH = _G.__MUHKUH_REPORT_PATH or "//Hilscher03/Cad/PRODUKT/TEST/netX/Muhkuh_ng_report"
 
 
 ---------------------------------------
@@ -563,7 +564,6 @@ local function createDefaultReportName()
 	local strTestName = testName:GetFullName()
 	local strReportName = "report_" .. strTestName .. string.format("_%05d_%05d", 
 		__MUHKUH_PARAMETERS.SerialNumber, __MUHKUH_PARAMETERS.SerialNumber+m_boardCnt-1)
-	print(strReportName)
 	return strReportName
 end
 
@@ -594,8 +594,7 @@ local function createControls()
 
 	-- the save report dialog
 	strReportName = createDefaultReportName()
-	-- m_saveReportDlg = wx.wxFileDialog(m_panel, "Choose a file", "", strReportName, "Html Files (*.htm;*.html)|*.htm;*.html|All Files (*.*)|*.*", wx.wxFD_SAVE+wx.wxFD_OVERWRITE_PROMPT)
-	m_saveReportDlg = wx.wxDirDialog(m_panel, "Choose directory to save to")
+	m_saveReportDlg = wx.wxDirDialog(m_panel, "Choose directory to save to", __MUHKUH_REPORT_PATH)
 	
 	-- the easy printer
 	m_easyPrint = wx.wxHtmlEasyPrinting(strReportName)
@@ -706,7 +705,7 @@ end
 
 local function errorDialog(strTitle, strMsg)
 	print(strTitle, strMsg)
-	local msgDialog = wx.wxMessageDialog(m_panel, strTitle, strMsg, wx.wxOK)
+	local msgDialog = wx.wxMessageDialog(m_panel, strMsg, strTitle, wx.wxOK)
 	msgDialog:ShowModal()
 end
 
@@ -1476,35 +1475,65 @@ local function OnButtonTestBoard()
 end
 
 
+local function OverwriteDialog(strDirName)
+	return wx.wxMessageBox(
+		"The directory\n"  .. strDirName .. "\nalready exists. Do you want to overwrite it?",
+		"Overwrite directory?",
+		wx.wxICON_QUESTION + wx.wxOK + wx.wxCANCEL,
+		m_panel)
+end
+
 local function OnButtonSaveReport()
+	local strReportName = createDefaultReportName()
+	m_saveReportDlg:SetMessage("Select directory to save to.\nThe test reports will be written to a subdirectory called ".. strReportName)
 	iResult = m_saveReportDlg:ShowModal()
+	
 	if iResult==wx.wxID_OK then
-		local strPath = m_saveReportDlg:GetPath()
+		local strPath = m_saveReportDlg:GetPath(wx.wxPATH_GET_VOLUME)
 		if strPath=="" then
 			print("no path selected")
 			return
 		end
-		print("saving report to directory "..strPath)
-		-- check if directory exists, create if not
-		local tDirName = wx.wxFileName(strPath)
-		if not tDirName:DirExists() then
-			if not tDirName:Mkdir() then
-				print("failed to make dir")
+		
+		-- If the directory exists,
+		-- ask the user if the files should be overwritten.
+		-- If it does not exist, create it.
+		local tDirName = wx.wxFileName()
+		tDirName:AssignDir(strPath)
+		tDirName:AppendDir(strReportName)
+		
+		if tDirName:DirExists() then
+			if wx.wxOK == OverwriteDialog(tDirName:GetFullPath()) then
+				if not utils.removeDirFiles(tDirName:GetFullPath()) then
+					errorDialog("Error saving test report", "Could not remove old files.")
+					return
+				end
+			else
 				return
 			end
+		else
+			if not tDirName:Mkdir() then
+				print("failed to make dir")
+				errorDialog("Error saving test report", "Could not create directory.")
+				return
+			end		
 		end
 		
+		-- abort if the directory is not readable and writable
 		if not tDirName:IsDirWritable() then
 			print("dir is not writable")
+			errorDialog("Error saving test report", "Directory is not writable.")
 			return
 		end
 	
 		if not tDirName:IsDirReadable() then
 			print("dir is not readable")
+			errorDialog("Error saving test report", "Directory is not readable.")
 			return
 		end
 		
 		-- save
+		print("saving report to directory "..strPath)
 		writeTestReports(tDirName)
 	end
 end

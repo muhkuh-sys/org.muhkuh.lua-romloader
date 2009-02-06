@@ -96,6 +96,7 @@ _G.__MUHKUH_TEST_RESULT_OK		= 1
 _G.__MUHKUH_TEST_RESULT_CANCEL		= 2
 _G.__MUHKUH_TEST_RESULT_FAIL		= -1
 _G.__MUHKUH_TEST_RESULT_FATALERROR	= -2
+_G.__MUHKUH_REPORT_PATH = _G.__MUHKUH_REPORT_PATH or "//Hilscher03/Cad/PRODUKT/TEST/netX/Muhkuh_ng_report"
 
 ---------------------------------------
 
@@ -593,7 +594,11 @@ local function createControls()
 	-- the save report dialog
 	strReportName = createDefaultReportName()
 	m_saveReportDlg = wx.wxFileDialog(m_panel, "Choose a file", "", strReportName, "Html Files (*.htm;*.html)|*.htm;*.html|All Files (*.*)|*.*", wx.wxFD_SAVE+wx.wxFD_OVERWRITE_PROMPT)
-
+	print("__MUHKUH_REPORT_PATH", __MUHKUH_REPORT_PATH)
+	m_saveReportDlg:SetDirectory(__MUHKUH_REPORT_PATH)
+	m_saveReportDlg:SetFilename(strReportName)
+	print("default save path:", m_saveReportDlg:GetPath())
+	
 	-- the easy printer
 	m_easyPrint = wx.wxHtmlEasyPrinting(strReportName)
 
@@ -1266,18 +1271,25 @@ local function OnButtonTestBoard()
 end
 
 
+
 local function OnButtonSaveReport()
 	local iResult
 	local strFileName
 	local outputFile
-
+	local iBytesWritten
 
 	iResult = m_saveReportDlg:ShowModal()
 	if iResult==wx.wxID_OK then
 		strFileName = m_saveReportDlg:GetPath()
 		print("saving report to file "..strFileName)
 		outputFile = wx.wxFile(strFileName, wx.wxFile.write)
-		outputFile:Write(m_strTestReport)
+		iBytesWritten = outputFile:Write(m_strTestReport, m_strTestReport:len()) 
+		print(iBytesWritten .. " bytes written")
+		if iBytesWritten < m_strTestReport:len() then
+			wx.wxMessageBox(
+				"Error writing file\n"..strFileName, "Error saving report",
+				wx.wxICON_ERROR + wx.wxOK, m_panel)
+		end
 		outputFile:Close()
 	end
 end

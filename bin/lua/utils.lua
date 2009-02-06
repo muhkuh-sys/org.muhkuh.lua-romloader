@@ -219,6 +219,54 @@ function appendBin(strName, bin)
 	return writeBin(strName, bin, wx.wxFile.write_append) 
 end
 
+
+
+-- Remove all files in a directory, but not the directory itself
+-- returns true or false and an error message
+function removeDirFiles(dir)
+	return removeDir(dir, false)
+end
+
+-- Remove all files in dir,
+-- then remove the directory itself, unless fRmDir==false
+-- returns true or false and an error message
+function removeDir(strDirName, fRmDir)
+	local dir = wx.wxDir(strDirName)
+	if not dir:IsOpened() then
+		return false, "could not open directory" .. strDirName
+	end
+	
+	local filename = wx.wxFileName()
+	filename:AssignDir(strDirName)
+	local strFullPath
+	
+	local fFile, strName = dir:GetFirst()
+	while fFile do
+		filename:SetFullName(strName)
+		strFullPath = filename:GetFullPath()
+		tprint("removing file: " .. strFullPath)
+		if not wx.wxRemoveFile(strFullPath) then
+			return false, "error removing file: "..strFullPath
+		end
+		fFile, strName = dir:GetNext()
+	end
+	
+	if fRmDir ~= false then
+		-- remove handle to directory
+		dir = nil
+		collectgarbage("collect")
+		tprint("removing directory " .. strDirName)
+		if wx.wxRmdir(strDirName) then
+			tprint("OK")
+		else
+			return false, "failed to remove dir: " .. strDirName
+		end
+	end
+	
+	return true
+end
+
+
 ---------------------------------------
 -- load_localfile_lines
 -- gets a local copy of a text file, reads its lines and removes the local file
@@ -315,6 +363,13 @@ end
 -- returns true or false and an error message
 function removeTempDir()
 	local strDirName = m_tTempFileName:GetPath(wx.wxPATH_GET_VOLUME)
+	local fOk, strError = removeDir(strDirName)
+	if fOk then m_tTempFileName = nil end
+	return fOk, strError
+end
+
+function removeTempDir_old()
+	local strDirName = m_tTempFileName:GetPath(wx.wxPATH_GET_VOLUME)
 	local dir = wx.wxDir(strDirName)
 	if not dir:IsOpened() then
 		return false, "could not open temp directory" .. strDirName
@@ -344,7 +399,6 @@ function removeTempDir()
 	end
 	return true
 end
-
 
 ----------------------------------------------------------------------------
 -- return the wxFileName object pointing to the temp file (which must exist)
