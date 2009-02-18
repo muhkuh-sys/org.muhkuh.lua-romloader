@@ -1,6 +1,19 @@
+1.0.422
+
 Changelog for Muhkuh
 
- * added tester_multifile.lua and utils.lua
+ * introduced variable __MUHKUH_REPORT_PATH into tester/tester_multifile
+ * the path is preselected in the file/dir requesters shown when saving test reports 
+ * fixed: if the test name has multiple components separated with slashes, the default name for the test report uses only the last component
+ * fixed: utils.loadBin does not bug anymore if the file can't be read due to its size being too large
+ * added tester_multifile.lua and utils.lua 
+ * any command line arguments following a "--" are passed to Lua in the "arg" table
+ * fixed read_image function in romloader_usb plugin
+ * added serverkuh application
+ * started muhkuh debugger
+ * add support for old style bitlib
+ * added mhash lib and bindings to serverkuh
+
 
 Muhkuh 1.0.250
 
