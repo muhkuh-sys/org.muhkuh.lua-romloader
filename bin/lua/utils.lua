@@ -151,7 +151,7 @@ function loadBin(strName)
 	local iLen = f:Length()
 	local iBytesRead, bin = f:Read(iLen)
 	f:Close()
-	tprint(iBytesRead .. " bytes read")
+	tprint((iBytesRead or 0) .. " bytes read")
 	if iBytesRead ~= iLen then
 		local msg = "Error reading file " .. strName
 		tprint(msg)
