@@ -135,9 +135,20 @@ function runLocalCopy(cmd, suffix, args)
 end
 
 
+---------------------------------------
+-- return the size of file strName
+-- or nil and an error message
+function getFileSize(strName)
+	local f = wx.wxFile(strName)
+	if not f:IsOpened() then 
+		return nil, "Cannot open file " .. strName 
+	else
+		return f:Length()
+	end
+end
+
 
 ---------------------------------------
-
 -- read binary file into string
 -- returns the file or nil, message
 
