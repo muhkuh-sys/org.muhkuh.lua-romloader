@@ -20,7 +20,7 @@
 
 
 #include <vector>
-#include <usb.h>
+#include <libusb-1.0/libusb.h>
 
 #include "../romloader.h"
 
@@ -44,26 +44,10 @@ extern "C"
 
 typedef void (*romloader_usb_plugin_fn_close_instance)(wxString &strInterface);
 
-typedef enum
-{
-	netxUsbState_Ok = 0,
-	netxUsbState_OutOfMemory,
-	netxUsbState_DeviceNotFound,
-	netxUsbState_DeviceBusy,
-	netxUsbState_ReadError,
-	netxUsbState_WriteError,
-	netxUsbState_BlockSizeError,
-	netxUsbState_CommandTooLong,
-	netxUsbState_Timeout,
-	netxUsbState_Cancel,
-	netxUsbState_Error
-} tNetxUsbState;
-
-
 class romloader_usb : public romloader
 {
 public:
-	romloader_usb(wxString strName, wxString strTyp, const romloader_functioninterface *ptFn, struct usb_device *ptNetxDev, romloader_usb_plugin_fn_close_instance fn_close, wxLuaState *ptLuaState);
+	romloader_usb(wxString strName, wxString strTyp, const romloader_functioninterface *ptFn, unsigned long ulDeviceId, romloader_usb_plugin_fn_close_instance fn_close, wxLuaState *ptLuaState);
 	~romloader_usb(void);
 
 // *** lua interface start ***
@@ -96,33 +80,37 @@ public:
 	virtual void call(double dNetxAddress, double dParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 // *** lua interface end ***
 
-
+	typedef struct
+	{
+		libusb_error eErrNo;
+		const char *pcErrMsg;
+	} LIBUSB_STRERROR_T;
+	static wxString libusb_strerror(int iError);
+	static bool isDeviceNetx(libusb_device *ptDev);
 private:
 	bool chip_init(void);
 
 	int write_data(wxString &strData, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 	bool parseDumpLine(const char *pcLine, size_t sizLineLen, unsigned long ulAddress, unsigned long ulElements, unsigned char *pucBuffer, wxString &strErrorMsg);
 
-	tNetxUsbState getLine(wxString &strData);
+	int getLine(wxString &strData);
 
-	tNetxUsbState usb_executeCommand(wxString strCommand, wxString &strResponse);
-	tNetxUsbState usb_load(const char *pcData, size_t sizDataLen, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
-	tNetxUsbState usb_call(unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
-
-	wxString usb_getErrorString(tNetxUsbState tResult);
-
-	tNetxUsbState usb_sendCommand(wxString strCommand);
-	tNetxUsbState usb_getNetxData(wxString &strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
-
+	int usb_executeCommand(wxString strCommand, wxString &strResponse);
+	int usb_load(const char *pcData, size_t sizDataLen, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+	int usb_call(unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+	int usb_sendCommand(wxString strCommand);
+	int usb_getNetxData(wxString &strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 
 	// lowlevel functions
-	tNetxUsbState libusb_openDevice(struct usb_device *ptNetxDev);
-	tNetxUsbState libusb_closeDevice(void);
-	tNetxUsbState libusb_resetDevice(void);
-	tNetxUsbState libusb_readBlock(unsigned char *pcReceiveBuffer, unsigned int uiSize, int iTimeoutMs);
-	tNetxUsbState libusb_writeBlock(const unsigned char *pcSendBuffer, unsigned int uiSize, int iTimeoutMs);
-	tNetxUsbState libusb_exchange(const unsigned char *pcSendBuffer, unsigned char *pcReceiveBuffer);
+	int libusb_open_by_bus_and_adr(wxString &strErrorMsg);
+	int libusb_closeDevice(void);
+	int libusb_resetDevice(void);
+	int libusb_readBlock(unsigned char *pucReceiveBuffer, unsigned int uiSize, int iTimeoutMs);
+	int libusb_writeBlock(unsigned char *pucSendBuffer, unsigned int uiSize, int iTimeoutMs);
+	int libusb_exchange(unsigned char *pucSendBuffer, unsigned char *pucReceiveBuffer);
 
+
+	static const LIBUSB_STRERROR_T atStrError[];
 
 
 
@@ -137,11 +125,14 @@ private:
 	// formatted name for log message
 	wxString m_strMe;
 
-	// pointer to the usb device
-	struct usb_device *m_ptUsbDev;
+	/* libusb context */
+	libusb_context *m_ptLibUsbContext;
+	/* pointer to the usb device */
+	libusb_device_handle *m_ptUsbDevHandle;
 
-	// handle to the USB device or NULL for unconnected
-	usb_dev_handle *m_ptUsbDevHandle;
+	/* bus number and device address for the connection */
+	uint8_t m_uiNetxBusNr;
+	uint8_t m_uiNetxDeviceAddress;
 
 	// buffer for the read_image command
 	size_t sizBufLen;

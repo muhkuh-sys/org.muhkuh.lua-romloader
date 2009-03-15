@@ -25,10 +25,6 @@
 #include <wx/wx.h>
 #include <wx/regex.h>
 
-#ifdef __WINDOWS__
-	#define ETIMEDOUT 116
-#endif
-
 /*-------------------------------------*/
 
 static muhkuh_plugin_desc plugin_desc =
@@ -67,8 +63,6 @@ int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId)
 	/* init the lua state */
 	m_ptLuaState = NULL;
 
-	usb_init();
-
 	return 0;
 }
 
@@ -87,7 +81,7 @@ int fn_init_lua(wxLuaState *ptLuaState)
 	fSuccess = wxLuaBinding_romloader_usb_lua_init();
 	if( fSuccess!=true )
 	{
-		wxLogMessage(wxT("failed to init romloader_baka lua bindings"));
+		wxLogError(wxT("failed to init romloader_baka lua bindings"));
 		return -1;
 	}
 
@@ -113,96 +107,145 @@ const muhkuh_plugin_desc *fn_get_desc(void)
 
 /*-------------------------------------*/
 
-bool romloader_usb_isDeviceNetx(struct usb_device *ptDevice)
-{
-	bool fDeviceIsNetx;
-
-
-	if( ptDevice==NULL )
-	{
-		return false;
-	}
-
-	fDeviceIsNetx  = true;
-	fDeviceIsNetx &= ( ptDevice->descriptor.bDeviceClass==0x00 );
-	fDeviceIsNetx &= ( ptDevice->descriptor.bDeviceSubClass==0x00 );
-	fDeviceIsNetx &= ( ptDevice->descriptor.bDeviceProtocol==0x00 );
-	fDeviceIsNetx &= ( ptDevice->descriptor.idVendor==0x0cc4 );
-	fDeviceIsNetx &= ( ptDevice->descriptor.idProduct==0x0815 );
-	fDeviceIsNetx &= ( ptDevice->descriptor.bcdDevice==0x0100 );
-
-	return fDeviceIsNetx;
-}
-
 int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList)
 {
-	std::vector<struct usb_device *> tDeviceList;
-	struct usb_bus *ptBusses;
-	struct usb_bus *ptBus;
-	struct usb_device *ptDev;
 	int iResult;
+	libusb_context *ptLibUsbContext;
+	ssize_t ssizDevList;
+	libusb_device **ptDeviceList;
+	libusb_device **ptDevCnt, **ptDevEnd;
+	libusb_device *ptDev;
+	libusb_device_handle *ptDevHandle;
+	uint8_t uiBusNr;
+	uint8_t uiDevAdr;
+	bool fDeviceIsBusy;
+	wxString strMe;
+	std::vector<struct usb_device *> tDeviceList;
 	int iInterfaces;
 	bool fDeviceIsNetx;
 	muhkuh_plugin_instance *ptInst;
 	wxString strName;
 	wxString strTyp;
 	wxString strLuaCreateFn;
+	wxString strErrorMsg;
+	unsigned long ulDeviceId;
+	void *pvDeviceId;
 
 
-	/* detect all busses */
-	iResult = usb_find_busses();
-	if( iResult<0 )
-	{
-		/* failed to detect busses */
-		return -1;
-	}
-
-	/* detect all devices on the busses */
-	iResult = usb_find_devices();
-	if( iResult<0 )
-	{
-		/* failed to detect devices */
-		return -1;
-	}
+	/* create id for errormessages */
+	strMe = plugin_desc.strPluginId + wxT(" : ");
 
 	strTyp = plugin_desc.strPluginId;
 	strLuaCreateFn = wxT("muhkuh.romloader_usb_create");
 
 	iInterfaces = 0;
 
-	/* get array of busses */
-	ptBusses = usb_get_busses();
-
-	/* loop over all busses */
-	ptBus = ptBusses;
-	while(ptBus!=NULL)
+	/* create a new libusb context */
+	iResult = libusb_init(&ptLibUsbContext);
+	if( iResult!=LIBUSB_SUCCESS )
 	{
-		/* loop over all devices */
-		ptDev = ptBus->devices;
-		while(ptDev!=NULL) 
+		/* failed to create the context */
+		wxLogError(wxT("Failed to create libusb context: ") + romloader_usb::libusb_strerror(iResult));
+	}
+	else
+	{
+		/* detect devices */
+		ssizDevList = libusb_get_device_list(ptLibUsbContext, &ptDeviceList);
+		if( ssizDevList<0 )
 		{
-			// is this device a netx bootmonitor?
-			// class==0, vendor==0x0cc4, product==0x0815, revision==1.00
-			fDeviceIsNetx = romloader_usb_isDeviceNetx(ptDev);
-			if( fDeviceIsNetx==true )
+			/* failed to detect devices */
+			strErrorMsg = romloader_usb::libusb_strerror(ssizDevList);
+			wxLogError(strMe + wxT("failed to detect usb devices: %s"), strErrorMsg.fn_str());
+		}
+		else
+		{
+			/* loop over all devices */
+			ptDevCnt = ptDeviceList;
+			ptDevEnd = ptDevCnt + ssizDevList;
+			while( ptDevCnt<ptDevEnd )
 			{
-				/* construct the name */
-				strName.Printf("romloader_usb_%08x_%02x", ptBus->location, ptDev->devnum);
-				ptInst = new muhkuh_plugin_instance(strName, strTyp, false, strLuaCreateFn, ptDev);
+				ptDev = *ptDevCnt;
+				fDeviceIsNetx = romloader_usb::isDeviceNetx(ptDev);
+				if( fDeviceIsNetx==true )
+				{
+					/* construct the name */
+					uiBusNr = libusb_get_bus_number(ptDev);
+					uiDevAdr = libusb_get_device_address(ptDev);
+					ulDeviceId = uiDevAdr | (uiBusNr<<8);
+					pvDeviceId = (void*)ulDeviceId;
+					strName.Printf("romloader_usb_%08x", ulDeviceId);
+					iResult = libusb_open(ptDev, &ptDevHandle);
+					if( iResult!=LIBUSB_SUCCESS )
+					{
+						/* failed to open the interface, do not add it to the list */
+						wxLogError(strMe + wxT("failed to open device %s, skipping!"), strName.fn_str());
+					}
+					else
+					{
+						/* set the configuration */
+						iResult = libusb_set_configuration(ptDevHandle, 1);
+						if( iResult!=LIBUSB_SUCCESS )
+						{
+							/* failed to set the configuration */
+							wxLogError(wxT("failed to set the configuration of device %s, skipping!"), strName.fn_str());
+						}
+						else
+						{
+							/* claim the interface, 0 is the interface number */
+							iResult = libusb_claim_interface(ptDevHandle, 0);
+							if( iResult!=LIBUSB_SUCCESS && iResult!=LIBUSB_ERROR_BUSY )
+							{
+								/* failed to claim the interface */
+								wxLogError(wxT("failed to claim the interface of device %s, skipping!"), strName.fn_str());
+							}
+							else
+							{
+								if( iResult!=LIBUSB_SUCCESS )
+								{
+									/* the interface is busy! */
+									fDeviceIsBusy = true;
+								}
+								else
+								{
+									/* ok, claimed the interface -> the device is not busy */
+									fDeviceIsBusy = false;
+									/* release the interface */
+									/* NOTE: The 'busy' information only represents the device state at detection time.
+									 * This function _must_not_ keep the claim on the device or other applications will
+									 * not be able to use it.
+									 */
+									iResult = libusb_release_interface(ptDevHandle, 0);
+									if( iResult!=LIBUSB_SUCCESS )
+									{
+										/* failed to release the interface */
+										wxLogError(wxT("failed to release the interface of device %s after a successful claim, skipping!"), strName.fn_str());
+									}
+								}
 
-				pvInterfaceList->push_back(ptInst);
-				++iInterfaces;
+								/* create the new instance */
+								ptInst = new muhkuh_plugin_instance(strName, strTyp, fDeviceIsBusy, strLuaCreateFn, pvDeviceId);
+								/* add the new instance to the list */
+								pvInterfaceList->push_back(ptInst);
+								/* count the created instances */
+								++iInterfaces;
+							}
+						}
+
+						/* close the device */
+						libusb_close(ptDevHandle);
+					}
+				}
+				/* next list item */
+				++ptDevCnt;
 			}
-			/* next device */
-			ptDev = ptDev->next;
+
+			/* free the device list */
+			libusb_free_device_list(ptDeviceList, 1);
 		}
 
-		/* scan next bus */
-		ptBus = ptBus->next;
+		/* free the libusb context */
+		libusb_exit(ptLibUsbContext);
 	}
-
-	// mark all interfaces which are also in the 'open' list as 'busy'
-	// TODO...
 
 	return iInterfaces;
 }
@@ -220,22 +263,24 @@ void romloader_usb_close_instance(wxString &strInterface)
 
 romloader *romloader_usb_create(void *pvHandle)
 {
-	struct usb_device *ptNetxDev;
+	unsigned long ulDeviceId;
+	uint8_t uiBusNr;
+	uint8_t uiDevAdr;
 	romloader *ptInstance = NULL;
 	wxString strName;
 	wxString strTyp;
 
 
-	if( pvHandle!=NULL )
-	{
-		// get handle
-		ptNetxDev = (struct usb_device *)pvHandle;
+	ulDeviceId = (unsigned long)pvHandle;
 
-		// create the new instance
-		strTyp = plugin_desc.strPluginId;
-		strName.Printf("romloader_usb_%08x_%02x", ptNetxDev->bus->location, ptNetxDev->devnum);
-		ptInstance = new romloader_usb(strName, strTyp, NULL, ptNetxDev, romloader_usb_close_instance, m_ptLuaState);
-	}
+	// create the new instance
+	strTyp = plugin_desc.strPluginId;
+
+	uiDevAdr = ulDeviceId & 0xff;
+	uiBusNr = (ulDeviceId>>8) & 0xff;
+	strName.Printf("romloader_usb_%08x", ulDeviceId);
+
+	ptInstance = new romloader_usb(strName, strTyp, NULL, ulDeviceId, romloader_usb_close_instance, m_ptLuaState);
 
 	return ptInstance;
 }
@@ -244,27 +289,47 @@ romloader *romloader_usb_create(void *pvHandle)
 /*-------------------------------------*/
 
 
-romloader_usb::romloader_usb(wxString strName, wxString strTyp, const romloader_functioninterface *ptFn, struct usb_device *ptNetxDev, romloader_usb_plugin_fn_close_instance fn_close, wxLuaState *ptLuaState)
+romloader_usb::romloader_usb(wxString strName, wxString strTyp, const romloader_functioninterface *ptFn, unsigned long ulDeviceId, romloader_usb_plugin_fn_close_instance fn_close, wxLuaState *ptLuaState)
  : romloader(strName, strTyp, NULL, NULL, NULL, ptLuaState)
  , m_fIsConnected(false)
- , m_ptUsbDev(ptNetxDev)
+ , m_ptLibUsbContext(NULL)
  , m_ptUsbDevHandle(NULL)
  , m_fn_usb_close(fn_close)
 {
+	int iResult;
+
+
 	m_strMe.Printf(wxT("romloader_usb(%p): "), this);
 
-	wxLogMessage(m_strMe + wxT("constructor"));
+	wxLogDebug(m_strMe + wxT("constructor"));
 
 	m_strInterface = strName;
 	m_strTyp = strTyp;
+
+	m_uiNetxDeviceAddress = ulDeviceId & 0xff;
+	m_uiNetxBusNr = (ulDeviceId>>8) & 0xff;
+
+	/* create a new libusb context */
+	iResult = libusb_init(&m_ptLibUsbContext);
+	if( iResult!=LIBUSB_SUCCESS )
+	{
+		wxLogError(m_strMe + _("failed to init libusb: %s"), libusb_strerror(iResult).fn_str());
+		m_ptLibUsbContext = NULL;
+	}
 }
 
 
 romloader_usb::~romloader_usb(void)
 {
-	wxLogMessage(m_strMe + wxT("destructor"));
+	wxLogDebug(m_strMe + wxT("destructor"));
 
 	disconnect();
+
+	if( m_ptLibUsbContext!=NULL )
+	{
+		libusb_exit(m_ptLibUsbContext);
+		m_ptLibUsbContext = NULL;
+	}
 
 	if( m_fn_usb_close!=NULL )
 	{
@@ -331,73 +396,87 @@ bool romloader_usb::chip_init(void)
 /* open the connection to the device */
 void romloader_usb::connect(void)
 {
-	tNetxUsbState tResult;
+	int iResult;
 	wxString strResponse;
 	wxString strErrorMsg;
 
 
-	if( m_ptUsbDev!=NULL && m_fIsConnected==false )
+	if( m_fIsConnected!=false )
 	{
-		// open device and provide cancel function with this class as parameter
-		tResult = libusb_openDevice(m_ptUsbDev);
-		if( tResult!=netxUsbState_Ok )
+		wxLogDebug(m_strMe + _("already connected, ignoring new connect request"));
+	}
+	else
+	{
+		m_ptUsbDevHandle = NULL;
+		iResult = libusb_open_by_bus_and_adr(strErrorMsg);
+		if( iResult==LIBUSB_SUCCESS )
 		{
-			strErrorMsg = m_strMe + wxT("failed to open the usb connection to the netx: ") + usb_getErrorString(tResult);
-		}
-		else
-		{
-			// get netx welcome message
-			tResult = usb_getNetxData(strResponse, NULL, 0, NULL);
-			if( tResult!=netxUsbState_Ok )
+			if( m_ptUsbDevHandle==NULL )
 			{
-				wxLogMessage(m_strMe + wxT("failed to receive netx response, trying to reset netx: ") + usb_getErrorString(tResult) );
+				strErrorMsg.Printf(_("device not found. is it still plugged in and powered?"));
+			}
+			else
+			{
+				// get netx welcome message
+				iResult = usb_getNetxData(strResponse, NULL, 0, NULL);
+				if( iResult!=LIBUSB_SUCCESS )
+				{
+					wxLogMessage(m_strMe + _("failed to receive netx response, trying to reset netx: %s") + libusb_strerror(iResult).fn_str() );
 
-				// try to reset the device and try again
-				tResult = libusb_resetDevice();
-				if( tResult!=netxUsbState_Ok )
-				{
-					strErrorMsg = m_strMe + wxT("failed to reset the netx, giving up!");
-				}
-				// open device and provide cancel function with this class as parameter
-				wxLogMessage(m_strMe + wxT("reset ok!"));
-
-				tResult = libusb_openDevice(m_ptUsbDev);
-				if( tResult!=netxUsbState_Ok )
-				{
-					strErrorMsg = m_strMe + wxT("failed to open the usb connection to the netx: ") + usb_getErrorString(tResult);
-				}
-				else
-				{
-					// get netx welcome message
-					tResult = usb_getNetxData(strResponse, NULL, 0, NULL);
-					if( tResult!=netxUsbState_Ok )
+					// try to reset the device and try again
+					m_ptUsbDevHandle = NULL;
+					iResult = libusb_resetDevice();
+					if( iResult!=LIBUSB_SUCCESS )
 					{
-						strErrorMsg = m_strMe + wxT("failed to receive netx response, trying to reset netx: ") + usb_getErrorString(tResult);
-						libusb_closeDevice();
+						strErrorMsg.Printf(_("failed to reset the netx, giving up: %s"), libusb_strerror(iResult).fn_str() );
+					}
+					else
+					{
+						wxLogMessage(m_strMe + wxT("reset ok!"));
+
+						iResult = libusb_open_by_bus_and_adr(strErrorMsg);
+						if( iResult==LIBUSB_SUCCESS )
+						{
+							if( m_ptUsbDevHandle==NULL )
+							{
+								strErrorMsg = _("lost device after reset!");
+								iResult = LIBUSB_ERROR_OTHER;
+							}
+							else
+							{
+								// get netx welcome message
+								iResult = usb_getNetxData(strResponse, NULL, 0, NULL);
+								if( iResult!=LIBUSB_SUCCESS )
+								{
+									strErrorMsg.Printf(_("failed to receive netx response: %s"), libusb_strerror(iResult).fn_str());
+									libusb_closeDevice();
+								}
+							}
+						}
 					}
 				}
-			}
 
-			if( tResult==netxUsbState_Ok )
-			{
-				wxLogInfo(m_strMe + wxT("netx response: ") + strResponse);
-				if( detect_chiptyp()!=true )
-				{
-					strErrorMsg = m_strMe + wxT("failed to detect chiptyp!");
-				}
-				else if( chip_init()!=true )
-				{
-					strErrorMsg = m_strMe + wxT("failed to init chip!");
-				}
-				else
+				if( iResult==LIBUSB_SUCCESS )
 				{
 					m_fIsConnected = true;
-				}
-			}
 
-			if( m_fIsConnected!=true )
-			{
-				libusb_closeDevice();
+					wxLogInfo(m_strMe + wxT("netx response: ") + strResponse);
+					if( detect_chiptyp()!=true )
+					{
+						strErrorMsg = _("failed to detect chiptyp!");
+						m_fIsConnected = false;
+					}
+					else if( chip_init()!=true )
+					{
+						strErrorMsg = _("failed to init chip!");
+						m_fIsConnected = false;
+					}
+				}
+
+				if( m_fIsConnected!=true )
+				{
+					libusb_closeDevice();
+				}
 			}
 		}
 
@@ -413,23 +492,18 @@ void romloader_usb::connect(void)
 /* close the connection to the device */
 void romloader_usb::disconnect(void)
 {
-	tNetxUsbState tResult;
 	wxString strMsg;
 
 
-	if( m_fIsConnected==true )
+	wxLogDebug(m_strMe + wxT("disconnect"));
+
+	if( m_ptUsbDevHandle!=NULL )
 	{
-		wxLogMessage(m_strMe + wxT("disconnect"));
-		tResult = libusb_closeDevice();
-		if( tResult==netxUsbState_Ok )
-		{
-			m_fIsConnected = false;
-		}
-		else
-		{
-			wxLogError(m_strMe + wxT("failed to close the usb connection to the netx: ") + usb_getErrorString(tResult) );
-		}
+		libusb_close(m_ptUsbDevHandle);
 	}
+
+	m_fIsConnected = false;
+	m_ptUsbDevHandle = NULL;
 }
 
 
@@ -445,7 +519,7 @@ double romloader_usb::read_data08(double dNetxAddress)
 {
 	unsigned long ulNetxAddress;
 	unsigned long ulValue;
-	tNetxUsbState tResult;
+	int iResult;
 	wxString strErrorMsg;
 	wxString strCommand;
 	wxString strResponse;
@@ -463,38 +537,45 @@ double romloader_usb::read_data08(double dNetxAddress)
 	// construct the command
 	strCommand.Printf(wxT("DUMP %08lX BYTE"), ulNetxAddress);
 
-	// send the command
-	tResult = usb_executeCommand(strCommand, strResponse);
-	if( tResult!=netxUsbState_Ok )
+	if( m_fIsConnected==false )
 	{
-		strErrorMsg.Printf(wxT("failed to send command: ") + usb_getErrorString(tResult));
-	}
-	else if( reDumpResponse.Matches(strResponse)!=true )
-	{
-		strErrorMsg.Printf(wxT("strange response from device:") + strResponse);
+		strErrorMsg = _("not connected!");
 	}
 	else
 	{
-		strHexValue = reDumpResponse.GetMatch(strResponse, 1);
-		if( strHexValue.ToULong(&ulValue, 16)!=true )
+		// send the command
+		iResult = usb_executeCommand(strCommand, strResponse);
+		if( iResult!=LIBUSB_SUCCESS )
 		{
-			strErrorMsg.Printf(wxT("failed to extract address from response:") + strResponse);
+			strErrorMsg.Printf(_("failed to send command: %s"), libusb_strerror(iResult).fn_str());
 		}
-		else if( ulValue!=ulNetxAddress )
+		else if( reDumpResponse.Matches(strResponse)!=true )
 		{
-			strErrorMsg.Printf(wxT("address does not match request:") + strResponse);
+			strErrorMsg.Printf(_("strange response from device:") + strResponse);
 		}
 		else
 		{
-			strHexValue = reDumpResponse.GetMatch(strResponse, 2);
+			strHexValue = reDumpResponse.GetMatch(strResponse, 1);
 			if( strHexValue.ToULong(&ulValue, 16)!=true )
 			{
-				strErrorMsg.Printf(wxT("failed to extract value from response:") + strResponse);
+				strErrorMsg.Printf(_("failed to extract address from response:") + strResponse);
+			}
+			else if( ulValue!=ulNetxAddress )
+			{
+				strErrorMsg.Printf(_("address does not match request:") + strResponse);
 			}
 			else
 			{
-				wxLogMessage(m_strMe + wxT("read_data08: 0x%08lx = 0x%08lx"), ulNetxAddress, ulValue);
-				fOk = true;
+				strHexValue = reDumpResponse.GetMatch(strResponse, 2);
+				if( strHexValue.ToULong(&ulValue, 16)!=true )
+				{
+					strErrorMsg.Printf(_("failed to extract value from response:") + strResponse);
+				}
+				else
+				{
+					wxLogDebug(m_strMe + wxT("read_data08: 0x%08lx = 0x%08lx"), ulNetxAddress, ulValue);
+					fOk = true;
+				}
 			}
 		}
 	}
@@ -514,7 +595,7 @@ double romloader_usb::read_data16(double dNetxAddress)
 {
 	unsigned long ulNetxAddress;
 	unsigned long ulValue;
-	tNetxUsbState tResult;
+	int iResult;
 	wxString strErrorMsg;
 	wxString strCommand;
 	wxString strResponse;
@@ -532,38 +613,45 @@ double romloader_usb::read_data16(double dNetxAddress)
 	// construct the command
 	strCommand.Printf(wxT("DUMP %08lX WORD"), ulNetxAddress);
 
-	// send the command
-	tResult = usb_executeCommand(strCommand, strResponse);
-	if( tResult!=netxUsbState_Ok )
+	if( m_fIsConnected==false )
 	{
-		strErrorMsg.Printf(wxT("failed to send command: ") + usb_getErrorString(tResult));
-	}
-	else if( reDumpResponse.Matches(strResponse)!=true )
-	{
-		strErrorMsg.Printf(wxT("strange response from device:") + strResponse);
+		strErrorMsg = _("not connected!");
 	}
 	else
 	{
-		strHexValue = reDumpResponse.GetMatch(strResponse, 1);
-		if( strHexValue.ToULong(&ulValue, 16)!=true )
+		// send the command
+		iResult = usb_executeCommand(strCommand, strResponse);
+		if( iResult!=LIBUSB_SUCCESS )
 		{
-			strErrorMsg.Printf(wxT("failed to extract address from response:") + strResponse);
+			strErrorMsg.Printf(_("failed to send command: %s"), libusb_strerror(iResult).fn_str());
 		}
-		else if( ulValue!=ulNetxAddress )
+		else if( reDumpResponse.Matches(strResponse)!=true )
 		{
-			strErrorMsg.Printf(wxT("address does not match request:") + strResponse);
+			strErrorMsg.Printf(_("strange response from device:") + strResponse);
 		}
 		else
 		{
-			strHexValue = reDumpResponse.GetMatch(strResponse, 2);
+			strHexValue = reDumpResponse.GetMatch(strResponse, 1);
 			if( strHexValue.ToULong(&ulValue, 16)!=true )
 			{
-				strErrorMsg.Printf(wxT("failed to extract value from response:") + strResponse);
+				strErrorMsg.Printf(_("failed to extract address from response:") + strResponse);
+			}
+			else if( ulValue!=ulNetxAddress )
+			{
+				strErrorMsg.Printf(_("address does not match request:") + strResponse);
 			}
 			else
 			{
-				wxLogMessage(m_strMe + wxT("read_data16: 0x%08lx = 0x%08lx"), ulNetxAddress, ulValue);
-				fOk = true;
+				strHexValue = reDumpResponse.GetMatch(strResponse, 2);
+				if( strHexValue.ToULong(&ulValue, 16)!=true )
+				{
+					strErrorMsg.Printf(_("failed to extract value from response:") + strResponse);
+				}
+				else
+				{
+					wxLogDebug(m_strMe + wxT("read_data16: 0x%08lx = 0x%08lx"), ulNetxAddress, ulValue);
+					fOk = true;
+				}
 			}
 		}
 	}
@@ -583,7 +671,7 @@ double romloader_usb::read_data32(double dNetxAddress)
 {
 	unsigned long ulNetxAddress;
 	unsigned long ulValue;
-	tNetxUsbState tResult;
+	int iResult;
 	wxString strErrorMsg;
 	wxString strCommand;
 	wxString strResponse;
@@ -601,38 +689,45 @@ double romloader_usb::read_data32(double dNetxAddress)
 	// construct the command
 	strCommand.Printf(wxT("DUMP %08lX"), ulNetxAddress);
 
-	// send the command
-	tResult = usb_executeCommand(strCommand, strResponse);
-	if( tResult!=netxUsbState_Ok )
+	if( m_fIsConnected==false )
 	{
-		strErrorMsg.Printf(wxT("failed to send command: ") + usb_getErrorString(tResult));
-	}
-	else if( reDumpResponse.Matches(strResponse)!=true )
-	{
-		strErrorMsg.Printf(wxT("strange response from device:") + strResponse);
+		strErrorMsg = _("not connected!");
 	}
 	else
 	{
-		strHexValue = reDumpResponse.GetMatch(strResponse, 1);
-		if( strHexValue.ToULong(&ulValue, 16)!=true )
+		// send the command
+		iResult = usb_executeCommand(strCommand, strResponse);
+		if( iResult!=LIBUSB_SUCCESS )
 		{
-			strErrorMsg.Printf(wxT("failed to extract address from response:") + strResponse);
+			strErrorMsg.Printf(wxT("failed to send command: %s"), libusb_strerror(iResult).fn_str());
 		}
-		else if( ulValue!=ulNetxAddress )
+		else if( reDumpResponse.Matches(strResponse)!=true )
 		{
-			strErrorMsg.Printf(wxT("address does not match request:") + strResponse);
+			strErrorMsg.Printf(wxT("strange response from device:") + strResponse);
 		}
 		else
 		{
-			strHexValue = reDumpResponse.GetMatch(strResponse, 2);
+			strHexValue = reDumpResponse.GetMatch(strResponse, 1);
 			if( strHexValue.ToULong(&ulValue, 16)!=true )
 			{
-				strErrorMsg.Printf(wxT("failed to extract value from response:") + strResponse);
+				strErrorMsg.Printf(wxT("failed to extract address from response:") + strResponse);
+			}
+			else if( ulValue!=ulNetxAddress )
+			{
+				strErrorMsg.Printf(wxT("address does not match request:") + strResponse);
 			}
 			else
 			{
-				wxLogMessage(m_strMe + wxT("read_data32: 0x%08lx = 0x%08lx"), ulNetxAddress, ulValue);
-				fOk = true;
+				strHexValue = reDumpResponse.GetMatch(strResponse, 2);
+				if( strHexValue.ToULong(&ulValue, 16)!=true )
+				{
+					strErrorMsg.Printf(wxT("failed to extract value from response:") + strResponse);
+				}
+				else
+				{
+					wxLogDebug(m_strMe + wxT("read_data32: 0x%08lx = 0x%08lx"), ulNetxAddress, ulValue);
+					fOk = true;
+				}
 			}
 		}
 	}
@@ -710,15 +805,15 @@ bool romloader_usb::parseDumpLine(const char *pcLine, size_t sizLineLen, unsigne
 }
 
 
-tNetxUsbState romloader_usb::getLine(wxString &strData)
+int romloader_usb::getLine(wxString &strData)
 {
 	int iEolCnt;
 	size_t sizStartPos;
 	char c;
-	tNetxUsbState tResult;
+	int iResult;
 
 
-	tResult = netxUsbState_Ok;
+	iResult = LIBUSB_SUCCESS;
 
 	strData.Empty();
 
@@ -745,11 +840,11 @@ tNetxUsbState romloader_usb::getLine(wxString &strData)
 			++sizBufPos;
 		}
 
-    // get end of string
-    if( iEolCnt>0 )
-    {
-      strData.Append(wxString::From8BitData(acBuf+sizStartPos, sizBufPos-sizStartPos-iEolCnt));
-    }
+		// get end of string
+		if( iEolCnt>0 )
+		{
+			strData.Append(wxString::From8BitData(acBuf+sizStartPos, sizBufPos-sizStartPos-iEolCnt));
+		}
 
 		// get beginning of string
 		if( iEolCnt==0 && sizStartPos<sizBufPos )
@@ -761,10 +856,10 @@ tNetxUsbState romloader_usb::getLine(wxString &strData)
 		if( iEolCnt==0 || strData.IsEmpty()==true )
 		{
 			acBuf[0] = 0x00;
-			tResult = libusb_exchange((const unsigned char*)acBuf, (unsigned char*)acBuf);
-			if( tResult!=netxUsbState_Ok )
+			iResult = libusb_exchange((unsigned char*)acBuf, (unsigned char*)acBuf);
+			if( iResult!=LIBUSB_SUCCESS )
 			{
-				strData = wxT("failed to receive command response: ") + usb_getErrorString(tResult);
+				strData.Printf(_("failed to receive command response: %s"), libusb_strerror(iResult).fn_str());
 				break;
 			}
 			else
@@ -784,7 +879,7 @@ tNetxUsbState romloader_usb::getLine(wxString &strData)
 		}
 	} while( iEolCnt==0 );
 
-	return tResult;
+	return iResult;
 }
 
 /* read a byte array from the netx to the pc */
@@ -792,7 +887,7 @@ wxString romloader_usb::read_image(double dNetxAddress, double dSize, lua_State 
 {
 	unsigned long ulNetxAddress;
 	unsigned long ulSize;
-	tNetxUsbState tResult;
+	int iResult;
 	wxString strCommand;
 	bool fOk;
 	wxString strErrorMsg;
@@ -814,99 +909,106 @@ wxString romloader_usb::read_image(double dNetxAddress, double dSize, lua_State 
 	// construct the command
 	strCommand.Printf(wxT("DUMP %08lX %08lX BYTE"), ulNetxAddress, ulSize);
 
-	// send the command
-	tResult = usb_sendCommand(strCommand);
-	if( tResult!=netxUsbState_Ok )
+	if( m_fIsConnected==false )
 	{
-		strErrorMsg = wxT("failed to send command: ") + usb_getErrorString(tResult);
+		strErrorMsg = _("not connected!");
 	}
 	else
 	{
-		// init the buffer
-		sizBufLen = 0;
-		sizBufPos = 0;
-		fEof = false;
-
-		// alloc buffer
-		pucData = (unsigned char*)malloc(ulSize);
-		if( pucData==NULL )
+		// send the command
+		iResult = usb_sendCommand(strCommand);
+		if( iResult!=LIBUSB_SUCCESS )
 		{
-			strErrorMsg.Printf(wxT("failed to alloc %d bytes of input buffer!"), ulSize);
+			strErrorMsg.Printf(_("failed to send command: %s"), libusb_strerror(iResult).fn_str());
 		}
 		else
 		{
-			pucDataCnt = pucData;
-			// parse the result
-			ulBytesLeft = ulSize;
-			ulExpectedAddress = ulNetxAddress;
-			while( ulBytesLeft>0 )
-			{
-				fOk = callback_long(L, iLuaCallbackTag, ulSize-ulBytesLeft, pvCallbackUserData);
-				if( fOk!=true )
-				{
-					strErrorMsg = wxT("operation canceled!");
-					break;
-				}
+			// init the buffer
+			sizBufLen = 0;
+			sizBufPos = 0;
+			fEof = false;
 
-				// get the response line
-				tResult = getLine(strResponse);
-				if( tResult!=netxUsbState_Ok )
+			// alloc buffer
+			pucData = (unsigned char*)malloc(ulSize);
+			if( pucData==NULL )
+			{
+				strErrorMsg.Printf(wxT("failed to alloc %d bytes of input buffer!"), ulSize);
+			}
+			else
+			{
+				pucDataCnt = pucData;
+				// parse the result
+				ulBytesLeft = ulSize;
+				ulExpectedAddress = ulNetxAddress;
+				while( ulBytesLeft>0 )
 				{
-					fOk = false;
-					strErrorMsg = wxT("failed to get dump response from device");
-					break;
-				}
-				else if( fEof==true )
-				{
-					fOk = false;
-					strErrorMsg = wxT("not enough data received from device");
-					break;
-				}
-				else
-				{
-					// get the number of expected bytes in the next row
-					ulChunkSize = 16;
-					if( ulChunkSize>ulBytesLeft )
-					{
-						ulChunkSize = ulBytesLeft;
-					}
-					fOk = parseDumpLine(strResponse.To8BitData(), strResponse.Len(), ulExpectedAddress, ulChunkSize, pucDataCnt, strErrorMsg);
+					fOk = callback_long(L, iLuaCallbackTag, ulSize-ulBytesLeft, pvCallbackUserData);
 					if( fOk!=true )
 					{
+						strErrorMsg = wxT("operation canceled!");
+						break;
+					}
+
+					// get the response line
+					iResult = getLine(strResponse);
+					if( iResult!=LIBUSB_SUCCESS )
+					{
+						fOk = false;
+						strErrorMsg = wxT("failed to get dump response from device");
+						break;
+					}
+					else if( fEof==true )
+					{
+						fOk = false;
+						strErrorMsg = wxT("not enough data received from device");
 						break;
 					}
 					else
 					{
-						ulBytesLeft -= ulChunkSize;
-						// inc address
-						ulExpectedAddress += ulChunkSize;
-						// inc buffer ptr
-						pucDataCnt += ulChunkSize;
+						// get the number of expected bytes in the next row
+						ulChunkSize = 16;
+						if( ulChunkSize>ulBytesLeft )
+						{
+							ulChunkSize = ulBytesLeft;
+						}
+						fOk = parseDumpLine(strResponse.To8BitData(), strResponse.Len(), ulExpectedAddress, ulChunkSize, pucDataCnt, strErrorMsg);
+						if( fOk!=true )
+						{
+							break;
+						}
+						else
+						{
+							ulBytesLeft -= ulChunkSize;
+							// inc address
+							ulExpectedAddress += ulChunkSize;
+							// inc buffer ptr
+							pucDataCnt += ulChunkSize;
+						}
 					}
 				}
-			}
 
-			if( fOk==true )
-			{
-				// get data
-				strData = wxString::From8BitData((const char*)pucData, ulSize);
-
-				// wait for prompt
-				tResult = usb_getNetxData(strResponse, NULL, 0, NULL);
-				if( tResult!=netxUsbState_Ok )
+				if( fOk==true )
 				{
-					strData = wxT("failed to receive command response: ") + usb_getErrorString(tResult);
-					fOk = false;
+					// get data
+					strData = wxString::From8BitData((const char*)pucData, ulSize);
+
+					// wait for prompt
+					iResult = usb_getNetxData(strResponse, NULL, 0, NULL);
+					if( iResult!=LIBUSB_SUCCESS )
+					{
+						strData.Printf(_("failed to receive command response: %s"), libusb_strerror(iResult).fn_str());
+						fOk = false;
+					}
 				}
-			}
 
-			if( fOk!=true )
-			{
-				strErrorMsg = strData;
-				strData.Empty();
-			}
+				if( fOk!=true )
+				{
+					strErrorMsg = strData;
+					strData.Empty();
+				}
 
-			free(pucData);
+				free(pucData);
+			}
 		}
 	}
 
@@ -925,7 +1027,7 @@ void romloader_usb::write_data08(double dNetxAddress, double dData)
 {
 	unsigned long ulNetxAddress;
 	unsigned char ucData;
-	tNetxUsbState tResult;
+	int iResult;
 	wxString strErrorMsg;
 	wxString strCommand;
 	wxString strResponse;
@@ -943,20 +1045,27 @@ void romloader_usb::write_data08(double dNetxAddress, double dData)
 	// construct the command
 	strCommand.Printf(wxT("FILL %08lX %02X BYTE"), ulNetxAddress, ucData);
 
-	// send the command
-	tResult = usb_executeCommand(strCommand, strResponse);
-	if( tResult!=netxUsbState_Ok )
+	if( m_fIsConnected==false )
 	{
-		strErrorMsg = wxT("failed to send command: ") + usb_getErrorString(tResult);
-	}
-	else if( strResponse.Cmp(wxT("\n>"))==0 )
-	{
-		wxLogMessage(m_strMe + wxT("write_data08: 0x%08lx = 0x%02x"), ulNetxAddress, ucData);
-		fOk = true;
+		strErrorMsg = _("not connected!");
 	}
 	else
 	{
-		strErrorMsg = wxT("strange response from netx: ") + strResponse;
+		// send the command
+		iResult = usb_executeCommand(strCommand, strResponse);
+		if( iResult!=LIBUSB_SUCCESS )
+		{
+			strErrorMsg.Printf(_("failed to send command: %s"), libusb_strerror(iResult).fn_str());
+		}
+		else if( strResponse.Cmp(wxT("\n>"))==0 )
+		{
+			wxLogDebug(m_strMe + wxT("write_data08: 0x%08lx = 0x%02x"), ulNetxAddress, ucData);
+			fOk = true;
+		}
+		else
+		{
+			strErrorMsg = wxT("strange response from netx: ") + strResponse;
+		}
 	}
 
 	if( fOk!=true )
@@ -972,7 +1081,7 @@ void romloader_usb::write_data16(double dNetxAddress, double dData)
 {
 	unsigned long ulNetxAddress;
 	unsigned short usData;
-	tNetxUsbState tResult;
+	int iResult;
 	wxString strErrorMsg;
 	wxString strCommand;
 	wxString strResponse;
@@ -990,20 +1099,27 @@ void romloader_usb::write_data16(double dNetxAddress, double dData)
 	// construct the command
 	strCommand.Printf(wxT("FILL %08lX %04X WORD"), ulNetxAddress, usData);
 
-	// send the command
-	tResult = usb_executeCommand(strCommand, strResponse);
-	if( tResult!=netxUsbState_Ok )
+	if( m_fIsConnected==false )
 	{
-		strErrorMsg = wxT("failed to send command: ") + usb_getErrorString(tResult);
-	}
-	else if( strResponse.Cmp(wxT("\n>"))==0 )
-	{
-		wxLogMessage(m_strMe + wxT("write_data16: 0x%08lx = 0x%04x"), ulNetxAddress, usData);
-		fOk = true;
+		strErrorMsg = _("not connected!");
 	}
 	else
 	{
-		strErrorMsg = wxT("strange response from netx: ") + strResponse;
+		// send the command
+		iResult = usb_executeCommand(strCommand, strResponse);
+		if( iResult!=LIBUSB_SUCCESS )
+		{
+			strErrorMsg.Printf(_("failed to send command: %s"), libusb_strerror(iResult).fn_str());
+		}
+		else if( strResponse.Cmp(wxT("\n>"))==0 )
+		{
+			wxLogDebug(m_strMe + wxT("write_data16: 0x%08lx = 0x%04x"), ulNetxAddress, usData);
+			fOk = true;
+		}
+		else
+		{
+			strErrorMsg = wxT("strange response from netx: ") + strResponse;
+		}
 	}
 
 	if( fOk!=true )
@@ -1019,7 +1135,7 @@ void romloader_usb::write_data32(double dNetxAddress, double dData)
 {
 	unsigned long ulNetxAddress;
 	unsigned long ulData;
-	tNetxUsbState tResult;
+	int iResult;
 	wxString strErrorMsg;
 	wxString strCommand;
 	wxString strResponse;
@@ -1037,20 +1153,27 @@ void romloader_usb::write_data32(double dNetxAddress, double dData)
 	// construct the command
 	strCommand.Printf(wxT("FILL %08lX %08X"), ulNetxAddress, ulData);
 
-	// send the command
-	tResult = usb_executeCommand(strCommand, strResponse);
-	if( tResult!=netxUsbState_Ok )
+	if( m_fIsConnected==false )
 	{
-		strErrorMsg = wxT("failed to send command: ") + usb_getErrorString(tResult);
-	}
-	else if( strResponse.Cmp(wxT("\n>"))==0 )
-	{
-		wxLogMessage(m_strMe + wxT("write_data32: 0x%08lx = 0x%08lx"), ulNetxAddress, ulData);
-		fOk = true;
+		strErrorMsg = _("not connected!");
 	}
 	else
 	{
-		strErrorMsg = wxT("strange response from netx: ") + strResponse;
+		// send the command
+		iResult = usb_executeCommand(strCommand, strResponse);
+		if( iResult!=LIBUSB_SUCCESS )
+		{
+			strErrorMsg.Printf(_("failed to send command: %s"), libusb_strerror(iResult).fn_str());
+		}
+		else if( strResponse.Cmp(wxT("\n>"))==0 )
+		{
+			wxLogDebug(m_strMe + wxT("write_data32: 0x%08lx = 0x%08lx"), ulNetxAddress, ulData);
+			fOk = true;
+		}
+		else
+		{
+			strErrorMsg = wxT("strange response from netx: ") + strResponse;
+		}
 	}
 
 	if( fOk!=true )
@@ -1065,7 +1188,7 @@ void romloader_usb::write_data32(double dNetxAddress, double dData)
 void romloader_usb::write_image(double dNetxAddress, wxString strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	unsigned long ulNetxAddress;
-	tNetxUsbState tResult;
+	int iResult;
 	bool fOk;
 	wxString strErrorMsg;
 	wxString strResponse;
@@ -1076,31 +1199,38 @@ void romloader_usb::write_image(double dNetxAddress, wxString strData, lua_State
 	// expect error
 	fOk = false;
 
-	// send the command
-	tResult = usb_load(strData.To8BitData(), strData.Len(), ulNetxAddress, L, iLuaCallbackTag, pvCallbackUserData);
-	if( tResult!=netxUsbState_Ok )
+	if( m_fIsConnected==false )
 	{
-		strErrorMsg = wxT("failed to send load command: ") + usb_getErrorString(tResult);
+		strErrorMsg = _("not connected!");
 	}
 	else
 	{
-		// get the response
-		tResult = usb_getNetxData(strResponse, NULL, 0, NULL);
-		if( tResult!=netxUsbState_Ok )
+		// send the command
+		iResult = usb_load(strData.To8BitData(), strData.Len(), ulNetxAddress, L, iLuaCallbackTag, pvCallbackUserData);
+		if( iResult!=LIBUSB_SUCCESS )
 		{
-			strErrorMsg = wxT("failed to get command response: ") + usb_getErrorString(tResult);
+			strErrorMsg.Printf(_("failed to send load command: %s"), libusb_strerror(iResult).fn_str());
 		}
 		else
 		{
-			// check the response
-			if( strResponse.Cmp(wxT("\n>"))==0 )
+			// get the response
+			iResult = usb_getNetxData(strResponse, NULL, 0, NULL);
+			if( iResult!=LIBUSB_SUCCESS )
 			{
-				// ok!
-				fOk = true;
+				strErrorMsg.Printf(_("failed to get command response: %s"), libusb_strerror(iResult).fn_str());
 			}
 			else
 			{
-				strErrorMsg = wxT("strange response from netx: ") + strResponse;
+				// check the response
+				if( strResponse.Cmp(wxT("\n>"))==0 )
+				{
+					// ok!
+					fOk = true;
+				}
+				else
+				{
+					strErrorMsg = wxT("strange response from netx: ") + strResponse;
+				}
 			}
 		}
 	}
@@ -1118,19 +1248,37 @@ void romloader_usb::call(double dNetxAddress, double dParameterR0, lua_State *L,
 {
 	unsigned long ulNetxAddress;
 	unsigned long ulParameterR0;
-	tNetxUsbState tResult;
+	int iResult;
 	wxString strErrorMsg;
 	wxString strResponse;
+	bool fOk;
 
 
 	ulNetxAddress = (unsigned long)dNetxAddress;
 	ulParameterR0 = (unsigned long)dParameterR0;
 
-	// send the command
-	tResult = usb_call(ulNetxAddress, ulParameterR0, L, iLuaCallbackTag, pvCallbackUserData);
-	if( tResult!=netxUsbState_Ok )
+	fOk = false;
+
+	if( m_fIsConnected==false )
 	{
-		strErrorMsg = m_strMe + wxT("failed to send command: ") + usb_getErrorString(tResult);
+		strErrorMsg = _("not connected!");
+	}
+	else
+	{
+		// send the command
+		iResult = usb_call(ulNetxAddress, ulParameterR0, L, iLuaCallbackTag, pvCallbackUserData);
+		if( iResult!=LIBUSB_SUCCESS )
+		{
+			strErrorMsg = m_strMe + wxT("failed to send command: ") + libusb_strerror(iResult).fn_str();
+		}
+		else
+		{
+			fOk = true;
+		}
+	}
+
+	if( fOk!=true )
+	{
 		wxLogError(m_strMe + strErrorMsg);
 		m_ptLuaState->wxlua_Error(strErrorMsg);
 	}
@@ -1139,11 +1287,10 @@ void romloader_usb::call(double dNetxAddress, double dParameterR0, lua_State *L,
 
 /*-------------------------------------*/
 
-
-tNetxUsbState romloader_usb::usb_load(const char *pcData, size_t sizDataLen, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
+int romloader_usb::usb_load(const char *pcData, size_t sizDataLen, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	const unsigned char *pucDataCnt, *pucDataEnd;
-	tNetxUsbState tResult;
+	int iResult;
 	unsigned int uiCrc;
 	wxString strCommand;
 	unsigned char aucBufSend[64];
@@ -1167,8 +1314,8 @@ tNetxUsbState romloader_usb::usb_load(const char *pcData, size_t sizDataLen, uns
 	strCommand.Printf(wxT("LOAD %08lX %08X %04X"), ulLoadAdr, sizDataLen, uiCrc);
 
 	// send the command
-	tResult = usb_sendCommand(strCommand);
-	if( tResult==netxUsbState_Ok )
+	iResult = usb_sendCommand(strCommand);
+	if( iResult==LIBUSB_SUCCESS )
 	{
 		// now send the data part
 		pucDataCnt = (const unsigned char*)pcData;
@@ -1188,12 +1335,12 @@ tNetxUsbState romloader_usb::usb_load(const char *pcData, size_t sizDataLen, uns
 			fIsRunning = callback_long(L, iLuaCallbackTag, lBytesProcessed, pvCallbackUserData);
 			if( fIsRunning!=true )
 			{
-				tResult = netxUsbState_Cancel;
+				iResult = LIBUSB_ERROR_INTERRUPTED;
 				break;
 			}
 
-			tResult = libusb_exchange(aucBufSend, aucBufRec);
-			if( tResult!=netxUsbState_Ok )
+			iResult = libusb_exchange(aucBufSend, aucBufRec);
+			if( iResult!=LIBUSB_SUCCESS )
 			{
 				break;
 			}
@@ -1203,17 +1350,17 @@ tNetxUsbState romloader_usb::usb_load(const char *pcData, size_t sizDataLen, uns
 
 		if( pucDataCnt==pucDataEnd )
 		{
-			tResult = netxUsbState_Ok;
+			iResult = LIBUSB_SUCCESS;
 		}
 	}
 
-	return tResult;
+	return iResult;
 }
 
 
-tNetxUsbState romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
+int romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
-	tNetxUsbState tResult;
+	int iResult;
 	wxString strCommand;
 	unsigned char aucSend[64];
 	unsigned char aucRec[64];
@@ -1230,16 +1377,16 @@ tNetxUsbState romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long
 	strCommand.Printf(wxT("CALL %08lX %08X"), ulNetxAddress, ulParameterR0);
 
 	// send the command
-	tResult = usb_sendCommand(strCommand);
-	if( tResult==netxUsbState_Ok )
+	iResult = usb_sendCommand(strCommand);
+	if( iResult==LIBUSB_SUCCESS )
 	{
 		// wait for the call to finish
 		do
 		{
 			// send handshake
 			aucSend[0] = 0x00;
-			tResult = libusb_writeBlock(aucSend, 64, 200);
-			if( tResult==netxUsbState_Ok )
+			iResult = libusb_writeBlock(aucSend, 64, 200);
+			if( iResult==LIBUSB_SUCCESS )
 			{
 				do
 				{
@@ -1248,15 +1395,15 @@ tNetxUsbState romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long
 					strCallbackData.Empty();
 					if( fIsRunning!=true )
 					{
-						tResult = netxUsbState_Cancel;
+						iResult = LIBUSB_ERROR_INTERRUPTED;
 					}
 					else
 					{
 						// look for data from netx
-						tResult = libusb_readBlock(aucRec, 64, 200);
-						if( tResult==netxUsbState_Ok )
+						iResult = libusb_readBlock(aucRec, 64, 200);
+						if( iResult==LIBUSB_SUCCESS )
 						{
-							tResult = netxUsbState_Timeout;
+							iResult = LIBUSB_ERROR_TIMEOUT;
 
 							// received netx data, check for prompt
 							sizChunkRead = aucRec[0];
@@ -1271,30 +1418,30 @@ tNetxUsbState romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long
 								{
 									// send the rest of the data
 									callback_string(L, iLuaCallbackTag, strCallbackData, pvCallbackUserData);
-									tResult = netxUsbState_Ok;
+									iResult = LIBUSB_SUCCESS;
 								}
 							}
 							break;
 						}
 					}
-				} while( tResult==netxUsbState_Timeout );
+				} while( iResult==LIBUSB_ERROR_TIMEOUT );
 			}
-		} while( tResult==netxUsbState_Timeout );
+		} while( iResult==LIBUSB_ERROR_TIMEOUT );
 	}
 
-	if( tResult==netxUsbState_Ok )
+	if( iResult==LIBUSB_SUCCESS )
 	{
 		aucSend[0] = 0x00;
-		tResult = libusb_exchange(aucSend, aucRec);
+		iResult = libusb_exchange(aucSend, aucRec);
 	}
 
-	return tResult;
+	return iResult;
 }
 
 
-tNetxUsbState romloader_usb::usb_sendCommand(wxString strCommand)
+int romloader_usb::usb_sendCommand(wxString strCommand)
 {
-	tNetxUsbState tResult;
+	int iResult;
 	size_t sizCmdLen;
 	unsigned char abSend[64];
 	unsigned char abRec[64];
@@ -1308,12 +1455,12 @@ tNetxUsbState romloader_usb::usb_sendCommand(wxString strCommand)
 	sizCmdLen = strCommand.Len();
 	if( sizCmdLen>62 )
 	{
-		wxLogMessage(m_strMe + wxT("command exceeds maximum length of 62 chars: ") + strCommand);
-		tResult = netxUsbState_CommandTooLong;
+		wxLogError(m_strMe + wxT("command exceeds maximum length of 62 chars: ") + strCommand);
+		iResult = LIBUSB_ERROR_OVERFLOW;
 	}
 	else
 	{
-		wxLogMessage(m_strMe + wxT("send command '%s'"), strCommand.fn_str());
+		wxLogDebug(m_strMe + wxT("send command '%s'"), strCommand.fn_str());
 
 		// construct the command
 		memcpy(abSend+1, strCommand.To8BitData(), sizCmdLen);
@@ -1321,22 +1468,22 @@ tNetxUsbState romloader_usb::usb_sendCommand(wxString strCommand)
 		abSend[sizCmdLen+1] = 0x0a;
 
 		// send the command
-		tResult = libusb_exchange(abSend, abRec);
-		if( tResult==netxUsbState_Ok )
+		iResult = libusb_exchange(abSend, abRec);
+		if( iResult==LIBUSB_SUCCESS )
 		{
 			// terminate command
 			abSend[0] = 0x00;
-			tResult = libusb_exchange(abSend, abRec);
+			iResult = libusb_exchange(abSend, abRec);
 		}
 	}
 
-	return tResult;
+	return iResult;
 }
 
 
-tNetxUsbState romloader_usb::usb_getNetxData(wxString &strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
+int romloader_usb::usb_getNetxData(wxString &strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
-	tNetxUsbState tResult;
+	int iResult;
 	unsigned char buf_send[64];
 	unsigned char buf_rec[64];
 	unsigned int ulLineLen;
@@ -1349,8 +1496,8 @@ tNetxUsbState romloader_usb::usb_getNetxData(wxString &strData, lua_State *L, in
 	do
 	{
 		buf_send[0] = 0x00;
-		tResult = libusb_exchange(buf_send, buf_rec);
-		if( tResult!=netxUsbState_Ok )
+		iResult = libusb_exchange(buf_send, buf_rec);
+		if( iResult!=LIBUSB_SUCCESS )
 		{
 			break;
 		}
@@ -1365,276 +1512,271 @@ tNetxUsbState romloader_usb::usb_getNetxData(wxString &strData, lua_State *L, in
 		}
 	} while( ulLineLen!=0 );
 
-	return tResult;
+	return iResult;
 }
 
 
-tNetxUsbState romloader_usb::usb_executeCommand(wxString strCommand, wxString &strResponse)
+int romloader_usb::usb_executeCommand(wxString strCommand, wxString &strResponse)
 {
-	tNetxUsbState tResult;
+	int iResult;
 
 
-	// send the command
-	tResult = usb_sendCommand(strCommand);
-	if( tResult==netxUsbState_Ok )
+	/* send the command */
+	iResult = usb_sendCommand(strCommand);
+	if( iResult==LIBUSB_SUCCESS )
 	{
-		// get the response
-		tResult = usb_getNetxData(strResponse, NULL, 0, NULL);
+		/* get the response */
+		iResult = usb_getNetxData(strResponse, NULL, 0, NULL);
 	}
 
-	return tResult;
-}
-
-
-wxString romloader_usb::usb_getErrorString(tNetxUsbState tResult)
-{
-	wxString strMessage;
-
-
-	switch(tResult)
-	{
-	case netxUsbState_Ok:
-		strMessage = _("ok");
-		break;
-
-	case netxUsbState_OutOfMemory:
-		strMessage = _("out of memory");
-		break;
-
-	case netxUsbState_DeviceNotFound:
-		strMessage = _("device not found");
-		break;
-
-	case netxUsbState_DeviceBusy:
-		strMessage = _("device is busy");
-		break;
-
-	case netxUsbState_ReadError:
-		strMessage = _("read error");
-		break;
-
-	case netxUsbState_WriteError:
-		strMessage = _("write error");
-		break;
-
-	case netxUsbState_BlockSizeError:
-		strMessage = _("block size error");
-		break;
-
-	case netxUsbState_CommandTooLong:
-		strMessage = _("command too long");
-		break;
-
-	case netxUsbState_Timeout:
-		strMessage = _("timeout");
-		break;
-
-	case netxUsbState_Cancel:
-		strMessage = _("canceled");
-		break;
-
-	case netxUsbState_Error:
-		strMessage = _("error");
-		break;
-
-	default:
-		strMessage.Printf(_("unknown errorcode: %d"), tResult);
-		break;
-	}
-
-	return strMessage;
+	return iResult;
 }
 
 
 /*-------------------------------------*/
 
 
-tNetxUsbState romloader_usb::libusb_openDevice(struct usb_device *ptNetxDev)
+int romloader_usb::libusb_open_by_bus_and_adr(wxString &strErrorMsg)
 {
-	usb_dev_handle *ptDevHandle;
-	int iRet;
-	tNetxUsbState tResult;
+	int iResult;
+	ssize_t ssizDevList;
+	libusb_device **ptDeviceList;
+	libusb_device **ptDevCnt, **ptDevEnd;
+	libusb_device *ptDev;
+	libusb_device_handle *ptDevHandle;
+	bool fDeviceIsBusy;
+	bool fDeviceIsNetx;
+	uint8_t uiBusNr;
+	uint8_t uiDevAdr;
 
 
-	// open the netx device
-	ptDevHandle = usb_open(ptNetxDev);
-	if( ptDevHandle==NULL )
+	/* detect devices */
+	ssizDevList = libusb_get_device_list(m_ptLibUsbContext, &ptDeviceList);
+	if( ssizDevList<0 )
 	{
-		// can't open handle
-		wxLogError(m_strMe + _("failed to open handle! was the device unplugged after the last scan?"));
-		tResult = netxUsbState_DeviceNotFound;
+		/* failed to detect devices */
+		iResult = (int)ssizDevList;
+		strErrorMsg.Printf(_("failed to detect usb devices: %s"), libusb_strerror(iResult).fn_str());
 	}
 	else
 	{
-		// set the configuration
-		iRet = usb_set_configuration(ptDevHandle, 1);
-		if( iRet!=0 )
+		/* loop over all devices */
+		ptDevCnt = ptDeviceList;
+		ptDevEnd = ptDevCnt + ssizDevList;
+		while( ptDevCnt<ptDevEnd )
 		{
-			// close the device
-			usb_close(ptDevHandle);
-			// failed to claim interface, assume busy
-			wxLogError(m_strMe + _("failed to configure the usb interface! is the device in use?"));
-			tResult = netxUsbState_DeviceBusy;
-		}
-		else
-		{
-			// try to claim the interface
-			iRet = usb_claim_interface(ptDevHandle, 0);
-			if( iRet!=0 )
+			ptDev = *ptDevCnt;
+			fDeviceIsNetx = isDeviceNetx(ptDev);
+			if( fDeviceIsNetx==true )
 			{
-				// close the device
-				usb_close(ptDevHandle);
-				// failed to claim interface, assume busy
-				wxLogError(m_strMe + _("failed to claim the usb interface! is the device in use?"));
-				tResult = netxUsbState_DeviceBusy;
+				/* is this the correct bus number and device address? */
+				uiBusNr = libusb_get_bus_number(ptDev);
+				uiDevAdr = libusb_get_device_address(ptDev);
+				if( uiBusNr==m_uiNetxBusNr && uiDevAdr==m_uiNetxDeviceAddress )
+				{
+					iResult = libusb_open(ptDev, &ptDevHandle);
+					if( iResult!=LIBUSB_SUCCESS )
+					{
+						/* failed to open the interface */
+						strErrorMsg.Printf(_("failed to open device: %s"), libusb_strerror(iResult).fn_str());
+					}
+					else
+					{
+						/* set the configuration */
+						iResult = libusb_set_configuration(ptDevHandle, 1);
+						if( iResult!=LIBUSB_SUCCESS )
+						{
+							/* failed to set the configuration */
+							wxLogError(wxT("failed to set the configuration: %s"), libusb_strerror(iResult).fn_str());
+						}
+						else
+						{
+							/* claim the interface, 0 is the interface number */
+							iResult = libusb_claim_interface(ptDevHandle, 0);
+							if( iResult!=LIBUSB_SUCCESS )
+							{
+								/* failed to claim the interface */
+								strErrorMsg.Printf(wxT("failed to claim the interface:"), libusb_strerror(iResult).fn_str());
+								/* close the device */
+								libusb_close(ptDevHandle);
+							}
+							else
+							{
+								m_ptUsbDevHandle = ptDevHandle;
+							}
+						}
+					}
+				}
+				break;
 			}
-			else
-			{
-				// fill the device structure
-				m_ptUsbDevHandle = ptDevHandle;
-				tResult = netxUsbState_Ok;
-			}
+			/* next list item */
+			++ptDevCnt;
 		}
 	}
 
-	return tResult;
+	/* free the device list */
+	libusb_free_device_list(ptDeviceList, 1);
+
+	return iResult;
 }
 
 
-tNetxUsbState romloader_usb::libusb_closeDevice(void)
+int romloader_usb::libusb_closeDevice(void)
 {
-	tNetxUsbState tResult;
-	int iRet;
+	int iResult;
 
 
-	// expect failure
-	tResult = netxUsbState_Error;
-
-	// release the interface
-	iRet = usb_release_interface(m_ptUsbDevHandle, 0);
-	if( iRet!=0 )
+	/* release the interface */
+	iResult = libusb_release_interface(m_ptUsbDevHandle, 0);
+	if( iResult!=LIBUSB_SUCCESS )
 	{
-		// failed to release interface
-		wxLogError(m_strMe + wxT("failed to release the usb interface"));
+		/* failed to release interface */
+		wxLogError(m_strMe + _("failed to release the usb interface: %s"), libusb_strerror(iResult).fn_str());
 	}
 	else
 	{
-		// close the netx device
-		iRet = usb_close(m_ptUsbDevHandle);
-		if( iRet!=0 )
-		{
-			// failed to close handle
-			wxLogError(m_strMe + wxT("failed to release the usb handle"));
-		}
-		else
-		{
-			tResult = netxUsbState_Ok;
-		}
+		/* close the netx device */
+		libusb_close(m_ptUsbDevHandle);
 	}
 
-	return tResult;
+	return iResult;
 }
 
 
-tNetxUsbState romloader_usb::libusb_resetDevice(void)
+int romloader_usb::libusb_resetDevice(void)
 {
-	tNetxUsbState tResult;
-	int iRet;
+	int iResult;
 
 
-	// expect success
-	tResult = netxUsbState_Ok;
-
-	iRet = usb_reset(m_ptUsbDevHandle);
-	if( iRet==0 )
+	iResult = libusb_reset_device(m_ptUsbDevHandle);
+	if( iResult==LIBUSB_SUCCESS )
 	{
-		usb_close(m_ptUsbDevHandle);
+		libusb_close(m_ptUsbDevHandle);
 	}
-	else if( iRet==-ENODEV )
+	else if( iResult==LIBUSB_ERROR_NOT_FOUND )
 	{
 		// the old device is already gone -> that's good, ignore the error
-		usb_close(m_ptUsbDevHandle);
-	}
-	else
-	{
-		tResult = netxUsbState_Error;
+		libusb_close(m_ptUsbDevHandle);
+		iResult = LIBUSB_SUCCESS;
 	}
 
-	return tResult;
+	return iResult;
 }
 
 
-tNetxUsbState romloader_usb::libusb_readBlock(unsigned char *pcReceiveBuffer, unsigned int uiSize, int iTimeoutMs)
+int romloader_usb::libusb_readBlock(unsigned char *pucReceiveBuffer, unsigned int uiSize, int iTimeoutMs)
 {
 	int iRet;
 	int iSize;
+	int iTransfered;
 
 
-	// check blocksize
-	if( uiSize>64 )
-	{
-		return netxUsbState_BlockSizeError;
-	}
 	iSize = (int)uiSize;
 
-	iRet = usb_bulk_read(m_ptUsbDevHandle, 0x81, (char*)pcReceiveBuffer, iSize, iTimeoutMs);
-	if( iRet==-ETIMEDOUT )
-	{
-		return netxUsbState_Timeout;
-	}
-	else if( iRet!=iSize )
-	{
-		return netxUsbState_ReadError;
-	}
-	else
-	{
-		return netxUsbState_Ok;
-	}
+	iRet = libusb_bulk_transfer(m_ptUsbDevHandle, 0x81, pucReceiveBuffer, iSize, &iTransfered, iTimeoutMs);
+	return iRet;
 }
 
 
-tNetxUsbState romloader_usb::libusb_writeBlock(const unsigned char *pcSendBuffer, unsigned int uiSize, int iTimeoutMs)
+int romloader_usb::libusb_writeBlock(unsigned char *pucSendBuffer, unsigned int uiSize, int iTimeoutMs)
 {
 	int iRet;
 	int iSize;
+	int iTransfered;
 
 
-	// check blocksize
-	if( uiSize>64 )
-	{
-		return netxUsbState_BlockSizeError;
-	}
 	iSize = (int)uiSize;
 
-	iRet = usb_bulk_write(m_ptUsbDevHandle, 0x01, (char*)pcSendBuffer, iSize, iTimeoutMs);
-	if( iRet==-ETIMEDOUT )
-	{
-		return netxUsbState_Timeout;
-	}
-	else if( iRet!=iSize )
-	{
-		return netxUsbState_WriteError;
-	}
-	else
-	{
-		return netxUsbState_Ok;
-	}
+	iRet = libusb_bulk_transfer(m_ptUsbDevHandle, 0x01, pucSendBuffer, iSize, &iTransfered, iTimeoutMs);
+	return iRet;
 }
 
 
-
-tNetxUsbState romloader_usb::libusb_exchange(const unsigned char *pcSendBuffer, unsigned char *pcReceiveBuffer)
+int romloader_usb::libusb_exchange(unsigned char *pucSendBuffer, unsigned char *pucReceiveBuffer)
 {
-	tNetxUsbState tResult;
+	int iResult;
 
 
-	tResult = libusb_writeBlock(pcSendBuffer, 64, 200);
-	if( tResult==netxUsbState_Ok )
+	iResult = libusb_writeBlock(pucSendBuffer, 64, 200);
+	if( iResult==LIBUSB_SUCCESS )
 	{
-		tResult = libusb_readBlock(pcReceiveBuffer, 64, 200);
+		iResult = libusb_readBlock(pucReceiveBuffer, 64, 200);
 	}
-        return tResult;
+	return iResult;
 }
 
 
+const romloader_usb::LIBUSB_STRERROR_T romloader_usb::atStrError[] =
+{
+	{ LIBUSB_SUCCESS,		_("success") },
+	{ LIBUSB_ERROR_IO,		_("input/output error") },
+	{ LIBUSB_ERROR_INVALID_PARAM,	_("invalid parameter") },
+	{ LIBUSB_ERROR_ACCESS,		_("access denied (insufficient permissions)") },
+	{ LIBUSB_ERROR_NO_DEVICE,	_("no such device (it may have been disconnected)") },
+	{ LIBUSB_ERROR_NOT_FOUND,	_("entity not found") },
+	{ LIBUSB_ERROR_BUSY,		_("resource busy") },
+	{ LIBUSB_ERROR_TIMEOUT,		_("operation timed out") },
+	{ LIBUSB_ERROR_OVERFLOW,	_("overflow") },
+	{ LIBUSB_ERROR_PIPE,		_("pipe error") },
+	{ LIBUSB_ERROR_INTERRUPTED,	_("system call interrupted (perhaps due to signal)") },
+	{ LIBUSB_ERROR_NO_MEM,		_("insufficient memory") },
+	{ LIBUSB_ERROR_NOT_SUPPORTED,	_("operation not supported or unimplemented on this platform") },
+	{ LIBUSB_ERROR_OTHER,		_("other error") },
+};
+
+wxString romloader_usb::libusb_strerror(int iError)
+{
+	const LIBUSB_STRERROR_T *ptCnt, *ptEnd;
+	const char *pcMsg;
+	const char *pcUnknownError = "unknown error";
+	wxString strErrorMsg;
+
+
+	ptCnt = atStrError;
+	ptEnd = ptCnt + (sizeof(atStrError)/sizeof(atStrError[0]));
+	pcMsg = pcUnknownError;
+	while( ptCnt<ptEnd )
+	{
+		if( ptCnt->eErrNo==iError )
+		{
+			pcMsg = ptCnt->pcErrMsg;
+			break;
+		}
+		else
+		{
+			++ptCnt;
+		}
+	}
+
+	strErrorMsg.Printf(wxT("%d: %s"), iError, pcMsg);
+
+	return strErrorMsg;
+}
+
+
+bool romloader_usb::isDeviceNetx(libusb_device *ptDev)
+{
+	bool fDeviceIsNetx;
+	int iResult;
+	struct libusb_device_descriptor sDevDesc;
+
+
+	fDeviceIsNetx = false;
+	if( ptDev!=NULL )
+	{
+		iResult = libusb_get_device_descriptor(ptDev, &sDevDesc);
+		if( iResult==LIBUSB_SUCCESS )
+		{
+			fDeviceIsNetx  = true;
+			fDeviceIsNetx &= ( sDevDesc.bDeviceClass==0x00 );
+			fDeviceIsNetx &= ( sDevDesc.bDeviceSubClass==0x00 );
+			fDeviceIsNetx &= ( sDevDesc.bDeviceProtocol==0x00 );
+			fDeviceIsNetx &= ( sDevDesc.idVendor==0x0cc4 );
+			fDeviceIsNetx &= ( sDevDesc.idProduct==0x0815 );
+			fDeviceIsNetx &= ( sDevDesc.bcdDevice==0x0100 );
+		}
+	}
+
+	return fDeviceIsNetx;
+}
 

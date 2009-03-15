@@ -28,7 +28,7 @@
 			<sys-lib>setupapi</sys-lib>
 		</if>
 		<if cond="TARGETING_UNIX=='1'">
-			<sys-lib>usb</sys-lib>
+			<sys-lib>usb-1.0</sys-lib>
 		</if>
 
 		<wxlua-lib>wxluasocket</wxlua-lib>
