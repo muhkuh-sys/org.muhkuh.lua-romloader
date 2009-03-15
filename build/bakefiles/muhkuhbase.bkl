@@ -4,32 +4,33 @@
 	<!--                     The common muhkuh settings                     -->
 	<!-- ================================================================== -->
 
-	<using module="pkgconfig"/>
-
-	<!-- do not use monolithic wx build -->
-	<set var="WX_MONOLITHIC">0</set>
-
-	<!-- do not use unicode -->
-	<set var="WX_UNICODE">0</set>
-
-	<!-- use shared wx -->
-	<set var="WX_SHARED">1</set>
-
-	<!-- do not use python -->
-	<set var="WX_PYTHON">0</set>
-
-        <set var="WX_DEBUG_DEFAULT" overwrite="0">1</set>
-        <option name="WX_DEBUG">
-            <values>0,1</values>
-            <values-description>Release,Debug</values-description>
-            <default-value>$(WX_DEBUG_DEFAULT)</default-value>
-            <description>
-                Use debug build of wxWidgets (define __WXDEBUG__)?
-            </description>
-        </option>
-
 	<!-- This is required because it contains the definitions of a lot of utils -->
 	<include file="wxluabase.bkl"/>
+
+	<template id="muhkuh_template">
+		<!-- do not use monolithic wx build -->
+		<set var="WX_MONOLITHIC">0</set>
+
+		<!-- do not use unicode -->
+		<set var="WX_UNICODE">0</set>
+
+		<!-- use shared wx -->
+		<set var="WX_SHARED">1</set>
+
+		<!-- do not use python -->
+		<set var="WX_PYTHON">0</set>
+
+
+		<set var="__IS_DEBUG__">
+			<if cond="WX_DEBUG=='0'">off</if>
+			<if cond="WX_DEBUG=='1'">on</if>
+		</set>
+		<threading>multi</threading>
+		<runtime-libs>dynamic</runtime-libs>
+		<debug-info>$(__IS_DEBUG__)</debug-info>
+		<debug-runtime-libs>$(__IS_DEBUG__)</debug-runtime-libs>
+	</template>
+
 
 	<!-- Set Lua include and libdir to env var on win platforms -->
 	<if cond="TARGETING_WIN32=='1'">

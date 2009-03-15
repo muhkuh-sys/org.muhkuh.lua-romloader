@@ -4,17 +4,8 @@
 	<!--                     The romloader uart plugin                      -->
 	<!-- ================================================================== -->
 
-	<module id="plugin_romloader_uart" template="wxlua">
+	<module id="plugin_romloader_uart" template="wxlua,muhkuh_template">
 		<dllname>bootloader_uart</dllname>
-
-		<set var="__IS_DEBUG__">
-			<if cond="WX_DEBUG=='0'">off</if>
-			<if cond="WX_DEBUG=='1'">on</if>
-		</set>
-		<threading>multi</threading>
-		<runtime-libs>dynamic</runtime-libs>
-		<debug-info>$(__IS_DEBUG__)</debug-info>
-		<debug-runtime-libs>$(__IS_DEBUG__)</debug-runtime-libs>
 
 		<dirname>$(SRCDIR)/bin</dirname>
 		<include>$(SRCDIR)</include>
