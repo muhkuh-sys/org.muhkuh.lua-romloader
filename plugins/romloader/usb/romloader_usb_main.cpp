@@ -424,7 +424,6 @@ void romloader_usb::connect(void)
 					wxLogMessage(m_strMe + _("failed to receive netx response, trying to reset netx: %s") + libusb_strerror(iResult).fn_str() );
 
 					// try to reset the device and try again
-					m_ptUsbDevHandle = NULL;
 					iResult = libusb_resetDevice();
 					if( iResult!=LIBUSB_SUCCESS )
 					{
@@ -434,6 +433,7 @@ void romloader_usb::connect(void)
 					{
 						wxLogMessage(m_strMe + wxT("reset ok!"));
 
+						m_ptUsbDevHandle = NULL;
 						iResult = libusb_open_by_bus_and_adr(strErrorMsg);
 						if( iResult==LIBUSB_SUCCESS )
 						{
