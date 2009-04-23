@@ -1,6 +1,8 @@
-1.0.422
 
 Changelog for Muhkuh
+
+
+Muhkuh 1.0.422
 
  * introduced variable __MUHKUH_REPORT_PATH into tester/tester_multifile
  * the path is preselected in the file/dir requesters shown when saving test reports 
@@ -10,7 +12,6 @@ Changelog for Muhkuh
  * any command line arguments following a "--" are passed to Lua in the "arg" table
  * fixed read_image function in romloader_usb plugin
  * added serverkuh application
- * started muhkuh debugger
  * add support for old style bitlib
  * added mhash lib and bindings to serverkuh
 
