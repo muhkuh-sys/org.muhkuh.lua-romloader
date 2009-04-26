@@ -193,7 +193,6 @@ romloader *romloader_uart_create(void *pvHandle)
 	wxString strInterface;
 	wxString strTyp;
 	romloader *ptInstance;
-	bool fIsUsed;
 
 
 	ptInstance = NULL;

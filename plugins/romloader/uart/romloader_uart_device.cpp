@@ -588,10 +588,6 @@ bool romloader_uart_device::IdentifyLoader(void)
     wxString            strMsg;
     wxString            strHexValue;
     unsigned long       ulLength;
-    unsigned long       ulValue;
-    unsigned long       ulVersionMajor;
-    unsigned long       ulVersionMinor;
-    unsigned long       ulChipTyp;
     unsigned char       ucData;
     wxString            strResponse;
     unsigned char       abData[3];

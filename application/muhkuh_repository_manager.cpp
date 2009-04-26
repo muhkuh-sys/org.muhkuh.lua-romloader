@@ -42,7 +42,6 @@ muhkuh_repository_manager::muhkuh_repository_manager(const muhkuh_repository_man
  : m_ptRepositories(NULL)
  , m_sizActiveRepositoryIdx(wxNOT_FOUND)
 {
-	std::vector<muhkuh_repository*> *tmpRepositories;
 	std::vector<muhkuh_repository*>::const_iterator iter;
 	muhkuh_repository *ptRepos;
 	muhkuh_repository *ptNewRepos;

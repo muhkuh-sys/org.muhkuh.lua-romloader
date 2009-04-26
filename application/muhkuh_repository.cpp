@@ -808,7 +808,6 @@ bool muhkuh_repository::createTestlist_alllocal(pfnTestlistProgress pfnCallback,
 	wxString strUrl;
 	wxFileSystem fileSystem;
 	bool fScannerIsRunning;
-	tTestData *ptTestData;
 
 
 	// clear any old tests

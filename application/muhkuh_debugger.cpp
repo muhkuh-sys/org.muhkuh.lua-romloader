@@ -436,7 +436,7 @@ void muhkuh_debugger::create_controls(void)
 wxStyledTextCtrl *muhkuh_debugger::create_debugger_editor(wxString strCaption)
 {
 	wxStyledTextCtrl *ptEditor;
-	int iCnt;
+//	int iCnt;
 	const wxFont *ptFont;
 	const wxFont *ptFontItalic;
 

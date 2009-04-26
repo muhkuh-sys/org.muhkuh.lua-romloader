@@ -566,9 +566,6 @@ int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcDa
 	size_t sizBytesLeft;
 	size_t sizChunkSize;
 	size_t sizChunkCnt;
-	int iOldTopOfStack;
-	unsigned long ulBytesProcessed;
-	bool fStillRunning;
 
 
 	/* check the handle */
