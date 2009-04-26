@@ -1233,7 +1233,7 @@ void muhkuh_configDialog::luaIncludePathUpdateButtons(int iSelection)
 	{
 		fPathSelected = true;
 		fCanMoveUp = (iSelection>0);
-		fCanMoveDown = ((iSelection+1)<m_ptPathListBox->GetCount());
+		fCanMoveDown = ((iSelection>=0) && ((((unsigned int)iSelection)+1)<m_ptPathListBox->GetCount()));
 	}
 	else
 	{
