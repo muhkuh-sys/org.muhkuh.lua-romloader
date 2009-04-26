@@ -32,40 +32,10 @@ wx_dataTypeTable =
     Name = "BOOL",
     ValueType = "number",
   },
-  DWORD = {
-    IsNumber = true,
-    Name = "DWORD",
-    ValueType = "number",
-  },
-  DWORD64 = {
-    IsNumber = true,
-    Name = "DWORD64",
-    ValueType = "number",
-  },
-  HANDLE = {
-    IsNumber = false,
-    Name = "HANDLE",
-    ValueType = "number",
-  },
   IntArray_FromLuaTable = {
     IsNumber = true,
     Name = "IntArray_FromLuaTable",
     ValueType = "special",
-  },
-  LPCVOID = {
-    IsNumber = true,
-    Name = "LPCVOID",
-    ValueType = "number",
-  },
-  LPDWORD = {
-    IsNumber = true,
-    Name = "LPDWORD",
-    ValueType = "number",
-  },
-  LPVOID = {
-    IsNumber = true,
-    Name = "LPVOID",
-    ValueType = "number",
   },
   LuaFunction = {
     IsNumber = true,
@@ -76,11 +46,6 @@ wx_dataTypeTable =
     IsNumber = true,
     Name = "LuaTable",
     ValueType = "special",
-  },
-  PVOID = {
-    IsNumber = true,
-    Name = "PVOID",
-    ValueType = "number",
   },
   Propagation_state = {
     IsNumber = true,
@@ -809,6 +774,13 @@ wx_dataTypeTable =
     Name = "wxClipboard",
     ValueType = "class",
   },
+  wxClipboardLocker = {
+    ["%encapsulate"] = true,
+    Condition = "wxLUA_USE_wxClipboard && wxUSE_CLIPBOARD",
+    IsNumber = false,
+    Name = "wxClipboardLocker",
+    ValueType = "class",
+  },
   wxClipboardTextEvent = {
     BaseClass = "wxCommandEvent",
     Condition = "(wxLUA_USE_wxClipboard && wxUSE_CLIPBOARD) && (wxCHECK_VERSION(2,8,0))",
@@ -1123,6 +1095,11 @@ wx_dataTypeTable =
     IsNumber = true,
     Name = "wxDateTime::WeekDay",
     ValueType = "enum",
+  },
+  ["wxDateTime::wxDateTime_t"] = {
+    IsNumber = true,
+    Name = "wxDateTime::wxDateTime_t",
+    ValueType = "number",
   },
   wxDateTimeArray = {
     ["%encapsulate"] = true,
@@ -1820,6 +1797,13 @@ wx_dataTypeTable =
     Condition = "wxLUA_USE_wxGrid && wxUSE_GRID",
     IsNumber = false,
     Name = "wxGridCellCoords",
+    ValueType = "class",
+  },
+  wxGridCellCoordsArray = {
+    ["%encapsulate"] = true,
+    Condition = "wxLUA_USE_wxGrid && wxUSE_GRID",
+    IsNumber = false,
+    Name = "wxGridCellCoordsArray",
     ValueType = "class",
   },
   wxGridCellDateTimeRenderer = {
@@ -2578,6 +2562,11 @@ wx_dataTypeTable =
     Name = "wxLogGui",
     ValueType = "class",
   },
+  wxLogLevel = {
+    IsNumber = true,
+    Name = "wxLogLevel",
+    ValueType = "number",
+  },
   wxLogNull = {
     ["%encapsulate"] = true,
     BaseClass = "wxLog",
@@ -2910,6 +2899,11 @@ wx_dataTypeTable =
     Condition = "wxLUA_USE_wxNotebook && wxUSE_NOTEBOOK",
     IsNumber = false,
     Name = "wxNotebookEvent",
+    ValueType = "class",
+  },
+  wxNotebookPage = {
+    IsNumber = false,
+    Name = "wxNotebookPage",
     ValueType = "class",
   },
   wxNotebookSizer = {
@@ -3974,6 +3968,13 @@ wx_dataTypeTable =
     Name = "wxTextEntryDialog",
     ValueType = "class",
   },
+  wxTextUrlEvent = {
+    BaseClass = "wxCommandEvent",
+    Condition = "wxLUA_USE_wxTextCtrl && wxUSE_TEXTCTRL",
+    IsNumber = false,
+    Name = "wxTextUrlEvent",
+    ValueType = "class",
+  },
   wxTextValidator = {
     BaseClass = "wxValidator",
     Condition = "(wxLUA_USE_wxValidator && wxUSE_VALIDATORS) && (wxLUA_USE_wxTextValidator)",
@@ -4077,6 +4078,11 @@ wx_dataTypeTable =
     IsNumber = false,
     Name = "wxTopLevelWindow",
     ValueType = "class",
+  },
+  wxTraceMask = {
+    IsNumber = true,
+    Name = "wxTraceMask",
+    ValueType = "number",
   },
   wxTreeCtrl = {
     BaseClass = "wxControl",
@@ -4448,10 +4454,12 @@ wx_preprocConditionTable =
   ["%wxchkver_2_6"] = "wxCHECK_VERSION(2,6,0)",
   ["%wxchkver_2_6_4"] = "wxCHECK_VERSION(2,6,4)",
   ["%wxchkver_2_8"] = "wxCHECK_VERSION(2,8,0)",
+  ["%wxchkver_2_8_0"] = "wxCHECK_VERSION(2,8,0)",
   ["%wxchkver_2_8_1"] = "wxCHECK_VERSION(2,8,1)",
   ["%wxchkver_2_8_4"] = "wxCHECK_VERSION(2,8,4)",
   ["%wxchkver_2_8_5"] = "wxCHECK_VERSION(2,8,5)",
   ["%wxchkver_2_8_6"] = "wxCHECK_VERSION(2,8,6)",
+  ["%wxchkver_2_8_8"] = "wxCHECK_VERSION(2,8,8)",
   ["%wxcompat_2_4"] = "(defined(WXWIN_COMPATIBILITY_2_4) && WXWIN_COMPATIBILITY_2_4)",
   ["%wxcompat_2_6"] = "(defined(WXWIN_COMPATIBILITY_2_6) && WXWIN_COMPATIBILITY_2_6)",
   ["%x11"] = "defined(__WXX11__)",

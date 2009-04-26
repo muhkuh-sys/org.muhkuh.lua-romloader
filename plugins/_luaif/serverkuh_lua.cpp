@@ -193,14 +193,14 @@ static int LUACALL wxLua_muhkuh_wrap_xml_testDescription_getVersion(lua_State *L
     return 1;
 }
 
-static wxLuaArgType s_wxluatypeArray_wxLua_muhkuh_wrap_xml_testDescription_setTest[] = { &wxluatype_muhkuh_wrap_xml, &wxluatype_TNUMBER, NULL };
+static wxLuaArgType s_wxluatypeArray_wxLua_muhkuh_wrap_xml_testDescription_setTest[] = { &wxluatype_muhkuh_wrap_xml, &wxluatype_TINTEGER, NULL };
 static int LUACALL wxLua_muhkuh_wrap_xml_testDescription_setTest(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_muhkuh_wrap_xml_testDescription_setTest[1] = {{ wxLua_muhkuh_wrap_xml_testDescription_setTest, WXLUAMETHOD_METHOD, 2, 2, s_wxluatypeArray_wxLua_muhkuh_wrap_xml_testDescription_setTest }};
 // 	bool testDescription_setTest(unsigned int uiTestIdx)
 static int LUACALL wxLua_muhkuh_wrap_xml_testDescription_setTest(lua_State *L)
 {
     // unsigned int uiTestIdx
-    unsigned int uiTestIdx = (int)wxlua_getnumbertype(L, 2);
+    unsigned int uiTestIdx = (unsigned int)wxlua_getuintegertype(L, 2);
     // get this
     muhkuh_wrap_xml * self = (muhkuh_wrap_xml *)wxluaT_getuserdatatype(L, 1, wxluatype_muhkuh_wrap_xml);
     // call testDescription_setTest

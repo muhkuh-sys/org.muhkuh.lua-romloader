@@ -117,7 +117,7 @@ static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_get_chiptyp_name[1] = {{ wxLua
 static int LUACALL wxLua_romloader_get_chiptyp_name(lua_State *L)
 {
     // ROMLOADER_CHIPTYP tChiptyp
-    ROMLOADER_CHIPTYP tChiptyp = (ROMLOADER_CHIPTYP)wxlua_getintegertype(L, 2);
+    ROMLOADER_CHIPTYP tChiptyp = (ROMLOADER_CHIPTYP)wxlua_getenumtype(L, 2);
     // get this
     romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call get_chiptyp_name
@@ -167,7 +167,7 @@ static wxLuaBindCFunc s_wxluafunc_wxLua_romloader_get_romcode_name[1] = {{ wxLua
 static int LUACALL wxLua_romloader_get_romcode_name(lua_State *L)
 {
     // ROMLOADER_ROMCODE tRomcode
-    ROMLOADER_ROMCODE tRomcode = (ROMLOADER_ROMCODE)wxlua_getintegertype(L, 2);
+    ROMLOADER_ROMCODE tRomcode = (ROMLOADER_ROMCODE)wxlua_getenumtype(L, 2);
     // get this
     romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call get_romcode_name

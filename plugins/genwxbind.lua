@@ -17,7 +17,7 @@
 -- Globals
 -- ---------------------------------------------------------------------------
 
-WXLUA_BINDING_VERSION = 23 -- Used to verify that the bindings are updated
+WXLUA_BINDING_VERSION = 26 -- Used to verify that the bindings are updated
                            -- This must match modules/wxlua/include/wxldefs.h
                            -- otherwise a compile time error will be generated.
 
@@ -32,6 +32,8 @@ preprocOperatorTable  = {} -- Preprocessor operators, e.g. table["&"] == "&&"
 typedefTable        = {} -- all %typedefs read from the interface files
 dataTypeTable       = {} -- all datatypes; int, double, class names, see AllocDataType
 dataTypeAttribTable = {} -- attributes for data types; unsigned, const
+dataTypeUIntTable   = {} -- datatypes that are unsigned numbers
+dataTypeBoolTable   = {} -- datatypes that are boolean
 functionAttribTable = {} -- attributes for functions; static, virtual
 
 enumBindingTable           = {} -- table[i] = { Map, Condition, ... }
@@ -108,7 +110,7 @@ function pairs_sort(atable, comp_func)
 end
 
 -- ---------------------------------------------------------------------------
--- Sort the table and return it as an numerically indexed table array
+-- Sort the table keys and return it as an numerically indexed table array
 -- ---------------------------------------------------------------------------
 function TableSort(atable, comp_func)
     local a = {}
@@ -187,6 +189,7 @@ end
 -- ---------------------------------------------------------------------------
 -- Allocate a data type description table (int, double, class...) to dataTypeTable
 -- ---------------------------------------------------------------------------
+
 function AllocDataType(name, value_type, is_number, abstract)
     dataTypeTable[name] =
     {
@@ -217,13 +220,13 @@ function InitDataTypes()
     AllocDataType("size_t",             "number", true)
     AllocDataType("time_t",             "number", true)
     AllocDataType("unsigned char",      "number", true)
+    AllocDataType("unsigned short",     "number", true)
     AllocDataType("unsigned int",       "number", true)
     AllocDataType("unsigned long",      "number", true)
-    AllocDataType("unsigned short",     "number", true)
     AllocDataType("uchar",              "number", true)
+    AllocDataType("ushort",             "number", true)
     AllocDataType("uint",               "number", true)
     AllocDataType("ulong",              "number", true)
-    AllocDataType("ushort",             "number", true)
     AllocDataType("void",               "number", true)
     AllocDataType("wchar_t",            "number", true)
 
@@ -256,20 +259,20 @@ function InitDataTypes()
     AllocDataType("lua_State",          "number", false)
 
     -- win32 data types
-    AllocDataType("HANDLE",             "number", false)
-    AllocDataType("DWORD64",            "number", true)
-    AllocDataType("DWORD",              "number", true)
-    AllocDataType("PVOID",              "number", true)
-    AllocDataType("LPCVOID",            "number", true)
-    AllocDataType("LPVOID",             "number", true)
-    AllocDataType("LPDWORD",            "number", true)
+    --AllocDataType("HANDLE",             "number", false)
+    --AllocDataType("DWORD64",            "number", true)
+    --AllocDataType("DWORD",              "number", true)
+    --AllocDataType("PVOID",              "number", true)
+    --AllocDataType("LPCVOID",            "number", true)
+    --AllocDataType("LPVOID",             "number", true)
+    --AllocDataType("LPDWORD",            "number", true)
 
     -- "fake" data types that we handle in some more complicated way
     AllocDataType("LuaFunction",           "special", true)
     AllocDataType("LuaTable",              "special", true)
     AllocDataType("wxString",              "special", true)
     --AllocDataType("wxArrayString",         "special", true) -- special, but we only convert input, not output
-    --AllocDataType("wxSortedArrayString",         "special", true) -- special, but we only convert input, not output
+    --AllocDataType("wxSortedArrayString",   "special", true) -- special, but we only convert input, not output
     --AllocDataType("wxArrayInt",            "special", true) -- special, but we only convert input, not output
     AllocDataType("IntArray_FromLuaTable", "special", true)
     AllocDataType("voidptr_long",          "special", true)
@@ -281,10 +284,35 @@ function InitDataTypes()
     dataTypeAttribTable["%gc"]     = true -- this object will be gc by Lua
     dataTypeAttribTable["%ungc"]   = true -- this object won't be gc by Lua
 
+    -- datatypes that are unsigned integers to be treated differently
+    dataTypeUIntTable["size_t"]         = true
+    dataTypeUIntTable["time_t"]         = true
+    dataTypeUIntTable["unsigned char"]  = true
+    dataTypeUIntTable["unsigned short"] = true
+    dataTypeUIntTable["unsigned int"]   = true
+    dataTypeUIntTable["unsigned long"]  = true
+    dataTypeUIntTable["uchar"]          = true
+    dataTypeUIntTable["ushort"]         = true
+    dataTypeUIntTable["uint"]           = true
+    dataTypeUIntTable["ulong"]          = true
+    dataTypeUIntTable["void"]           = true
+
+    dataTypeUIntTable["wxUint8"]        = true
+    dataTypeUIntTable["wxUint16"]       = true
+    dataTypeUIntTable["wxUint32"]       = true
+    dataTypeUIntTable["wxUint64"]       = true
+    dataTypeUIntTable["wxMemorySize"]   = true
+    dataTypeUIntTable["wxFileOffset"]   = true
+
+    -- datatypes that are boolean integers to be treated differently
+    dataTypeBoolTable["bool"] = true
+    dataTypeBoolTable["BOOL"] = true
+
     -- attributes that can precede a function (must set equal to true)
     functionAttribTable["static"]  = true
     functionAttribTable["virtual"] = true
     functionAttribTable["inline"]  = true
+    functionAttribTable["friend"]  = true
 end
 
 -- ---------------------------------------------------------------------------
@@ -394,14 +422,6 @@ function IsDataType(datatype)
 end
 
 -- ---------------------------------------------------------------------------
--- Get base type for a data type that is a typedef
--- ---------------------------------------------------------------------------
-function GetTypeDef(datatype)
-    -- if typedef is found, replace type with replacement typedef
-    return typedefTable[datatype] or datatype
-end
-
--- ---------------------------------------------------------------------------
 -- Get the dataTypeTable[typedefinition] from a string after removing delimiters
 -- ---------------------------------------------------------------------------
 function GetDataTypeOnly(typedefinition)
@@ -419,7 +439,7 @@ end
 -- ---------------------------------------------------------------------------
 -- Get the base dataTypeTable[typedefinition] by translating typedefs
 -- ---------------------------------------------------------------------------
-function GetDataTypeBase(datatype)
+function GetDataTypedefBase(datatype)
     if dataTypeTable[datatype] then
         return dataTypeTable[datatype]
     end
@@ -432,16 +452,39 @@ function GetDataTypeBase(datatype)
         end
     end
 
-    print("ERROR: Missing data type '"..tostring(datatype).."' in GetDataTypeBase.")
+    print("ERROR: Missing data type '"..tostring(datatype).."' in GetDataTypedefBase.")
 
     return nil
+end
+
+-- ---------------------------------------------------------------------------
+-- Returns true if the classname is derived from base_classname
+-- ---------------------------------------------------------------------------
+
+function IsDerivedClass(classname, base_classname)
+
+    if dataTypeTable[classname] == nil then
+        print("ERROR: dataTypeTable for classname is nil in IsDerivedClass()", classname, base_classname)
+        return false
+    end
+
+    if classname == base_classname then
+        return true
+    end
+
+    if dataTypeTable[classname].BaseClass then
+        local c = dataTypeTable[dataTypeTable[classname].BaseClass].Name
+        return IsDerivedClass(c, base_classname)
+    end
+
+    return false
 end
 
 -- ---------------------------------------------------------------------------
 -- Get any conditions for this data type
 -- ---------------------------------------------------------------------------
 function GetDataTypeCondition(datatype)
-    local dtype = GetDataTypeBase(datatype)
+    local dtype = GetDataTypedefBase(datatype)
     if dtype then
         return dtype.Condition
     else
@@ -455,7 +498,7 @@ end
 -- Is this data type intrinisic, eg is it basically a number
 -- ---------------------------------------------------------------------------
 function IsDataTypeNumeric(datatype)
-    local dtype = GetDataTypeBase(datatype)
+    local dtype = GetDataTypedefBase(string.gsub(datatype, "const ", ""))
     if dtype then
         return dtype.IsNumber
     else
@@ -466,14 +509,42 @@ function IsDataTypeNumeric(datatype)
 end
 
 -- ---------------------------------------------------------------------------
+-- Is this data type an unsigned integer
+-- ---------------------------------------------------------------------------
+function IsDataTypeUInt(datatype)
+    local dtype = GetDataTypedefBase(string.gsub(datatype, "const ", ""))
+    if dtype then
+        return dataTypeUIntTable[dtype.Name] or false
+    else
+        print("ERROR: Missing data type '"..tostring(datatype).."' in IsDataTypeUInt.")
+    end
+
+    return false
+end
+
+-- ---------------------------------------------------------------------------
 -- Is this data type an enum
 -- ---------------------------------------------------------------------------
 function IsDataTypeEnum(datatype)
-    local dtype = GetDataTypeBase(datatype)
+    local dtype = GetDataTypedefBase(string.gsub(datatype, "const ", ""))
     if dtype then
         return (dtype.ValueType == "enum")
     else
         print("ERROR: Missing data type '"..tostring(datatype).."' in IsDataTypeEnum.")
+    end
+
+    return false
+end
+
+-- ---------------------------------------------------------------------------
+-- Is this data type a boolean
+-- ---------------------------------------------------------------------------
+function IsDataTypeBool(datatype)
+    local dtype = GetDataTypedefBase(string.gsub(datatype, "const ", ""))
+    if dtype then
+        return dataTypeBoolTable[dtype.Name] or false
+    else
+        print("ERROR: Missing data type '"..tostring(datatype).."' in IsDataTypeBool.")
     end
 
     return false
@@ -490,7 +561,7 @@ end
 -- FileExists - return true if file exists and is readable
 -- ---------------------------------------------------------------------------
 function FileExists(path)
-    local file_handle = io.open(path)
+    local file_handle = io.open(path, "rb")
     if not file_handle then
         return false
     end
@@ -505,7 +576,7 @@ end
 --   returns true for a match or false if not
 -- ---------------------------------------------------------------------------
 function FileDataIsStringData(filename, strData)
-    local file_handle = io.open(filename)
+    local file_handle = io.open(filename, "rb")
     if not file_handle then return false end -- ok if it doesn't exist
 
     local f = file_handle:read("*a")
@@ -560,7 +631,8 @@ function FindOrCreateCondition(condition)
         local ver = { 0, 0, 0 }
         local n = 1
         for v in string.gmatch(condition, "%d+") do
-            ver[n] = tonumber(v); n = n + 1
+            ver[n] = tonumber(v);
+            n = n + 1
         end
         assert(#ver == 3, "%wxchkver_x_y_z conditions has too many version numbers. '"..condition.."'")
         result = string.format("wxCHECK_VERSION(%d,%d,%d)", ver[1], ver[2], ver[3])
@@ -647,6 +719,23 @@ function AddCondition(condition1, condition2)
     end
 
     return condition
+end
+
+-- ---------------------------------------------------------------------------
+-- Add a value to or with a string of values
+-- ---------------------------------------------------------------------------
+function AddOredValue(value, new_value)
+    local v = value
+
+    if not string.find(value, new_value, 1, 1) then
+        if string.len(v) > 1 then
+            v = value.."|"..new_value
+        else
+            v = new_value
+        end
+    end
+
+    return v
 end
 
 -- ---------------------------------------------------------------------------
@@ -1063,37 +1152,49 @@ function InitKeywords()
     preprocOperatorTable[")"]  = ")"
 
     -- operators for %operator
+
+    bindingOperatorTable["=="]  = "op_eq"
+    bindingOperatorTable["!="]  = "op_ne"
+    bindingOperatorTable["<"]   = "op_lt"
+    bindingOperatorTable[">"]   = "op_gt"
+    bindingOperatorTable["<="]  = "op_le"
+    bindingOperatorTable[">="]  = "op_ge"
+    bindingOperatorTable["||"]  = "op_lor"  -- logical or
+    bindingOperatorTable["&&"]  = "op_land" -- logical and
+    bindingOperatorTable["!"]   = "op_not"
+
+    bindingOperatorTable["|"]   = "op_or"
+    bindingOperatorTable["&"]   = "op_and"
+    bindingOperatorTable["^"]   = "op_xor"
+    bindingOperatorTable["<<"]  = "op_lshift"
+    bindingOperatorTable[">>"]  = "op_rshift"
+
+    bindingOperatorTable["|="]  = "op_ior"
+    bindingOperatorTable["&="]  = "op_iand"
+    bindingOperatorTable["^="]  = "op_ixor"
+    bindingOperatorTable["<<="] = "op_ilshift"
+    bindingOperatorTable[">>="] = "op_irshift"
+
     bindingOperatorTable["="]  = "op_set"
-    bindingOperatorTable["=="] = "op_eq"
-    bindingOperatorTable["!="] = "op_ne"
-    bindingOperatorTable["<"]  = "op_lt"
-    bindingOperatorTable[">"]  = "op_gt"
-    bindingOperatorTable["<="] = "op_le"
-    bindingOperatorTable[">="] = "op_ge"
+    bindingOperatorTable["()"] = "op_func"
+    bindingOperatorTable["[]"] = "op_index"
 
-    bindingOperatorTable["|"]  = "op_or"
-    bindingOperatorTable["&"]  = "op_and"
-    bindingOperatorTable["||"] = "op_lor"
-    bindingOperatorTable["&&"] = "op_land"
-    bindingOperatorTable["!"]  = "op_not"
-    bindingOperatorTable["^"]  = "op_xor"
-
-    bindingOperatorTable["++"] = "op_inc"
-    bindingOperatorTable["--"] = "op_dec"
+    bindingOperatorTable["++"] = "op_inc"  -- or op_preinc
+    bindingOperatorTable["--"] = "op_dec"  -- or op_predec
+    bindingOperatorTable["~"]  = "op_comp" -- bitwise one's compliment
+    --bindingOperatorTable["-"] = "op_neg" -- also op_sub if not unary -
 
     bindingOperatorTable["+"]  = "op_add"
-    bindingOperatorTable["-"]  = "op_sub" -- also op_neg if unary -
-    bindingOperatorTable["*"]  = "op_mul"
+    bindingOperatorTable["-"]  = "op_sub"  -- also op_neg if unary -
+    bindingOperatorTable["*"]  = "op_mul"  -- also op_deref if no args
     bindingOperatorTable["/"]  = "op_div"
+    bindingOperatorTable["%"]  = "op_mod"
 
     bindingOperatorTable["+="] = "op_iadd"
     bindingOperatorTable["-="] = "op_isub"
     bindingOperatorTable["*="] = "op_imul"
     bindingOperatorTable["/="] = "op_idiv"
     bindingOperatorTable["%="] = "op_imod"
-    bindingOperatorTable["&="] = "op_iand"
-    bindingOperatorTable["|="] = "op_ior"
-    bindingOperatorTable["^="] = "op_ixor"
 
     -- bindingKeywordTable
     bindingKeywordTable["%if"]          = true
@@ -1592,6 +1693,13 @@ function AllocParam()
     return member
 end
 
+function InsertParamState(Params, ParamState)
+    -- don't insert func(void) parameters
+    if ParamState.DataType and ((ParamState.DataTypeWithAttrib ~= "void") or (#ParamState.DataTypePointer > 0)) then
+        table.insert(Params, ParamState)
+    end
+end
+
 -- ---------------------------------------------------------------------------
 -- Build DataType Table by adding %classes (and their bases), %structs, and %enums
 -- ---------------------------------------------------------------------------
@@ -1604,6 +1712,8 @@ function BuildDataTypeTable(interfaceData)
 
         local classname = nil -- current classname if any
         local action    = nil -- what to look for next
+
+        local typedefTable = {}
 
         for t = 1, #lineTags do
             local tag = lineTags[t]
@@ -1631,6 +1741,8 @@ function BuildDataTypeTable(interfaceData)
                         action = "find_structname"
                     elseif tag == "%enum" then
                         action = "find_enumname"
+                    elseif tag == "%typedef" then
+                        action = "find_typedef"
                     end
                 end
             elseif (in_block_comment == 0) and action and
@@ -1672,9 +1784,27 @@ function BuildDataTypeTable(interfaceData)
                     end
 
                     action = nil
+                elseif action == "find_typedef" then
+                    table.insert(typedefTable, tag)
+
                 end
             end
         end
+
+        if #typedefTable > 0 then
+            local typedef_name = typedefTable[#typedefTable]
+            local typedef_type = table.concat(typedefTable, " ", 1, #typedefTable-1)
+            local dt = false
+            for i = 1,#typedefTable-1 do
+                -- increment forward until we know the type, skipping const and other attribs
+                dt = dataTypeTable[table.concat(typedefTable, " ", i, #typedefTable-1)]
+                if dt then
+                    AllocDataType(typedef_name, dt.ValueType, dt.IsNumber)
+                    break
+                end
+            end
+        end
+
     end
 end
 
@@ -1685,6 +1815,7 @@ end
 -- ---------------------------------------------------------------------------
 
 function ParseData(interfaceData)
+
     local objectList = {}
     local parseState =
     {
@@ -2227,11 +2358,14 @@ function ParseData(interfaceData)
                             lineState.ActionMandatory = false
                         elseif lineState.Action == "action_typedef" then
                             lineState.Name = tag
+                            lineState.RValue = {}
+                            table.insert(lineState.RValue, tag)
 
                             lineState.Action = "action_typedefvalue"
                             lineState.ActionMandatory = true
                         elseif lineState.Action == "action_typedefvalue" then
-                            lineState.RValue = SpaceSeparateStrings(lineState.RValue, tag)
+                            --lineState.RValue = SpaceSeparateStrings(lineState.RValue, tag)
+                            table.insert(lineState.RValue, tag)
 
                             lineState.Action = "action_typedefvalue" -- allow more than one word
                             lineState.ActionMandatory = false
@@ -2316,9 +2450,14 @@ function ParseData(interfaceData)
 
                             elseif lineState["%operator"] and string.find(tag, "operator", 1, 1) then
                                 -- eat the rest of the "operator+=(...)" symbols which may be split before (
-                                while lineTags[t+1] and (not string.find(lineTags[t+1], "(", 1, 1)) do
-                                    tag = tag..lineTags[t+1]
-                                    t = t + 1
+                                if (string.sub(tag, -1) == "r") and (lineTags[t+1] == "(") and (lineTags[t+2] == ")") then -- op_func
+                                    tag = tag..lineTags[t+1]..lineTags[t+2]
+                                    t = t + 2
+                                else
+                                    while lineTags[t+1] and (lineTags[t+1] ~= "(") do
+                                        tag = tag..lineTags[t+1]
+                                        t = t + 1
+                                    end
                                 end
 
                                 local a, b = string.find(tag, "operator", 1, 1)
@@ -2373,7 +2512,7 @@ function ParseData(interfaceData)
                             end
 
                         elseif lineState.Action == "action_methodbracket" then
-                                if tag ~= '(' then
+                                if tag ~= "(" then
                                     local msg = "(Name="..tostring(lineState.Name).."; DataType="..tostring(lineState.DataType)..")"
                                     print("ERROR: Expected Method Tag '(', got Tag='"..tag.."'. "..msg.." "..LineTableErrString(lineTable))
                                 end
@@ -2417,7 +2556,7 @@ function ParseData(interfaceData)
 
                             elseif tag == ")" then
                                 if lineState.ParamState.DataType then
-                                    table.insert(lineState.Params, lineState.ParamState)
+                                    InsertParamState(lineState.Params, lineState.ParamState)
                                     lineState.ParamState = AllocParam()
                                 end
 
@@ -2448,7 +2587,7 @@ function ParseData(interfaceData)
                                     print("ERROR: Method Parameter requires DataType to be assigned. "..LineTableErrString(lineTable))
                                 end
 
-                                table.insert(lineState.Params, lineState.ParamState)
+                                InsertParamState(lineState.Params, lineState.ParamState)
                                 lineState.ParamState = AllocParam()
 
                                 lineState.Action = "action_methodparam"
@@ -2459,10 +2598,8 @@ function ParseData(interfaceData)
                                     print("ERROR: Method Parameter requires DefaultValue to be assigned. "..LineTableErrString(lineTable))
                                 end
 
-                                if lineState.ParamState.DataType then
-                                    table.insert(lineState.Params, lineState.ParamState)
-                                    lineState.ParamState = AllocParam()
-                                end
+                                InsertParamState(lineState.Params, lineState.ParamState)
+                                lineState.ParamState = AllocParam()
 
                                 lineState.Action = "action_method_body"
                                 lineState.ActionMandatory = false
@@ -2481,16 +2618,14 @@ function ParseData(interfaceData)
                                     print("ERROR: Method Parameter requires DataType to be assigned. "..LineTableErrString(lineTable))
                                 end
 
-                                table.insert(lineState.Params, lineState.ParamState)
+                                InsertParamState(lineState.Params, lineState.ParamState)
                                 lineState.ParamState = AllocParam()
 
                                 lineState.Action = "action_methodparam"
                                 lineState.ActionMandatory = true
                             elseif tag == ")" then
-                                if lineState.ParamState.DataType then
-                                    table.insert(lineState.Params, lineState.ParamState)
-                                    lineState.ParamState = AllocParam()
-                                end
+                                InsertParamState(lineState.Params, lineState.ParamState)
+                                lineState.ParamState = AllocParam()
 
                                 lineState.Action = "action_method_body"
                                 lineState.ActionMandatory = false
@@ -2546,8 +2681,11 @@ function ParseData(interfaceData)
 
         -- set line definition data
         if lineState.DefType == "deftype_%typedef" then
-            -- line is a typedef
-            typedefTable[lineState.Name] = lineState.RValue
+            -- line is in the form: typedef [unsigned int] wxUInt32
+            local typedef_name = lineState.RValue[#lineState.RValue]
+            local typedef_type = table.concat(lineState.RValue, " ", 1, #lineState.RValue-1)
+
+            typedefTable[typedef_name] = typedef_type
 
         elseif lineState.DefType == "deftype_%if" then
             -- line is a block condition, push onto condition stack
@@ -2728,8 +2866,8 @@ function GenerateLuaLanguageBinding(interface)
                 Condition      = encapcondition
             }
 
-            if (parseObject.Name == "wxGridCellWorker") or (parseObject.Name == "wxGridCellEditor") or
-               (parseObject.Name == "wxGridCellAttr") then
+            if IsDerivedClass(parseObject.Name, "wxGridCellWorker") or
+               IsDerivedClass(parseObject.Name, "wxGridCellAttr") then
                 encapsulationBinding.Implementation = "wxLUA_IMPLEMENT_wxGridCellWorker_ENCAPSULATION("..parseObject.Name..", "..MakeVar(parseObject.Name)..")\n"
             end
 
@@ -2737,7 +2875,9 @@ function GenerateLuaLanguageBinding(interface)
                 encapsulationBindingTable[encapcondition] = {}
             end
 
-            encapsulationBindingTable[encapcondition][parseObject.Name] = encapsulationBinding
+            if parseObject["%encapsulate"] then
+                encapsulationBindingTable[encapcondition][parseObject.Name] = encapsulationBinding
+            end
         end
 
         -- parseObject member binding
@@ -2750,7 +2890,7 @@ function GenerateLuaLanguageBinding(interface)
             -- member binding
             -- ---------------------------------------------------------------
             if (member.DefType == "deftype_%member") or (member.DefType == "deftype_%member_func") then
-                local memberType = GetTypeDef(member.DataType)
+                local memberType    = member.DataType
                 local memberGetFunc = "Get_"..member.Name
                 local memberSetFunc = "Set_"..member.Name
                 if member["%rename"] then
@@ -2763,6 +2903,10 @@ function GenerateLuaLanguageBinding(interface)
                 if member.IsStaticFunction then
                     funcType = "WXLUAMETHOD_METHOD|WXLUAMETHOD_STATIC"
                     propType = "|WXLUAMETHOD_STATIC"
+                end
+
+                if parseObject["%encapsulate"] then
+                    --funcType = AddOredValue(funcType, "WXLUAMETHOD_ENCAPSULATE") FIXME
                 end
 
                 local memberPtr = member.DataTypePointer[1]
@@ -2819,7 +2963,7 @@ function GenerateLuaLanguageBinding(interface)
                     CommentBindingTable(codeList, "    // push the result datatype\n")
                     table.insert(codeList, "    wxluaT_pushuserdatatype(L, "..self_name..member.Name..", wxluatype_"..MakeClassVar(memberType)..");\n")
 
-                elseif (memberType == "BOOL") or (memberType == "bool") then
+                elseif IsDataTypeBool(memberType) then
                     CommentBindingTable(codeList, "    // push the result flag\n")
                     table.insert(codeList, "    lua_pushboolean(L, "..self_name..member.Name..");\n")
 
@@ -2904,14 +3048,18 @@ function GenerateLuaLanguageBinding(interface)
                     overload_argList = overload_argList.."&wxluatype_"..MakeClassVar(memberType)..", "
                     CommentBindingTable(codeList, "    // get the data type value\n")
                     table.insert(codeList, "    "..memberType.."* val = ("..memberType.."*)wxluaT_getuserdatatype(L, "..stack_idx..", wxluatype_"..MakeClassVar(memberType)..");\n")
-                elseif (memberType == "BOOL") or (memberType == "bool") then
+                elseif IsDataTypeBool(memberType) then
                     overload_argList = overload_argList.."&wxluatype_TBOOLEAN, "
                     CommentBindingTable(codeList, "    // get the boolean value\n")
                     table.insert(codeList, "    bool val = wxlua_getbooleantype(L, "..stack_idx..");\n")
                 elseif IsDataTypeEnum(memberType) then
                     overload_argList = overload_argList.."&wxluatype_TINTEGER, "
-                    CommentBindingTable(codeList, "    // get the number value\n")
-                    table.insert(codeList, "    "..memberType.." val = ("..memberType..")wxlua_getintegertype(L, "..stack_idx..");\n")
+                    CommentBindingTable(codeList, "    // get the enum value\n")
+                    table.insert(codeList, "    "..memberType.." val = ("..memberType..")wxlua_getenumtype(L, "..stack_idx..");\n")
+                elseif IsDataTypeUInt(memberType) then
+                    overload_argList = overload_argList.."&wxluatype_TINTEGER, "
+                    CommentBindingTable(codeList, "    // get the unsigned integer value\n")
+                    table.insert(codeList, "    "..memberType.." val = ("..memberType..")wxlua_getuintegertype(L, "..stack_idx..");\n")
                 else
                     overload_argList = overload_argList.."&wxluatype_TNUMBER, "
                     CommentBindingTable(codeList, "    // get the number value\n")
@@ -3128,6 +3276,18 @@ function GenerateLuaLanguageBinding(interface)
                 local gcList = {}
 
                 local arg = 0
+
+                if (member["%operator"] == "++") and (#member.Params > 0) then
+                    member.Name = "op_preinc"
+                    member.Params = {}
+                elseif (member["%operator"] == "--") and (#member.Params > 0) then
+                    member.Name = "op_predec"
+                    member.Params = {}
+                elseif (member["%operator"] == "*") and (#member.Params == 0) then
+                    member.Name = "op_deref"
+                    member.Params = {}
+                end
+
                 while member.Params[arg+1] do
                     arg = arg + 1
                     local param = member.Params[arg]
@@ -3291,6 +3451,7 @@ function GenerateLuaLanguageBinding(interface)
                             argItem = "wxlua_getstringtype(L, "..argNum..")"
 
                             argTypeWithAttrib = "wxCharBuffer"
+                            argCast = "const char*" -- allows for "unsigned char*"
                         else
                             if isTranslated and (origIndirectionCount == 0) then
                                 argTypeWithAttrib = origArgTypeWithAttrib
@@ -3373,18 +3534,21 @@ function GenerateLuaLanguageBinding(interface)
                                     opt = "wxString("..opt..")"
                                 end
                             end
-                        elseif (argType == "bool") or (argType == "BOOL") then
+                        elseif IsDataTypeBool(argTypeWithAttrib) then
                             overload_argList = overload_argList.."&wxluatype_TBOOLEAN, "
                             argItem = "wxlua_getbooleantype(L, "..argNum..")"
-                        elseif IsDataTypeEnum(argType) then
+                        elseif IsDataTypeEnum(argTypeWithAttrib) then
                             overload_argList = overload_argList.."&wxluatype_TINTEGER, "
-                            argItem = "("..argType..")wxlua_getintegertype(L, "..argNum..")"
+                            argItem = "("..argTypeWithAttrib..")wxlua_getenumtype(L, "..argNum..")"
+                        elseif IsDataTypeUInt(argTypeWithAttrib) then
+                            overload_argList = overload_argList.."&wxluatype_TINTEGER, "
+                            argItem = "("..argTypeWithAttrib..")wxlua_getuintegertype(L, "..argNum..")"
                         elseif not numeric then
                             overload_argList = overload_argList.."&wxluatype_"..MakeClassVar(argType)..", "
                             argItem = "*("..argTypeWithAttrib.."*)wxluaT_getuserdatatype(L, "..argNum..", wxluatype_"..MakeClassVar(argType)..")"
                         else
                             overload_argList = overload_argList.."&wxluatype_TNUMBER, "
-                            argItem = "("..argType..")wxlua_getnumbertype(L, "..argNum..")"
+                            argItem = "("..argTypeWithAttrib..")wxlua_getnumbertype(L, "..argNum..")"
                         end
                     else
                         local point = ""
@@ -3480,6 +3644,10 @@ function GenerateLuaLanguageBinding(interface)
                 end
 
                 if not funcNameBase then funcNameBase = funcName end
+
+                if parseObject["%encapsulate"] then
+                    --funcType = AddOredValue(funcType, "WXLUAMETHOD_ENCAPSULATE") FIXME
+                end
 
                 -- if they declared this, the conditions must be exclusive
                 -- since the functions will have the same names
@@ -3662,8 +3830,15 @@ function GenerateLuaLanguageBinding(interface)
                         paramCount = paramCount + 1
 
                         if member["%operator"] then
-                            memberPtr = false
-                            if paramCount > 1 then
+                            if (member.Name == "op_preinc") or (member.Name == "op_predec") then
+                                functor = member["%operator"].."(*self)"
+                            elseif (member.Name == "op_inc") or (member.Name == "op_dec") then
+                                functor = "(*self)"..member["%operator"]
+                            elseif member["%operator"] == "[]" then     -- op_index
+                                functor = "(*self)["
+                            elseif member["%operator"] == "()" then -- op_func
+                                functor = "(*self)"
+                            elseif paramCount > 1 then
                                 functor = "(*self)"..member["%operator"]
                             else
                                 functor = member["%operator"].."(*self)"
@@ -3688,6 +3863,10 @@ function GenerateLuaLanguageBinding(interface)
                         functor = functor.."("..argList..")"
                     end
 
+                    if member["%operator"] == "[]" then -- op_index
+                        functor = functor.."]"
+                    end
+
                     CommentBindingTable(codeList, "    // call "..member.Name.."\n")
 
                     if not memberType or (memberTypeWithAttrib == "void") then
@@ -3697,9 +3876,15 @@ function GenerateLuaLanguageBinding(interface)
                         table.insert(codeList, "}\n")
                     else
                         -- call function, get return value
-                        if member["%operator"] and origMemberPtr and string.find(origMemberPtr, "&", 1, 1) then
+                        if member["%operator"] and string.find(origMemberPtr or "", "&", 1, 1) and string.find(member["%operator"], "=", 1, 1) then
+                            table.insert(codeList, "    "..functor..";\n")
                             table.insert(codeList, "    "..memberTypeWithAttrib.." returns = self;\n")
-                            table.insert(codeList, "    *returns = ("..functor..");\n")
+                        elseif member["%operator"] and string.find(origMemberPtr or "", "&", 1, 1) and (string.find(member["%operator"], "=", 1, 1) == nil) then
+                            if string.find(memberTypeWithAttrib or "", "*", 1, 1) then
+                                table.insert(codeList, "    "..memberTypeWithAttrib.." returns = &("..functor..");\n")
+                            else
+                                table.insert(codeList, "    "..memberTypeWithAttrib.." returns = "..functor..";\n")
+                            end
                         elseif (not numeric) and (not memberPtr) then
                             CommentBindingTable(codeList, "    // allocate a new object using the copy constructor\n")
                             table.insert(codeList, "    "..memberTypeWithAttrib.." returns = new "..memberType.."("..functor..");\n")
@@ -3711,13 +3896,15 @@ function GenerateLuaLanguageBinding(interface)
                                 returnCast = string.sub(returnCast, 7)
                             end
 
-                            if dataTypeTable[memberType]["%encapsulate"] then
-                                table.insert(codeList, "    wxluaO_addgcobject(L, (void*)returns, new wxLua_wxObject_"..MakeVar(memberType).."(("..returnCast..")returns));\n")
+                            local member_DataType = GetDataTypedefBase(memberType)
+
+                            if member_DataType["%encapsulate"] then
+                                table.insert(codeList, "    wxluaO_addgcobject(L, (void*)returns, new wxLua_wxObject_"..MakeVar(member_DataType.Name).."(("..returnCast..")returns));\n")
                             else
                                 table.insert(codeList, "    wxluaO_addgcobject(L, ("..returnCast..")returns);\n")
                             end
 
-                        elseif (not member["%operator"]) and (memberPtr == "&") and (memberType ~= "wxString") then
+                        elseif (not member["%operator"]) and (memberPtr == "&") and string.find(memberTypeWithAttrib, "*") and (memberType ~= "wxString") then
                             table.insert(codeList, "    "..memberTypeWithAttrib.." returns = &"..functor..";\n")
                         elseif (memberPtr == "*") or (memberType == "voidptr_long") then
                             table.insert(codeList, "    "..memberTypeWithAttrib.." returns = ("..memberTypeWithAttrib..")"..functor..";\n")
@@ -3743,7 +3930,7 @@ function GenerateLuaLanguageBinding(interface)
                         elseif not numeric then
                             CommentBindingTable(codeList, "    // push the result datatype\n")
                             table.insert(codeList, "    wxluaT_pushuserdatatype(L, returns, wxluatype_"..MakeClassVar(memberType)..");\n")
-                        elseif (member.DataType == "BOOL") or (member.DataType == "bool") then
+                        elseif IsDataTypeBool(member.DataType) then
                             CommentBindingTable(codeList, "    // push the result flag\n")
                             table.insert(codeList, "    lua_pushboolean(L, returns);\n")
                         elseif returnPtr == "*" then
@@ -3899,12 +4086,18 @@ function GenerateLuaLanguageBinding(interface)
 
                 RemovewxLuaStateIfNotUsed(codeList)
 
+                local funcType = "WXLUAMETHOD_METHOD"
+
+                if parseObject["%encapsulate"] then
+                    --funcType = AddOredValue(funcType, "WXLUAMETHOD_ENCAPSULATE") FIXME
+                end
+
                 local delMethodBinding =
                 {
                     LuaName         = "delete",
                     CFunctionName   = funcName_,
                     Method          = codeList,
-                    FuncType        = "WXLUAMETHOD_METHOD",
+                    FuncType        = funcType,
                     FuncMap         = "{ "..funcName_..", WXLUAMETHOD_METHOD|WXLUAMETHOD_DELETE, 1, 1, "..overload_argListName.." }",
                     FuncMapName     = funcMapName,
                     ArgArray        = overload_argList,

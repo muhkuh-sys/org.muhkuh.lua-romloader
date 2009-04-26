@@ -105,14 +105,14 @@ static int LUACALL wxLua_dpm_is_connected(lua_State *L)
     return 1;
 }
 
-static wxLuaArgType s_wxluatypeArray_wxLua_dpm_read_data08[] = { &wxluatype_dpm, &wxluatype_TNUMBER, NULL };
+static wxLuaArgType s_wxluatypeArray_wxLua_dpm_read_data08[] = { &wxluatype_dpm, &wxluatype_TINTEGER, NULL };
 static int LUACALL wxLua_dpm_read_data08(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_dpm_read_data08[1] = {{ wxLua_dpm_read_data08, WXLUAMETHOD_METHOD, 2, 2, s_wxluatypeArray_wxLua_dpm_read_data08 }};
 //  unsigned char read_data08(unsigned long ulNetxAddress)
 static int LUACALL wxLua_dpm_read_data08(lua_State *L)
 {
     // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    unsigned long ulNetxAddress = (unsigned long)wxlua_getuintegertype(L, 2);
     // get this
     dpm * self = (dpm *)wxluaT_getuserdatatype(L, 1, wxluatype_dpm);
     // call read_data08
@@ -123,14 +123,14 @@ static int LUACALL wxLua_dpm_read_data08(lua_State *L)
     return 1;
 }
 
-static wxLuaArgType s_wxluatypeArray_wxLua_dpm_read_data16[] = { &wxluatype_dpm, &wxluatype_TNUMBER, NULL };
+static wxLuaArgType s_wxluatypeArray_wxLua_dpm_read_data16[] = { &wxluatype_dpm, &wxluatype_TINTEGER, NULL };
 static int LUACALL wxLua_dpm_read_data16(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_dpm_read_data16[1] = {{ wxLua_dpm_read_data16, WXLUAMETHOD_METHOD, 2, 2, s_wxluatypeArray_wxLua_dpm_read_data16 }};
 //  unsigned short read_data16(unsigned long ulNetxAddress)
 static int LUACALL wxLua_dpm_read_data16(lua_State *L)
 {
     // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    unsigned long ulNetxAddress = (unsigned long)wxlua_getuintegertype(L, 2);
     // get this
     dpm * self = (dpm *)wxluaT_getuserdatatype(L, 1, wxluatype_dpm);
     // call read_data16
@@ -141,14 +141,14 @@ static int LUACALL wxLua_dpm_read_data16(lua_State *L)
     return 1;
 }
 
-static wxLuaArgType s_wxluatypeArray_wxLua_dpm_read_data32[] = { &wxluatype_dpm, &wxluatype_TNUMBER, NULL };
+static wxLuaArgType s_wxluatypeArray_wxLua_dpm_read_data32[] = { &wxluatype_dpm, &wxluatype_TINTEGER, NULL };
 static int LUACALL wxLua_dpm_read_data32(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_dpm_read_data32[1] = {{ wxLua_dpm_read_data32, WXLUAMETHOD_METHOD, 2, 2, s_wxluatypeArray_wxLua_dpm_read_data32 }};
 //  unsigned long read_data32(unsigned long ulNetxAddress)
 static int LUACALL wxLua_dpm_read_data32(lua_State *L)
 {
     // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    unsigned long ulNetxAddress = (unsigned long)wxlua_getuintegertype(L, 2);
     // get this
     dpm * self = (dpm *)wxluaT_getuserdatatype(L, 1, wxluatype_dpm);
     // call read_data32
@@ -159,7 +159,7 @@ static int LUACALL wxLua_dpm_read_data32(lua_State *L)
     return 1;
 }
 
-static wxLuaArgType s_wxluatypeArray_wxLua_dpm_read_image[] = { &wxluatype_dpm, &wxluatype_TNUMBER, &wxluatype_TNUMBER, &wxluatype_TFUNCTION, &wxluatype_TNUMBER, NULL };
+static wxLuaArgType s_wxluatypeArray_wxLua_dpm_read_image[] = { &wxluatype_dpm, &wxluatype_TINTEGER, &wxluatype_TINTEGER, &wxluatype_TFUNCTION, &wxluatype_TNUMBER, NULL };
 static int LUACALL wxLua_dpm_read_image(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_dpm_read_image[1] = {{ wxLua_dpm_read_image, WXLUAMETHOD_METHOD, 5, 5, s_wxluatypeArray_wxLua_dpm_read_image }};
 // %override wxLua_dpm_read_image
@@ -188,7 +188,7 @@ static int LUACALL wxLua_dpm_read_image(lua_State *L)
     // unsigned long ulNetxAddress
     unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
     // get this
-    dpm * self = (dpm *)wxluaT_getuserdatatype(L, 1, wxluatype_dpm);
+    romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call read_image
     returns = (self->read_image(ulNetxAddress, ulSize, L, iLuaCallbackTag, (void*)vplCallbackUserData));
 
@@ -202,16 +202,16 @@ static int LUACALL wxLua_dpm_read_image(lua_State *L)
 }
 
 
-static wxLuaArgType s_wxluatypeArray_wxLua_dpm_write_data08[] = { &wxluatype_dpm, &wxluatype_TNUMBER, &wxluatype_TNUMBER, NULL };
+static wxLuaArgType s_wxluatypeArray_wxLua_dpm_write_data08[] = { &wxluatype_dpm, &wxluatype_TINTEGER, &wxluatype_TINTEGER, NULL };
 static int LUACALL wxLua_dpm_write_data08(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_dpm_write_data08[1] = {{ wxLua_dpm_write_data08, WXLUAMETHOD_METHOD, 3, 3, s_wxluatypeArray_wxLua_dpm_write_data08 }};
 //  void write_data08(unsigned long ulNetxAddress, unsigned char bData)
 static int LUACALL wxLua_dpm_write_data08(lua_State *L)
 {
     // unsigned char bData
-    unsigned char bData = (char)wxlua_getnumbertype(L, 3);
+    unsigned char bData = (unsigned char)wxlua_getuintegertype(L, 3);
     // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    unsigned long ulNetxAddress = (unsigned long)wxlua_getuintegertype(L, 2);
     // get this
     dpm * self = (dpm *)wxluaT_getuserdatatype(L, 1, wxluatype_dpm);
     // call write_data08
@@ -220,16 +220,16 @@ static int LUACALL wxLua_dpm_write_data08(lua_State *L)
     return 0;
 }
 
-static wxLuaArgType s_wxluatypeArray_wxLua_dpm_write_data16[] = { &wxluatype_dpm, &wxluatype_TNUMBER, &wxluatype_TNUMBER, NULL };
+static wxLuaArgType s_wxluatypeArray_wxLua_dpm_write_data16[] = { &wxluatype_dpm, &wxluatype_TINTEGER, &wxluatype_TINTEGER, NULL };
 static int LUACALL wxLua_dpm_write_data16(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_dpm_write_data16[1] = {{ wxLua_dpm_write_data16, WXLUAMETHOD_METHOD, 3, 3, s_wxluatypeArray_wxLua_dpm_write_data16 }};
 //  void write_data16(unsigned long ulNetxAddress, unsigned short usData)
 static int LUACALL wxLua_dpm_write_data16(lua_State *L)
 {
     // unsigned short usData
-    unsigned short usData = (short)wxlua_getnumbertype(L, 3);
+    unsigned short usData = (unsigned short)wxlua_getuintegertype(L, 3);
     // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    unsigned long ulNetxAddress = (unsigned long)wxlua_getuintegertype(L, 2);
     // get this
     dpm * self = (dpm *)wxluaT_getuserdatatype(L, 1, wxluatype_dpm);
     // call write_data16
@@ -238,16 +238,16 @@ static int LUACALL wxLua_dpm_write_data16(lua_State *L)
     return 0;
 }
 
-static wxLuaArgType s_wxluatypeArray_wxLua_dpm_write_data32[] = { &wxluatype_dpm, &wxluatype_TNUMBER, &wxluatype_TNUMBER, NULL };
+static wxLuaArgType s_wxluatypeArray_wxLua_dpm_write_data32[] = { &wxluatype_dpm, &wxluatype_TINTEGER, &wxluatype_TINTEGER, NULL };
 static int LUACALL wxLua_dpm_write_data32(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_dpm_write_data32[1] = {{ wxLua_dpm_write_data32, WXLUAMETHOD_METHOD, 3, 3, s_wxluatypeArray_wxLua_dpm_write_data32 }};
 //  void write_data32(unsigned long ulNetxAddress, unsigned long ulData)
 static int LUACALL wxLua_dpm_write_data32(lua_State *L)
 {
     // unsigned long ulData
-    unsigned long ulData = (long)wxlua_getnumbertype(L, 3);
+    unsigned long ulData = (unsigned long)wxlua_getuintegertype(L, 3);
     // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    unsigned long ulNetxAddress = (unsigned long)wxlua_getuintegertype(L, 2);
     // get this
     dpm * self = (dpm *)wxluaT_getuserdatatype(L, 1, wxluatype_dpm);
     // call write_data32
@@ -256,7 +256,7 @@ static int LUACALL wxLua_dpm_write_data32(lua_State *L)
     return 0;
 }
 
-static wxLuaArgType s_wxluatypeArray_wxLua_dpm_write_image[] = { &wxluatype_dpm, &wxluatype_TNUMBER, &wxluatype_TSTRING, &wxluatype_TFUNCTION, &wxluatype_TNUMBER, NULL };
+static wxLuaArgType s_wxluatypeArray_wxLua_dpm_write_image[] = { &wxluatype_dpm, &wxluatype_TINTEGER, &wxluatype_TSTRING, &wxluatype_TFUNCTION, &wxluatype_TNUMBER, NULL };
 static int LUACALL wxLua_dpm_write_image(lua_State *L);
 static wxLuaBindCFunc s_wxluafunc_wxLua_dpm_write_image[1] = {{ wxLua_dpm_write_image, WXLUAMETHOD_METHOD, 5, 5, s_wxluatypeArray_wxLua_dpm_write_image }};
 // %override wxLua_dpm_write_image
@@ -295,7 +295,7 @@ static int LUACALL wxLua_dpm_write_image(lua_State *L)
     // unsigned long ulNetxAddress
     unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
     // get this
-    dpm * self = (dpm *)wxluaT_getuserdatatype(L, 1, wxluatype_dpm);
+    romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
     // call write_image
     self->write_image(ulNetxAddress, strData, L, iLuaCallbackTag, (void*)vplCallbackUserData);
 
