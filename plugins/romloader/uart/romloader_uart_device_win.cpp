@@ -451,8 +451,8 @@ bool romloader_uart_device_win::Open()
     {
       fResult     = true;
       // signal ready even if DTR and RTS is switched off, a virtual COM port needs this to send the data
-      fResult = EscapeCommFunction(m_hPort, SETDTR);
-      fResult = EscapeCommFunction(m_hPort, SETRTS);
+      fResult &= (EscapeCommFunction(m_hPort, SETDTR) == TRUE);
+      fResult &= (EscapeCommFunction(m_hPort, SETRTS) == TRUE);
     }
   }
 
