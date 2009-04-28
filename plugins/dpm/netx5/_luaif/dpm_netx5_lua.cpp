@@ -166,7 +166,6 @@ static wxLuaBindCFunc s_wxluafunc_wxLua_dpm_read_image[1] = {{ wxLua_dpm_read_im
 static int LUACALL wxLua_dpm_read_image(lua_State *L)
 {
     int iLuaCallbackTag;
-    wxLuaState wxlState(L);
     wxString returns;
     // voidptr_long vplCallbackUserData
     long vplCallbackUserData = (long)wxlua_getnumbertype(L, 5);
@@ -184,11 +183,11 @@ static int LUACALL wxLua_dpm_read_image(lua_State *L)
         wxlua_argerror(L, 4, wxT("a 'function'"));
     }
     // unsigned long ulSize
-    unsigned long ulSize = (long)wxlua_getnumbertype(L, 3);
+    unsigned long ulSize = (unsigned long)wxlua_getuintegertype(L, 3);
     // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    unsigned long ulNetxAddress = (unsigned long)wxlua_getuintegertype(L, 2);
     // get this
-    romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
+    dpm * self = (dpm *)wxluaT_getuserdatatype(L, 1, wxluatype_dpm);
     // call read_image
     returns = (self->read_image(ulNetxAddress, ulSize, L, iLuaCallbackTag, (void*)vplCallbackUserData));
 
@@ -196,7 +195,7 @@ static int LUACALL wxLua_dpm_read_image(lua_State *L)
     luaL_unref(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
 
     // push the result string
-    wxlState.lua_PushLString(returns,returns.Len());
+    wxlua_pushwxString(L, returns);
 
     return 1;
 }
@@ -263,7 +262,6 @@ static wxLuaBindCFunc s_wxluafunc_wxLua_dpm_write_image[1] = {{ wxLua_dpm_write_
 static int LUACALL wxLua_dpm_write_image(lua_State *L)
 {
     int iLuaCallbackTag;
-    wxLuaState wxlState(L);
     // voidptr_long vplCallbackUserData
     long vplCallbackUserData = (long)wxlua_getnumbertype(L, 5);
     // LuaFunction fnCallback
@@ -293,9 +291,9 @@ static int LUACALL wxLua_dpm_write_image(lua_State *L)
         strData = wxString::From8BitData(pcBuf, sizLen);
     }
     // unsigned long ulNetxAddress
-    unsigned long ulNetxAddress = (long)wxlua_getnumbertype(L, 2);
+    unsigned long ulNetxAddress = (unsigned long)wxlua_getuintegertype(L, 2);
     // get this
-    romloader * self = (romloader *)wxluaT_getuserdatatype(L, 1, wxluatype_romloader);
+    dpm * self = (dpm *)wxluaT_getuserdatatype(L, 1, wxluatype_dpm);
     // call write_image
     self->write_image(ulNetxAddress, strData, L, iLuaCallbackTag, (void*)vplCallbackUserData);
 
