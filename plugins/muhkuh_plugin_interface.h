@@ -19,158 +19,131 @@
  ***************************************************************************/
 
 
+#include <string.h>
 #include <vector>
 
-#include <wx/wx.h>
-#include <wx/dynlib.h>
-#include <wx/xml/xml.h>
+#include "muhkuh_plugin_reference.h"
 
-#include <wxlua/include/wxlua.h>
-#include <wxluasocket/include/wxldserv.h>
-
-extern "C"
-{
-	#include <lualib.h>
-}
 
 #ifndef __MUHKUH_PLUGIN_INTERFACE__
 #define __MUHKUH_PLUGIN_INTERFACE__
 
 /*-----------------------------------*/
 
-class muhkuh_plugin_instance : public wxObject
-{
-public:
-	muhkuh_plugin_instance(void)
-	 : fIsValid(false)
-	 , strName(wxEmptyString)
-	 , strTyp(wxEmptyString)
-	 , fIsUsed(false)
-	 , strLuaCreateFn(wxEmptyString)
-	 , pvHandle(NULL)
-	{
-	}
-
-	muhkuh_plugin_instance(wxString _strName, wxString _strTyp, bool _fIsUsed, wxString _strLuaCreateFn, void *_pvHandle)
-	 : fIsValid(true)
-	 , strName(_strName)
-	 , strTyp(_strTyp)
-	 , fIsUsed(_fIsUsed)
-	 , strLuaCreateFn(_strLuaCreateFn)
-	 , pvHandle(_pvHandle)
-	{
-	}
-
-	muhkuh_plugin_instance(const muhkuh_plugin_instance *ptCloneMe)
-	 : fIsValid(true)
-	 , strName(ptCloneMe->strName)
-	 , strTyp(ptCloneMe->strTyp)
-	 , fIsUsed(ptCloneMe->fIsUsed)
-	 , strLuaCreateFn(ptCloneMe->strLuaCreateFn)
-	 , pvHandle(ptCloneMe->pvHandle)
-	{
-	}
-
-	bool IsValid(void)
-	{
-		return fIsValid;
-	}
-
-	wxString GetName(void)
-	{
-		return strName;
-	}
-
-	wxString GetTyp(void)
-	{
-		return strTyp;
-	}
-
-	bool IsUsed(void)
-	{
-		return fIsUsed;
-	}
-
-	wxString GetLuaCreateFn(void)
-	{
-		return strLuaCreateFn;
-	}
-
-	void *GetHandle(void)
-	{
-		return pvHandle;
-	}
-
-	bool fIsValid;
-	wxString strName;
-	wxString strTyp;
-	bool fIsUsed;
-	wxString strLuaCreateFn;
-	void *pvHandle;
-};
+#define SIZ_MAX_MUHKUH_PLUGIN_STRING 256
 
 /*-----------------------------------*/
 
+
+class muhkuh_plugin_provider;
+class muhkuh_plugin_reference;
+class muhkuh_plugin;
+
+
+/*-----------------------------------*/
+
+
 typedef struct
 {
-	unsigned int	uiVersionMajor;
-	unsigned int	uiVersionMinor;
-	unsigned int	uiVersionSub;
+	unsigned int uiVersionMajor;
+	unsigned int uiVersionMinor;
+	unsigned int uiVersionSub;
 } muhkuh_plugin_so_version;
 
+
 typedef struct
 {
-	wxString			strPluginName;
-	wxString			strPluginId;
-	muhkuh_plugin_so_version	tVersion;
+	const char *pcPluginName;
+	const char *pcPluginId;
+	muhkuh_plugin_so_version tVersion;
 } muhkuh_plugin_desc;
 
-/*-----------------------------------*/
-
-/*
-  This is the required plugin interface which has to be present in every
-  plugin. All function symbols are resolved when the plugin is opened.
-*/
-typedef int (*muhkuh_plugin_fn_init)(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId);
-typedef int (*muhkuh_plugin_fn_init_lua)(wxLuaState *ptLuaState);
-typedef int (*muhkuh_plugin_fn_leave)(void);
-typedef const muhkuh_plugin_desc *(*muhkuh_plugin_fn_get_desc)(void);
-typedef int (*muhkuh_plugin_fn_detect_interfaces)(std::vector<muhkuh_plugin_instance*> *pvInterfaceList);
-
-/*
-  NOTE: The function 'muhkuh_plugin_fn_close_instance' is not part of the
-  required plugin interface. The function's symbol is not resolved in the
-  plugin open function. It is a suggestion how to close a plugin instance.
-
-  The idea is to set this function pointer in the plugin instance class at
-  the creation time. It points to the plugin's internal 'close_instance'
-  function and is called when the plugin instance class is destroyed.
-  Please take a look at the 'romloader_baka' plugin for an example.
-*/
-typedef void (*muhkuh_plugin_fn_close_instance)(void *pvHandle);
 
 /*-----------------------------------*/
 
-typedef struct
+
+class muhkuh_plugin_provider
 {
-	muhkuh_plugin_fn_init			fn_init;
-	muhkuh_plugin_fn_init_lua		fn_init_lua;
-	muhkuh_plugin_fn_leave			fn_leave;
-	muhkuh_plugin_fn_get_desc		fn_get_desc;
-	muhkuh_plugin_fn_detect_interfaces	fn_detect_interfaces;
-} muhkuh_plugin_function_interface_t;
+public:
+	muhkuh_plugin_provider(const char *pcPluginId);
+	~muhkuh_plugin_provider(void);
 
-typedef struct
-{
-	union
-	{
-		muhkuh_plugin_function_interface_t tFn;
-		void *apv[sizeof(muhkuh_plugin_function_interface_t)/sizeof(void*)];
-	} uSym;
-	wxDllType tHandle;
-} muhkuh_plugin_interface;
+	const muhkuh_plugin_desc *GetDesc(void) const;
+
+	virtual int DetectInterfaces(std::vector<muhkuh_plugin_reference*> &vInterfaceList) = 0;
+	virtual void *ClaimInterface(const muhkuh_plugin_reference *ptReference) = 0;
+//	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin) = 0;
+
+protected:
+	char *clone_string(const char *pcStr, size_t sizMax);
+
+
+	muhkuh_plugin_desc m_pt_plugin_desc;
+};
+
 
 /*-----------------------------------*/
+
+
+class muhkuh_plugin_reference
+{
+public:
+	muhkuh_plugin_reference(void);
+	muhkuh_plugin_reference(const char *pcName, const char *pcTyp, bool fIsUsed);
+	muhkuh_plugin_reference(const muhkuh_plugin_reference *ptCloneMe);
+
+	bool IsValid(void) const;
+	const char *GetName(void) const;
+	const char *GetTyp(void) const;
+	bool IsUsed(void) const;
+
+protected:
+	bool m_fIsValid;
+	char *m_pcName;
+	char *m_pcTyp;
+	bool m_fIsUsed;
+
+private:
+	char *clone_string(const char *pcStr, size_t sizMax);
+};
+
+
+/*-----------------------------------*/
+
+
+class muhkuh_plugin
+{
+public:
+	muhkuh_plugin(const char *pcName, const char *pcTyp, muhkuh_plugin_provider *ptProvider);
+	~muhkuh_plugin(void);
+
+	// open the connection to the device
+	virtual void Connect(void) = 0;
+	// close the connection to the device
+	virtual void Disconnect(void) = 0;
+	// returns the connection state of the device
+	virtual bool IsConnected(void) const;
+
+	// returns the device name
+	virtual const char *GetName(void) const;
+	// returns the device typ
+	virtual const char *GetTyp(void) const;
+
+protected:
+	char *clone_string(const char *pcStr, size_t sizMax);
+
+
+	char *m_pcName;
+	char *m_pcTyp;
+
+	muhkuh_plugin_provider *m_ptProvider;
+
+	bool m_fIsConnected;
+};
+
+
+/*-----------------------------------*/
+
 
 #endif	/* __MUHKUH_PLUGIN_INTERFACE__ */
 

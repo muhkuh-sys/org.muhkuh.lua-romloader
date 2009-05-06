@@ -19,208 +19,185 @@
  ***************************************************************************/
 
 
+#include <stdio.h>
+
 #include "romloader_baka_main.h"
-#include "_luaif/romloader_baka_wxlua_bindings.h"
 
 
-/*-------------------------------------*/
-/* configuration */
+const char *romloader_baka_provider::m_pcPluginNamePattern = "baka_%d";
 
-/* number of instances which can be used simultneous */
-static const unsigned int uiInstances = 4;
-
-/*-------------------------------------*/
-/* some local prototypes */
-
-bool fn_connect(void *pvHandle);
-void fn_disconnect(void *pvHandle);
-bool fn_is_connected(void *pvHandle);
-int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pucData);
-int fn_read_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short *pusData);
-int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *pulData);
-int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pbData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
-int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char ucData);
-int fn_write_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short usData);
-int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulData);
-int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pucData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
-int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
-
-/*-------------------------------------*/
-
-static muhkuh_plugin_desc plugin_desc =
+romloader_baka_provider::romloader_baka_provider(void)
+ : muhkuh_plugin_provider("romloader_baka")
+ , m_ptInstanceCfg(NULL)
+ , m_cfg_iInstances(0)
 {
-	wxT("Dummy Plugin"),
-	wxT(""),
-	{ 0, 0, 1 }
-};
-
-const romloader_functioninterface tFunctionInterface =
-{
-	fn_connect,
-	fn_disconnect,
-	fn_is_connected,
-	fn_read_data08,
-	fn_read_data16,
-	fn_read_data32,
-	fn_read_image,
-	fn_write_data08,
-	fn_write_data16,
-	fn_write_data32,
-	fn_write_image,
-	fn_call
-};
-
-static wxLuaState *m_ptLuaState;
-
-/*-------------------------------------*/
-/* config struct for all instances, this is just the connect flag at the moment */
-
-typedef struct
-{
-	bool fIsUsed;
-	bool fIsConnected;
-} baka_instance_cfg_t;
-
-baka_instance_cfg_t atInstanceCfg[uiInstances];
-
-/*-------------------------------------*/
-
-int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId)
-{
-	wxLog *pOldLogTarget;
-	baka_instance_cfg_t *ptC, *ptE;
-	wxString strMsg;
+	BAKA_INSTANCE_CFG_T *ptC, *ptE;
 
 
-	/* set main app's log target */
-	pOldLogTarget = wxLog::GetActiveTarget();
-	if( pOldLogTarget!=ptLogTarget )
-	{
-		wxLog::SetActiveTarget(ptLogTarget);
-		if( pOldLogTarget!=NULL )
-		{
-			delete pOldLogTarget;
-		}
-	}
+	printf("%s(%p): provider create\n", m_pt_plugin_desc.pcPluginId, this);
 
-	/* say hi */
-	strMsg.Printf(wxT("baka plugin init, preparing %d instances"), uiInstances);
-	wxLogMessage(strMsg);
-
-	/* remember id */
-	plugin_desc.strPluginId = strPluginId;
-
-	/* init the lua state */
-	m_ptLuaState = NULL;
+	m_cfg_iInstances = 4;
+	m_ptInstanceCfg = new BAKA_INSTANCE_CFG_T[m_cfg_iInstances];
 
 	/* loop over all instance configs and init them */
-	ptC = atInstanceCfg;
-	ptE = ptC + uiInstances;
+	ptC = m_ptInstanceCfg;
+	ptE = ptC + m_cfg_iInstances;
 	while( ptC<ptE )
 	{
 		/* init instance */
 		ptC->fIsUsed = false;
-		ptC->fIsConnected = false;
 
 		/* next instance */
 		++ptC;
 	}
-
-	return 0;
 }
 
 
-/*-------------------------------------*/
-
-int fn_init_lua(wxLuaState *ptLuaState)
-{
-	bool fSuccess;
-
-
-	/* remember the lua state for instance creation */
-	m_ptLuaState = ptLuaState;
-
-	/* init the lua bindings */
-	fSuccess = wxLuaBinding_romloader_baka_lua_init();
-//	fSuccess = wxLuaBinding_romloader_baka_lua_bind(m_ptLuaState);
-	if( fSuccess!=true )
-	{
-		wxLogMessage(wxT("failed to init romloader_baka lua bindings"));
-		return -1;
-	}
-
-	return 0;
-}
-
-
-/*-------------------------------------*/
-
-int fn_leave(void)
+romloader_baka_provider::~romloader_baka_provider(void)
 {
 	unsigned int uiCnt;
-	wxString strMsg;
 
 
-	wxLogMessage(wxT("baka plugin leave"));
+	printf("%s(%p): provider delete\n", m_pt_plugin_desc.pcPluginId, this);
 
-	/* check for connected instances */
-	for(uiCnt=0; uiCnt<uiInstances; ++uiCnt)
+	if( m_ptInstanceCfg!=NULL )
 	{
-		if( atInstanceCfg[uiCnt].fIsUsed==true )
+		/* check for connected instances */
+		for(uiCnt=0; uiCnt<m_cfg_iInstances; ++uiCnt)
 		{
-			strMsg.Printf(wxT("baka plugin instance %d is still used"), uiInstances);
-			wxLogError(strMsg);
+			if( m_ptInstanceCfg[uiCnt].fIsUsed==true )
+			{
+				printf("%s(%p): instance %d is still used\n", m_pt_plugin_desc.pcPluginId, this, uiCnt);
+			}
 		}
-		if( atInstanceCfg[uiCnt].fIsConnected==true )
-		{
-			strMsg.Printf(wxT("baka plugin instance %d is still connected"), uiInstances);
-			wxLogError(strMsg);
-		}
+
+		delete[] m_ptInstanceCfg;
 	}
-
-	return 0;
 }
 
-/*-------------------------------------*/
 
-const muhkuh_plugin_desc *fn_get_desc(void)
+int romloader_baka_provider::DetectInterfaces(std::vector<muhkuh_plugin_reference*> &vInterfaceList)
 {
-	return &plugin_desc;
-}
-
-/*-------------------------------------*/
-
-int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList)
-{
-	unsigned int uiInterfaceCnt;
-	muhkuh_plugin_instance *ptInst;
-	wxString strName;
-	wxString strTyp;
-	wxString strLuaCreateFn;
-	void *pvHandle;
+	int iInterfaceCnt;
+	muhkuh_plugin_reference *ptRef;
 	bool fIsUsed;
+	const size_t sizMaxName = 32;
+	char acName[sizMaxName];
 
 
-	strTyp = plugin_desc.strPluginId;
-	strLuaCreateFn = wxT("muhkuh.romloader_baka_create");
+	// terminate name buffer
+	acName[sizMaxName-1] = 0;
 
 	// detect all interfaces
-	for(uiInterfaceCnt=0; uiInterfaceCnt<uiInstances; ++uiInterfaceCnt)
+	for(iInterfaceCnt=0; iInterfaceCnt<m_cfg_iInstances; ++iInterfaceCnt)
 	{
-		strName.Printf("baka_%d", uiInterfaceCnt);
-		pvHandle = (void*)uiInterfaceCnt;
-		fIsUsed = atInstanceCfg[uiInterfaceCnt].fIsUsed;
-		ptInst = new muhkuh_plugin_instance(strName, strTyp, fIsUsed, strLuaCreateFn, pvHandle);
+		snprintf(acName, sizMaxName-1, m_pcPluginNamePattern, iInterfaceCnt);
+		fIsUsed = m_ptInstanceCfg[iInterfaceCnt].fIsUsed;
+		ptRef = new muhkuh_plugin_reference(acName, m_pt_plugin_desc.pcPluginId, fIsUsed);
 
-		pvInterfaceList->push_back(ptInst);
+		vInterfaceList.push_back(ptRef);
 	}
 
-	return (int)uiInterfaceCnt;
+	return iInterfaceCnt;
 }
 
 
-/*-------------------------------------*/
+romloader_baka *romloader_baka_provider::ClaimInterface(const muhkuh_plugin_reference *ptReference)
+{
+	romloader_baka *ptPlugin;
+	const char *pcName;
+	int iInterfaceIdx;
 
+
+	/* expect error */
+	ptPlugin = NULL;
+
+
+	if( ptReference==NULL )
+	{
+		fprintf(stderr, "%s(%p): claim_interface(): missing reference!\n", m_pt_plugin_desc.pcPluginId, this);
+	}
+	else
+	{
+		pcName = ptReference->GetName();
+		if( pcName==NULL )
+		{
+			fprintf(stderr, "%s(%p): claim_interface(): missing name!\n", m_pt_plugin_desc.pcPluginId, this);
+		}
+		else if( sscanf(pcName, m_pcPluginNamePattern, &iInterfaceIdx)!=1 )
+		{
+			fprintf(stderr, "%s(%p): claim_interface(): invalid name: %s\n", m_pt_plugin_desc.pcPluginId, this, pcName);
+		}
+		else if( (iInterfaceIdx<0) || (iInterfaceIdx>=m_cfg_iInstances) )
+		{
+			fprintf(stderr, "%s(%p): claim_interface(): invalid interface index: %d\n", m_pt_plugin_desc.pcPluginId, this, iInterfaceIdx);
+		}
+		else if( m_ptInstanceCfg[iInterfaceIdx].fIsUsed==true )
+		{
+			fprintf(stderr, "%s(%p): claim_interface(): can not claim interface %d, already in use!\n", m_pt_plugin_desc.pcPluginId, this, iInterfaceIdx);
+		}
+		else
+		{
+			m_ptInstanceCfg[iInterfaceIdx].fIsUsed = true;
+			printf("%s(%p): claim_interface(): claimed interface %d.\n", m_pt_plugin_desc.pcPluginId, this, iInterfaceIdx);
+
+			ptPlugin = new romloader_baka(pcName, m_pt_plugin_desc.pcPluginId, this);
+		}
+	}
+
+	return ptPlugin;
+}
+
+
+bool romloader_baka_provider::ReleaseInterface(romloader_baka *ptPlugin)
+{
+	bool fOk;
+	const char *pcName;
+	int iInterfaceIdx;
+
+
+	/* expect error */
+	fOk = false;
+
+
+	if( ptPlugin==NULL )
+	{
+		fprintf(stderr, "%s(%p): release_interface(): missing plugin!\n", m_pt_plugin_desc.pcPluginId, this);
+	}
+	else
+	{
+		pcName = ptPlugin->GetName();
+		if( pcName==NULL )
+		{
+			fprintf(stderr, "%s(%p): release_interface(): missing name!\n", m_pt_plugin_desc.pcPluginId, this);
+		}
+		else if( sscanf(pcName, m_pcPluginNamePattern, &iInterfaceIdx)!=1 )
+		{
+			fprintf(stderr, "%s(%p): release_interface(): invalid name: %s\n", m_pt_plugin_desc.pcPluginId, this, pcName);
+		}
+		else if( (iInterfaceIdx<0) || (iInterfaceIdx>=m_cfg_iInstances) )
+		{
+			fprintf(stderr, "%s(%p): release_interface(): invalid interface index: %d\n", m_pt_plugin_desc.pcPluginId, this, iInterfaceIdx);
+		}
+		else
+		{
+			if( m_ptInstanceCfg[iInterfaceIdx].fIsUsed==false )
+			{
+				printf("%s(%p): release_interface(): interface %d is not claimed\n", m_pt_plugin_desc.pcPluginId, this, iInterfaceIdx);
+			}
+			else
+			{
+				m_ptInstanceCfg[iInterfaceIdx].fIsUsed = false;
+				printf("%s(%p): released interface %d.\n", m_pt_plugin_desc.pcPluginId, this, iInterfaceIdx);
+			}
+			fOk = true;
+		}
+	}
+
+	return fOk;
+}
+
+#if 0
 static void romloader_baka_close_instance(void *pvHandle)
 {
 	unsigned int uiIdx;
@@ -253,207 +230,77 @@ static void romloader_baka_close_instance(void *pvHandle)
 		}
 	}
 }
-
+#endif
 
 /*-------------------------------------*/
 
-romloader *romloader_baka_create(void *pvHandle)
+romloader_baka::romloader_baka(const char *pcName, const char *pcTyp, romloader_baka_provider *ptProvider)
+ : romloader(pcName, pcTyp, ptProvider)
 {
-	unsigned int uiIdx;
-	wxString strMsg;
-	wxString strName;
-	wxString strTyp;
-	romloader *ptInstance;
-	bool fIsUsed;
-
-
-	ptInstance = NULL;
-
-	/* check the handle */
-	uiIdx = (unsigned int)pvHandle;
-	if( uiIdx>=uiInstances )
-	{
-		strMsg.Printf(wxT("romloader_baka_create: handle %p is no valid plugin handle"), pvHandle);
-		wxLogError(strMsg);
-	}
-	else
-	{
-		/* is the instance really unused? */
-		fIsUsed = atInstanceCfg[uiIdx].fIsUsed;
-		if( fIsUsed==true )
-		{
-			strMsg.Printf(wxT("romloader_baka_create: plugin instance %p is already in use"), pvHandle);
-			wxLogError(strMsg);
-		}
-		else
-		{
-			/* create the new instance */
-			strTyp = plugin_desc.strPluginId;
-			strName.Printf("baka_%d", uiIdx);
-			ptInstance = new romloader(strName, strTyp, &tFunctionInterface, pvHandle, romloader_baka_close_instance, m_ptLuaState);
-			atInstanceCfg[uiIdx].fIsUsed = true;
-		}
-	}
-
-	return ptInstance;
+	printf("%s(%p): created in romloader_baka\n", m_pcName, this);
 }
 
 
-/*-------------------------------------*/
+romloader_baka::~romloader_baka(void)
+{
+	printf("%s(%p): deleted in romloader_baka\n", m_pcName, this);
+}
+
 
 /* open the connection to the device */
-bool fn_connect(void *pvHandle)
+void romloader_baka::Connect(void)
 {
-	unsigned int uiIdx;
-	wxString strMsg;
+	printf("%s(%p): connect()\n", m_pcName, this);
 
-
-	/* check the handle */
-	uiIdx = (unsigned int)pvHandle;
-	if( uiIdx>=uiInstances )
+	if( m_fIsConnected==true )
 	{
-		strMsg.Printf(wxT("romloader_baka_fn_connect: handle %p is no valid plugin handle"), pvHandle);
-		wxLogError(strMsg);
-		return false;
+		printf("%s(%p): connect() called when already connected\n", m_pcName, this);
 	}
 	else
 	{
-		strMsg.Printf(wxT("baka %d: connected"), uiIdx);
-		wxLogMessage(strMsg);
-		atInstanceCfg[uiIdx].fIsConnected = true;
-		return true;
+		m_fIsConnected = true;
 	}
 }
+
 
 /* close the connection to the device */
-void fn_disconnect(void *pvHandle)
+void romloader_baka::Disconnect(void)
 {
-	unsigned int uiIdx;
-	wxString strMsg;
+	printf("%s(%p): disconnect()\n", m_pcName, this);
 
-
-	/* check the handle */
-	uiIdx = (unsigned int)pvHandle;
-	if( uiIdx>=uiInstances )
-	{
-		strMsg.Printf(wxT("romloader_baka_fn_disconnect: handle %p is no valid plugin handle"), pvHandle);
-		wxLogError(strMsg);
-	}
-	else
-	{
-		strMsg.Printf(wxT("baka %d: disconnected"), uiIdx);
-		wxLogMessage(strMsg);
-		atInstanceCfg[uiIdx].fIsConnected = false;
-	}
+	/* NOTE: allow disconnects even if the plugin was already disconnected. */
+	m_fIsConnected = false;
 }
 
-/* returns the connection state of the device */
-bool fn_is_connected(void *pvHandle)
-{
-	unsigned int uiIdx;
-	wxString strMsg;
-	bool fIsConnected;
-
-
-	/* check the handle */
-	uiIdx = (unsigned int)pvHandle;
-	if( uiIdx>=uiInstances )
-	{
-		strMsg.Printf(wxT("romloader_baka_fn_is_connected: handle %p is no valid plugin handle"), pvHandle);
-		wxLogError(strMsg);
-		return false;
-	}
-	else
-	{
-		fIsConnected = atInstanceCfg[uiIdx].fIsConnected;
-		strMsg.Printf(wxT("baka %d: is_connected = %d"), uiIdx, (fIsConnected?1:0));
-		wxLogMessage(strMsg);
-		return fIsConnected;
-	}
-}
 
 /* read a byte (8bit) from the netx to the pc */
-int fn_read_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char *pucData)
+unsigned char romloader_baka::read_data08(unsigned long ulNetxAddress)
 {
-	unsigned int uiIdx;
-	wxString strMsg;
+	printf("%s(%p): read_data08(0x%08lx) = 0x00\n", m_pcName, this, ulNetxAddress);
 
-
-	/* check the handle */
-	uiIdx = (unsigned int)pvHandle;
-	if( uiIdx>=uiInstances )
-	{
-		strMsg.Printf(wxT("romloader_baka_fn_read_data08: handle %p is no valid plugin handle"), pvHandle);
-		wxLogError(strMsg);
-		return -1;
-	}
-	else
-	{
-		strMsg.Printf(wxT("baka %d: read08 from 0x%08lx"), uiIdx, ulNetxAddress);
-		wxLogMessage(strMsg);
-		if( pucData!=NULL )
-		{
-			*pucData = 0x00;
-		}
-		return 0;
-	}
+	return 0;
 }
+
 
 /* read a word (16bit) from the netx to the pc */
-int fn_read_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short *pusData)
+unsigned short romloader_baka::read_data16(unsigned long ulNetxAddress)
 {
-	unsigned int uiIdx;
-	wxString strMsg;
+	printf("%s(%p): read_data16(0x%08lx) = 0x0000\n", m_pcName, this, ulNetxAddress);
 
-
-	/* check the handle */
-	uiIdx = (unsigned int)pvHandle;
-	if( uiIdx>=uiInstances )
-	{
-		strMsg.Printf(wxT("romloader_baka_fn_read_data16: handle %p is no valid plugin handle"), pvHandle);
-		wxLogError(strMsg);
-		return -1;
-	}
-	else
-	{
-		strMsg.Printf(wxT("baka %d: read16 from 0x%08lx"), uiIdx, ulNetxAddress);
-		wxLogMessage(strMsg);
-		if( pusData!=NULL )
-		{
-			*pusData = 0x0000;
-		}
-		return 0;
-	}
+	return 0;
 }
+
 
 /* read a long (32bit) from the netx to the pc */
-int fn_read_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long *pulData)
+unsigned long romloader_baka::read_data32(unsigned long ulNetxAddress)
 {
-	unsigned int uiIdx;
-	wxString strMsg;
+	printf("%s(%p): read_data32(0x%08lx) = 0x00000000\n", m_pcName, this, ulNetxAddress);
 
-
-	/* check the handle */
-	uiIdx = (unsigned int)pvHandle;
-	if( uiIdx>=uiInstances )
-	{
-		strMsg.Printf(wxT("romloader_baka_fn_read_data32: handle %p is no valid plugin handle"), pvHandle);
-		wxLogError(strMsg);
-		return -1;
-	}
-	else
-	{
-		strMsg.Printf(wxT("baka %d: read32 from 0x%08lx"), uiIdx, ulNetxAddress);
-		wxLogMessage(strMsg);
-		if( pulData!=NULL )
-		{
-			*pulData = 0x00000000;
-		}
-		return 0;
-	}
+	return 0;
 }
 
 
+#if 0
 /* read a byte array from the netx to the pc */
 int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pcData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
@@ -480,80 +327,29 @@ int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pcData, uns
 		return 0;
 	}
 }
-
+#endif
 
 /* write a byte (8bit) from the pc to the netx */
-int fn_write_data08(void *pvHandle, unsigned long ulNetxAddress, unsigned char ucData)
+void romloader_baka::write_data08(unsigned long ulNetxAddress, unsigned char ucData)
 {
-	unsigned int uiIdx;
-	wxString strMsg;
-
-
-	/* check the handle */
-	uiIdx = (unsigned int)pvHandle;
-	if( uiIdx>=uiInstances )
-	{
-		strMsg.Printf(wxT("romloader_baka_fn_write_data08: handle %p is no valid plugin handle"), pvHandle);
-		wxLogError(strMsg);
-		return -1;
-	}
-	else
-	{
-		strMsg.Printf(wxT("baka %d: write08 from 0x%08lx with 0x%02x"), uiIdx, ulNetxAddress, ucData);
-		wxLogMessage(strMsg);
-		return 0;
-	}
+	printf("%s(%p): write_data08(0x%08lx, 0x%02x)\n", m_pcName, this, ulNetxAddress, ucData);
 }
 
 
 /* write a word (16bit) from the pc to the netx */
-int fn_write_data16(void *pvHandle, unsigned long ulNetxAddress, unsigned short usData)
+void romloader_baka::write_data16(unsigned long ulNetxAddress, unsigned short usData)
 {
-	unsigned int uiIdx;
-	wxString strMsg;
-
-
-	/* check the handle */
-	uiIdx = (unsigned int)pvHandle;
-	if( uiIdx>=uiInstances )
-	{
-		strMsg.Printf(wxT("romloader_baka_fn_write_data16: handle %p is no valid plugin handle"), pvHandle);
-		wxLogError(strMsg);
-		return -1;
-	}
-	else
-	{
-		strMsg.Printf(wxT("baka %d: write16 from 0x%08lx with 0x%04x"), uiIdx, ulNetxAddress, usData);
-		wxLogMessage(strMsg);
-		return 0;
-	}
+	printf("%s(%p): write_data16(0x%08lx, 0x%04x)\n", m_pcName, this, ulNetxAddress, usData);
 }
 
 
 /* write a long (32bit) from the pc to the netx */
-int fn_write_data32(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulData)
+void romloader_baka::write_data32(unsigned long ulNetxAddress, unsigned long ulData)
 {
-	unsigned int uiIdx;
-	wxString strMsg;
-
-
-	/* check the handle */
-	uiIdx = (unsigned int)pvHandle;
-	if( uiIdx>=uiInstances )
-	{
-		strMsg.Printf(wxT("romloader_baka_fn_write_data32: handle %p is no valid plugin handle"), pvHandle);
-		wxLogError(strMsg);
-		return -1;
-	}
-	else
-	{
-		strMsg.Printf(wxT("baka %d: write32 from 0x%08lx with 0x%08lx"), uiIdx, ulNetxAddress, ulData);
-		wxLogMessage(strMsg);
-		return 0;
-	}
+	printf("%s(%p): write_data32(0x%08lx, 0x%08lx)\n", m_pcName, this, ulNetxAddress, ulData);
 }
 
-
+#if 0
 /* write a byte array from the pc to the netx */
 int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
@@ -622,8 +418,9 @@ int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcDa
 		return 0;
 	}
 }
+#endif
 
-
+#if 0
 /* call routine */
 int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
@@ -646,6 +443,6 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 		return 0;
 	}
 }
-
+#endif
 
 /*-------------------------------------*/

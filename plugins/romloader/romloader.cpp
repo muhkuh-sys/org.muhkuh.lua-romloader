@@ -19,476 +19,98 @@
  ***************************************************************************/
 
 
+#include <stdio.h>
+
 #include "romloader.h"
 
 
-romloader::romloader(wxString strName, wxString strTyp, const romloader_functioninterface *ptFn, void *pvHandle, muhkuh_plugin_fn_close_instance fn_close, wxLuaState *ptLuaState)
- : wxObject()
- , m_strName(strName)
- , m_strTyp(strTyp)
- , m_pvHandle(pvHandle)
- , m_fn_close(fn_close)
- , m_ptLuaState(ptLuaState)
+romloader::romloader(const char *pcName, const char *pcTyp, muhkuh_plugin_provider *ptProvider)
+ : muhkuh_plugin(pcName, pcTyp, ptProvider)
  , m_tChiptyp(ROMLOADER_CHIPTYP_UNKNOWN)
  , m_tRomcode(ROMLOADER_ROMCODE_UNKNOWN)
 {
-	wxString strDebug;
-
-
-	if( ptFn==NULL )
-	{
-		memset(&m_tFunctionInterface, 0, sizeof(romloader_functioninterface));
-	}
-	else
-	{
-		memcpy(&m_tFunctionInterface, ptFn, sizeof(romloader_functioninterface));
-	}
-
-	// *** DEBUG ***
-	strDebug.Printf(wxT("created romloader at %p"), this);
-	wxLogMessage(strDebug);
+	printf("%s(%p): created in romloader\n", m_pcName, this);
 }
 
 
 romloader::~romloader(void)
 {
-	wxString strDebug;
-
-
-	if( m_fn_close!=NULL )
-	{
-		m_fn_close(m_pvHandle);
-	}
-
-	// *** DEBUG ***
-	strDebug.Printf(wxT("deleted romloader at %p"), this);
-	wxLogMessage(strDebug);
+	printf("%s(%p): deleted in romloader\n", m_pcName, this);
 }
 
 
-// open the connection to the device
-void romloader::connect(void)
-{
-	wxString strMsg;
-
-
-	if( m_tFunctionInterface.fn_connect==NULL )
-	{
-		strMsg.Printf(m_strName + wxT(" (%p): missing connect function, ignoring request."), this);
-		m_ptLuaState->wxlua_Error(strMsg);
-	}
-	else
-	{
-		m_tFunctionInterface.fn_connect(m_pvHandle);
-	}
-}
-
-
-// close the connection to the device
-void romloader::disconnect(void)
-{
-	wxString strMsg;
-
-
-	if( m_tFunctionInterface.fn_disconnect==NULL )
-	{
-		strMsg.Printf(m_strName + wxT(" (%p): missing disconnect function, ignoring request."), this);
-		m_ptLuaState->wxlua_Error(strMsg);
-	}
-	else
-	{
-		m_tFunctionInterface.fn_disconnect(m_pvHandle);
-	}
-}
-
-
-// returns the connection state of the device
-bool romloader::is_connected(void) const
-{
-	bool fIsConnected = false;
-	wxString strMsg;
-
-
-	if( m_tFunctionInterface.fn_is_connected==NULL )
-	{
-		strMsg.Printf(m_strName + wxT(" (%p): missing is_connected function, ignoring request."), this);
-		m_ptLuaState->wxlua_Error(strMsg);
-	}
-	else
-	{
-		fIsConnected = m_tFunctionInterface.fn_is_connected(m_pvHandle);
-	}
-
-	return fIsConnected;
-}
-
-
-// returns the device name
-wxString romloader::get_name(void)
-{
-	return m_strName;
-}
-
-
-// returns the device typ
-wxString romloader::get_typ(void)
-{
-	return m_strTyp;
-}
-
-
-// read a byte (8bit) from the netx to the pc
-double romloader::read_data08(double dNetxAddress)
-{
-	wxString strMsg;
-	unsigned char ucData = 0x00;
-	int iResult;
-	unsigned long ulNetxAddress;
-
-
-	ulNetxAddress = (unsigned long)dNetxAddress;
-
-	if( m_tFunctionInterface.fn_read_data08==NULL )
-	{
-		strMsg.Printf(m_strName + wxT(" (%p): missing read_data08 function, ignoring request."), this);
-		m_ptLuaState->wxlua_Error(strMsg);
-	}
-	else
-	{
-		iResult = m_tFunctionInterface.fn_read_data08(m_pvHandle, ulNetxAddress, &ucData);
-		if( iResult!=0 )
-		{
-			strMsg.Printf(wxT("read_data08 failed with error %d"), iResult);
-			m_ptLuaState->wxlua_Error(strMsg);
-		}
-	}
-
-	return ucData;
-}
-
-
-// read a word (16bit) from the netx to the pc
-double romloader::read_data16(double dNetxAddress)
-{
-	wxString strMsg;
-	unsigned short usData = 0x0000;
-	int iResult;
-	unsigned long ulNetxAddress;
-
-
-	ulNetxAddress = (unsigned long)dNetxAddress;
-
-	if( m_tFunctionInterface.fn_read_data16==NULL )
-	{
-		strMsg.Printf(m_strName + wxT(" (%p): missing read_data16 function, ignoring request."), this);
-		m_ptLuaState->wxlua_Error(strMsg);
-	}
-	else
-	{
-		iResult = m_tFunctionInterface.fn_read_data16(m_pvHandle, ulNetxAddress, &usData);
-		if( iResult!=0 )
-		{
-			strMsg.Printf(wxT("read_data16 failed with error %d"), iResult);
-			m_ptLuaState->wxlua_Error(strMsg);
-		}
-	}
-
-	return usData;
-}
-
-
-// read a long (32bit) from the netx to the pc
-double romloader::read_data32(double dNetxAddress)
-{
-	wxString strMsg;
-	unsigned long ulData = 0x00000000;
-	int iResult;
-	unsigned long ulNetxAddress;
-
-
-	ulNetxAddress = (unsigned long)dNetxAddress;
-
-	if( m_tFunctionInterface.fn_read_data32==NULL )
-	{
-		strMsg.Printf(m_strName + wxT(" (%p): missing read_data32 function, ignoring request."), this);
-		m_ptLuaState->wxlua_Error(strMsg);
-	}
-	else
-	{
-		iResult = m_tFunctionInterface.fn_read_data32(m_pvHandle, ulNetxAddress, &ulData);
-		if( iResult!=0 )
-		{
-			strMsg.Printf(wxT("read_data32 failed with error %d"), iResult);
-			m_ptLuaState->wxlua_Error(strMsg);
-		}
-	}
-
-	return ulData;
-}
-
-
-// read a byte array from the netx to the pc
-wxString romloader::read_image(double dNetxAddress, double dSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
-{
-	wxString strMsg;
-	wxString strData;
-	char *pcBuffer;
-	int iResult;
-	unsigned long ulNetxAddress;
-	unsigned long ulSize;
-
-
-	ulNetxAddress = (unsigned long)dNetxAddress;
-	ulSize = (unsigned long)dSize;
-
-	if( m_tFunctionInterface.fn_read_image==NULL )
-	{
-		strMsg.Printf(m_strName + wxT(" (%p): missing read_image function, ignoring request."), this);
-		m_ptLuaState->wxlua_Error(strMsg);
-	}
-	else
-	{
-		// check parameter
-		if( ulSize!=0 )
-		{
-			// get memory for the buffer
-			pcBuffer = new char[ulSize];
-			iResult = m_tFunctionInterface.fn_read_image(m_pvHandle, ulNetxAddress, pcBuffer, ulSize, L, iLuaCallbackTag, pvCallbackUserData);
-			if( iResult!=0 )
-			{
-				strMsg.Printf(wxT("read_image failed with error %d"), iResult);
-				// free the buffer
-				delete[] pcBuffer;
-				m_ptLuaState->wxlua_Error(strMsg);
-			}
-			else
-			{
-				// convert the binary data to wxString
-				strData = wxString::From8BitData(pcBuffer, ulSize);
-				delete[] pcBuffer;
-			}
-		}
-		else
-		{
-			wxLogDebug(wxT("ignoring read_image request with size 0"));
-		}
-	}
-
-	return strData;
-}
-
-// write a byte (8bit) from the pc to the netx
-void romloader::write_data08(double dNetxAddress, double dData)
-{
-	wxString strMsg;
-	int iResult;
-	unsigned long ulNetxAddress;
-	unsigned char ucData;
-
-
-	ulNetxAddress = (unsigned long)dNetxAddress;
-	ucData = (unsigned char)dData;
-
-	if( m_tFunctionInterface.fn_write_data08==NULL )
-	{
-		strMsg.Printf(m_strName + wxT(" (%p): missing write_data08 function, ignoring request."), this);
-		m_ptLuaState->wxlua_Error(strMsg);
-	}
-	else
-	{
-		iResult = m_tFunctionInterface.fn_write_data08(m_pvHandle, ulNetxAddress, ucData);
-		if( iResult!=0 )
-		{
-			strMsg.Printf(wxT("write_data08 failed with error %d"), iResult);
-			m_ptLuaState->wxlua_Error(strMsg);
-		}
-	}
-}
-
-
-// write a word (16bit) from the pc to the netx
-void romloader::write_data16(double dNetxAddress, double dData)
-{
-	wxString strMsg;
-	int iResult;
-	unsigned long ulNetxAddress;
-	unsigned short usData;
-
-
-	ulNetxAddress = (unsigned long)dNetxAddress;
-	usData = (unsigned short)dData;
-
-	if( m_tFunctionInterface.fn_write_data16==NULL )
-	{
-		strMsg.Printf(m_strName + wxT(" (%p): missing write_data16 function, ignoring request."), this);
-		m_ptLuaState->wxlua_Error(strMsg);
-	}
-	else
-	{
-		iResult = m_tFunctionInterface.fn_write_data16(m_pvHandle, ulNetxAddress, usData);
-		if( iResult!=0 )
-		{
-			strMsg.Printf(wxT("write_data16 failed with error %d"), iResult);
-			m_ptLuaState->wxlua_Error(strMsg);
-		}
-	}
-}
-
-
-// write a long (32bit) from the pc to the netx
-void romloader::write_data32(double dNetxAddress, double dData)
-{
-	wxString strMsg;
-	int iResult;
-	unsigned long ulNetxAddress;
-	unsigned long ulData;
-
-
-	ulNetxAddress = (unsigned long)dNetxAddress;
-	ulData = (unsigned long)dData;
-
-	if( m_tFunctionInterface.fn_write_data32==NULL )
-	{
-		strMsg.Printf(m_strName + wxT(" (%p): missing write_data32 function, ignoring request."), this);
-		m_ptLuaState->wxlua_Error(strMsg);
-	}
-	else
-	{
-		iResult = m_tFunctionInterface.fn_write_data32(m_pvHandle, ulNetxAddress, ulData);
-		if( iResult!=0 )
-		{
-			strMsg.Printf(wxT("write_data32 failed with error %d"), iResult);
-			m_ptLuaState->wxlua_Error(strMsg);
-		}
-	}
-}
-
-
-// write a byte array from the pc to the netx
-void romloader::write_image(double dNetxAddress, wxString strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
-{
-	wxString strMsg;
-	int iResult;
-	unsigned long ulNetxAddress;
-
-
-	ulNetxAddress = (unsigned long)dNetxAddress;
-
-	if( m_tFunctionInterface.fn_write_image==NULL )
-	{
-		strMsg.Printf(m_strName + wxT(" (%p): missing write_image function, ignoring request."), this);
-		m_ptLuaState->wxlua_Error(strMsg);
-	}
-	else
-	{
-		iResult = m_tFunctionInterface.fn_write_image(m_pvHandle, ulNetxAddress, strData.To8BitData(), strData.Len(), L, iLuaCallbackTag, pvCallbackUserData);
-		if( iResult!=0 )
-		{
-			strMsg.Printf(wxT("write_image failed with error %d"), iResult);
-			m_ptLuaState->wxlua_Error(strMsg);
-		}
-	}
-}
-
-
-// call routine
-void romloader::call(double dNetxAddress, double dParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
-{
-	wxString strMsg;
-	int iResult;
-	unsigned long ulNetxAddress;
-	unsigned long ulParameterR0;
-
-
-	ulNetxAddress = (unsigned long)dNetxAddress;
-	ulParameterR0 = (unsigned long)dParameterR0;
-
-	if( m_tFunctionInterface.fn_call==NULL )
-	{
-		strMsg.Printf(m_strName + wxT(" (%p): missing call function, ignoring request."), this);
-		m_ptLuaState->wxlua_Error(strMsg);
-	}
-	else
-	{
-		iResult = m_tFunctionInterface.fn_call(m_pvHandle, ulNetxAddress, ulParameterR0, L, iLuaCallbackTag, pvCallbackUserData);
-		if( iResult!=0 )
-		{
-			strMsg.Printf(wxT("call failed with error %d"), iResult);
-			m_ptLuaState->wxlua_Error(strMsg);
-		}
-	}
-}
-
-
-ROMLOADER_CHIPTYP romloader::get_chiptyp(void)
+ROMLOADER_CHIPTYP romloader::GetChiptyp(void) const
 {
 	return m_tChiptyp;
 }
 
 
-ROMLOADER_ROMCODE romloader::get_romcode(void)
+ROMLOADER_ROMCODE romloader::GetRomcode(void) const
 {
 	return m_tRomcode;
 }
 
 
-wxString romloader::get_chiptyp_name(ROMLOADER_CHIPTYP tChiptyp)
+
+const char *romloader::GetChiptypName(ROMLOADER_CHIPTYP tChiptyp) const
 {
-	wxString strChiptyp;
+	const char *pcChiptyp;
+	const ROMLOADER_RESET_ID_T *ptCnt, *ptEnd;
 
 
-	switch( tChiptyp )
+	// init chip name with unknown name
+	pcChiptyp = "unknown chip";
+
+	// loop over all known romcodes and search the romcode typ
+	ptCnt = atResIds;
+	ptEnd = ptCnt + (sizeof(atResIds)/sizeof(atResIds[0]));
+	while( ptCnt<ptEnd )
 	{
-	case ROMLOADER_CHIPTYP_NETX500:
-		strChiptyp = wxT("netX500");
-		break;
-	case ROMLOADER_CHIPTYP_NETX100:
-		strChiptyp = wxT("netX100");
-		break;
-	case ROMLOADER_CHIPTYP_NETX50:
-		strChiptyp = wxT("netX50");
-		break;
-	case ROMLOADER_CHIPTYP_UNKNOWN:
-		strChiptyp = _("unknown chip");
-		break;
+		if( ptCnt->tChiptyp==tChiptyp )
+		{
+			pcChiptyp = ptCnt->pcChiptypName;
+			break;
+		}
 	}
 
-	return strChiptyp;
+	return pcChiptyp;
 }
 
 
-wxString romloader::get_romcode_name(ROMLOADER_ROMCODE tRomcode)
+const char *romloader::GetRomcodeName(ROMLOADER_ROMCODE tRomcode) const
 {
-	wxString strRomcode;
+	const char *pcRomcode;
+	const ROMLOADER_RESET_ID_T *ptCnt, *ptEnd;
 
 
-	switch( tRomcode )
+	// init romcode name with unknown name
+	pcRomcode = "unknown romcode";
+
+	// loop over all known romcodes and search the romcode typ
+	ptCnt = atResIds;
+	ptEnd = ptCnt + (sizeof(atResIds)/sizeof(atResIds[0]));
+	while( ptCnt<ptEnd )
 	{
-	case ROMLOADER_ROMCODE_ABOOT:
-		strRomcode = wxT("ABoot");
-		break;
-	case ROMLOADER_ROMCODE_HBOOT:
-		strRomcode = wxT("HBoot");
-		break;
-	case ROMLOADER_ROMCODE_UNKNOWN:
-		strRomcode = _("unknown romcode");
-		break;
+		if( ptCnt->tRomcode==tRomcode )
+		{
+			pcRomcode = ptCnt->pcRomcodeName;
+			break;
+		}
 	}
 
-	return strRomcode;
+	return pcRomcode;
 }
 
 
 bool romloader::detect_chiptyp(void)
 {
 	unsigned long ulResetVector;
-	const tRomloader_ResetId *ptRstCnt, *ptRstEnd;
+	const ROMLOADER_RESET_ID_T *ptRstCnt, *ptRstEnd;
 	unsigned long ulVersionAddr;
 	unsigned long ulVersion;
-	wxString strChiptyp;
-	wxString strRomcode;
-	wxString strMsg;
 	bool fResult;
+	const char *pcChiptypName;
+	const char *pcRomcodeName;
 
 
 	m_tChiptyp = ROMLOADER_CHIPTYP_UNKNOWN;
@@ -496,7 +118,7 @@ bool romloader::detect_chiptyp(void)
 
 	// read the reset vector at 0x00000000
 	ulResetVector = read_data32(0);
-	wxLogMessage(wxT("romloader_uart(%p): reset vector: 0x%08X"), this, ulResetVector);
+	printf("%s(%p): reset vector: 0x%08X", m_pcName, this, ulResetVector);
 
 	// match the reset vector to all known chipfamilies
 	ptRstCnt = atResIds;
@@ -509,7 +131,7 @@ bool romloader::detect_chiptyp(void)
 			ulVersionAddr = ptRstCnt->ulVersionAddress;
 			// read version address
 			ulVersion = read_data32(ulVersionAddr);
-			wxLogMessage(wxT("romloader_uart(%p): version value: 0x%08X"), this, ulVersion);
+			printf("%s(%p): version value: 0x%08X", m_pcName, this, ulVersion);
 			if( ptRstCnt->ulVersionValue==ulVersion )
 			{
 				// found chip!
@@ -526,26 +148,50 @@ bool romloader::detect_chiptyp(void)
 
 	if( fResult!=true )
 	{
-		wxLogError(wxT("romloader(%p): unknown chip!"), this);
+		fprintf(stderr, "%s(%p): unknown chip!", m_pcName, this);
 	}
 	else
 	{
-		strChiptyp = get_chiptyp_name(m_tChiptyp);
-		strRomcode = get_romcode_name(m_tRomcode);
-
-		strMsg.Printf(_("found chip %s with romcode %s"), strChiptyp.fn_str(), strRomcode.fn_str());
-		wxLogMessage(wxT("romloader(%p): ") + strMsg, this);
+		pcChiptypName = GetChiptypName(m_tChiptyp);
+		pcRomcodeName = GetRomcodeName(m_tRomcode);
+		printf("%s(%p): found chip %s with romcode %s", m_pcName, this, pcChiptypName, pcRomcodeName);
 	}
 
 	return fResult;
 }
 
 
-const tRomloader_ResetId romloader::atResIds[3] =
+const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[3] =
 {
-	{ 0xea080001,	0x00200008,	0x00001000,	ROMLOADER_CHIPTYP_NETX500,  ROMLOADER_ROMCODE_ABOOT },  // aboot netx500
-	{ 0xea080002,	0x00200008,	0x00003002,	ROMLOADER_CHIPTYP_NETX100,  ROMLOADER_ROMCODE_ABOOT },  // aboot netx100
-	{ 0xeac83ffc,	0x08200008,	0x00002001,	ROMLOADER_CHIPTYP_NETX50,   ROMLOADER_ROMCODE_HBOOT }   // hboot netx50
+	{
+		0xea080001,
+		0x00200008,
+		0x00001000,
+		ROMLOADER_CHIPTYP_NETX500,
+		"netX500",
+		ROMLOADER_ROMCODE_ABOOT,
+		"ABoot"
+	},
+
+	{
+		0xea080002,
+		0x00200008,
+		0x00003002,
+		ROMLOADER_CHIPTYP_NETX100,
+		"netX100",
+		ROMLOADER_ROMCODE_ABOOT,
+		"ABoot"
+	},
+
+	{
+		0xeac83ffc,
+		0x08200008,
+		0x00002001,
+		ROMLOADER_CHIPTYP_NETX50,
+		"netX50",
+		ROMLOADER_ROMCODE_HBOOT,
+		"HBoot"
+	},
 };
 
 
@@ -561,7 +207,7 @@ unsigned int romloader::crc16(unsigned int uCrc, unsigned int uData)
 }
 
 
-
+/*
 bool romloader::callback_long(lua_State *L, int iLuaCallbackTag, long lProgressData, void *pvCallbackUserData)
 {
 	bool fStillRunning;
@@ -682,4 +328,5 @@ bool romloader::callback_common(lua_State *L, void *pvCallbackUserData, int iOld
 
 	return fStillRunning;
 }
+*/
 
