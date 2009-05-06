@@ -7,8 +7,8 @@
 %}
 
 
-%newobject romloader_baka_reference::ClaimInterface;
-%delobject romloader_baka_reference::ReleaseInterface;
+%newobject romloader_baka_provider::ClaimInterface;
+%delobject romloader_baka_provider::ReleaseInterface;
 
 %include "../../muhkuh_plugin_interface.h"
 %include "../romloader.h"

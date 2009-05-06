@@ -52,13 +52,11 @@ muhkuh_plugin::~muhkuh_plugin(void)
 
 	if( m_ptProvider!=NULL )
 	{
-/*
 		fOk = m_ptProvider->ReleaseInterface(this);
 		if( fOk!=true )
 		{
 			printf("%s(%p): failed to release interface!\n", m_pcName, this);
 		}
-*/
 	}
 
 	printf("%s(%p): deleted\n", m_pcName, this);

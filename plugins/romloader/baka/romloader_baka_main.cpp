@@ -152,7 +152,7 @@ romloader_baka *romloader_baka_provider::ClaimInterface(const muhkuh_plugin_refe
 }
 
 
-bool romloader_baka_provider::ReleaseInterface(romloader_baka *ptPlugin)
+bool romloader_baka_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 {
 	bool fOk;
 	const char *pcName;

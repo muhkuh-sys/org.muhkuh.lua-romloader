@@ -3013,6 +3013,23 @@ static swig_lua_class *swig_romloader_baka_bases[] = {0,0};
 static const char *swig_romloader_baka_base_names[] = {"romloader *",0};
 static swig_lua_class _wrap_class_romloader_baka = { "romloader_baka", &SWIGTYPE_p_romloader_baka,_wrap_new_romloader_baka, swig_delete_romloader_baka, swig_romloader_baka_methods, swig_romloader_baka_attributes, swig_romloader_baka_bases, swig_romloader_baka_base_names };
 
+static int _wrap_new_romloader_baka_provider(lua_State* L) {
+  int SWIG_arg = 0;
+  romloader_baka_provider *result = 0 ;
+  
+  SWIG_check_num_args("romloader_baka_provider",0,0)
+  result = (romloader_baka_provider *)new romloader_baka_provider();
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_romloader_baka_provider,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_romloader_baka_provider_DetectInterfaces(lua_State* L) {
   int SWIG_arg = 0;
   romloader_baka_provider *arg1 = (romloader_baka_provider *) 0 ;
@@ -3064,7 +3081,7 @@ static int _wrap_romloader_baka_provider_ClaimInterface(lua_State* L) {
   }
   
   result = (romloader_baka *)(arg1)->ClaimInterface((muhkuh_plugin_reference const *)arg2);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_romloader_baka,0); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_romloader_baka,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -3078,20 +3095,20 @@ fail:
 static int _wrap_romloader_baka_provider_ReleaseInterface(lua_State* L) {
   int SWIG_arg = 0;
   romloader_baka_provider *arg1 = (romloader_baka_provider *) 0 ;
-  romloader_baka *arg2 = (romloader_baka *) 0 ;
+  muhkuh_plugin *arg2 = (muhkuh_plugin *) 0 ;
   bool result;
   
   SWIG_check_num_args("ReleaseInterface",2,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ReleaseInterface",1,"romloader_baka_provider *");
-  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("ReleaseInterface",2,"romloader_baka *");
+  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("ReleaseInterface",2,"muhkuh_plugin *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader_baka_provider,0))){
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader_baka_provider,SWIG_POINTER_DISOWN))){
     SWIG_fail_ptr("romloader_baka_provider_ReleaseInterface",1,SWIGTYPE_p_romloader_baka_provider);
   }
   
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_romloader_baka,0))){
-    SWIG_fail_ptr("romloader_baka_provider_ReleaseInterface",2,SWIGTYPE_p_romloader_baka);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_muhkuh_plugin,0))){
+    SWIG_fail_ptr("romloader_baka_provider_ReleaseInterface",2,SWIGTYPE_p_muhkuh_plugin);
   }
   
   result = (bool)(arg1)->ReleaseInterface(arg2);
@@ -3121,7 +3138,7 @@ static swig_lua_attribute swig_romloader_baka_provider_attributes[] = {
 };
 static swig_lua_class *swig_romloader_baka_provider_bases[] = {0,0};
 static const char *swig_romloader_baka_provider_base_names[] = {"muhkuh_plugin_provider *",0};
-static swig_lua_class _wrap_class_romloader_baka_provider = { "romloader_baka_provider", &SWIGTYPE_p_romloader_baka_provider,0, swig_delete_romloader_baka_provider, swig_romloader_baka_provider_methods, swig_romloader_baka_provider_attributes, swig_romloader_baka_provider_bases, swig_romloader_baka_provider_base_names };
+static swig_lua_class _wrap_class_romloader_baka_provider = { "romloader_baka_provider", &SWIGTYPE_p_romloader_baka_provider,_wrap_new_romloader_baka_provider, swig_delete_romloader_baka_provider, swig_romloader_baka_provider_methods, swig_romloader_baka_provider_attributes, swig_romloader_baka_provider_bases, swig_romloader_baka_provider_base_names };
 
 static int _wrap_new_PluginVector__SWIG_0(lua_State* L) {
   int SWIG_arg = 0;

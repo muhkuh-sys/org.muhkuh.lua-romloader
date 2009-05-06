@@ -79,7 +79,7 @@ public:
 	int DetectInterfaces(std::vector<muhkuh_plugin_reference*> &vInterfaceList);
 
 	virtual romloader_baka *ClaimInterface(const muhkuh_plugin_reference *ptReference);
-	virtual bool ReleaseInterface(romloader_baka *ptPlugin);
+	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin);
 
 private:
 	static const char *m_pcPluginNamePattern;
