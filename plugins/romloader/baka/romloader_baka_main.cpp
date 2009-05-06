@@ -23,6 +23,9 @@
 
 #include "romloader_baka_main.h"
 
+#ifdef _WIN32
+	#define snprintf _snprintf
+#endif
 
 const char *romloader_baka_provider::m_pcPluginNamePattern = "baka_%d";
 
@@ -55,7 +58,7 @@ romloader_baka_provider::romloader_baka_provider(void)
 
 romloader_baka_provider::~romloader_baka_provider(void)
 {
-	unsigned int uiCnt;
+	int iCnt;
 
 
 	printf("%s(%p): provider delete\n", m_pt_plugin_desc.pcPluginId, this);
@@ -63,11 +66,11 @@ romloader_baka_provider::~romloader_baka_provider(void)
 	if( m_ptInstanceCfg!=NULL )
 	{
 		/* check for connected instances */
-		for(uiCnt=0; uiCnt<m_cfg_iInstances; ++uiCnt)
+		for(iCnt=0; iCnt<m_cfg_iInstances; ++iCnt)
 		{
-			if( m_ptInstanceCfg[uiCnt].fIsUsed==true )
+			if( m_ptInstanceCfg[iCnt].fIsUsed==true )
 			{
-				printf("%s(%p): instance %d is still used\n", m_pt_plugin_desc.pcPluginId, this, uiCnt);
+				printf("%s(%p): instance %d is still used\n", m_pt_plugin_desc.pcPluginId, this, iCnt);
 			}
 		}
 
