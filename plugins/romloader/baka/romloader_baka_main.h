@@ -28,33 +28,7 @@
 
 /*-----------------------------------*/
 
-class romloader_baka;
-
-/*-----------------------------------*/
-
-class romloader_baka_provider : public muhkuh_plugin_provider
-{
-public:
-	romloader_baka_provider(void);
-	~romloader_baka_provider(void);
-
-	int DetectInterfaces(std::vector<muhkuh_plugin_reference*> &vInterfaceList);
-
-	virtual romloader_baka *ClaimInterface(const muhkuh_plugin_reference *ptReference);
-	virtual bool ReleaseInterface(romloader_baka *ptPlugin);
-
-private:
-	static const char *m_pcPluginNamePattern;
-
-	typedef struct
-	{
-		bool fIsUsed;
-	} BAKA_INSTANCE_CFG_T;
-
-	BAKA_INSTANCE_CFG_T *m_ptInstanceCfg;
-
-	int m_cfg_iInstances;
-};
+class romloader_baka_provider;
 
 /*-----------------------------------*/
 
@@ -92,6 +66,32 @@ public:
 //	virtual void call(double dNetxAddress, double dParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 
 private:
+};
+
+/*-----------------------------------*/
+
+class romloader_baka_provider : public muhkuh_plugin_provider
+{
+public:
+	romloader_baka_provider(void);
+	~romloader_baka_provider(void);
+
+	int DetectInterfaces(std::vector<muhkuh_plugin_reference*> &vInterfaceList);
+
+	virtual romloader_baka *ClaimInterface(const muhkuh_plugin_reference *ptReference);
+	virtual bool ReleaseInterface(romloader_baka *ptPlugin);
+
+private:
+	static const char *m_pcPluginNamePattern;
+
+	typedef struct
+	{
+		bool fIsUsed;
+	} BAKA_INSTANCE_CFG_T;
+
+	BAKA_INSTANCE_CFG_T *m_ptInstanceCfg;
+
+	int m_cfg_iInstances;
 };
 
 /*-----------------------------------*/

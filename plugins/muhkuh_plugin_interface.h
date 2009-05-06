@@ -22,8 +22,6 @@
 #include <string.h>
 #include <vector>
 
-#include "muhkuh_plugin_reference.h"
-
 
 #ifndef __MUHKUH_PLUGIN_INTERFACE__
 #define __MUHKUH_PLUGIN_INTERFACE__
@@ -57,29 +55,6 @@ typedef struct
 	const char *pcPluginId;
 	muhkuh_plugin_so_version tVersion;
 } muhkuh_plugin_desc;
-
-
-/*-----------------------------------*/
-
-
-class muhkuh_plugin_provider
-{
-public:
-	muhkuh_plugin_provider(const char *pcPluginId);
-	~muhkuh_plugin_provider(void);
-
-	const muhkuh_plugin_desc *GetDesc(void) const;
-
-	virtual int DetectInterfaces(std::vector<muhkuh_plugin_reference*> &vInterfaceList) = 0;
-	virtual void *ClaimInterface(const muhkuh_plugin_reference *ptReference) = 0;
-//	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin) = 0;
-
-protected:
-	char *clone_string(const char *pcStr, size_t sizMax);
-
-
-	muhkuh_plugin_desc m_pt_plugin_desc;
-};
 
 
 /*-----------------------------------*/
@@ -139,6 +114,29 @@ protected:
 	muhkuh_plugin_provider *m_ptProvider;
 
 	bool m_fIsConnected;
+};
+
+
+/*-----------------------------------*/
+
+
+class muhkuh_plugin_provider
+{
+public:
+	muhkuh_plugin_provider(const char *pcPluginId);
+	~muhkuh_plugin_provider(void);
+
+	const muhkuh_plugin_desc *GetDesc(void) const;
+
+	virtual int DetectInterfaces(std::vector<muhkuh_plugin_reference*> &vInterfaceList) = 0;
+	virtual muhkuh_plugin *ClaimInterface(const muhkuh_plugin_reference *ptReference) = 0;
+	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin) = 0;
+
+protected:
+	char *clone_string(const char *pcStr, size_t sizMax);
+
+
+	muhkuh_plugin_desc m_pt_plugin_desc;
 };
 
 
