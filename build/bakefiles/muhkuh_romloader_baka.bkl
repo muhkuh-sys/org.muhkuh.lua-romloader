@@ -14,7 +14,7 @@
 			plugins/muhkuh_plugin_interface.cpp
 			plugins/romloader/romloader.cpp
 			plugins/romloader/baka/romloader_baka_main.cpp
-			plugins/romloader/baka/romloader_baka_wrap.cpp
+			plugins/romloader/baka/_luaif/romloader_baka_wrap.cpp
 		</sources>
 		<headers>
 			plugins/romloader/romloader.h
