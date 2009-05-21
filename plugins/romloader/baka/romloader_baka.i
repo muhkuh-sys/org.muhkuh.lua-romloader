@@ -1,5 +1,12 @@
 %module romloader_baka
 
+/* This interface is lua specific. It will definitely not work with other
+ * scripting languages. Refuse to continue if the output is not lua.
+ */
+#ifndef SWIGLUA
+	#error "This module is lua specific. It will not work with other scripting languages!"
+#endif
+
 /* TODO: get rid of vectors and use plain lua tables */
 %include "std_vector.i"
 
