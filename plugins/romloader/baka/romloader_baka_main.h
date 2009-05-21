@@ -73,7 +73,7 @@ private:
 class romloader_baka_provider : public muhkuh_plugin_provider
 {
 public:
-	romloader_baka_provider(swig_type_info *ptPluginTypeInfo);
+	romloader_baka_provider(swig_type_info *pt_romloader_baka_type_info);
 	~romloader_baka_provider(void);
 
 	int DetectInterfaces(std::vector<muhkuh_plugin_reference*> &vInterfaceList);

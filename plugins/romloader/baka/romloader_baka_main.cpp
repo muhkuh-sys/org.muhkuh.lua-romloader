@@ -30,7 +30,7 @@
 const char *romloader_baka_provider::m_pcPluginNamePattern = "baka_%d";
 
 
-romloader_baka_provider::romloader_baka_provider(swig_type_info *ptPluginTypeInfo)
+romloader_baka_provider::romloader_baka_provider(swig_type_info *pt_romloader_baka_type_info)
  : muhkuh_plugin_provider("romloader_baka")
  , m_ptInstanceCfg(NULL)
  , m_cfg_iInstances(0)
@@ -41,7 +41,7 @@ romloader_baka_provider::romloader_baka_provider(swig_type_info *ptPluginTypeInf
 	printf("%s(%p): provider create\n", m_pcPluginId, this);
 
 	/* get the romloader_baka lua type */
-	m_ptPluginTypeInfo = ptPluginTypeInfo;
+	m_ptPluginTypeInfo = pt_romloader_baka_type_info;
 	printf("%s(%p): romloader_baka type: %p\n", m_pcPluginId, this, m_ptPluginTypeInfo);
 
 	m_cfg_iInstances = 4;
