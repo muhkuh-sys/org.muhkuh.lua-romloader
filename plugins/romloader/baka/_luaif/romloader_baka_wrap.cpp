@@ -1492,7 +1492,7 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 
 #define SWIGTYPE_p_ROMLOADER_CHIPTYP swig_types[0]
 #define SWIGTYPE_p_ROMLOADER_ROMCODE swig_types[1]
-#define SWIGTYPE_p_SWIGLUA_FN swig_types[2]
+#define SWIGTYPE_p_SWIGLUA_REF swig_types[2]
 #define SWIGTYPE_p_lua_State swig_types[3]
 #define SWIGTYPE_p_muhkuh_plugin swig_types[4]
 #define SWIGTYPE_p_muhkuh_plugin_provider swig_types[5]
@@ -1564,19 +1564,19 @@ void swiglua_ref_get(SWIGLUA_REF* pref){
 #ifdef __cplusplus
 extern "C" {
 #endif
-static int _wrap_SWIGLUA_FN_L_set(lua_State* L) {
+static int _wrap_SWIGLUA_REF_L_set(lua_State* L) {
   int SWIG_arg = 0;
-  SWIGLUA_FN *arg1 = (SWIGLUA_FN *) 0 ;
+  SWIGLUA_REF *arg1 = (SWIGLUA_REF *) 0 ;
   lua_State *arg2 = (lua_State *) 0 ;
   
   
   arg2 = L;
   
   SWIG_check_num_args("L",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("L",1,"SWIGLUA_FN *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("L",1,"SWIGLUA_REF *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_SWIGLUA_FN,0))){
-    SWIG_fail_ptr("SWIGLUA_FN_L_set",1,SWIGTYPE_p_SWIGLUA_FN);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_SWIGLUA_REF,0))){
+    SWIG_fail_ptr("SWIGLUA_REF_L_set",1,SWIGTYPE_p_SWIGLUA_REF);
   }
   
   if (arg1) (arg1)->L = arg2;
@@ -1591,16 +1591,16 @@ fail:
 }
 
 
-static int _wrap_SWIGLUA_FN_L_get(lua_State* L) {
+static int _wrap_SWIGLUA_REF_L_get(lua_State* L) {
   int SWIG_arg = 0;
-  SWIGLUA_FN *arg1 = (SWIGLUA_FN *) 0 ;
+  SWIGLUA_REF *arg1 = (SWIGLUA_REF *) 0 ;
   lua_State *result = 0 ;
   
   SWIG_check_num_args("L",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("L",1,"SWIGLUA_FN *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("L",1,"SWIGLUA_REF *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_SWIGLUA_FN,0))){
-    SWIG_fail_ptr("SWIGLUA_FN_L_get",1,SWIGTYPE_p_SWIGLUA_FN);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_SWIGLUA_REF,0))){
+    SWIG_fail_ptr("SWIGLUA_REF_L_get",1,SWIGTYPE_p_SWIGLUA_REF);
   }
   
   result = (lua_State *) ((arg1)->L);
@@ -1615,21 +1615,21 @@ fail:
 }
 
 
-static int _wrap_SWIGLUA_FN_idx_set(lua_State* L) {
+static int _wrap_SWIGLUA_REF_ref_set(lua_State* L) {
   int SWIG_arg = 0;
-  SWIGLUA_FN *arg1 = (SWIGLUA_FN *) 0 ;
+  SWIGLUA_REF *arg1 = (SWIGLUA_REF *) 0 ;
   int arg2 ;
   
-  SWIG_check_num_args("idx",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("idx",1,"SWIGLUA_FN *");
-  if(!lua_isnumber(L,2)) SWIG_fail_arg("idx",2,"int");
+  SWIG_check_num_args("ref",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ref",1,"SWIGLUA_REF *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("ref",2,"int");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_SWIGLUA_FN,0))){
-    SWIG_fail_ptr("SWIGLUA_FN_idx_set",1,SWIGTYPE_p_SWIGLUA_FN);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_SWIGLUA_REF,0))){
+    SWIG_fail_ptr("SWIGLUA_REF_ref_set",1,SWIGTYPE_p_SWIGLUA_REF);
   }
   
   arg2 = (int)lua_tonumber(L, 2);
-  if (arg1) (arg1)->idx = arg2;
+  if (arg1) (arg1)->ref = arg2;
   
   return SWIG_arg;
   
@@ -1641,19 +1641,19 @@ fail:
 }
 
 
-static int _wrap_SWIGLUA_FN_idx_get(lua_State* L) {
+static int _wrap_SWIGLUA_REF_ref_get(lua_State* L) {
   int SWIG_arg = 0;
-  SWIGLUA_FN *arg1 = (SWIGLUA_FN *) 0 ;
+  SWIGLUA_REF *arg1 = (SWIGLUA_REF *) 0 ;
   int result;
   
-  SWIG_check_num_args("idx",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("idx",1,"SWIGLUA_FN *");
+  SWIG_check_num_args("ref",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ref",1,"SWIGLUA_REF *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_SWIGLUA_FN,0))){
-    SWIG_fail_ptr("SWIGLUA_FN_idx_get",1,SWIGTYPE_p_SWIGLUA_FN);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_SWIGLUA_REF,0))){
+    SWIG_fail_ptr("SWIGLUA_REF_ref_get",1,SWIGTYPE_p_SWIGLUA_REF);
   }
   
-  result = (int) ((arg1)->idx);
+  result = (int) ((arg1)->ref);
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
   
@@ -1665,13 +1665,13 @@ fail:
 }
 
 
-static int _wrap_new_SWIGLUA_FN(lua_State* L) {
+static int _wrap_new_SWIGLUA_REF(lua_State* L) {
   int SWIG_arg = 0;
-  SWIGLUA_FN *result = 0 ;
+  SWIGLUA_REF *result = 0 ;
   
-  SWIG_check_num_args("SWIGLUA_FN::SWIGLUA_FN",0,0)
-  result = (SWIGLUA_FN *)new SWIGLUA_FN();
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_SWIGLUA_FN,1); SWIG_arg++; 
+  SWIG_check_num_args("SWIGLUA_REF::SWIGLUA_REF",0,0)
+  result = (SWIGLUA_REF *)new SWIGLUA_REF();
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_SWIGLUA_REF,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -1682,21 +1682,97 @@ fail:
 }
 
 
-static void swig_delete_SWIGLUA_FN(void *obj) {
-SWIGLUA_FN *arg1 = (SWIGLUA_FN *) obj;
+static void swig_delete_SWIGLUA_REF(void *obj) {
+SWIGLUA_REF *arg1 = (SWIGLUA_REF *) obj;
 delete arg1;
 }
-static swig_lua_method swig_SWIGLUA_FN_methods[] = {
+static swig_lua_method swig_SWIGLUA_REF_methods[] = {
     {0,0}
 };
-static swig_lua_attribute swig_SWIGLUA_FN_attributes[] = {
-    { "L", _wrap_SWIGLUA_FN_L_get, _wrap_SWIGLUA_FN_L_set},
-    { "idx", _wrap_SWIGLUA_FN_idx_get, _wrap_SWIGLUA_FN_idx_set},
+static swig_lua_attribute swig_SWIGLUA_REF_attributes[] = {
+    { "L", _wrap_SWIGLUA_REF_L_get, _wrap_SWIGLUA_REF_L_set},
+    { "ref", _wrap_SWIGLUA_REF_ref_get, _wrap_SWIGLUA_REF_ref_set},
     {0,0,0}
 };
-static swig_lua_class *swig_SWIGLUA_FN_bases[] = {0};
-static const char *swig_SWIGLUA_FN_base_names[] = {0};
-static swig_lua_class _wrap_class_SWIGLUA_FN = { "SWIGLUA_FN", &SWIGTYPE_p_SWIGLUA_FN,_wrap_new_SWIGLUA_FN, swig_delete_SWIGLUA_FN, swig_SWIGLUA_FN_methods, swig_SWIGLUA_FN_attributes, swig_SWIGLUA_FN_bases, swig_SWIGLUA_FN_base_names };
+static swig_lua_class *swig_SWIGLUA_REF_bases[] = {0};
+static const char *swig_SWIGLUA_REF_base_names[] = {0};
+static swig_lua_class _wrap_class_SWIGLUA_REF = { "SWIGLUA_REF", &SWIGTYPE_p_SWIGLUA_REF,_wrap_new_SWIGLUA_REF, swig_delete_SWIGLUA_REF, swig_SWIGLUA_REF_methods, swig_SWIGLUA_REF_attributes, swig_SWIGLUA_REF_bases, swig_SWIGLUA_REF_base_names };
+
+static int _wrap_swiglua_ref_clear(lua_State* L) {
+  int SWIG_arg = 0;
+  SWIGLUA_REF *arg1 = (SWIGLUA_REF *) 0 ;
+  
+  SWIG_check_num_args("swiglua_ref_clear",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("swiglua_ref_clear",1,"SWIGLUA_REF *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_SWIGLUA_REF,0))){
+    SWIG_fail_ptr("swiglua_ref_clear",1,SWIGTYPE_p_SWIGLUA_REF);
+  }
+  
+  swiglua_ref_clear(arg1);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_swiglua_ref_set(lua_State* L) {
+  int SWIG_arg = 0;
+  SWIGLUA_REF *arg1 = (SWIGLUA_REF *) 0 ;
+  lua_State *arg2 = (lua_State *) 0 ;
+  int arg3 ;
+  
+  
+  arg2 = L;
+  
+  SWIG_check_num_args("swiglua_ref_set",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("swiglua_ref_set",1,"SWIGLUA_REF *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("swiglua_ref_set",2,"int");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_SWIGLUA_REF,0))){
+    SWIG_fail_ptr("swiglua_ref_set",1,SWIGTYPE_p_SWIGLUA_REF);
+  }
+  
+  arg3 = (int)lua_tonumber(L, 2);
+  swiglua_ref_set(arg1,arg2,arg3);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_swiglua_ref_get(lua_State* L) {
+  int SWIG_arg = 0;
+  SWIGLUA_REF *arg1 = (SWIGLUA_REF *) 0 ;
+  
+  SWIG_check_num_args("swiglua_ref_get",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("swiglua_ref_get",1,"SWIGLUA_REF *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_SWIGLUA_REF,0))){
+    SWIG_fail_ptr("swiglua_ref_get",1,SWIGTYPE_p_SWIGLUA_REF);
+  }
+  
+  swiglua_ref_get(arg1);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
 
 static int _wrap_muhkuh_plugin_version_uiVersionMajor_set(lua_State* L) {
   int SWIG_arg = 0;
@@ -2640,8 +2716,8 @@ static int _wrap_romloader_read_image(lua_State* L) {
   unsigned long arg3 ;
   char **arg4 = (char **) 0 ;
   unsigned long *arg5 = (unsigned long *) 0 ;
-  SWIGLUA_FN arg6 ;
-  unsigned long arg7 ;
+  SWIGLUA_REF arg6 ;
+  long arg7 ;
   
   
   char *pcOutputData;
@@ -2653,8 +2729,7 @@ static int _wrap_romloader_read_image(lua_State* L) {
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("read_image",1,"romloader *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("read_image",2,"unsigned long");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("read_image",3,"unsigned long");
-  if(!lua_isfunction(L,4)) SWIG_fail_arg("read_image",4,"SWIGLUA_FN");
-  if(!lua_isnumber(L,5)) SWIG_fail_arg("read_image",5,"unsigned long");
+  if(!lua_isnumber(L,5)) SWIG_fail_arg("read_image",5,"long");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader,0))){
     SWIG_fail_ptr("romloader_read_image",1,SWIGTYPE_p_romloader);
@@ -2662,8 +2737,8 @@ static int _wrap_romloader_read_image(lua_State* L) {
   
   arg2 = (unsigned long)lua_tonumber(L, 2);
   arg3 = (unsigned long)lua_tonumber(L, 3);
-  (&arg6)->L=L; (&arg6)->idx=4; 
-  arg7 = (unsigned long)lua_tonumber(L, 5);
+  swiglua_ref_set(&arg6,L,4); 
+  arg7 = (long)lua_tonumber(L, 5);
   (arg1)->read_image(arg2,arg3,arg4,arg5,arg6,arg7);
   
   
@@ -2793,14 +2868,13 @@ static int _wrap_romloader_write_image(lua_State* L) {
   unsigned long arg2 ;
   char *arg3 = (char *) 0 ;
   unsigned long arg4 ;
-  SWIGLUA_FN arg5 ;
-  unsigned long arg6 ;
+  SWIGLUA_REF arg5 ;
+  long arg6 ;
   
   SWIG_check_num_args("write_image",5,5)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("write_image",1,"romloader *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("write_image",2,"unsigned long");
-  if(!lua_isfunction(L,4)) SWIG_fail_arg("write_image",4,"SWIGLUA_FN");
-  if(!lua_isnumber(L,5)) SWIG_fail_arg("write_image",5,"unsigned long");
+  if(!lua_isnumber(L,5)) SWIG_fail_arg("write_image",5,"long");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader,0))){
     SWIG_fail_ptr("romloader_write_image",1,SWIGTYPE_p_romloader);
@@ -2812,8 +2886,8 @@ static int _wrap_romloader_write_image(lua_State* L) {
     arg3 = (char*)lua_tolstring(L, 3, &sizInputData);
     arg4 = (unsigned long)sizInputData;
   }
-  (&arg5)->L=L; (&arg5)->idx=4; 
-  arg6 = (unsigned long)lua_tonumber(L, 5);
+  swiglua_ref_set(&arg5,L,4); 
+  arg6 = (long)lua_tonumber(L, 5);
   (arg1)->write_image(arg2,(char const *)arg3,arg4,arg5,arg6);
   
   return SWIG_arg;
@@ -3134,8 +3208,8 @@ static int _wrap_romloader_baka_read_image(lua_State* L) {
   unsigned long arg3 ;
   char **arg4 = (char **) 0 ;
   unsigned long *arg5 = (unsigned long *) 0 ;
-  SWIGLUA_FN arg6 ;
-  unsigned long arg7 ;
+  SWIGLUA_REF arg6 ;
+  long arg7 ;
   
   
   char *pcOutputData;
@@ -3147,8 +3221,7 @@ static int _wrap_romloader_baka_read_image(lua_State* L) {
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("read_image",1,"romloader_baka *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("read_image",2,"unsigned long");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("read_image",3,"unsigned long");
-  if(!lua_isfunction(L,4)) SWIG_fail_arg("read_image",4,"SWIGLUA_FN");
-  if(!lua_isnumber(L,5)) SWIG_fail_arg("read_image",5,"unsigned long");
+  if(!lua_isnumber(L,5)) SWIG_fail_arg("read_image",5,"long");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader_baka,0))){
     SWIG_fail_ptr("romloader_baka_read_image",1,SWIGTYPE_p_romloader_baka);
@@ -3156,8 +3229,8 @@ static int _wrap_romloader_baka_read_image(lua_State* L) {
   
   arg2 = (unsigned long)lua_tonumber(L, 2);
   arg3 = (unsigned long)lua_tonumber(L, 3);
-  (&arg6)->L=L; (&arg6)->idx=4; 
-  arg7 = (unsigned long)lua_tonumber(L, 5);
+  swiglua_ref_set(&arg6,L,4); 
+  arg7 = (long)lua_tonumber(L, 5);
   (arg1)->read_image(arg2,arg3,arg4,arg5,arg6,arg7);
   
   
@@ -3287,14 +3360,13 @@ static int _wrap_romloader_baka_write_image(lua_State* L) {
   unsigned long arg2 ;
   char *arg3 = (char *) 0 ;
   unsigned long arg4 ;
-  SWIGLUA_FN arg5 ;
-  unsigned long arg6 ;
+  SWIGLUA_REF arg5 ;
+  long arg6 ;
   
   SWIG_check_num_args("write_image",5,5)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("write_image",1,"romloader_baka *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("write_image",2,"unsigned long");
-  if(!lua_isfunction(L,4)) SWIG_fail_arg("write_image",4,"SWIGLUA_FN");
-  if(!lua_isnumber(L,5)) SWIG_fail_arg("write_image",5,"unsigned long");
+  if(!lua_isnumber(L,5)) SWIG_fail_arg("write_image",5,"long");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader_baka,0))){
     SWIG_fail_ptr("romloader_baka_write_image",1,SWIGTYPE_p_romloader_baka);
@@ -3306,8 +3378,8 @@ static int _wrap_romloader_baka_write_image(lua_State* L) {
     arg3 = (char*)lua_tolstring(L, 3, &sizInputData);
     arg4 = (unsigned long)sizInputData;
   }
-  (&arg5)->L=L; (&arg5)->idx=4; 
-  arg6 = (unsigned long)lua_tonumber(L, 5);
+  swiglua_ref_set(&arg5,L,4); 
+  arg6 = (long)lua_tonumber(L, 5);
   (arg1)->write_image(arg2,(char const *)arg3,arg4,arg5,arg6);
   
   return SWIG_arg;
@@ -3569,6 +3641,9 @@ static swig_lua_class _wrap_class_romloader_baka_reference = { "romloader_baka_r
 #endif
 
 static const struct luaL_reg swig_commands[] = {
+    { "swiglua_ref_clear", _wrap_swiglua_ref_clear},
+    { "swiglua_ref_set", _wrap_swiglua_ref_set},
+    { "swiglua_ref_get", _wrap_swiglua_ref_get},
     {0,0}
 };
 
@@ -3607,7 +3682,7 @@ static void *_p_romloaderTo_p_muhkuh_plugin(void *x, int *SWIGUNUSEDPARM(newmemo
 }
 static swig_type_info _swigt__p_ROMLOADER_CHIPTYP = {"_p_ROMLOADER_CHIPTYP", "enum ROMLOADER_CHIPTYP *|ROMLOADER_CHIPTYP *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_ROMLOADER_ROMCODE = {"_p_ROMLOADER_ROMCODE", "enum ROMLOADER_ROMCODE *|ROMLOADER_ROMCODE *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_SWIGLUA_FN = {"_p_SWIGLUA_FN", "SWIGLUA_FN *", 0, 0, (void*)&_wrap_class_SWIGLUA_FN, 0};
+static swig_type_info _swigt__p_SWIGLUA_REF = {"_p_SWIGLUA_REF", "SWIGLUA_REF *", 0, 0, (void*)&_wrap_class_SWIGLUA_REF, 0};
 static swig_type_info _swigt__p_lua_State = {"_p_lua_State", "lua_State *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_muhkuh_plugin = {"_p_muhkuh_plugin", "muhkuh_plugin *", 0, 0, (void*)&_wrap_class_muhkuh_plugin, 0};
 static swig_type_info _swigt__p_muhkuh_plugin_provider = {"_p_muhkuh_plugin_provider", "muhkuh_plugin_provider *", 0, 0, (void*)&_wrap_class_muhkuh_plugin_provider, 0};
@@ -3624,7 +3699,7 @@ static swig_type_info _swigt__p_unsigned_long = {"_p_unsigned_long", "unsigned l
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_ROMLOADER_CHIPTYP,
   &_swigt__p_ROMLOADER_ROMCODE,
-  &_swigt__p_SWIGLUA_FN,
+  &_swigt__p_SWIGLUA_REF,
   &_swigt__p_lua_State,
   &_swigt__p_muhkuh_plugin,
   &_swigt__p_muhkuh_plugin_provider,
@@ -3641,7 +3716,7 @@ static swig_type_info *swig_type_initial[] = {
 
 static swig_cast_info _swigc__p_ROMLOADER_CHIPTYP[] = {  {&_swigt__p_ROMLOADER_CHIPTYP, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_ROMLOADER_ROMCODE[] = {  {&_swigt__p_ROMLOADER_ROMCODE, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_SWIGLUA_FN[] = {  {&_swigt__p_SWIGLUA_FN, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_SWIGLUA_REF[] = {  {&_swigt__p_SWIGLUA_REF, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_lua_State[] = {  {&_swigt__p_lua_State, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_muhkuh_plugin[] = {  {&_swigt__p_muhkuh_plugin, 0, 0, 0},  {&_swigt__p_romloader_baka, _p_romloader_bakaTo_p_muhkuh_plugin, 0, 0},  {&_swigt__p_romloader, _p_romloaderTo_p_muhkuh_plugin, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_muhkuh_plugin_provider[] = {  {&_swigt__p_muhkuh_plugin_provider, 0, 0, 0},  {&_swigt__p_romloader_baka_provider, _p_romloader_baka_providerTo_p_muhkuh_plugin_provider, 0, 0},{0, 0, 0, 0}};
@@ -3658,7 +3733,7 @@ static swig_cast_info _swigc__p_unsigned_long[] = {  {&_swigt__p_unsigned_long, 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_ROMLOADER_CHIPTYP,
   _swigc__p_ROMLOADER_ROMCODE,
-  _swigc__p_SWIGLUA_FN,
+  _swigc__p_SWIGLUA_REF,
   _swigc__p_lua_State,
   _swigc__p_muhkuh_plugin,
   _swigc__p_muhkuh_plugin_provider,

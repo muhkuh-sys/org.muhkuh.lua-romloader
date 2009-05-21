@@ -314,12 +314,15 @@ unsigned long romloader_baka::read_data32(lua_State *ptClientData, unsigned long
 }
 
 
-void romloader_baka::read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcOutputData, unsigned long *pulOutputData, SWIGLUA_FN tLuaFn, unsigned long ulCallbackUserData)
+void romloader_baka::read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcOutputData, unsigned long *pulOutputData, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	char *pcData;
+	bool fStillRunning;
 
 
 	printf("%s(%p): read_image(0x%08lx, 0x%08lx) = 0x00 .. 0x00\n", m_pcName, this, ulNetxAddress, ulSize);
+
+	fStillRunning = callback_long(&tLuaFn, 0, lCallbackUserData);
 
 	pcData = NULL;
 	if( ulSize!=0 )
@@ -330,6 +333,10 @@ void romloader_baka::read_image(unsigned long ulNetxAddress, unsigned long ulSiz
 		// show a hexdump of the data
 		hexdump(pcData, ulSize, ulNetxAddress);
 	}
+
+	fStillRunning = callback_long(&tLuaFn, ulSize, lCallbackUserData);
+
+	swiglua_ref_clear(&tLuaFn);
 
 	*ppcOutputData = pcData;
 	*pulOutputData = ulSize;
@@ -357,12 +364,21 @@ void romloader_baka::write_data32(lua_State *ptClientData, unsigned long ulNetxA
 }
 
 /* write a byte array from the pc to the netx */
-void romloader_baka::write_image(unsigned long ulNetxAddress, const char *pcInputData, unsigned long ulInputData, SWIGLUA_FN tLuaFn, unsigned long ulCallbackUserData)
+void romloader_baka::write_image(unsigned long ulNetxAddress, const char *pcInputData, unsigned long ulInputData, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
+	bool fStillRunning;
+
+
 	printf("%s(%p): write_image(0x%08lx)\n", m_pcName, this, ulNetxAddress);
+
+	fStillRunning = callback_long(&tLuaFn, 0, lCallbackUserData);
 
 	// show a hexdump of the data
 	hexdump(pcInputData, ulInputData, ulNetxAddress);
+
+	fStillRunning = callback_long(&tLuaFn, ulInputData, lCallbackUserData);
+
+	swiglua_ref_clear(&tLuaFn);
 }
 
 

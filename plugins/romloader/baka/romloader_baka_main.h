@@ -49,7 +49,7 @@ public:
 	// read a long (32bit) from the netx to the pc
 	virtual unsigned long read_data32(lua_State *ptClientData, unsigned long ulNetxAddress);
 	// read a byte array from the netx to the pc
-	virtual void read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcOutputData, unsigned long *pulOutputData, SWIGLUA_FN tLuaFn, unsigned long ulCallbackUserData);
+	virtual void read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcOutputData, unsigned long *pulOutputData, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 
 	// write a byte (8bit) from the pc to the netx
 	virtual void write_data08(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned char ucData);
@@ -58,7 +58,7 @@ public:
 	// write a long (32bit) from the pc to the netx
 	virtual void write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData);
 	// write a byte array from the pc to the netx
-	virtual void write_image(unsigned long ulNetxAddress, const char *pcInputData, unsigned long ulInputData, SWIGLUA_FN tLuaFn, unsigned long ulCallbackUserData);
+	virtual void write_image(unsigned long ulNetxAddress, const char *pcInputData, unsigned long ulInputData, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 
 	// call routine
 //	virtual void call(lua_State *ptClientData, double dNetxAddress, double dParameterR0, int iLuaCallbackTag, void *pvCallbackUserData);

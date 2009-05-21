@@ -207,8 +207,7 @@ unsigned int romloader::crc16(unsigned int uCrc, unsigned int uData)
 }
 
 
-/*
-bool romloader::callback_long(lua_State *L, int iLuaCallbackTag, long lProgressData, void *pvCallbackUserData)
+bool romloader::callback_long(SWIGLUA_REF *ptLuaFn, long lProgressData, long lCallbackUserData)
 {
 	bool fStillRunning;
 	int iOldTopOfStack;
@@ -218,22 +217,21 @@ bool romloader::callback_long(lua_State *L, int iLuaCallbackTag, long lProgressD
 	fStillRunning = false;
 
 	// check lua state and callback tag
-	if( L!=NULL && iLuaCallbackTag!=0 )
+	if( ptLuaFn->L!=NULL && ptLuaFn->ref!=LUA_NOREF && ptLuaFn->ref!=LUA_REFNIL )
 	{
 		// get the current stack position
-		iOldTopOfStack = lua_gettop(L);
-		// push the function tag on the stack
-		lua_rawgeti(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
+		iOldTopOfStack = lua_gettop(ptLuaFn->L);
+		swiglua_ref_get(ptLuaFn);
 		// push the arguments on the stack
-		lua_pushnumber(L, lProgressData);
-		fStillRunning = callback_common(L, pvCallbackUserData, iOldTopOfStack);
+		lua_pushnumber(ptLuaFn->L, lProgressData);
+		fStillRunning = callback_common(ptLuaFn, lCallbackUserData, iOldTopOfStack);
 	}
 
 	return fStillRunning;
 }
 
 
-bool romloader::callback_string(lua_State *L, int iLuaCallbackTag, wxString strProgressData, void *pvCallbackUserData)
+bool romloader::callback_string(SWIGLUA_REF *ptLuaFn, const char *pcProgressData, size_t sizProgressData, long lCallbackUserData)
 {
 	bool fStillRunning;
 	int iOldTopOfStack;
@@ -243,79 +241,77 @@ bool romloader::callback_string(lua_State *L, int iLuaCallbackTag, wxString strP
 	fStillRunning = false;
 
 	// check lua state and callback tag
-	if( L!=NULL && iLuaCallbackTag!=0 )
+	if( ptLuaFn->L!=NULL && ptLuaFn->ref!=LUA_NOREF && ptLuaFn->ref!=LUA_REFNIL )
 	{
 		// get the current stack position
-		iOldTopOfStack = lua_gettop(L);
-		// push the function tag on the stack
-		lua_rawgeti(L, LUA_REGISTRYINDEX, iLuaCallbackTag);
+		iOldTopOfStack = lua_gettop(ptLuaFn->L);
+		swiglua_ref_get(ptLuaFn);
 		// push the arguments on the stack
-		lua_pushlstring(L, strProgressData.fn_str(), strProgressData.Len());
-		fStillRunning = callback_common(L, pvCallbackUserData, iOldTopOfStack);
+		lua_pushlstring(ptLuaFn->L, pcProgressData, sizProgressData);
+		fStillRunning = callback_common(ptLuaFn, lCallbackUserData, iOldTopOfStack);
 	}
 
 	return fStillRunning;
 }
 
 
-bool romloader::callback_common(lua_State *L, void *pvCallbackUserData, int iOldTopOfStack)
+bool romloader::callback_common(SWIGLUA_REF *ptLuaFn, long lCallbackUserData, int iOldTopOfStack)
 {
 	bool fStillRunning;
 	int iResult;
 	int iLuaType;
-	wxString strMsg;
+	const char *pcErrMsg;
+	const char *pcErrDetails;
 
 
 	// check lua state and callback tag
-	if( L!=NULL )
+	if( ptLuaFn->L!=NULL && ptLuaFn->ref!=LUA_NOREF && ptLuaFn->ref!=LUA_REFNIL )
 	{
-		lua_pushnumber(L, (long)pvCallbackUserData);
+		lua_pushnumber(ptLuaFn->L, lCallbackUserData);
 		// call the function
-		iResult = lua_pcall(L, 2, 1, 0);
+		iResult = lua_pcall(ptLuaFn->L, 2, 1, 0);
 		if( iResult!=0 )
 		{
 			switch( iResult )
 			{
 			case LUA_ERRRUN:
-				strMsg = wxT("runtime error");
+				pcErrMsg = "runtime error";
 				break;
 			case LUA_ERRMEM:
-				strMsg = wxT("memory allocation error");
+				pcErrMsg = "memory allocation error";
 				break;
 			default:
-				strMsg.Printf(wxT("unknown errorcode: %d"), iResult);
+				pcErrMsg = "unknown errorcode";
 				break;
 			}
-			wxLogError(wxT("callback function failed: ") + strMsg);
-			strMsg = wxlua_getstringtype(L, -1);
-			wxLogError(strMsg);
-			wxLogError(wxT("cancel operation"));
+			pcErrDetails = lua_tostring(ptLuaFn->L, -1);
+			MUHKUH_PLUGIN_ERROR(ptLuaFn->L, "callback function failed: %s (%d): %s", pcErrMsg, iResult, pcErrDetails);
 			fStillRunning = false;
 		}
 		else
 		{
 			// get the function's return value
-			iLuaType = lua_type(L, -1);
-			if( wxlua_iswxluatype(iLuaType, WXLUA_TBOOLEAN)==false )
+			iLuaType = lua_type(ptLuaFn->L, -1);
+			if( iLuaType!=LUA_TNUMBER && iLuaType!=LUA_TBOOLEAN )
 			{
-				wxLogError(wxT("callback function returned a non-boolean type!"));
+				MUHKUH_PLUGIN_ERROR(ptLuaFn->L, "callback function returned a non-boolean type: %d", iLuaType);
 				fStillRunning = false;
 			}
 			else
 			{
 				if( iLuaType==LUA_TNUMBER )
 				{
-					iResult = lua_tonumber(L, -1);
+					iResult = lua_tonumber(ptLuaFn->L, -1);
 				}
 				else
 				{
-					iResult = lua_toboolean(L, -1);
+					iResult = lua_toboolean(ptLuaFn->L, -1);
 				}
 				fStillRunning = (iResult!=0);
 			}
 		}
 		// return old stack top
-		lua_settop(L, iOldTopOfStack);
+		lua_settop(ptLuaFn->L, iOldTopOfStack);
 	}
 	else
 	{
@@ -323,10 +319,6 @@ bool romloader::callback_common(lua_State *L, void *pvCallbackUserData, int iOld
 		fStillRunning = true;
 	}
 
-	// allow gui updates
-	wxTheApp->Yield();
-
 	return fStillRunning;
 }
-*/
 

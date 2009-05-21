@@ -30,8 +30,11 @@
 /* swigluarun does not include the lua specific defines. Add them here. */
 typedef struct{
   lua_State* L; /* the state */
-  int idx;      /* the index on the stack */
-}SWIGLUA_FN;
+  int ref;      /* a ref in the lua global index */
+}SWIGLUA_REF;
+void swiglua_ref_clear(SWIGLUA_REF* pref);
+void swiglua_ref_set(SWIGLUA_REF* pref,lua_State* L,int idx);
+void swiglua_ref_get(SWIGLUA_REF* pref);
 #endif
 
 /*-----------------------------------*/

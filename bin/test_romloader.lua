@@ -1,8 +1,10 @@
 
 require("romloader_baka")
 
-local function callback(a,b,c)
-	print("callback:", a, b, c)
+local function callback(a,b)
+	print("callback")
+	print("a:", type(a), a)
+	print("b:", type(b), b)
 	return 0
 end
 
@@ -86,7 +88,7 @@ else
 	--write 128 bytes
 	strData = get_rnd_data(128)
 	hexdump(strData,16)
-	tPlugin:write_image(0, strData, callback, 0)
+	tPlugin:write_image(0, strData, callback, 1)
 	-- access some plugin functions
 	print( romloader_baka.ROMLOADER_CHIPTYP_NETX500 )
 	print( tPlugin:GetChiptypName(romloader_baka.ROMLOADER_CHIPTYP_NETX500) )

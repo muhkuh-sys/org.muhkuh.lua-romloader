@@ -60,7 +60,7 @@ public:
 	// read a long (32bit) from the netx to the pc
 	virtual unsigned long read_data32(lua_State *ptClientData, unsigned long ulNetxAddress) = 0;
 	// read a byte array from the netx to the pc
-	virtual void read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcOutputData, unsigned long *pulOutputData, SWIGLUA_FN tLuaFn, unsigned long ulCallbackUserData) = 0;
+	virtual void read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcOutputData, unsigned long *pulOutputData, SWIGLUA_REF tLuaFn, long lCallbackUserData) = 0;
 
 	// write a byte (8bit) from the pc to the netx
 	virtual void write_data08(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned char ucData) = 0;
@@ -69,7 +69,7 @@ public:
 	// write a long (32bit) from the pc to the netx
 	virtual void write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData) = 0;
 	// write a byte array from the pc to the netx
-	virtual void write_image(unsigned long ulNetxAddress, const char *pcInputData, unsigned long ulInputData, SWIGLUA_FN tLuaFn, unsigned long ulCallbackUserData) = 0;
+	virtual void write_image(unsigned long ulNetxAddress, const char *pcInputData, unsigned long ulInputData, SWIGLUA_REF tLuaFn, long lCallbackUserData) = 0;
 
 	// call routine
 //	virtual void call(lua_State *ptLuaState, double dNetxAddress, double dParameterR0, int iLuaCallbackTag, void *pvCallbackUserData);
@@ -85,20 +85,14 @@ public:
 protected:
 	bool detect_chiptyp(lua_State *ptClientData);
 	unsigned int crc16(unsigned int uCrc, unsigned int uData);
-//	bool callback_long(lua_State *ptLuaState, int iLuaCallbackTag, long lProgressData, void *pvCallbackUserData);
-//	bool callback_string(lua_State *ptLuaState, int iLuaCallbackTag, wxString strProgressData, void *pvCallbackUserData);
-
-	// the lua state
-//	wxLuaState *m_ptLuaState;
+	bool callback_long(SWIGLUA_REF *ptLuaFn, long lProgressData, long lCallbackUserData);
+	bool callback_string(SWIGLUA_REF *ptLuaFn, const char *pcProgressData, size_t sizProgressData, long lCallbackUserData);
 
 	ROMLOADER_CHIPTYP m_tChiptyp;
 	ROMLOADER_ROMCODE m_tRomcode;
 
 private:
-//	bool callback_common(lua_State *ptLuaState, void *pvCallbackUserData, int iOldTopOfStack);
-
-//	muhkuh_plugin_fn_close_instance m_fn_close;
-
+	bool callback_common(SWIGLUA_REF *ptLuaFn, long lCallbackUserData, int iOldTopOfStack);
 
 	typedef struct
 	{
