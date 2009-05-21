@@ -38,11 +38,11 @@ romloader_baka_provider::romloader_baka_provider(swig_type_info *ptPluginTypeInf
 	BAKA_INSTANCE_CFG_T *ptC, *ptE;
 
 
-	printf("%s(%p): provider create\n", m_pt_plugin_desc.pcPluginId, this);
+	printf("%s(%p): provider create\n", m_pcPluginId, this);
 
 	/* get the romloader_baka lua type */
 	m_ptPluginTypeInfo = ptPluginTypeInfo;
-	printf("%s(%p): romloader_baka type: %p\n", m_pt_plugin_desc.pcPluginId, this, m_ptPluginTypeInfo);
+	printf("%s(%p): romloader_baka type: %p\n", m_pcPluginId, this, m_ptPluginTypeInfo);
 
 	m_cfg_iInstances = 4;
 	m_ptInstanceCfg = new BAKA_INSTANCE_CFG_T[m_cfg_iInstances];
@@ -66,7 +66,7 @@ romloader_baka_provider::~romloader_baka_provider(void)
 	int iCnt;
 
 
-	printf("%s(%p): provider delete\n", m_pt_plugin_desc.pcPluginId, this);
+	printf("%s(%p): provider delete\n", m_pcPluginId, this);
 
 	if( m_ptInstanceCfg!=NULL )
 	{
@@ -75,7 +75,7 @@ romloader_baka_provider::~romloader_baka_provider(void)
 		{
 			if( m_ptInstanceCfg[iCnt].fIsUsed==true )
 			{
-				printf("%s(%p): instance %d is still used\n", m_pt_plugin_desc.pcPluginId, this, iCnt);
+				printf("%s(%p): instance %d is still used\n", m_pcPluginId, this, iCnt);
 			}
 		}
 
@@ -101,7 +101,7 @@ int romloader_baka_provider::DetectInterfaces(std::vector<muhkuh_plugin_referenc
 	{
 		snprintf(acName, sizMaxName-1, m_pcPluginNamePattern, iInterfaceCnt);
 		fIsUsed = m_ptInstanceCfg[iInterfaceCnt].fIsUsed;
-		ptRef = new romloader_baka_reference(acName, m_pt_plugin_desc.pcPluginId, fIsUsed, this);
+		ptRef = new romloader_baka_reference(acName, m_pcPluginId, fIsUsed, this);
 
 		vInterfaceList.push_back(ptRef);
 	}
@@ -123,33 +123,33 @@ romloader_baka *romloader_baka_provider::ClaimInterface(const muhkuh_plugin_refe
 
 	if( ptReference==NULL )
 	{
-		fprintf(stderr, "%s(%p): claim_interface(): missing reference!\n", m_pt_plugin_desc.pcPluginId, this);
+		fprintf(stderr, "%s(%p): claim_interface(): missing reference!\n", m_pcPluginId, this);
 	}
 	else
 	{
 		pcName = ptReference->GetName();
 		if( pcName==NULL )
 		{
-			fprintf(stderr, "%s(%p): claim_interface(): missing name!\n", m_pt_plugin_desc.pcPluginId, this);
+			fprintf(stderr, "%s(%p): claim_interface(): missing name!\n", m_pcPluginId, this);
 		}
 		else if( sscanf(pcName, m_pcPluginNamePattern, &iInterfaceIdx)!=1 )
 		{
-			fprintf(stderr, "%s(%p): claim_interface(): invalid name: %s\n", m_pt_plugin_desc.pcPluginId, this, pcName);
+			fprintf(stderr, "%s(%p): claim_interface(): invalid name: %s\n", m_pcPluginId, this, pcName);
 		}
 		else if( (iInterfaceIdx<0) || (iInterfaceIdx>=m_cfg_iInstances) )
 		{
-			fprintf(stderr, "%s(%p): claim_interface(): invalid interface index: %d\n", m_pt_plugin_desc.pcPluginId, this, iInterfaceIdx);
+			fprintf(stderr, "%s(%p): claim_interface(): invalid interface index: %d\n", m_pcPluginId, this, iInterfaceIdx);
 		}
 		else if( m_ptInstanceCfg[iInterfaceIdx].fIsUsed==true )
 		{
-			fprintf(stderr, "%s(%p): claim_interface(): can not claim interface %d, already in use!\n", m_pt_plugin_desc.pcPluginId, this, iInterfaceIdx);
+			fprintf(stderr, "%s(%p): claim_interface(): can not claim interface %d, already in use!\n", m_pcPluginId, this, iInterfaceIdx);
 		}
 		else
 		{
 			m_ptInstanceCfg[iInterfaceIdx].fIsUsed = true;
-			printf("%s(%p): claim_interface(): claimed interface %d.\n", m_pt_plugin_desc.pcPluginId, this, iInterfaceIdx);
+			printf("%s(%p): claim_interface(): claimed interface %d.\n", m_pcPluginId, this, iInterfaceIdx);
 
-			ptPlugin = new romloader_baka(pcName, m_pt_plugin_desc.pcPluginId, this);
+			ptPlugin = new romloader_baka(pcName, m_pcPluginId, this);
 		}
 	}
 
@@ -170,33 +170,33 @@ bool romloader_baka_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 
 	if( ptPlugin==NULL )
 	{
-		fprintf(stderr, "%s(%p): release_interface(): missing plugin!\n", m_pt_plugin_desc.pcPluginId, this);
+		fprintf(stderr, "%s(%p): release_interface(): missing plugin!\n", m_pcPluginId, this);
 	}
 	else
 	{
 		pcName = ptPlugin->GetName();
 		if( pcName==NULL )
 		{
-			fprintf(stderr, "%s(%p): release_interface(): missing name!\n", m_pt_plugin_desc.pcPluginId, this);
+			fprintf(stderr, "%s(%p): release_interface(): missing name!\n", m_pcPluginId, this);
 		}
 		else if( sscanf(pcName, m_pcPluginNamePattern, &iInterfaceIdx)!=1 )
 		{
-			fprintf(stderr, "%s(%p): release_interface(): invalid name: %s\n", m_pt_plugin_desc.pcPluginId, this, pcName);
+			fprintf(stderr, "%s(%p): release_interface(): invalid name: %s\n", m_pcPluginId, this, pcName);
 		}
 		else if( (iInterfaceIdx<0) || (iInterfaceIdx>=m_cfg_iInstances) )
 		{
-			fprintf(stderr, "%s(%p): release_interface(): invalid interface index: %d\n", m_pt_plugin_desc.pcPluginId, this, iInterfaceIdx);
+			fprintf(stderr, "%s(%p): release_interface(): invalid interface index: %d\n", m_pcPluginId, this, iInterfaceIdx);
 		}
 		else
 		{
 			if( m_ptInstanceCfg[iInterfaceIdx].fIsUsed==false )
 			{
-				printf("%s(%p): release_interface(): interface %d is not claimed\n", m_pt_plugin_desc.pcPluginId, this, iInterfaceIdx);
+				printf("%s(%p): release_interface(): interface %d is not claimed\n", m_pcPluginId, this, iInterfaceIdx);
 			}
 			else
 			{
 				m_ptInstanceCfg[iInterfaceIdx].fIsUsed = false;
-				printf("%s(%p): released interface %d.\n", m_pt_plugin_desc.pcPluginId, this, iInterfaceIdx);
+				printf("%s(%p): released interface %d.\n", m_pcPluginId, this, iInterfaceIdx);
 			}
 			fOk = true;
 		}

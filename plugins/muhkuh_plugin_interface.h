@@ -49,15 +49,7 @@ typedef struct
 	unsigned int uiVersionMajor;
 	unsigned int uiVersionMinor;
 	unsigned int uiVersionSub;
-} muhkuh_plugin_so_version;
-
-
-typedef struct
-{
-	const char *pcPluginName;
-	const char *pcPluginId;
-	muhkuh_plugin_so_version tVersion;
-} muhkuh_plugin_desc;
+} muhkuh_plugin_version;
 
 
 /*-----------------------------------*/
@@ -103,7 +95,9 @@ public:
 	muhkuh_plugin_provider(const char *pcPluginId);
 	~muhkuh_plugin_provider(void);
 
-	const muhkuh_plugin_desc *GetDesc(void) const;
+	const char *GetName(void) const;
+	const char *GetID(void) const;
+	const muhkuh_plugin_version *GetVersion(void) const;
 	swig_type_info *GetTypeInfo(void) const;
 
 	virtual int DetectInterfaces(std::vector<muhkuh_plugin_reference*> &vInterfaceList) = 0;
@@ -113,8 +107,9 @@ public:
 protected:
 	char *clone_string(const char *pcStr, size_t sizMax);
 
-
-	muhkuh_plugin_desc m_pt_plugin_desc;
+	const char *m_pcPluginName;
+	const char *m_pcPluginId;
+	muhkuh_plugin_version m_tVersion;
 	swig_type_info *m_ptPluginTypeInfo;
 };
 

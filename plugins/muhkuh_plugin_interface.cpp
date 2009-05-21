@@ -236,14 +236,14 @@ char *muhkuh_plugin_reference::clone_string(const char *pcStr, size_t sizMax)
 muhkuh_plugin_provider::muhkuh_plugin_provider(const char *pcPluginId)
 {
 	// init the plugin description with default values
-	m_pt_plugin_desc.pcPluginName = NULL;
-	m_pt_plugin_desc.pcPluginId = NULL;
-	m_pt_plugin_desc.tVersion.uiVersionMajor = 0;
-	m_pt_plugin_desc.tVersion.uiVersionMinor = 0;
-	m_pt_plugin_desc.tVersion.uiVersionSub = 0;
+	m_pcPluginName = NULL;
+	m_pcPluginId = NULL;
+	m_tVersion.uiVersionMajor = 0;
+	m_tVersion.uiVersionMinor = 0;
+	m_tVersion.uiVersionSub = 0;
 
 	// copy the id
-	m_pt_plugin_desc.pcPluginId = clone_string(pcPluginId, SIZ_MAX_MUHKUH_PLUGIN_STRING);
+	m_pcPluginId = clone_string(pcPluginId, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 
 	/* init the lua type info */
 	m_ptPluginTypeInfo = NULL;
@@ -252,20 +252,32 @@ muhkuh_plugin_provider::muhkuh_plugin_provider(const char *pcPluginId)
 
 muhkuh_plugin_provider::~muhkuh_plugin_provider(void)
 {
-	if( m_pt_plugin_desc.pcPluginName!=NULL )
+	if( m_pcPluginName!=NULL )
 	{
-		delete[] m_pt_plugin_desc.pcPluginName;
+		delete[] m_pcPluginName;
 	}
-	if( m_pt_plugin_desc.pcPluginId!=NULL )
+	if( m_pcPluginId!=NULL )
 	{
-		delete[] m_pt_plugin_desc.pcPluginId;
+		delete[] m_pcPluginId;
 	}
 }
 
 
-const muhkuh_plugin_desc *muhkuh_plugin_provider::GetDesc(void) const
+const char *muhkuh_plugin_provider::GetName(void) const
 {
-	return &m_pt_plugin_desc;
+	return m_pcPluginName;
+}
+
+
+const char *muhkuh_plugin_provider::GetID(void) const
+{
+	return m_pcPluginId;
+}
+
+
+const muhkuh_plugin_version *muhkuh_plugin_provider::GetVersion(void) const
+{
+	return &m_tVersion;
 }
 
 
