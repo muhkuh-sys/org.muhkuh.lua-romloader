@@ -1,12 +1,20 @@
 
 require("romloader_baka")
 
-function callback(a,b,c)
+local function callback(a,b,c)
 	print("callback:", a, b, c)
 	return 0
 end
 
-function hexdump(strData, iBytesPerRow)
+local function get_rnd_data(len)
+	local data = ""
+	for i=1,len do
+		data = data .. string.char(math.random(0,255))
+	end
+	return data
+end
+
+local function hexdump(strData, iBytesPerRow)
 	local iCnt
 	local iByteCnt
 	local strDump
@@ -71,9 +79,14 @@ else
 	print( tPlugin:IsConnected() )
 	-- write a 32 bit value
 	tPlugin:write_data32(0, 0)
+	-- read 128 bytes
 	str = tPlugin:read_image(0, 128, callback, 0)
 	print("size: ", string.len(str))
 	hexdump(str,16)
+	--write 128 bytes
+	strData = get_rnd_data(128)
+	hexdump(strData,16)
+	tPlugin:write_image(0, strData, callback, 0)
 	-- access some plugin functions
 	print( romloader_baka.ROMLOADER_CHIPTYP_NETX500 )
 	print( tPlugin:GetChiptypName(romloader_baka.ROMLOADER_CHIPTYP_NETX500) )

@@ -356,76 +356,15 @@ void romloader_baka::write_data32(lua_State *ptClientData, unsigned long ulNetxA
 	printf("%s(%p): write_data32(0x%08lx, 0x%08lx)\n", m_pcName, this, ulNetxAddress, ulData);
 }
 
-#if 0
 /* write a byte array from the pc to the netx */
-int fn_write_image(lua_State *ptClientData, void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize, int iLuaCallbackTag, void *pvCallbackUserData)
+void romloader_baka::write_image(unsigned long ulNetxAddress, const char *pcInputData, unsigned long ulInputData, SWIGLUA_FN tLuaFn, unsigned long ulCallbackUserData)
 {
-	unsigned int uiIdx;
-	wxString strMsg;
-	wxString strDumpByte;
-	const char *pcDumpCnt, *pcDumpEnd;
-	unsigned long ulAddressCnt;
-	unsigned long ulSkipOffset;
-	size_t sizBytesLeft;
-	size_t sizChunkSize;
-	size_t sizChunkCnt;
+	printf("%s(%p): write_image(0x%08lx)\n", m_pcName, this, ulNetxAddress);
 
-
-	/* check the handle */
-	uiIdx = (unsigned int)pvHandle;
-	if( uiIdx>=uiInstances )
-	{
-		strMsg.Printf(wxT("romloader_baka_fn_write_image: handle %p is no valid plugin handle"), pvHandle);
-		wxLogError(strMsg);
-		return -1;
-	}
-	else
-	{
-		strMsg.Printf(wxT("baka %d: write_image from 0x%08lx with %ld bytes:"), uiIdx, ulNetxAddress, ulSize);
-		wxLogMessage(strMsg);
-		// show a hexdump of the data
-		pcDumpCnt = pcData;
-		pcDumpEnd = pcData + ulSize;
-		ulAddressCnt = ulNetxAddress;
-		while( pcDumpCnt<pcDumpEnd )
-		{
-			// get number of bytes for the next line
-			sizChunkSize = 16;
-			sizBytesLeft = pcDumpEnd-pcDumpCnt;
-			if( sizChunkSize>sizBytesLeft )
-			{
-				sizChunkSize = sizBytesLeft;
-			}
-
-			// start a line in the dump with the address
-			strMsg.Printf(wxT("%08X: "), ulAddressCnt);
-			// append the data bytes
-			sizChunkCnt = sizChunkSize;
-			while( sizChunkCnt!=0 )
-			{
-				strDumpByte.Printf(wxT("%02X "), (unsigned char)(*(pcDumpCnt++)));
-				strMsg += strDumpByte;
-				--sizChunkCnt;
-			}
-			// show line
-			wxLogMessage(strMsg);
-			ulAddressCnt += sizChunkSize;
-			// only show first and last 3 lines for very long files
-			if( (pcDumpCnt-pcData)==0x30 && (pcDumpEnd-pcData)>0x100 )
-			{
-				ulSkipOffset  = ulSize + 0xf;
-				ulSkipOffset &= ~0xf;
-				ulSkipOffset -= 0x30;
-				pcDumpCnt = pcData + ulSkipOffset;
-				ulAddressCnt = ulNetxAddress + ulSkipOffset;
-				strMsg.Printf(wxT("... (skipping 0x%08X bytes)"), ulSkipOffset-0x30);
-				wxLogMessage(strMsg);
-			}
-		}
-		return 0;
-	}
+	// show a hexdump of the data
+	hexdump(pcInputData, ulInputData, ulNetxAddress);
 }
-#endif
+
 
 #if 0
 /* call routine */

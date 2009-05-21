@@ -86,6 +86,12 @@
 	++SWIG_arg;
 %}
 
+%typemap(in) (const char *pcInputData, unsigned long ulInputData)
+{
+	size_t sizInputData = $2;
+	$1 = (char*)lua_tolstring(L, $argnum, &sizInputData);
+	$2 = (unsigned long)sizInputData;
+}
 
 /* The plugin provider's functions "ClaimInterface" and "ReleaseInterface"
  * are only used from the C++ side. "ClaimInterface" is called from the

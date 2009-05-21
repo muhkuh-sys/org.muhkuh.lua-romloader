@@ -58,7 +58,7 @@ public:
 	// write a long (32bit) from the pc to the netx
 	virtual void write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData);
 	// write a byte array from the pc to the netx
-//	virtual void write_image(lua_State *ptClientData, double dNetxAddress, wxString strData, int iLuaCallbackTag, void *pvCallbackUserData);
+	virtual void write_image(unsigned long ulNetxAddress, const char *pcInputData, unsigned long ulInputData, SWIGLUA_FN tLuaFn, unsigned long ulCallbackUserData);
 
 	// call routine
 //	virtual void call(lua_State *ptClientData, double dNetxAddress, double dParameterR0, int iLuaCallbackTag, void *pvCallbackUserData);
