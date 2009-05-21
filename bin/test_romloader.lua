@@ -1,6 +1,37 @@
 
 require("romloader_baka")
 
+function callback(a,b,c)
+	print("callback:", a, b, c)
+	return 0
+end
+
+function hexdump(strData, iBytesPerRow)
+	local iCnt
+	local iByteCnt
+	local strDump
+
+
+	if not iBytesPerRow then
+		iBytesPerRow = 16
+	end
+
+	iByteCnt = 0
+	for iCnt=1,strData:len() do
+		if iByteCnt==0 then
+			strDump = string.format("%08X :", iCnt-1)
+		end
+		strDump = strDump .. string.format(" %02X", strData:byte(iCnt))
+		iByteCnt = iByteCnt + 1
+		if iByteCnt==iBytesPerRow then
+			iByteCnt = 0
+			print(strDump)
+		end
+	end
+	if iByteCnt~=0 then
+		print(strDump)
+	end
+end
 
 -- show all providers
 print("Available plugins:")
@@ -40,6 +71,9 @@ else
 	print( tPlugin:IsConnected() )
 	-- write a 32 bit value
 	tPlugin:write_data32(0, 0)
+	str = tPlugin:read_image(0, 128, callback, 0)
+	print("size: ", string.len(str))
+	hexdump(str,16)
 	-- access some plugin functions
 	print( romloader_baka.ROMLOADER_CHIPTYP_NETX500 )
 	print( tPlugin:GetChiptypName(romloader_baka.ROMLOADER_CHIPTYP_NETX500) )

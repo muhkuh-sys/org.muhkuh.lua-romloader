@@ -102,7 +102,7 @@ const char *romloader::GetRomcodeName(ROMLOADER_ROMCODE tRomcode) const
 }
 
 
-bool romloader::detect_chiptyp(void)
+bool romloader::detect_chiptyp(lua_State *ptClientData)
 {
 	unsigned long ulResetVector;
 	const ROMLOADER_RESET_ID_T *ptRstCnt, *ptRstEnd;
@@ -117,7 +117,7 @@ bool romloader::detect_chiptyp(void)
 	m_tRomcode = ROMLOADER_ROMCODE_UNKNOWN;
 
 	// read the reset vector at 0x00000000
-	ulResetVector = read_data32(0);
+	ulResetVector = read_data32(ptClientData, 0);
 	printf("%s(%p): reset vector: 0x%08X", m_pcName, this, ulResetVector);
 
 	// match the reset vector to all known chipfamilies
@@ -130,7 +130,7 @@ bool romloader::detect_chiptyp(void)
 		{
 			ulVersionAddr = ptRstCnt->ulVersionAddress;
 			// read version address
-			ulVersion = read_data32(ulVersionAddr);
+			ulVersion = read_data32(ptClientData, ulVersionAddr);
 			printf("%s(%p): version value: 0x%08X", m_pcName, this, ulVersion);
 			if( ptRstCnt->ulVersionValue==ulVersion )
 			{
@@ -148,7 +148,7 @@ bool romloader::detect_chiptyp(void)
 
 	if( fResult!=true )
 	{
-		fprintf(stderr, "%s(%p): unknown chip!", m_pcName, this);
+		MUHKUH_PLUGIN_ERROR(ptClientData, "failed to detect the type of the connected chip!");
 	}
 	else
 	{

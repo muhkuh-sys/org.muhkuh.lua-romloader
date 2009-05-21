@@ -30,7 +30,7 @@
 const char *romloader_baka_provider::m_pcPluginNamePattern = "baka_%d";
 
 
-romloader_baka_provider::romloader_baka_provider(swig_type_info *pt_romloader_baka_type_info, swig_type_info *pt_romloader_baka_reference_type_info)
+romloader_baka_provider::romloader_baka_provider(swig_type_info *p_romloader_baka, swig_type_info *p_romloader_baka_reference)
  : muhkuh_plugin_provider("romloader_baka")
  , m_ptInstanceCfg(NULL)
  , m_cfg_iInstances(0)
@@ -41,8 +41,8 @@ romloader_baka_provider::romloader_baka_provider(swig_type_info *pt_romloader_ba
 	printf("%s(%p): provider create\n", m_pcPluginId, this);
 
 	/* get the romloader_baka lua type */
-	m_ptPluginTypeInfo = pt_romloader_baka_type_info;
-	m_ptReferenceTypeInfo = pt_romloader_baka_reference_type_info;
+	m_ptPluginTypeInfo = p_romloader_baka;
+	m_ptReferenceTypeInfo = p_romloader_baka_reference;
 
 	m_cfg_iInstances = 4;
 	m_ptInstanceCfg = new BAKA_INSTANCE_CFG_T[m_cfg_iInstances];
@@ -84,7 +84,7 @@ romloader_baka_provider::~romloader_baka_provider(void)
 }
 
 
-int romloader_baka_provider::DetectInterfaces(lua_State *tLuaStateForTableAccess)
+int romloader_baka_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess)
 {
 	size_t sizTable;
 	int iInterfaceCnt;
@@ -98,8 +98,7 @@ int romloader_baka_provider::DetectInterfaces(lua_State *tLuaStateForTableAccess
 	acName[sizMaxName-1] = 0;
 
 	// get the size of the table
-	sizTable = lua_objlen(tLuaStateForTableAccess, 2);
-	printf("table has %d elements\n", sizTable);
+	sizTable = lua_objlen(ptLuaStateForTableAccess, 2);
 
 	// detect all interfaces
 	for(iInterfaceCnt=0; iInterfaceCnt<m_cfg_iInstances; ++iInterfaceCnt)
@@ -108,9 +107,9 @@ int romloader_baka_provider::DetectInterfaces(lua_State *tLuaStateForTableAccess
 		fIsUsed = m_ptInstanceCfg[iInterfaceCnt].fIsUsed;
 		ptRef = new romloader_baka_reference(acName, m_pcPluginId, fIsUsed, this);
 
-		SWIG_NewPointerObj(tLuaStateForTableAccess, ptRef, m_ptReferenceTypeInfo, 1);
+		SWIG_NewPointerObj(ptLuaStateForTableAccess, ptRef, m_ptReferenceTypeInfo, 1);
 		sizTable++;
-		lua_rawseti(tLuaStateForTableAccess, 2, sizTable);
+		lua_rawseti(ptLuaStateForTableAccess, 2, sizTable);
 	}
 
 	return iInterfaceCnt;
@@ -263,7 +262,7 @@ romloader_baka::~romloader_baka(void)
 
 
 /* open the connection to the device */
-void romloader_baka::Connect(void)
+void romloader_baka::Connect(lua_State *ptClientData)
 {
 	printf("%s(%p): connect()\n", m_pcName, this);
 
@@ -279,7 +278,7 @@ void romloader_baka::Connect(void)
 
 
 /* close the connection to the device */
-void romloader_baka::Disconnect(void)
+void romloader_baka::Disconnect(lua_State *ptClientData)
 {
 	printf("%s(%p): disconnect()\n", m_pcName, this);
 
@@ -289,7 +288,7 @@ void romloader_baka::Disconnect(void)
 
 
 /* read a byte (8bit) from the netx to the pc */
-unsigned char romloader_baka::read_data08(unsigned long ulNetxAddress)
+unsigned char romloader_baka::read_data08(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
 	printf("%s(%p): read_data08(0x%08lx) = 0x00\n", m_pcName, this, ulNetxAddress);
 
@@ -298,7 +297,7 @@ unsigned char romloader_baka::read_data08(unsigned long ulNetxAddress)
 
 
 /* read a word (16bit) from the netx to the pc */
-unsigned short romloader_baka::read_data16(unsigned long ulNetxAddress)
+unsigned short romloader_baka::read_data16(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
 	printf("%s(%p): read_data16(0x%08lx) = 0x0000\n", m_pcName, this, ulNetxAddress);
 
@@ -307,7 +306,7 @@ unsigned short romloader_baka::read_data16(unsigned long ulNetxAddress)
 
 
 /* read a long (32bit) from the netx to the pc */
-unsigned long romloader_baka::read_data32(unsigned long ulNetxAddress)
+unsigned long romloader_baka::read_data32(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
 	printf("%s(%p): read_data32(0x%08lx) = 0x00000000\n", m_pcName, this, ulNetxAddress);
 
@@ -315,58 +314,51 @@ unsigned long romloader_baka::read_data32(unsigned long ulNetxAddress)
 }
 
 
-#if 0
-/* read a byte array from the netx to the pc */
-int fn_read_image(void *pvHandle, unsigned long ulNetxAddress, char *pcData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
+void romloader_baka::read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcOutputData, unsigned long *pulOutputData, SWIGLUA_FN tLuaFn, unsigned long ulCallbackUserData)
 {
-	unsigned int uiIdx;
-	wxString strMsg;
+	char *pcData;
 
 
-	/* check the handle */
-	uiIdx = (unsigned int)pvHandle;
-	if( uiIdx>=uiInstances )
+	printf("%s(%p): read_image(0x%08lx, 0x%08lx) = 0x00 .. 0x00\n", m_pcName, this, ulNetxAddress, ulSize);
+
+	pcData = NULL;
+	if( ulSize!=0 )
 	{
-		strMsg.Printf(wxT("romloader_baka_fn_read_image: handle %p is no valid plugin handle"), pvHandle);
-		wxLogError(strMsg);
-		return -1;
+		pcData = new char[ulSize];
+		memset(pcData, 0, ulSize);
+
+		// show a hexdump of the data
+		hexdump(pcData, ulSize, ulNetxAddress);
 	}
-	else
-	{
-		strMsg.Printf(wxT("baka %d: read_image from 0x%08lx with %ld bytes"), uiIdx, ulNetxAddress, ulSize);
-		wxLogMessage(strMsg);
-		if( pcData!=NULL )
-		{
-			memset(pcData, 0, ulSize);
-		}
-		return 0;
-	}
+
+	*ppcOutputData = pcData;
+	*pulOutputData = ulSize;
 }
-#endif
+
 
 /* write a byte (8bit) from the pc to the netx */
-void romloader_baka::write_data08(unsigned long ulNetxAddress, unsigned char ucData)
+void romloader_baka::write_data08(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned char ucData)
 {
 	printf("%s(%p): write_data08(0x%08lx, 0x%02x)\n", m_pcName, this, ulNetxAddress, ucData);
 }
 
 
 /* write a word (16bit) from the pc to the netx */
-void romloader_baka::write_data16(unsigned long ulNetxAddress, unsigned short usData)
+void romloader_baka::write_data16(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned short usData)
 {
 	printf("%s(%p): write_data16(0x%08lx, 0x%04x)\n", m_pcName, this, ulNetxAddress, usData);
 }
 
 
 /* write a long (32bit) from the pc to the netx */
-void romloader_baka::write_data32(unsigned long ulNetxAddress, unsigned long ulData)
+void romloader_baka::write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData)
 {
 	printf("%s(%p): write_data32(0x%08lx, 0x%08lx)\n", m_pcName, this, ulNetxAddress, ulData);
 }
 
 #if 0
 /* write a byte array from the pc to the netx */
-int fn_write_image(void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
+int fn_write_image(lua_State *ptClientData, void *pvHandle, unsigned long ulNetxAddress, const char *pcData, unsigned long ulSize, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	unsigned int uiIdx;
 	wxString strMsg;
@@ -459,6 +451,56 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 	}
 }
 #endif
+
+void romloader_baka::hexdump(const char *pcData, unsigned long ulSize, unsigned long ulNetxAddress)
+{
+	unsigned int uiIdx;
+	const char *pcDumpCnt, *pcDumpEnd;
+	unsigned long ulAddressCnt;
+	unsigned long ulSkipOffset;
+	size_t sizBytesLeft;
+	size_t sizChunkSize;
+	size_t sizChunkCnt;
+
+
+	// show a hexdump of the data
+	pcDumpCnt = pcData;
+	pcDumpEnd = pcData + ulSize;
+	ulAddressCnt = ulNetxAddress;
+	while( pcDumpCnt<pcDumpEnd )
+	{
+		// get number of bytes for the next line
+		sizChunkSize = 16;
+		sizBytesLeft = pcDumpEnd-pcDumpCnt;
+		if( sizChunkSize>sizBytesLeft )
+		{
+			sizChunkSize = sizBytesLeft;
+		}
+
+		// start a line in the dump with the address
+		printf("%08X: ", ulAddressCnt);
+		// append the data bytes
+		sizChunkCnt = sizChunkSize;
+		while( sizChunkCnt!=0 )
+		{
+			printf("%02X ", (unsigned char)(*(pcDumpCnt++)));
+			--sizChunkCnt;
+		}
+		// next line
+		printf("\n");
+		ulAddressCnt += sizChunkSize;
+		// only show first and last 3 lines for very long files
+		if( (pcDumpCnt-pcData)==0x30 && (pcDumpEnd-pcData)>0x100 )
+		{
+			ulSkipOffset  = ulSize + 0xf;
+			ulSkipOffset &= ~0xf;
+			ulSkipOffset -= 0x30;
+			pcDumpCnt = pcData + ulSkipOffset;
+			ulAddressCnt = ulNetxAddress + ulSkipOffset;
+			printf("... (skipping 0x%08X bytes)", ulSkipOffset-0x30);
+		}
+	}
+}
 
 /*-------------------------------------*/
 

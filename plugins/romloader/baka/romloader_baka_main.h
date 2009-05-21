@@ -38,32 +38,33 @@ public:
 
 // *** lua interface start ***
 	// open the connection to the device
-	virtual void Connect(void);
+	virtual void Connect(lua_State *ptClientData);
 	// close the connection to the device
-	virtual void Disconnect(void);
+	virtual void Disconnect(lua_State *ptClientData);
 
 	// read a byte (8bit) from the netx to the pc
-	virtual unsigned char read_data08(unsigned long ulNetxAddress);
+	virtual unsigned char read_data08(lua_State *ptClientData, unsigned long ulNetxAddress);
 	// read a word (16bit) from the netx to the pc
-	virtual unsigned short read_data16(unsigned long ulNetxAddress);
+	virtual unsigned short read_data16(lua_State *ptClientData, unsigned long ulNetxAddress);
 	// read a long (32bit) from the netx to the pc
-	virtual unsigned long read_data32(unsigned long ulNetxAddress);
+	virtual unsigned long read_data32(lua_State *ptClientData, unsigned long ulNetxAddress);
 	// read a byte array from the netx to the pc
-//	virtual wxString read_image(double dNetxAddress, double dSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+	virtual void read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcOutputData, unsigned long *pulOutputData, SWIGLUA_FN tLuaFn, unsigned long ulCallbackUserData);
 
 	// write a byte (8bit) from the pc to the netx
-	virtual void write_data08(unsigned long ulNetxAddress, unsigned char ucData);
+	virtual void write_data08(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned char ucData);
 	// write a word (16bit) from the pc to the netx
-	virtual void write_data16(unsigned long ulNetxAddress, unsigned short usData);
+	virtual void write_data16(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned short usData);
 	// write a long (32bit) from the pc to the netx
-	virtual void write_data32(unsigned long ulNetxAddress, unsigned long ulData);
+	virtual void write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData);
 	// write a byte array from the pc to the netx
-//	virtual void write_image(double dNetxAddress, wxString strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+//	virtual void write_image(lua_State *ptClientData, double dNetxAddress, wxString strData, int iLuaCallbackTag, void *pvCallbackUserData);
 
 	// call routine
-//	virtual void call(double dNetxAddress, double dParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+//	virtual void call(lua_State *ptClientData, double dNetxAddress, double dParameterR0, int iLuaCallbackTag, void *pvCallbackUserData);
 
 private:
+	void hexdump(const char *pcData, unsigned long ulSize, unsigned long ulNetxAddress);
 };
 
 /*-----------------------------------*/
@@ -71,10 +72,10 @@ private:
 class romloader_baka_provider : public muhkuh_plugin_provider
 {
 public:
-	romloader_baka_provider(swig_type_info *pt_romloader_baka_type_info, swig_type_info *pt_romloader_baka_reference_type_info);
+	romloader_baka_provider(swig_type_info *p_romloader_baka, swig_type_info *p_romloader_baka_reference);
 	~romloader_baka_provider(void);
 
-	int DetectInterfaces(lua_State *tLuaStateForTableAccess);
+	int DetectInterfaces(lua_State *ptLuaStateForTableAccess);
 
 	virtual romloader_baka *ClaimInterface(const muhkuh_plugin_reference *ptReference);
 	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin);
@@ -100,8 +101,6 @@ public:
 	romloader_baka_reference(void);
 	romloader_baka_reference(const char *pcName, const char *pcTyp, bool fIsUsed, romloader_baka_provider *ptProvider);
 	romloader_baka_reference(const romloader_baka_reference *ptCloneMe);
-
-//	virtual romloader_baka *Create(void) const;
 };
 
 /*-----------------------------------*/

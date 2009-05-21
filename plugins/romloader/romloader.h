@@ -54,25 +54,25 @@ protected:
 public:
 // *** lua interface start ***
 	// read a byte (8bit) from the netx to the pc
-	virtual unsigned char read_data08(unsigned long ulNetxAddress) = 0;
+	virtual unsigned char read_data08(lua_State *ptClientData, unsigned long ulNetxAddress) = 0;
 	// read a word (16bit) from the netx to the pc
-	virtual unsigned short read_data16(unsigned long ulNetxAddress) = 0;
+	virtual unsigned short read_data16(lua_State *ptClientData, unsigned long ulNetxAddress) = 0;
 	// read a long (32bit) from the netx to the pc
-	virtual unsigned long read_data32(unsigned long ulNetxAddress) = 0;
+	virtual unsigned long read_data32(lua_State *ptClientData, unsigned long ulNetxAddress) = 0;
 	// read a byte array from the netx to the pc
-//	virtual wxString read_image(double dNetxAddress, double dSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+	virtual void read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcOutputData, unsigned long *pulOutputData, SWIGLUA_FN tLuaFn, unsigned long ulCallbackUserData) = 0;
 
 	// write a byte (8bit) from the pc to the netx
-	virtual void write_data08(unsigned long ulNetxAddress, unsigned char ucData) = 0;
+	virtual void write_data08(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned char ucData) = 0;
 	// write a word (16bit) from the pc to the netx
-	virtual void write_data16(unsigned long ulNetxAddress, unsigned short usData) = 0;
+	virtual void write_data16(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned short usData) = 0;
 	// write a long (32bit) from the pc to the netx
-	virtual void write_data32(unsigned long ulNetxAddress, unsigned long ulData) = 0;
+	virtual void write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData) = 0;
 	// write a byte array from the pc to the netx
-//	virtual void write_image(double dNetxAddress, wxString strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+//	virtual void write_image(lua_State *ptClientData, double dNetxAddress, wxString strData, int iLuaCallbackTag, void *pvCallbackUserData);
 
 	// call routine
-//	virtual void call(double dNetxAddress, double dParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+//	virtual void call(lua_State *ptLuaState, double dNetxAddress, double dParameterR0, int iLuaCallbackTag, void *pvCallbackUserData);
 
 	// get chiptyp and romcode version
 	virtual ROMLOADER_CHIPTYP GetChiptyp(void) const;
@@ -83,10 +83,10 @@ public:
 // *** lua interface end ***
 
 protected:
-	bool detect_chiptyp(void);
+	bool detect_chiptyp(lua_State *ptClientData);
 	unsigned int crc16(unsigned int uCrc, unsigned int uData);
-//	bool callback_long(lua_State *L, int iLuaCallbackTag, long lProgressData, void *pvCallbackUserData);
-//	bool callback_string(lua_State *L, int iLuaCallbackTag, wxString strProgressData, void *pvCallbackUserData);
+//	bool callback_long(lua_State *ptLuaState, int iLuaCallbackTag, long lProgressData, void *pvCallbackUserData);
+//	bool callback_string(lua_State *ptLuaState, int iLuaCallbackTag, wxString strProgressData, void *pvCallbackUserData);
 
 	// the lua state
 //	wxLuaState *m_ptLuaState;
@@ -95,7 +95,7 @@ protected:
 	ROMLOADER_ROMCODE m_tRomcode;
 
 private:
-//	bool callback_common(lua_State *L, void *pvCallbackUserData, int iOldTopOfStack);
+//	bool callback_common(lua_State *ptLuaState, void *pvCallbackUserData, int iOldTopOfStack);
 
 //	muhkuh_plugin_fn_close_instance m_fn_close;
 

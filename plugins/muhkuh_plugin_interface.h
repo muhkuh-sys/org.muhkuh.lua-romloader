@@ -26,9 +26,17 @@
 
 #ifndef SWIGRUNTIME
 #include "_luaif/swigluarun.h"
+
+/* swigluarun does not include the lua specific defines. Add them here. */
+typedef struct{
+  lua_State* L; /* the state */
+  int idx;      /* the index on the stack */
+}SWIGLUA_FN;
 #endif
 
 /*-----------------------------------*/
+
+#define MUHKUH_PLUGIN_ERROR(L,...) { lua_pushfstring(L,__VA_ARGS__); lua_error(L); }
 
 #define SIZ_MAX_MUHKUH_PLUGIN_STRING 256
 
@@ -61,9 +69,9 @@ public:
 	~muhkuh_plugin(void);
 
 	// open the connection to the device
-	virtual void Connect(void) = 0;
+	virtual void Connect(lua_State *ptClientData) = 0;
 	// close the connection to the device
-	virtual void Disconnect(void) = 0;
+	virtual void Disconnect(lua_State *ptClientData) = 0;
 	// returns the connection state of the device
 	virtual bool IsConnected(void) const;
 
@@ -99,7 +107,7 @@ public:
 	const muhkuh_plugin_version *GetVersion(void) const;
 	swig_type_info *GetTypeInfo(void) const;
 
-	virtual int DetectInterfaces(lua_State *tLuaStateForTableAccess) = 0;
+	virtual int DetectInterfaces(lua_State *ptLuaStateForTableAccess) = 0;
 	virtual muhkuh_plugin *ClaimInterface(const muhkuh_plugin_reference *ptReference) = 0;
 	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin) = 0;
 
