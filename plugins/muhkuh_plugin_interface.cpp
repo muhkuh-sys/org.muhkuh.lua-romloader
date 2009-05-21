@@ -123,16 +123,18 @@ char *muhkuh_plugin::clone_string(const char *pcStr, size_t sizMax)
 
 muhkuh_plugin_reference::muhkuh_plugin_reference(void)
  : m_fIsValid(false)
+ , m_fIsUsed(false)
  , m_pcName(NULL)
  , m_pcTyp(NULL)
- , m_fIsUsed(false)
+ , m_ptProvider(NULL)
 {
 }
 
 
-muhkuh_plugin_reference::muhkuh_plugin_reference(const char *pcName, const char *pcTyp, bool fIsUsed)
+muhkuh_plugin_reference::muhkuh_plugin_reference(const char *pcName, const char *pcTyp, bool fIsUsed, muhkuh_plugin_provider *ptProvider)
  : m_fIsValid(true)
- , m_fIsUsed(m_fIsUsed)
+ , m_fIsUsed(fIsUsed)
+ , m_ptProvider(ptProvider)
 {
 	m_pcName = clone_string(pcName, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 	m_pcTyp = clone_string(pcTyp, SIZ_MAX_MUHKUH_PLUGIN_STRING);
@@ -142,6 +144,7 @@ muhkuh_plugin_reference::muhkuh_plugin_reference(const char *pcName, const char 
 muhkuh_plugin_reference::muhkuh_plugin_reference(const muhkuh_plugin_reference *ptCloneMe)
  : m_fIsValid(true)
  , m_fIsUsed(ptCloneMe->m_fIsUsed)
+ , m_ptProvider(ptCloneMe->m_ptProvider)
 {
 	m_pcName = clone_string(ptCloneMe->m_pcName, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 	m_pcTyp = clone_string(ptCloneMe->m_pcTyp, SIZ_MAX_MUHKUH_PLUGIN_STRING);
@@ -169,6 +172,38 @@ const char *muhkuh_plugin_reference::GetTyp(void) const
 bool muhkuh_plugin_reference::IsUsed(void) const
 {
 	return m_fIsUsed;
+}
+
+
+muhkuh_plugin *muhkuh_plugin_reference::Create(void) const
+{
+	muhkuh_plugin *ptPlugin;
+
+
+	ptPlugin = NULL;
+
+	if( m_ptProvider!=NULL )
+	{
+		ptPlugin = m_ptProvider->ClaimInterface(this);
+	}
+
+	return ptPlugin;
+}
+
+
+swig_type_info *muhkuh_plugin_reference::GetTypeInfo(void) const
+{
+	swig_type_info *ptTypeInfo;
+
+
+	ptTypeInfo = NULL;
+
+	if( m_ptProvider!=NULL )
+	{
+		ptTypeInfo = m_ptProvider->GetTypeInfo();
+	}
+
+	return ptTypeInfo;
 }
 
 
@@ -209,6 +244,9 @@ muhkuh_plugin_provider::muhkuh_plugin_provider(const char *pcPluginId)
 
 	// copy the id
 	m_pt_plugin_desc.pcPluginId = clone_string(pcPluginId, SIZ_MAX_MUHKUH_PLUGIN_STRING);
+
+	/* init the lua type info */
+	m_ptPluginTypeInfo = NULL;
 }
 
 
@@ -228,6 +266,12 @@ muhkuh_plugin_provider::~muhkuh_plugin_provider(void)
 const muhkuh_plugin_desc *muhkuh_plugin_provider::GetDesc(void) const
 {
 	return &m_pt_plugin_desc;
+}
+
+
+swig_type_info *muhkuh_plugin_provider::GetTypeInfo(void) const
+{
+	return m_ptPluginTypeInfo;
 }
 
 

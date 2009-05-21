@@ -29,7 +29,8 @@
 
 const char *romloader_baka_provider::m_pcPluginNamePattern = "baka_%d";
 
-romloader_baka_provider::romloader_baka_provider(void)
+
+romloader_baka_provider::romloader_baka_provider(swig_type_info *ptPluginTypeInfo)
  : muhkuh_plugin_provider("romloader_baka")
  , m_ptInstanceCfg(NULL)
  , m_cfg_iInstances(0)
@@ -38,6 +39,10 @@ romloader_baka_provider::romloader_baka_provider(void)
 
 
 	printf("%s(%p): provider create\n", m_pt_plugin_desc.pcPluginId, this);
+
+	/* get the romloader_baka lua type */
+	m_ptPluginTypeInfo = ptPluginTypeInfo;
+	printf("%s(%p): romloader_baka type: %p\n", m_pt_plugin_desc.pcPluginId, this, m_ptPluginTypeInfo);
 
 	m_cfg_iInstances = 4;
 	m_ptInstanceCfg = new BAKA_INSTANCE_CFG_T[m_cfg_iInstances];
@@ -82,7 +87,7 @@ romloader_baka_provider::~romloader_baka_provider(void)
 int romloader_baka_provider::DetectInterfaces(std::vector<muhkuh_plugin_reference*> &vInterfaceList)
 {
 	int iInterfaceCnt;
-	muhkuh_plugin_reference *ptRef;
+	romloader_baka_reference *ptRef;
 	bool fIsUsed;
 	const size_t sizMaxName = 32;
 	char acName[sizMaxName];
@@ -96,7 +101,7 @@ int romloader_baka_provider::DetectInterfaces(std::vector<muhkuh_plugin_referenc
 	{
 		snprintf(acName, sizMaxName-1, m_pcPluginNamePattern, iInterfaceCnt);
 		fIsUsed = m_ptInstanceCfg[iInterfaceCnt].fIsUsed;
-		ptRef = new muhkuh_plugin_reference(acName, m_pt_plugin_desc.pcPluginId, fIsUsed);
+		ptRef = new romloader_baka_reference(acName, m_pt_plugin_desc.pcPluginId, fIsUsed, this);
 
 		vInterfaceList.push_back(ptRef);
 	}
@@ -449,3 +454,27 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 #endif
 
 /*-------------------------------------*/
+
+
+romloader_baka_reference::romloader_baka_reference(void)
+ : muhkuh_plugin_reference()
+{
+}
+
+
+romloader_baka_reference::romloader_baka_reference(const char *pcName, const char *pcTyp, bool fIsUsed, romloader_baka_provider *ptProvider)
+ : muhkuh_plugin_reference(pcName, pcTyp, fIsUsed, ptProvider)
+{
+}
+
+
+romloader_baka_reference::romloader_baka_reference(const romloader_baka_reference *ptCloneMe)
+ : muhkuh_plugin_reference(ptCloneMe)
+{
+}
+
+
+
+
+/*-------------------------------------*/
+

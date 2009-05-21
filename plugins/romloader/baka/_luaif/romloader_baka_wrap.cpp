@@ -1517,9 +1517,11 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 #define SWIGTYPE_p_romloader swig_types[7]
 #define SWIGTYPE_p_romloader_baka swig_types[8]
 #define SWIGTYPE_p_romloader_baka_provider swig_types[9]
-#define SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t swig_types[10]
-static swig_type_info *swig_types[12];
-static swig_module_info swig_module = {swig_types, 11, 0, 0, 0, 0};
+#define SWIGTYPE_p_romloader_baka_reference swig_types[10]
+#define SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t swig_types[11]
+#define SWIGTYPE_p_swig_type_info swig_types[12]
+static swig_type_info *swig_types[14];
+static swig_module_info swig_module = {swig_types, 13, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1951,240 +1953,6 @@ static swig_lua_class *swig_muhkuh_plugin_desc_bases[] = {0};
 static const char *swig_muhkuh_plugin_desc_base_names[] = {0};
 static swig_lua_class _wrap_class_muhkuh_plugin_desc = { "muhkuh_plugin_desc", &SWIGTYPE_p_muhkuh_plugin_desc,_wrap_new_muhkuh_plugin_desc, swig_delete_muhkuh_plugin_desc, swig_muhkuh_plugin_desc_methods, swig_muhkuh_plugin_desc_attributes, swig_muhkuh_plugin_desc_bases, swig_muhkuh_plugin_desc_base_names };
 
-static int _wrap_new_muhkuh_plugin_reference__SWIG_0(lua_State* L) {
-  int SWIG_arg = 0;
-  muhkuh_plugin_reference *result = 0 ;
-  
-  SWIG_check_num_args("muhkuh_plugin_reference",0,0)
-  result = (muhkuh_plugin_reference *)new muhkuh_plugin_reference();
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_muhkuh_plugin_reference,1); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_new_muhkuh_plugin_reference__SWIG_1(lua_State* L) {
-  int SWIG_arg = 0;
-  char *arg1 = (char *) 0 ;
-  char *arg2 = (char *) 0 ;
-  bool arg3 ;
-  muhkuh_plugin_reference *result = 0 ;
-  
-  SWIG_check_num_args("muhkuh_plugin_reference",3,3)
-  if(!lua_isstring(L,1)) SWIG_fail_arg("muhkuh_plugin_reference",1,"char const *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("muhkuh_plugin_reference",2,"char const *");
-  if(!lua_isboolean(L,3)) SWIG_fail_arg("muhkuh_plugin_reference",3,"bool");
-  arg1 = (char *)lua_tostring(L, 1);
-  arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (lua_toboolean(L, 3)!=0);
-  result = (muhkuh_plugin_reference *)new muhkuh_plugin_reference((char const *)arg1,(char const *)arg2,arg3);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_muhkuh_plugin_reference,1); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_new_muhkuh_plugin_reference__SWIG_2(lua_State* L) {
-  int SWIG_arg = 0;
-  muhkuh_plugin_reference *arg1 = (muhkuh_plugin_reference *) 0 ;
-  muhkuh_plugin_reference *result = 0 ;
-  
-  SWIG_check_num_args("muhkuh_plugin_reference",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("muhkuh_plugin_reference",1,"muhkuh_plugin_reference const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_muhkuh_plugin_reference,0))){
-    SWIG_fail_ptr("new_muhkuh_plugin_reference",1,SWIGTYPE_p_muhkuh_plugin_reference);
-  }
-  
-  result = (muhkuh_plugin_reference *)new muhkuh_plugin_reference((muhkuh_plugin_reference const *)arg1);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_muhkuh_plugin_reference,1); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_new_muhkuh_plugin_reference(lua_State* L) {
-  int argc;
-  int argv[4]={
-    1,2,3,4
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 0) {
-    return _wrap_new_muhkuh_plugin_reference__SWIG_0(L);
-  }
-  if (argc == 1) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_muhkuh_plugin_reference, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      return _wrap_new_muhkuh_plugin_reference__SWIG_2(L);
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    {
-      _v = lua_isstring(L,argv[0]);
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isboolean(L,argv[2]);
-        }
-        if (_v) {
-          return _wrap_new_muhkuh_plugin_reference__SWIG_1(L);
-        }
-      }
-    }
-  }
-  
-  lua_pushstring(L,"Wrong arguments for overloaded function 'new_muhkuh_plugin_reference'\n"
-    "  Possible C/C++ prototypes are:\n"
-    "    muhkuh_plugin_reference()\n"
-    "    muhkuh_plugin_reference(char const *,char const *,bool)\n"
-    "    muhkuh_plugin_reference(muhkuh_plugin_reference const *)\n");
-  lua_error(L);return 0;
-}
-
-
-static int _wrap_muhkuh_plugin_reference_IsValid(lua_State* L) {
-  int SWIG_arg = 0;
-  muhkuh_plugin_reference *arg1 = (muhkuh_plugin_reference *) 0 ;
-  bool result;
-  
-  SWIG_check_num_args("IsValid",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsValid",1,"muhkuh_plugin_reference const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_muhkuh_plugin_reference,0))){
-    SWIG_fail_ptr("muhkuh_plugin_reference_IsValid",1,SWIGTYPE_p_muhkuh_plugin_reference);
-  }
-  
-  result = (bool)((muhkuh_plugin_reference const *)arg1)->IsValid();
-  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_muhkuh_plugin_reference_GetName(lua_State* L) {
-  int SWIG_arg = 0;
-  muhkuh_plugin_reference *arg1 = (muhkuh_plugin_reference *) 0 ;
-  char *result = 0 ;
-  
-  SWIG_check_num_args("GetName",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetName",1,"muhkuh_plugin_reference const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_muhkuh_plugin_reference,0))){
-    SWIG_fail_ptr("muhkuh_plugin_reference_GetName",1,SWIGTYPE_p_muhkuh_plugin_reference);
-  }
-  
-  result = (char *)((muhkuh_plugin_reference const *)arg1)->GetName();
-  lua_pushstring(L,(const char*)result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_muhkuh_plugin_reference_GetTyp(lua_State* L) {
-  int SWIG_arg = 0;
-  muhkuh_plugin_reference *arg1 = (muhkuh_plugin_reference *) 0 ;
-  char *result = 0 ;
-  
-  SWIG_check_num_args("GetTyp",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetTyp",1,"muhkuh_plugin_reference const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_muhkuh_plugin_reference,0))){
-    SWIG_fail_ptr("muhkuh_plugin_reference_GetTyp",1,SWIGTYPE_p_muhkuh_plugin_reference);
-  }
-  
-  result = (char *)((muhkuh_plugin_reference const *)arg1)->GetTyp();
-  lua_pushstring(L,(const char*)result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_muhkuh_plugin_reference_IsUsed(lua_State* L) {
-  int SWIG_arg = 0;
-  muhkuh_plugin_reference *arg1 = (muhkuh_plugin_reference *) 0 ;
-  bool result;
-  
-  SWIG_check_num_args("IsUsed",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsUsed",1,"muhkuh_plugin_reference const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_muhkuh_plugin_reference,0))){
-    SWIG_fail_ptr("muhkuh_plugin_reference_IsUsed",1,SWIGTYPE_p_muhkuh_plugin_reference);
-  }
-  
-  result = (bool)((muhkuh_plugin_reference const *)arg1)->IsUsed();
-  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static void swig_delete_muhkuh_plugin_reference(void *obj) {
-muhkuh_plugin_reference *arg1 = (muhkuh_plugin_reference *) obj;
-delete arg1;
-}
-static swig_lua_method swig_muhkuh_plugin_reference_methods[] = {
-    {"IsValid", _wrap_muhkuh_plugin_reference_IsValid}, 
-    {"GetName", _wrap_muhkuh_plugin_reference_GetName}, 
-    {"GetTyp", _wrap_muhkuh_plugin_reference_GetTyp}, 
-    {"IsUsed", _wrap_muhkuh_plugin_reference_IsUsed}, 
-    {0,0}
-};
-static swig_lua_attribute swig_muhkuh_plugin_reference_attributes[] = {
-    {0,0,0}
-};
-static swig_lua_class *swig_muhkuh_plugin_reference_bases[] = {0};
-static const char *swig_muhkuh_plugin_reference_base_names[] = {0};
-static swig_lua_class _wrap_class_muhkuh_plugin_reference = { "muhkuh_plugin_reference", &SWIGTYPE_p_muhkuh_plugin_reference,_wrap_new_muhkuh_plugin_reference, swig_delete_muhkuh_plugin_reference, swig_muhkuh_plugin_reference_methods, swig_muhkuh_plugin_reference_attributes, swig_muhkuh_plugin_reference_bases, swig_muhkuh_plugin_reference_base_names };
-
 static int _wrap_muhkuh_plugin_Connect(lua_State* L) {
   int SWIG_arg = 0;
   muhkuh_plugin *arg1 = (muhkuh_plugin *) 0 ;
@@ -2346,6 +2114,30 @@ fail:
 }
 
 
+static int _wrap_muhkuh_plugin_provider_GetTypeInfo(lua_State* L) {
+  int SWIG_arg = 0;
+  muhkuh_plugin_provider *arg1 = (muhkuh_plugin_provider *) 0 ;
+  swig_type_info *result = 0 ;
+  
+  SWIG_check_num_args("GetTypeInfo",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetTypeInfo",1,"muhkuh_plugin_provider const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_muhkuh_plugin_provider,0))){
+    SWIG_fail_ptr("muhkuh_plugin_provider_GetTypeInfo",1,SWIGTYPE_p_muhkuh_plugin_provider);
+  }
+  
+  result = (swig_type_info *)((muhkuh_plugin_provider const *)arg1)->GetTypeInfo();
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_swig_type_info,0); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_muhkuh_plugin_provider_DetectInterfaces(lua_State* L) {
   int SWIG_arg = 0;
   muhkuh_plugin_provider *arg1 = (muhkuh_plugin_provider *) 0 ;
@@ -2397,7 +2189,9 @@ static int _wrap_muhkuh_plugin_provider_ClaimInterface(lua_State* L) {
   }
   
   result = (muhkuh_plugin *)(arg1)->ClaimInterface((muhkuh_plugin_reference const *)arg2);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_muhkuh_plugin,0); SWIG_arg++; 
+  
+  SWIG_NewPointerObj(L,result,((muhkuh_plugin_reference const *)arg1)->GetTypeInfo(),0); SWIG_arg++;
+  
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2445,6 +2239,7 @@ delete arg1;
 }
 static swig_lua_method swig_muhkuh_plugin_provider_methods[] = {
     {"GetDesc", _wrap_muhkuh_plugin_provider_GetDesc}, 
+    {"GetTypeInfo", _wrap_muhkuh_plugin_provider_GetTypeInfo}, 
     {"DetectInterfaces", _wrap_muhkuh_plugin_provider_DetectInterfaces}, 
     {"ClaimInterface", _wrap_muhkuh_plugin_provider_ClaimInterface}, 
     {"ReleaseInterface", _wrap_muhkuh_plugin_provider_ReleaseInterface}, 
@@ -2456,6 +2251,309 @@ static swig_lua_attribute swig_muhkuh_plugin_provider_attributes[] = {
 static swig_lua_class *swig_muhkuh_plugin_provider_bases[] = {0};
 static const char *swig_muhkuh_plugin_provider_base_names[] = {0};
 static swig_lua_class _wrap_class_muhkuh_plugin_provider = { "muhkuh_plugin_provider", &SWIGTYPE_p_muhkuh_plugin_provider,0, swig_delete_muhkuh_plugin_provider, swig_muhkuh_plugin_provider_methods, swig_muhkuh_plugin_provider_attributes, swig_muhkuh_plugin_provider_bases, swig_muhkuh_plugin_provider_base_names };
+
+static int _wrap_new_muhkuh_plugin_reference__SWIG_0(lua_State* L) {
+  int SWIG_arg = 0;
+  muhkuh_plugin_reference *result = 0 ;
+  
+  SWIG_check_num_args("muhkuh_plugin_reference",0,0)
+  result = (muhkuh_plugin_reference *)new muhkuh_plugin_reference();
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_muhkuh_plugin_reference,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_new_muhkuh_plugin_reference__SWIG_1(lua_State* L) {
+  int SWIG_arg = 0;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  bool arg3 ;
+  muhkuh_plugin_provider *arg4 = (muhkuh_plugin_provider *) 0 ;
+  muhkuh_plugin_reference *result = 0 ;
+  
+  SWIG_check_num_args("muhkuh_plugin_reference",4,4)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("muhkuh_plugin_reference",1,"char const *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("muhkuh_plugin_reference",2,"char const *");
+  if(!lua_isboolean(L,3)) SWIG_fail_arg("muhkuh_plugin_reference",3,"bool");
+  if(!SWIG_isptrtype(L,4)) SWIG_fail_arg("muhkuh_plugin_reference",4,"muhkuh_plugin_provider *");
+  arg1 = (char *)lua_tostring(L, 1);
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (lua_toboolean(L, 3)!=0);
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,4,(void**)&arg4,SWIGTYPE_p_muhkuh_plugin_provider,0))){
+    SWIG_fail_ptr("new_muhkuh_plugin_reference",4,SWIGTYPE_p_muhkuh_plugin_provider);
+  }
+  
+  result = (muhkuh_plugin_reference *)new muhkuh_plugin_reference((char const *)arg1,(char const *)arg2,arg3,arg4);
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_muhkuh_plugin_reference,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_new_muhkuh_plugin_reference__SWIG_2(lua_State* L) {
+  int SWIG_arg = 0;
+  muhkuh_plugin_reference *arg1 = (muhkuh_plugin_reference *) 0 ;
+  muhkuh_plugin_reference *result = 0 ;
+  
+  SWIG_check_num_args("muhkuh_plugin_reference",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("muhkuh_plugin_reference",1,"muhkuh_plugin_reference const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_muhkuh_plugin_reference,0))){
+    SWIG_fail_ptr("new_muhkuh_plugin_reference",1,SWIGTYPE_p_muhkuh_plugin_reference);
+  }
+  
+  result = (muhkuh_plugin_reference *)new muhkuh_plugin_reference((muhkuh_plugin_reference const *)arg1);
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_muhkuh_plugin_reference,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_new_muhkuh_plugin_reference(lua_State* L) {
+  int argc;
+  int argv[5]={
+    1,2,3,4,5
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 0) {
+    return _wrap_new_muhkuh_plugin_reference__SWIG_0(L);
+  }
+  if (argc == 1) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_muhkuh_plugin_reference, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      return _wrap_new_muhkuh_plugin_reference__SWIG_2(L);
+    }
+  }
+  if (argc == 4) {
+    int _v;
+    {
+      _v = lua_isstring(L,argv[0]);
+    }
+    if (_v) {
+      {
+        _v = lua_isstring(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isboolean(L,argv[2]);
+        }
+        if (_v) {
+          {
+            void *ptr;
+            if (SWIG_isptrtype(L,argv[3])==0 || SWIG_ConvertPtr(L,argv[3], (void **) &ptr, SWIGTYPE_p_muhkuh_plugin_provider, 0)) {
+              _v = 0;
+            } else {
+              _v = 1;
+            }
+          }
+          if (_v) {
+            return _wrap_new_muhkuh_plugin_reference__SWIG_1(L);
+          }
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"Wrong arguments for overloaded function 'new_muhkuh_plugin_reference'\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    muhkuh_plugin_reference()\n"
+    "    muhkuh_plugin_reference(char const *,char const *,bool,muhkuh_plugin_provider *)\n"
+    "    muhkuh_plugin_reference(muhkuh_plugin_reference const *)\n");
+  lua_error(L);return 0;
+}
+
+
+static int _wrap_muhkuh_plugin_reference_IsValid(lua_State* L) {
+  int SWIG_arg = 0;
+  muhkuh_plugin_reference *arg1 = (muhkuh_plugin_reference *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("IsValid",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsValid",1,"muhkuh_plugin_reference const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_muhkuh_plugin_reference,0))){
+    SWIG_fail_ptr("muhkuh_plugin_reference_IsValid",1,SWIGTYPE_p_muhkuh_plugin_reference);
+  }
+  
+  result = (bool)((muhkuh_plugin_reference const *)arg1)->IsValid();
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_muhkuh_plugin_reference_GetName(lua_State* L) {
+  int SWIG_arg = 0;
+  muhkuh_plugin_reference *arg1 = (muhkuh_plugin_reference *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("GetName",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetName",1,"muhkuh_plugin_reference const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_muhkuh_plugin_reference,0))){
+    SWIG_fail_ptr("muhkuh_plugin_reference_GetName",1,SWIGTYPE_p_muhkuh_plugin_reference);
+  }
+  
+  result = (char *)((muhkuh_plugin_reference const *)arg1)->GetName();
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_muhkuh_plugin_reference_GetTyp(lua_State* L) {
+  int SWIG_arg = 0;
+  muhkuh_plugin_reference *arg1 = (muhkuh_plugin_reference *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("GetTyp",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetTyp",1,"muhkuh_plugin_reference const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_muhkuh_plugin_reference,0))){
+    SWIG_fail_ptr("muhkuh_plugin_reference_GetTyp",1,SWIGTYPE_p_muhkuh_plugin_reference);
+  }
+  
+  result = (char *)((muhkuh_plugin_reference const *)arg1)->GetTyp();
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_muhkuh_plugin_reference_IsUsed(lua_State* L) {
+  int SWIG_arg = 0;
+  muhkuh_plugin_reference *arg1 = (muhkuh_plugin_reference *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("IsUsed",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("IsUsed",1,"muhkuh_plugin_reference const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_muhkuh_plugin_reference,0))){
+    SWIG_fail_ptr("muhkuh_plugin_reference_IsUsed",1,SWIGTYPE_p_muhkuh_plugin_reference);
+  }
+  
+  result = (bool)((muhkuh_plugin_reference const *)arg1)->IsUsed();
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_muhkuh_plugin_reference_Create(lua_State* L) {
+  int SWIG_arg = 0;
+  muhkuh_plugin_reference *arg1 = (muhkuh_plugin_reference *) 0 ;
+  muhkuh_plugin *result = 0 ;
+  
+  SWIG_check_num_args("Create",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Create",1,"muhkuh_plugin_reference const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_muhkuh_plugin_reference,0))){
+    SWIG_fail_ptr("muhkuh_plugin_reference_Create",1,SWIGTYPE_p_muhkuh_plugin_reference);
+  }
+  
+  result = (muhkuh_plugin *)((muhkuh_plugin_reference const *)arg1)->Create();
+  
+  SWIG_NewPointerObj(L,result,((muhkuh_plugin_reference const *)arg1)->GetTypeInfo(),0); SWIG_arg++;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_muhkuh_plugin_reference_GetTypeInfo(lua_State* L) {
+  int SWIG_arg = 0;
+  muhkuh_plugin_reference *arg1 = (muhkuh_plugin_reference *) 0 ;
+  swig_type_info *result = 0 ;
+  
+  SWIG_check_num_args("GetTypeInfo",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("GetTypeInfo",1,"muhkuh_plugin_reference const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_muhkuh_plugin_reference,0))){
+    SWIG_fail_ptr("muhkuh_plugin_reference_GetTypeInfo",1,SWIGTYPE_p_muhkuh_plugin_reference);
+  }
+  
+  result = (swig_type_info *)((muhkuh_plugin_reference const *)arg1)->GetTypeInfo();
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_swig_type_info,0); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static void swig_delete_muhkuh_plugin_reference(void *obj) {
+muhkuh_plugin_reference *arg1 = (muhkuh_plugin_reference *) obj;
+delete arg1;
+}
+static swig_lua_method swig_muhkuh_plugin_reference_methods[] = {
+    {"IsValid", _wrap_muhkuh_plugin_reference_IsValid}, 
+    {"GetName", _wrap_muhkuh_plugin_reference_GetName}, 
+    {"GetTyp", _wrap_muhkuh_plugin_reference_GetTyp}, 
+    {"IsUsed", _wrap_muhkuh_plugin_reference_IsUsed}, 
+    {"Create", _wrap_muhkuh_plugin_reference_Create}, 
+    {"GetTypeInfo", _wrap_muhkuh_plugin_reference_GetTypeInfo}, 
+    {0,0}
+};
+static swig_lua_attribute swig_muhkuh_plugin_reference_attributes[] = {
+    {0,0,0}
+};
+static swig_lua_class *swig_muhkuh_plugin_reference_bases[] = {0};
+static const char *swig_muhkuh_plugin_reference_base_names[] = {0};
+static swig_lua_class _wrap_class_muhkuh_plugin_reference = { "muhkuh_plugin_reference", &SWIGTYPE_p_muhkuh_plugin_reference,_wrap_new_muhkuh_plugin_reference, swig_delete_muhkuh_plugin_reference, swig_muhkuh_plugin_reference_methods, swig_muhkuh_plugin_reference_attributes, swig_muhkuh_plugin_reference_bases, swig_muhkuh_plugin_reference_base_names };
 
 static int _wrap_romloader_read_data08(lua_State* L) {
   int SWIG_arg = 0;
@@ -3015,10 +3113,14 @@ static swig_lua_class _wrap_class_romloader_baka = { "romloader_baka", &SWIGTYPE
 
 static int _wrap_new_romloader_baka_provider(lua_State* L) {
   int SWIG_arg = 0;
+  swig_type_info *arg1 = (swig_type_info *) 0 ;
   romloader_baka_provider *result = 0 ;
   
+  
+  arg1 = SWIGTYPE_p_romloader_baka;
+  
   SWIG_check_num_args("romloader_baka_provider",0,0)
-  result = (romloader_baka_provider *)new romloader_baka_provider();
+  result = (romloader_baka_provider *)new romloader_baka_provider(arg1);
   SWIG_NewPointerObj(L,result,SWIGTYPE_p_romloader_baka_provider,1); SWIG_arg++; 
   return SWIG_arg;
   
@@ -3061,76 +3163,12 @@ fail:
 }
 
 
-static int _wrap_romloader_baka_provider_ClaimInterface(lua_State* L) {
-  int SWIG_arg = 0;
-  romloader_baka_provider *arg1 = (romloader_baka_provider *) 0 ;
-  muhkuh_plugin_reference *arg2 = (muhkuh_plugin_reference *) 0 ;
-  romloader_baka *result = 0 ;
-  
-  SWIG_check_num_args("ClaimInterface",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ClaimInterface",1,"romloader_baka_provider *");
-  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("ClaimInterface",2,"muhkuh_plugin_reference const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader_baka_provider,0))){
-    SWIG_fail_ptr("romloader_baka_provider_ClaimInterface",1,SWIGTYPE_p_romloader_baka_provider);
-  }
-  
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_muhkuh_plugin_reference,0))){
-    SWIG_fail_ptr("romloader_baka_provider_ClaimInterface",2,SWIGTYPE_p_muhkuh_plugin_reference);
-  }
-  
-  result = (romloader_baka *)(arg1)->ClaimInterface((muhkuh_plugin_reference const *)arg2);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_romloader_baka,1); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_romloader_baka_provider_ReleaseInterface(lua_State* L) {
-  int SWIG_arg = 0;
-  romloader_baka_provider *arg1 = (romloader_baka_provider *) 0 ;
-  muhkuh_plugin *arg2 = (muhkuh_plugin *) 0 ;
-  bool result;
-  
-  SWIG_check_num_args("ReleaseInterface",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ReleaseInterface",1,"romloader_baka_provider *");
-  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("ReleaseInterface",2,"muhkuh_plugin *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader_baka_provider,SWIG_POINTER_DISOWN))){
-    SWIG_fail_ptr("romloader_baka_provider_ReleaseInterface",1,SWIGTYPE_p_romloader_baka_provider);
-  }
-  
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_muhkuh_plugin,0))){
-    SWIG_fail_ptr("romloader_baka_provider_ReleaseInterface",2,SWIGTYPE_p_muhkuh_plugin);
-  }
-  
-  result = (bool)(arg1)->ReleaseInterface(arg2);
-  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
 static void swig_delete_romloader_baka_provider(void *obj) {
 romloader_baka_provider *arg1 = (romloader_baka_provider *) obj;
 delete arg1;
 }
 static swig_lua_method swig_romloader_baka_provider_methods[] = {
     {"DetectInterfaces", _wrap_romloader_baka_provider_DetectInterfaces}, 
-    {"ClaimInterface", _wrap_romloader_baka_provider_ClaimInterface}, 
-    {"ReleaseInterface", _wrap_romloader_baka_provider_ReleaseInterface}, 
     {0,0}
 };
 static swig_lua_attribute swig_romloader_baka_provider_attributes[] = {
@@ -3139,6 +3177,157 @@ static swig_lua_attribute swig_romloader_baka_provider_attributes[] = {
 static swig_lua_class *swig_romloader_baka_provider_bases[] = {0,0};
 static const char *swig_romloader_baka_provider_base_names[] = {"muhkuh_plugin_provider *",0};
 static swig_lua_class _wrap_class_romloader_baka_provider = { "romloader_baka_provider", &SWIGTYPE_p_romloader_baka_provider,_wrap_new_romloader_baka_provider, swig_delete_romloader_baka_provider, swig_romloader_baka_provider_methods, swig_romloader_baka_provider_attributes, swig_romloader_baka_provider_bases, swig_romloader_baka_provider_base_names };
+
+static int _wrap_new_romloader_baka_reference__SWIG_0(lua_State* L) {
+  int SWIG_arg = 0;
+  romloader_baka_reference *result = 0 ;
+  
+  SWIG_check_num_args("romloader_baka_reference",0,0)
+  result = (romloader_baka_reference *)new romloader_baka_reference();
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_romloader_baka_reference,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_new_romloader_baka_reference__SWIG_1(lua_State* L) {
+  int SWIG_arg = 0;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  bool arg3 ;
+  romloader_baka_provider *arg4 = (romloader_baka_provider *) 0 ;
+  romloader_baka_reference *result = 0 ;
+  
+  SWIG_check_num_args("romloader_baka_reference",4,4)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("romloader_baka_reference",1,"char const *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("romloader_baka_reference",2,"char const *");
+  if(!lua_isboolean(L,3)) SWIG_fail_arg("romloader_baka_reference",3,"bool");
+  if(!SWIG_isptrtype(L,4)) SWIG_fail_arg("romloader_baka_reference",4,"romloader_baka_provider *");
+  arg1 = (char *)lua_tostring(L, 1);
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (lua_toboolean(L, 3)!=0);
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,4,(void**)&arg4,SWIGTYPE_p_romloader_baka_provider,0))){
+    SWIG_fail_ptr("new_romloader_baka_reference",4,SWIGTYPE_p_romloader_baka_provider);
+  }
+  
+  result = (romloader_baka_reference *)new romloader_baka_reference((char const *)arg1,(char const *)arg2,arg3,arg4);
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_romloader_baka_reference,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_new_romloader_baka_reference__SWIG_2(lua_State* L) {
+  int SWIG_arg = 0;
+  romloader_baka_reference *arg1 = (romloader_baka_reference *) 0 ;
+  romloader_baka_reference *result = 0 ;
+  
+  SWIG_check_num_args("romloader_baka_reference",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("romloader_baka_reference",1,"romloader_baka_reference const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader_baka_reference,0))){
+    SWIG_fail_ptr("new_romloader_baka_reference",1,SWIGTYPE_p_romloader_baka_reference);
+  }
+  
+  result = (romloader_baka_reference *)new romloader_baka_reference((romloader_baka_reference const *)arg1);
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_romloader_baka_reference,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_new_romloader_baka_reference(lua_State* L) {
+  int argc;
+  int argv[5]={
+    1,2,3,4,5
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 0) {
+    return _wrap_new_romloader_baka_reference__SWIG_0(L);
+  }
+  if (argc == 1) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_romloader_baka_reference, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      return _wrap_new_romloader_baka_reference__SWIG_2(L);
+    }
+  }
+  if (argc == 4) {
+    int _v;
+    {
+      _v = lua_isstring(L,argv[0]);
+    }
+    if (_v) {
+      {
+        _v = lua_isstring(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isboolean(L,argv[2]);
+        }
+        if (_v) {
+          {
+            void *ptr;
+            if (SWIG_isptrtype(L,argv[3])==0 || SWIG_ConvertPtr(L,argv[3], (void **) &ptr, SWIGTYPE_p_romloader_baka_provider, 0)) {
+              _v = 0;
+            } else {
+              _v = 1;
+            }
+          }
+          if (_v) {
+            return _wrap_new_romloader_baka_reference__SWIG_1(L);
+          }
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"Wrong arguments for overloaded function 'new_romloader_baka_reference'\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    romloader_baka_reference()\n"
+    "    romloader_baka_reference(char const *,char const *,bool,romloader_baka_provider *)\n"
+    "    romloader_baka_reference(romloader_baka_reference const *)\n");
+  lua_error(L);return 0;
+}
+
+
+static void swig_delete_romloader_baka_reference(void *obj) {
+romloader_baka_reference *arg1 = (romloader_baka_reference *) obj;
+delete arg1;
+}
+static swig_lua_method swig_romloader_baka_reference_methods[] = {
+    {0,0}
+};
+static swig_lua_attribute swig_romloader_baka_reference_attributes[] = {
+    {0,0,0}
+};
+static swig_lua_class *swig_romloader_baka_reference_bases[] = {0,0};
+static const char *swig_romloader_baka_reference_base_names[] = {"muhkuh_plugin_reference *",0};
+static swig_lua_class _wrap_class_romloader_baka_reference = { "romloader_baka_reference", &SWIGTYPE_p_romloader_baka_reference,_wrap_new_romloader_baka_reference, swig_delete_romloader_baka_reference, swig_romloader_baka_reference_methods, swig_romloader_baka_reference_attributes, swig_romloader_baka_reference_bases, swig_romloader_baka_reference_base_names };
 
 static int _wrap_new_PluginVector__SWIG_0(lua_State* L) {
   int SWIG_arg = 0;
@@ -3609,17 +3798,20 @@ static swig_lua_const_info swig_constants[] = {
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
+static void *_p_romloader_baka_referenceTo_p_muhkuh_plugin_reference(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((muhkuh_plugin_reference *)  ((romloader_baka_reference *) x));
+}
+static void *_p_romloader_baka_providerTo_p_muhkuh_plugin_provider(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((muhkuh_plugin_provider *)  ((romloader_baka_provider *) x));
+}
+static void *_p_romloader_bakaTo_p_romloader(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((romloader *)  ((romloader_baka *) x));
+}
 static void *_p_romloader_bakaTo_p_muhkuh_plugin(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((muhkuh_plugin *) (romloader *) ((romloader_baka *) x));
 }
 static void *_p_romloaderTo_p_muhkuh_plugin(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((muhkuh_plugin *)  ((romloader *) x));
-}
-static void *_p_romloader_bakaTo_p_romloader(void *x, int *SWIGUNUSEDPARM(newmemory)) {
-    return (void *)((romloader *)  ((romloader_baka *) x));
-}
-static void *_p_romloader_baka_providerTo_p_muhkuh_plugin_provider(void *x, int *SWIGUNUSEDPARM(newmemory)) {
-    return (void *)((muhkuh_plugin_provider *)  ((romloader_baka_provider *) x));
 }
 static swig_type_info _swigt__p_ROMLOADER_CHIPTYP = {"_p_ROMLOADER_CHIPTYP", "enum ROMLOADER_CHIPTYP *|ROMLOADER_CHIPTYP *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_ROMLOADER_ROMCODE = {"_p_ROMLOADER_ROMCODE", "enum ROMLOADER_ROMCODE *|ROMLOADER_ROMCODE *", 0, 0, (void*)0, 0};
@@ -3631,7 +3823,9 @@ static swig_type_info _swigt__p_muhkuh_plugin_so_version = {"_p_muhkuh_plugin_so
 static swig_type_info _swigt__p_romloader = {"_p_romloader", "romloader *", 0, 0, (void*)&_wrap_class_romloader, 0};
 static swig_type_info _swigt__p_romloader_baka = {"_p_romloader_baka", "romloader_baka *", 0, 0, (void*)&_wrap_class_romloader_baka, 0};
 static swig_type_info _swigt__p_romloader_baka_provider = {"_p_romloader_baka_provider", "romloader_baka_provider *", 0, 0, (void*)&_wrap_class_romloader_baka_provider, 0};
+static swig_type_info _swigt__p_romloader_baka_reference = {"_p_romloader_baka_reference", "romloader_baka_reference *", 0, 0, (void*)&_wrap_class_romloader_baka_reference, 0};
 static swig_type_info _swigt__p_std__vectorT_muhkuh_plugin_reference_p_t = {"_p_std__vectorT_muhkuh_plugin_reference_p_t", "std::vector< muhkuh_plugin_reference * > *", 0, 0, (void*)&_wrap_class_std_vector_Sl_muhkuh_plugin_reference_Sm__Sg_, 0};
+static swig_type_info _swigt__p_swig_type_info = {"_p_swig_type_info", "swig_type_info *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_ROMLOADER_CHIPTYP,
@@ -3644,7 +3838,9 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_romloader,
   &_swigt__p_romloader_baka,
   &_swigt__p_romloader_baka_provider,
+  &_swigt__p_romloader_baka_reference,
   &_swigt__p_std__vectorT_muhkuh_plugin_reference_p_t,
+  &_swigt__p_swig_type_info,
 };
 
 static swig_cast_info _swigc__p_ROMLOADER_CHIPTYP[] = {  {&_swigt__p_ROMLOADER_CHIPTYP, 0, 0, 0},{0, 0, 0, 0}};
@@ -3652,12 +3848,14 @@ static swig_cast_info _swigc__p_ROMLOADER_ROMCODE[] = {  {&_swigt__p_ROMLOADER_R
 static swig_cast_info _swigc__p_muhkuh_plugin[] = {  {&_swigt__p_muhkuh_plugin, 0, 0, 0},  {&_swigt__p_romloader_baka, _p_romloader_bakaTo_p_muhkuh_plugin, 0, 0},  {&_swigt__p_romloader, _p_romloaderTo_p_muhkuh_plugin, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_muhkuh_plugin_desc[] = {  {&_swigt__p_muhkuh_plugin_desc, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_muhkuh_plugin_provider[] = {  {&_swigt__p_muhkuh_plugin_provider, 0, 0, 0},  {&_swigt__p_romloader_baka_provider, _p_romloader_baka_providerTo_p_muhkuh_plugin_provider, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_muhkuh_plugin_reference[] = {  {&_swigt__p_muhkuh_plugin_reference, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_muhkuh_plugin_reference[] = {  {&_swigt__p_muhkuh_plugin_reference, 0, 0, 0},  {&_swigt__p_romloader_baka_reference, _p_romloader_baka_referenceTo_p_muhkuh_plugin_reference, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_muhkuh_plugin_so_version[] = {  {&_swigt__p_muhkuh_plugin_so_version, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_romloader[] = {  {&_swigt__p_romloader_baka, _p_romloader_bakaTo_p_romloader, 0, 0},  {&_swigt__p_romloader, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_romloader_baka[] = {  {&_swigt__p_romloader_baka, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_romloader_baka_provider[] = {  {&_swigt__p_romloader_baka_provider, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_romloader_baka_reference[] = {  {&_swigt__p_romloader_baka_reference, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_muhkuh_plugin_reference_p_t[] = {  {&_swigt__p_std__vectorT_muhkuh_plugin_reference_p_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_swig_type_info[] = {  {&_swigt__p_swig_type_info, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_ROMLOADER_CHIPTYP,
@@ -3670,7 +3868,9 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_romloader,
   _swigc__p_romloader_baka,
   _swigc__p_romloader_baka_provider,
+  _swigc__p_romloader_baka_reference,
   _swigc__p_std__vectorT_muhkuh_plugin_reference_p_t,
+  _swigc__p_swig_type_info,
 };
 
 
@@ -3974,7 +4174,11 @@ SWIGEXPORT int SWIG_init(lua_State* L)
 
 
 const char* SWIG_LUACODE=
-  "";
+  "\n"
+  "	if not _G.__MUHKUH_PLUGINS then\n"
+  "		_G.__MUHKUH_PLUGINS = {}\n"
+  "	end\n"
+  "	table.insert(_G.__MUHKUH_PLUGINS, romloader_baka.romloader_baka_provider())";
 
 void SWIG_init_user(lua_State* L)
 {

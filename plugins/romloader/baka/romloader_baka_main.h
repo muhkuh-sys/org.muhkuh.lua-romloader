@@ -73,7 +73,7 @@ private:
 class romloader_baka_provider : public muhkuh_plugin_provider
 {
 public:
-	romloader_baka_provider(void);
+	romloader_baka_provider(swig_type_info *ptPluginTypeInfo);
 	~romloader_baka_provider(void);
 
 	int DetectInterfaces(std::vector<muhkuh_plugin_reference*> &vInterfaceList);
@@ -92,6 +92,18 @@ private:
 	BAKA_INSTANCE_CFG_T *m_ptInstanceCfg;
 
 	int m_cfg_iInstances;
+};
+
+/*-----------------------------------*/
+
+class romloader_baka_reference : public muhkuh_plugin_reference
+{
+public:
+	romloader_baka_reference(void);
+	romloader_baka_reference(const char *pcName, const char *pcTyp, bool fIsUsed, romloader_baka_provider *ptProvider);
+	romloader_baka_reference(const romloader_baka_reference *ptCloneMe);
+
+//	virtual romloader_baka *Create(void) const;
 };
 
 /*-----------------------------------*/

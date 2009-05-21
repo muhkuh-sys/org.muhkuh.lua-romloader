@@ -22,9 +22,12 @@
 #include <string.h>
 #include <vector>
 
-
 #ifndef __MUHKUH_PLUGIN_INTERFACE__
 #define __MUHKUH_PLUGIN_INTERFACE__
+
+#ifndef SWIGRUNTIME
+#include "_luaif/swigluarun.h"
+#endif
 
 /*-----------------------------------*/
 
@@ -55,32 +58,6 @@ typedef struct
 	const char *pcPluginId;
 	muhkuh_plugin_so_version tVersion;
 } muhkuh_plugin_desc;
-
-
-/*-----------------------------------*/
-
-
-class muhkuh_plugin_reference
-{
-public:
-	muhkuh_plugin_reference(void);
-	muhkuh_plugin_reference(const char *pcName, const char *pcTyp, bool fIsUsed);
-	muhkuh_plugin_reference(const muhkuh_plugin_reference *ptCloneMe);
-
-	bool IsValid(void) const;
-	const char *GetName(void) const;
-	const char *GetTyp(void) const;
-	bool IsUsed(void) const;
-
-protected:
-	bool m_fIsValid;
-	char *m_pcName;
-	char *m_pcTyp;
-	bool m_fIsUsed;
-
-private:
-	char *clone_string(const char *pcStr, size_t sizMax);
-};
 
 
 /*-----------------------------------*/
@@ -127,6 +104,7 @@ public:
 	~muhkuh_plugin_provider(void);
 
 	const muhkuh_plugin_desc *GetDesc(void) const;
+	swig_type_info *GetTypeInfo(void) const;
 
 	virtual int DetectInterfaces(std::vector<muhkuh_plugin_reference*> &vInterfaceList) = 0;
 	virtual muhkuh_plugin *ClaimInterface(const muhkuh_plugin_reference *ptReference) = 0;
@@ -137,6 +115,38 @@ protected:
 
 
 	muhkuh_plugin_desc m_pt_plugin_desc;
+	swig_type_info *m_ptPluginTypeInfo;
+};
+
+
+/*-----------------------------------*/
+
+
+class muhkuh_plugin_reference
+{
+public:
+	muhkuh_plugin_reference(void);
+	muhkuh_plugin_reference(const char *pcName, const char *pcTyp, bool fIsUsed, muhkuh_plugin_provider *ptProvider);
+	muhkuh_plugin_reference(const muhkuh_plugin_reference *ptCloneMe);
+
+	bool IsValid(void) const;
+	const char *GetName(void) const;
+	const char *GetTyp(void) const;
+	bool IsUsed(void) const;
+
+	muhkuh_plugin *Create(void) const;
+	swig_type_info *GetTypeInfo(void) const;
+
+protected:
+	bool m_fIsValid;
+	char *m_pcName;
+	char *m_pcTyp;
+	char *m_pcCreateFn;
+	bool m_fIsUsed;
+	muhkuh_plugin_provider *m_ptProvider;
+
+private:
+	char *clone_string(const char *pcStr, size_t sizMax);
 };
 
 
