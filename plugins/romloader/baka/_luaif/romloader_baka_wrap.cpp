@@ -2035,7 +2035,7 @@ static int _wrap_muhkuh_plugin_provider_ClaimInterface(lua_State* L) {
   
   result = (muhkuh_plugin *)(arg1)->ClaimInterface((muhkuh_plugin_reference const *)arg2);
   
-  SWIG_NewPointerObj(L,result,((muhkuh_plugin_reference const *)arg1)->GetTypeInfo(),0); SWIG_arg++;
+  SWIG_NewPointerObj(L,result,((muhkuh_plugin_reference const *)arg1)->GetTypeInfo(),1); SWIG_arg++;
   
   return SWIG_arg;
   
@@ -2346,7 +2346,7 @@ static int _wrap_muhkuh_plugin_reference_Create(lua_State* L) {
   
   result = (muhkuh_plugin *)((muhkuh_plugin_reference const *)arg1)->Create();
   
-  SWIG_NewPointerObj(L,result,((muhkuh_plugin_reference const *)arg1)->GetTypeInfo(),0); SWIG_arg++;
+  SWIG_NewPointerObj(L,result,((muhkuh_plugin_reference const *)arg1)->GetTypeInfo(),1); SWIG_arg++;
   
   return SWIG_arg;
   

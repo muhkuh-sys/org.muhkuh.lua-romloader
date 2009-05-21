@@ -12,7 +12,7 @@
 
 /* Include the header file in the lua wrapper.
  */
-%{
+%header %{
 	#include "romloader_baka_main.h"
 %}
 
@@ -37,15 +37,19 @@
 %}
 
 /* This typemap converts the output of the plugin reference's "Create"
- * function from the general "muhkuh_plugin" type to the 
+ * function from the general "muhkuh_plugin" type to the type of this
+ * interface. It transfers the ownership of the object to lua (this is the
+ * last parameter in the call to "SWIG_NewPointerObj").
  */
 %typemap(out) muhkuh_plugin *
 %{
-	SWIG_NewPointerObj(L,result,((muhkuh_plugin_reference const *)arg1)->GetTypeInfo(),0); SWIG_arg++;
+	SWIG_NewPointerObj(L,result,((muhkuh_plugin_reference const *)arg1)->GetTypeInfo(),1); SWIG_arg++;
 %}
 
 /* The plugin provider's functions "ClaimInterface" and "ReleaseInterface"
- * are 
+ * are only used from the C++ side. "ClaimInterface" is called from the
+ * plugin reference's "Create" function and "ReleaseInterface" is called from
+ * the plugin's destructor.
  */
 %ignore romloader_baka_provider::ClaimInterface;
 %ignore romloader_baka_provider::ReleaseInterface;
