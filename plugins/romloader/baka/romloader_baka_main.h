@@ -19,8 +19,6 @@
  ***************************************************************************/
 
 
-#include <vector>
-
 #include "../romloader.h"
 
 #ifndef __BAKA_MAIN_H__
@@ -73,10 +71,10 @@ private:
 class romloader_baka_provider : public muhkuh_plugin_provider
 {
 public:
-	romloader_baka_provider(swig_type_info *pt_romloader_baka_type_info);
+	romloader_baka_provider(swig_type_info *pt_romloader_baka_type_info, swig_type_info *pt_romloader_baka_reference_type_info);
 	~romloader_baka_provider(void);
 
-	int DetectInterfaces(std::vector<muhkuh_plugin_reference*> &vInterfaceList);
+	int DetectInterfaces(lua_State *tLuaStateForTableAccess);
 
 	virtual romloader_baka *ClaimInterface(const muhkuh_plugin_reference *ptReference);
 	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin);

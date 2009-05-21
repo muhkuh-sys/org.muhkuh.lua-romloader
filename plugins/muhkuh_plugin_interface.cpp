@@ -21,7 +21,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <vector>
 
 #include "muhkuh_plugin_interface.h"
 

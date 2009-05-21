@@ -13,25 +13,40 @@ for i,v in ipairs(__MUHKUH_PLUGINS) do
 end
 
 
--- select a provider
-iPluginIdx = 1
-tProvider = __MUHKUH_PLUGINS[iPluginIdx]
-print(string.format("Using plugin %d: %s", iPluginIdx, tProvider:GetID()))
+-- detect all interfaces
+aDetectedInterfaces = {}
+for i,v in ipairs(__MUHKUH_PLUGINS) do
+	local iDetected
+	print(string.format("Detecting interfaces with plugin %s", v:GetID()))
+	iDetected = v:DetectInterfaces(aDetectedInterfaces)
+	print(string.format("Found %d interfaces with plugin %s", iDetected, v:GetID()))
+end
+print(string.format("Found a total of %d interfaces with %d plugins", #aDetectedInterfaces, #__MUHKUH_PLUGINS))
 
 
--- detect the interfaces
-l = romloader_baka.PluginVector()
-i = tProvider:DetectInterfaces(l)
-print("i:    " .. i)
-print("size: " .. l:size())
-
-tPlugin = l[0]:Create()
-print( tPlugin:IsConnected() )
-tPlugin:Connect()
-print( tPlugin:IsConnected() )
-tPlugin:write_data32(0, 0)
-print( romloader_baka.ROMLOADER_CHIPTYP_NETX500 )
-print( tPlugin:GetChiptypName(romloader_baka.ROMLOADER_CHIPTYP_NETX500) )
-tPlugin:Disconnect()
-print( tPlugin:IsConnected() )
-tPlugin = nil
+if #aDetectedInterfaces==0 then
+	print("No interfaces detected, nothing to do...")
+else
+	-- select a list entry
+	iIndex = 1
+	
+	-- create the plugin
+	tPlugin = aDetectedInterfaces[iIndex]:Create()
+	-- check if the plugin is connected (should be not)
+	print( tPlugin:IsConnected() )
+	-- connect the plugin
+	tPlugin:Connect()
+	-- check if the plugin is connected (should be connected now)
+	print( tPlugin:IsConnected() )
+	-- write a 32 bit value
+	tPlugin:write_data32(0, 0)
+	-- access some plugin functions
+	print( romloader_baka.ROMLOADER_CHIPTYP_NETX500 )
+	print( tPlugin:GetChiptypName(romloader_baka.ROMLOADER_CHIPTYP_NETX500) )
+	-- disconnect the plugin
+	tPlugin:Disconnect()
+	-- check if the plugin is disconnected
+	print( tPlugin:IsConnected() )
+	-- free the plugin
+	tPlugin = nil
+end

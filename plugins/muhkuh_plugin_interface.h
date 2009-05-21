@@ -20,7 +20,6 @@
 
 
 #include <string.h>
-#include <vector>
 
 #ifndef __MUHKUH_PLUGIN_INTERFACE__
 #define __MUHKUH_PLUGIN_INTERFACE__
@@ -100,7 +99,7 @@ public:
 	const muhkuh_plugin_version *GetVersion(void) const;
 	swig_type_info *GetTypeInfo(void) const;
 
-	virtual int DetectInterfaces(std::vector<muhkuh_plugin_reference*> &vInterfaceList) = 0;
+	virtual int DetectInterfaces(lua_State *tLuaStateForTableAccess) = 0;
 	virtual muhkuh_plugin *ClaimInterface(const muhkuh_plugin_reference *ptReference) = 0;
 	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin) = 0;
 
@@ -111,6 +110,7 @@ protected:
 	const char *m_pcPluginId;
 	muhkuh_plugin_version m_tVersion;
 	swig_type_info *m_ptPluginTypeInfo;
+	swig_type_info *m_ptReferenceTypeInfo;
 };
 
 

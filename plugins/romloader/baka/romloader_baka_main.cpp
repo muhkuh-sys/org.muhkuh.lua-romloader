@@ -30,7 +30,7 @@
 const char *romloader_baka_provider::m_pcPluginNamePattern = "baka_%d";
 
 
-romloader_baka_provider::romloader_baka_provider(swig_type_info *pt_romloader_baka_type_info)
+romloader_baka_provider::romloader_baka_provider(swig_type_info *pt_romloader_baka_type_info, swig_type_info *pt_romloader_baka_reference_type_info)
  : muhkuh_plugin_provider("romloader_baka")
  , m_ptInstanceCfg(NULL)
  , m_cfg_iInstances(0)
@@ -42,7 +42,7 @@ romloader_baka_provider::romloader_baka_provider(swig_type_info *pt_romloader_ba
 
 	/* get the romloader_baka lua type */
 	m_ptPluginTypeInfo = pt_romloader_baka_type_info;
-	printf("%s(%p): romloader_baka type: %p\n", m_pcPluginId, this, m_ptPluginTypeInfo);
+	m_ptReferenceTypeInfo = pt_romloader_baka_reference_type_info;
 
 	m_cfg_iInstances = 4;
 	m_ptInstanceCfg = new BAKA_INSTANCE_CFG_T[m_cfg_iInstances];
@@ -84,8 +84,9 @@ romloader_baka_provider::~romloader_baka_provider(void)
 }
 
 
-int romloader_baka_provider::DetectInterfaces(std::vector<muhkuh_plugin_reference*> &vInterfaceList)
+int romloader_baka_provider::DetectInterfaces(lua_State *tLuaStateForTableAccess)
 {
+	size_t sizTable;
 	int iInterfaceCnt;
 	romloader_baka_reference *ptRef;
 	bool fIsUsed;
@@ -96,6 +97,10 @@ int romloader_baka_provider::DetectInterfaces(std::vector<muhkuh_plugin_referenc
 	// terminate name buffer
 	acName[sizMaxName-1] = 0;
 
+	// get the size of the table
+	sizTable = lua_objlen(tLuaStateForTableAccess, 2);
+	printf("table has %d elements\n", sizTable);
+
 	// detect all interfaces
 	for(iInterfaceCnt=0; iInterfaceCnt<m_cfg_iInstances; ++iInterfaceCnt)
 	{
@@ -103,7 +108,9 @@ int romloader_baka_provider::DetectInterfaces(std::vector<muhkuh_plugin_referenc
 		fIsUsed = m_ptInstanceCfg[iInterfaceCnt].fIsUsed;
 		ptRef = new romloader_baka_reference(acName, m_pcPluginId, fIsUsed, this);
 
-		vInterfaceList.push_back(ptRef);
+		SWIG_NewPointerObj(tLuaStateForTableAccess, ptRef, m_ptReferenceTypeInfo, 1);
+		sizTable++;
+		lua_rawseti(tLuaStateForTableAccess, 2, sizTable);
 	}
 
 	return iInterfaceCnt;

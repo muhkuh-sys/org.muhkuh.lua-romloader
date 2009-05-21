@@ -7,9 +7,6 @@
 	#error "This module is lua specific. It will not work with other scripting languages!"
 #endif
 
-/* TODO: get rid of vectors and use plain lua tables */
-%include "std_vector.i"
-
 /* Include the header file in the lua wrapper.
  */
 %header %{
@@ -28,12 +25,27 @@
 	table.insert(_G.__MUHKUH_PLUGINS, romloader_baka.romloader_baka_provider())
 }
 
-/* This typemap passes the lua type of the plugin to the provider's
- * constructor.
+/* This typemap passes the lua type of the plugin and the plugin reference to
+ * the provider's constructor.
  */
-%typemap(in, numinputs=0) swig_type_info *pt_romloader_baka_type_info
+%typemap(in, numinputs=0) (swig_type_info *pt_romloader_baka_type_info, swig_type_info *pt_romloader_baka_reference_type_info)
 %{
 	$1 = SWIGTYPE_p_romloader_baka;
+	$2 = SWIGTYPE_p_romloader_baka_reference;
+%}
+
+/* This typemap checks the first argument after the class. It must be a
+ * table. It passes the lua state to the function. This allows the function
+ * to add elements to the table without the overhead of creating and deleting
+ * a C array.
+ */
+%typemap(in) lua_State *tLuaStateForTableAccess
+%{
+	if( lua_istable(L,2)!=1 )
+	{
+		SWIG_fail_arg("Create",2,"table");
+	}
+	$1 = L;
 %}
 
 /* This typemap converts the output of the plugin reference's "Create"
@@ -64,9 +76,3 @@
 %include "../../muhkuh_plugin_interface.h"
 %include "../romloader.h"
 %include "romloader_baka_main.h"
-
-/* TODO: get rid of vectors and use plain lua tables */
-namespace std
-{
-   %template(PluginVector) vector<muhkuh_plugin_reference*>;
-}

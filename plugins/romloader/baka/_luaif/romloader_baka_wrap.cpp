@@ -1487,37 +1487,20 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 
 /* ------------------------------ end luarun.swg  ------------------------------ */
 
-/*  Errors in SWIG */
-#define  SWIG_UnknownError    	   -1 
-#define  SWIG_IOError        	   -2 
-#define  SWIG_RuntimeError   	   -3 
-#define  SWIG_IndexError     	   -4 
-#define  SWIG_TypeError      	   -5 
-#define  SWIG_DivisionByZero 	   -6 
-#define  SWIG_OverflowError  	   -7 
-#define  SWIG_SyntaxError    	   -8 
-#define  SWIG_ValueError     	   -9 
-#define  SWIG_SystemError    	   -10
-#define  SWIG_AttributeError 	   -11
-#define  SWIG_MemoryError    	   -12 
-#define  SWIG_NullReferenceError   -13
-
-
-
 
 /* -------- TYPES TABLE (BEGIN) -------- */
 
 #define SWIGTYPE_p_ROMLOADER_CHIPTYP swig_types[0]
 #define SWIGTYPE_p_ROMLOADER_ROMCODE swig_types[1]
-#define SWIGTYPE_p_muhkuh_plugin swig_types[2]
-#define SWIGTYPE_p_muhkuh_plugin_provider swig_types[3]
-#define SWIGTYPE_p_muhkuh_plugin_reference swig_types[4]
-#define SWIGTYPE_p_muhkuh_plugin_version swig_types[5]
-#define SWIGTYPE_p_romloader swig_types[6]
-#define SWIGTYPE_p_romloader_baka swig_types[7]
-#define SWIGTYPE_p_romloader_baka_provider swig_types[8]
-#define SWIGTYPE_p_romloader_baka_reference swig_types[9]
-#define SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t swig_types[10]
+#define SWIGTYPE_p_lua_State swig_types[2]
+#define SWIGTYPE_p_muhkuh_plugin swig_types[3]
+#define SWIGTYPE_p_muhkuh_plugin_provider swig_types[4]
+#define SWIGTYPE_p_muhkuh_plugin_reference swig_types[5]
+#define SWIGTYPE_p_muhkuh_plugin_version swig_types[6]
+#define SWIGTYPE_p_romloader swig_types[7]
+#define SWIGTYPE_p_romloader_baka swig_types[8]
+#define SWIGTYPE_p_romloader_baka_provider swig_types[9]
+#define SWIGTYPE_p_romloader_baka_reference swig_types[10]
 #define SWIGTYPE_p_swig_type_info swig_types[11]
 static swig_type_info *swig_types[13];
 static swig_module_info swig_module = {swig_types, 12, 0, 0, 0, 0};
@@ -1538,31 +1521,8 @@ typedef struct{} LANGUAGE_OBJ;
 }
 
 
-#include <vector>
-
-
-#include <stdexcept>
-
-
-#define SWIG_exception(a,b)\
-{ lua_pushfstring(L,"%s:%s",#a,b);SWIG_fail; }
-
-
-#include <stdexcept>
-
-
 	#include "romloader_baka_main.h"
 
-SWIGINTERN muhkuh_plugin_reference *std_vector_Sl_muhkuh_plugin_reference_Sm__Sg____getitem__(std::vector< muhkuh_plugin_reference * > *self,unsigned int idx){
-				if (idx>=self->size())
-					throw std::out_of_range("in vector::__getitem__()");
-				return (*self)[idx];
-			}
-SWIGINTERN void std_vector_Sl_muhkuh_plugin_reference_Sm__Sg____setitem__(std::vector< muhkuh_plugin_reference * > *self,unsigned int idx,muhkuh_plugin_reference *val){
-				if (idx>=self->size())
-					throw std::out_of_range("in vector::__setitem__()");
-				(*self)[idx]=val;
-			}
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1986,23 +1946,26 @@ fail:
 static int _wrap_muhkuh_plugin_provider_DetectInterfaces(lua_State* L) {
   int SWIG_arg = 0;
   muhkuh_plugin_provider *arg1 = (muhkuh_plugin_provider *) 0 ;
-  std::vector< muhkuh_plugin_reference * > *arg2 = 0 ;
+  lua_State *arg2 = (lua_State *) 0 ;
   int result;
   
   SWIG_check_num_args("DetectInterfaces",2,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("DetectInterfaces",1,"muhkuh_plugin_provider *");
-  if(!lua_isuserdata(L,2)) SWIG_fail_arg("DetectInterfaces",2,"std::vector< muhkuh_plugin_reference * > &");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_muhkuh_plugin_provider,0))){
     SWIG_fail_ptr("muhkuh_plugin_provider_DetectInterfaces",1,SWIGTYPE_p_muhkuh_plugin_provider);
   }
   
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,0))){
-    SWIG_fail_ptr("muhkuh_plugin_provider_DetectInterfaces",2,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t);
+  /* the second argument on the stack must be a table */
+  if( lua_istable(L,2)!=1 )
+  {
+    SWIG_fail_arg("Create",2,"table");
   }
+  /* set the lua state as the first argument */
+  arg2 = L;
   
-  result = (int)(arg1)->DetectInterfaces(*arg2);
+  result = (int)(arg1)->DetectInterfaces(arg2);
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
   
@@ -2961,13 +2924,15 @@ static swig_lua_class _wrap_class_romloader_baka = { "romloader_baka", &SWIGTYPE
 static int _wrap_new_romloader_baka_provider(lua_State* L) {
   int SWIG_arg = 0;
   swig_type_info *arg1 = (swig_type_info *) 0 ;
+  swig_type_info *arg2 = (swig_type_info *) 0 ;
   romloader_baka_provider *result = 0 ;
   
   
   arg1 = SWIGTYPE_p_romloader_baka;
+  arg2 = SWIGTYPE_p_romloader_baka_reference;
   
   SWIG_check_num_args("romloader_baka_provider",0,0)
-  result = (romloader_baka_provider *)new romloader_baka_provider(arg1);
+  result = (romloader_baka_provider *)new romloader_baka_provider(arg1,arg2);
   SWIG_NewPointerObj(L,result,SWIGTYPE_p_romloader_baka_provider,1); SWIG_arg++; 
   return SWIG_arg;
   
@@ -2982,23 +2947,26 @@ fail:
 static int _wrap_romloader_baka_provider_DetectInterfaces(lua_State* L) {
   int SWIG_arg = 0;
   romloader_baka_provider *arg1 = (romloader_baka_provider *) 0 ;
-  std::vector< muhkuh_plugin_reference * > *arg2 = 0 ;
+  lua_State *arg2 = (lua_State *) 0 ;
   int result;
   
   SWIG_check_num_args("DetectInterfaces",2,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("DetectInterfaces",1,"romloader_baka_provider *");
-  if(!lua_isuserdata(L,2)) SWIG_fail_arg("DetectInterfaces",2,"std::vector< muhkuh_plugin_reference * > &");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader_baka_provider,0))){
     SWIG_fail_ptr("romloader_baka_provider_DetectInterfaces",1,SWIGTYPE_p_romloader_baka_provider);
   }
   
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,0))){
-    SWIG_fail_ptr("romloader_baka_provider_DetectInterfaces",2,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t);
+  /* the second argument on the stack must be a table */
+  if( lua_istable(L,2)!=1 )
+  {
+    SWIG_fail_arg("Create",2,"table");
   }
+  /* set the lua state as the first argument */
+  arg2 = L;
   
-  result = (int)(arg1)->DetectInterfaces(*arg2);
+  result = (int)(arg1)->DetectInterfaces(arg2);
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
   
@@ -3176,449 +3144,6 @@ static swig_lua_class *swig_romloader_baka_reference_bases[] = {0,0};
 static const char *swig_romloader_baka_reference_base_names[] = {"muhkuh_plugin_reference *",0};
 static swig_lua_class _wrap_class_romloader_baka_reference = { "romloader_baka_reference", &SWIGTYPE_p_romloader_baka_reference,_wrap_new_romloader_baka_reference, swig_delete_romloader_baka_reference, swig_romloader_baka_reference_methods, swig_romloader_baka_reference_attributes, swig_romloader_baka_reference_bases, swig_romloader_baka_reference_base_names };
 
-static int _wrap_new_PluginVector__SWIG_0(lua_State* L) {
-  int SWIG_arg = 0;
-  std::vector< muhkuh_plugin_reference * > *result = 0 ;
-  
-  SWIG_check_num_args("std::vector<(p.muhkuh_plugin_reference)>",0,0)
-  result = (std::vector< muhkuh_plugin_reference * > *)new std::vector< muhkuh_plugin_reference * >();
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,1); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_new_PluginVector__SWIG_1(lua_State* L) {
-  int SWIG_arg = 0;
-  unsigned int arg1 ;
-  std::vector< muhkuh_plugin_reference * > *result = 0 ;
-  
-  SWIG_check_num_args("std::vector<(p.muhkuh_plugin_reference)>",1,1)
-  if(!lua_isnumber(L,1)) SWIG_fail_arg("std::vector<(p.muhkuh_plugin_reference)>",1,"unsigned int");
-  arg1 = (unsigned int)lua_tonumber(L, 1);
-  result = (std::vector< muhkuh_plugin_reference * > *)new std::vector< muhkuh_plugin_reference * >(arg1);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,1); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_new_PluginVector__SWIG_2(lua_State* L) {
-  int SWIG_arg = 0;
-  std::vector< muhkuh_plugin_reference * > *arg1 = 0 ;
-  std::vector< muhkuh_plugin_reference * > *result = 0 ;
-  
-  SWIG_check_num_args("std::vector<(p.muhkuh_plugin_reference)>",1,1)
-  if(!lua_isuserdata(L,1)) SWIG_fail_arg("std::vector<(p.muhkuh_plugin_reference)>",1,"std::vector< muhkuh_plugin_reference * > const &");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,0))){
-    SWIG_fail_ptr("new_PluginVector",1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t);
-  }
-  
-  result = (std::vector< muhkuh_plugin_reference * > *)new std::vector< muhkuh_plugin_reference * >((std::vector< muhkuh_plugin_reference * > const &)*arg1);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,1); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_new_PluginVector__SWIG_3(lua_State* L) {
-  int SWIG_arg = 0;
-  unsigned int arg1 ;
-  muhkuh_plugin_reference *arg2 = (muhkuh_plugin_reference *) 0 ;
-  std::vector< muhkuh_plugin_reference * > *result = 0 ;
-  
-  SWIG_check_num_args("std::vector<(p.muhkuh_plugin_reference)>",2,2)
-  if(!lua_isnumber(L,1)) SWIG_fail_arg("std::vector<(p.muhkuh_plugin_reference)>",1,"unsigned int");
-  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("std::vector<(p.muhkuh_plugin_reference)>",2,"muhkuh_plugin_reference *");
-  arg1 = (unsigned int)lua_tonumber(L, 1);
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_muhkuh_plugin_reference,0))){
-    SWIG_fail_ptr("new_PluginVector",2,SWIGTYPE_p_muhkuh_plugin_reference);
-  }
-  
-  result = (std::vector< muhkuh_plugin_reference * > *)new std::vector< muhkuh_plugin_reference * >(arg1,arg2);
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,1); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_new_PluginVector(lua_State* L) {
-  int argc;
-  int argv[3]={
-    1,2,3
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 0) {
-    return _wrap_new_PluginVector__SWIG_0(L);
-  }
-  if (argc == 1) {
-    int _v;
-    {
-      void *ptr;
-      if (lua_isuserdata(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      return _wrap_new_PluginVector__SWIG_2(L);
-    }
-  }
-  if (argc == 1) {
-    int _v;
-    {
-      _v = lua_isnumber(L,argv[0]);
-    }
-    if (_v) {
-      return _wrap_new_PluginVector__SWIG_1(L);
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      _v = lua_isnumber(L,argv[0]);
-    }
-    if (_v) {
-      {
-        void *ptr;
-        if (SWIG_isptrtype(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_muhkuh_plugin_reference, 0)) {
-          _v = 0;
-        } else {
-          _v = 1;
-        }
-      }
-      if (_v) {
-        return _wrap_new_PluginVector__SWIG_3(L);
-      }
-    }
-  }
-  
-  lua_pushstring(L,"Wrong arguments for overloaded function 'new_PluginVector'\n"
-    "  Possible C/C++ prototypes are:\n"
-    "    std::vector< muhkuh_plugin_reference * >()\n"
-    "    std::vector< muhkuh_plugin_reference * >(unsigned int)\n"
-    "    std::vector< muhkuh_plugin_reference * >(std::vector< muhkuh_plugin_reference * > const &)\n"
-    "    std::vector< muhkuh_plugin_reference * >(unsigned int,muhkuh_plugin_reference *)\n");
-  lua_error(L);return 0;
-}
-
-
-static int _wrap_PluginVector_size(lua_State* L) {
-  int SWIG_arg = 0;
-  std::vector< muhkuh_plugin_reference * > *arg1 = (std::vector< muhkuh_plugin_reference * > *) 0 ;
-  unsigned int result;
-  
-  SWIG_check_num_args("size",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("size",1,"std::vector< muhkuh_plugin_reference * > const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,0))){
-    SWIG_fail_ptr("PluginVector_size",1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t);
-  }
-  
-  result = (unsigned int)((std::vector< muhkuh_plugin_reference * > const *)arg1)->size();
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_PluginVector_max_size(lua_State* L) {
-  int SWIG_arg = 0;
-  std::vector< muhkuh_plugin_reference * > *arg1 = (std::vector< muhkuh_plugin_reference * > *) 0 ;
-  unsigned int result;
-  
-  SWIG_check_num_args("max_size",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("max_size",1,"std::vector< muhkuh_plugin_reference * > const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,0))){
-    SWIG_fail_ptr("PluginVector_max_size",1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t);
-  }
-  
-  result = (unsigned int)((std::vector< muhkuh_plugin_reference * > const *)arg1)->max_size();
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_PluginVector_empty(lua_State* L) {
-  int SWIG_arg = 0;
-  std::vector< muhkuh_plugin_reference * > *arg1 = (std::vector< muhkuh_plugin_reference * > *) 0 ;
-  bool result;
-  
-  SWIG_check_num_args("empty",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("empty",1,"std::vector< muhkuh_plugin_reference * > const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,0))){
-    SWIG_fail_ptr("PluginVector_empty",1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t);
-  }
-  
-  result = (bool)((std::vector< muhkuh_plugin_reference * > const *)arg1)->empty();
-  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_PluginVector_clear(lua_State* L) {
-  int SWIG_arg = 0;
-  std::vector< muhkuh_plugin_reference * > *arg1 = (std::vector< muhkuh_plugin_reference * > *) 0 ;
-  
-  SWIG_check_num_args("clear",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("clear",1,"std::vector< muhkuh_plugin_reference * > *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,0))){
-    SWIG_fail_ptr("PluginVector_clear",1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t);
-  }
-  
-  (arg1)->clear();
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_PluginVector_push_back(lua_State* L) {
-  int SWIG_arg = 0;
-  std::vector< muhkuh_plugin_reference * > *arg1 = (std::vector< muhkuh_plugin_reference * > *) 0 ;
-  muhkuh_plugin_reference *arg2 = (muhkuh_plugin_reference *) 0 ;
-  
-  SWIG_check_num_args("push_back",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("push_back",1,"std::vector< muhkuh_plugin_reference * > *");
-  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("push_back",2,"muhkuh_plugin_reference *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,0))){
-    SWIG_fail_ptr("PluginVector_push_back",1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t);
-  }
-  
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_muhkuh_plugin_reference,0))){
-    SWIG_fail_ptr("PluginVector_push_back",2,SWIGTYPE_p_muhkuh_plugin_reference);
-  }
-  
-  (arg1)->push_back(arg2);
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_PluginVector_pop_back(lua_State* L) {
-  int SWIG_arg = 0;
-  std::vector< muhkuh_plugin_reference * > *arg1 = (std::vector< muhkuh_plugin_reference * > *) 0 ;
-  
-  SWIG_check_num_args("pop_back",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("pop_back",1,"std::vector< muhkuh_plugin_reference * > *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,0))){
-    SWIG_fail_ptr("PluginVector_pop_back",1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t);
-  }
-  
-  (arg1)->pop_back();
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_PluginVector_front(lua_State* L) {
-  int SWIG_arg = 0;
-  std::vector< muhkuh_plugin_reference * > *arg1 = (std::vector< muhkuh_plugin_reference * > *) 0 ;
-  muhkuh_plugin_reference *result = 0 ;
-  
-  SWIG_check_num_args("front",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("front",1,"std::vector< muhkuh_plugin_reference * > const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,0))){
-    SWIG_fail_ptr("PluginVector_front",1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t);
-  }
-  
-  result = (muhkuh_plugin_reference *)((std::vector< muhkuh_plugin_reference * > const *)arg1)->front();
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_muhkuh_plugin_reference,0); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_PluginVector_back(lua_State* L) {
-  int SWIG_arg = 0;
-  std::vector< muhkuh_plugin_reference * > *arg1 = (std::vector< muhkuh_plugin_reference * > *) 0 ;
-  muhkuh_plugin_reference *result = 0 ;
-  
-  SWIG_check_num_args("back",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("back",1,"std::vector< muhkuh_plugin_reference * > const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,0))){
-    SWIG_fail_ptr("PluginVector_back",1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t);
-  }
-  
-  result = (muhkuh_plugin_reference *)((std::vector< muhkuh_plugin_reference * > const *)arg1)->back();
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_muhkuh_plugin_reference,0); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_PluginVector___getitem(lua_State* L) {
-  int SWIG_arg = 0;
-  std::vector< muhkuh_plugin_reference * > *arg1 = (std::vector< muhkuh_plugin_reference * > *) 0 ;
-  unsigned int arg2 ;
-  muhkuh_plugin_reference *result = 0 ;
-  
-  SWIG_check_num_args("__getitem__",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("__getitem__",1,"std::vector< muhkuh_plugin_reference * > *");
-  if(!lua_isnumber(L,2)) SWIG_fail_arg("__getitem__",2,"unsigned int");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,0))){
-    SWIG_fail_ptr("PluginVector___getitem",1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t);
-  }
-  
-  arg2 = (unsigned int)lua_tonumber(L, 2);
-  try {
-    result = (muhkuh_plugin_reference *)std_vector_Sl_muhkuh_plugin_reference_Sm__Sg____getitem__(arg1,arg2);
-  }
-  catch(std::out_of_range &_e) {
-    SWIG_exception(SWIG_IndexError, (&_e)->what());
-  }
-  
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_muhkuh_plugin_reference,0); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_PluginVector___setitem(lua_State* L) {
-  int SWIG_arg = 0;
-  std::vector< muhkuh_plugin_reference * > *arg1 = (std::vector< muhkuh_plugin_reference * > *) 0 ;
-  unsigned int arg2 ;
-  muhkuh_plugin_reference *arg3 = (muhkuh_plugin_reference *) 0 ;
-  
-  SWIG_check_num_args("__setitem__",3,3)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("__setitem__",1,"std::vector< muhkuh_plugin_reference * > *");
-  if(!lua_isnumber(L,2)) SWIG_fail_arg("__setitem__",2,"unsigned int");
-  if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("__setitem__",3,"muhkuh_plugin_reference *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,0))){
-    SWIG_fail_ptr("PluginVector___setitem",1,SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t);
-  }
-  
-  arg2 = (unsigned int)lua_tonumber(L, 2);
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,3,(void**)&arg3,SWIGTYPE_p_muhkuh_plugin_reference,0))){
-    SWIG_fail_ptr("PluginVector___setitem",3,SWIGTYPE_p_muhkuh_plugin_reference);
-  }
-  
-  try {
-    std_vector_Sl_muhkuh_plugin_reference_Sm__Sg____setitem__(arg1,arg2,arg3);
-  }
-  catch(std::out_of_range &_e) {
-    SWIG_exception(SWIG_IndexError, (&_e)->what());
-  }
-  
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static void swig_delete_PluginVector(void *obj) {
-std::vector< muhkuh_plugin_reference * > *arg1 = (std::vector< muhkuh_plugin_reference * > *) obj;
-delete arg1;
-}
-static swig_lua_method swig_std_vector_Sl_muhkuh_plugin_reference_Sm__Sg__methods[] = {
-    {"size", _wrap_PluginVector_size}, 
-    {"max_size", _wrap_PluginVector_max_size}, 
-    {"empty", _wrap_PluginVector_empty}, 
-    {"clear", _wrap_PluginVector_clear}, 
-    {"push_back", _wrap_PluginVector_push_back}, 
-    {"pop_back", _wrap_PluginVector_pop_back}, 
-    {"front", _wrap_PluginVector_front}, 
-    {"back", _wrap_PluginVector_back}, 
-    {"__getitem", _wrap_PluginVector___getitem}, 
-    {"__setitem", _wrap_PluginVector___setitem}, 
-    {0,0}
-};
-static swig_lua_attribute swig_std_vector_Sl_muhkuh_plugin_reference_Sm__Sg__attributes[] = {
-    {0,0,0}
-};
-static swig_lua_class *swig_std_vector_Sl_muhkuh_plugin_reference_Sm__Sg__bases[] = {0};
-static const char *swig_std_vector_Sl_muhkuh_plugin_reference_Sm__Sg__base_names[] = {0};
-static swig_lua_class _wrap_class_std_vector_Sl_muhkuh_plugin_reference_Sm__Sg_ = { "PluginVector", &SWIGTYPE_p_std__vectorT_muhkuh_plugin_reference_p_t,_wrap_new_PluginVector, swig_delete_PluginVector, swig_std_vector_Sl_muhkuh_plugin_reference_Sm__Sg__methods, swig_std_vector_Sl_muhkuh_plugin_reference_Sm__Sg__attributes, swig_std_vector_Sl_muhkuh_plugin_reference_Sm__Sg__bases, swig_std_vector_Sl_muhkuh_plugin_reference_Sm__Sg__base_names };
-
 #ifdef __cplusplus
 }
 #endif
@@ -3662,6 +3187,7 @@ static void *_p_romloader_baka_referenceTo_p_muhkuh_plugin_reference(void *x, in
 }
 static swig_type_info _swigt__p_ROMLOADER_CHIPTYP = {"_p_ROMLOADER_CHIPTYP", "enum ROMLOADER_CHIPTYP *|ROMLOADER_CHIPTYP *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_ROMLOADER_ROMCODE = {"_p_ROMLOADER_ROMCODE", "enum ROMLOADER_ROMCODE *|ROMLOADER_ROMCODE *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_lua_State = {"_p_lua_State", "lua_State *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_muhkuh_plugin = {"_p_muhkuh_plugin", "muhkuh_plugin *", 0, 0, (void*)&_wrap_class_muhkuh_plugin, 0};
 static swig_type_info _swigt__p_muhkuh_plugin_provider = {"_p_muhkuh_plugin_provider", "muhkuh_plugin_provider *", 0, 0, (void*)&_wrap_class_muhkuh_plugin_provider, 0};
 static swig_type_info _swigt__p_muhkuh_plugin_reference = {"_p_muhkuh_plugin_reference", "muhkuh_plugin_reference *", 0, 0, (void*)&_wrap_class_muhkuh_plugin_reference, 0};
@@ -3670,12 +3196,12 @@ static swig_type_info _swigt__p_romloader = {"_p_romloader", "romloader *", 0, 0
 static swig_type_info _swigt__p_romloader_baka = {"_p_romloader_baka", "romloader_baka *", 0, 0, (void*)&_wrap_class_romloader_baka, 0};
 static swig_type_info _swigt__p_romloader_baka_provider = {"_p_romloader_baka_provider", "romloader_baka_provider *", 0, 0, (void*)&_wrap_class_romloader_baka_provider, 0};
 static swig_type_info _swigt__p_romloader_baka_reference = {"_p_romloader_baka_reference", "romloader_baka_reference *", 0, 0, (void*)&_wrap_class_romloader_baka_reference, 0};
-static swig_type_info _swigt__p_std__vectorT_muhkuh_plugin_reference_p_t = {"_p_std__vectorT_muhkuh_plugin_reference_p_t", "std::vector< muhkuh_plugin_reference * > *", 0, 0, (void*)&_wrap_class_std_vector_Sl_muhkuh_plugin_reference_Sm__Sg_, 0};
 static swig_type_info _swigt__p_swig_type_info = {"_p_swig_type_info", "swig_type_info *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_ROMLOADER_CHIPTYP,
   &_swigt__p_ROMLOADER_ROMCODE,
+  &_swigt__p_lua_State,
   &_swigt__p_muhkuh_plugin,
   &_swigt__p_muhkuh_plugin_provider,
   &_swigt__p_muhkuh_plugin_reference,
@@ -3684,12 +3210,12 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_romloader_baka,
   &_swigt__p_romloader_baka_provider,
   &_swigt__p_romloader_baka_reference,
-  &_swigt__p_std__vectorT_muhkuh_plugin_reference_p_t,
   &_swigt__p_swig_type_info,
 };
 
 static swig_cast_info _swigc__p_ROMLOADER_CHIPTYP[] = {  {&_swigt__p_ROMLOADER_CHIPTYP, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_ROMLOADER_ROMCODE[] = {  {&_swigt__p_ROMLOADER_ROMCODE, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_lua_State[] = {  {&_swigt__p_lua_State, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_muhkuh_plugin[] = {  {&_swigt__p_muhkuh_plugin, 0, 0, 0},  {&_swigt__p_romloader_baka, _p_romloader_bakaTo_p_muhkuh_plugin, 0, 0},  {&_swigt__p_romloader, _p_romloaderTo_p_muhkuh_plugin, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_muhkuh_plugin_provider[] = {  {&_swigt__p_muhkuh_plugin_provider, 0, 0, 0},  {&_swigt__p_romloader_baka_provider, _p_romloader_baka_providerTo_p_muhkuh_plugin_provider, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_muhkuh_plugin_reference[] = {  {&_swigt__p_muhkuh_plugin_reference, 0, 0, 0},  {&_swigt__p_romloader_baka_reference, _p_romloader_baka_referenceTo_p_muhkuh_plugin_reference, 0, 0},{0, 0, 0, 0}};
@@ -3698,12 +3224,12 @@ static swig_cast_info _swigc__p_romloader[] = {  {&_swigt__p_romloader_baka, _p_
 static swig_cast_info _swigc__p_romloader_baka[] = {  {&_swigt__p_romloader_baka, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_romloader_baka_provider[] = {  {&_swigt__p_romloader_baka_provider, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_romloader_baka_reference[] = {  {&_swigt__p_romloader_baka_reference, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__vectorT_muhkuh_plugin_reference_p_t[] = {  {&_swigt__p_std__vectorT_muhkuh_plugin_reference_p_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_swig_type_info[] = {  {&_swigt__p_swig_type_info, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_ROMLOADER_CHIPTYP,
   _swigc__p_ROMLOADER_ROMCODE,
+  _swigc__p_lua_State,
   _swigc__p_muhkuh_plugin,
   _swigc__p_muhkuh_plugin_provider,
   _swigc__p_muhkuh_plugin_reference,
@@ -3712,7 +3238,6 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_romloader_baka,
   _swigc__p_romloader_baka_provider,
   _swigc__p_romloader_baka_reference,
-  _swigc__p_std__vectorT_muhkuh_plugin_reference_p_t,
   _swigc__p_swig_type_info,
 };
 
