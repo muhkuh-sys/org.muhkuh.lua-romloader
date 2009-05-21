@@ -1,31 +1,31 @@
 
 require("romloader_baka")
 
-t = romloader_baka.romloader_baka_provider()
 
--- print the description
-local desc = t:GetDesc()
---print("name:          " .. desc.pcPluginName)
-print("id:            " .. desc.pcPluginId)
-print("version major: " .. desc.tVersion.uiVersionMajor)
-print("version minor: " .. desc.tVersion.uiVersionMinor)
-print("version sub:   " .. desc.tVersion.uiVersionSub)
-
--- detect the interfaces
-l = romloader_baka.PluginVector()
-i = t:DetectInterfaces(l)
-print("i:    " .. i)
-print("size: " .. l:size())
-
--- show all interfaces
-for cnt=0,l:size()-1 do
-	print("name: " .. l[cnt]:GetName())
+-- show all providers
+print("Available plugins:")
+for i,v in ipairs(__MUHKUH_PLUGINS) do
+	local strID
+	local tVer
+	strID = v:GetID()
+	tVer = v:GetVersion()
+	print(string.format("%d: %s, v%d.%d.%d", i, strID, tVer.uiVersionMajor, tVer.uiVersionMinor, tVer.uiVersionSub))
 end
 
 
--- create the first interface
-p = t:ClaimInterface(l[0])
---p = romloader_baka.romloader_baka(l[0]:GetName(), l[0]:GetTyp(), t)
+-- select a provider
+iPluginIdx = 1
+tProvider = __MUHKUH_PLUGINS[iPluginIdx]
+print(string.format("Using plugin %d: %s", iPluginIdx, tProvider:GetID()))
+
+
+-- detect the interfaces
+l = romloader_baka.PluginVector()
+i = tProvider:DetectInterfaces(l)
+print("i:    " .. i)
+print("size: " .. l:size())
+
+p = l[0]:Create()
 print( p:IsConnected() )
 p:Connect()
 print( p:IsConnected() )
