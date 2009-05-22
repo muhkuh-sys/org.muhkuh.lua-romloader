@@ -409,7 +409,6 @@ int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParamet
 
 void romloader_baka::hexdump(const char *pcData, unsigned long ulSize, unsigned long ulNetxAddress)
 {
-	unsigned int uiIdx;
 	const char *pcDumpCnt, *pcDumpEnd;
 	unsigned long ulAddressCnt;
 	unsigned long ulSkipOffset;
@@ -433,7 +432,7 @@ void romloader_baka::hexdump(const char *pcData, unsigned long ulSize, unsigned 
 		}
 
 		// start a line in the dump with the address
-		printf("%08X: ", ulAddressCnt);
+		printf("%08lX: ", ulAddressCnt);
 		// append the data bytes
 		sizChunkCnt = sizChunkSize;
 		while( sizChunkCnt!=0 )
@@ -452,7 +451,7 @@ void romloader_baka::hexdump(const char *pcData, unsigned long ulSize, unsigned 
 			ulSkipOffset -= 0x30;
 			pcDumpCnt = pcData + ulSkipOffset;
 			ulAddressCnt = ulNetxAddress + ulSkipOffset;
-			printf("... (skipping 0x%08X bytes)", ulSkipOffset-0x30);
+			printf("... (skipping 0x%08lX bytes)", ulSkipOffset-0x30);
 		}
 	}
 }

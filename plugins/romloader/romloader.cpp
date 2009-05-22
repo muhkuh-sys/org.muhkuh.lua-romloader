@@ -118,7 +118,7 @@ bool romloader::detect_chiptyp(lua_State *ptClientData)
 
 	// read the reset vector at 0x00000000
 	ulResetVector = read_data32(ptClientData, 0);
-	printf("%s(%p): reset vector: 0x%08X", m_pcName, this, ulResetVector);
+	printf("%s(%p): reset vector: 0x%08lX", m_pcName, this, ulResetVector);
 
 	// match the reset vector to all known chipfamilies
 	ptRstCnt = atResIds;
@@ -131,7 +131,7 @@ bool romloader::detect_chiptyp(lua_State *ptClientData)
 			ulVersionAddr = ptRstCnt->ulVersionAddress;
 			// read version address
 			ulVersion = read_data32(ptClientData, ulVersionAddr);
-			printf("%s(%p): version value: 0x%08X", m_pcName, this, ulVersion);
+			printf("%s(%p): version value: 0x%08lX", m_pcName, this, ulVersion);
 			if( ptRstCnt->ulVersionValue==ulVersion )
 			{
 				// found chip!
@@ -259,6 +259,7 @@ bool romloader::callback_common(SWIGLUA_REF *ptLuaFn, long lCallbackUserData, in
 {
 	bool fStillRunning;
 	int iResult;
+	double dResult;
 	int iLuaType;
 	const char *pcErrMsg;
 	const char *pcErrDetails;
@@ -301,13 +302,14 @@ bool romloader::callback_common(SWIGLUA_REF *ptLuaFn, long lCallbackUserData, in
 			{
 				if( iLuaType==LUA_TNUMBER )
 				{
-					iResult = lua_tonumber(ptLuaFn->L, -1);
+					dResult = lua_tonumber(ptLuaFn->L, -1);
+					fStillRunning = (dResult!=0);
 				}
 				else
 				{
 					iResult = lua_toboolean(ptLuaFn->L, -1);
+					fStillRunning = (iResult!=0);
 				}
-				fStillRunning = (iResult!=0);
 			}
 		}
 		// return old stack top
