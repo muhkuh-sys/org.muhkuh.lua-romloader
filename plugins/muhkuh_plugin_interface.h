@@ -147,9 +147,8 @@ protected:
 	bool m_fIsValid;
 	char *m_pcName;
 	char *m_pcTyp;
-	char *m_pcCreateFn;
-	bool m_fIsUsed;
 	muhkuh_plugin_provider *m_ptProvider;
+	bool m_fIsUsed;
 
 private:
 	char *clone_string(const char *pcStr, size_t sizMax);

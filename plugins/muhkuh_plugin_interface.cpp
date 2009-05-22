@@ -122,18 +122,20 @@ char *muhkuh_plugin::clone_string(const char *pcStr, size_t sizMax)
 
 muhkuh_plugin_reference::muhkuh_plugin_reference(void)
  : m_fIsValid(false)
- , m_fIsUsed(false)
  , m_pcName(NULL)
  , m_pcTyp(NULL)
  , m_ptProvider(NULL)
+ , m_fIsUsed(false)
 {
 }
 
 
 muhkuh_plugin_reference::muhkuh_plugin_reference(const char *pcName, const char *pcTyp, bool fIsUsed, muhkuh_plugin_provider *ptProvider)
  : m_fIsValid(true)
- , m_fIsUsed(fIsUsed)
+ , m_pcName(NULL)
+ , m_pcTyp(NULL)
  , m_ptProvider(ptProvider)
+ , m_fIsUsed(fIsUsed)
 {
 	m_pcName = clone_string(pcName, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 	m_pcTyp = clone_string(pcTyp, SIZ_MAX_MUHKUH_PLUGIN_STRING);
@@ -142,8 +144,10 @@ muhkuh_plugin_reference::muhkuh_plugin_reference(const char *pcName, const char 
 
 muhkuh_plugin_reference::muhkuh_plugin_reference(const muhkuh_plugin_reference *ptCloneMe)
  : m_fIsValid(true)
- , m_fIsUsed(ptCloneMe->m_fIsUsed)
+ , m_pcName(NULL)
+ , m_pcTyp(NULL)
  , m_ptProvider(ptCloneMe->m_ptProvider)
+ , m_fIsUsed(ptCloneMe->m_fIsUsed)
 {
 	m_pcName = clone_string(ptCloneMe->m_pcName, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 	m_pcTyp = clone_string(ptCloneMe->m_pcTyp, SIZ_MAX_MUHKUH_PLUGIN_STRING);
