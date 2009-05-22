@@ -88,7 +88,7 @@
 
 %typemap(in) (const char *pcInputData, unsigned long ulInputData)
 {
-	size_t sizInputData = $2;
+	size_t sizInputData;
 	$1 = (char*)lua_tolstring(L, $argnum, &sizInputData);
 	$2 = (unsigned long)sizInputData;
 }

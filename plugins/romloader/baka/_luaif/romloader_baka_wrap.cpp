@@ -2882,7 +2882,7 @@ static int _wrap_romloader_write_image(lua_State* L) {
   
   arg2 = (unsigned long)lua_tonumber(L, 2);
   {
-    size_t sizInputData = arg4;
+    size_t sizInputData;
     arg3 = (char*)lua_tolstring(L, 3, &sizInputData);
     arg4 = (unsigned long)sizInputData;
   }
@@ -3374,7 +3374,7 @@ static int _wrap_romloader_baka_write_image(lua_State* L) {
   
   arg2 = (unsigned long)lua_tonumber(L, 2);
   {
-    size_t sizInputData = arg4;
+    size_t sizInputData;
     arg3 = (char*)lua_tolstring(L, 3, &sizInputData);
     arg4 = (unsigned long)sizInputData;
   }
