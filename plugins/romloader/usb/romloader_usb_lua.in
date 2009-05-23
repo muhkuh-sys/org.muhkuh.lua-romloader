@@ -1,7 +1,0 @@
-
-%include "../romloader_usb_main.h"
-%include "../../romloader.h"
-
-#include "../romloader_lua.i"
-
-%function %gc romloader *romloader_usb_create(voidptr_long pvHandle)
