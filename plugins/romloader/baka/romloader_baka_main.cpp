@@ -211,41 +211,6 @@ bool romloader_baka_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 	return fOk;
 }
 
-#if 0
-static void romloader_baka_close_instance(void *pvHandle)
-{
-	unsigned int uiIdx;
-	wxString strMsg;
-	bool fIsUsed;
-
-
-	/* check the handle */
-	uiIdx = (unsigned int)pvHandle;
-	if( uiIdx>=uiInstances )
-	{
-		strMsg.Printf(wxT("romloader_baka_close_instance: handle %p is no valid plugin handle"), pvHandle);
-		wxLogError(strMsg);
-	}
-	else
-	{
-		/* is the instance really used? */
-		fIsUsed = atInstanceCfg[uiIdx].fIsUsed;
-		if( fIsUsed==false )
-		{
-			strMsg.Printf(wxT("romloader_baka_close_instance: plugin instance %p is not in use"), pvHandle);
-			wxLogError(strMsg);
-		}
-		else
-		{
-			strMsg.Printf(wxT("baka %d: close"), uiIdx);
-			wxLogMessage(strMsg);
-			/* free the instance */
-			atInstanceCfg[uiIdx].fIsUsed = false;
-		}
-	}
-}
-#endif
-
 /*-------------------------------------*/
 
 romloader_baka::romloader_baka(const char *pcName, const char *pcTyp, romloader_baka_provider *ptProvider)
@@ -382,30 +347,12 @@ void romloader_baka::write_image(unsigned long ulNetxAddress, const char *pcInpu
 }
 
 
-#if 0
 /* call routine */
-int fn_call(void *pvHandle, unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
+void romloader_baka::call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
-	unsigned int uiIdx;
-	wxString strMsg;
-
-
-	/* check the handle */
-	uiIdx = (unsigned int)pvHandle;
-	if( uiIdx>=uiInstances )
-	{
-		strMsg.Printf(wxT("romloader_baka_fn_call: handle %p is no valid plugin handle"), pvHandle);
-		wxLogError(strMsg);
-		return -1;
-	}
-	else
-	{
-		strMsg.Printf(wxT("baka %d: call 0x%08lx with param 0x%08lx"), uiIdx, ulNetxAddress, ulParameterR0);
-		wxLogMessage(strMsg);
-		return 0;
-	}
+	printf("%s(%p): call(0x%08lx, 0x%08lx)\n", m_pcName, this, ulNetxAddress, ulParameterR0);
 }
-#endif
+
 
 void romloader_baka::hexdump(const char *pcData, unsigned long ulSize, unsigned long ulNetxAddress)
 {

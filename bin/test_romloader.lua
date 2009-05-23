@@ -89,6 +89,8 @@ else
 	strData = get_rnd_data(128)
 	hexdump(strData,16)
 	tPlugin:write_image(0, strData, callback, 1)
+	-- call routine
+	tPlugin:call(0x8000, 0x12345678, callback, 2)
 	-- access some plugin functions
 	print( romloader_baka.ROMLOADER_CHIPTYP_NETX500 )
 	print( tPlugin:GetChiptypName(romloader_baka.ROMLOADER_CHIPTYP_NETX500) )

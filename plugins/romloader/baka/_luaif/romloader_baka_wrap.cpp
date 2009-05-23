@@ -2900,6 +2900,40 @@ fail:
 }
 
 
+static int _wrap_romloader_call(lua_State* L) {
+  int SWIG_arg = 0;
+  romloader *arg1 = (romloader *) 0 ;
+  unsigned long arg2 ;
+  unsigned long arg3 ;
+  SWIGLUA_REF arg4 ;
+  long arg5 ;
+  
+  SWIG_check_num_args("call",5,5)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("call",1,"romloader *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("call",2,"unsigned long");
+  if(!lua_isnumber(L,3)) SWIG_fail_arg("call",3,"unsigned long");
+  if(!lua_isnumber(L,5)) SWIG_fail_arg("call",5,"long");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader,0))){
+    SWIG_fail_ptr("romloader_call",1,SWIGTYPE_p_romloader);
+  }
+  
+  arg2 = (unsigned long)lua_tonumber(L, 2);
+  arg3 = (unsigned long)lua_tonumber(L, 3);
+  swiglua_ref_set(&arg4,L,4); 
+  arg5 = (long)lua_tonumber(L, 5);
+  (arg1)->call(arg2,arg3,arg4,arg5);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_romloader_GetChiptyp(lua_State* L) {
   int SWIG_arg = 0;
   romloader *arg1 = (romloader *) 0 ;
@@ -3011,6 +3045,7 @@ static swig_lua_method swig_romloader_methods[] = {
     {"write_data16", _wrap_romloader_write_data16}, 
     {"write_data32", _wrap_romloader_write_data32}, 
     {"write_image", _wrap_romloader_write_image}, 
+    {"call", _wrap_romloader_call}, 
     {"GetChiptyp", _wrap_romloader_GetChiptyp}, 
     {"GetChiptypName", _wrap_romloader_GetChiptypName}, 
     {"GetRomcode", _wrap_romloader_GetRomcode}, 
@@ -3392,6 +3427,40 @@ fail:
 }
 
 
+static int _wrap_romloader_baka_call(lua_State* L) {
+  int SWIG_arg = 0;
+  romloader_baka *arg1 = (romloader_baka *) 0 ;
+  unsigned long arg2 ;
+  unsigned long arg3 ;
+  SWIGLUA_REF arg4 ;
+  long arg5 ;
+  
+  SWIG_check_num_args("call",5,5)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("call",1,"romloader_baka *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("call",2,"unsigned long");
+  if(!lua_isnumber(L,3)) SWIG_fail_arg("call",3,"unsigned long");
+  if(!lua_isnumber(L,5)) SWIG_fail_arg("call",5,"long");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader_baka,0))){
+    SWIG_fail_ptr("romloader_baka_call",1,SWIGTYPE_p_romloader_baka);
+  }
+  
+  arg2 = (unsigned long)lua_tonumber(L, 2);
+  arg3 = (unsigned long)lua_tonumber(L, 3);
+  swiglua_ref_set(&arg4,L,4); 
+  arg5 = (long)lua_tonumber(L, 5);
+  (arg1)->call(arg2,arg3,arg4,arg5);
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static void swig_delete_romloader_baka(void *obj) {
 romloader_baka *arg1 = (romloader_baka *) obj;
 delete arg1;
@@ -3407,6 +3476,7 @@ static swig_lua_method swig_romloader_baka_methods[] = {
     {"write_data16", _wrap_romloader_baka_write_data16}, 
     {"write_data32", _wrap_romloader_baka_write_data32}, 
     {"write_image", _wrap_romloader_baka_write_image}, 
+    {"call", _wrap_romloader_baka_call}, 
     {0,0}
 };
 static swig_lua_attribute swig_romloader_baka_attributes[] = {

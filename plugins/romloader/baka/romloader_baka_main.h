@@ -61,7 +61,7 @@ public:
 	virtual void write_image(unsigned long ulNetxAddress, const char *pcInputData, unsigned long ulInputData, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 
 	// call routine
-//	virtual void call(lua_State *ptClientData, double dNetxAddress, double dParameterR0, int iLuaCallbackTag, void *pvCallbackUserData);
+	virtual void call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 
 private:
 	void hexdump(const char *pcData, unsigned long ulSize, unsigned long ulNetxAddress);
