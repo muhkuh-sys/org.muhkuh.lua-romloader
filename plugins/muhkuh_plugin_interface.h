@@ -39,6 +39,8 @@ void swiglua_ref_get(SWIGLUA_REF* pref);
 
 /*-----------------------------------*/
 
+#define MUHKUH_PLUGIN_PUSH_ERROR(L,...) { lua_pushfstring(L,__VA_ARGS__); }
+#define MUHKUH_PLUGIN_EXIT_ERROR(L) { lua_error(L); }
 #define MUHKUH_PLUGIN_ERROR(L,...) { lua_pushfstring(L,__VA_ARGS__); lua_error(L); }
 
 #define SIZ_MAX_MUHKUH_PLUGIN_STRING 256
