@@ -19,6 +19,7 @@
 		<headers>
 			plugins/romloader/romloader.h
 			plugins/romloader/baka/romloader_baka_main.h
+			plugins/romloader/baka/_luaif/swigluarun.h
 		</headers>
 	</module>
 </makefile>

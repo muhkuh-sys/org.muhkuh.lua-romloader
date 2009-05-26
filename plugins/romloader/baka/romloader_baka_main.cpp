@@ -424,7 +424,5 @@ romloader_baka_reference::romloader_baka_reference(const romloader_baka_referenc
 }
 
 
-
-
 /*-------------------------------------*/
 
