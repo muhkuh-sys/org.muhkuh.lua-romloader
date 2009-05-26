@@ -19,115 +19,92 @@
  ***************************************************************************/
 
 
-#include <vector>
 #include <libusb-1.0/libusb.h>
 
 #include "../romloader.h"
 
-#ifndef __BOOTLOADER_USB_MAIN_H__
-#define __BOOTLOADER_USB_MAIN_H__
+#ifndef __ROMLOADER_USB_MAIN_H__
+#define __ROMLOADER_USB_MAIN_H__
 
 /*-----------------------------------*/
 
-extern "C"
-{
-	WXEXPORT int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId);
-	WXEXPORT int fn_init_lua(wxLuaState *ptLuaState);
-	WXEXPORT int fn_leave(void);
-	WXEXPORT const muhkuh_plugin_desc *fn_get_desc(void);
-	WXEXPORT int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList);
-
-	WXEXPORT romloader *romloader_usb_create(void *pvHandle);
-}
+class romloader_usb_provider;
 
 /*-----------------------------------*/
-
-typedef void (*romloader_usb_plugin_fn_close_instance)(wxString &strInterface);
 
 class romloader_usb : public romloader
 {
 public:
-	romloader_usb(wxString strName, wxString strTyp, const romloader_functioninterface *ptFn, unsigned long ulDeviceId, romloader_usb_plugin_fn_close_instance fn_close, wxLuaState *ptLuaState);
+	romloader_usb(const char *pcName, const char *pcTyp, romloader_usb_provider *ptProvider, libusb_device *ptUsbDevice);
 	~romloader_usb(void);
 
 // *** lua interface start ***
 	// open the connection to the device
-	virtual void connect(void);
+	virtual void Connect(lua_State *ptClientData);
 	// close the connection to the device
-	virtual void disconnect(void);
-	// returns the connection state of the device
-	virtual bool is_connected(void) const;
+	virtual void Disconnect(lua_State *ptClientData);
 
 	// read a byte (8bit) from the netx to the pc
-	virtual double read_data08(double dNetxAddress);
+	virtual unsigned char read_data08(lua_State *ptClientData, unsigned long ulNetxAddress);
 	// read a word (16bit) from the netx to the pc
-	virtual double read_data16(double dNetxAddress);
+	virtual unsigned short read_data16(lua_State *ptClientData, unsigned long ulNetxAddress);
 	// read a long (32bit) from the netx to the pc
-	virtual double read_data32(double dNetxAddress);
+	virtual unsigned long read_data32(lua_State *ptClientData, unsigned long ulNetxAddress);
 	// read a byte array from the netx to the pc
-	virtual wxString read_image(double dNetxAddress, double dSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+	virtual void read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcOutputData, unsigned long *pulOutputData, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 
 	// write a byte (8bit) from the pc to the netx
-	virtual void write_data08(double dNetxAddress, double dData);
+	virtual void write_data08(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned char ucData);
 	// write a word (16bit) from the pc to the netx
-	virtual void write_data16(double dNetxAddress, double dData);
+	virtual void write_data16(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned short usData);
 	// write a long (32bit) from the pc to the netx
-	virtual void write_data32(double dNetxAddress, double dData);
+	virtual void write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData);
 	// write a byte array from the pc to the netx
-	virtual void write_image(double dNetxAddress, wxString strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+	virtual void write_image(unsigned long ulNetxAddress, const char *pcInputData, unsigned long ulInputData, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 
 	// call routine
-	virtual void call(double dNetxAddress, double dParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+	virtual void call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 // *** lua interface end ***
 
+private:
 	typedef struct
 	{
-		libusb_error eErrNo;
-		const char *pcErrMsg;
-	} LIBUSB_STRERROR_T;
-	static wxString libusb_strerror(int iError);
-	static bool isDeviceNetx(libusb_device *ptDev);
-private:
-	bool chip_init(void);
+		unsigned char *pucData;
+		size_t sizData;
+		size_t sizPos;
+	} DATA_BUFFER_T;
 
+	bool chip_init(lua_State *ptClientData);
+
+	bool parse_hex_digit(DATA_BUFFER_T *ptBuffer, size_t sizDigits, unsigned long *pulResult);
+	bool expect_string(DATA_BUFFER_T *ptBuffer, const char *pcMatch);
+
+	bool parseDumpLine(DATA_BUFFER_T *ptBuffer, unsigned long ulAddress, unsigned long ulElements, unsigned char *pucBuffer);
+/*
 	int write_data(wxString &strData, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
-	bool parseDumpLine(const char *pcLine, size_t sizLineLen, unsigned long ulAddress, unsigned long ulElements, unsigned char *pucBuffer, wxString &strErrorMsg);
+	
 
 	int getLine(wxString &strData);
 
-	int usb_executeCommand(wxString strCommand, wxString &strResponse);
 	int usb_load(const char *pcData, size_t sizDataLen, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 	int usb_call(unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
-	int usb_sendCommand(wxString strCommand);
-	int usb_getNetxData(wxString &strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+*/
+	int usb_executeCommand(const char *pcCommand, DATA_BUFFER_T *ptBuffer);
+	int usb_sendCommand(const char *pcCommand);
+	int usb_getNetxData(DATA_BUFFER_T *ptBuffer, SWIGLUA_REF *ptLuaFn, long lCallbackUserData);
+
 
 	// lowlevel functions
-	int libusb_open_by_bus_and_adr(wxString &strErrorMsg);
 	int libusb_closeDevice(void);
 	int libusb_resetDevice(void);
 	int libusb_readBlock(unsigned char *pucReceiveBuffer, unsigned int uiSize, int iTimeoutMs);
 	int libusb_writeBlock(unsigned char *pucSendBuffer, unsigned int uiSize, int iTimeoutMs);
 	int libusb_exchange(unsigned char *pucSendBuffer, unsigned char *pucReceiveBuffer);
 
+	romloader_usb_provider *m_ptUsbProvider;
 
-	static const LIBUSB_STRERROR_T atStrError[];
-
-
-
-
-	bool m_fIsConnected;
-
-	romloader_usb_plugin_fn_close_instance m_fn_usb_close;
-
-	wxString m_strInterface;
-	wxString m_strTyp;
-
-	// formatted name for log message
-	wxString m_strMe;
-
-	/* libusb context */
-	libusb_context *m_ptLibUsbContext;
-	/* pointer to the usb device */
+	/* pointer to the usb device and the usb device handle */
+	libusb_device *m_ptUsbDev;
 	libusb_device_handle *m_ptUsbDevHandle;
 
 	/* bus number and device address for the connection */
@@ -143,5 +120,44 @@ private:
 
 /*-----------------------------------*/
 
-#endif	/* __BOOTLOADER_USB_MAIN_H__ */
+class romloader_usb_provider : public muhkuh_plugin_provider
+{
+public:
+	romloader_usb_provider(swig_type_info *p_romloader_usb, swig_type_info *p_romloader_usb_reference);
+	~romloader_usb_provider(void);
+
+	int DetectInterfaces(lua_State *ptLuaStateForTableAccess);
+
+	virtual romloader_usb *ClaimInterface(const muhkuh_plugin_reference *ptReference);
+	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin);
+
+	const char *libusb_strerror(int iError);
+private:
+	bool isDeviceNetx(libusb_device *ptDev);
+
+	typedef struct
+	{
+		libusb_error eErrNo;
+		const char *pcErrMsg;
+	} LIBUSB_STRERROR_T;
+	static const LIBUSB_STRERROR_T atStrError[];
+
+	static const char *m_pcPluginNamePattern;
+
+	libusb_context *m_ptLibUsbContext;
+};
+
+/*-----------------------------------*/
+
+class romloader_usb_reference : public muhkuh_plugin_reference
+{
+public:
+	romloader_usb_reference(void);
+	romloader_usb_reference(const char *pcName, const char *pcTyp, bool fIsUsed, romloader_usb_provider *ptProvider);
+	romloader_usb_reference(const romloader_usb_reference *ptCloneMe);
+};
+
+/*-----------------------------------*/
+
+#endif	/* __ROMLOADER_USB_MAIN_H__ */
 

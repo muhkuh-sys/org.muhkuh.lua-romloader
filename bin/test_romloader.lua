@@ -1,5 +1,6 @@
 
-require("romloader_baka")
+--require("romloader_baka")
+require("romloader_usb")
 
 local function callback(a,b)
 	print("callback")
@@ -70,7 +71,7 @@ if #aDetectedInterfaces==0 then
 else
 	-- select a list entry
 	iIndex = 1
-	
+
 	-- create the plugin
 	tPlugin = aDetectedInterfaces[iIndex]:Create()
 	-- check if the plugin is connected (should be not)
@@ -79,18 +80,27 @@ else
 	tPlugin:Connect()
 	-- check if the plugin is connected (should be connected now)
 	print( tPlugin:IsConnected() )
+
+	-- read a 32 bit value
+	ulVal = tPlugin:read_data32(0x00000000)
+	print( string.format("0x00000000: 0x%08x", ulVal) )
+
 	-- write a 32 bit value
-	tPlugin:write_data32(0, 0)
+	tPlugin:write_data32(0x00008000, 0)
+--[[
 	-- read 128 bytes
 	str = tPlugin:read_image(0, 128, callback, 0)
 	print("size: ", string.len(str))
 	hexdump(str,16)
+
 	--write 128 bytes
 	strData = get_rnd_data(128)
 	hexdump(strData,16)
 	tPlugin:write_image(0, strData, callback, 1)
+
 	-- call routine
 	tPlugin:call(0x8000, 0x12345678, callback, 2)
+--]]
 	-- access some plugin functions
 	print( romloader_baka.ROMLOADER_CHIPTYP_NETX500 )
 	print( tPlugin:GetChiptypName(romloader_baka.ROMLOADER_CHIPTYP_NETX500) )

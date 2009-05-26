@@ -11,8 +11,7 @@
 <!--	<include file="muhkuh_dpm_netx5.bkl"/>
 -->
 	<!-- include the romloader plugins -->
-<!--	<include file="muhkuh_romloader_usb.bkl"/>
-	<include file="muhkuh_romloader_openocd.bkl"/>
+<!--	<include file="muhkuh_romloader_openocd.bkl"/>
 	<include file="muhkuh_romloader_uart.bkl"/>
 -->
 	<!-- include the lua libraries -->
@@ -20,4 +19,5 @@
 -->
 
 	<include file="muhkuh_romloader_baka.bkl"/>
+	<include file="muhkuh_romloader_usb.bkl"/>
 </makefile>
