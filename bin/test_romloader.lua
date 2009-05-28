@@ -102,8 +102,8 @@ else
 	tPlugin:call(0x8000, 0x12345678, callback, 2)
 --]]
 	-- access some plugin functions
-	print( romloader_baka.ROMLOADER_CHIPTYP_NETX500 )
-	print( tPlugin:GetChiptypName(romloader_baka.ROMLOADER_CHIPTYP_NETX500) )
+	print( romloader_usb.ROMLOADER_CHIPTYP_NETX500 )
+	print( tPlugin:GetChiptypName(romloader_usb.ROMLOADER_CHIPTYP_NETX500) )
 	-- disconnect the plugin
 	tPlugin:Disconnect()
 	-- check if the plugin is disconnected

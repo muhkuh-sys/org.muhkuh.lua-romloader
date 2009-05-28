@@ -118,7 +118,7 @@ bool romloader::detect_chiptyp(lua_State *ptClientData)
 
 	// read the reset vector at 0x00000000
 	ulResetVector = read_data32(ptClientData, 0);
-	printf("%s(%p): reset vector: 0x%08lX", m_pcName, this, ulResetVector);
+	printf("%s(%p): reset vector: 0x%08lX\n", m_pcName, this, ulResetVector);
 
 	// match the reset vector to all known chipfamilies
 	ptRstCnt = atResIds;
@@ -131,7 +131,7 @@ bool romloader::detect_chiptyp(lua_State *ptClientData)
 			ulVersionAddr = ptRstCnt->ulVersionAddress;
 			// read version address
 			ulVersion = read_data32(ptClientData, ulVersionAddr);
-			printf("%s(%p): version value: 0x%08lX", m_pcName, this, ulVersion);
+			printf("%s(%p): version value: 0x%08lX\n", m_pcName, this, ulVersion);
 			if( ptRstCnt->ulVersionValue==ulVersion )
 			{
 				// found chip!
@@ -154,7 +154,7 @@ bool romloader::detect_chiptyp(lua_State *ptClientData)
 	{
 		pcChiptypName = GetChiptypName(m_tChiptyp);
 		pcRomcodeName = GetRomcodeName(m_tRomcode);
-		printf("%s(%p): found chip %s with romcode %s", m_pcName, this, pcChiptypName, pcRomcodeName);
+		printf("%s(%p): found chip %s with romcode %s\n", m_pcName, this, pcChiptypName, pcRomcodeName);
 	}
 
 	return fResult;

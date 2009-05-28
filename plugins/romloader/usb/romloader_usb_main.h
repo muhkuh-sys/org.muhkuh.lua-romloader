@@ -35,7 +35,7 @@ class romloader_usb_provider;
 class romloader_usb : public romloader
 {
 public:
-	romloader_usb(const char *pcName, const char *pcTyp, romloader_usb_provider *ptProvider, libusb_device *ptUsbDevice);
+	romloader_usb(const char *pcName, const char *pcTyp, romloader_usb_provider *ptProvider, unsigned int uiBusNr, unsigned int uiDeviceAdr);
 	~romloader_usb(void);
 
 // *** lua interface start ***
@@ -103,7 +103,11 @@ private:
 
 	romloader_usb_provider *m_ptUsbProvider;
 
+	unsigned int m_uiBusNr;
+	unsigned int m_uiDeviceAdr;
+
 	/* pointer to the usb device and the usb device handle */
+	libusb_context *m_ptLibUsbContext;
 	libusb_device *m_ptUsbDev;
 	libusb_device_handle *m_ptUsbDevHandle;
 
@@ -131,17 +135,7 @@ public:
 	virtual romloader_usb *ClaimInterface(const muhkuh_plugin_reference *ptReference);
 	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin);
 
-	const char *libusb_strerror(int iError);
 private:
-	bool isDeviceNetx(libusb_device *ptDev);
-
-	typedef struct
-	{
-		libusb_error eErrNo;
-		const char *pcErrMsg;
-	} LIBUSB_STRERROR_T;
-	static const LIBUSB_STRERROR_T atStrError[];
-
 	static const char *m_pcPluginNamePattern;
 
 	libusb_context *m_ptLibUsbContext;

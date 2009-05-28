@@ -1493,21 +1493,20 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 #define SWIGTYPE_p_ROMLOADER_CHIPTYP swig_types[0]
 #define SWIGTYPE_p_ROMLOADER_ROMCODE swig_types[1]
 #define SWIGTYPE_p_SWIGLUA_REF swig_types[2]
-#define SWIGTYPE_p_libusb_device swig_types[3]
-#define SWIGTYPE_p_lua_State swig_types[4]
-#define SWIGTYPE_p_muhkuh_plugin swig_types[5]
-#define SWIGTYPE_p_muhkuh_plugin_provider swig_types[6]
-#define SWIGTYPE_p_muhkuh_plugin_reference swig_types[7]
-#define SWIGTYPE_p_muhkuh_plugin_version swig_types[8]
-#define SWIGTYPE_p_p_char swig_types[9]
-#define SWIGTYPE_p_romloader swig_types[10]
-#define SWIGTYPE_p_romloader_usb swig_types[11]
-#define SWIGTYPE_p_romloader_usb_provider swig_types[12]
-#define SWIGTYPE_p_romloader_usb_reference swig_types[13]
-#define SWIGTYPE_p_swig_type_info swig_types[14]
-#define SWIGTYPE_p_unsigned_long swig_types[15]
-static swig_type_info *swig_types[17];
-static swig_module_info swig_module = {swig_types, 16, 0, 0, 0, 0};
+#define SWIGTYPE_p_lua_State swig_types[3]
+#define SWIGTYPE_p_muhkuh_plugin swig_types[4]
+#define SWIGTYPE_p_muhkuh_plugin_provider swig_types[5]
+#define SWIGTYPE_p_muhkuh_plugin_reference swig_types[6]
+#define SWIGTYPE_p_muhkuh_plugin_version swig_types[7]
+#define SWIGTYPE_p_p_char swig_types[8]
+#define SWIGTYPE_p_romloader swig_types[9]
+#define SWIGTYPE_p_romloader_usb swig_types[10]
+#define SWIGTYPE_p_romloader_usb_provider swig_types[11]
+#define SWIGTYPE_p_romloader_usb_reference swig_types[12]
+#define SWIGTYPE_p_swig_type_info swig_types[13]
+#define SWIGTYPE_p_unsigned_long swig_types[14]
+static swig_type_info *swig_types[16];
+static swig_module_info swig_module = {swig_types, 15, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -3065,14 +3064,16 @@ static int _wrap_new_romloader_usb(lua_State* L) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   romloader_usb_provider *arg3 = (romloader_usb_provider *) 0 ;
-  libusb_device *arg4 = (libusb_device *) 0 ;
+  unsigned int arg4 ;
+  unsigned int arg5 ;
   romloader_usb *result = 0 ;
   
-  SWIG_check_num_args("romloader_usb",4,4)
+  SWIG_check_num_args("romloader_usb",5,5)
   if(!lua_isstring(L,1)) SWIG_fail_arg("romloader_usb",1,"char const *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("romloader_usb",2,"char const *");
   if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("romloader_usb",3,"romloader_usb_provider *");
-  if(!SWIG_isptrtype(L,4)) SWIG_fail_arg("romloader_usb",4,"libusb_device *");
+  if(!lua_isnumber(L,4)) SWIG_fail_arg("romloader_usb",4,"unsigned int");
+  if(!lua_isnumber(L,5)) SWIG_fail_arg("romloader_usb",5,"unsigned int");
   arg1 = (char *)lua_tostring(L, 1);
   arg2 = (char *)lua_tostring(L, 2);
   
@@ -3080,12 +3081,9 @@ static int _wrap_new_romloader_usb(lua_State* L) {
     SWIG_fail_ptr("new_romloader_usb",3,SWIGTYPE_p_romloader_usb_provider);
   }
   
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,4,(void**)&arg4,SWIGTYPE_p_libusb_device,0))){
-    SWIG_fail_ptr("new_romloader_usb",4,SWIGTYPE_p_libusb_device);
-  }
-  
-  result = (romloader_usb *)new romloader_usb((char const *)arg1,(char const *)arg2,arg3,arg4);
+  arg4 = (unsigned int)lua_tonumber(L, 4);
+  arg5 = (unsigned int)lua_tonumber(L, 5);
+  result = (romloader_usb *)new romloader_usb((char const *)arg1,(char const *)arg2,arg3,arg4,arg5);
   SWIG_NewPointerObj(L,result,SWIGTYPE_p_romloader_usb,1); SWIG_arg++; 
   return SWIG_arg;
   
@@ -3548,40 +3546,12 @@ fail:
 }
 
 
-static int _wrap_romloader_usb_provider_libusb_strerror(lua_State* L) {
-  int SWIG_arg = 0;
-  romloader_usb_provider *arg1 = (romloader_usb_provider *) 0 ;
-  int arg2 ;
-  char *result = 0 ;
-  
-  SWIG_check_num_args("libusb_strerror",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("libusb_strerror",1,"romloader_usb_provider *");
-  if(!lua_isnumber(L,2)) SWIG_fail_arg("libusb_strerror",2,"int");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader_usb_provider,0))){
-    SWIG_fail_ptr("romloader_usb_provider_libusb_strerror",1,SWIGTYPE_p_romloader_usb_provider);
-  }
-  
-  arg2 = (int)lua_tonumber(L, 2);
-  result = (char *)(arg1)->libusb_strerror(arg2);
-  lua_pushstring(L,(const char*)result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
 static void swig_delete_romloader_usb_provider(void *obj) {
 romloader_usb_provider *arg1 = (romloader_usb_provider *) obj;
 delete arg1;
 }
 static swig_lua_method swig_romloader_usb_provider_methods[] = {
     {"DetectInterfaces", _wrap_romloader_usb_provider_DetectInterfaces}, 
-    {"libusb_strerror", _wrap_romloader_usb_provider_libusb_strerror}, 
     {0,0}
 };
 static swig_lua_attribute swig_romloader_usb_provider_attributes[] = {
@@ -3789,7 +3759,6 @@ static void *_p_romloader_usbTo_p_muhkuh_plugin(void *x, int *SWIGUNUSEDPARM(new
 static swig_type_info _swigt__p_ROMLOADER_CHIPTYP = {"_p_ROMLOADER_CHIPTYP", "enum ROMLOADER_CHIPTYP *|ROMLOADER_CHIPTYP *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_ROMLOADER_ROMCODE = {"_p_ROMLOADER_ROMCODE", "enum ROMLOADER_ROMCODE *|ROMLOADER_ROMCODE *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_SWIGLUA_REF = {"_p_SWIGLUA_REF", "SWIGLUA_REF *", 0, 0, (void*)&_wrap_class_SWIGLUA_REF, 0};
-static swig_type_info _swigt__p_libusb_device = {"_p_libusb_device", "libusb_device *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_lua_State = {"_p_lua_State", "lua_State *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_muhkuh_plugin = {"_p_muhkuh_plugin", "muhkuh_plugin *", 0, 0, (void*)&_wrap_class_muhkuh_plugin, 0};
 static swig_type_info _swigt__p_muhkuh_plugin_provider = {"_p_muhkuh_plugin_provider", "muhkuh_plugin_provider *", 0, 0, (void*)&_wrap_class_muhkuh_plugin_provider, 0};
@@ -3807,7 +3776,6 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_ROMLOADER_CHIPTYP,
   &_swigt__p_ROMLOADER_ROMCODE,
   &_swigt__p_SWIGLUA_REF,
-  &_swigt__p_libusb_device,
   &_swigt__p_lua_State,
   &_swigt__p_muhkuh_plugin,
   &_swigt__p_muhkuh_plugin_provider,
@@ -3825,7 +3793,6 @@ static swig_type_info *swig_type_initial[] = {
 static swig_cast_info _swigc__p_ROMLOADER_CHIPTYP[] = {  {&_swigt__p_ROMLOADER_CHIPTYP, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_ROMLOADER_ROMCODE[] = {  {&_swigt__p_ROMLOADER_ROMCODE, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_SWIGLUA_REF[] = {  {&_swigt__p_SWIGLUA_REF, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_libusb_device[] = {  {&_swigt__p_libusb_device, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_lua_State[] = {  {&_swigt__p_lua_State, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_muhkuh_plugin[] = {  {&_swigt__p_muhkuh_plugin, 0, 0, 0},  {&_swigt__p_romloader, _p_romloaderTo_p_muhkuh_plugin, 0, 0},  {&_swigt__p_romloader_usb, _p_romloader_usbTo_p_muhkuh_plugin, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_muhkuh_plugin_provider[] = {  {&_swigt__p_muhkuh_plugin_provider, 0, 0, 0},  {&_swigt__p_romloader_usb_provider, _p_romloader_usb_providerTo_p_muhkuh_plugin_provider, 0, 0},{0, 0, 0, 0}};
@@ -3843,7 +3810,6 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_ROMLOADER_CHIPTYP,
   _swigc__p_ROMLOADER_ROMCODE,
   _swigc__p_SWIGLUA_REF,
-  _swigc__p_libusb_device,
   _swigc__p_lua_State,
   _swigc__p_muhkuh_plugin,
   _swigc__p_muhkuh_plugin_provider,
