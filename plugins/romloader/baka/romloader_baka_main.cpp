@@ -279,9 +279,9 @@ unsigned long romloader_baka::read_data32(lua_State *ptClientData, unsigned long
 }
 
 
-void romloader_baka::read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcOutputData, unsigned long *pulOutputData, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader_baka::read_image(unsigned long ulNetxAddress, unsigned long ulSize, unsigned char **ppucOutputData, unsigned long *pulOutputData, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
-	char *pcData;
+	unsigned char *pucData;
 	bool fStillRunning;
 
 
@@ -289,21 +289,21 @@ void romloader_baka::read_image(unsigned long ulNetxAddress, unsigned long ulSiz
 
 	fStillRunning = callback_long(&tLuaFn, 0, lCallbackUserData);
 
-	pcData = NULL;
+	pucData = NULL;
 	if( ulSize!=0 )
 	{
-		pcData = new char[ulSize];
-		memset(pcData, 0, ulSize);
+		pucData = new unsigned char[ulSize];
+		memset(pucData, 0, ulSize);
 
 		// show a hexdump of the data
-		hexdump(pcData, ulSize, ulNetxAddress);
+		hexdump(pucData, ulSize, ulNetxAddress);
 	}
 
 	fStillRunning = callback_long(&tLuaFn, ulSize, lCallbackUserData);
 
 	swiglua_ref_clear(&tLuaFn);
 
-	*ppcOutputData = pcData;
+	*ppucOutputData = pucData;
 	*pulOutputData = ulSize;
 }
 
@@ -329,7 +329,7 @@ void romloader_baka::write_data32(lua_State *ptClientData, unsigned long ulNetxA
 }
 
 /* write a byte array from the pc to the netx */
-void romloader_baka::write_image(unsigned long ulNetxAddress, const char *pcInputData, unsigned long ulInputData, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader_baka::write_image(unsigned long ulNetxAddress, const unsigned char *pucInputData, unsigned long ulInputData, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	bool fStillRunning;
 
@@ -339,7 +339,7 @@ void romloader_baka::write_image(unsigned long ulNetxAddress, const char *pcInpu
 	fStillRunning = callback_long(&tLuaFn, 0, lCallbackUserData);
 
 	// show a hexdump of the data
-	hexdump(pcInputData, ulInputData, ulNetxAddress);
+	hexdump(pucInputData, ulInputData, ulNetxAddress);
 
 	fStillRunning = callback_long(&tLuaFn, ulInputData, lCallbackUserData);
 
@@ -354,9 +354,9 @@ void romloader_baka::call(unsigned long ulNetxAddress, unsigned long ulParameter
 }
 
 
-void romloader_baka::hexdump(const char *pcData, unsigned long ulSize, unsigned long ulNetxAddress)
+void romloader_baka::hexdump(const unsigned char *pucData, unsigned long ulSize, unsigned long ulNetxAddress)
 {
-	const char *pcDumpCnt, *pcDumpEnd;
+	const unsigned char *pucDumpCnt, *pucDumpEnd;
 	unsigned long ulAddressCnt;
 	unsigned long ulSkipOffset;
 	size_t sizBytesLeft;
@@ -365,14 +365,14 @@ void romloader_baka::hexdump(const char *pcData, unsigned long ulSize, unsigned 
 
 
 	// show a hexdump of the data
-	pcDumpCnt = pcData;
-	pcDumpEnd = pcData + ulSize;
+	pucDumpCnt = pucData;
+	pucDumpEnd = pucData + ulSize;
 	ulAddressCnt = ulNetxAddress;
-	while( pcDumpCnt<pcDumpEnd )
+	while( pucDumpCnt<pucDumpEnd )
 	{
 		// get number of bytes for the next line
 		sizChunkSize = 16;
-		sizBytesLeft = pcDumpEnd-pcDumpCnt;
+		sizBytesLeft = pucDumpEnd - pucDumpCnt;
 		if( sizChunkSize>sizBytesLeft )
 		{
 			sizChunkSize = sizBytesLeft;
@@ -384,19 +384,19 @@ void romloader_baka::hexdump(const char *pcData, unsigned long ulSize, unsigned 
 		sizChunkCnt = sizChunkSize;
 		while( sizChunkCnt!=0 )
 		{
-			printf("%02X ", (unsigned char)(*(pcDumpCnt++)));
+			printf("%02X ", *(pucDumpCnt++));
 			--sizChunkCnt;
 		}
 		// next line
 		printf("\n");
 		ulAddressCnt += sizChunkSize;
 		// only show first and last 3 lines for very long files
-		if( (pcDumpCnt-pcData)==0x30 && (pcDumpEnd-pcData)>0x100 )
+		if( (pucDumpCnt-pucData)==0x30 && (pucDumpEnd-pucData)>0x100 )
 		{
 			ulSkipOffset  = ulSize + 0xf;
 			ulSkipOffset &= ~0xf;
 			ulSkipOffset -= 0x30;
-			pcDumpCnt = pcData + ulSkipOffset;
+			pucDumpCnt = pucData + ulSkipOffset;
 			ulAddressCnt = ulNetxAddress + ulSkipOffset;
 			printf("... (skipping 0x%08lX bytes)", ulSkipOffset-0x30);
 		}

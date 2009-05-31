@@ -1498,15 +1498,16 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 #define SWIGTYPE_p_muhkuh_plugin_provider swig_types[5]
 #define SWIGTYPE_p_muhkuh_plugin_reference swig_types[6]
 #define SWIGTYPE_p_muhkuh_plugin_version swig_types[7]
-#define SWIGTYPE_p_p_char swig_types[8]
+#define SWIGTYPE_p_p_unsigned_char swig_types[8]
 #define SWIGTYPE_p_romloader swig_types[9]
 #define SWIGTYPE_p_romloader_baka swig_types[10]
 #define SWIGTYPE_p_romloader_baka_provider swig_types[11]
 #define SWIGTYPE_p_romloader_baka_reference swig_types[12]
 #define SWIGTYPE_p_swig_type_info swig_types[13]
-#define SWIGTYPE_p_unsigned_long swig_types[14]
-static swig_type_info *swig_types[16];
-static swig_module_info swig_module = {swig_types, 15, 0, 0, 0, 0};
+#define SWIGTYPE_p_unsigned_char swig_types[14]
+#define SWIGTYPE_p_unsigned_long swig_types[15]
+static swig_type_info *swig_types[17];
+static swig_module_info swig_module = {swig_types, 16, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -2714,22 +2715,18 @@ static int _wrap_romloader_read_image(lua_State* L) {
   romloader *arg1 = (romloader *) 0 ;
   unsigned long arg2 ;
   unsigned long arg3 ;
-  char **arg4 = (char **) 0 ;
+  unsigned char **arg4 = (unsigned char **) 0 ;
   unsigned long *arg5 = (unsigned long *) 0 ;
   SWIGLUA_REF arg6 ;
   long arg7 ;
   
-  
-  char *pcOutputData;
-  unsigned long ulOutputData;
-  arg4 = &pcOutputData;
-  arg5 = &ulOutputData;
-  
-  SWIG_check_num_args("read_image",5,5)
+  SWIG_check_num_args("read_image",7,7)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("read_image",1,"romloader *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("read_image",2,"unsigned long");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("read_image",3,"unsigned long");
-  if(!lua_isnumber(L,5)) SWIG_fail_arg("read_image",5,"long");
+  if(!SWIG_isptrtype(L,4)) SWIG_fail_arg("read_image",4,"unsigned char **");
+  if(!SWIG_isptrtype(L,5)) SWIG_fail_arg("read_image",5,"unsigned long *");
+  if(!lua_isnumber(L,7)) SWIG_fail_arg("read_image",7,"long");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader,0))){
     SWIG_fail_ptr("romloader_read_image",1,SWIGTYPE_p_romloader);
@@ -2737,21 +2734,19 @@ static int _wrap_romloader_read_image(lua_State* L) {
   
   arg2 = (unsigned long)lua_tonumber(L, 2);
   arg3 = (unsigned long)lua_tonumber(L, 3);
-  swiglua_ref_set(&arg6,L,4); 
-  arg7 = (long)lua_tonumber(L, 5);
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,4,(void**)&arg4,SWIGTYPE_p_p_unsigned_char,0))){
+    SWIG_fail_ptr("romloader_read_image",4,SWIGTYPE_p_p_unsigned_char);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,5,(void**)&arg5,SWIGTYPE_p_unsigned_long,0))){
+    SWIG_fail_ptr("romloader_read_image",5,SWIGTYPE_p_unsigned_long);
+  }
+  
+  swiglua_ref_set(&arg6,L,6); 
+  arg7 = (long)lua_tonumber(L, 7);
   (arg1)->read_image(arg2,arg3,arg4,arg5,arg6,arg7);
-  
-  
-  if( pcOutputData!=NULL && ulOutputData!=0 )
-  {
-    lua_pushlstring(L, pcOutputData, ulOutputData);
-    delete[] pcOutputData;
-  }
-  else
-  {
-    lua_pushnil(L);
-  }
-  ++SWIG_arg;
   
   return SWIG_arg;
   
@@ -2866,29 +2861,32 @@ static int _wrap_romloader_write_image(lua_State* L) {
   int SWIG_arg = 0;
   romloader *arg1 = (romloader *) 0 ;
   unsigned long arg2 ;
-  char *arg3 = (char *) 0 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
   unsigned long arg4 ;
   SWIGLUA_REF arg5 ;
   long arg6 ;
   
-  SWIG_check_num_args("write_image",5,5)
+  SWIG_check_num_args("write_image",6,6)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("write_image",1,"romloader *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("write_image",2,"unsigned long");
-  if(!lua_isnumber(L,5)) SWIG_fail_arg("write_image",5,"long");
+  if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("write_image",3,"unsigned char const *");
+  if(!lua_isnumber(L,4)) SWIG_fail_arg("write_image",4,"unsigned long");
+  if(!lua_isnumber(L,6)) SWIG_fail_arg("write_image",6,"long");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader,0))){
     SWIG_fail_ptr("romloader_write_image",1,SWIGTYPE_p_romloader);
   }
   
   arg2 = (unsigned long)lua_tonumber(L, 2);
-  {
-    size_t sizInputData;
-    arg3 = (char*)lua_tolstring(L, 3, &sizInputData);
-    arg4 = (unsigned long)sizInputData;
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,3,(void**)&arg3,SWIGTYPE_p_unsigned_char,0))){
+    SWIG_fail_ptr("romloader_write_image",3,SWIGTYPE_p_unsigned_char);
   }
-  swiglua_ref_set(&arg5,L,4); 
-  arg6 = (long)lua_tonumber(L, 5);
-  (arg1)->write_image(arg2,(char const *)arg3,arg4,arg5,arg6);
+  
+  arg4 = (unsigned long)lua_tonumber(L, 4);
+  swiglua_ref_set(&arg5,L,5); 
+  arg6 = (long)lua_tonumber(L, 6);
+  (arg1)->write_image(arg2,(unsigned char const *)arg3,arg4,arg5,arg6);
   
   return SWIG_arg;
   
@@ -3241,22 +3239,18 @@ static int _wrap_romloader_baka_read_image(lua_State* L) {
   romloader_baka *arg1 = (romloader_baka *) 0 ;
   unsigned long arg2 ;
   unsigned long arg3 ;
-  char **arg4 = (char **) 0 ;
+  unsigned char **arg4 = (unsigned char **) 0 ;
   unsigned long *arg5 = (unsigned long *) 0 ;
   SWIGLUA_REF arg6 ;
   long arg7 ;
   
-  
-  char *pcOutputData;
-  unsigned long ulOutputData;
-  arg4 = &pcOutputData;
-  arg5 = &ulOutputData;
-  
-  SWIG_check_num_args("read_image",5,5)
+  SWIG_check_num_args("read_image",7,7)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("read_image",1,"romloader_baka *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("read_image",2,"unsigned long");
   if(!lua_isnumber(L,3)) SWIG_fail_arg("read_image",3,"unsigned long");
-  if(!lua_isnumber(L,5)) SWIG_fail_arg("read_image",5,"long");
+  if(!SWIG_isptrtype(L,4)) SWIG_fail_arg("read_image",4,"unsigned char **");
+  if(!SWIG_isptrtype(L,5)) SWIG_fail_arg("read_image",5,"unsigned long *");
+  if(!lua_isnumber(L,7)) SWIG_fail_arg("read_image",7,"long");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader_baka,0))){
     SWIG_fail_ptr("romloader_baka_read_image",1,SWIGTYPE_p_romloader_baka);
@@ -3264,21 +3258,19 @@ static int _wrap_romloader_baka_read_image(lua_State* L) {
   
   arg2 = (unsigned long)lua_tonumber(L, 2);
   arg3 = (unsigned long)lua_tonumber(L, 3);
-  swiglua_ref_set(&arg6,L,4); 
-  arg7 = (long)lua_tonumber(L, 5);
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,4,(void**)&arg4,SWIGTYPE_p_p_unsigned_char,0))){
+    SWIG_fail_ptr("romloader_baka_read_image",4,SWIGTYPE_p_p_unsigned_char);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,5,(void**)&arg5,SWIGTYPE_p_unsigned_long,0))){
+    SWIG_fail_ptr("romloader_baka_read_image",5,SWIGTYPE_p_unsigned_long);
+  }
+  
+  swiglua_ref_set(&arg6,L,6); 
+  arg7 = (long)lua_tonumber(L, 7);
   (arg1)->read_image(arg2,arg3,arg4,arg5,arg6,arg7);
-  
-  
-  if( pcOutputData!=NULL && ulOutputData!=0 )
-  {
-    lua_pushlstring(L, pcOutputData, ulOutputData);
-    delete[] pcOutputData;
-  }
-  else
-  {
-    lua_pushnil(L);
-  }
-  ++SWIG_arg;
   
   return SWIG_arg;
   
@@ -3393,29 +3385,32 @@ static int _wrap_romloader_baka_write_image(lua_State* L) {
   int SWIG_arg = 0;
   romloader_baka *arg1 = (romloader_baka *) 0 ;
   unsigned long arg2 ;
-  char *arg3 = (char *) 0 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
   unsigned long arg4 ;
   SWIGLUA_REF arg5 ;
   long arg6 ;
   
-  SWIG_check_num_args("write_image",5,5)
+  SWIG_check_num_args("write_image",6,6)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("write_image",1,"romloader_baka *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("write_image",2,"unsigned long");
-  if(!lua_isnumber(L,5)) SWIG_fail_arg("write_image",5,"long");
+  if(!SWIG_isptrtype(L,3)) SWIG_fail_arg("write_image",3,"unsigned char const *");
+  if(!lua_isnumber(L,4)) SWIG_fail_arg("write_image",4,"unsigned long");
+  if(!lua_isnumber(L,6)) SWIG_fail_arg("write_image",6,"long");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_romloader_baka,0))){
     SWIG_fail_ptr("romloader_baka_write_image",1,SWIGTYPE_p_romloader_baka);
   }
   
   arg2 = (unsigned long)lua_tonumber(L, 2);
-  {
-    size_t sizInputData;
-    arg3 = (char*)lua_tolstring(L, 3, &sizInputData);
-    arg4 = (unsigned long)sizInputData;
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,3,(void**)&arg3,SWIGTYPE_p_unsigned_char,0))){
+    SWIG_fail_ptr("romloader_baka_write_image",3,SWIGTYPE_p_unsigned_char);
   }
-  swiglua_ref_set(&arg5,L,4); 
-  arg6 = (long)lua_tonumber(L, 5);
-  (arg1)->write_image(arg2,(char const *)arg3,arg4,arg5,arg6);
+  
+  arg4 = (unsigned long)lua_tonumber(L, 4);
+  swiglua_ref_set(&arg5,L,5); 
+  arg6 = (long)lua_tonumber(L, 6);
+  (arg1)->write_image(arg2,(unsigned char const *)arg3,arg4,arg5,arg6);
   
   return SWIG_arg;
   
@@ -3758,12 +3753,13 @@ static swig_type_info _swigt__p_muhkuh_plugin = {"_p_muhkuh_plugin", "muhkuh_plu
 static swig_type_info _swigt__p_muhkuh_plugin_provider = {"_p_muhkuh_plugin_provider", "muhkuh_plugin_provider *", 0, 0, (void*)&_wrap_class_muhkuh_plugin_provider, 0};
 static swig_type_info _swigt__p_muhkuh_plugin_reference = {"_p_muhkuh_plugin_reference", "muhkuh_plugin_reference *", 0, 0, (void*)&_wrap_class_muhkuh_plugin_reference, 0};
 static swig_type_info _swigt__p_muhkuh_plugin_version = {"_p_muhkuh_plugin_version", "muhkuh_plugin_version *", 0, 0, (void*)&_wrap_class_muhkuh_plugin_version, 0};
-static swig_type_info _swigt__p_p_char = {"_p_p_char", "char **", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_p_unsigned_char = {"_p_p_unsigned_char", "unsigned char **", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_romloader = {"_p_romloader", "romloader *", 0, 0, (void*)&_wrap_class_romloader, 0};
 static swig_type_info _swigt__p_romloader_baka = {"_p_romloader_baka", "romloader_baka *", 0, 0, (void*)&_wrap_class_romloader_baka, 0};
 static swig_type_info _swigt__p_romloader_baka_provider = {"_p_romloader_baka_provider", "romloader_baka_provider *", 0, 0, (void*)&_wrap_class_romloader_baka_provider, 0};
 static swig_type_info _swigt__p_romloader_baka_reference = {"_p_romloader_baka_reference", "romloader_baka_reference *", 0, 0, (void*)&_wrap_class_romloader_baka_reference, 0};
 static swig_type_info _swigt__p_swig_type_info = {"_p_swig_type_info", "swig_type_info *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_unsigned_char = {"_p_unsigned_char", "unsigned char *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_unsigned_long = {"_p_unsigned_long", "unsigned long *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
@@ -3775,12 +3771,13 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_muhkuh_plugin_provider,
   &_swigt__p_muhkuh_plugin_reference,
   &_swigt__p_muhkuh_plugin_version,
-  &_swigt__p_p_char,
+  &_swigt__p_p_unsigned_char,
   &_swigt__p_romloader,
   &_swigt__p_romloader_baka,
   &_swigt__p_romloader_baka_provider,
   &_swigt__p_romloader_baka_reference,
   &_swigt__p_swig_type_info,
+  &_swigt__p_unsigned_char,
   &_swigt__p_unsigned_long,
 };
 
@@ -3792,12 +3789,13 @@ static swig_cast_info _swigc__p_muhkuh_plugin[] = {  {&_swigt__p_muhkuh_plugin, 
 static swig_cast_info _swigc__p_muhkuh_plugin_provider[] = {  {&_swigt__p_muhkuh_plugin_provider, 0, 0, 0},  {&_swigt__p_romloader_baka_provider, _p_romloader_baka_providerTo_p_muhkuh_plugin_provider, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_muhkuh_plugin_reference[] = {  {&_swigt__p_muhkuh_plugin_reference, 0, 0, 0},  {&_swigt__p_romloader_baka_reference, _p_romloader_baka_referenceTo_p_muhkuh_plugin_reference, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_muhkuh_plugin_version[] = {  {&_swigt__p_muhkuh_plugin_version, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_p_char[] = {  {&_swigt__p_p_char, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_p_unsigned_char[] = {  {&_swigt__p_p_unsigned_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_romloader[] = {  {&_swigt__p_romloader_baka, _p_romloader_bakaTo_p_romloader, 0, 0},  {&_swigt__p_romloader, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_romloader_baka[] = {  {&_swigt__p_romloader_baka, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_romloader_baka_provider[] = {  {&_swigt__p_romloader_baka_provider, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_romloader_baka_reference[] = {  {&_swigt__p_romloader_baka_reference, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_swig_type_info[] = {  {&_swigt__p_swig_type_info, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_unsigned_char[] = {  {&_swigt__p_unsigned_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_unsigned_long[] = {  {&_swigt__p_unsigned_long, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
@@ -3809,12 +3807,13 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_muhkuh_plugin_provider,
   _swigc__p_muhkuh_plugin_reference,
   _swigc__p_muhkuh_plugin_version,
-  _swigc__p_p_char,
+  _swigc__p_p_unsigned_char,
   _swigc__p_romloader,
   _swigc__p_romloader_baka,
   _swigc__p_romloader_baka_provider,
   _swigc__p_romloader_baka_reference,
   _swigc__p_swig_type_info,
+  _swigc__p_unsigned_char,
   _swigc__p_unsigned_long,
 };
 
