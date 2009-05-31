@@ -70,7 +70,7 @@
 	</lib>
 -->
 
-	<dll id="my_lua_dll">
+	<dll id="lua_dll">
 		<dirname>$(SRCDIR)/bin</dirname>
 		<libname>lua5.1</libname>
 		<dllname>lua5.1</dllname>

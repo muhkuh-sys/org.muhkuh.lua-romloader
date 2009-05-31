@@ -9,7 +9,7 @@
 
 		<dirname>$(SRCDIR)/bin</dirname>
 		<include>$(SRCDIR)</include>
-		<include>$(SRCDIR)/lua/lib/lua-5.1.4</include>
+		<include>$(SRCDIR)/lua/lib/lua-5.1.4/src</include>
 		<include>$(SRCDIR)/plugins/romloader/baka</include>
 		<sources>
 			plugins/muhkuh_plugin_interface.cpp
@@ -22,5 +22,9 @@
 			plugins/romloader/baka/romloader_baka_main.h
 			plugins/romloader/baka/_luaif/swigluarun.h
 		</headers>
+		<!-- windows needs the lua import library -->
+		<if cond="PLATFORM_WIN32=='1'">
+			<library>lua_dll</library>
+		</if>
 	</module>
 </makefile>

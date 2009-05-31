@@ -9,7 +9,7 @@
 
 		<dirname>$(SRCDIR)/bin</dirname>
 		<include>$(SRCDIR)</include>
-		<include>$(SRCDIR)/lua/lib/lua-5.1.4</include>
+		<include>$(SRCDIR)/lua/lib/lua-5.1.4/src</include>
 		<include>$(SRCDIR)/plugins/romloader/usb</include>
 		<sources>
 			plugins/muhkuh_plugin_interface.cpp
@@ -22,14 +22,18 @@
 			plugins/romloader/usb/romloader_usb_main.h
 			plugins/romloader/usb/_luaif/swigluarun.h
 		</headers>
-		<if cond="TARGETING_WIN32=='1'">
+		<if cond="PLATFORM_WIN32=='1'">
 			<include>$(SRCDIR)/plugins/romloader/usb/win/include</include>
 			<lib-path>$(SRCDIR)/plugins/romloader/usb/win/lib/msvc</lib-path>
 			<sys-lib>libusb</sys-lib>
 			<sys-lib>setupapi</sys-lib>
 		</if>
-		<if cond="TARGETING_UNIX=='1'">
+		<if cond="PLATFORM_UNIX=='1'">
 			<sys-lib>usb-1.0</sys-lib>
+		</if>
+		<!-- windows needs the lua import library -->
+		<if cond="PLATFORM_WIN32=='1'">
+			<library>lua_dll</library>
 		</if>
 	</module>
 </makefile>
