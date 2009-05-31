@@ -1,0 +1,146 @@
+<?xml version="1.0" ?>
+<makefile>
+	<!-- ================================================================== -->
+	<!--   Static and shared version of the lua library                     -->
+	<!-- ================================================================== -->
+<!--
+	<lib id="lua_lib">
+		<dirname>$(SRCDIR)/bin</dirname>
+		<libname>lua5.1</libname>
+
+		<sources>
+			lua/lib/lua-5.1.4/src/lapi.c
+			lua/lib/lua-5.1.4/src/lcode.c
+			lua/lib/lua-5.1.4/src/ldebug.c
+			lua/lib/lua-5.1.4/src/ldo.c
+			lua/lib/lua-5.1.4/src/ldump.c
+			lua/lib/lua-5.1.4/src/lfunc.c
+			lua/lib/lua-5.1.4/src/lgc.c
+			lua/lib/lua-5.1.4/src/llex.c
+			lua/lib/lua-5.1.4/src/lmem.c
+			lua/lib/lua-5.1.4/src/lobject.c
+			lua/lib/lua-5.1.4/src/lopcodes.c
+			lua/lib/lua-5.1.4/src/lparser.c
+			lua/lib/lua-5.1.4/src/lstate.c
+			lua/lib/lua-5.1.4/src/lstring.c
+			lua/lib/lua-5.1.4/src/ltable.c
+			lua/lib/lua-5.1.4/src/ltm.c
+			lua/lib/lua-5.1.4/src/lundump.c
+			lua/lib/lua-5.1.4/src/lvm.c
+			lua/lib/lua-5.1.4/src/lzio.c
+			lua/lib/lua-5.1.4/src/lauxlib.c
+			lua/lib/lua-5.1.4/src/lbaselib.c
+			lua/lib/lua-5.1.4/src/ldblib.c
+			lua/lib/lua-5.1.4/src/liolib.c
+			lua/lib/lua-5.1.4/src/lmathlib.c
+			lua/lib/lua-5.1.4/src/loslib.c
+			lua/lib/lua-5.1.4/src/ltablib.c
+			lua/lib/lua-5.1.4/src/lstrlib.c
+			lua/lib/lua-5.1.4/src/loadlib.c
+			lua/lib/lua-5.1.4/src/linit.c
+		</sources>
+		<headers>
+			lua/lib/lua-5.1.4/src/lapi.h
+			lua/lib/lua-5.1.4/src/lauxlib.h
+			lua/lib/lua-5.1.4/src/lcode.h
+			lua/lib/lua-5.1.4/src/ldebug.h
+			lua/lib/lua-5.1.4/src/ldo.h
+			lua/lib/lua-5.1.4/src/lfunc.h
+			lua/lib/lua-5.1.4/src/lgc.h
+			lua/lib/lua-5.1.4/src/llex.h
+			lua/lib/lua-5.1.4/src/llimits.h
+			lua/lib/lua-5.1.4/src/lmem.h
+			lua/lib/lua-5.1.4/src/lobject.h
+			lua/lib/lua-5.1.4/src/lopcodes.h
+			lua/lib/lua-5.1.4/src/lparser.h
+			lua/lib/lua-5.1.4/src/lstate.h
+			lua/lib/lua-5.1.4/src/lstring.h
+			lua/lib/lua-5.1.4/src/ltable.h
+			lua/lib/lua-5.1.4/src/ltm.h
+			lua/lib/lua-5.1.4/src/luaconf.h
+			lua/lib/lua-5.1.4/src/lua.h
+			lua/lib/lua-5.1.4/src/lualib.h
+			lua/lib/lua-5.1.4/src/lundump.h
+			lua/lib/lua-5.1.4/src/lvm.h
+			lua/lib/lua-5.1.4/src/lzio.h
+		</headers>
+
+		<cflags>$(LUA_PLATFORM_SPECIFIC_CFLAGS)</cflags>
+		<ldflags>$(LUA_PLATFORM_SPECIFIC_LDFLAGS)</ldflags>
+	</lib>
+-->
+
+	<dll id="my_lua_dll">
+		<dirname>$(SRCDIR)/bin</dirname>
+		<libname>lua5.1</libname>
+		<dllname>lua5.1</dllname>
+
+		<version>5.1.4</version>
+		<so_version>0.0.0</so_version>
+		<mac_version>514</mac_version>
+
+		<sources>
+			lua/lib/lua-5.1.4/src/lapi.c
+			lua/lib/lua-5.1.4/src/lcode.c
+			lua/lib/lua-5.1.4/src/ldebug.c
+			lua/lib/lua-5.1.4/src/ldo.c
+			lua/lib/lua-5.1.4/src/ldump.c
+			lua/lib/lua-5.1.4/src/lfunc.c
+			lua/lib/lua-5.1.4/src/lgc.c
+			lua/lib/lua-5.1.4/src/llex.c
+			lua/lib/lua-5.1.4/src/lmem.c
+			lua/lib/lua-5.1.4/src/lobject.c
+			lua/lib/lua-5.1.4/src/lopcodes.c
+			lua/lib/lua-5.1.4/src/lparser.c
+			lua/lib/lua-5.1.4/src/lstate.c
+			lua/lib/lua-5.1.4/src/lstring.c
+			lua/lib/lua-5.1.4/src/ltable.c
+			lua/lib/lua-5.1.4/src/ltm.c
+			lua/lib/lua-5.1.4/src/lundump.c
+			lua/lib/lua-5.1.4/src/lvm.c
+			lua/lib/lua-5.1.4/src/lzio.c
+			lua/lib/lua-5.1.4/src/lauxlib.c
+			lua/lib/lua-5.1.4/src/lbaselib.c
+			lua/lib/lua-5.1.4/src/ldblib.c
+			lua/lib/lua-5.1.4/src/liolib.c
+			lua/lib/lua-5.1.4/src/lmathlib.c
+			lua/lib/lua-5.1.4/src/loslib.c
+			lua/lib/lua-5.1.4/src/ltablib.c
+			lua/lib/lua-5.1.4/src/lstrlib.c
+			lua/lib/lua-5.1.4/src/loadlib.c
+			lua/lib/lua-5.1.4/src/linit.c
+		</sources>
+		<headers>
+			lua/lib/lua-5.1.4/src/lapi.h
+			lua/lib/lua-5.1.4/src/lauxlib.h
+			lua/lib/lua-5.1.4/src/lcode.h
+			lua/lib/lua-5.1.4/src/ldebug.h
+			lua/lib/lua-5.1.4/src/ldo.h
+			lua/lib/lua-5.1.4/src/lfunc.h
+			lua/lib/lua-5.1.4/src/lgc.h
+			lua/lib/lua-5.1.4/src/llex.h
+			lua/lib/lua-5.1.4/src/llimits.h
+			lua/lib/lua-5.1.4/src/lmem.h
+			lua/lib/lua-5.1.4/src/lobject.h
+			lua/lib/lua-5.1.4/src/lopcodes.h
+			lua/lib/lua-5.1.4/src/lparser.h
+			lua/lib/lua-5.1.4/src/lstate.h
+			lua/lib/lua-5.1.4/src/lstring.h
+			lua/lib/lua-5.1.4/src/ltable.h
+			lua/lib/lua-5.1.4/src/ltm.h
+			lua/lib/lua-5.1.4/src/luaconf.h
+			lua/lib/lua-5.1.4/src/lua.h
+			lua/lib/lua-5.1.4/src/lualib.h
+			lua/lib/lua-5.1.4/src/lundump.h
+			lua/lib/lua-5.1.4/src/lvm.h
+			lua/lib/lua-5.1.4/src/lzio.h
+		</headers>
+
+		<if cond="TARGETING_WIN32=='1'">
+			<define>LUA_BUILD_AS_DLL</define>
+		</if>
+		<if cond="TARGETING_UNIX=='1'">
+			<define>LUA_USE_LINUX</define>
+		</if>
+	</dll>
+</makefile>

@@ -9,6 +9,7 @@
 
 		<dirname>$(SRCDIR)/bin</dirname>
 		<include>$(SRCDIR)</include>
+		<include>$(SRCDIR)/lua/lib/lua-5.1.4</include>
 		<include>$(SRCDIR)/plugins/romloader/usb</include>
 		<sources>
 			plugins/muhkuh_plugin_interface.cpp
