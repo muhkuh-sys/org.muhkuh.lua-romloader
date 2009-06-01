@@ -1141,7 +1141,7 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 		{
 			// init the buffer
 			sizDataExpected = ((ulSize+15)/16)*77;
-			printf("%s(%p): expecting %d bytes", m_pcName, this, sizDataExpected);
+			printf("%s(%p): expecting %d bytes\n", m_pcName, this, sizDataExpected);
 			// rounding up to a multiple of 4096
 			if( (sizDataExpected & 4095)!=0 )
 			{
@@ -1709,6 +1709,9 @@ int romloader_usb::usb_getNetxData(DATA_BUFFER_T *ptBuffer, SWIGLUA_REF *ptLuaFn
 
 				if( sizChunk!=0 )
 				{
+					// remove the size byte from the data length
+					--sizChunk;
+
 					// is still enough space in the buffer left?
 					if( sizBufferPos+sizChunk>sizBuffer )
 					{

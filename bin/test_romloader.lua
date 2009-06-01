@@ -87,12 +87,12 @@ else
 
 	-- write a 32 bit value
 	tPlugin:write_data32(0x00008000, 0)
---[[
+
 	-- read 128 bytes
 	str = tPlugin:read_image(0, 128, callback, 0)
 	print("size: ", string.len(str))
 	hexdump(str,16)
-
+--[[
 	--write 128 bytes
 	strData = get_rnd_data(128)
 	hexdump(strData,16)
