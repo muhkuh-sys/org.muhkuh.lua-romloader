@@ -1374,61 +1374,54 @@ void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 /* write a byte array from the pc to the netx */
 void romloader_usb::write_image(unsigned long ulNetxAddress, const unsigned char *pucInputData, unsigned long ulInputData, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
-/*
-	unsigned long ulNetxAddress;
 	int iResult;
 	bool fOk;
-	wxString strErrorMsg;
-	wxString strResponse;
+	DATA_BUFFER_T tBuffer;
 
-
-	ulNetxAddress = (unsigned long)dNetxAddress;
 
 	// expect error
 	fOk = false;
 
 	if( m_fIsConnected==false )
 	{
-		strErrorMsg = _("not connected!");
+		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
 	}
 	else
 	{
 		// send the command
-		iResult = usb_load(strData.To8BitData(), strData.Len(), ulNetxAddress, L, iLuaCallbackTag, pvCallbackUserData);
+		iResult = usb_load(pucInputData, ulInputData, ulNetxAddress, &tLuaFn, lCallbackUserData);
 		if( iResult!=LIBUSB_SUCCESS )
 		{
-			strErrorMsg.Printf(_("failed to send load command: %s"), libusb_strerror(iResult));
+			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to send command: %d:%s", m_pcName, this, iResult, libusb_strerror(iResult));
 		}
 		else
 		{
 			// get the response
-			iResult = usb_getNetxData(strResponse, NULL, 0, NULL);
+			iResult = usb_getNetxData(&tBuffer, &tLuaFn, lCallbackUserData);
 			if( iResult!=LIBUSB_SUCCESS )
 			{
-				strErrorMsg.Printf(_("failed to get command response: %s"), libusb_strerror(iResult));
+				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to get response from netx", m_pcName, this);
 			}
 			else
 			{
-				// check the response
-				if( strResponse.Cmp(wxT("\n>"))==0 )
+				if( expect_string(&tBuffer, "\n>")!=true )
 				{
-					// ok!
-					fOk = true;
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): strange response from netx: %s", m_pcName, this, tBuffer.pucData);
 				}
 				else
 				{
-					strErrorMsg = wxT("strange response from netx: ") + strResponse;
+					fOk = true;
 				}
+
+				free(tBuffer.pucData);
 			}
 		}
 	}
 
 	if( fOk!=true )
 	{
-		muhkuh_log_error("%s%s", m_acMe, strErrorMsg.fn_str());
-		m_ptLuaState->wxlua_Error(strErrorMsg);
+		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
 	}
-*/
 }
 
 
@@ -1446,7 +1439,7 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 
 	if( m_fIsConnected==false )
 	{
-		strErrorMsg = _("not connected!");
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
 	}
 	else
 	{
@@ -1472,13 +1465,14 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 
 
 /*-------------------------------------*/
-/*
-int romloader_usb::usb_load(const char *pcData, size_t sizDataLen, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
+
+
+int romloader_usb::usb_load(const unsigned char *pucData, size_t sizDataLen, unsigned long ulLoadAdr, SWIGLUA_REF *ptLuaFn, long lCallbackUserData)
 {
 	const unsigned char *pucDataCnt, *pucDataEnd;
 	int iResult;
 	unsigned int uiCrc;
-	wxString strCommand;
+	char acCommand[28];
 	unsigned char aucBufSend[64];
 	unsigned char aucBufRec[64];
 	size_t sizChunkSize;
@@ -1486,7 +1480,7 @@ int romloader_usb::usb_load(const char *pcData, size_t sizDataLen, unsigned long
 	long lBytesProcessed;
 
 
-	pucDataCnt = (const unsigned char*)pcData;
+	pucDataCnt = pucData;
 	pucDataEnd = pucDataCnt + sizDataLen;
 	// generate crc checksum
 	uiCrc = 0xffff;
@@ -1496,15 +1490,15 @@ int romloader_usb::usb_load(const char *pcData, size_t sizDataLen, unsigned long
 		uiCrc = crc16(uiCrc, *(pucDataCnt++));
 	}
 
-	// generate load command
-	strCommand.Printf(wxT("LOAD %08lX %08X %04X"), ulLoadAdr, sizDataLen, uiCrc);
+	// construct the command
+	snprintf(acCommand, sizeof(acCommand), "LOAD %08lX %08X %04X", ulLoadAdr, sizDataLen, uiCrc);
 
 	// send the command
-	iResult = usb_sendCommand(strCommand);
+	iResult = usb_sendCommand(acCommand);
 	if( iResult==LIBUSB_SUCCESS )
 	{
 		// now send the data part
-		pucDataCnt = (const unsigned char*)pcData;
+		pucDataCnt = pucData;
 		lBytesProcessed = 0;
 		while( pucDataCnt<pucDataEnd )
 		{
@@ -1518,9 +1512,12 @@ int romloader_usb::usb_load(const char *pcData, size_t sizDataLen, unsigned long
 			memcpy(aucBufSend+1, pucDataCnt, sizChunkSize);
 			aucBufSend[0] = sizChunkSize+1;
 
-			fIsRunning = callback_long(L, iLuaCallbackTag, lBytesProcessed, pvCallbackUserData);
+			fIsRunning = callback_long(ptLuaFn, lBytesProcessed, lCallbackUserData);
 			if( fIsRunning!=true )
 			{
+				printf("***********************************\n");
+				printf("*** operation canceled by user! ***\n");
+				printf("***********************************\n");
 				iResult = LIBUSB_ERROR_INTERRUPTED;
 				break;
 			}
@@ -1543,7 +1540,7 @@ int romloader_usb::usb_load(const char *pcData, size_t sizDataLen, unsigned long
 	return iResult;
 }
 
-
+/*
 int romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
 {
 	int iResult;

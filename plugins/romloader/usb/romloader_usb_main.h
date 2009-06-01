@@ -86,9 +86,10 @@ private:
 
 	int getLine(wxString &strData);
 
-	int usb_load(const char *pcData, size_t sizDataLen, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 	int usb_call(unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
 */
+	int usb_load(const unsigned char *pucData, size_t sizDataLen, unsigned long ulLoadAdr, SWIGLUA_REF *ptLuaFn, long lCallbackUserData);
+
 	int usb_executeCommand(const char *pcCommand, DATA_BUFFER_T *ptBuffer);
 	int usb_sendCommand(const char *pcCommand);
 	int usb_getNetxData(DATA_BUFFER_T *ptBuffer, SWIGLUA_REF *ptLuaFn, long lCallbackUserData, size_t sizInitialSize=4096);

@@ -6,7 +6,7 @@ local function callback(a,b)
 	print("callback")
 	print("a:", type(a), a)
 	print("b:", type(b), b)
-	return 0
+	return true
 end
 
 local function get_rnd_data(len)
@@ -89,15 +89,15 @@ else
 	tPlugin:write_data32(0x00008000, 0)
 
 	-- read 128 bytes
-	str = tPlugin:read_image(0, 128, callback, 0)
+	str = tPlugin:read_image(0x00008000, 128, callback, 0)
 	print("size: ", string.len(str))
 	hexdump(str,16)
---[[
+
 	--write 128 bytes
 	strData = get_rnd_data(128)
 	hexdump(strData,16)
-	tPlugin:write_image(0, strData, callback, 1)
-
+	tPlugin:write_image(0x00008000, strData, callback, 1)
+--[[
 	-- call routine
 	tPlugin:call(0x8000, 0x12345678, callback, 2)
 --]]
