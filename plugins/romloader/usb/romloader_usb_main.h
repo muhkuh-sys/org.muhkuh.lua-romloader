@@ -80,14 +80,9 @@ private:
 	bool expect_string(DATA_BUFFER_T *ptBuffer, const char *pcMatch);
 
 	bool parseDumpLine(DATA_BUFFER_T *ptBuffer, unsigned long ulAddress, unsigned long ulElements, unsigned char *pucBuffer);
-/*
-	int write_data(wxString &strData, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
-	
 
-	int getLine(wxString &strData);
+	int usb_call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF *ptLuaFn, long lCallbackUserData);
 
-	int usb_call(unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
-*/
 	int usb_load(const unsigned char *pucData, size_t sizDataLen, unsigned long ulLoadAdr, SWIGLUA_REF *ptLuaFn, long lCallbackUserData);
 
 	int usb_executeCommand(const char *pcCommand, DATA_BUFFER_T *ptBuffer);
@@ -101,6 +96,8 @@ private:
 	int libusb_readBlock(unsigned char *pucReceiveBuffer, unsigned int uiSize, int iTimeoutMs);
 	int libusb_writeBlock(unsigned char *pucSendBuffer, unsigned int uiSize, int iTimeoutMs);
 	int libusb_exchange(unsigned char *pucSendBuffer, unsigned char *pucReceiveBuffer);
+
+	void hexdump(const unsigned char *pucData, unsigned long ulSize, unsigned long ulNetxAddress);
 
 	romloader_usb_provider *m_ptUsbProvider;
 

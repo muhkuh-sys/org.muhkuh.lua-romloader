@@ -1022,84 +1022,7 @@ bool romloader_usb::parseDumpLine(DATA_BUFFER_T *ptBuffer, unsigned long ulAddre
 	return fResult;
 }
 
-/*
-int romloader_usb::getLine(wxString &strData)
-{
-	int iEolCnt;
-	size_t sizStartPos;
-	char c;
-	int iResult;
 
-
-	iResult = LIBUSB_SUCCESS;
-
-	strData.Empty();
-
-	do
-	{
-		// save start position
-		sizStartPos = sizBufPos;
-
-		// no eol found yet
-		iEolCnt = 0;
-
-		// look for eol in current buffer
-		while( sizBufPos<sizBufLen )
-		{
-			c = acBuf[sizBufPos];
-			if( c==0x0a || c==0x0d)
-			{
-				++iEolCnt;
-			}
-			else if( iEolCnt>0 )
-			{
-				break;
-			}
-			++sizBufPos;
-		}
-
-		// get end of string
-		if( iEolCnt>0 )
-		{
-			strData.Append(wxString::From8BitData(acBuf+sizStartPos, sizBufPos-sizStartPos-iEolCnt));
-		}
-
-		// get beginning of string
-		if( iEolCnt==0 && sizStartPos<sizBufPos )
-		{
-			strData.Append(wxString::From8BitData(acBuf+sizStartPos, sizBufPos-sizStartPos));
-		}
-
-		// get more data
-		if( iEolCnt==0 || strData.IsEmpty()==true )
-		{
-			acBuf[0] = 0x00;
-			iResult = libusb_exchange((unsigned char*)acBuf, (unsigned char*)acBuf);
-			if( iResult!=LIBUSB_SUCCESS )
-			{
-				strData.Printf(_("failed to receive command response: %s"), libusb_strerror(iResult));
-				break;
-			}
-			else
-			{
-				sizBufLen = acBuf[0];
-				if( sizBufLen==0 )
-				{
-					fEof = true;
-					iEolCnt = 1;
-					break;
-				}
-				else
-				{
-					sizBufPos = 1;
-				}
-			}
-		}
-	} while( iEolCnt==0 );
-
-	return iResult;
-}
-*/
 /* read a byte array from the netx to the pc */
 void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize, unsigned char **ppucOutputData, unsigned long *pulOutputData, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
@@ -1428,10 +1351,7 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const unsigned char
 /* call routine */
 void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
-/*
 	int iResult;
-	wxString strErrorMsg;
-	wxString strResponse;
 	bool fOk;
 
 
@@ -1439,15 +1359,15 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 
 	if( m_fIsConnected==false )
 	{
-		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
 	}
 	else
 	{
 		// send the command
-		iResult = usb_call(ulNetxAddress, ulParameterR0, L, iLuaCallbackTag, pvCallbackUserData);
+		iResult = usb_call(ulNetxAddress, ulParameterR0, &tLuaFn, lCallbackUserData);
 		if( iResult!=LIBUSB_SUCCESS )
 		{
-			strErrorMsg.Printf((_("%sfailed to send command: %s"), m_acMe, libusb_strerror(iResult)));
+			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute call: %d:%s", m_pcName, this, iResult, libusb_strerror(iResult));
 		}
 		else
 		{
@@ -1457,10 +1377,8 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 
 	if( fOk!=true )
 	{
-		muhkuh_log_error("%s%s", m_acMe, strErrorMsg.fn_str());
-		m_ptLuaState->wxlua_Error(strErrorMsg);
+		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
 	}
-*/
 }
 
 
@@ -1540,29 +1458,32 @@ int romloader_usb::usb_load(const unsigned char *pucData, size_t sizDataLen, uns
 	return iResult;
 }
 
-/*
-int romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long ulParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData)
+
+int romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF *ptLuaFn, long lCallbackUserData)
 {
 	int iResult;
-	wxString strCommand;
+	char acCommand[23];
 	unsigned char aucSend[64];
 	unsigned char aucRec[64];
 	bool fIsRunning;
-	wxString strResponse;
-	wxString strCallbackData;
 	size_t sizChunkRead;
+	size_t sizProgressData;
 	unsigned char *pucBuf;
 	unsigned char *pucCnt, *pucEnd;
 	unsigned char aucSbuf[2] = { 0, 0 };
+	char *pcCallbackData;
 
 
-	// construct the "call" command
-	strCommand.Printf(wxT("CALL %08lX %08X"), ulNetxAddress, ulParameterR0);
+	// construct the command
+	snprintf(acCommand, sizeof(acCommand), "CALL %08lX %08X", ulNetxAddress, ulParameterR0);
 
 	// send the command
-	iResult = usb_sendCommand(strCommand);
+	iResult = usb_sendCommand(acCommand);
 	if( iResult==LIBUSB_SUCCESS )
 	{
+		aucRec[0] = 0x00;
+		pcCallbackData = (char*)(aucRec+1);
+
 		// wait for the call to finish
 		do
 		{
@@ -1574,8 +1495,19 @@ int romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long ulParamet
 				do
 				{
 					// execute callback
-					fIsRunning = callback_string(L, iLuaCallbackTag, strCallbackData, pvCallbackUserData);
-					strCallbackData.Empty();
+					sizProgressData = aucRec[0];
+//					printf("raw data len: %d\n", sizProgressData);
+					if( sizProgressData>1 && sizProgressData<=64 )
+					{
+						--sizProgressData;
+					}
+					else
+					{
+						sizProgressData = 0;
+					}
+//					printf("run callback with %d bytes of data\n", sizProgressData);
+					fIsRunning = callback_string(ptLuaFn, pcCallbackData, sizProgressData, lCallbackUserData);
+					aucRec[0] = 0x00;
 					if( fIsRunning!=true )
 					{
 						iResult = LIBUSB_ERROR_INTERRUPTED;
@@ -1586,21 +1518,20 @@ int romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long ulParamet
 						iResult = libusb_readBlock(aucRec, 64, 200);
 						if( iResult==LIBUSB_SUCCESS )
 						{
+//							printf("received a packet!\n");
+//							hexdump(aucRec, 64, 0);
+
 							iResult = LIBUSB_ERROR_TIMEOUT;
 
 							// received netx data, check for prompt
-							sizChunkRead = aucRec[0];
-							if( sizChunkRead>1 && sizChunkRead<=64 )
+							sizProgressData = aucRec[0];
+							if( sizProgressData>1 && sizProgressData<=64 )
 							{
-								// get data
-								// NOTE: use Append to make a real copy
-								strCallbackData.Append( wxString::From8BitData((const char*)(aucRec+1), sizChunkRead-1) );
-
 								// last packet has '\n>' at the end
-								if( sizChunkRead>2 && aucRec[sizChunkRead-2]=='\n' && aucRec[sizChunkRead-1]=='>' )
+								if( sizProgressData>2 && aucRec[sizProgressData-2]=='\n' && aucRec[sizProgressData-1]=='>' )
 								{
 									// send the rest of the data
-									callback_string(L, iLuaCallbackTag, strCallbackData, pvCallbackUserData);
+									callback_string(ptLuaFn, pcCallbackData, sizProgressData-1, lCallbackUserData);
 									iResult = LIBUSB_SUCCESS;
 								}
 							}
@@ -1620,7 +1551,7 @@ int romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long ulParamet
 
 	return iResult;
 }
-*/
+
 
 int romloader_usb::usb_sendCommand(const char *pcCommand)
 {
@@ -1887,6 +1818,56 @@ int romloader_usb::libusb_exchange(unsigned char *pucSendBuffer, unsigned char *
 		iResult = libusb_readBlock(pucReceiveBuffer, 64, 200);
 	}
 	return iResult;
+}
+
+
+void romloader_usb::hexdump(const unsigned char *pucData, unsigned long ulSize, unsigned long ulNetxAddress)
+{
+	const unsigned char *pucDumpCnt, *pucDumpEnd;
+	unsigned long ulAddressCnt;
+	unsigned long ulSkipOffset;
+	size_t sizBytesLeft;
+	size_t sizChunkSize;
+	size_t sizChunkCnt;
+
+
+	// show a hexdump of the data
+	pucDumpCnt = pucData;
+	pucDumpEnd = pucData + ulSize;
+	ulAddressCnt = ulNetxAddress;
+	while( pucDumpCnt<pucDumpEnd )
+	{
+		// get number of bytes for the next line
+		sizChunkSize = 16;
+		sizBytesLeft = pucDumpEnd - pucDumpCnt;
+		if( sizChunkSize>sizBytesLeft )
+		{
+			sizChunkSize = sizBytesLeft;
+		}
+
+		// start a line in the dump with the address
+		printf("%08lX: ", ulAddressCnt);
+		// append the data bytes
+		sizChunkCnt = sizChunkSize;
+		while( sizChunkCnt!=0 )
+		{
+			printf("%02X ", *(pucDumpCnt++));
+			--sizChunkCnt;
+		}
+		// next line
+		printf("\n");
+		ulAddressCnt += sizChunkSize;
+		// only show first and last 3 lines for very long files
+		if( (pucDumpCnt-pucData)==0x30 && (pucDumpEnd-pucData)>0x100 )
+		{
+			ulSkipOffset  = ulSize + 0xf;
+			ulSkipOffset &= ~0xf;
+			ulSkipOffset -= 0x30;
+			pucDumpCnt = pucData + ulSkipOffset;
+			ulAddressCnt = ulNetxAddress + ulSkipOffset;
+			printf("... (skipping 0x%08lX bytes)", ulSkipOffset-0x30);
+		}
+	}
 }
 
 

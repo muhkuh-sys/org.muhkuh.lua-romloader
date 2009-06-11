@@ -4,8 +4,8 @@ require("romloader_usb")
 
 local function callback(a,b)
 	print("callback")
-	print("a:", type(a), a)
-	print("b:", type(b), b)
+	print(string.format("a(%s): '%s'", type(a), a))
+	print(string.format("b(%s): '%s'", type(b), b))
 	return true
 end
 
@@ -15,6 +15,22 @@ local function get_rnd_data(len)
 		data = data .. string.char(math.random(0,255))
 	end
 	return data
+end
+
+-- read binary file into string
+-- returns the file or nil, message
+function loadBin(strName)
+	print("reading file " .. strName)
+	local bin
+	local f, msg = io.open(strName, "rb")
+	if f then
+		bin = f:read("*all")
+		f:close()
+		print(bin:len() .. " bytes read")
+		return bin
+	else
+		return nil, msg
+	end
 end
 
 local function hexdump(strData, iBytesPerRow)
@@ -97,10 +113,27 @@ else
 	strData = get_rnd_data(128)
 	hexdump(strData,16)
 	tPlugin:write_image(0x00008000, strData, callback, 1)
---[[
-	-- call routine
-	tPlugin:call(0x8000, 0x12345678, callback, 2)
---]]
+
+	-- try to load netx500 binary
+	strData, msg = loadBin("netxtest_nx500.bin")
+	if not strData then
+		print("failed to load binary: " .. msg)
+		print("skipping call test.")
+	else
+		-- download binary to 0x8000
+		tPlugin:write_image(0x00008000, strData, callback, 1)
+
+		-- set the parameter
+		tPlugin:write_data32(0x00017000, 0xffffffff)
+		tPlugin:write_data32(0x00017004, 0x12345678)
+		tPlugin:write_data32(0x00017008, 0x00000000)
+		tPlugin:call(0x00008000, 0x00017000, callback, 2)
+
+		-- get the result
+		ulValue = tPlugin:read_data32(0x08017000)
+		print(string.format("call finished with result 0x%08x", ulValue))
+	end
+
 	-- access some plugin functions
 	print( romloader_usb.ROMLOADER_CHIPTYP_NETX500 )
 	print( tPlugin:GetChiptypName(romloader_usb.ROMLOADER_CHIPTYP_NETX500) )
