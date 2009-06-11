@@ -19,16 +19,15 @@
  ***************************************************************************/
 
 
-#ifndef __BIT_LUA_INTERFACE_H__
-#define __BIT_LUA_INTERFACE_H__
+#ifndef __BIT_H__
+#define __BIT_H__
 
+unsigned long band(unsigned long ulA, unsigned long ulB);
+unsigned long bor(unsigned long ulA, unsigned long ulB);
+unsigned long bxor(unsigned long ulA, unsigned long ulB);
+unsigned long lshift(unsigned long ulA, unsigned long ulB);
+unsigned long rshift(unsigned long ulA, unsigned long ulB);
+unsigned long bnot(unsigned long ulA);
 
-double band(double a, double b);
-double bor(double a, double b);
-double bxor(double a, double b);
-double lshift(double a, double b);
-double rshift(double a, double b);
-double bnot(double a);
-
-#endif	// __BIT_LUA_INTERFACE_H__
+#endif	/* __BIT_H__ */
 

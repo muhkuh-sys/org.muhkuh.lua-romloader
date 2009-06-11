@@ -18,89 +18,65 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "bit_lua_interface.h"
-#include <wx/wx.h>
+#include "bit.h"
 
 
-double band(double a, double b)
+unsigned long band(unsigned long ulA, unsigned long ulB)
 {
-  unsigned long ulA, ulB, ulResult;
+	unsigned long ulResult;
 
 
-  ulA = (unsigned long)a;
-  ulB = (unsigned long)b;
-
-  ulResult = ulA&ulB;
-//  wxLogMessage(wxT("band: %08x & %08x = %08x"), ulA, ulB, ulResult);
+	ulResult = ulA&ulB;
 	return (double)ulResult;
 }
 
 
-double bor(double a, double b)
+unsigned long bor(unsigned long ulA, unsigned long ulB)
 {
-  unsigned long ulA, ulB, ulResult;
+	unsigned long ulResult;
 
 
-  ulA = (unsigned long)a;
-  ulB = (unsigned long)b;
-
-  ulResult = ulA|ulB;
-//  wxLogMessage(wxT("bor: %08x | %08x = %08x"), ulA, ulB, ulResult);
+	ulResult = ulA|ulB;
 	return (double)ulResult;
 }
 
 
-double bxor(double a, double b)
+unsigned long bxor(unsigned long ulA, unsigned long ulB)
 {
-  unsigned long ulA, ulB, ulResult;
+	unsigned long ulResult;
 
 
-  ulA = (unsigned long)a;
-  ulB = (unsigned long)b;
-
-  ulResult = ulA^ulB;
-//  wxLogMessage(wxT("bxor: %08x ^ %08x = %08x"), ulA, ulB, ulResult);
-	return (double)ulResult;
+	ulResult = ulA^ulB;
+	return ulResult;
 }
 
 
-double lshift(double a, double b)
+unsigned long lshift(unsigned long ulA, unsigned long ulB)
 {
-  unsigned long ulA, ulB, ulResult;
+	unsigned long ulResult;
 
 
-  ulA = (unsigned long)a;
-  ulB = (unsigned long)b;
-
-  ulResult = ulA<<ulB;
-//  wxLogMessage(wxT("lshift: %08x << %08x = %08x"), ulA, ulB, ulResult);
-	return (double)ulResult;
+	ulResult = ulA<<ulB;
+	return ulResult;
 }
 
 
-double rshift(double a, double b)
+unsigned long rshift(unsigned long ulA, unsigned long ulB)
 {
-  unsigned long ulA, ulB, ulResult;
+	unsigned long ulResult;
 
 
-  ulA = (unsigned long)a;
-  ulB = (unsigned long)b;
-
-  ulResult = ulA>>ulB;
-//  wxLogMessage(wxT("rshift: %08x >> %08x = %08x"), ulA, ulB, ulResult);
-	return (double)ulResult;
+	ulResult = ulA>>ulB;
+	return ulResult;
 }
 
 
-double bnot(double a)
+unsigned long bnot(unsigned long ulA)
 {
-  unsigned long ulA, ulResult;
+	unsigned long ulResult;
 
 
-  ulA = (unsigned long)a;
-
-  ulResult = ~ulA;
-//  wxLogMessage(wxT("bnot: ~%08x = %08x"), ulA, ulResult);
-	return (double)ulResult;
+	ulResult = ~ulA;
+	return ulResult;
 }
 
