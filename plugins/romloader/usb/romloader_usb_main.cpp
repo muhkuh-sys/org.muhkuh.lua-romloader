@@ -258,6 +258,8 @@ int romloader_usb_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 								SWIG_NewPointerObj(ptLuaStateForTableAccess, ptRef, m_ptReferenceTypeInfo, 1);
 								sizTable++;
 								lua_rawseti(ptLuaStateForTableAccess, 2, sizTable);
+
+								++iInterfaces;
 							}
 						}
 
@@ -720,7 +722,6 @@ bool romloader_usb::expect_string(DATA_BUFFER_T *ptBuffer, const char *pcMatch)
 /* read a byte (8bit) from the netx to the pc */
 unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
-	unsigned long ulValue;
 	int iResult;
 	char acCommand[19];
 	DATA_BUFFER_T tBuffer;
@@ -729,7 +730,7 @@ unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long 
 	bool fOk;
 
 
-	ulValue = 0;
+	ulResponseValue = 0;
 
 	// expect failure
 	fOk = false;
@@ -769,7 +770,7 @@ unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long 
 			}
 			else
 			{
-				printf("%s(%p): read_data08: 0x%08lx = 0x%02lx\n", m_pcName, this, ulNetxAddress, ulValue);
+				printf("%s(%p): read_data08: 0x%08lx = 0x%02lx\n", m_pcName, this, ulNetxAddress, ulResponseValue);
 				fOk = true;
 			}
 
@@ -789,7 +790,6 @@ unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long 
 /* read a word (16bit) from the netx to the pc */
 unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
-	unsigned long ulValue;
 	int iResult;
 	char acCommand[19];
 	DATA_BUFFER_T tBuffer;
@@ -798,7 +798,7 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 	bool fOk;
 
 
-	ulValue = 0;
+	ulResponseValue = 0;
 
 	// expect failure
 	fOk = false;
@@ -838,7 +838,7 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 			}
 			else
 			{
-				printf("%s(%p): read_data16: 0x%08lx = 0x%04lx\n", m_pcName, this, ulNetxAddress, ulValue);
+				printf("%s(%p): read_data16: 0x%08lx = 0x%04lx\n", m_pcName, this, ulNetxAddress, ulResponseValue);
 				fOk = true;
 			}
 
@@ -858,7 +858,6 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 /* read a long (32bit) from the netx to the pc */
 unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
-	unsigned long ulValue;
 	int iResult;
 	char acCommand[19];
 	DATA_BUFFER_T tBuffer;
@@ -867,7 +866,7 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 	bool fOk;
 
 
-	ulValue = 0;
+	ulResponseValue = 0;
 
 	// expect failure
 	fOk = false;
@@ -907,7 +906,7 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 			}
 			else
 			{
-				printf("%s(%p): read_data32: 0x%08lx = 0x%08lx\n", m_pcName, this, ulNetxAddress, ulValue);
+				printf("%s(%p): read_data32: 0x%08lx = 0x%08lx\n", m_pcName, this, ulNetxAddress, ulResponseValue);
 				fOk = true;
 			}
 
