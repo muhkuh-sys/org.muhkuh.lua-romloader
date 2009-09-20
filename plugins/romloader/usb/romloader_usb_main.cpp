@@ -67,7 +67,10 @@ void libusb_close(libusb_device_handle *dev_handle)
 int libusb_init(libusb_context **pptContext)
 {
 	usb_init();
-	*pptContext = NULL;
+
+	/* use something different from NULL */
+	*pptContext = (libusb_context*)1;
+
 	return LIBUSB_SUCCESS;
 }
 
@@ -349,19 +352,6 @@ void libusb_free_device_list(libusb_device **list, int unref_devices)
 
 
 #endif
-
-/*-------------------------------------*/
-
-/*
- * libusb-1.0 wrapper functions
- */
-
-#if ROMLOADER_USB_LIBUSB_VERSION==1
-
-
-
-#endif
-
 
 /*-------------------------------------*/
 
