@@ -147,94 +147,6 @@ int usb_bulk_netx_to_pc(libusb_device_handle *ptDevHandle, unsigned char ucEndPo
 	return iError;
 }
 
-#if 0 
-	static void scan_bus(libusb_context *ptContext)
-	{
-	        unsigned int uiNetxCnt;
-	        struct usb_bus *ptBusses;
-	        struct usb_bus *ptBus;
-	        struct usb_device *ptDev;
-		struct usb_device *ptDevFound;
-		usb_dev_handle *ptDevHandle;
-
-
-		usb_find_busses();
-		usb_find_devices();
-
-		ptBusses = usb_get_busses();
-
-		uiNetxCnt = 0;
-
-		/* nothing found yet */
-		ptDevFound = NULL;
-
-		/* loop over all busses */
-		ptBus = ptBusses;
-		while( ptBus!=NULL )
-		{
-			/* loop over all devices */
-			ptDev = ptBus->devices;
-			while( ptDev!=NULL )
-			{
-				printf("*** Device Descriptor:\n");
-				printf(" bLength:            %d\n", ptDev->descriptor.bLength);
-				printf(" bDescriptorType:    %d\n", ptDev->descriptor.bDescriptorType);
-				printf(" bcdUSB:             0x%04x\n", ptDev->descriptor.bcdUSB);
-				printf(" bDeviceClass:       %d\n", ptDev->descriptor.bDeviceClass);
-				printf(" bDeviceSubClass:    %d\n", ptDev->descriptor.bDeviceSubClass);
-				printf(" bDeviceSubClass:    %d\n", ptDev->descriptor.bDeviceSubClass);
-				printf(" bMaxPacketSize0:    %d\n", ptDev->descriptor.bMaxPacketSize0);
-				printf(" idVendor:           0x%04x\n", ptDev->descriptor.idVendor);
-				printf(" idProduct:          0x%04x\n", ptDev->descriptor.idProduct);
-				printf(" bcdDevice:          0x%04x\n", ptDev->descriptor.bcdDevice);
-				printf(" iManufacturer:      %d\n", ptDev->descriptor.iManufacturer);
-				printf(" iProduct:           %d\n", ptDev->descriptor.iProduct);
-				printf(" iSerialNumber:      %d\n", ptDev->descriptor.iSerialNumber);
-				printf(" bNumConfigurations: %d\n\n", ptDev->descriptor.bNumConfigurations);
-
-				if( ptDev->descriptor.idVendor==NETX10_USB_VENDOR_ID && ptDev->descriptor.idProduct==NETX10_USB_PRODUCT_ID )
-				{
-					printf(". Found netX10 JTag device.\n");
-					ptDevFound = ptDev;
-					break;
-				}
-
-				/* next device */
-				ptDev = ptDev->next;
-			}
-			/* scan next bus */
-			ptBus = ptBus->next;
-		}
-
-		if( ptDevFound==NULL )
-		{
-			printf("! No netX10 JTag device found.\n");
-		}
-		else
-		{
-			ptDevHandle = usb_open(ptDevFound);
-			if( ptDevHandle==NULL )
-			{
-				printf("! Failed to open netX10 JTag device:\n");
-			}
-			else if( usb_set_configuration(ptDevHandle, 1)!=0 )
-			{
-				printf("! Failed to set config:\n");
-			}
-			else if( usb_claim_interface(ptDevHandle, 0)!=0 )
-			{
-				printf("! Failed to claim the if:\n");
-			}
-			else
-			{
-				loopback_test(ptDevHandle, EP_OUT, EP_IN);
-
-				usb_close(ptDevHandle);
-			}
-		}
-	}
-#endif
-
 
 int libusb_get_device_descriptor(libusb_device *dev, struct libusb_device_descriptor *desc)
 {
@@ -321,6 +233,120 @@ uint8_t libusb_get_device_address(libusb_device *dev)
 
 	return ucDeviceAddress;
 }
+
+
+int libusb_reset_device(libusb_device_handle *dev)
+{
+	return usb_reset(dev);
+}
+
+
+int libusb_set_configuration(libusb_device_handle *dev, int configuration)
+{
+	return usb_set_configuration(dev, configuration);
+}
+
+
+int libusb_claim_interface(libusb_device_handle *dev, int iface)
+{
+	return usb_claim_interface(dev, iface);
+}
+
+
+int libusb_release_interface(libusb_device_handle *dev, int iface)
+{
+	return usb_release_interface(dev, iface);
+}
+
+
+ssize_t libusb_get_device_list(libusb_context *ctx, libusb_device ***list)
+{
+	libusb_device **ptDeviceList;
+	libusb_device **ptCnt;
+	ssize_t ssizDeviceList;
+	struct usb_bus *ptBusses;
+	struct usb_bus *ptBusCnt;
+	struct usb_device *ptDevCnt;
+	usb_dev_handle *ptDevHandle;
+
+
+	/* detect all busses */
+	usb_find_busses();
+	/* detect all devices on each bus */
+	usb_find_devices();
+
+	/* init the device list */
+	ptDeviceList = NULL;
+
+	/* init the device counter */
+	ssizDeviceList = 0;
+
+	/* get the head of the bus list */
+	ptBusses = usb_get_busses();
+
+	/* loop over all bus entries and count the devices */
+	ptBusCnt = ptBusses;
+	while( ptBusCnt!=NULL )
+	{
+		/* loop over all devices on this bus */
+		ptDevCnt = ptBusCnt->devices;
+		while( ptDevCnt!=NULL )
+		{
+			/* found one more device */
+			++ssizDeviceList;
+
+			/* next device */
+			ptDevCnt = ptDevCnt->next;
+		}
+		/* scan next bus */
+		ptBusCnt = ptBusCnt->next;
+	}
+
+	/* found any devices? */
+	if( ssizDeviceList>0 )
+	{
+		/* allocate the array */
+		ptDeviceList = (libusb_device **)malloc(ssizDeviceList*sizeof(libusb_device*));
+		if( ptDeviceList==NULL )
+		{
+			ssizDeviceList = LIBUSB_ERROR_NO_MEM;
+		}
+		else
+		{
+			ptCnt = ptDeviceList;
+
+			/* loop over all bus entries and count the devices */
+			ptBusCnt = ptBusses;
+			while( ptBusCnt!=NULL )
+			{
+				/* loop over all devices on this bus */
+				ptDevCnt = ptBusCnt->devices;
+				while( ptDevCnt!=NULL )
+				{
+					/* add the device to the list */
+					*(ptCnt++) = ptDevCnt;
+
+					/* next device */
+					ptDevCnt = ptDevCnt->next;
+				}
+				/* scan next bus */
+				ptBusCnt = ptBusCnt->next;
+			}
+
+			*list = ptDeviceList;
+		}
+	}
+
+	return ssizDeviceList;
+}
+
+
+void libusb_free_device_list(libusb_device **list, int unref_devices)
+{
+	/* free the complete list */
+	free(list);
+}
+
 
 #endif
 
@@ -2104,7 +2130,7 @@ int romloader_usb::libusb_readBlock(unsigned char *pucReceiveBuffer, unsigned in
 
 	iSize = (int)uiSize;
 
-	iRet = libusb_bulk_transfer(m_ptUsbDevHandle, 0x81, pucReceiveBuffer, iSize, &iTransfered, iTimeoutMs);
+	iRet = usb_bulk_netx_to_pc(m_ptUsbDevHandle, 0x81, pucReceiveBuffer, iSize, &iTransfered, iTimeoutMs);
 	return iRet;
 }
 
@@ -2118,7 +2144,7 @@ int romloader_usb::libusb_writeBlock(unsigned char *pucSendBuffer, unsigned int 
 
 	iSize = (int)uiSize;
 
-	iRet = libusb_bulk_transfer(m_ptUsbDevHandle, 0x01, pucSendBuffer, iSize, &iTransfered, iTimeoutMs);
+	iRet = usb_bulk_pc_to_netx(m_ptUsbDevHandle, 0x01, pucSendBuffer, iSize, &iTransfered, iTimeoutMs);
 	return iRet;
 }
 
