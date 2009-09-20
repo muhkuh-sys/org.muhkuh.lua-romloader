@@ -2,10 +2,13 @@
 --require("romloader_baka")
 require("romloader_usb")
 
+local function callback_progress(a,b)
+	print(string.format("%d%% (%d/%d)", a*100/b, a, b))
+	return true
+end
+
 local function callback(a,b)
-	print("callback")
-	print(string.format("a(%s): '%s'", type(a), a))
-	print(string.format("b(%s): '%s'", type(b), b))
+	print(string.format("callback: a(%s)='%s', b(%s)='%s'", type(a), a, type(b), b))
 	return true
 end
 
@@ -105,14 +108,14 @@ else
 	tPlugin:write_data32(0x00008000, 0)
 
 	-- read 128 bytes
-	str = tPlugin:read_image(0x00008000, 128, callback, 0)
+	str = tPlugin:read_image(0x00008000, 128, callback_progress, 128)
 	print("size: ", string.len(str))
 	hexdump(str,16)
 
 	--write 128 bytes
 	strData = get_rnd_data(128)
 	hexdump(strData,16)
-	tPlugin:write_image(0x00008000, strData, callback, 1)
+	tPlugin:write_image(0x00008000, strData, callback_progress, string.len(strData))
 
 	-- try to load netx500 binary
 	strData, msg = loadBin("netxtest_nx500.bin")
@@ -121,13 +124,13 @@ else
 		print("skipping call test.")
 	else
 		-- download binary to 0x8000
-		tPlugin:write_image(0x00008000, strData, callback, 1)
+		tPlugin:write_image(0x00008000, strData, callback_progress, string.len(strData))
 
 		-- set the parameter
 		tPlugin:write_data32(0x00017000, 0xffffffff)
 		tPlugin:write_data32(0x00017004, 0x12345678)
 		tPlugin:write_data32(0x00017008, 0x00000000)
-		tPlugin:call(0x00008000, 0x00017000, callback, 2)
+		tPlugin:call(0x00008000, 0x00017000, callback, 1)
 
 		-- get the result
 		ulValue = tPlugin:read_data32(0x08017000)
