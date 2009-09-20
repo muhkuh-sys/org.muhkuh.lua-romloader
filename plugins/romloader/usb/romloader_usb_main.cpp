@@ -30,11 +30,326 @@
 
 /*-------------------------------------*/
 
+/*
+ * libusb-0.1 compatibility functions
+ */
+
+#if ROMLOADER_USB_LIBUSB_VERSION==0
+
+int libusb_open(libusb_device *ptDevice, libusb_device_handle **pptDevHandle)
+{
+	libusb_device_handle *ptDevHandle;
+	int iError;
+
+
+	ptDevHandle = usb_open(ptDevice);
+	if( ptDevHandle!=NULL )
+	{
+		*pptDevHandle = ptDevHandle;
+		iError = 0;
+	}
+	else
+	{
+		*pptDevHandle = NULL;
+		iError = -1;
+	}
+
+	return iError;
+}
+
+
+void libusb_close(libusb_device_handle *dev_handle)
+{
+	usb_close(dev_handle);
+}
+
+
+int libusb_init(libusb_context **pptContext)
+{
+	usb_init();
+	*pptContext = NULL;
+	return LIBUSB_SUCCESS;
+}
+
+
+void libusb_exit(libusb_context *ptContext)
+{
+}
+
+
+void libusb_set_debug(libusb_context *ptContext, int iLevel)
+{
+}
+
+
+int usb_bulk_pc_to_netx(libusb_device_handle *ptDevHandle, unsigned char ucEndPointOut, const unsigned char *pucDataOut, int iLength, int *piProcessed, unsigned int uiTimeoutMs)
+{
+	int iError;
+
+
+	iError = usb_bulk_write(ptDevHandle, ucEndPointOut, (const char*)pucDataOut, iLength, uiTimeoutMs);
+	if( iError==iLength )
+	{
+		/* transfer ok! */
+		if( piProcessed!=NULL )
+		{
+			*piProcessed = iLength;
+		}
+		iError = 0;
+	}
+	else
+	{
+		/* do not return 0 in case of an error */
+		if( iError==0 )
+		{
+			iError = -1;
+		}
+		/* transfer failed */
+		if( piProcessed!=NULL )
+		{
+			*piProcessed = 0;
+		}
+	}
+
+	return iError;
+}
+
+
+int usb_bulk_netx_to_pc(libusb_device_handle *ptDevHandle, unsigned char ucEndPointIn, unsigned char *pucDataIn, int iLength, int *piProcessed, unsigned int uiTimeoutMs)
+{
+	int iError;
+
+
+	iError = usb_bulk_read(ptDevHandle, ucEndPointIn, (char*)pucDataIn, iLength, uiTimeoutMs);
+	if( iError==iLength )
+	{
+		/* transfer ok! */
+		if( piProcessed!=NULL )
+		{
+			*piProcessed = iLength;
+		}
+		iError = 0;
+	}
+	else
+	{
+		/* do not return 0 in case of an error */
+		if( iError==0 )
+		{
+			iError = -1;
+		}
+		/* transfer failed */
+		if( piProcessed!=NULL )
+		{
+			*piProcessed = 0;
+		}
+	}
+
+	return iError;
+}
+
+#if 0 
+	static void scan_bus(libusb_context *ptContext)
+	{
+	        unsigned int uiNetxCnt;
+	        struct usb_bus *ptBusses;
+	        struct usb_bus *ptBus;
+	        struct usb_device *ptDev;
+		struct usb_device *ptDevFound;
+		usb_dev_handle *ptDevHandle;
+
+
+		usb_find_busses();
+		usb_find_devices();
+
+		ptBusses = usb_get_busses();
+
+		uiNetxCnt = 0;
+
+		/* nothing found yet */
+		ptDevFound = NULL;
+
+		/* loop over all busses */
+		ptBus = ptBusses;
+		while( ptBus!=NULL )
+		{
+			/* loop over all devices */
+			ptDev = ptBus->devices;
+			while( ptDev!=NULL )
+			{
+				printf("*** Device Descriptor:\n");
+				printf(" bLength:            %d\n", ptDev->descriptor.bLength);
+				printf(" bDescriptorType:    %d\n", ptDev->descriptor.bDescriptorType);
+				printf(" bcdUSB:             0x%04x\n", ptDev->descriptor.bcdUSB);
+				printf(" bDeviceClass:       %d\n", ptDev->descriptor.bDeviceClass);
+				printf(" bDeviceSubClass:    %d\n", ptDev->descriptor.bDeviceSubClass);
+				printf(" bDeviceSubClass:    %d\n", ptDev->descriptor.bDeviceSubClass);
+				printf(" bMaxPacketSize0:    %d\n", ptDev->descriptor.bMaxPacketSize0);
+				printf(" idVendor:           0x%04x\n", ptDev->descriptor.idVendor);
+				printf(" idProduct:          0x%04x\n", ptDev->descriptor.idProduct);
+				printf(" bcdDevice:          0x%04x\n", ptDev->descriptor.bcdDevice);
+				printf(" iManufacturer:      %d\n", ptDev->descriptor.iManufacturer);
+				printf(" iProduct:           %d\n", ptDev->descriptor.iProduct);
+				printf(" iSerialNumber:      %d\n", ptDev->descriptor.iSerialNumber);
+				printf(" bNumConfigurations: %d\n\n", ptDev->descriptor.bNumConfigurations);
+
+				if( ptDev->descriptor.idVendor==NETX10_USB_VENDOR_ID && ptDev->descriptor.idProduct==NETX10_USB_PRODUCT_ID )
+				{
+					printf(". Found netX10 JTag device.\n");
+					ptDevFound = ptDev;
+					break;
+				}
+
+				/* next device */
+				ptDev = ptDev->next;
+			}
+			/* scan next bus */
+			ptBus = ptBus->next;
+		}
+
+		if( ptDevFound==NULL )
+		{
+			printf("! No netX10 JTag device found.\n");
+		}
+		else
+		{
+			ptDevHandle = usb_open(ptDevFound);
+			if( ptDevHandle==NULL )
+			{
+				printf("! Failed to open netX10 JTag device:\n");
+			}
+			else if( usb_set_configuration(ptDevHandle, 1)!=0 )
+			{
+				printf("! Failed to set config:\n");
+			}
+			else if( usb_claim_interface(ptDevHandle, 0)!=0 )
+			{
+				printf("! Failed to claim the if:\n");
+			}
+			else
+			{
+				loopback_test(ptDevHandle, EP_OUT, EP_IN);
+
+				usb_close(ptDevHandle);
+			}
+		}
+	}
+#endif
+
+
+int libusb_get_device_descriptor(libusb_device *dev, struct libusb_device_descriptor *desc)
+{
+	*desc = dev->descriptor;
+	return LIBUSB_SUCCESS;
+}
+
+
+uint8_t libusb_get_bus_number(libusb_device *dev)
+{
+	uint8_t ucBusNr;
+	usb_bus *ptBus;
+	const char *pcBusName;
+	int iResult;
+	unsigned int uiBusNumber;
+
+
+	/* expect failure */
+	ucBusNr = 0xffU;
+
+	/* is the device valid? */
+	if( dev!=NULL )
+	{
+		/* does the device have a bus assigned? */
+		ptBus = dev->bus;
+		if( ptBus!=NULL )
+		{
+			/* does the bus have a directory name? */
+			pcBusName = ptBus->dirname;
+			if( pcBusName!=NULL )
+			{
+				/* parse the directory name */
+				iResult = sscanf(pcBusName, "%u", &uiBusNumber);
+				/* does the directory name have the expected format? */
+				if( iResult==1 )
+				{
+					/* is the bus number in the valid range? */
+					if( uiBusNumber<0x80U )
+					{
+						/* set the result */
+						ucBusNr = (uint8_t)uiBusNumber;
+					}
+				}
+			}
+		}
+	}
+
+	return ucBusNr;
+}
+
+
+uint8_t libusb_get_device_address(libusb_device *dev)
+{
+	uint8_t ucDeviceAddress;
+	const char *pcFilename;
+	int iResult;
+	unsigned int uiDeviceNumber;
+
+
+	/* expect failure */
+	ucDeviceAddress = 0xffU;
+
+	/* is the device valid? */
+	if( dev!=NULL )
+	{
+		/* does the bus have a directory name? */
+		pcFilename = dev->filename;
+		if( pcFilename!=NULL )
+		{
+			/* parse the directory name */
+			iResult = sscanf(pcFilename, "%u", &uiDeviceNumber);
+			/* does the directory name have the expected format? */
+			if( iResult==1 )
+			{
+				/* is the bus number in the valid range? */
+				if( uiDeviceNumber<0x80U )
+				{
+					/* set the result */
+					ucDeviceAddress = (uint8_t)uiDeviceNumber;
+				}
+			}
+		}
+	}
+
+	return ucDeviceAddress;
+}
+
+#endif
+
+/*-------------------------------------*/
+
+/*
+ * libusb-1.0 wrapper functions
+ */
+
+#if ROMLOADER_USB_LIBUSB_VERSION==1
+
+
+
+#endif
+
+
+/*-------------------------------------*/
+
+/*
+ * common functions for all libusb versions
+ */
+
+
 typedef struct
 {
 	libusb_error eErrNo;
 	const char *pcErrMsg;
 } LIBUSB_STRERROR_T;
+
 
 static const LIBUSB_STRERROR_T atStrError[] =
 {
@@ -107,6 +422,8 @@ bool isDeviceNetx(libusb_device *ptDev)
 
 	return fDeviceIsNetx;
 }
+
+
 
 /*-------------------------------------*/
 
