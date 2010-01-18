@@ -61,7 +61,7 @@
 		LIBUSB_ERROR_NOT_SUPPORTED = -12,
 		LIBUSB_ERROR_OTHER = -99,
 	};
-#elif
+#elif ROMLOADER_USB_LIBUSB_VERSION==1
 	/* use libusb-1.0 */
 	#include <libusb-1.0/libusb.h>
 
