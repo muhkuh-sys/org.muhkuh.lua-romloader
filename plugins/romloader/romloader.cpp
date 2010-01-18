@@ -71,6 +71,7 @@ const char *romloader::GetChiptypName(ROMLOADER_CHIPTYP tChiptyp) const
 			pcChiptyp = ptCnt->pcChiptypName;
 			break;
 		}
+		++ptCnt;
 	}
 
 	return pcChiptyp;
@@ -96,6 +97,7 @@ const char *romloader::GetRomcodeName(ROMLOADER_ROMCODE tRomcode) const
 			pcRomcode = ptCnt->pcRomcodeName;
 			break;
 		}
+		++ptCnt;
 	}
 
 	return pcRomcode;
