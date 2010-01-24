@@ -25,7 +25,7 @@
 #define __MUHKUH_PLUGIN_INTERFACE__
 
 #ifndef SWIGRUNTIME
-#include "_luaif/swigluarun.h"
+#include <swigluarun.h>
 
 /* swigluarun does not include the lua specific defines. Add them here. */
 typedef struct{

@@ -1,0 +1,51 @@
+cmake_minimum_required(VERSION 2.8)
+
+
+PROJECT("romloader_usb")
+
+SET(romloader_usb_VERSION 0.0.1)
+
+
+FIND_PACKAGE(SWIG REQUIRED)
+INCLUDE(${SWIG_USE_FILE})
+
+INCLUDE_DIRECTORIES(${LUA_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
+
+
+IF(UNIX)
+	# Use libusb-0.1
+	SET(USB_LIBRARIES usb)
+	SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=0)
+
+	# Use libusb-1.0
+	#SET(USB_LIBRARIES usb-1.0)
+	#SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=1)
+ELSE(UNIX)
+	IF(WIN32)
+		INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/plugins/romloader/usb/win/include/)
+		LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/plugins/romloader/usb/win/lib/msvc/)
+		SET(USB_LIBRARIES libusb setupapi)
+		SET(USB_DEFINES )
+	ENDIF(WIN32)
+ENDIF(UNIX)
+
+
+SET_SOURCE_FILES_PROPERTIES(romloader_usb.i PROPERTIES CPLUSPLUS ON)
+SET_SOURCE_FILES_PROPERTIES(romloader_usb.i PROPERTIES SWIG_FLAGS "${USB_DEFINES}")
+
+
+SET(romloader_usb_SOURCES
+	romloader_usb_main.cpp
+)
+
+SET(romloader_usb_HEADERS
+	romloader_usb_main.h
+)
+
+add_definitions(${USB_DEFINES})
+SWIG_ADD_MODULE(romloader_usb lua romloader_usb.i ${romloader_usb_SOURCES})
+SWIG_LINK_LIBRARIES(romloader_usb ${LUA_LIBRARIES} ${USB_LIBRARIES} romloader)
+SET_TARGET_PROPERTIES(romloader_usb PROPERTIES PREFIX "")
+
