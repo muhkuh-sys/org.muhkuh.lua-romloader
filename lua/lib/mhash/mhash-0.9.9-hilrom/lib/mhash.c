@@ -41,6 +41,7 @@
 #include <mhash_whirlpool.h>
 #include <mhash_snefru.h>
 #include <mhash_hilrom.h>
+#include <mhash_crc16.h>
 
 /* 19/03/2000 Changes for better thread handling --nikos 
  * Actually it is thread safe.
@@ -169,6 +170,11 @@ static __const mhash_hash_entry algorithms[] = {
 		HilRom_Update, NULL, HilRom_Final),
 	MHASH_ENTRY(MHASH_HILROMI, 4, 0, sizeof(HILROM_CTX), HilRom_Init_Inv,
 		HilRom_Update, NULL, HilRom_Final),
+#endif
+
+#if defined(ENABLE_CRC16)
+	MHASH_ENTRY(MHASH_CRC16, 2, 0, sizeof(CRC16_CTX), Crc16_Init, 
+		Crc16_Update, NULL, Crc16_Final),
 #endif
 
 	{0}

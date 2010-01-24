@@ -70,6 +70,7 @@ typedef enum __hashid {
 	MHASH_SUBHASH		= 72, /* NOT YET IMPLEMENTED */
 	MHASH_HILROM		= 128,
 	MHASH_HILROMI		= 129,
+	MHASH_CRC16		= 130,
 #endif
 #if (MHASH_API_TYPE == MHASH_API_FAMILY)
 	MHASH_CRC32		= 0x0001,
@@ -110,6 +111,7 @@ typedef enum __hashid {
 	MHASH_SUBHASH		= 0x0f01, /* NOT YET IMPLEMENTED */
 	MHASH_HILROM		= 0x1001,
 	MHASH_HILROMI		= 0x1002,
+	MHASH_CRC16		= 0x1003,
 #endif
 } hashid;
 
