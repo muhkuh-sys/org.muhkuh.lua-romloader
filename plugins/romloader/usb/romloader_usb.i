@@ -44,7 +44,7 @@
 %newobject romloader_usb_reference::Create;
 
 
-/* TODO: split the interface in multiple files. */
-%include "../../muhkuh_plugin_interface.h"
-%include "../romloader.h"
+/* import interfaces */
+%import "../romloader.i"
+
 %include "romloader_usb_main.h"

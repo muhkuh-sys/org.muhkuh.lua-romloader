@@ -16,3 +16,4 @@
 %}
 
 %include "muhkuh_typemaps.i"
+%include "muhkuh_plugin_interface.h"

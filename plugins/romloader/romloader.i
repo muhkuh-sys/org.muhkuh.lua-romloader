@@ -18,6 +18,6 @@
 %include "../muhkuh_typemaps.i"
 
 /* import interfaces */
-%import "../muhkuh_plugin_interface.h"
+%import "../muhkuh_plugin_interface.i"
 
 %include "romloader.h"
