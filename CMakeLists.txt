@@ -8,6 +8,15 @@ MAKE_DIRECTORY(${LIBRARY_OUTPUT_PATH})
 SET(SWIG_RUNTIME_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/swig_runtime/)
 MAKE_DIRECTORY(${SWIG_RUNTIME_OUTPUT_PATH})
 
+SET(MODULE_LUA_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/lua)
+MAKE_DIRECTORY(${MODULE_LUA_OUTPUT_PATH})
+
+SET(MODULE_PYTHON_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/python)
+MAKE_DIRECTORY(${MODULE_PYTHON_OUTPUT_PATH})
+# NOTE: This is a little bit dirty as it sets the path for all generated modules, but it is only needed for python.
+# TODO: How to specify this for a single target?
+SET(CMAKE_SWIG_OUTDIR ${MODULE_PYTHON_OUTPUT_PATH})
+
 OPTION(USE_SYSTEM_LUA "Use the systemwide installed lua version instead of the muhkuh internal one." OFF)
 IF(USE_SYSTEM_LUA)
 	# Use the system version.
@@ -35,4 +44,5 @@ ADD_CUSTOM_TARGET(SWIG_PYTHON_RUNTIME DEPENDS ${SWIG_RUNTIME_OUTPUT_PATH}swigpyt
 
 
 add_subdirectory(lua)
+add_subdirectory(modules)
 add_subdirectory(plugins)

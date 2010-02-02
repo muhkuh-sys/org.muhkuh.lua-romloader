@@ -93,15 +93,16 @@ add_library(mhash_lib STATIC ${mhash_SOURCES})
 
 if(${LUA51_FOUND})
 	# Build the Lua module.
-	swig_add_module(mhash_lua lua mhash.i)
-	swig_link_libraries(mhash_lua mhash_lib ${LUA_LIBRARIES})
-	set_target_properties(mhash_lua PROPERTIES PREFIX "")
+	swig_add_module(mhash lua mhash.i)
+	swig_link_libraries(mhash mhash_lib ${LUA_LIBRARIES})
+	set_target_properties(mhash PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${MODULE_LUA_OUTPUT_PATH} PREFIX "")
 endif(${LUA51_FOUND})
 
 
 if(${PYTHONLIBS_FOUND})
 	# Build the Python module.
-	swig_add_module(mhash python mhash.i)
-	swig_link_libraries(mhash mhash_lib ${PYTHON_LIBRARIES})
+	swig_add_module(mhashmodule python mhash.i)
+	swig_link_libraries(mhashmodule mhash_lib ${PYTHON_LIBRARIES})
+	set_target_properties(_mhashmodule PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${MODULE_PYTHON_OUTPUT_PATH})
 endif(${PYTHONLIBS_FOUND})
 
