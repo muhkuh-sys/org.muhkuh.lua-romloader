@@ -42,6 +42,7 @@
 	++SWIG_arg;
 %}
 #else
+%include cstring.i
 %apply (char *STRING, int LENGTH) { (const char *pcBUFFER_IN, size_t sizBUFFER_IN) };
 %cstring_output_allocate_size(char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, free(*$1));
 #endif
