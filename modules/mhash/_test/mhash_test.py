@@ -28,6 +28,8 @@
 
 import mhash
 
+import binascii
+
 
 # define some helper functions for the pattern test
 
@@ -61,23 +63,22 @@ def hash_show_error(input, hash, expected):
 	hexdump(hash)
 	print "expected result:"
 	hexdump(expected)
-end
 
 
 #def check_hash(hash_id, patterns):
-	## expect success
-	#fResult = true
-
-	## create a state
-	#mh = mhash.mhash_state()
-
-	## loop over all testpatterns
-	#for (i,p) in values(patterns):
-		#print "Testing pattern %s" % i
-		## convert the hexdump string to binary data
-		#expected_hash = ""
-		#for i=1,p.hash:len(),2 do
-			#num = tonumber(p.hash:sub(i,i+1), 16)
+#	# expect success
+#	fResult = true
+#
+#	# create a state
+#	mh = _mhash.mhash_state()
+#
+#	# loop over all testpatterns
+#	for (i,p) in values(patterns):
+#		print "Testing pattern %s" % i
+#		# convert the hexdump string to binary data
+#		expected_hash = ""
+#		#for i=1,p.hash:len(),2 do
+#			#num = tonumber(p.hash:sub(i,i+1), 16)
 			#if not num then
 				#print("Failed to convert expected hash value to binary: " .. p.hash)
 				#fResult = false
@@ -108,11 +109,8 @@ end
 print "Binding and Version check"
 
 # check for mhash namespace
-if mhash!=None:
-	error("No mhash bindings found!")
-print "Found mhash bindings."
-
-print "Found mhash version '%s'" % mhash.get_version()
+strMhashVersion = mhash.get_version()
+print "Found mhash version '%s'" % strMhashVersion
 
 # print some info
 hash_cnt = mhash.count()
@@ -122,4 +120,37 @@ for t in range(0, hash_cnt+1):
 	if name:
 		print "\t%d: %s (%d)" % (t, name, mhash.get_block_size(t))
 
+
+##############################################################################
+
+
+print "Simple CRC32B check"
+
+# Expected hash for the string.
+expected_hash = binascii.unhexlify("33F0C468")
+
+# Create a mhash_state.
+mh = mhash.mhash_state()
+
+# Calculate the hash for a string.
+data = "0123456789abcdef"
+mh.init(mhash.MHASH_CRC32B)
+
+mh.hash(data)
+hash = mh.hash_end()
+
+# Delete the state.
+mh = None
+
+# Check the result.
+if hash!=expected_hash:
+	print "the hash does not match the expected hash!"
+	print "input data:"
+	hexdump(data)
+	print "result:"
+	hexdump(hash)
+	print "expected result:"
+	hexdump(expected_hash)
+	
+	error("test failed!")
 
