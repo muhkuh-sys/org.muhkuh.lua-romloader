@@ -3,6 +3,3 @@
 IF(NOT USE_SYSTEM_LUA)
 	add_subdirectory(lua-5.1.4)
 ENDIF(NOT USE_SYSTEM_LUA)
-
-add_subdirectory(bit)
-add_subdirectory(mhash)
