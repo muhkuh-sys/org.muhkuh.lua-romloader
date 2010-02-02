@@ -1,26 +1,33 @@
 cmake_minimum_required(VERSION 2.8)
 
-PROJECT("lua_lib_mhash")
+project("module_mhash")
 
-SET(lua_lib_mhash_VERSION 0.0.1)
-
-
-FIND_PACKAGE(SWIG REQUIRED)
+set(module_mhash_VERSION 0.0.1)
 
 
-INCLUDE(${SWIG_USE_FILE})
-
-INCLUDE_DIRECTORIES(${LUA_INCLUDE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/mhash-0.9.9-hilrom/lib)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/mhash-0.9.9-hilrom/include)
+find_package(SWIG REQUIRED)
 
 
-SET_SOURCE_FILES_PROPERTIES(mhash.i PROPERTIES CPLUSPLUS ON)
-SET_SOURCE_FILES_PROPERTIES(mhash.i PROPERTIES SWIG_FLAGS "")
+include(${SWIG_USE_FILE})
+
+if(${PYTHONLIBS_FOUND})
+	include_directories(${PYTHON_INCLUDE_DIRS})
+endif(${PYTHONLIBS_FOUND})
+
+if(${LUA51_FOUND})
+	include_directories(${LUA_INCLUDE_DIR})
+endif(${LUA51_FOUND})
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/mhash-0.9.9-hilrom/lib)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/mhash-0.9.9-hilrom/include)
 
 
-SET(lua_lib_mhash_SOURCES
+set_source_files_properties(mhash.i PROPERTIES CPLUSPLUS ON)
+set_source_files_properties(mhash.i PROPERTIES SWIG_FLAGS "-I${CMAKE_HOME_DIRECTORY}/modules/typemaps")
+
+
+set(mhash_SOURCES
 	mhash_state.cpp
 	mhash-0.9.9-hilrom/lib/adler32.c
 	mhash-0.9.9-hilrom/lib/crc16.c
@@ -49,7 +56,7 @@ SET(lua_lib_mhash_SOURCES
 	mhash-0.9.9-hilrom/lib/whirlpool.c
 )
 
-SET(lua_lib_mhash_HEADERS
+set(mhash_HEADERS
 	mhash_state.h
 	mhash_config.h
 	mhash-0.9.9-hilrom/include/mhash.h
@@ -80,6 +87,21 @@ SET(lua_lib_mhash_HEADERS
 	mhash-0.9.9-hilrom/lib/mhash_whirlpool.h
 )
 
-SWIG_ADD_MODULE(mhash lua mhash.i ${lua_lib_mhash_SOURCES})
-SWIG_LINK_LIBRARIES(mhash ${LUA_LIBRARIES})
-SET_TARGET_PROPERTIES(mhash PROPERTIES PREFIX "")
+# Build the library.
+add_library(mhash_lib STATIC ${mhash_SOURCES})
+
+
+if(${LUA51_FOUND})
+	# Build the Lua module.
+	swig_add_module(mhash_lua lua mhash.i)
+	swig_link_libraries(mhash_lua mhash_lib ${LUA_LIBRARIES})
+	set_target_properties(mhash_lua PROPERTIES PREFIX "")
+endif(${LUA51_FOUND})
+
+
+if(${PYTHONLIBS_FOUND})
+	# Build the Python module.
+	swig_add_module(mhash python mhash.i)
+	swig_link_libraries(mhash mhash_lib ${PYTHON_LIBRARIES})
+endif(${PYTHONLIBS_FOUND})
+
