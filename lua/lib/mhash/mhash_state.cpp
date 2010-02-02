@@ -154,16 +154,17 @@ void mhash_state::hash(const char *pcData, size_t sizData, size_t sizLength, siz
 }
 
 
-tBinaryData mhash_state::hash_end(void)
+void mhash_state::hash_end(char **ppcData, size_t *psizData)
 {
 	hashid tId;
 	size_t sizBlockSize;
 	void *pvHash;
-	tBinaryData tBinData;
+	char *pcData;
+	size_t sizData;
 
 
-	tBinData.pcData = NULL;
-	tBinData.sizData = 0;
+	pcData = NULL;
+	sizData = 0;
 
 	// get blocksize
 	if( m_hMHash!=NULL )
@@ -175,13 +176,14 @@ tBinaryData mhash_state::hash_end(void)
 			pvHash = mhash_end(m_hMHash);
 			if( pvHash!=NULL )
 			{
-				tBinData.pcData = (char*)pvHash;
-				tBinData.sizData = sizBlockSize;
+				pcData = (char*)pvHash;
+				sizData = sizBlockSize;
 			}
 			m_hMHash = NULL;
 		}
 	}
 
-	return tBinData;
+	*ppcData = pcData;
+	*psizData = sizData;
 }
 

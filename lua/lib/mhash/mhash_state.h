@@ -35,12 +35,6 @@ const char *get_hash_name(hashid type);
 //double get_hash_pblock(hashid type);
 //hashid get_mhash_algo(MHASH tmp);
 
-typedef struct
-{
-	char *pcData;
-	size_t sizData;
-} tBinaryData;
-
 
 class mhash_state
 {
@@ -56,7 +50,7 @@ public:
 	void hash(const char *pcData, size_t sizData);
 	void hash(const char *pcData, size_t sizData, size_t sizLength);
 	void hash(const char *pcData, size_t sizData, size_t sizLength, size_t sizOffset);
-	tBinaryData hash_end(void);
+	void hash_end(char **ppcData, size_t *psizData);
 
 
 	/* HMAC */

@@ -1,5 +1,7 @@
 %module mhash
 
+%include muhkuh.i
+
 %{
 	#include "mhash_state.h"
 %}
@@ -82,18 +84,6 @@ double count();
 double get_block_size(hashid type);
 const char *get_hash_name(hashid type);
 
-%typemap(in) (const char *pcData, size_t sizData)
-{
-	$1 = (char*)lua_tolstring(L, $argnum, &$2);
-}
-
-%typemap(out) tBinaryData
-{
-	lua_pushlstring(L, $1.pcData, $1.sizData);
-	++SWIG_arg;
-	free($1.pcData);
-}
-
 class mhash_state
 {
 public:
@@ -103,10 +93,10 @@ public:
 	~mhash_state();
 
 	void init(hashid type);
-	void hash(const char *pcData, size_t sizData);
-	void hash(const char *pcData, size_t sizData, size_t sizLength);
-	void hash(const char *pcData, size_t sizData, size_t sizLength, size_t sizOffset);
+	void hash(const char *pcBUFFER_IN, size_t sizBUFFER_IN);
+	void hash(const char *pcBUFFER_IN, size_t sizBUFFER_IN, size_t sizLength);
+	void hash(const char *pcBUFFER_IN, size_t sizBUFFER_IN, size_t sizLength, size_t sizOffset);
 
-	tBinaryData hash_end(void);
+	void hash_end(char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT);
 };
 
