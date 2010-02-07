@@ -1,6 +1,6 @@
 %module mhash
 
-%include muhkuh.i
+%include muhkuh_typemaps.i
 
 %{
 	#include "mhash_state.h"
