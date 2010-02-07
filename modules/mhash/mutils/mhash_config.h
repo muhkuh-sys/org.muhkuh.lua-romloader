@@ -128,9 +128,6 @@
 /* Define to 1 if you have the <signal.h> header file. */
 #define HAVE_SIGNAL_H 1
 
-/* Define to 1 if you have the `stat' function. */
-#define HAVE_STAT 1
-
 /* Define to 1 if stdbool.h conforms to C99. */
 #undef HAVE_STDBOOL_H
 
