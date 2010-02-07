@@ -9,7 +9,14 @@ SET(romloader_usb_VERSION 0.0.1)
 FIND_PACKAGE(SWIG REQUIRED)
 INCLUDE(${SWIG_USE_FILE})
 
-INCLUDE_DIRECTORIES(${LUA_INCLUDE_DIR})
+if(${PYTHONLIBS_FOUND})
+	include_directories(${PYTHON_INCLUDE_DIRS})
+endif(${PYTHONLIBS_FOUND})
+
+if(${LUA51_FOUND})
+	include_directories(${LUA_INCLUDE_DIR})
+endif(${LUA51_FOUND})
+
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 
@@ -32,8 +39,8 @@ ELSE(UNIX)
 ENDIF(UNIX)
 
 
-SET_SOURCE_FILES_PROPERTIES(romloader_usb.i PROPERTIES CPLUSPLUS ON)
-SET_SOURCE_FILES_PROPERTIES(romloader_usb.i PROPERTIES SWIG_FLAGS "${USB_DEFINES}")
+set_source_files_properties(romloader_usb.i PROPERTIES CPLUSPLUS ON)
+set_property(SOURCE romloader_usb.i PROPERTY SWIG_FLAGS ${USB_DEFINES} -I${CMAKE_HOME_DIRECTORY}/modules/typemaps)
 
 
 SET(romloader_usb_SOURCES
@@ -45,7 +52,23 @@ SET(romloader_usb_HEADERS
 )
 
 add_definitions(${USB_DEFINES})
-SWIG_ADD_MODULE(romloader_usb lua romloader_usb.i ${romloader_usb_SOURCES})
-SWIG_LINK_LIBRARIES(romloader_usb ${LUA_LIBRARIES} ${USB_LIBRARIES} romloader)
-SET_TARGET_PROPERTIES(romloader_usb PROPERTIES PREFIX "")
+
+add_library(romloader_usb_lib STATIC ${romloader_usb_SOURCES})
+
+
+if(${LUA51_FOUND})
+	# Build the Lua module.
+	SWIG_ADD_MODULE(romloader_usb lua romloader_usb.i)
+	SWIG_LINK_LIBRARIES(romloader_usb romloader_usb_lib ${LUA_LIBRARIES} ${USB_LIBRARIES} romloader)
+	set_property(TARGET romloader_usb PROPERTY LIBRARY_OUTPUT_DIRECTORY ${MODULE_LUA_OUTPUT_PATH})
+	set_property(TARGET romloader_usb PROPERTY PREFIX "")
+endif(${LUA51_FOUND})
+
+
+#if(${PYTHONLIBS_FOUND})
+#	# Build the Python module.
+#	swig_add_module(romloader_usbmodule python romloader_usb.i)
+#	swig_link_libraries(romloader_usbmodule romloader_usb_lib ${PYTHON_LIBRARIES} ${USB_LIBRARIES} romloader)
+#	set_target_properties(_romloader_usbmodule PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${MODULE_PYTHON_OUTPUT_PATH})
+#endif(${PYTHONLIBS_FOUND})
 

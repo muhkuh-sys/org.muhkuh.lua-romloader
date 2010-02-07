@@ -1356,7 +1356,7 @@ bool romloader_usb::parseDumpLine(DATA_BUFFER_T *ptBuffer, unsigned long ulAddre
 
 
 /* read a byte array from the netx to the pc */
-void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize, unsigned char **ppucOutputData, unsigned long *pulOutputData, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	int iResult;
 	char acCommand[28];
@@ -1459,8 +1459,8 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 					ulSize = 0;
 				}
 
-				*ppucOutputData = pucData;
-				*pulOutputData = ulSize;
+				*ppcBUFFER_OUT = (char*)pucData;
+				*psizBUFFER_OUT = (size_t)ulSize;
 			}
 		}
 	}
@@ -1627,11 +1627,12 @@ void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 
 
 /* write a byte array from the pc to the netx */
-void romloader_usb::write_image(unsigned long ulNetxAddress, const unsigned char *pucInputData, unsigned long ulInputData, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	int iResult;
 	bool fOk;
 	DATA_BUFFER_T tBuffer;
+	const unsigned char *pucInputData;
 
 
 	// expect error
@@ -1644,7 +1645,8 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const unsigned char
 	else
 	{
 		// send the command
-		iResult = usb_load(pucInputData, ulInputData, ulNetxAddress, &tLuaFn, lCallbackUserData);
+		pucInputData = (const unsigned char*)pcBUFFER_IN;
+		iResult = usb_load(pucInputData, sizBUFFER_IN, ulNetxAddress, &tLuaFn, lCallbackUserData);
 		if( iResult!=LIBUSB_SUCCESS )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to send command: %d:%s", m_pcName, this, iResult, libusb_strerror(iResult));
