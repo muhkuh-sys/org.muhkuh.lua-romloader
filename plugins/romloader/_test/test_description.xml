@@ -270,10 +270,10 @@
 				return __MUHKUH_TEST_RESULT_CANCEL
 			end
 
-			netx = plugin:get_chiptyp()
-			print("Found " .. plugin:get_chiptyp_name(netx) .. " with " .. plugin:get_romcode_name(plugin:get_romcode()))
+			netx = plugin:GetChiptyp()
+			print("Found " .. plugin:GetChiptypName(netx) .. " with " .. plugin:GetRomcodeName(plugin:GetRomcode()))
 
-			if netx==muhkuh.ROMLOADER_CHIPTYP_NETX50 then
+			if netx==romloader.ROMLOADER_CHIPTYP_NETX50 then
 				-- upload the test binary
 				testBinary = muhkuh.load("netxtest_nx50.bin")
 				tester.stdWrite(tester.getPanel(), plugin, 0x08008000, testBinary)
@@ -286,7 +286,7 @@
 
 				-- get the result
 				ulValue = plugin:read_data32(0x08017000)
-			elseif netx==muhkuh.ROMLOADER_CHIPTYP_NETX500 or netx==muhkuh.ROMLOADER_CHIPTYP_NETX100 then
+			elseif netx==romloader.ROMLOADER_CHIPTYP_NETX500 or netx==romloader.ROMLOADER_CHIPTYP_NETX100 then
 				-- upload the test binary
 				testBinary = muhkuh.load("netxtest_nx500.bin")
 				tester.stdWrite(tester.getPanel(), plugin, 0x00008000, testBinary)
