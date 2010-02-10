@@ -59,7 +59,7 @@ add_library(romloader_usb_lib STATIC ${romloader_usb_SOURCES})
 if(${LUA51_FOUND})
 	# Build the Lua module.
 	SWIG_ADD_MODULE(romloader_usb lua romloader_usb.i)
-	SWIG_LINK_LIBRARIES(romloader_usb romloader_usb_lib ${LUA_LIBRARIES} ${USB_LIBRARIES} romloader)
+	SWIG_LINK_LIBRARIES(romloader_usb romloader_usb_lib ${LUA_LIBRARIES} ${USB_LIBRARIES} romloader_lib)
 	set_property(TARGET romloader_usb PROPERTY LIBRARY_OUTPUT_DIRECTORY ${MODULE_LUA_OUTPUT_PATH})
 	set_property(TARGET romloader_usb PROPERTY PREFIX "")
 endif(${LUA51_FOUND})
