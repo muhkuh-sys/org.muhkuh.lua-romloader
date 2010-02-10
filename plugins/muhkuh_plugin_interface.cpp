@@ -312,3 +312,17 @@ char *muhkuh_plugin_provider::clone_string(const char *pcStr, size_t sizMax)
 	return pcClone;
 }
 
+
+void muhkuh_plugin_provider::add_reference_to_table(lua_State *ptLuaState, muhkuh_plugin_reference *ptReference)
+{
+	size_t sizTable;
+
+
+	/* get the size of the table */
+	sizTable = lua_objlen(ptLuaState, 2);
+	/* create a new pointer object with the special type */
+	SWIG_NewPointerObj(ptLuaState, ptReference, m_ptReferenceTypeInfo, 1);
+	/* add the pointer object to the table */
+	lua_rawseti(ptLuaState, 2, sizTable+1);
+}
+

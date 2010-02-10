@@ -119,6 +119,8 @@ public:
 protected:
 	char *clone_string(const char *pcStr, size_t sizMax);
 
+	void add_reference_to_table(lua_State *ptLuaState, muhkuh_plugin_reference *ptReference);
+
 	const char *m_pcPluginName;
 	const char *m_pcPluginId;
 	muhkuh_plugin_version m_tVersion;
