@@ -494,16 +494,12 @@ int romloader_usb_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 	bool fDeviceIsBusy;
 	int iInterfaces;
 	bool fDeviceIsNetx;
-	size_t sizTable;
 	romloader_usb_reference *ptRef;
 	const size_t sizMaxName = 32;
 	char acName[sizMaxName];
 
 
 	iInterfaces = 0;
-
-	// get the size of the table
-	sizTable = lua_objlen(ptLuaStateForTableAccess, 2);
 
 	/* check the libusb context */
 	if( m_ptLibUsbContext==NULL )
@@ -587,11 +583,8 @@ int romloader_usb_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 
 								/* create the new instance */
 								ptRef = new romloader_usb_reference(acName, m_pcPluginId, fDeviceIsBusy, this);
-
-								SWIG_NewPointerObj(ptLuaStateForTableAccess, ptRef, m_ptReferenceTypeInfo, 1);
-								sizTable++;
-								lua_rawseti(ptLuaStateForTableAccess, 2, sizTable);
-
+								add_reference_to_table(ptLuaStateForTableAccess, ptRef);
+								/* count instances */
 								++iInterfaces;
 							}
 						}
