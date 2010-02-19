@@ -75,3 +75,6 @@ ENDIF(UNIX)
 
 add_library(lua SHARED ${lua_lib_lua_SOURCES})
 
+add_executable(luaexe src/lua.c)
+target_link_libraries(luaexe lua)
+set_target_properties(luaexe PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/)
