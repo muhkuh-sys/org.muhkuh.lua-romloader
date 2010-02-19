@@ -285,7 +285,6 @@ ssize_t libusb_get_device_list(libusb_context *ctx, libusb_device ***list)
 	struct usb_bus *ptBusses;
 	struct usb_bus *ptBusCnt;
 	struct usb_device *ptDevCnt;
-	usb_dev_handle *ptDevHandle;
 
 
 	/* detect all busses */
@@ -498,7 +497,6 @@ romloader_usb_provider::~romloader_usb_provider(void)
 int romloader_usb_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess)
 {
 	int iResult;
-	libusb_context *ptLibUsbContext;
 	ssize_t ssizDevList;
 	libusb_device **ptDeviceList;
 	libusb_device **ptDevCnt, **ptDevEnd;
@@ -808,6 +806,7 @@ void romloader_usb::Connect(lua_State *ptClientData)
 	libusb_device **ptDeviceList;
 	libusb_device **ptDevCnt, **ptDevEnd;
 	libusb_device *ptDev;
+	libusb_device_handle *ptUsbDevHandle;
 
 
 	tRef.L = NULL;
@@ -859,80 +858,94 @@ void romloader_usb::Connect(lua_State *ptClientData)
 			}
 			else
 			{
-				iResult = libusb_open(m_ptUsbDev, &m_ptUsbDevHandle);
+				iResult = libusb_open(m_ptUsbDev, &ptUsbDevHandle);
 				if( iResult!=LIBUSB_SUCCESS )
 				{
 					MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to open the device: %d:%s", m_pcName, this, iResult, libusb_strerror(iResult));
 				}
 				else
 				{
-					if( m_ptUsbDevHandle==NULL )
+					/* set the configuration */
+					iResult = libusb_set_configuration(ptUsbDevHandle, 1);
+					if( iResult!=LIBUSB_SUCCESS )
 					{
-						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): device not found. is it still plugged in and powered?", m_pcName, this);
-						iResult = LIBUSB_ERROR_NOT_FOUND;
+						/* failed to set the configuration */
+						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to set the configuration of device: %d:%s\n", m_pcName, this, iResult, libusb_strerror(iResult));
 					}
 					else
 					{
-						// get netx welcome message
-						iResult = usb_getNetxData(&tBuffer, &tRef, 0);
+						/* claim the interface, 0 is the interface number */
+						iResult = libusb_claim_interface(ptUsbDevHandle, 0);
 						if( iResult!=LIBUSB_SUCCESS )
 						{
-							printf("%s(%p): failed to receive netx response, trying to reset netx: %d:%s\n", m_pcName, this, iResult, libusb_strerror(iResult));
+							/* failed to claim the interface */
+							MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to claim the device: %d:%s\n", m_pcName, this, iResult, libusb_strerror(iResult));
+						}
+						else
+						{
+							m_ptUsbDevHandle = ptUsbDevHandle;
 
-							// try to reset the device and try again
-							iResult = libusb_resetDevice();
+							// get netx welcome message
+							iResult = usb_getNetxData(&tBuffer, &tRef, 0);
 							if( iResult!=LIBUSB_SUCCESS )
 							{
-								MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to reset the netx, giving up: %d:%s", m_pcName, this, iResult, libusb_strerror(iResult));
-								libusb_closeDevice();
-							}
-							else
-							{
-								printf("%s(%p): reset ok!\n", m_pcName, this);
+								printf("%s(%p): failed to receive netx response, trying to reset netx: %d:%s\n", m_pcName, this, iResult, libusb_strerror(iResult));
 
-								libusb_closeDevice();
-								m_ptUsbDevHandle = NULL;
-								iResult = libusb_open(m_ptUsbDev, &m_ptUsbDevHandle);
-								if( iResult==LIBUSB_SUCCESS )
+								// try to reset the device and try again
+								iResult = libusb_resetDevice();
+								if( iResult!=LIBUSB_SUCCESS )
 								{
-									if( m_ptUsbDevHandle==NULL )
+									MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to reset the netx, giving up: %d:%s", m_pcName, this, iResult, libusb_strerror(iResult));
+									libusb_closeDevice();
+								}
+								else
+								{
+									printf("%s(%p): reset ok!\n", m_pcName, this);
+
+									libusb_closeDevice();
+									m_ptUsbDevHandle = NULL;
+									iResult = libusb_open(m_ptUsbDev, &m_ptUsbDevHandle);
+									if( iResult==LIBUSB_SUCCESS )
 									{
-										MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): lost device after reset!");
-										iResult = LIBUSB_ERROR_OTHER;
-									}
-									else
-									{
-										// get netx welcome message
-										iResult = usb_getNetxData(&tBuffer, &tRef, 0);
-										if( iResult!=LIBUSB_SUCCESS )
+										if( m_ptUsbDevHandle==NULL )
 										{
-											MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to receive netx response: %d:%s", m_pcName, this, iResult, libusb_strerror(iResult));
-											libusb_closeDevice();
+											MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): lost device after reset!");
+											iResult = LIBUSB_ERROR_OTHER;
+										}
+										else
+										{
+											// get netx welcome message
+											iResult = usb_getNetxData(&tBuffer, &tRef, 0);
+											if( iResult!=LIBUSB_SUCCESS )
+											{
+												MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to receive netx response: %d:%s", m_pcName, this, iResult, libusb_strerror(iResult));
+												libusb_closeDevice();
+											}
 										}
 									}
 								}
 							}
-						}
 
-						if( iResult==LIBUSB_SUCCESS )
-						{
-							printf("%s(%p): netx response: %s\n", m_pcName, this, tBuffer.pucData);
-							free(tBuffer.pucData);
-
-							/* NOTE: set m_fIsConnected to true here or detect_chiptyp and chip_init will fail! */
-							m_fIsConnected = true;
-
-							if( detect_chiptyp(ptClientData)!=true )
+							if( iResult==LIBUSB_SUCCESS )
 							{
-								MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chiptyp!", m_pcName, this);
-								m_fIsConnected = false;
-								libusb_closeDevice();
-							}
-							else if( chip_init(ptClientData)!=true )
-							{
-								MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to init chip!", m_pcName, this);
-								m_fIsConnected = false;
-								libusb_closeDevice();
+								printf("%s(%p): netx response: %s\n", m_pcName, this, tBuffer.pucData);
+								free(tBuffer.pucData);
+
+								/* NOTE: set m_fIsConnected to true here or detect_chiptyp and chip_init will fail! */
+								m_fIsConnected = true;
+
+								if( detect_chiptyp(ptClientData)!=true )
+								{
+									MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chiptyp!", m_pcName, this);
+									m_fIsConnected = false;
+									libusb_closeDevice();
+								}
+								else if( chip_init(ptClientData)!=true )
+								{
+									MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to init chip!", m_pcName, this);
+									m_fIsConnected = false;
+									libusb_closeDevice();
+								}
 							}
 						}
 					}
@@ -1271,7 +1284,6 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 bool romloader_usb::parseDumpLine(DATA_BUFFER_T *ptBuffer, unsigned long ulAddress, unsigned long ulElements, unsigned char *pucBuffer)
 {
 	bool fResult;
-	int iMatches;
 	unsigned long ulResponseAddress;
 	unsigned long ulChunkCnt;
 	unsigned long ulByte;
@@ -1489,9 +1501,7 @@ void romloader_usb::write_data08(lua_State *ptClientData, unsigned long ulNetxAd
 {
 	int iResult;
 	char acCommand[22];
-	unsigned char *pucData;
 	DATA_BUFFER_T tBuffer;
-	unsigned int uiDataLen;
 	bool fOk;
 
 
@@ -1542,7 +1552,6 @@ void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 	int iResult;
 	char acCommand[24];
 	DATA_BUFFER_T tBuffer;
-	unsigned int uiDataLen;
 	bool fOk;
 
 
@@ -1593,7 +1602,6 @@ void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 	int iResult;
 	char acCommand[28];
 	DATA_BUFFER_T tBuffer;
-	unsigned int uiDataLen;
 	bool fOk;
 
 
@@ -1812,10 +1820,7 @@ int romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long ulParamet
 	unsigned char aucSend[64];
 	unsigned char aucRec[64];
 	bool fIsRunning;
-	size_t sizChunkRead;
 	size_t sizProgressData;
-	unsigned char *pucBuf;
-	unsigned char *pucCnt, *pucEnd;
 	unsigned char aucSbuf[2] = { 0, 0 };
 	char *pcCallbackData;
 
@@ -1905,7 +1910,6 @@ int romloader_usb::usb_sendCommand(const char *pcCommand)
 	size_t sizCmdLen;
 	unsigned char abSend[64];
 	unsigned char abRec[64];
-	int iCmdLen;
 
 
 	// check the command size
