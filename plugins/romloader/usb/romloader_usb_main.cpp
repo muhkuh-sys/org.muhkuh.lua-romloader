@@ -37,6 +37,15 @@
 
 #if ROMLOADER_USB_LIBUSB_VERSION==0
 
+#ifdef _WINDOWS
+#define LIBUSB_BUS_PATTERN "bus-%u"
+#define LIBUSB_DEV_PATTERN "\\\\.\\libusb0-%u"
+#else
+#define LIBUSB_BUS_PATTERN "%u"
+#define LIBUSB_DEV_PATTERN "%u"
+#endif
+
+
 int libusb_open(libusb_device *ptDevice, libusb_device_handle **pptDevHandle)
 {
 	libusb_device_handle *ptDevHandle;
@@ -188,7 +197,7 @@ uint8_t libusb_get_bus_number(libusb_device *dev)
 			if( pcBusName!=NULL )
 			{
 				/* parse the directory name */
-				iResult = sscanf(pcBusName, "%u", &uiBusNumber);
+				iResult = sscanf(pcBusName, LIBUSB_BUS_PATTERN, &uiBusNumber);
 				/* does the directory name have the expected format? */
 				if( iResult==1 )
 				{
@@ -226,7 +235,7 @@ uint8_t libusb_get_device_address(libusb_device *dev)
 		if( pcFilename!=NULL )
 		{
 			/* parse the directory name */
-			iResult = sscanf(pcFilename, "%u", &uiDeviceNumber);
+			iResult = sscanf(pcFilename, LIBUSB_DEV_PATTERN, &uiDeviceNumber);
 			/* does the directory name have the expected format? */
 			if( iResult==1 )
 			{
