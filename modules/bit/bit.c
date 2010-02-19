@@ -27,7 +27,7 @@ unsigned long band(unsigned long ulA, unsigned long ulB)
 
 
 	ulResult = ulA&ulB;
-	return (double)ulResult;
+	return ulResult;
 }
 
 
@@ -37,7 +37,7 @@ unsigned long bor(unsigned long ulA, unsigned long ulB)
 
 
 	ulResult = ulA|ulB;
-	return (double)ulResult;
+	return ulResult;
 }
 
 
