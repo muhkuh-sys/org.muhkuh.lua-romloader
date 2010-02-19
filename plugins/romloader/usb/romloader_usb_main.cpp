@@ -525,6 +525,7 @@ int romloader_usb_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 	else
 	{
 		/* detect devices */
+		ptDeviceList = NULL;
 		ssizDevList = libusb_get_device_list(m_ptLibUsbContext, &ptDeviceList);
 		if( ssizDevList<0 )
 		{
@@ -612,7 +613,10 @@ int romloader_usb_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 				++ptDevCnt;
 			}
 			/* free the device list */
-			libusb_free_device_list(ptDeviceList, 1);
+			if( ptDeviceList!=NULL )
+			{
+				libusb_free_device_list(ptDeviceList, 1);
+			}
 		}
 	}
 
