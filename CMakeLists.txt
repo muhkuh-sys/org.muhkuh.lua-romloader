@@ -108,6 +108,10 @@ MACRO(SWIG_BUILD_WRAPPER target_variable language infile)
 ENDMACRO(SWIG_BUILD_WRAPPER)
 
 
+# Do not show msvs security warnings about unsafe functions.
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+
+
 add_subdirectory(lua)
 add_subdirectory(modules)
 add_subdirectory(plugins)
