@@ -24,8 +24,9 @@
 
 #include "romloader_usb_main.h"
 
-#ifdef _WIN32
+#ifdef _WINDOWS
 	#define snprintf _snprintf
+	#define ssize_t size_t
 #endif
 
 /*-------------------------------------*/
@@ -88,9 +89,14 @@ void libusb_set_debug(libusb_context *ptContext, int iLevel)
 int usb_bulk_pc_to_netx(libusb_device_handle *ptDevHandle, unsigned char ucEndPointOut, const unsigned char *pucDataOut, int iLength, int *piProcessed, unsigned int uiTimeoutMs)
 {
 	int iError;
+#ifdef _WINDOWS
+	char *pcDataOut = (char*)pucDataOut;
+#else
+	const char *pcDataOut = (const char*)pucDataOut;
+#endif
 
 
-	iError = usb_bulk_write(ptDevHandle, ucEndPointOut, (const char*)pucDataOut, iLength, uiTimeoutMs);
+	iError = usb_bulk_write(ptDevHandle, ucEndPointOut, pcDataOut, iLength, uiTimeoutMs);
 	if( iError==iLength )
 	{
 		/* transfer ok! */
@@ -1971,7 +1977,7 @@ int romloader_usb::usb_getNetxData(DATA_BUFFER_T *ptBuffer, SWIGLUA_REF *ptLuaFn
 					if( sizBufferPos+sizChunk>sizBuffer )
 					{
 						// no -> double the buffer
-						sizNewBuffer *= 2;
+						sizNewBuffer = sizBuffer * 2;
 						if( sizBuffer>sizNewBuffer )
 						{
 							iResult = LIBUSB_ERROR_NO_MEM;
@@ -1979,7 +1985,7 @@ int romloader_usb::usb_getNetxData(DATA_BUFFER_T *ptBuffer, SWIGLUA_REF *ptLuaFn
 						}
 						else
 						{
-							pucNewBuffer = (unsigned char*)realloc(pucBuffer, sizBuffer);
+							pucNewBuffer = (unsigned char*)realloc(pucBuffer, sizNewBuffer);
 							if( pucNewBuffer==NULL )
 							{
 								// out of memory

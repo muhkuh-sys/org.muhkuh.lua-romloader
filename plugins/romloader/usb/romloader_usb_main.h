@@ -26,6 +26,12 @@
 
 /*-----------------------------------*/
 
+#ifdef _WINDOWS
+typedef unsigned char uint8_t;
+#endif
+
+/*-----------------------------------*/
+
 /* NOTE: Seems like libusb-0.1 was the last version with a common api for
  * linux and windows. The windows port has it's own 1.0 api.
  * This plugin uses the libusb-1.0 api. It offers wrapper functions to link
