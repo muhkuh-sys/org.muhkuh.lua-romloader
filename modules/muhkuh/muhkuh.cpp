@@ -257,15 +257,10 @@ void load(lua_State *ptLuaState, char *pcUrl, char **ppcBUFFER_OUT, size_t *psiz
 	wxString strXmlUrl;
 	wxString strBaseUrl;
 	wxString strFileName;
-	wxString strMsg;
 	wxString strFileUrl;
 	wxURL filelistUrl;
 	wxURLError tUrlError;
-	wxString strFileContents;
 	growbuffer *ptGrowBuffer;
-	unsigned char *pucData;
-	size_t sizDataSize;
-	wxString strData;
 
 
 	/* expect failure */
