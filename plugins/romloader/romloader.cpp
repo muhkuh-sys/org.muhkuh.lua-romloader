@@ -223,7 +223,7 @@ bool romloader::callback_long(SWIGLUA_REF *ptLuaFn, long lProgressData, long lCa
 	{
 		// get the current stack position
 		iOldTopOfStack = lua_gettop(ptLuaFn->L);
-		swiglua_ref_get(ptLuaFn);
+		lua_rawgeti(ptLuaFn->L, LUA_REGISTRYINDEX, ptLuaFn->ref);
 		// push the arguments on the stack
 		lua_pushnumber(ptLuaFn->L, lProgressData);
 		fStillRunning = callback_common(ptLuaFn, lCallbackUserData, iOldTopOfStack);
@@ -247,7 +247,7 @@ bool romloader::callback_string(SWIGLUA_REF *ptLuaFn, const char *pcProgressData
 	{
 		// get the current stack position
 		iOldTopOfStack = lua_gettop(ptLuaFn->L);
-		swiglua_ref_get(ptLuaFn);
+		lua_rawgeti(ptLuaFn->L, LUA_REGISTRYINDEX, ptLuaFn->ref);
 		// push the arguments on the stack
 		lua_pushlstring(ptLuaFn->L, pcProgressData, sizProgressData);
 		fStillRunning = callback_common(ptLuaFn, lCallbackUserData, iOldTopOfStack);
