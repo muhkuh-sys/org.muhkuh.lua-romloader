@@ -47,7 +47,7 @@ typedef enum
 
 /*-----------------------------------*/
 
-class romloader : public muhkuh_plugin
+class MUHKUH_EXPORT romloader : public muhkuh_plugin
 {
 protected:
 	romloader(const char *pcName, const char *pcTyp, muhkuh_plugin_provider *ptProvider);

@@ -24,17 +24,25 @@
 #ifndef __MUHKUH_PLUGIN_INTERFACE__
 #define __MUHKUH_PLUGIN_INTERFACE__
 
+/*-----------------------------------*/
+
+#if defined(_WINDOWS)
+#define MUHKUH_EXPORT __declspec(dllexport)
+#else
+#define MUHKUH_EXPORT
+#endif
+
+/*-----------------------------------*/
+
 #ifndef SWIGRUNTIME
 #include <swigluarun.h>
 
 /* swigluarun does not include the lua specific defines. Add them here. */
-typedef struct{
-  lua_State* L; /* the state */
-  int ref;      /* a ref in the lua global index */
+typedef struct
+{
+	lua_State* L; /* the state */
+	int ref;      /* a ref in the lua global index */
 }SWIGLUA_REF;
-void swiglua_ref_clear(SWIGLUA_REF* pref);
-void swiglua_ref_set(SWIGLUA_REF* pref,lua_State* L,int idx);
-void swiglua_ref_get(SWIGLUA_REF* pref);
 #endif
 
 /*-----------------------------------*/
@@ -67,7 +75,7 @@ typedef struct
 /*-----------------------------------*/
 
 
-class muhkuh_plugin
+class MUHKUH_EXPORT muhkuh_plugin
 {
 public:
 	muhkuh_plugin(const char *pcName, const char *pcTyp, muhkuh_plugin_provider *ptProvider);
@@ -101,7 +109,7 @@ protected:
 /*-----------------------------------*/
 
 
-class muhkuh_plugin_provider
+class MUHKUH_EXPORT muhkuh_plugin_provider
 {
 public:
 	muhkuh_plugin_provider(const char *pcPluginId);
@@ -132,7 +140,7 @@ protected:
 /*-----------------------------------*/
 
 
-class muhkuh_plugin_reference
+class MUHKUH_EXPORT muhkuh_plugin_reference
 {
 public:
 	muhkuh_plugin_reference(void);
