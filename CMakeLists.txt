@@ -35,13 +35,13 @@ FIND_PACKAGE(PythonLibs)
 
 ADD_CUSTOM_COMMAND(
 	OUTPUT ${SWIG_RUNTIME_OUTPUT_PATH}swigluarun.h
-	COMMAND swig -lua -external-runtime ${SWIG_RUNTIME_OUTPUT_PATH}swigluarun.h
+	COMMAND "${SWIG_EXECUTABLE}" -lua -external-runtime ${SWIG_RUNTIME_OUTPUT_PATH}swigluarun.h
 )
 ADD_CUSTOM_TARGET(SWIG_LUA_RUNTIME DEPENDS ${SWIG_RUNTIME_OUTPUT_PATH}swigluarun.h)
 
 ADD_CUSTOM_COMMAND(
 	OUTPUT ${SWIG_RUNTIME_OUTPUT_PATH}swigpythonrun.h
-	COMMAND swig -python -external-runtime ${SWIG_RUNTIME_OUTPUT_PATH}swigpythonrun.h
+	COMMAND "${SWIG_EXECUTABLE}" -python -external-runtime ${SWIG_RUNTIME_OUTPUT_PATH}swigpythonrun.h
 )
 ADD_CUSTOM_TARGET(SWIG_PYTHON_RUNTIME DEPENDS ${SWIG_RUNTIME_OUTPUT_PATH}swigpythonrun.h)
 
