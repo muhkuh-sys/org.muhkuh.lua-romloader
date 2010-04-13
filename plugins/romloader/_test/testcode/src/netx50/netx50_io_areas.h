@@ -1,509 +1,227 @@
-
-#include "netx_regdef.h"
-
-#ifndef __NETX_IO_AREAS_H__
-#define __NETX_IO_AREAS_H__
-
-//-------------------------------------
-
-// I2C area, netX50
-
-typedef struct {
-	volatile unsigned long ulMcr;
-	volatile unsigned long ulScr;
-	volatile unsigned long ulCmd;
-	volatile unsigned long ulMdr;
-	volatile unsigned long ulSdr;
-	volatile unsigned long ulMfifoCr;
-	volatile unsigned long ulSfifoCr;
-	volatile unsigned long ulSr;
-	volatile unsigned long ulIrqmsk;
-	volatile unsigned long ulIrqsr;
-	volatile unsigned long ulIrqmsked;
-	volatile unsigned long ulDmacr;
-} I2C_AREA_T, *PI2C_AREA_T;
-
-extern const PI2C_AREA_T ptNetXI2CArea;
-
-//-------------------------------------
-
-// SPI area, netx50
-
-typedef struct {
-	volatile unsigned long ul_spi_cr0;
-	volatile unsigned long ul_spi_cr1;
-	volatile unsigned long ul_spi_dr;
-	volatile unsigned long ul_spi_sr;
-	volatile unsigned long ul_spi_cpsr;
-	volatile unsigned long ul_spi_imsc;
-	volatile unsigned long ul_spi_ris;
-	volatile unsigned long ul_spi_mis;
-	volatile unsigned long ul_spi_icr;
-	volatile unsigned long ul_spi_dmacr;
-	volatile unsigned long aul_reserved28[2];
-	volatile unsigned long ul_spi_data_register;
-	volatile unsigned long ul_spi_status_register;
-	volatile unsigned long ul_spi_control_register;
-	volatile unsigned long ul_spi_interrupt_control_register;
-} SPI_AREA_T, *PSPI_AREA_T;
-
-extern const PSPI_AREA_T ptNetXSpi0Area;
-
-//-------------------------------------
-
-// Uart area, same for netX50
-
-typedef struct {
-	volatile unsigned long ulUartdr;
-	volatile unsigned long ulUartrsr;
-	volatile unsigned long ulUartlcr_h;
-	volatile unsigned long ulUartlcr_m;
-	volatile unsigned long ulUartlcr_l;
-	volatile unsigned long ulUartcr;
-	volatile unsigned long ulUartfr;
-	volatile unsigned long ulUartiir;
-	volatile unsigned long ulUartilpr;
-	volatile unsigned long ulUartrts;
-	volatile unsigned long ulUartforerun;
-	volatile unsigned long ulUarttrail;
-	volatile unsigned long ulUartdrvout;
-	volatile unsigned long ulUartcr_2;
-	volatile unsigned long ulUartrxiflsel;
-	volatile unsigned long ulUarttxiflsel;
-} UART_AREA_T, *PUART_AREA_T;
-
-extern const PUART_AREA_T ptNetXUartArea;
-
-//-------------------------------------
-
-// Gpio area, netX50
-
-typedef struct {
-	volatile unsigned long aul_gpio_cfg[32];
-	volatile unsigned long aul_gpio_tc[32];
-	volatile unsigned long aul_gpio_counter_ctrl[5];
-	volatile unsigned long aul_gpio_counter_max[5];
-	volatile unsigned long aul_gpio_counter_cnt[5];
-	volatile unsigned long ul_gpio_systime_cmp;
-	volatile unsigned long ul_gpio_line;
-	volatile unsigned long ul_gpio_in;
-	volatile unsigned long ul_gpio_irq_raw;
-	volatile unsigned long ul_gpio_irq_masked;
-	volatile unsigned long ul_gpio_irq_mask_set;
-	volatile unsigned long ul_gpio_irq_mask_rst;
-	volatile unsigned long ul_gpio_cnt_irq_raw;
-	volatile unsigned long ul_gpio_cnt_irq_masked;
-	volatile unsigned long ul_gpio_cnt_irq_mask_set;
-	volatile unsigned long ul_gpio_cnt_irq_mask_rst;
-} GPIO_AREA_T, *PGPIO_AREA_T;
-
-extern const PGPIO_AREA_T ptNetXGpioArea;
-
-//-------------------------------------
-
-// USB area, same for netX50
-
-typedef struct {
-	volatile unsigned long ulID;
-	volatile unsigned long ulUSB_CTRL;
-	volatile unsigned long ulFRM_TIMER;
-	volatile unsigned long ulMAIN_EV;
-	volatile unsigned long ulMAIN_EM;
-	volatile unsigned long ulPIPE_EV;
-	volatile unsigned long ulPIPE_EM;
-	volatile unsigned long ulReserved_1c;
-	volatile unsigned long ulReserved_20;
-	volatile unsigned long ulPIPE_SEL;
-	volatile unsigned long ulReserved_28;
-	volatile unsigned long ulPORT_STAT;
-	volatile unsigned long ulPORT_CTRL;
-	volatile unsigned long ulPSC_EV;
-	volatile unsigned long ulPSC_EM;
-	volatile unsigned long ulReserved_3c;
-	volatile unsigned long ulPIPE_CTRL;
-	volatile unsigned long ulPIPE_CFG;
-	volatile unsigned long ulPIPE_ADDR;
-	volatile unsigned long ulPIPE_STAT;
-	volatile unsigned long ulPIPE_DATA_PTR;
-	volatile unsigned long ulPIPE_DATA_TBYTES;
-	volatile unsigned long ulPIPE_ADATA_PTR;
-	volatile unsigned long ulPIPE_ADATA_TBYTES;
-	volatile unsigned long ulDEBUG_CTRL;
-	volatile unsigned long ulDEBUG_PID;
-	volatile unsigned long ulDEBUG_STAT;
-	volatile unsigned long ulTEST;
-	volatile unsigned long ulReserved_70;
-	volatile unsigned long ulReserved_74;
-	volatile unsigned long ulReserved_78;
-	volatile unsigned long ulReserved_7c;
-	volatile unsigned long ulMAIN_CFG;
-	volatile unsigned long ulMODE_CFG;
-	volatile unsigned long ulUsb_core_ctrl;
-} USB_AREA_T, *PUSB_AREA_T;
-
-extern const PUSB_AREA_T ptNetXUsbArea;
-
-//-------------------------------------
-
-// asic control area, netX50
-
-typedef struct {
-	volatile unsigned long ul_io_status;
-	volatile unsigned long ul_io_config;
-	volatile unsigned long ul_io_config_mask;
-	volatile unsigned long ul_reset_ctrl;
-	volatile unsigned long ul_phy_control;
-	volatile unsigned long ul_armclk_rate_mul_add;
-	volatile unsigned long ul_usbclk_rate_mul_add;
-	volatile unsigned long ul_fb0clk_rate_mul_add;
-	volatile unsigned long ul_fb1clk_rate_mul_add;
-	volatile unsigned long ul_clock_enable;
-	volatile unsigned long ul_clock_enable_mask;
-	volatile unsigned long ul_misc_asic_ctrl;
-	volatile unsigned long ul_exmem_priority_lock;
-	volatile unsigned long ul_netx_version;
-	volatile unsigned long ul_rom_wdg;
-	volatile unsigned long aul_reserved_3c[13];
-	volatile unsigned long ul_asic_ctrl_access_key;
-	volatile unsigned long ul_netx_lock_reserved00;
-	volatile unsigned long ul_netx_lock_reserved01;
-	volatile unsigned long ul_reserved_7c;
-	volatile unsigned long aul_netx_lock_reserved_area[32];
-} ASIC_CTRL_AREA_T, *PASIC_CTRL_AREA_T;
-
-extern const PASIC_CTRL_AREA_T ptNetXAsicCtrlArea;
-
-//-------------------------------------
-
-// netx_global_reg_block1_area, netX50
-typedef struct {
-	volatile unsigned long ul_pci_window_low0;
-	volatile unsigned long ul_pci_window_high0;
-	volatile unsigned long ul_pci_window_low1;
-	volatile unsigned long ul_pci_window_high1;
-	volatile unsigned long ul_pci_window_low2;
-	volatile unsigned long ul_pci_window_high2;
-	volatile unsigned long ul_pci_window_low3;
-	volatile unsigned long ul_pci_window_high3;
-	volatile unsigned long ul_pci_io_base;
-	volatile unsigned long ul_pci_rom_base;
-	volatile unsigned long ul_arb_ctrl;
-	volatile unsigned long ul_pci_config;
-	volatile unsigned long aul_reserved_b0[2];
-	volatile unsigned long ul_sfr_base_addr;
-	volatile unsigned long ul_cis_base;
-	volatile unsigned long ul_wdg_netx;
-	volatile unsigned long ul_reserved_c4;
-	volatile unsigned long ul_dpmas_wdg_arm_timeout;
-	volatile unsigned long ul_dpmas_wdg_arm_trig;
-	volatile unsigned long aul_reserved_d0[2];
-	volatile unsigned long ul_sta_netx;
-	volatile unsigned long ul_reserved_dc;
-	volatile unsigned long ul_irq_status_0_netx;
-	volatile unsigned long ul_irq_status_1_netx;
-	volatile unsigned long ul_irq_status_2_netx;
-	volatile unsigned long ul_irq_status_3_netx;
-	volatile unsigned long ul_irq_mask_0_netx;
-	volatile unsigned long ul_irq_mask_1_netx;
-	volatile unsigned long ul_irq_mask_2_netx;
-	volatile unsigned long ul_irq_mask_3_netx;
-} NETX_GLOBAL_REG_BLOCK_1_AREA_T, *PNETX_GLOBAL_REG_BLOCK_1_AREA_T;
-
-extern const PNETX_GLOBAL_REG_BLOCK_1_AREA_T ptNetXGlobalRegBlock1Area;
-
-//-------------------------------------
-
-// netx_handshake_reg_block, netX50
-
-typedef struct {
-	volatile unsigned long aul_handshake_netx[16];
-} NETX_HANDSHAKE_REG_BLOCK_AREA_T, *PNETX_HANDSHAKE_REG_BLOCK_AREA_T;
-
-extern const PNETX_HANDSHAKE_REG_BLOCK_AREA_T ptNetxHandshakeRegBlockArea;
-
-//-------------------------------------
-
-// host_global_reg_block, netX50
-
-typedef struct {
-	volatile unsigned long ul_pci_base;
-	volatile unsigned long ul_wdg_timeout_host;
-	volatile unsigned long ul_wdg_trigger_host;
-	volatile unsigned long ul_wdg_timeout_netx;
-	volatile unsigned long ul_reserved_cc;
-	volatile unsigned long ul_cyclic_tmr_control;
-	volatile unsigned long ul_cyclic_tmr_reload;
-	volatile unsigned long ul_sta_host;
-	volatile unsigned long ul_res_reg;
-	volatile unsigned long aul_irq_status_host[4];
-	volatile unsigned long aul_irq_mask_host[4];
-} HOST_GLOBAL_REG_BLOCK_AREA_T, *PHOST_GLOBAL_REG_BLOCK_AREA_T;
-
-extern const PHOST_GLOBAL_REG_BLOCK_AREA_T ptHostGlobalRegBlockArea;
-
-//-------------------------------------
-
-// host_handshake_reg_block, netX50
-
-typedef struct {
-	volatile unsigned long aul_handshake_host[16];
-} HOST_HANDSHAKE_REG_BLOCK_AREA_T, *PHOST_HANDSHAKE_REG_BLOCK_AREA_T;
-
-extern const PHOST_HANDSHAKE_REG_BLOCK_AREA_T ptHostHandshakeRegBlockArea;
-
-//-------------------------------------
-
-// size of ram areas in dwords (32 bits)
-#define XMAC_RPU_DWORD_RAMSIZE 0x0100
-#define XMAC_TPU_DWORD_RAMSIZE 0x0100
-#define XPEC_DWORD_RAMSIZE 0x0800
-
-typedef struct {
-        volatile unsigned long aulRpuProgram[XMAC_RPU_DWORD_RAMSIZE];
-        volatile unsigned long aulTpuProgram[XMAC_TPU_DWORD_RAMSIZE];
-        volatile unsigned long aulSr[16];
-        volatile unsigned long ulStatusShared0;
-        volatile unsigned long ulConfigShared0;
-        volatile unsigned long ulStatusShared1;
-        volatile unsigned long ulConfigShared1;
-        volatile unsigned long ulStatusShared2;
-        volatile unsigned long ulConfigShared2;
-        volatile unsigned long ulStatusShared3;
-        volatile unsigned long ulConfigShared3;
-        volatile unsigned long aulUrxUtx[4];
-        volatile unsigned long ulUrx;
-        volatile unsigned long ulUtx;
-        volatile unsigned long ulRx;
-        volatile unsigned long ulRxHw;
-        volatile unsigned long ulRxHwCount;
-        volatile unsigned long ulTx;
-        volatile unsigned long ulTxHw;
-        volatile unsigned long ulTxHwCount;
-        volatile unsigned long ulTxSend;
-        volatile unsigned long ulRpuPc;
-        volatile unsigned long ulTpuPc;
-        volatile unsigned long aulWr[10];
-        volatile unsigned long ulSysTime;
-        volatile unsigned long aulCmpStatus[4];
-        volatile unsigned long ulAluFlags;
-        volatile unsigned long ulStatusInt;
-        volatile unsigned long ulStatBits;
-        volatile unsigned long ulStatusMii;
-        volatile unsigned long ulStatusMii2;
-        volatile unsigned long ulConfigMii;
-        volatile unsigned long ulConfigNibbleFifo;
-        volatile unsigned long ulConfigSbu;
-        volatile unsigned long ulSbuRateMulAdd;
-        volatile unsigned long ulSbuRateMulStart;
-        volatile unsigned long ulSbuRateMul;
-        volatile unsigned long ulStartSamplePos;
-        volatile unsigned long ulStopSamplePos;
-        volatile unsigned long ulConfigObu;
-        volatile unsigned long ulObuRateMulAdd;
-        volatile unsigned long ulObuRateMulStart;
-        volatile unsigned long ulObuRateMul;
-        volatile unsigned long ulStartTransPos;
-        volatile unsigned long ulStopTransPos;
-        volatile unsigned long ulRpuCount1;
-        volatile unsigned long ulRpuCount2;
-        volatile unsigned long ulTpuCount1;
-        volatile unsigned long ulTpuCount2;
-        volatile unsigned long ulRxCount;
-        volatile unsigned long ulTxCount;
-        volatile unsigned long ulRpmMask0;
-        volatile unsigned long ulRpmVal0;
-        volatile unsigned long ulRpmMask1;
-        volatile unsigned long ulRpmVal1;
-        volatile unsigned long ulTpmMask0;
-        volatile unsigned long ulTpmVal0;
-        volatile unsigned long ulTpmMask1;
-        volatile unsigned long ulTpmVal1;
-        volatile unsigned long ulPwmConfig;
-        volatile unsigned long ulPwmStatus;
-        volatile unsigned long ulPwmTp;
-        volatile unsigned long ulPwmTu;
-        volatile unsigned long ulPwmTv;
-        volatile unsigned long ulPwmTw;
-        volatile unsigned long ulPwmTd;
-        volatile unsigned long ulRpwmTp;
-        volatile unsigned long ulRpwmTr;
-        volatile unsigned long ulPwmCnt;
-        volatile unsigned long ulRpwmCnt;
-        volatile unsigned long ulPwmStartTime;
-        volatile unsigned long ulRpwmStartTime;
-        volatile unsigned long ulPosConfigEncoder;
-        volatile unsigned long ulPosConfigCapture;
-        volatile unsigned long ulPosCommand;
-        volatile unsigned long ulPosStatus;
-        volatile unsigned long ulPosEnc0Position;
-        volatile unsigned long ulPosEnc0Nullposition;
-        volatile unsigned long ulPosEnc1Position;
-        volatile unsigned long ulPosEnc1Nullposition;
-        volatile unsigned long ulPosEnc0EdgeTime;
-        volatile unsigned long ulPosEnc1EdgeTime;
-        volatile unsigned long aulPosCapture[4];
-        volatile unsigned long aulReserved0[4];
-        volatile unsigned long ulRxCrcPolynomialL;
-        volatile unsigned long ulRxCrcPolynomialH;
-        volatile unsigned long ulRxCrcL;
-        volatile unsigned long ulRxCrcH;
-        volatile unsigned long ulRxCrcCfg;
-        volatile unsigned long ulTxCrcPolynomialL;
-        volatile unsigned long ulTxCrcPolynomialH;
-        volatile unsigned long ulTxCrcL;
-        volatile unsigned long ulTxCrcH;
-        volatile unsigned long ulTxCrcCfg;
-        volatile unsigned long ulRpuHoldPc;
-        volatile unsigned long ulTpuHoldPc;
-} XMAC_AREA_T, *PXMAC_AREA_T;
-
-typedef struct {
-	union
-	{
-		struct
-		{
-			volatile unsigned long aulR[8];
-			volatile unsigned long ulRange01;
-			volatile unsigned long ulRange23;
-			volatile unsigned long ulRange45;
-			volatile unsigned long ulRange67;
-			volatile unsigned long ulTimer0;
-			volatile unsigned long ulTimer1;
-			volatile unsigned long ulTimer2;
-			volatile unsigned long ulTimer3;
-			volatile unsigned long ulUrxCount;
-			volatile unsigned long ulUtxCount;
-			volatile unsigned long ulPc;
-			volatile unsigned long ulZero;
-			volatile unsigned long ulStatCfg;
-			volatile unsigned long ulEcMaskA;
-			volatile unsigned long ulEcMaskB;
-			volatile unsigned long ulEcMask0;
-			volatile unsigned long ulEcMask1;
-			volatile unsigned long ulEcMask2;
-			volatile unsigned long ulEcMask3;
-			volatile unsigned long ulEcMask4;
-			volatile unsigned long ulEcMask5;
-			volatile unsigned long ulEcMask6;
-			volatile unsigned long ulEcMask7;
-			volatile unsigned long ulEcMask8;
-			volatile unsigned long ulEcMask9;
-			volatile unsigned long ulTimer4;
-			volatile unsigned long ulTimer5;
-			volatile unsigned long ulIrq;
-			volatile unsigned long ulSystimeNs;
-			volatile unsigned long ulFifoData;
-			volatile unsigned long ulSystimeS;
-			volatile unsigned long ulAdc;
-			volatile unsigned long aulSr[16];
-			volatile unsigned long aulStatCfg[4];
-			volatile unsigned long aulUrtx[4];
-		} s;
-		volatile unsigned long aul[64];
-	} uxc;
-	volatile unsigned long ulXpuHoldPc;
-	volatile unsigned long aulReserved0[1983];
-	volatile unsigned long aulRam[XPEC_DWORD_RAMSIZE];
-} XPEC_AREA_T, *PXPEC_AREA_T;
-
-extern const PXMAC_AREA_T ptNetXXMac0Area;
-extern const PXPEC_AREA_T ptNetXXPec0Area;
-
-//-------------------------------------
-
-// netx_global_reg_block_2, same for netX50
-
-typedef struct {
-	volatile unsigned long ul_reserved_00;
-	volatile unsigned long ul_clk_reg;
-	volatile unsigned long ul_if_conf1;
-	volatile unsigned long ul_if_conf2;
-	volatile unsigned long aul_ext_bus_config[4];
-	volatile unsigned long ul_io_reg_mode0;
-	volatile unsigned long ul_io_reg_drv_en0;
-	volatile unsigned long ul_io_reg_data0;
-	volatile unsigned long ul_io_reg_reserved_2c;
-	volatile unsigned long ul_io_reg_mode1;
-	volatile unsigned long ul_io_reg_drv_en1;
-	volatile unsigned long ul_io_reg_data1;
-	volatile unsigned long ul_io_reg_reserved_3c;
-	union
-	{
-		struct
-		{
-			volatile unsigned long ul_mb_base0;
-			volatile unsigned long ul_mb_mapping0;
-			volatile unsigned long ul_mb_base1;
-			volatile unsigned long ul_mb_mapping1;
-			volatile unsigned long ul_mb_base2;
-			volatile unsigned long ul_mb_mapping2;
-			volatile unsigned long ul_mb_base3;
-			volatile unsigned long ul_mb_mapping3;
-			volatile unsigned long ul_mb_base4;
-			volatile unsigned long ul_mb_mapping4;
-			volatile unsigned long ul_mb_base5;
-			volatile unsigned long ul_mb_mapping5;
-			volatile unsigned long ul_mb_base6;
-			volatile unsigned long ul_mb_mapping6;
-			volatile unsigned long ul_mb_base7;
-			volatile unsigned long ul_mb_mapping7;
-		} s;
-		volatile unsigned long aul_mb_config[16];
-	} u_mb;
-	volatile unsigned long aul_hs_ctrl[16];
-} NETX_GLOBAL_REG_BLOCK_2_AREA_T, *PNETX_GLOBAL_REG_BLOCK_2_AREA_T;
-
-extern const PNETX_GLOBAL_REG_BLOCK_2_AREA_T ptNetXGlobalRegBlock2Area;
-
-//-------------------------------------
-
-// extmem control, same for netX50
-
-typedef struct {
-	volatile unsigned long aul_extsram_ctrl[4];
-} EXT_ASYNC_MEM_CTRL_AREA_T, *PEXT_ASYNC_MEM_CTRL_AREA_T;
-
-extern const PEXT_ASYNC_MEM_CTRL_AREA_T ptNetXExtAsyncMemCtrlArea;
-
-//-------------------------------------
-
-// sdram control, same for netX50
-
-typedef struct {
-	volatile unsigned long ul_sdram_general_ctrl;
-	volatile unsigned long ul_sdram_timing_ctrl;
-	volatile unsigned long ul_sdram_mr;
-	volatile unsigned long ul_sdram_emr2;
-} EXT_SDRAM_CTRL_AREA_T, *PEXT_SDRAM_CTRL_AREA_T;
-
-extern const PEXT_SDRAM_CTRL_AREA_T ptNetXExtSdramCtrlArea;
-
-//-------------------------------------
-
-// pci shadow config area, same for netX50
-
-typedef struct {
-	volatile unsigned long ul_pci_conf_rd_ctrl;
-	volatile unsigned long ul_pci_conf_rd_data;
-	volatile unsigned long ul_pci_conf_wr_ctrl;
-	volatile unsigned long ul_pci_conf_wr_data;
-} PCI_SHADOW_CONFIG_AREA_T, *PPCI_SHADOW_CONFIG_AREA_T;
-
-extern const PPCI_SHADOW_CONFIG_AREA_T ptNetXPciShadowConfigArea;
-
-//-------------------------------------
-
-// random number generator
-
-typedef struct {
-	volatile unsigned long ul_ctrl;
-	volatile unsigned long ul_seed;
-	volatile unsigned long ul_num;
-} RNG_AREA_T, *PRNG_AREA_T;
-
-extern const PRNG_AREA_T ptNetXRngArea;
-
-//-------------------------------------
-
-
-#endif	// __NETX_IO_AREAS_H__
+/***************************************************************************
+ *   Copyright (C) 2005, 2006, 2007, 2008, 2009 by Hilscher GmbH           *
+ *                                                                         *
+ *   Author: Christoph Thelen (cthelen@hilscher.com)                       *
+ *                                                                         *
+ *   Redistribution or unauthorized use without expressed written          *
+ *   agreement from the Hilscher GmbH is forbidden.                        *
+ ***************************************************************************/
+
+
+#include "netx50_regdef.h"
+
+#ifndef __NETX50_IO_AREAS_H__
+#define __NETX50_IO_AREAS_H__
+
+
+typedef struct
+{
+	volatile unsigned long ulSdram_general_ctrl;
+	volatile unsigned long ulSdram_timing_ctrl;
+} NX50_SDRAM_AREA_T;
+
+
+extern NX50_ASIC_CTRL_AREA_T * const ptAsicCtrlArea;
+extern NX50_SDRAM_AREA_T * const ptSdramArea;
+extern NX50_EXT_ASYNCMEM_CTRL_AREA_T * const ptExtAsyncmemCtrlArea;
+extern NX50_EXTMEM_PRIORITY_CTRL_AREA_T * const ptExtmemPriorityCtrlArea;
+extern NX50_WATCHDOG_AREA_T * const ptWatchdogArea;
+extern NX50_GPIO_AREA_T * const ptGpioArea;
+extern NX50_PIO_AREA_T * const ptPioArea;
+extern NX50_UART_AREA_T * const ptUart0Area;
+extern NX50_UART_AREA_T * const ptUart1Area;
+extern NX50_UART_AREA_T * const ptUart2Area;
+extern NX50_MIIMU_AREA_T * const ptMiimuArea;
+extern NX50_SPI_AREA_T * const ptSpi0Area;
+extern NX50_SPI_AREA_T * const ptSpi1Area;
+extern NX50_I2C_AREA_T * const ptI2cArea;
+extern NX50_CCDC_AREA_T * const ptCcdcArea;
+extern NX50_CRC_AREA_T * const ptCrcArea;
+extern NX50_SYSTIME_AREA_T * const ptSystimeArea;
+extern NX50_MMIO_CTRL_AREA_T * const ptMmioCtrlArea;
+extern NX50_HOST_CONTROLLED_DMA_REGISTER_BLOCK_AREA_T * const ptHostControlledDmaRegisterBlockArea;
+extern NX50_HOST_CONTROLLED_GLOBAL_REGISTER_BLOCK_AREA_T * const ptHostControlledGlobalRegisterBlockArea;
+extern NX50_HOST_CONTROLLED_HANDSHAKE_REGISTER_BLOCK_AREA_T * const ptHostControlledHandshakeRegisterBlockArea;
+extern NX50_NETX_CONTROLLED_DMA_REGISTER_BLOCK_AREA_T * const ptNetxControlledDmaRegisterBlockArea;
+extern NX50_NETX_CONTROLLED_GLOBAL_REGISTER_BLOCK_1_AREA_T * const ptNetxControlledGlobalRegisterBlock1Area;
+extern NX50_NETX_CONTROLLED_HANDSHAKE_REGISTER_BLOCK_AREA_T * const ptNetxControlledHandshakeRegisterBlockArea;
+extern NX50_NETX_CONTROLLED_GLOBAL_REGISTER_BLOCK_2_AREA_T * const ptNetxControlledGlobalRegisterBlock2Area;
+extern NX50_DMAC_CH_AREA_T * const ptDmacCh0Area;
+extern NX50_DMAC_CH_AREA_T * const ptDmacCh1Area;
+extern NX50_DMAC_CH_AREA_T * const ptDmacCh2Area;
+extern NX50_DMAC_CH_AREA_T * const ptDmacCh3Area;
+extern NX50_DMAC_REG_AREA_T * const ptDmacRegArea;
+extern NX50_USB_CORE_AREA_T * const ptUsbCoreArea;
+extern NX50_USB_FIFO_AREA_T * const ptUsbFifoArea;
+extern NX50_XPEC_AREA_T * const ptXpec0Area;
+extern NX50_XPEC_AREA_T * const ptXpec1Area;
+extern NX50_XMAC_AREA_T * const ptXmac0Area;
+extern NX50_XMAC_AREA_T * const ptXmac1Area;
+extern NX50_POINTER_FIFO_AREA_T * const ptPointerFifoArea;
+extern NX50_XPEC_IRQ_REGISTERS_AREA_T * const ptXpecIrqRegistersArea;
+extern NX50_XC_MEM_PROT_AREA_T * const ptXcMemProtArea;
+extern NX50_XC_DEBUG_AREA_T * const ptXcDebugArea;
+extern NX50_TRIGGER_SAMPLE_UNIT_AREA_T * const ptTriggerSampleUnitArea;
+extern NX50_FMMUSM_AREA_T * const ptFmmusmArea;
+extern NX50_BUF_MAN_AREA_T * const ptBufManArea;
+extern NX50_XC_EXTBUS_SEL_AREA_T * const ptXcExtbusSelArea;
+extern NX50_VIC_AREA_T * const ptVicArea;
+
+
+typedef enum
+{
+	MMIO_CFG_xm0_io0		= 0x00,
+	MMIO_CFG_xm0_io1		= 0x01,
+	MMIO_CFG_xm0_io2		= 0x02,
+	MMIO_CFG_xm0_io3		= 0x03,
+	MMIO_CFG_xm0_io4		= 0x04,
+	MMIO_CFG_xm0_io5		= 0x05,
+	MMIO_CFG_xm0_rx			= 0x06,
+	MMIO_CFG_xm0_tx_oe		= 0x07,
+	MMIO_CFG_xm0_tx_out		= 0x08,
+	MMIO_CFG_xm1_io0		= 0x09,
+	MMIO_CFG_xm1_io1		= 0x0a,
+	MMIO_CFG_xm1_io2		= 0x0b,
+	MMIO_CFG_xm1_io3		= 0x0c,
+	MMIO_CFG_xm1_io4		= 0x0d,
+	MMIO_CFG_xm1_io5		= 0x0e,
+	MMIO_CFG_xm1_rx			= 0x0f,
+	MMIO_CFG_xm1_tx_oe		= 0x10,
+	MMIO_CFG_xm1_tx_out		= 0x11,
+	MMIO_CFG_gpio0			= 0x12,
+	MMIO_CFG_gpio1			= 0x13,
+	MMIO_CFG_gpio2			= 0x14,
+	MMIO_CFG_gpio3			= 0x15,
+	MMIO_CFG_gpio4			= 0x16,
+	MMIO_CFG_gpio5			= 0x17,
+	MMIO_CFG_gpio6			= 0x18,
+	MMIO_CFG_gpio7			= 0x19,
+	MMIO_CFG_gpio8			= 0x1a,
+	MMIO_CFG_gpio9			= 0x1b,
+	MMIO_CFG_gpio10			= 0x1c,
+	MMIO_CFG_gpio11			= 0x1d,
+	MMIO_CFG_gpio12			= 0x1e,
+	MMIO_CFG_gpio13			= 0x1f,
+	MMIO_CFG_gpio14			= 0x20,
+	MMIO_CFG_gpio15			= 0x21,
+	MMIO_CFG_gpio16			= 0x22,
+	MMIO_CFG_gpio17			= 0x23,
+	MMIO_CFG_gpio18			= 0x24,
+	MMIO_CFG_gpio19			= 0x25,
+	MMIO_CFG_gpio20			= 0x26,
+	MMIO_CFG_gpio21			= 0x27,
+	MMIO_CFG_gpio22			= 0x28,
+	MMIO_CFG_gpio23			= 0x29,
+	MMIO_CFG_gpio24			= 0x2a,
+	MMIO_CFG_gpio25			= 0x2b,
+	MMIO_CFG_gpio26			= 0x2c,
+	MMIO_CFG_gpio27			= 0x2d,
+	MMIO_CFG_gpio28			= 0x2e,
+	MMIO_CFG_gpio29			= 0x2f,
+	MMIO_CFG_gpio30			= 0x30,
+	MMIO_CFG_gpio31			= 0x31,
+	MMIO_CFG_phy0_led0		= 0x32,
+	MMIO_CFG_phy0_led1		= 0x33,
+	MMIO_CFG_phy0_led2		= 0x34,
+	MMIO_CFG_phy0_led3		= 0x35,
+	MMIO_CFG_phy1_led0		= 0x36,
+	MMIO_CFG_phy1_led1		= 0x37,
+	MMIO_CFG_phy1_led2		= 0x38,
+	MMIO_CFG_phy1_led3		= 0x39,
+	MMIO_CFG_mii_mdc		= 0x3a,
+	MMIO_CFG_mii_mdio		= 0x3b,
+	MMIO_CFG_mii0_col		= 0x3c,
+	MMIO_CFG_mii0_crs		= 0x3d,
+	MMIO_CFG_mii0_led0		= 0x3e,
+	MMIO_CFG_mii0_led1		= 0x3f,
+	MMIO_CFG_mii0_led2		= 0x40,
+	MMIO_CFG_mii0_led3		= 0x41,
+	MMIO_CFG_mii0_rxclk		= 0x42,
+	MMIO_CFG_mii0_rxd0		= 0x43,
+	MMIO_CFG_mii0_rxd1		= 0x44,
+	MMIO_CFG_mii0_rxd2		= 0x45,
+	MMIO_CFG_mii0_rxd3		= 0x46,
+	MMIO_CFG_mii0_rxdv		= 0x47,
+	MMIO_CFG_mii0_rxer		= 0x48,
+	MMIO_CFG_mii0_txclk		= 0x49,
+	MMIO_CFG_mii0_txd0		= 0x4a,
+	MMIO_CFG_mii0_txd1		= 0x4b,
+	MMIO_CFG_mii0_txd2		= 0x4c,
+	MMIO_CFG_mii0_txd3		= 0x4d,
+	MMIO_CFG_mii0_txen		= 0x4e,
+	MMIO_CFG_mii0_txer		= 0x4f,
+	MMIO_CFG_mii1_col		= 0x50,
+	MMIO_CFG_mii1_crs		= 0x51,
+	MMIO_CFG_mii1_led0		= 0x52,
+	MMIO_CFG_mii1_led1		= 0x53,
+	MMIO_CFG_mii1_led2		= 0x54,
+	MMIO_CFG_mii1_led3		= 0x55,
+	MMIO_CFG_mii1_rxclk		= 0x56,
+	MMIO_CFG_mii1_rxd0		= 0x57,
+	MMIO_CFG_mii1_rxd1		= 0x58,
+	MMIO_CFG_mii1_rxd2		= 0x59,
+	MMIO_CFG_mii1_rxd3		= 0x5a,
+	MMIO_CFG_mii1_rxdv		= 0x5b,
+	MMIO_CFG_mii1_rxer		= 0x5c,
+	MMIO_CFG_mii1_txclk		= 0x5d,
+	MMIO_CFG_mii1_txd0		= 0x5e,
+	MMIO_CFG_mii1_txd1		= 0x5f,
+	MMIO_CFG_mii1_txd2		= 0x60,
+	MMIO_CFG_mii1_txd3		= 0x61,
+	MMIO_CFG_mii1_txen		= 0x62,
+	MMIO_CFG_mii1_txer		= 0x63,
+	MMIO_CFG_pio0			= 0x64,
+	MMIO_CFG_pio1			= 0x65,
+	MMIO_CFG_pio2			= 0x66,
+	MMIO_CFG_pio3			= 0x67,
+	MMIO_CFG_pio4			= 0x68,
+	MMIO_CFG_pio5			= 0x69,
+	MMIO_CFG_pio6			= 0x6a,
+	MMIO_CFG_pio7			= 0x6b,
+	MMIO_CFG_spi0_cs2n		= 0x6c,
+	MMIO_CFG_spi1_clk		= 0x6d,
+	MMIO_CFG_spi1_cs0n		= 0x6e,
+	MMIO_CFG_spi1_cs1n		= 0x6f,
+	MMIO_CFG_spi1_cs2n		= 0x70,
+	MMIO_CFG_spi1_miso		= 0x71,
+	MMIO_CFG_spi1_mosi		= 0x72,
+	MMIO_CFG_i2c_scl_mmio		= 0x73,
+	MMIO_CFG_i2c_sda_mmio		= 0x74,
+	MMIO_CFG_xc_sample0		= 0x75,
+	MMIO_CFG_xc_sample1		= 0x76,
+	MMIO_CFG_xc_trigger0		= 0x77,
+	MMIO_CFG_xc_trigger1		= 0x78,
+	MMIO_CFG_uart0_cts		= 0x79,
+	MMIO_CFG_uart0_rts		= 0x7a,
+	MMIO_CFG_uart0_rxd		= 0x7b,
+	MMIO_CFG_uart0_txd		= 0x7c,
+	MMIO_CFG_uart1_cts		= 0x7d,
+	MMIO_CFG_uart1_rts		= 0x7e,
+	MMIO_CFG_uart1_rxd		= 0x7f,
+	MMIO_CFG_uart1_txd		= 0x80,
+	MMIO_CFG_uart2_cts		= 0x81,
+	MMIO_CFG_uart2_rts		= 0x82,
+	MMIO_CFG_uart2_rxd		= 0x83,
+	MMIO_CFG_uart2_txd		= 0x84,
+	MMIO_CFG_usb_id_dig		= 0x85,
+	MMIO_CFG_usb_id_pullup_ctrl	= 0x86,
+	MMIO_CFG_usb_rpd_ena		= 0x87,
+	MMIO_CFG_usb_rpu_ena		= 0x88,
+	MMIO_CFG_ccd_data0		= 0x89,
+	MMIO_CFG_ccd_data1		= 0x8a,
+	MMIO_CFG_ccd_data2		= 0x8b,
+	MMIO_CFG_ccd_data3		= 0x8c,
+	MMIO_CFG_ccd_data4		= 0x8d,
+	MMIO_CFG_ccd_data5		= 0x8e,
+	MMIO_CFG_ccd_data6		= 0x8f,
+	MMIO_CFG_ccd_data7		= 0x90,
+	MMIO_CFG_ccd_pixclk		= 0x91,
+	MMIO_CFG_ccd_line_valid		= 0x92,
+	MMIO_CFG_ccd_frame_valid	= 0x93,
+	MMIO_CFG_INPUT			= 0xff
+} MMIO_CFG_T;
+
+#define MMIO_CFG_DISABLE MMIO_CFG_INPUT
+
+
+#endif  /*  __NETX50_IO_AREAS_H__ */

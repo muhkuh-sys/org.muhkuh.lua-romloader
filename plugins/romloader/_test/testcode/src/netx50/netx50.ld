@@ -1,69 +1,67 @@
+/*---------------------------------------------------------------------------
+  Author : Christoph Thelen
+
+           Hilscher GmbH, Copyright (c) 2009, All Rights Reserved
+
+           Redistribution or unauthorized use without expressed written 
+           agreement from the Hilscher GmbH is forbidden
+---------------------------------------------------------------------------*/
+
+ENTRY(start)
 
 MEMORY
 {
-	ROMVECTOR(rx)	: ORIGIN = 0x00000000, LENGTH = 0x00000004
-	DATATCM(rw)	: ORIGIN = 0x04000000, LENGTH = 0x00001000
-	INTRAM(rwx)	: ORIGIN = 0x08000004, LENGTH = 0x00017ffc
-	INTROM(rx)	: ORIGIN = 0x08200000, LENGTH = 0x00010000
-	INTROM_HI(rx)	: ORIGIN = 0xff200000, LENGTH = 0x00010000
-	SDRAM(rwx)	: ORIGIN = 0x80000000, LENGTH = 0x00020000
+	ASSERT_EMPTY(rwx)	: ORIGIN = 0x00000000, LENGTH = 0
+
+	DTCM(rw)		: ORIGIN = 0x04000000, LENGTH = 0x00001000
+	INTRAM(rwx)		: ORIGIN = 0x08000000, LENGTH = 0x00018000
 }
 
 
 /* Section Definitions */
 SECTIONS
 {
+	.assert_empty (NOLOAD) :
+	{
+		/* NOTE: include all sections here whioch should be empty.
+		 */
+		*(.data)
+		*(.glue*)
+		*(.vfp11_veneer)
+		*(.v4_bx)
+	} >ASSERT_EMPTY
+
+
 	.serialvectors 0x04000ff0 :
 	{
-		PROVIDE ( serial_vectors = . );
+		PROVIDE ( tSerialVectors = . );
 		. = . + 0x10;
-	} >DATATCM
+	} >DTCM
 
-	/* bootloader reserved area */
-	.bootloader 0x08000004 :
+	.stack 0x08000004 :
 	{
 		. = . + 0x7ffc;
+		PROVIDE ( stack_top = . );
 	} >INTRAM
 
-	.startvector 0x08008000 :
+
+	.code 0x08008000 :
 	{
 		*(.init_code)
-	} >INTRAM
-
-	.sec0 :
-	{
 		*(.text)
-
-		*(.glue_7t) *(.glue_7)
-
+	
 		/* .rodata section which is used for read-only data (constants) */
 		*(.rodata*)
-
-		/* now let all the rest,typically non static variables, follow */
-		*(COMMON)
 	} >INTRAM
 
-
-	/* .data section which is used for initialized data */
-	.data :
+	.bss :
 	{
-		*(.data)
-	} >INTRAM
-
-	.sec1 :
-	{
-		/* .bss section which is used for uninitialized data */
-		__bss_start__ = . ;
-
+		PROVIDE ( __bss_start__ = . );
 		*(.bss)
-
-		__bss_end__ = . ;
+		*(COMMON)
+		PROVIDE ( __bss_end__ = . );
 	} >INTRAM
 
-	.testparameter 0x08017000 :
-	{
-		. = . + 0x0100;
-	} >INTRAM
 
 	/* Stabs debugging sections.  */
 	.stab          0 : { *(.stab) }
@@ -74,8 +72,8 @@ SECTIONS
 	.stab.indexstr 0 : { *(.stab.indexstr) }
 	.comment       0 : { *(.comment) }
 	/* DWARF debug sections.
-	   Symbols in the DWARF debugging sections are relative to the beginning
-	   of the section so we begin them at 0.  */
+		Symbols in the DWARF debugging sections are relative to the beginning
+		of the section so we begin them at 0.  */
 	/* DWARF 1 */
 	.debug          0 : { *(.debug) }
 	.line           0 : { *(.line) }
