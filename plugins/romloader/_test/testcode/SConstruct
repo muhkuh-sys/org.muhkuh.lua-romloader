@@ -1,58 +1,154 @@
-import netx
+# -*- coding: utf-8 -*-
 
+# TODO:
+#  * more than one system include dir (for arg parsing etc)
+#  * set a default location for the compiler dir (but where could this be?)
+#
+# Done:
+#  * print help even if the site dir for the compiler stuff is missing.
+#  * generate relocated sources from list of real locations
+#  * set compiler flags from build properties
+#  * show command line summary (e.g. "Cc blah.o") for the actions, but show complete line if the command failed.
+#  * accept 'clean' target like make
+#  * auto dependency for LDFILE
+#
 
-netxtest_defines_netx500 = ['__NETX500']
-netxtest_defines_netx50  = ['__NETX50']
+import scons_common
+import build_properties
 
-netxtest_includes_netx500 = ['./netx500']
-netxtest_includes_netx50  = ['./netx50']
+build_properties.Read()
 
+#----------------------------------------------------------------------------
+#
+# set help text
+#
+Help("""
+	Set the compiler dir with all the gcc_*.py files with --site-dir=path .
+	Example: The compiler dir is usually in the folder '.ant' in the users home directory.
+	This expands for the user 'brunhild' to '/home/brunhild/.ant'.
 
-# ----------------------------------------------------------------
-# ------------------- Common Sources -----------------------------
-# ----------------------------------------------------------------
-
-netxtest_common_c = Split("""
-	./main.c
-	./netx_consoleapp.c
-	./uprintf.c
+	Type: 'scons --site-dir=compiler_dir' to build the production program,
+	      'scons --site-dir=compiler_dir clean' to clean everything.
 """)
 
-netxtest_common_s = Split("""
-	./init_netx_test.s
-""")
-
-# ----------------------------------------------------------------
-# ---------------- Sources for netx500 ---------------------------
-# ----------------------------------------------------------------
-
-netxtest_netx500_c = Split("""
-	./netx500/netx_io_areas.c
-""")
-
-# ----------------------------------------------------------------
-# ---------------- Sources for netx50 ----------------------------
-# ----------------------------------------------------------------
-
-netxtest_netx50_c  = Split("""
-	./netx50/netx_io_areas.c
-""")
-
-# ----------------------------------------------------------------
-# ---------------- Build all versions --------------------
-# ----------------------------------------------------------------
-
-netxtest_nx500_files = netx.netx500_compile_arm(netxtest_common_c + netxtest_common_s + netxtest_netx500_c, netxtest_includes_netx500, netxtest_defines_netx500, 'output/netxtest_nx500')
-
-netxtest_nx50_files  = netx.netx50_compile_arm( netxtest_common_c + netxtest_common_s + netxtest_netx50_c,  netxtest_includes_netx50,  netxtest_defines_netx50,  'output/netxtest_nx50')
+build_properties.GenerateHelp()
 
 
-netxtest_nx500_elf = netx.netx500_makeelf(netxtest_nx500_files, 'output/netxtest_nx500', 'netxtest_nx500.elf', '', '', 'netx500/netx_test.ld')
+#----------------------------------------------------------------------------
+# This is the list of sources. The elements must be separated with whitespace
+# (i.e. spaces, tabs, newlines). The amount of whitespace does not matter.
+netxtest_sources_common = """
+	src/main.c
+	src/netx_consoleapp.c
+	src/uprintf.c
+	src/init_netx_test.s
+"""
 
-netxtest_nx50_elf  = netx.netx50_makeelf( netxtest_nx50_files,  'output/netxtest_nx50',  'netxtest_nx50.elf',  '', '', 'netx50/netx_test.ld')
+
+netxtest_sources_custom_netx500 = """
+	src/netx500/netx500_io_areas.c
+"""
 
 
-netx.arm_env.Oc('netxtest_nx500.bin', netxtest_nx500_elf)
+netxtest_sources_custom_netx50 = """
+	src/netx50/netx50_io_areas.c
+"""
 
-netx.arm_env.Oc('netxtest_nx50.bin', netxtest_nx50_elf)
 
+netxtest_sources_custom_netx10 = """
+	src/netx10/netx10_io_areas.c
+"""
+
+
+default_ccflags = """
+	-ffreestanding
+	-mlong-calls
+	-Wall
+	-Wextra
+	-Wconversion
+	-Wshadow
+	-Wcast-qual
+	-Wwrite-strings
+	-Wcast-align
+	-Wpointer-arith
+	-Wmissing-prototypes
+	-Wstrict-prototypes
+	-mapcs
+	-g3
+	-gdwarf-2
+	-std=c99
+	-pedantic
+"""
+
+#----------------------------------------------------------------------------
+# Only execute this part if the help text is not requested.
+# This keeps the help message functional even if no include path for the
+# compiler definitions was specified.
+if not GetOption('help'):
+	# Show summary of the build properties.
+	build_properties.PrintSummary()
+	
+	
+	#----------------------------------------------------------------------------
+	#
+	# import the compiler definitions
+	#
+	# NOTE: it would be possible to use execfile instead of import here. This
+	gcc_arm_elf_4_3_3 = scons_common.get_compiler('gcc_arm_elf_4_3_3')
+	
+	
+	#----------------------------------------------------------------------------
+	#
+	# create the default environment
+	#
+	env_default = gcc_arm_elf_4_3_3.get_gcc_arm_elf_4_3_3()
+	env_default.Decider('timestamp-newer')
+	env_default.Append(CPPPATH = ['src'])
+	env_default.Replace(CCFLAGS = Split(default_ccflags))
+	env_default.Replace(LIBS = ['m', 'c', 'gcc'])
+	env_default.Replace(LINKFLAGS = ['-nostdlib', '-static', '-Map=${TARGET}.map'])
+	build_properties.ApplyToEnv(env_default)
+	
+	
+	# create environments for both builds
+	env_netx500 = env_default.Clone()
+	env_netx500.Append(CCFLAGS = ['-mcpu=arm926ej-s'])
+	env_netx500.Replace(LDFILE = 'src/netx500/netx500.ld')
+	env_netx500.Replace(LIBPATH = ['${GCC_DIR}/arm-elf/lib/arm926ej-s', '${GCC_DIR}/lib/gcc/arm-elf/${GCC_VERSION}/arm926ej-s'])
+	env_netx500.Append(CPPDEFINES = [['ASIC_TYP', '500']])
+	env_netx500.Append(CPPPATH = ['src/netx500'])
+	env_netx500.VariantDir('targets/netx500', 'src', duplicate=0)
+	
+	env_netx50 = env_default.Clone()
+	env_netx50.Append(CCFLAGS = ['-mcpu=arm966e-s'])
+	env_netx50.Replace(LDFILE = 'src/netx50/netx50.ld')
+	env_netx50.Replace(LIBPATH = ['${GCC_DIR}/arm-elf/lib/arm966e-s', '${GCC_DIR}/lib/gcc/arm-elf/${GCC_VERSION}/arm966e-s'])
+	env_netx50.Append(CPPDEFINES = [['ASIC_TYP', '50']])
+	env_netx50.Append(CPPPATH = ['src/netx50'])
+	env_netx50.VariantDir('targets/netx50', 'src', duplicate=0)
+	
+	env_netx10 = env_default.Clone()
+	env_netx10.Append(CCFLAGS = ['-mcpu=arm966e-s'])
+	env_netx10.Replace(LDFILE = 'src/netx10/netx10.ld')
+	env_netx10.Replace(LIBPATH = ['${GCC_DIR}/arm-elf/lib/arm966e-s', '${GCC_DIR}/lib/gcc/arm-elf/${GCC_VERSION}/arm966e-s'])
+	env_netx10.Append(CPPDEFINES = [['ASIC_TYP', '10']])
+	env_netx10.Append(CPPPATH = ['src/netx10'])
+	env_netx10.VariantDir('targets/netx10', 'src', duplicate=0)
+	
+	
+	#----------------------------------------------------------------------------
+	#
+	# build the files
+	#
+	netxtest_sources_netx500 = [src.replace('src', 'targets/netx500') for src in Split(netxtest_sources_common+netxtest_sources_custom_netx500)]
+	netxtest_netx500_elf = env_netx500.Elf('targets/netxtest_nx500', netxtest_sources_netx500)
+	netxtest_netx500_bin = env_netx500.ObjCopy('targets/netxtest_nx500', netxtest_netx500_elf)
+	
+	netxtest_sources_netx50  = [src.replace('src', 'targets/netx50')  for src in Split(netxtest_sources_common+netxtest_sources_custom_netx50)]
+	netxtest_netx50_elf = env_netx50.Elf('targets/netxtest_nx50', netxtest_sources_netx50)
+	netxtest_netx50_bin = env_netx50.ObjCopy('targets/netxtest_nx50', netxtest_netx50_elf)
+	
+	netxtest_sources_netx10  = [src.replace('src', 'targets/netx10')  for src in Split(netxtest_sources_common+netxtest_sources_custom_netx10)]
+	netxtest_netx10_elf = env_netx10.Elf('targets/netxtest_nx10', netxtest_sources_netx10)
+	netxtest_netx10_bin = env_netx10.ObjCopy('targets/netxtest_nx10', netxtest_netx10_elf)
+	
