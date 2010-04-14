@@ -41,7 +41,7 @@ netxtest_sources_common = """
 	src/main.c
 	src/netx_consoleapp.c
 	src/uprintf.c
-	src/init_netx_test.s
+	src/init_netx_test.S
 """
 
 

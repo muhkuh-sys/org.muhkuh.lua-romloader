@@ -2,7 +2,7 @@
 	.section .init_code, "ax"
 	.arm
 
-	.extern test_main
+	.extern netx_consoleapp_init
 
 	.global NetxTestParameter_Init
 	.global start
@@ -54,31 +54,7 @@ clear_bss:
 	blo	clear_bss
 
 	bl	call_test_main
-/*
-	mov	r0, #0
-	mov	r1, #65
-	ldr	r2, =0x0400fff4
-	blx	r2
 
-	mov	r0, #0
-	mov	r1, #66
-	ldr	r2, =0x0400fff4
-	blx	r2
-
-	mov	r0, #0
-	mov	r1, #67
-	ldr	r2, =0x0400fff4
-	blx	r2
-
-	mov	r0, #0
-	mov	r1, #68
-	ldr	r2, =0x0400fff4
-	blx	r2
-
-	mov	r0, #0
-	ldr	r2, =0x0400fffc
-	blx	r2
-*/
 	@ restore debug console stack
 	ldr	r1, =blstack_save
 	ldr	r0, [r1]
@@ -88,7 +64,7 @@ clear_bss:
 	bx	lr
 
 call_test_main:
-	ldr	r0, =test_main
+	ldr	r0, =netx_consoleapp_init
 	bx	r0
 
   .endfunc
