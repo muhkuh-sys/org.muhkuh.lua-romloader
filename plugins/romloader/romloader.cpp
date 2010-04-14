@@ -111,12 +111,14 @@ bool romloader::detect_chiptyp(lua_State *ptClientData)
 	unsigned long ulVersionAddr;
 	unsigned long ulVersion;
 	bool fResult;
+	ROMLOADER_CHIPTYP tChiptyp;
+	ROMLOADER_ROMCODE tRomcode;
 	const char *pcChiptypName;
 	const char *pcRomcodeName;
 
 
-	m_tChiptyp = ROMLOADER_CHIPTYP_UNKNOWN;
-	m_tRomcode = ROMLOADER_ROMCODE_UNKNOWN;
+	tChiptyp = ROMLOADER_CHIPTYP_UNKNOWN;
+	tRomcode = ROMLOADER_ROMCODE_UNKNOWN;
 
 	// read the reset vector at 0x00000000
 	ulResetVector = read_data32(ptClientData, 0);
@@ -137,8 +139,8 @@ bool romloader::detect_chiptyp(lua_State *ptClientData)
 			if( ptRstCnt->ulVersionValue==ulVersion )
 			{
 				// found chip!
-				m_tChiptyp = ptRstCnt->tChiptyp;
-				m_tRomcode = ptRstCnt->tRomcode;
+				tChiptyp = ptRstCnt->tChiptyp;
+				tRomcode = ptRstCnt->tRomcode;
 				break;
 			}
 		}
@@ -146,7 +148,7 @@ bool romloader::detect_chiptyp(lua_State *ptClientData)
 	}
 
 	// found something?
-	fResult = ( m_tChiptyp!=ROMLOADER_CHIPTYP_UNKNOWN && m_tRomcode!=ROMLOADER_ROMCODE_UNKNOWN );
+	fResult = ( tChiptyp!=ROMLOADER_CHIPTYP_UNKNOWN && tRomcode!=ROMLOADER_ROMCODE_UNKNOWN );
 
 	if( fResult!=true )
 	{
@@ -154,8 +156,12 @@ bool romloader::detect_chiptyp(lua_State *ptClientData)
 	}
 	else
 	{
-		pcChiptypName = GetChiptypName(m_tChiptyp);
-		pcRomcodeName = GetRomcodeName(m_tRomcode);
+		/* Accept new chiptype and romcode. */
+		m_tChiptyp = tChiptyp;
+		m_tRomcode = tRomcode;
+
+		pcChiptypName = GetChiptypName(tChiptyp);
+		pcRomcodeName = GetRomcodeName(tRomcode);
 		printf("%s(%p): found chip %s with romcode %s\n", m_pcName, this, pcChiptypName, pcRomcodeName);
 	}
 
@@ -163,7 +169,7 @@ bool romloader::detect_chiptyp(lua_State *ptClientData)
 }
 
 
-const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[3] =
+const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[4] =
 {
 	{
 		0xea080001,
@@ -194,6 +200,16 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[3] =
 		ROMLOADER_ROMCODE_HBOOT,
 		"HBoot"
 	},
+
+	{
+		0xeafdfffa,
+		0x08070008,
+		0x00005003,
+		ROMLOADER_CHIPTYP_NETX10,
+		"netX10",
+		ROMLOADER_ROMCODE_HBOOT,
+		"HBoot"
+	}
 };
 
 
