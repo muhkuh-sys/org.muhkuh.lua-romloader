@@ -117,6 +117,8 @@ public:
 	virtual void call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 // *** lua interface end ***
 
+	static void hexdump(const unsigned char *pucData, unsigned long ulSize, unsigned long ulNetxAddress);
+
 private:
 	typedef struct
 	{
@@ -129,10 +131,15 @@ private:
 
 	bool parse_hex_digit(DATA_BUFFER_T *ptBuffer, size_t sizDigits, unsigned long *pulResult);
 	bool expect_string(DATA_BUFFER_T *ptBuffer, const char *pcMatch);
+	bool skip_line(DATA_BUFFER_T *ptBuffer);
+	size_t get_line_length(DATA_BUFFER_T *ptBuffer);
 
 	bool parseDumpLine(DATA_BUFFER_T *ptBuffer, unsigned long ulAddress, unsigned long ulElements, unsigned char *pucBuffer);
+	int parse_uue(DATA_BUFFER_T *ptBuffer, unsigned long ulStart, size_t sizLength, unsigned char **ppucData);
+	int uue_generate(const unsigned char *pucData, size_t sizData, char **ppcUueData, size_t *psizUueData);
 
 	int usb_call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF *ptLuaFn, long lCallbackUserData);
+	int usb_call_netx10(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF *ptLuaFn, long lCallbackUserData);
 
 	int usb_load(const unsigned char *pucData, size_t sizDataLen, unsigned long ulLoadAdr, SWIGLUA_REF *ptLuaFn, long lCallbackUserData);
 
@@ -147,8 +154,6 @@ private:
 	int libusb_readBlock(unsigned char *pucReceiveBuffer, unsigned int uiSize, int iTimeoutMs);
 	int libusb_writeBlock(unsigned char *pucSendBuffer, unsigned int uiSize, int iTimeoutMs);
 	int libusb_exchange(unsigned char *pucSendBuffer, unsigned char *pucReceiveBuffer);
-
-	void hexdump(const unsigned char *pucData, unsigned long ulSize, unsigned long ulNetxAddress);
 
 	romloader_usb_provider *m_ptUsbProvider;
 
