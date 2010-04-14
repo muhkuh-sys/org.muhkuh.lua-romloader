@@ -45,15 +45,15 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(NETX_CONSOLEAPP_PARAMETER_T *ptTes
 
 	/* say hi */
 	uprintf(". *** test skeleton start ***\n");
-	uprintf(". Parameter Address: 0x$\n", (unsigned long)ptTestParam);
-	uprintf(". Parameter: 0x$\n", ulParameter);
+	uprintf(". Parameter Address: 0x%08x\n", (unsigned long)ptTestParam);
+	uprintf(". Parameter: 0x%08x\n", ulParameter);
 
 	/* print a lot of messages */
 	iMax = 100;
-	uprintf(". counting from 0 to $\n", iMax);
+	uprintf(". counting from 0 to %d\n", iMax);
 	for(iCnt=0; iCnt<iMax; ++iCnt)
 	{
-		uprintf("% $8/$8\n", iCnt, iMax);
+		uprintf("%% %08x/%08x\n", iCnt, iMax);
 	}
 
 	/* write parameter to return message */
