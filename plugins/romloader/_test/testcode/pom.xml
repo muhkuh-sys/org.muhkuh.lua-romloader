@@ -144,7 +144,7 @@
 				<executions>
 					<execution>
 						<id>unpack_tools</id>
-						<phase>initialize</phase>
+						<phase>validate</phase>
 						<goals>
 							<goal>unpack</goal>
 						</goals>
@@ -163,7 +163,7 @@
 								<artifactItem>
 									<groupId>org.gnu.gcc</groupId>
 									<artifactId>gcc-arm-elf_${os_family}_${os.arch}</artifactId>
-									<version>4.3.3_1</version>
+									<version>4.3.3_2</version>
 									<type>tar.bz2</type>
 									<overWrite>false</overWrite>
 									<outputDirectory>${gcc_dir}</outputDirectory>
@@ -196,7 +196,7 @@
 				<executions>
 					<execution>
 						<id>filter_files</id>
-						<phase>initialize</phase>
+						<phase>process-sources</phase>
 						<goals>
 							<goal>run</goal>
 						</goals>
