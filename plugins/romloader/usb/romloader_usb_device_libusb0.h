@@ -87,11 +87,48 @@ public:
 
 	int detect_interfaces(romloader_usb_reference ***ppptReferences, size_t *psizReferences, romloader_usb_provider *ptProvider);
 
+
+	static const size_t mc_sizCardSize = 16384;
+	struct sBufferCard;
+
+	typedef struct sBufferCard
+	{
+		unsigned char *pucEnd;
+		unsigned char *pucRead;
+		unsigned char *pucWrite;
+		sBufferCard *ptNext;
+		unsigned char aucData[mc_sizCardSize];
+	} tBufferCard;
+
+
+	void initCards(void);
+	void deleteCards(void);
+	void writeCards(const unsigned char *pucBuffer, size_t sizBufferSize);
+	size_t readCards(unsigned char *pucBuffer, size_t sizBufferSize);
+	size_t getCardSize(void) const;
+
+
+	static void *rxThread(void *pvParameter);
+	void *localRxThread(void);
+
 protected:
+	void card_lock_enter(void);
+	void card_lock_leave(void);
+
+
+	bool m_fCardMutexIsInitialized;
+	pthread_mutex_t tCardMutex;
+
+	pthread_t tRxThread;
+
+	tBufferCard *m_ptFirstCard;
+	tBufferCard *m_ptLastCard;
+
 
 private:
 	int libusb_init(libusb_context **pptContext);
 	void libusb_exit(libusb_context *ptContext);
+	size_t readCardData(unsigned char *pucBuffer, size_t sizBufferSize);
 
 	char *m_pcPluginId;
 	static const char *m_pcPluginNamePattern;
