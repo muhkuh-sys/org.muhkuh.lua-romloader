@@ -107,7 +107,7 @@ private:
 		const char *pcRomcodeName;
 	} ROMLOADER_RESET_ID_T;
 
-	static const ROMLOADER_RESET_ID_T atResIds[3];
+	static const ROMLOADER_RESET_ID_T atResIds[4];
 };
 
 /*-----------------------------------*/
