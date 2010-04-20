@@ -132,12 +132,12 @@ private:
 
 	/* pointer to the usb device and the usb device handle */
 	romloader_usb_device_platform *m_ptUsbDevice;
-	libusb_device *m_ptUsbDev;
-	libusb_device_handle *m_ptUsbDevHandle;
+//	libusb_device *m_ptUsbDev;
+//	libusb_device_handle *m_ptUsbDevHandle;
 
 	/* bus number and device address for the connection */
-	uint8_t m_uiNetxBusNr;
-	uint8_t m_uiNetxDeviceAddress;
+//	uint8_t m_uiNetxBusNr;
+//	uint8_t m_uiNetxDeviceAddress;
 
 	// buffer for the read_image command
 	size_t sizBufLen;

@@ -26,6 +26,8 @@
 #include <usb.h>
 #include <errno.h>
 
+#include "../romloader.h"
+
 
 typedef usb_dev_handle libusb_device_handle;
 typedef void* libusb_context;
@@ -60,33 +62,15 @@ public:
 	romloader_usb_device_libusb0(const char *pcPluginId);
 	~romloader_usb_device_libusb0(void);
 
-	bool fIsDeviceNetx(libusb_device *ptDevice);
 	const char *libusb_strerror(int iError);
-
-
-	int libusb_open(libusb_device *ptDevice, libusb_device_handle **pptDevHandle);
-	void libusb_close(libusb_device_handle *dev_handle);
-	void libusb_set_debug(libusb_context *ptContext, int iLevel);
-	int libusb_get_device_descriptor(libusb_device *dev, LIBUSB_DEVICE_DESCRIPTOR_T *desc);
-	int libusb_reset_device(libusb_device_handle *dev);
-	int libusb_set_configuration(libusb_device_handle *dev, int configuration);
-	int libusb_claim_interface(libusb_device_handle *dev, int iface);
-	int libusb_release_interface(libusb_device_handle *dev, int iface);
-	ssize_t libusb_get_device_list(libusb_device ***list);
-	void libusb_free_device_list(libusb_device **list, int unref_devices);
-
-	uint8_t libusb_get_bus_number(libusb_device *dev);
-	uint8_t libusb_get_device_address(libusb_device *dev);
-
-
-	int libusb_reset_and_close_device(libusb_device_handle *dev);
-	int libusb_release_and_close_device(libusb_device_handle *dev_handle);
 
 	int usb_bulk_pc_to_netx(libusb_device_handle *ptDevHandle, unsigned char ucEndPointOut, const unsigned char *pucDataOut, int iLength, int *piProcessed, unsigned int uiTimeoutMs);
 	int usb_bulk_netx_to_pc(libusb_device_handle *ptDevHandle, unsigned char ucEndPointIn, unsigned char *pucDataIn, int iLength, int *piProcessed, unsigned int uiTimeoutMs);
 
-	int detect_interfaces(romloader_usb_reference ***ppptReferences, size_t *psizReferences, romloader_usb_provider *ptProvider);
 
+	int detect_interfaces(romloader_usb_reference ***ppptReferences, size_t *psizReferences, romloader_usb_provider *ptProvider);
+	int Connect(unsigned int uiBusNr, unsigned int uiDeviceAdr);
+	void Disconnect(void);
 
 	static const size_t mc_sizCardSize = 16384;
 	struct sBufferCard;
@@ -124,16 +108,48 @@ protected:
 	tBufferCard *m_ptFirstCard;
 	tBufferCard *m_ptLastCard;
 
+	ROMLOADER_CHIPTYP m_tChiptyp;
+	ROMLOADER_ROMCODE m_tRomcode;
+
+	unsigned char m_ucEndpoint_In;
+	unsigned char m_ucEndpoint_Out;
+
 
 private:
+	bool fIsDeviceNetx(libusb_device *ptDevice);
+
+	int libusb_get_device_descriptor(libusb_device *dev, LIBUSB_DEVICE_DESCRIPTOR_T *desc);
+	ssize_t libusb_get_device_list(libusb_device ***list);
+	void libusb_free_device_list(libusb_device **list, int unref_devices);
+	libusb_device *find_netx_device(libusb_device **ptDeviceList, ssize_t ssizDevList, unsigned int uiBusNr, unsigned int uiDeviceAdr);
+	int setup_netx_device(libusb_device *ptNetxDevice);
+
+	unsigned char libusb_get_bus_number(libusb_device *dev);
+	unsigned char libusb_get_device_address(libusb_device *dev);
+
 	int libusb_init(libusb_context **pptContext);
 	void libusb_exit(libusb_context *ptContext);
+
+	int libusb_open(libusb_device *ptDevice);
+	void libusb_close(void);
+	int libusb_reset_and_close_device(void);
+	int libusb_release_and_close_device(void);
+
+	int libusb_set_configuration(int iConfiguration);
+
+	int libusb_claim_interface(void);
+	int libusb_release_interface(void);
+
 	size_t readCardData(unsigned char *pucBuffer, size_t sizBufferSize);
+
+	void hexdump(const unsigned char *pucData, unsigned long ulSize);
+
 
 	char *m_pcPluginId;
 	static const char *m_pcPluginNamePattern;
 
 	libusb_context *m_ptLibUsbContext;
+	libusb_device_handle *m_ptDevHandle;
 
 	static const char *m_pcLibUsb_BusPattern;
 	static const char *m_pcLibUsb_DevicePattern;
