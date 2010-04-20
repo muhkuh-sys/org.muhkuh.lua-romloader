@@ -1,4 +1,4 @@
-Creating the MSVS project files
+iCreating the MSVS project files
 -------------------------------
 
 1) Move to the muhkuh source directory (that's the folder where this readme is).
@@ -16,4 +16,12 @@ Run cmake with swig in path:
 Run cmake with swig not in the path. Here the swig.exe is in c:\tools\swigwin-1.3.40\ . Do not forget to set the filename of the swig executable as well:
  cmake -D SWIG_EXECUTABLE=c:\tools\swigwin-1.3.40\swig.exe ..
 
+
+Visual Studio Projects offer all build configuration, but Makefiles just one. Select it with 'CMAKE_BUILD_TYPE'.
+Generate Makefile for a debug project:
+  cmake -D CMAKE_BUILD_TYPE=debug ..
+
+
+Execute Makefile with verbose output:
+  make VERBOSE=1
 
