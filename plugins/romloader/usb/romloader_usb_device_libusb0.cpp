@@ -36,7 +36,7 @@ typedef struct
 	unsigned char ucEndpoint_Out;
 } NETX_USB_DEVICE_T;
 
-static const NETX_USB_DEVICE_T atNetxUsbDevices[] =
+static const NETX_USB_DEVICE_T atNetxUsbDevices[2] =
 {
 	{
 		"netX500",
@@ -640,14 +640,17 @@ libusb_device *romloader_usb_device_libusb0::find_netx_device(libusb_device **pt
 			iResult = libusb_get_device_descriptor(ptDev, &sDevDesc);
 			if( iResult==LIBUSB_SUCCESS )
 			{
+				printf("Hello device (VID=0x$04x, PID=0x%04x)\n", sDevDesc.idVendor, sDevDesc.idProduct);
 				/* Loop over all known devices. */
 				ptIdCnt = atNetxUsbDevices;
 				ptIdEnd = atNetxUsbDevices + (sizeof(atNetxUsbDevices)/sizeof(atNetxUsbDevices[0]));
+				printf("probing %d devices\n", sizeof(atNetxUsbDevices)/sizeof(atNetxUsbDevices[0]));
 				while(ptIdCnt<ptIdEnd)
 				{
+					printf("Are you a %s?\n", ptIdCnt->pcName);
 					if( sDevDesc.idVendor==ptIdCnt->usVendorId && sDevDesc.idProduct==ptIdCnt->usDeviceId )
 					{
-						printf("Found VID=0x$04x, PID=0x%04x -> %s\n", sDevDesc.idVendor, sDevDesc.idProduct, ptIdCnt->pcName);
+						printf("Found VID=0x%04x, PID=0x%04x -> %s\n", sDevDesc.idVendor, sDevDesc.idProduct, ptIdCnt->pcName);
 						m_tChiptyp = ptIdCnt->tChiptyp;
 						m_tRomcode = ptIdCnt->tRomcode;
 						m_ucEndpoint_In = ptIdCnt->ucEndpoint_In;
@@ -655,7 +658,9 @@ libusb_device *romloader_usb_device_libusb0::find_netx_device(libusb_device **pt
 						ptNetxDevice = ptDev;
 						break;
 					}
+					++ptIdCnt;
 				}
+				printf("End of search\n");
 			}
 		}
 
@@ -745,6 +750,8 @@ int romloader_usb_device_libusb0::Connect(unsigned int uiBusNr, unsigned int uiD
 	tRef.ref = 0;
 
 	ptDeviceList = NULL;
+
+	printf("Connect\n");
 
 	/* Search device with bus and address. */
 	ssizDevList = libusb_get_device_list(&ptDeviceList);
