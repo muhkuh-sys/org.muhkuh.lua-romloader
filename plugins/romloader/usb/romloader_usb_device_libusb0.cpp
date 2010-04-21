@@ -22,41 +22,11 @@
 #include <stdio.h>
 
 #include "romloader_usb_device_libusb0.h"
+
+#include <errno.h>
+#include <sys/time.h>
+
 #include "romloader_usb_main.h"
-
-
-typedef struct
-{
-	const char *pcName;
-	unsigned short usVendorId;
-	unsigned short usDeviceId;
-	ROMLOADER_CHIPTYP tChiptyp;
-	ROMLOADER_ROMCODE tRomcode;
-	unsigned char ucEndpoint_In;
-	unsigned char ucEndpoint_Out;
-} NETX_USB_DEVICE_T;
-
-static const NETX_USB_DEVICE_T atNetxUsbDevices[2] =
-{
-	{
-		"netX500",
-		0x0cc4,
-		0x0815,
-		ROMLOADER_CHIPTYP_NETX500,
-		ROMLOADER_ROMCODE_ABOOT,
-		0x81,
-		0x01
-	},
-	{
-		"netX10",
-		0x1939,
-		0x000c,
-		ROMLOADER_CHIPTYP_NETX10,
-		ROMLOADER_ROMCODE_HBOOT,
-		0x83,
-		0x04
-	}
-};
 
 
 
@@ -70,6 +40,64 @@ static const NETX_USB_DEVICE_T atNetxUsbDevices[2] =
 	#include <pthread.h>
 #endif
 
+
+
+romloader_usb_device_libusb0::romloader_usb_device_libusb0(const char *pcPluginId)
+ : romloader_usb_device(pcPluginId)
+ , m_ucEndpoint_In(0)
+ , m_ucEndpoint_Out(0)
+ , m_ptLibUsbContext(NULL)
+ , m_ptDevHandle(NULL)
+ , m_ptRxDataAvail_Condition(NULL)
+ , m_ptRxDataAvail_Mutex(NULL)
+{
+	int iResult;
+
+
+	usb_init();
+
+	m_ptRxDataAvail_Condition = new pthread_cond_t;
+	iResult = pthread_cond_init(m_ptRxDataAvail_Condition, NULL);
+	if( iResult!=0 )
+	{
+		fprintf(stderr, "failed to init m_ptRxDataAvail_Condition: %d\n", iResult);
+		delete m_ptRxDataAvail_Condition;
+		m_ptRxDataAvail_Condition = NULL;
+	}
+	else
+	{
+		m_ptRxDataAvail_Mutex = new pthread_mutex_t;
+		iResult = pthread_mutex_init(m_ptRxDataAvail_Mutex, NULL);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "failed to init m_ptRxDataAvail_Condition: %d\n", iResult);
+			pthread_cond_destroy(m_ptRxDataAvail_Condition);
+			delete m_ptRxDataAvail_Condition;
+			m_ptRxDataAvail_Condition = NULL;
+
+			delete m_ptRxDataAvail_Mutex;
+			m_ptRxDataAvail_Mutex = NULL;
+		}
+	}
+}
+
+
+romloader_usb_device_libusb0::~romloader_usb_device_libusb0(void)
+{
+	if( m_ptRxDataAvail_Condition!=NULL )
+	{
+		pthread_cond_destroy(m_ptRxDataAvail_Condition);
+		delete m_ptRxDataAvail_Condition;
+		m_ptRxDataAvail_Condition = NULL;
+	}
+
+	if( m_ptRxDataAvail_Mutex!=NULL )
+	{
+		pthread_mutex_destroy(m_ptRxDataAvail_Mutex);
+		delete m_ptRxDataAvail_Mutex;
+		m_ptRxDataAvail_Mutex = NULL;
+	}
+}
 
 
 void *romloader_usb_device_libusb0::rxThread(void *pvParameter)
@@ -112,6 +140,8 @@ void *romloader_usb_device_libusb0::localRxThread(void)
 					hexdump(uBuffer.auc, iError);
 					
 					writeCards(uBuffer.auc, iError);
+					/* Send a signal to any waiting threads. */
+					int pthread_cond_signal(pthread_cond_t *cond);
 					iError = 0;
 				}
 				else if( iError==-110 )
@@ -119,6 +149,8 @@ void *romloader_usb_device_libusb0::localRxThread(void)
 					/* Timeout. */
 					iError = 0;
 				}
+
+				pthread_testcancel();
 			} while( iError>=0 );
 		}
 	}
@@ -150,15 +182,7 @@ int romloader_usb_device_libusb0::libusb_open(libusb_device *ptDevice)
 	{
 		/* NOTE: m_ptDevHandle must be assigned before the thread starts. */
 		m_ptDevHandle = ptDevHandle;
-
-		/* Create the receive thread. */
-		iError = pthread_create(&tRxThread, NULL, romloader_usb_device_libusb0::rxThread, (void*)this);
-		if( iError!=0 )
-		{
-			usb_close(m_ptDevHandle);
-			m_ptDevHandle = NULL;
-			fprintf(stderr, "%s(%p): Failed to create card mutex: %d:%s\n", m_pcPluginId, this, errno, strerror(errno));
-		}
+		iError = 0;
 	}
 	else
 	{
@@ -177,6 +201,52 @@ void romloader_usb_device_libusb0::libusb_close(void)
 		usb_close(m_ptDevHandle);
 		m_ptDevHandle = NULL;
 	}
+}
+
+
+int romloader_usb_device_libusb0::start_rx_thread(void)
+{
+	int iResult;
+
+
+	/* Create the receive thread. */
+	iResult = pthread_create(&m_tRxThread, NULL, romloader_usb_device_libusb0::rxThread, (void*)this);
+	if( iResult!=0 )
+	{
+		fprintf(stderr, "%s(%p): Failed to create card mutex: %d:%s\n", m_pcPluginId, this, errno, strerror(errno));
+	}
+
+	return iResult;
+}
+
+
+int romloader_usb_device_libusb0::stop_rx_thread(void)
+{
+	int iResult;
+	int iStatus;
+	void *pvStatus;
+
+
+	iResult = pthread_cancel(m_tRxThread);
+	if( iResult!=0 )
+	{
+		fprintf(stderr, "pthread_cancel failed: %d\n", iResult);
+	}
+	else
+	{
+		iResult = pthread_join(m_tRxThread, &pvStatus);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "pthread_join failed: %d\n", iResult);
+		}
+		else
+		{
+			iStatus = (int)pvStatus;
+			printf("rxthread finished with status %d\n", iStatus);
+		}
+	}
+
+	return iResult;
 }
 
 
@@ -674,6 +744,12 @@ libusb_device *romloader_usb_device_libusb0::find_netx_device(libusb_device **pt
 int romloader_usb_device_libusb0::setup_netx_device(libusb_device *ptNetxDevice)
 {
 	int iResult;
+	size_t sizReceivedTotal;
+	size_t sizChunk;
+	const size_t sizMaxChunk = 65536;
+	const size_t sizMaxData = 524288;
+	unsigned char aucChunkBuffer[sizChunk];
+	const unsigned int uiChunkReceiveTimeoutMs = 100;
 
 
 	printf("%s(%p): open device.\n", m_pcPluginId, this);
@@ -704,14 +780,35 @@ int romloader_usb_device_libusb0::setup_netx_device(libusb_device *ptNetxDevice)
 			}
 			else
 			{
-				/* Get netx welcome message. */
-				printf("%s(%p): receive welcome message.\n", m_pcPluginId, this);
-/* FIXME: This is just a test for the receive thread. */
-				usleep(10000);
-//				iResult = usb_receive(&tBuffer, &tRef, 0);
-				if( iResult!=LIBUSB_SUCCESS )
+				printf("%s(%p): start rx thread.\n", m_pcPluginId, this);
+				iResult = start_rx_thread();
+				if( iResult!=0 )
 				{
-					printf("%s(%p): received data:\n", m_pcPluginId, this);
+					/* Failed to start the receive thread. */
+					fprintf(stderr, "%s(%p): failed to start the receive thread: %d\n", m_pcPluginId, this, iResult);
+				}
+				else
+				{
+					/* Get any waiting data. This can be garbage from the last connection or the netx welcome message. */
+					printf("%s(%p): receive welcome message.\n", m_pcPluginId, this);
+
+					sizReceivedTotal = 0;
+					do
+					{
+						/* Receive a chunk of data. */
+						sizChunk = usb_receive(aucChunkBuffer, sizMaxChunk, uiChunkReceiveTimeoutMs);
+						printf("received %d bytes of data:\n", sizChunk);
+						hexdump(aucChunkBuffer, sizChunk);
+						/* Is the maximum already reached? */
+						sizReceivedTotal += sizChunk;
+						if( sizReceivedTotal>=sizMaxData )
+						{
+							/* Guess the device will never shut up! */
+							iResult = -1;
+							stop_rx_thread();
+							break;
+						}
+					} while( sizChunk!=0 );
 				}
 
 				/* Cleanup in error case. */
@@ -812,279 +909,6 @@ void romloader_usb_device_libusb0::Disconnect(void)
 }
 
 
-void romloader_usb_device_libusb0::card_lock_enter(void)
-{
-	pthread_mutex_lock(&tCardMutex);
-}
-
-void romloader_usb_device_libusb0::card_lock_leave(void)
-{
-	pthread_mutex_unlock(&tCardMutex);
-}
-
-
-romloader_usb_device_libusb0::romloader_usb_device_libusb0(const char *pcPluginId)
- : m_pcPluginId(NULL)
- , m_ptFirstCard(NULL)
- , m_ptLastCard(NULL)
- , m_fCardMutexIsInitialized(false)
- , m_ucEndpoint_In(0)
- , m_ucEndpoint_Out(0)
- , m_ptLibUsbContext(NULL)
- , m_ptDevHandle(NULL)
-{
-	int iResult;
-
-
-	m_pcPluginId = strdup(pcPluginId);
-
-	usb_init();
-
-	/* Create the card mutex. */
-	iResult = pthread_mutex_init(&tCardMutex, NULL);
-	if( iResult!=0 )
-	{
-		fprintf(stderr, "%s(%p): Failed to create card mutex: %d:%s\n", m_pcPluginId, this, errno, strerror(errno));
-	}
-	else
-	{
-		m_fCardMutexIsInitialized = true;
-		initCards();
-	}
-}
-
-romloader_usb_device_libusb0::~romloader_usb_device_libusb0(void)
-{
-	int iResult;
-
-
-	if( m_fCardMutexIsInitialized==true )
-	{
-		deleteCards();
-
-		iResult = pthread_mutex_destroy(&tCardMutex);
-		if( iResult!=0 )
-		{
-			fprintf(stderr, "%s(%p): Failed to destroy card mutex: %d:%s\n", m_pcPluginId, this, errno, strerror(errno));
-		}
-	}
-
-	if( m_pcPluginId!=NULL )
-	{
-		free(m_pcPluginId);
-	}
-}
-
-
-void romloader_usb_device_libusb0::initCards(void)
-{
-	tBufferCard *ptCard;
-
-
-	if( m_ptFirstCard!=NULL )
-	{
-		deleteCards();
-	}
-
-	ptCard = new tBufferCard;
-	ptCard->pucEnd = ptCard->aucData + mc_sizCardSize;
-	ptCard->pucRead = ptCard->aucData;
-	ptCard->pucWrite = ptCard->aucData;
-	ptCard->ptNext = NULL;
-
-	m_ptFirstCard = ptCard;
-	m_ptLastCard = ptCard;
-}
-
-
-void romloader_usb_device_libusb0::deleteCards(void)
-{
-	tBufferCard *ptCard;
-	tBufferCard *ptNextCard;
-
-
-	/* Lock the cards. */
-	card_lock_enter();
-
-	ptCard = m_ptFirstCard;
-	while( ptCard!=NULL )
-	{
-		ptNextCard = ptCard->ptNext;
-		delete ptCard;
-		ptCard = ptNextCard;
-	}
-	m_ptFirstCard = NULL;
-	m_ptLastCard = NULL;
-
-	/* Unlock the cards. */
-	card_lock_leave();
-}
-
-
-void romloader_usb_device_libusb0::writeCards(const unsigned char *pucBuffer, size_t sizBufferSize)
-{
-	size_t sizLeft;
-	size_t sizChunk;
-	tBufferCard *ptCard;
-
-
-	/* Lock the cards. */
-	card_lock_enter();
-
-	sizLeft = sizBufferSize;
-	while( sizLeft>0 )
-	{
-		// get free space in the current card
-		sizChunk = m_ptLastCard->pucEnd - m_ptLastCard->pucWrite;
-		// no more space -> create a new card
-		if( sizChunk==0 )
-		{
-			ptCard = new tBufferCard;
-			ptCard->pucEnd = ptCard->aucData + mc_sizCardSize;
-			ptCard->pucRead = ptCard->aucData;
-			ptCard->pucWrite = ptCard->aucData;
-			ptCard->ptNext = NULL;
-			// append new card
-			m_ptLastCard->ptNext = ptCard;
-			// close old card
-			m_ptLastCard->pucWrite = NULL;
-			// set the new last pointer
-			m_ptLastCard = ptCard;
-			// the new card is empty
-			sizChunk = mc_sizCardSize;
-		}
-		// limit chunk to request size
-		if( sizChunk>sizLeft )
-		{
-			sizChunk = sizLeft;
-		}
-		// copy data
-		memcpy(m_ptLastCard->pucWrite, pucBuffer, sizChunk);
-		// advance pointer
-		m_ptLastCard->pucWrite += sizChunk;
-		pucBuffer += sizChunk;
-		sizLeft -= sizChunk;
-	}
-
-	// unlock the cards
-	card_lock_leave();
-}
-
-
-size_t romloader_usb_device_libusb0::readCards(unsigned char *pucBuffer, size_t sizBufferSize)
-{
-	size_t sizRead;
-	size_t sizLeft;
-
-
-	sizLeft = sizBufferSize;
-	do
-	{
-		sizRead = readCardData(pucBuffer, sizLeft);
-		pucBuffer += sizRead;
-		sizLeft -= sizRead;
-	} while( sizRead!=0 && sizLeft>0 );
-
-	return sizBufferSize-sizLeft;
-}
-
-
-size_t romloader_usb_device_libusb0::readCardData(unsigned char *pucBuffer, size_t sizBufferSize)
-{
-	size_t sizRead;
-	tBufferCard *ptOldCard;
-	tBufferCard *ptNewCard;
-
-
-	if( m_ptFirstCard==NULL )
-	{
-		sizRead = 0;
-	}
-	else if( m_ptFirstCard->pucWrite!=NULL )
-	{
-		// the first card is used by the write part -> lock the cards
-		card_lock_enter();
-
-		// get the number of bytes left in this card
-		sizRead = m_ptFirstCard->pucWrite - m_ptFirstCard->pucRead;
-		if( sizRead>sizBufferSize )
-		{
-			sizRead = sizBufferSize;
-		}
-		// card can be empty
-		if( sizRead>0 )
-		{
-			// copy the data
-			memcpy(pucBuffer, m_ptFirstCard->pucRead, sizRead);
-			// advance the read pointer
-			m_ptFirstCard->pucRead += sizRead;
-		}
-
-		// unlock the cards
-		card_lock_leave();
-	}
-	else
-	{
-		// the first card is not used by the write part
-
-		// get the number of bytes left in this card
-		sizRead = m_ptFirstCard->pucEnd - m_ptFirstCard->pucRead;
-		if( sizRead>sizBufferSize )
-		{
-			sizRead = sizBufferSize;
-		}
-		// card can be empty for overlapping buffer grow
-		if( sizRead>0 )
-		{
-			// copy the data
-			memcpy(pucBuffer, m_ptFirstCard->pucRead, sizRead);
-			// advance the read pointer
-			m_ptFirstCard->pucRead += sizRead;
-		}
-		// reached the end of the buffer?
-		if( m_ptFirstCard->pucRead>=m_ptFirstCard->pucEnd )
-		{
-			// card is empty, move on to next card
-			ptNewCard = m_ptFirstCard->ptNext;
-			if( ptNewCard!=NULL )
-			{
-				// remember the empty card
-				ptOldCard = m_ptFirstCard;
-				// move to the new first card
-				m_ptFirstCard = ptNewCard;
-				// delete the empty card
-				delete ptOldCard;
-			}
-		}
-	}
-
-	return sizRead;
-}
-
-
-size_t romloader_usb_device_libusb0::getCardSize(void) const
-{
-	size_t sizData;
-	tBufferCard *ptCard;
-
-
-	sizData = 0;
-	ptCard = m_ptFirstCard;
-	while( ptCard!=NULL )
-	{
-		if( ptCard->pucWrite==NULL )
-		{
-			sizData += m_ptFirstCard->pucEnd - m_ptFirstCard->pucRead;
-		}
-		else
-		{
-			sizData += m_ptFirstCard->pucWrite - m_ptFirstCard->pucRead;
-		}
-		ptCard = ptCard->ptNext;
-	}
-
-	return sizData;
-}
 
 
 bool romloader_usb_device_libusb0::fIsDeviceNetx(libusb_device *ptDevice)
@@ -1130,9 +954,155 @@ bool romloader_usb_device_libusb0::fIsDeviceNetx(libusb_device *ptDevice)
 	return fDeviceIsNetx;
 }
 
+
+
+const romloader_usb_device_libusb0::LIBUSB_STRERROR_T romloader_usb_device_libusb0::atStrError[14] =
+{
+	{ LIBUSB_SUCCESS,		"success" },
+	{ LIBUSB_ERROR_IO,		"input/output error" },
+	{ LIBUSB_ERROR_INVALID_PARAM,	"invalid parameter" },
+	{ LIBUSB_ERROR_ACCESS,		"access denied (insufficient permissions)" },
+	{ LIBUSB_ERROR_NO_DEVICE,	"no such device (it may have been disconnected)" },
+	{ LIBUSB_ERROR_NOT_FOUND,	"entity not found" },
+	{ LIBUSB_ERROR_BUSY,		"resource busy" },
+	{ LIBUSB_ERROR_TIMEOUT,		"operation timed out" },
+	{ LIBUSB_ERROR_OVERFLOW,	"overflow" },
+	{ LIBUSB_ERROR_PIPE,		"pipe error" },
+	{ LIBUSB_ERROR_INTERRUPTED,	"system call interrupted (perhaps due to signal)" },
+	{ LIBUSB_ERROR_NO_MEM,		"insufficient memory" },
+	{ LIBUSB_ERROR_NOT_SUPPORTED,	"operation not supported or unimplemented on this platform" },
+	{ LIBUSB_ERROR_OTHER,		"other error" }
+};
+
+
 const char *romloader_usb_device_libusb0::libusb_strerror(int iError)
 {
+	const char *pcMessage = "unknown error";
+	const LIBUSB_STRERROR_T *ptCnt;
+	const LIBUSB_STRERROR_T *ptEnd;
+
+
+	ptCnt = atStrError;
+	ptEnd = atStrError + (sizeof(atStrError)/sizeof(atStrError[0]));
+	while( ptCnt<ptEnd )
+	{
+		if(ptCnt->tError==iError)
+		{
+			pcMessage = ptCnt->pcMessage;
+			break;
+		}
+		++ptCnt;
+	}
+
+	return pcMessage;
 }
+
+
+
+
+#define MILLISEC_PER_SEC 1000UL
+#define NANOSEC_PER_MILLISEC 1000000UL
+#define NANOSEC_PER_MICROSEC 1000UL
+
+int romloader_usb_device_libusb0::get_end_time(unsigned int uiTimeoutMs, struct timespec *ptEndTime)
+{
+	int iResult;
+	struct timeval tTimeVal;
+	struct timespec tCurTime;
+	struct timespec tAddTime;
+	struct timespec tSumTime;
+
+
+	iResult = gettimeofday(&tTimeVal, NULL);
+	if( iResult!=0 )
+	{
+		fprintf(stderr, "clock_gettime failed with result %d, errno: %d (%s)", iResult, errno, strerror(errno));
+	}
+	else
+	{
+		/* Convert the current time in a timeval structure to timespec. */
+		tCurTime.tv_sec  = tTimeVal.tv_sec;
+		tCurTime.tv_nsec = tTimeVal.tv_usec * NANOSEC_PER_MICROSEC;
+
+		/* Convert the timeout value in milliseconds to a timespec. */
+		tAddTime.tv_sec  = uiTimeoutMs/MILLISEC_PER_SEC;
+		tAddTime.tv_nsec = (uiTimeoutMs%MILLISEC_PER_SEC) * NANOSEC_PER_MILLISEC;
+	
+		/* Add the timeout to the current time. */
+		tSumTime.tv_sec = tCurTime.tv_sec   + tAddTime.tv_sec;
+		tSumTime.tv_nsec = tCurTime.tv_nsec + tAddTime.tv_nsec;
+		while( tSumTime.tv_nsec>NANOSEC_PER_MILLISEC )
+		{
+			tSumTime.tv_nsec -= NANOSEC_PER_MILLISEC;
+			++tSumTime.tv_sec;
+		}
+
+		/* Set result. */
+		ptEndTime->tv_sec  = tSumTime.tv_sec;
+		ptEndTime->tv_nsec = tSumTime.tv_nsec;
+	}
+
+	return iResult;
+}
+
+
+size_t romloader_usb_device_libusb0::usb_receive(unsigned char *pucBuffer, size_t sizBuffer, unsigned int uiTimeoutMs)
+{
+	int iResult;
+	int iWaitResult;
+	size_t sizReceived;
+	size_t sizChunk;
+	struct timespec tEndTime;
+
+
+	/* No data received. */
+	sizReceived = 0;
+	iResult = get_end_time(uiTimeoutMs, &tEndTime);
+	if( iResult!=0 )
+	{
+		fprintf(stderr, "get_end_time failed with result %d, errno: %d (%s)", iResult, errno, strerror(errno));
+	}
+	else
+	{
+		while( sizBuffer>0 )
+		{
+			/* Receive as much of the requested data as possible. */
+			sizChunk = readCards(pucBuffer, sizBuffer);
+			if( sizChunk>0 )
+			{
+				/* Received some data. */
+				pucBuffer += sizChunk;
+				sizBuffer -= sizChunk;
+			}
+			else
+			{
+				/* No data left, wait for input. */
+				/* Wait for data. */
+				pthread_mutex_lock(m_ptRxDataAvail_Mutex);
+				iWaitResult = pthread_cond_timedwait(m_ptRxDataAvail_Condition, m_ptRxDataAvail_Mutex, &tEndTime);
+				pthread_mutex_unlock(m_ptRxDataAvail_Mutex);
+
+				if( iWaitResult==ETIMEDOUT )
+				{
+					/* Timeout, no more data arrived. */
+					break;
+				}
+				else if( iWaitResult!=0 )
+				{
+					fprintf(stderr, "failed to wait for data available condition: %d\n", iWaitResult);
+					break;
+				}
+			}
+		}
+	}
+
+	return sizReceived;
+}
+
+
+
+
+
 
 
 int romloader_usb_device_libusb0::usb_bulk_pc_to_netx(libusb_device_handle *ptDevHandle, unsigned char ucEndPointOut, const unsigned char *pucDataOut, int iLength, int *piProcessed, unsigned int uiTimeoutMs)
@@ -1211,42 +1181,3 @@ int romloader_usb_device_libusb0::usb_bulk_netx_to_pc(libusb_device_handle *ptDe
 	return iError;
 }
 
-
-void romloader_usb_device_libusb0::hexdump(const unsigned char *pucData, unsigned long ulSize)
-{
-	const unsigned char *pucDumpCnt, *pucDumpEnd;
-	unsigned long ulAddressCnt;
-	unsigned long ulSkipOffset;
-	size_t sizBytesLeft;
-	size_t sizChunkSize;
-	size_t sizChunkCnt;
-
-
-	// show a hexdump of the data
-	pucDumpCnt = pucData;
-	pucDumpEnd = pucData + ulSize;
-	ulAddressCnt = 0;
-	while( pucDumpCnt<pucDumpEnd )
-	{
-		// get number of bytes for the next line
-		sizChunkSize = 16;
-		sizBytesLeft = pucDumpEnd - pucDumpCnt;
-		if( sizChunkSize>sizBytesLeft )
-		{
-			sizChunkSize = sizBytesLeft;
-		}
-
-		// start a line in the dump with the address
-		printf("%08lX: ", ulAddressCnt);
-		// append the data bytes
-		sizChunkCnt = sizChunkSize;
-		while( sizChunkCnt!=0 )
-		{
-			printf("%02X ", *(pucDumpCnt++));
-			--sizChunkCnt;
-		}
-		// next line
-		printf("\n");
-		ulAddressCnt += sizChunkSize;
-	}
-}

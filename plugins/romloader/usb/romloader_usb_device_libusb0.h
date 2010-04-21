@@ -24,9 +24,8 @@
 
 
 #include <usb.h>
-#include <errno.h>
 
-#include "../romloader.h"
+#include "romloader_usb_device.h"
 
 
 typedef usb_dev_handle libusb_device_handle;
@@ -34,7 +33,7 @@ typedef void* libusb_context;
 typedef struct usb_device libusb_device;
 typedef struct usb_device_descriptor LIBUSB_DEVICE_DESCRIPTOR_T;
 
-enum libusb_error
+typedef enum
 {
 	LIBUSB_SUCCESS = 0,
 	LIBUSB_ERROR_IO = -1,
@@ -50,13 +49,13 @@ enum libusb_error
 	LIBUSB_ERROR_NO_MEM = -11,
 	LIBUSB_ERROR_NOT_SUPPORTED = -12,
 	LIBUSB_ERROR_OTHER = -99,
-};
+} LIBUSB_ERROR_T;
 
 
 class romloader_usb_provider;
 class romloader_usb_reference;
 
-class romloader_usb_device_libusb0
+class romloader_usb_device_libusb0 : public romloader_usb_device
 {
 public:
 	romloader_usb_device_libusb0(const char *pcPluginId);
@@ -72,48 +71,20 @@ public:
 	int Connect(unsigned int uiBusNr, unsigned int uiDeviceAdr);
 	void Disconnect(void);
 
-	static const size_t mc_sizCardSize = 16384;
-	struct sBufferCard;
-
-	typedef struct sBufferCard
-	{
-		unsigned char *pucEnd;
-		unsigned char *pucRead;
-		unsigned char *pucWrite;
-		sBufferCard *ptNext;
-		unsigned char aucData[mc_sizCardSize];
-	} tBufferCard;
-
-
-	void initCards(void);
-	void deleteCards(void);
-	void writeCards(const unsigned char *pucBuffer, size_t sizBufferSize);
-	size_t readCards(unsigned char *pucBuffer, size_t sizBufferSize);
-	size_t getCardSize(void) const;
+	size_t usb_receive(unsigned char *pucBuffer, size_t sizBuffer, unsigned int uiTimeoutMs);
 
 
 	static void *rxThread(void *pvParameter);
 	void *localRxThread(void);
 
 protected:
-	void card_lock_enter(void);
-	void card_lock_leave(void);
-
-
-	bool m_fCardMutexIsInitialized;
-	pthread_mutex_t tCardMutex;
-
-	pthread_t tRxThread;
-
-	tBufferCard *m_ptFirstCard;
-	tBufferCard *m_ptLastCard;
+	pthread_t m_tRxThread;
 
 	ROMLOADER_CHIPTYP m_tChiptyp;
 	ROMLOADER_ROMCODE m_tRomcode;
 
 	unsigned char m_ucEndpoint_In;
 	unsigned char m_ucEndpoint_Out;
-
 
 private:
 	bool fIsDeviceNetx(libusb_device *ptDevice);
@@ -140,19 +111,31 @@ private:
 	int libusb_claim_interface(void);
 	int libusb_release_interface(void);
 
-	size_t readCardData(unsigned char *pucBuffer, size_t sizBufferSize);
+	int start_rx_thread(void);
+	int stop_rx_thread(void);
 
-	void hexdump(const unsigned char *pucData, unsigned long ulSize);
+	int get_end_time(unsigned int uiTimeoutMs, struct timespec *ptEndTime);
 
 
-	char *m_pcPluginId;
 	static const char *m_pcPluginNamePattern;
 
 	libusb_context *m_ptLibUsbContext;
 	libusb_device_handle *m_ptDevHandle;
 
+	pthread_cond_t *m_ptRxDataAvail_Condition;
+	pthread_mutex_t *m_ptRxDataAvail_Mutex;
+
 	static const char *m_pcLibUsb_BusPattern;
 	static const char *m_pcLibUsb_DevicePattern;
+
+
+	typedef struct
+	{
+		LIBUSB_ERROR_T tError;
+		const char *pcMessage;
+	} LIBUSB_STRERROR_T;
+
+	static const LIBUSB_STRERROR_T atStrError[14];
 };
 
 

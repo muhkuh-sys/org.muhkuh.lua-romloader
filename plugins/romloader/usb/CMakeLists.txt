@@ -45,6 +45,7 @@ set_property(SOURCE romloader_usb.i PROPERTY SWIG_FLAGS ${USB_DEFINES} -I${CMAKE
 
 
 SET(romloader_usb_SOURCES
+	romloader_usb_device.cpp
 	romloader_usb_device_libusb0.cpp
 	romloader_usb_main.cpp
 )
