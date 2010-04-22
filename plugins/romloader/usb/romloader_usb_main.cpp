@@ -37,9 +37,6 @@ romloader_usb_provider::romloader_usb_provider(swig_type_info *p_romloader_usb, 
  : muhkuh_plugin_provider("romloader_usb")
  , m_ptUsbDevice(NULL)
 {
-	int iResult;
-
-
 	printf("%s(%p): provider create\n", m_pcPluginId, this);
 
 	/* get the romloader_usb lua type */
@@ -832,16 +829,12 @@ bool romloader_usb::parseDumpLine(DATA_BUFFER_T *ptBuffer, unsigned long ulAddre
 int romloader_usb::parse_uue(DATA_BUFFER_T *ptBuffer, unsigned long ulStart, size_t sizLength, unsigned char **ppucData)
 {
 	int iResult;
-	const unsigned char *pucLine;
-	int iMatch;
 	size_t sizLine;
 	size_t sizUueBytesInLine;
 	size_t sizCharCnt;
 	size_t sizByteCnt;
 	const unsigned char *pucCnt;
 	unsigned long ulResult;
-	unsigned int uiMaxLineSize;
-	unsigned char ucData;
 	unsigned long ulValue;
 	unsigned char *pucData;
 	unsigned char *pucDataCnt;
@@ -1476,7 +1469,6 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 	size_t sizUueData;
 	size_t sizChunk;
 	char acCommand[16];
-	int iProcessed;
 
 
 	/* Expect error. */
@@ -1831,7 +1823,7 @@ int romloader_usb::usb_call_netx10(unsigned long ulNetxAddress, unsigned long ul
 	char acCommand[23];
 	unsigned char aucRec[64];
 	bool fIsRunning;
-	size_t sizProgressData;
+//	size_t sizProgressData;
 	unsigned char aucSbuf[2] = { 0, 0 };
 	const char *pcCallbackData;
 	int iProcessed;
@@ -1886,7 +1878,7 @@ int romloader_usb::usb_sendCommand(const char *pcCommand)
 	unsigned char abSend[64];
 	unsigned char abRec[64];
 	unsigned char *pucData;
-	int iProcessed;
+//	int iProcessed;
 
 
 	if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
@@ -2082,7 +2074,7 @@ int romloader_usb::usb_executeCommand(const char *pcCommand, DATA_BUFFER_T *ptBu
 	if( iResult==LIBUSB_SUCCESS )
 	{
 	
-		usleep(10000);
+//		usleep(10000);
 	
 	
 		/* get the response */
@@ -2100,7 +2092,7 @@ int romloader_usb::libusb_readBlock(unsigned char *pucReceiveBuffer, unsigned in
 {
 	int iRet;
 	int iSize;
-	int iTransfered;
+//	int iTransfered;
 	unsigned char ucEndPoint;
 
 
@@ -2123,7 +2115,7 @@ int romloader_usb::libusb_writeBlock(unsigned char *pucSendBuffer, unsigned int 
 {
 	int iRet;
 	int iSize;
-	int iTransfered;
+//	int iTransfered;
 	unsigned char ucEndPoint;
 
 
@@ -2160,7 +2152,6 @@ void romloader_usb::hexdump(const unsigned char *pucData, unsigned long ulSize, 
 {
 	const unsigned char *pucDumpCnt, *pucDumpEnd;
 	unsigned long ulAddressCnt;
-	unsigned long ulSkipOffset;
 	size_t sizBytesLeft;
 	size_t sizChunkSize;
 	size_t sizChunkCnt;

@@ -52,22 +52,41 @@ romloader_usb_device::romloader_usb_device(const char *pcPluginId)
  : m_pcPluginId(NULL)
  , m_ptFirstCard(NULL)
  , m_ptLastCard(NULL)
- , m_fCardMutexIsInitialized(false)
+#if defined(WIN32)
+ , m_hCardMutex(NULL)
+#else
+ , m_ptCardMutex(NULL)
+#endif
 {
 	int iResult;
 
 
 	m_pcPluginId = strdup(pcPluginId);
 
+	/* Expect success. */
+	iResult = 0;
+
 	/* Create the card mutex. */
-	iResult = pthread_mutex_init(&tCardMutex, NULL);
+#if defined(WIN32)
+	m_hCardMutex = CreateMutex(NULL, FALSE, NULL);
+	if( m_hCardMutex==NULL )
+	{
+		fprintf(stderr, "%s(%p): Failed to create card mutex: %ul\n", m_pcPluginId, this, GetLastError());
+		iResult = -1;
+	}
+#else
+	m_ptCardMutex = new pthread_mutex_t;
+	iResult = pthread_mutex_init(m_ptCardMutex, NULL);
 	if( iResult!=0 )
 	{
 		fprintf(stderr, "%s(%p): Failed to create card mutex: %d:%s\n", m_pcPluginId, this, errno, strerror(errno));
+		delete m_ptCardMutex;
+		m_ptCardMutex = NULL;
 	}
-	else
+#endif
+
+	if( iResult==0 )
 	{
-		m_fCardMutexIsInitialized = true;
 		initCards();
 	}
 }
@@ -75,6 +94,15 @@ romloader_usb_device::romloader_usb_device(const char *pcPluginId)
 
 romloader_usb_device::~romloader_usb_device(void)
 {
+#if defined(WIN32)
+	if( m_hCardMutex!=NULL )
+	{
+		deleteCards();
+
+		CloseHandle(m_hCardMutex);
+		m_hCardMutex = NULL;
+	}
+#else
 	int iResult;
 
 
@@ -88,6 +116,7 @@ romloader_usb_device::~romloader_usb_device(void)
 			fprintf(stderr, "%s(%p): Failed to destroy card mutex: %d:%s\n", m_pcPluginId, this, errno, strerror(errno));
 		}
 	}
+#endif
 
 	if( m_pcPluginId!=NULL )
 	{
@@ -98,12 +127,23 @@ romloader_usb_device::~romloader_usb_device(void)
 
 void romloader_usb_device::card_lock_enter(void)
 {
+#if defined(WIN32)
+	DWORD dwResult;
+
+
+	dwResult = WaitForSingleObject(m_hCardMutex, INFINITE);
+#else
 	pthread_mutex_lock(&tCardMutex);
+#endif
 }
 
 void romloader_usb_device::card_lock_leave(void)
 {
+#if defined(WIN32)
+	ReleaseMutex(m_hCardMutex);
+#else
 	pthread_mutex_unlock(&tCardMutex);
+#endif
 }
 
 
@@ -322,7 +362,6 @@ void romloader_usb_device::hexdump(const unsigned char *pucData, unsigned long u
 {
 	const unsigned char *pucDumpCnt, *pucDumpEnd;
 	unsigned long ulAddressCnt;
-	unsigned long ulSkipOffset;
 	size_t sizBytesLeft;
 	size_t sizChunkSize;
 	size_t sizChunkCnt;

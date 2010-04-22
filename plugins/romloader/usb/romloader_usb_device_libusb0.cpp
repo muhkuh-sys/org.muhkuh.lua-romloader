@@ -24,7 +24,12 @@
 #include "romloader_usb_device_libusb0.h"
 
 #include <errno.h>
-#include <sys/time.h>
+
+#if defined(WIN32)
+#	define snprintf _snprintf
+#else
+#	include <sys/time.h>
+#endif
 
 #include "romloader_usb_main.h"
 
@@ -48,14 +53,28 @@ romloader_usb_device_libusb0::romloader_usb_device_libusb0(const char *pcPluginI
  , m_ucEndpoint_Out(0)
  , m_ptLibUsbContext(NULL)
  , m_ptDevHandle(NULL)
+#if defined(WIN32)
+ , m_hRxThread(NULL)
+ , m_hRxDataAvail(NULL)
+#else
+ , m_ptRxThread(NULL)
  , m_ptRxDataAvail_Condition(NULL)
  , m_ptRxDataAvail_Mutex(NULL)
+#endif
 {
 	int iResult;
 
 
 	usb_init();
 
+#if defined(WIN32)
+	m_hRxDataAvail = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if( m_hRxDataAvail==NULL )
+	{
+		fprintf(stderr, "%s(%p): Failed to create card mutex: %ul\n", m_pcPluginId, this, GetLastError());
+		iResult = -1;
+	}
+#else
 	m_ptRxDataAvail_Condition = new pthread_cond_t;
 	iResult = pthread_cond_init(m_ptRxDataAvail_Condition, NULL);
 	if( iResult!=0 )
@@ -79,11 +98,19 @@ romloader_usb_device_libusb0::romloader_usb_device_libusb0(const char *pcPluginI
 			m_ptRxDataAvail_Mutex = NULL;
 		}
 	}
+#endif
 }
 
 
 romloader_usb_device_libusb0::~romloader_usb_device_libusb0(void)
 {
+#if defined(WIN32)
+	if( m_hRxDataAvail!=NULL )
+	{
+		CloseHandle(m_hRxDataAvail);
+		m_hRxDataAvail = NULL;
+	}
+#else
 	if( m_ptRxDataAvail_Condition!=NULL )
 	{
 		pthread_cond_destroy(m_ptRxDataAvail_Condition);
@@ -97,9 +124,69 @@ romloader_usb_device_libusb0::~romloader_usb_device_libusb0(void)
 		delete m_ptRxDataAvail_Mutex;
 		m_ptRxDataAvail_Mutex = NULL;
 	}
+#endif
 }
 
 
+#if defined(WIN32)
+DWORD WINAPI romloader_usb_device_libusb0::rxThread(LPVOID lpParam)
+{
+	romloader_usb_device_libusb0 *ptParent;
+
+
+	/* Get the parent class. */
+	ptParent = (romloader_usb_device_libusb0*)lpParam;
+	return ptParent->localRxThread();
+}
+
+
+DWORD romloader_usb_device_libusb0::localRxThread(void)
+{
+	int iError;
+	DWORD dwResult;
+	const size_t sizBufferSize = 4096;
+	union
+	{
+		unsigned char auc[sizBufferSize];
+		char ac[sizBufferSize];
+	} uBuffer;
+
+
+	/* Expect error. */
+	dwResult = FALSE;
+
+	do
+	{
+		iError = usb_bulk_read(m_ptDevHandle, m_ucEndpoint_In, uBuffer.ac, sizBufferSize, 200);
+		if( iError>0 )
+		{
+			/* transfer ok! */
+			printf("received data:\n");
+			hexdump(uBuffer.auc, iError);
+					
+			writeCards(uBuffer.auc, iError);
+
+			/* Send a signal to any waiting threads. */
+			SetEvent(m_hRxDataAvail);
+			iError = 0;
+		}
+		else if( iError==-110 )
+		{
+			/* Timeout. */
+			iError = 0;
+		}
+
+		/* FIXME: How can I check for termination requests without this volatile? */
+		if( m_fRxThread_RequestTermination==true )
+		{
+			dwResult = TRUE;
+			break;
+		}
+	} while( iError>=0 );
+
+	return dwResult;
+}
+#else
 void *romloader_usb_device_libusb0::rxThread(void *pvParameter)
 {
 	romloader_usb_device_libusb0 *ptParent;
@@ -157,16 +244,7 @@ void *romloader_usb_device_libusb0::localRxThread(void)
 
 	pthread_exit((void*)iError);
 }
-
-
-
-
-
-
-
-
-
-
+#endif
 
 
 const char *romloader_usb_device_libusb0::m_pcPluginNamePattern = "romloader_usb_%02x_%02x";
@@ -210,12 +288,25 @@ int romloader_usb_device_libusb0::start_rx_thread(void)
 
 
 	/* Create the receive thread. */
+#if defined(WIN32)
+	m_fRxThread_RequestTermination = false;
+	m_hRxThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) romloader_usb_device_libusb0::rxThread, (void*)this, 0, NULL);
+	if( m_hRxThread==NULL )
+	{
+		fprintf(stderr, "%s(%p): Failed to create card mutex: %d:%s\n", m_pcPluginId, this, errno, strerror(errno));
+		iResult = -1;
+	}
+	else
+	{
+		iResult = 0;
+	}
+#else
 	iResult = pthread_create(&m_tRxThread, NULL, romloader_usb_device_libusb0::rxThread, (void*)this);
 	if( iResult!=0 )
 	{
 		fprintf(stderr, "%s(%p): Failed to create card mutex: %d:%s\n", m_pcPluginId, this, errno, strerror(errno));
 	}
-
+#endif
 	return iResult;
 }
 
@@ -223,10 +314,15 @@ int romloader_usb_device_libusb0::start_rx_thread(void)
 int romloader_usb_device_libusb0::stop_rx_thread(void)
 {
 	int iResult;
-	int iStatus;
-	void *pvStatus;
 
 
+#if defined(WIN32)
+	m_fRxThread_RequestTermination = true;
+	WaitForSingleObject(m_hRxThread, INFINITE);
+	CloseHandle(m_hRxThread);
+	m_hRxThread = NULL;
+	iResult = 0;
+#else
 	iResult = pthread_cancel(m_tRxThread);
 	if( iResult!=0 )
 	{
@@ -245,7 +341,7 @@ int romloader_usb_device_libusb0::stop_rx_thread(void)
 			printf("rxthread finished with status %d\n", iStatus);
 		}
 	}
-
+#endif
 	return iResult;
 }
 
@@ -748,7 +844,7 @@ int romloader_usb_device_libusb0::setup_netx_device(libusb_device *ptNetxDevice)
 	size_t sizChunk;
 	const size_t sizMaxChunk = 65536;
 	const size_t sizMaxData = 524288;
-	unsigned char aucChunkBuffer[sizChunk];
+	unsigned char aucChunkBuffer[sizMaxChunk];
 	const unsigned int uiChunkReceiveTimeoutMs = 100;
 
 
@@ -835,12 +931,12 @@ int romloader_usb_device_libusb0::setup_netx_device(libusb_device *ptNetxDevice)
 int romloader_usb_device_libusb0::Connect(unsigned int uiBusNr, unsigned int uiDeviceAdr)
 {
 	int iResult;
-	bool fFoundDevice;
+//	bool fFoundDevice;
 	SWIGLUA_REF tRef;
 	ssize_t ssizDevList;
 	libusb_device **ptDeviceList;
 	libusb_device *ptUsbDevice;
-	libusb_device_handle *ptUsbDevHandle;
+//	libusb_device_handle *ptUsbDevHandle;
 
 
 	tRef.L = NULL;
@@ -999,7 +1095,58 @@ const char *romloader_usb_device_libusb0::libusb_strerror(int iError)
 
 
 
+#if defined(WIN32)
+size_t romloader_usb_device_libusb0::usb_receive(unsigned char *pucBuffer, size_t sizBuffer, unsigned int uiTimeoutMs)
+{
+	size_t sizReceived;
+	size_t sizChunk;
+	DWORD dwStartTime;
+	DWORD dwTimeElapsed;
+	DWORD dwTimeLeft;
+	DWORD dwWaitResult;
 
+
+	/* No data received. */
+	sizReceived = 0;
+
+	dwStartTime = GetTickCount();
+
+	while( sizBuffer>0 )
+	{
+		/* Receive as much of the requested data as possible. */
+		sizChunk = readCards(pucBuffer, sizBuffer);
+		if( sizChunk>0 )
+		{
+			/* Received some data. */
+			pucBuffer += sizChunk;
+			sizBuffer -= sizChunk;
+		}
+		else
+		{
+			/* No data left, wait for input. */
+			dwTimeElapsed = GetTickCount() - dwStartTime;
+			if( dwTimeElapsed>=uiTimeoutMs )
+			{
+				/* Timeout, no more data arrived. */
+				break;
+			}
+			else
+			{
+				dwTimeLeft = dwTimeElapsed - uiTimeoutMs;
+				/* Wait for new data to arrive. */
+				dwWaitResult = WaitForSingleObject(m_hRxDataAvail, dwTimeLeft);
+				if( dwWaitResult!=WAIT_OBJECT_0 )
+				{
+					/* Timeout or error -> no new data arrived. */
+					break;
+				}
+			}
+		}
+	}
+
+	return sizReceived;
+}
+#else
 #define MILLISEC_PER_SEC 1000UL
 #define NANOSEC_PER_MILLISEC 1000000UL
 #define NANOSEC_PER_MICROSEC 1000UL
@@ -1098,7 +1245,7 @@ size_t romloader_usb_device_libusb0::usb_receive(unsigned char *pucBuffer, size_
 
 	return sizReceived;
 }
-
+#endif
 
 
 

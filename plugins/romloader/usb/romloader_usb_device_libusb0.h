@@ -28,6 +28,10 @@
 #include "romloader_usb_device.h"
 
 
+#if defined(WIN32)
+	typedef int ssize_t;
+#endif
+
 typedef usb_dev_handle libusb_device_handle;
 typedef void* libusb_context;
 typedef struct usb_device libusb_device;
@@ -74,12 +78,15 @@ public:
 	size_t usb_receive(unsigned char *pucBuffer, size_t sizBuffer, unsigned int uiTimeoutMs);
 
 
+#if defined(WIN32)
+	static DWORD WINAPI rxThread(LPVOID lpParam);
+	DWORD localRxThread(void);
+#else
 	static void *rxThread(void *pvParameter);
 	void *localRxThread(void);
+#endif
 
 protected:
-	pthread_t m_tRxThread;
-
 	ROMLOADER_CHIPTYP m_tChiptyp;
 	ROMLOADER_ROMCODE m_tRomcode;
 
@@ -114,16 +121,23 @@ private:
 	int start_rx_thread(void);
 	int stop_rx_thread(void);
 
-	int get_end_time(unsigned int uiTimeoutMs, struct timespec *ptEndTime);
-
 
 	static const char *m_pcPluginNamePattern;
 
 	libusb_context *m_ptLibUsbContext;
 	libusb_device_handle *m_ptDevHandle;
 
+#if defined(WIN32)
+	volatile bool m_fRxThread_RequestTermination;
+	HANDLE m_hRxThread;
+	HANDLE m_hRxDataAvail;
+#else
+	int get_end_time(unsigned int uiTimeoutMs, struct timespec *ptEndTime);
+
+	pthread_t *m_ptRxThread;
 	pthread_cond_t *m_ptRxDataAvail_Condition;
 	pthread_mutex_t *m_ptRxDataAvail_Mutex;
+#endif
 
 	static const char *m_pcLibUsb_BusPattern;
 	static const char *m_pcLibUsb_DevicePattern;

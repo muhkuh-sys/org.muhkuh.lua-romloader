@@ -22,7 +22,11 @@
 #ifndef __ROMLOADER_USB_DEVICE_H__
 #define __ROMLOADER_USB_DEVICE_H__
 
-#include <pthread.h>
+#if defined(WIN32)
+#	include <windows.h>
+#else
+#	include <pthread.h>
+#endif
 
 #include "../romloader.h"
 
@@ -60,8 +64,11 @@ protected:
 	void card_lock_enter(void);
 	void card_lock_leave(void);
 
-	bool m_fCardMutexIsInitialized;
-	pthread_mutex_t tCardMutex;
+#if defined(WIN32)
+	HANDLE m_hCardMutex;
+#else
+	pthread_mutex_t *m_ptCardMutex;
+#endif
 
 	tBufferCard *m_ptFirstCard;
 	tBufferCard *m_ptLastCard;
