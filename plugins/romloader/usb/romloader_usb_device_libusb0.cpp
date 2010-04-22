@@ -176,7 +176,7 @@ DWORD romloader_usb_device_libusb0::localRxThread(void)
 			iError = 0;
 		}
 
-		/* FIXME: How can I check for termination requests without this volatile? */
+		/* Check for thread cancelation. */
 		if( m_fRxThread_RequestTermination==true )
 		{
 			dwResult = TRUE;
@@ -806,7 +806,7 @@ libusb_device *romloader_usb_device_libusb0::find_netx_device(libusb_device **pt
 			iResult = libusb_get_device_descriptor(ptDev, &sDevDesc);
 			if( iResult==LIBUSB_SUCCESS )
 			{
-				printf("Hello device (VID=0x$04x, PID=0x%04x)\n", sDevDesc.idVendor, sDevDesc.idProduct);
+				printf("Hello device (VID=0x%04x, PID=0x%04x)\n", sDevDesc.idVendor, sDevDesc.idProduct);
 				/* Loop over all known devices. */
 				ptIdCnt = atNetxUsbDevices;
 				ptIdEnd = atNetxUsbDevices + (sizeof(atNetxUsbDevices)/sizeof(atNetxUsbDevices[0]));
@@ -1104,11 +1104,13 @@ size_t romloader_usb_device_libusb0::usb_receive(unsigned char *pucBuffer, size_
 	DWORD dwTimeElapsed;
 	DWORD dwTimeLeft;
 	DWORD dwWaitResult;
+	DWORD dwTimeoutMs;
 
 
 	/* No data received. */
 	sizReceived = 0;
 
+	dwTimeoutMs = uiTimeoutMs;
 	dwStartTime = GetTickCount();
 
 	while( sizBuffer>0 )
@@ -1120,6 +1122,7 @@ size_t romloader_usb_device_libusb0::usb_receive(unsigned char *pucBuffer, size_
 			/* Received some data. */
 			pucBuffer += sizChunk;
 			sizBuffer -= sizChunk;
+			sizReceived += sizChunk;
 		}
 		else
 		{
@@ -1132,7 +1135,8 @@ size_t romloader_usb_device_libusb0::usb_receive(unsigned char *pucBuffer, size_
 			}
 			else
 			{
-				dwTimeLeft = dwTimeElapsed - uiTimeoutMs;
+				dwTimeLeft = dwTimeoutMs - dwTimeElapsed;
+
 				/* Wait for new data to arrive. */
 				dwWaitResult = WaitForSingleObject(m_hRxDataAvail, dwTimeLeft);
 				if( dwWaitResult!=WAIT_OBJECT_0 )
