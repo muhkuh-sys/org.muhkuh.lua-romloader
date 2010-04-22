@@ -84,7 +84,8 @@ ServiceBinary  = %12%\libusb0.sys
 ;--------------------------------------------------------------------------
 
 [Devices]
-"netX Bootmonitor"=LIBUSB_DEV, USB\VID_0cc4&PID_0815
+"netX500 Bootmonitor"=LIBUSB_DEV, USB\VID_0cc4&PID_0815
+"netX10 Bootmonitor"=LIBUSB_DEV, USB\VID_1939&PID_000c
 
 [Strings]
 manufacturer = "Hilscher GmbH"
