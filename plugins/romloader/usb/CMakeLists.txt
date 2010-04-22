@@ -66,6 +66,8 @@ if(${LUA51_FOUND})
 	SWIG_LINK_LIBRARIES(romloader_usb romloader_usb_lib ${LUA_LIBRARIES} ${USB_LIBRARIES} romloader_lib)
 	set_property(TARGET romloader_usb PROPERTY LIBRARY_OUTPUT_DIRECTORY ${MODULE_LUA_OUTPUT_PATH})
 	set_property(TARGET romloader_usb PROPERTY PREFIX "")
+	# Install the targets.
+	INSTALL(TARGETS romloader_usb DESTINATION ${CMAKE_BINARY_DIR}/build/)
 endif(${LUA51_FOUND})
 
 

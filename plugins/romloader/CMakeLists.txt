@@ -38,7 +38,7 @@ SET(romloader_lib_HEADERS
 	romloader.h
 )
 
-add_library(romloader_lib SHARED ${romloader_lib_SOURCES})
+add_library(romloader_lib STATIC ${romloader_lib_SOURCES})
 target_link_libraries(romloader_lib ${LUA_LIBRARIES} muhkuh_plugin_interface)
 set_target_properties(romloader_lib PROPERTIES PREFIX "")
 
@@ -48,6 +48,8 @@ if(${LUA51_FOUND})
 	SWIG_LINK_LIBRARIES(romloader romloader_lib ${LUA_LIBRARIES})
 	set_property(TARGET romloader PROPERTY LIBRARY_OUTPUT_DIRECTORY ${MODULE_LUA_OUTPUT_PATH})
 	set_property(TARGET romloader PROPERTY PREFIX "")
+	# Install the targets.
+	INSTALL(TARGETS romloader DESTINATION ${CMAKE_BINARY_DIR}/build/)
 endif(${LUA51_FOUND})
 
 

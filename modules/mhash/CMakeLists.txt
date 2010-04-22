@@ -96,6 +96,9 @@ if(${LUA51_FOUND})
 	swig_add_module(mhash lua mhash.i)
 	swig_link_libraries(mhash mhash_lib ${LUA_LIBRARIES})
 	set_target_properties(mhash PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${MODULE_LUA_OUTPUT_PATH} PREFIX "")
+
+	# install the lua module
+	INSTALL(TARGETS mhash DESTINATION ${CMAKE_BINARY_DIR}/build/)
 endif(${LUA51_FOUND})
 
 
