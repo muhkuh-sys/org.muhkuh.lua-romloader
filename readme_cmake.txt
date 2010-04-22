@@ -17,6 +17,13 @@ Run cmake with swig not in the path. Here the swig.exe is in c:\tools\swigwin-1.
  cmake -D SWIG_EXECUTABLE=c:\tools\swigwin-1.3.40\swig.exe ..
 
 
+Set the wxWidgets directory
+---------------------------
+
+ cmake -D wxWidgets_ROOT_DIR=%WXWIN% ..
+
+
+
 Select the build type
 ---------------------
 
