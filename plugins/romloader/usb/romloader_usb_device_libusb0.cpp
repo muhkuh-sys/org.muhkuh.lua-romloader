@@ -900,6 +900,7 @@ int romloader_usb_device_libusb0::setup_netx_device(libusb_device *ptNetxDevice)
 						if( sizReceivedTotal>=sizMaxData )
 						{
 							/* Guess the device will never shut up! */
+							fprintf(stderr, "%s(%p): received too much initial data from the device, guess it will never shut up!\n", m_pcPluginId, this);
 							iResult = -1;
 							stop_rx_thread();
 							break;
@@ -965,11 +966,11 @@ int romloader_usb_device_libusb0::Connect(unsigned int uiBusNr, unsigned int uiD
 		else
 		{
 			iResult = setup_netx_device(ptUsbDevice);
-			if( iResult==LIBUSB_SUCCESS )
+			if( iResult!=LIBUSB_SUCCESS )
 			{
-				printf("%s(%p): failed to receive netx response, trying to reset netx: %d:%s\n", m_pcPluginId, this, iResult, libusb_strerror(iResult));
+				printf("%s(%p): failed to setup the device, trying to reset it.\n", m_pcPluginId, this);
 
-				/* Try to reset the device and try again. */
+				/* Reset the device and try again. */
 				iResult = libusb_reset_and_close_device();
 				if( iResult!=LIBUSB_SUCCESS )
 				{
@@ -984,8 +985,8 @@ int romloader_usb_device_libusb0::Connect(unsigned int uiBusNr, unsigned int uiD
 					iResult = setup_netx_device(ptUsbDevice);
 					if( iResult!=LIBUSB_SUCCESS )
 					{
-							fprintf(stderr, "%s(%p): lost device after reset!", m_pcPluginId, this);
-							iResult = LIBUSB_ERROR_OTHER;
+						fprintf(stderr, "%s(%p): lost device after reset!", m_pcPluginId, this);
+						iResult = LIBUSB_ERROR_OTHER;
 					}
 				}
 			}
