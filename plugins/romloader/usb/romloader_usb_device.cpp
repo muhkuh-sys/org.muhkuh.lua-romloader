@@ -52,98 +52,21 @@ romloader_usb_device::romloader_usb_device(const char *pcPluginId)
  : m_pcPluginId(NULL)
  , m_ptFirstCard(NULL)
  , m_ptLastCard(NULL)
-#if defined(WIN32)
- , m_hCardMutex(NULL)
-#else
- , m_ptCardMutex(NULL)
-#endif
 {
-	int iResult;
-
-
 	m_pcPluginId = strdup(pcPluginId);
 
-	/* Expect success. */
-	iResult = 0;
-
-	/* Create the card mutex. */
-#if defined(WIN32)
-	m_hCardMutex = CreateMutex(NULL, FALSE, NULL);
-	if( m_hCardMutex==NULL )
-	{
-		fprintf(stderr, "%s(%p): Failed to create card mutex: %ul\n", m_pcPluginId, this, GetLastError());
-		iResult = -1;
-	}
-#else
-	m_ptCardMutex = new pthread_mutex_t;
-	iResult = pthread_mutex_init(m_ptCardMutex, NULL);
-	if( iResult!=0 )
-	{
-		fprintf(stderr, "%s(%p): Failed to create card mutex: %d:%s\n", m_pcPluginId, this, errno, strerror(errno));
-		delete m_ptCardMutex;
-		m_ptCardMutex = NULL;
-	}
-#endif
-
-	if( iResult==0 )
-	{
-		initCards();
-	}
+	initCards();
 }
 
 
 romloader_usb_device::~romloader_usb_device(void)
 {
-#if defined(WIN32)
-	if( m_hCardMutex!=NULL )
-	{
-		deleteCards();
-
-		CloseHandle(m_hCardMutex);
-		m_hCardMutex = NULL;
-	}
-#else
-	int iResult;
-
-
-	if( m_fCardMutexIsInitialized==true )
-	{
-		deleteCards();
-
-		iResult = pthread_mutex_destroy(&tCardMutex);
-		if( iResult!=0 )
-		{
-			fprintf(stderr, "%s(%p): Failed to destroy card mutex: %d:%s\n", m_pcPluginId, this, errno, strerror(errno));
-		}
-	}
-#endif
+	deleteCards();
 
 	if( m_pcPluginId!=NULL )
 	{
 		free(m_pcPluginId);
 	}
-}
-
-
-void romloader_usb_device::card_lock_enter(void)
-{
-#if defined(WIN32)
-	DWORD dwResult;
-
-
-	dwResult = WaitForSingleObject(m_hCardMutex, INFINITE);
-#else
-	pthread_mutex_lock(&tCardMutex);
-#endif
-}
-
-void romloader_usb_device::card_lock_leave(void)
-{
-#if defined(WIN32)
-	ReleaseMutex(m_hCardMutex);
-#else
-	pthread_mutex_unlock(&tCardMutex);
-#endif
 }
 
 
@@ -174,9 +97,6 @@ void romloader_usb_device::deleteCards(void)
 	tBufferCard *ptNextCard;
 
 
-	/* Lock the cards. */
-	card_lock_enter();
-
 	ptCard = m_ptFirstCard;
 	while( ptCard!=NULL )
 	{
@@ -186,9 +106,6 @@ void romloader_usb_device::deleteCards(void)
 	}
 	m_ptFirstCard = NULL;
 	m_ptLastCard = NULL;
-
-	/* Unlock the cards. */
-	card_lock_leave();
 }
 
 
@@ -198,9 +115,6 @@ void romloader_usb_device::writeCards(const unsigned char *pucBuffer, size_t siz
 	size_t sizChunk;
 	tBufferCard *ptCard;
 
-
-	/* Lock the cards. */
-	card_lock_enter();
 
 	sizLeft = sizBufferSize;
 	while( sizLeft>0 )
@@ -236,9 +150,6 @@ void romloader_usb_device::writeCards(const unsigned char *pucBuffer, size_t siz
 		pucBuffer += sizChunk;
 		sizLeft -= sizChunk;
 	}
-
-	// unlock the cards
-	card_lock_leave();
 }
 
 
@@ -273,9 +184,6 @@ size_t romloader_usb_device::readCardData(unsigned char *pucBuffer, size_t sizBu
 	}
 	else if( m_ptFirstCard->pucWrite!=NULL )
 	{
-		// the first card is used by the write part -> lock the cards
-		card_lock_enter();
-
 		// get the number of bytes left in this card
 		sizRead = m_ptFirstCard->pucWrite - m_ptFirstCard->pucRead;
 		if( sizRead>sizBufferSize )
@@ -290,9 +198,6 @@ size_t romloader_usb_device::readCardData(unsigned char *pucBuffer, size_t sizBu
 			// advance the read pointer
 			m_ptFirstCard->pucRead += sizRead;
 		}
-
-		// unlock the cards
-		card_lock_leave();
 	}
 	else
 	{
@@ -355,6 +260,128 @@ size_t romloader_usb_device::getCardSize(void) const
 	}
 
 	return sizData;
+}
+
+
+void romloader_usb_device::flushCards(void)
+{
+	tBufferCard *ptOldCard;
+	tBufferCard *ptNextCard;
+
+
+	while( m_ptFirstCard!=NULL )
+	{
+		if( m_ptFirstCard->pucWrite!=NULL )
+		{
+			/* Skip all data in this card. */
+			m_ptFirstCard->pucRead = m_ptFirstCard->pucWrite;
+		}
+		else
+		{
+			/* The card is not used by the write part. */
+			ptNextCard = m_ptFirstCard->ptNext;
+			if( ptNextCard!=NULL )
+			{
+				/* Remember the empty card. */
+				ptOldCard = m_ptFirstCard;
+				/* Move to the new first card. */
+				m_ptFirstCard = ptNextCard;
+				/* Delete the empty card. */
+				delete ptOldCard;
+			}
+		}
+	}
+}
+
+
+bool romloader_usb_device::expect_string(const char *pcString)
+{
+	unsigned char *pucBuffer;
+	size_t sizString;
+	size_t sizReceived;
+	const unsigned int uiTimeoutMs = 200;
+	bool fFound;
+
+
+	/* Allocate a buffer for the string. */
+	sizString = strlen(pcString);
+	pucBuffer = new unsigned char[sizString];
+
+	/* Receive data. */
+	sizReceived = usb_receive(pucBuffer, sizString, uiTimeoutMs);
+	fFound  = true;
+	fFound &= (sizReceived==sizString);
+	fFound &= ( memcmp(pucBuffer, pcString, sizString)==0 );
+
+	delete pucBuffer;
+
+	return fFound;
+}
+
+
+bool romloader_usb_device::parse_hex_digit(size_t sizDigits, unsigned long *pulResult)
+{
+	unsigned char *pucBuffer;
+	unsigned long ulResult;
+	bool fOk;
+	unsigned char uc;
+	unsigned int uiDigit;
+	size_t sizCnt;
+	size_t sizReceived;
+	const unsigned int uiTimeoutMs = 200;
+
+
+	/* Allocate a buffer for the digits. */
+	pucBuffer = new unsigned char[sizDigits];
+
+	/* Receive data. */
+	sizReceived = usb_receive(pucBuffer, sizDigits, uiTimeoutMs);
+	if( sizReceived!=sizDigits )
+	{
+		/* Not enough chars received. */
+		fOk = false;
+	}
+	else
+	{
+		ulResult = 0;
+		fOk = true;
+		sizCnt = 0;
+		while( sizCnt<sizDigits )
+		{
+			uc = pucBuffer[sizCnt];
+			if( uc>='0' && uc<='9' )
+			{
+				uiDigit = uc - '0';
+			}
+			else if( uc>='a' && uc<='f' )
+			{
+				uiDigit = uc - 'a' + 10;
+			}
+			else if( uc>='A' && uc<='F' )
+			{
+				uiDigit = uc - 'A' + 10;
+			}
+			else
+			{
+				fOk = false;
+				break;
+			}
+			ulResult <<= 4;
+			ulResult |= uiDigit;
+
+			++sizCnt;
+		}
+
+		if( fOk==true )
+		{
+			if( pulResult!=NULL )
+			{
+				*pulResult = ulResult;
+			}
+		}
+	}
+
+	return fOk;
 }
 
 

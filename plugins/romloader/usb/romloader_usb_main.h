@@ -115,7 +115,7 @@ private:
 
 	int usb_load(const unsigned char *pucData, size_t sizDataLen, unsigned long ulLoadAdr, SWIGLUA_REF *ptLuaFn, long lCallbackUserData);
 
-	int usb_executeCommand(const char *pcCommand, DATA_BUFFER_T *ptBuffer);
+	int usb_executeCommand(const char *pcCommand, size_t sizCommand);
 	int usb_sendCommand(const char *pcCommand);
 	int usb_getNetxData(DATA_BUFFER_T *ptBuffer, SWIGLUA_REF *ptLuaFn, long lCallbackUserData, size_t sizInitialSize=4096);
 

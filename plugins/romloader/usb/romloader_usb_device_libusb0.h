@@ -29,8 +29,12 @@
 
 
 #if defined(WIN32)
+#	include <windows.h>
 	typedef int ssize_t;
+#else
+#	include <pthread.h>
 #endif
+
 
 typedef usb_dev_handle libusb_device_handle;
 typedef void* libusb_context;
@@ -75,8 +79,11 @@ public:
 	int Connect(unsigned int uiBusNr, unsigned int uiDeviceAdr);
 	void Disconnect(void);
 
-	size_t usb_receive(unsigned char *pucBuffer, size_t sizBuffer, unsigned int uiTimeoutMs);
+	int read_data32(unsigned long ulNetxAddress, unsigned long *pulValue);
 
+
+	size_t usb_receive(unsigned char *pucBuffer, size_t sizBuffer, unsigned int uiTimeoutMs);
+	int usb_send(const char *pcBuffer, size_t sizBuffer);
 
 #if defined(WIN32)
 	static DWORD WINAPI rxThread(LPVOID lpParam);

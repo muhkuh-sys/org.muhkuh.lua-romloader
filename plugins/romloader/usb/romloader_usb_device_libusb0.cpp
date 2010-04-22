@@ -27,6 +27,7 @@
 
 #if defined(WIN32)
 #	define snprintf _snprintf
+#	define ETIMEDOUT 116
 #else
 #	include <sys/time.h>
 #endif
@@ -161,16 +162,13 @@ DWORD romloader_usb_device_libusb0::localRxThread(void)
 		if( iError>0 )
 		{
 			/* transfer ok! */
-			printf("received data:\n");
-			hexdump(uBuffer.auc, iError);
-					
 			writeCards(uBuffer.auc, iError);
 
 			/* Send a signal to any waiting threads. */
 			SetEvent(m_hRxDataAvail);
 			iError = 0;
 		}
-		else if( iError==-110 )
+		else if( iError==-ETIMEDOUT )
 		{
 			/* Timeout. */
 			iError = 0;
@@ -231,7 +229,7 @@ void *romloader_usb_device_libusb0::localRxThread(void)
 					int pthread_cond_signal(pthread_cond_t *cond);
 					iError = 0;
 				}
-				else if( iError==-110 )
+				else if( iError==-ETIMEDOUT )
 				{
 					/* Timeout. */
 					iError = 0;
@@ -1225,6 +1223,7 @@ size_t romloader_usb_device_libusb0::usb_receive(unsigned char *pucBuffer, size_
 				/* Received some data. */
 				pucBuffer += sizChunk;
 				sizBuffer -= sizChunk;
+				sizReceived += sizChunk;
 			}
 			else
 			{
@@ -1253,6 +1252,136 @@ size_t romloader_usb_device_libusb0::usb_receive(unsigned char *pucBuffer, size_
 #endif
 
 
+int romloader_usb_device_libusb0::usb_send(const char *pcBuffer, size_t sizBuffer)
+{
+	const char *pcCnt;
+	const char *pcEnd;
+	const unsigned int uiChunkTimeoutMs = 500;
+	size_t sizChunk;
+	int iResult;
+
+
+	/* Send the complete data block. */
+	pcCnt = pcBuffer;
+	pcEnd = pcBuffer + sizBuffer;
+	while( pcCnt<pcEnd )
+	{
+		/* Limit the next data chunk to the maximum USB packet size of 64 bytes. */
+		sizChunk = pcEnd - pcCnt;
+		if( sizChunk>64 )
+		{
+			sizChunk = 64;
+		}
+
+		/* Send the next data chunk. */
+#if defined(WIN32)
+		iResult = usb_bulk_write(m_ptDevHandle, m_ucEndpoint_Out, (char*)pcCnt, sizChunk, uiChunkTimeoutMs);
+#else
+		iResult = usb_bulk_write(m_ptDevHandle, m_ucEndpoint_Out, pcCnt, sizChunk, uiChunkTimeoutMs);
+#endif
+		if( iResult<0 )
+		{
+			/* Translate timeout error. */
+			if( iResult==-ETIMEDOUT )
+			{
+				iResult = LIBUSB_ERROR_TIMEOUT;
+			}
+
+			/* Transfer failed. */
+			break;
+		}
+		else if( iResult==0 )
+		{
+			printf("usb_send: retry\n");
+		}
+		else
+		{
+			/* Transfer ok! */
+			pcCnt += iResult;
+			iResult = 0;
+		}
+	}
+
+	return iResult;
+}
+
+
+int romloader_usb_device_libusb0::read_data32(unsigned long ulNetxAddress, unsigned long *pulValue)
+{
+	int iResult;
+	char acCommand[19];
+	size_t sizCommand;
+	unsigned long ulResponseAddress;
+	unsigned long ulResponseValue;
+	bool fOk;
+	size_t sizOldData;
+
+
+	ulResponseValue = 0;
+
+	/* Expect failure. */
+	fOk = false;
+
+	/* Construct the command. */
+	if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
+	{
+		sizCommand = snprintf(acCommand, sizeof(acCommand), "d %08lX ++4\r\n", ulNetxAddress);
+	}
+	else
+	{
+		sizCommand = snprintf(acCommand, sizeof(acCommand), "DUMP %08lX LONG", ulNetxAddress);
+	}
+
+	/* Flush any old data. */
+	sizOldData = getCardSize();
+	if( sizOldData!=0 )
+	{
+		fprintf(stderr, "Old data in card buffer left!\n");
+		flushCards();
+	}
+
+	/* send the command */
+	iResult = usb_send(acCommand, sizCommand);
+	if( iResult!=LIBUSB_SUCCESS )
+	{
+		fprintf(stderr, "%s(%p): failed to send command: %d:%s", m_pcPluginId, this, iResult, libusb_strerror(iResult));
+	}
+	else
+	{
+		if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 && expect_string(acCommand)!=true )
+		{
+			fprintf(stderr, "%s(%p): strange response 1 from device", m_pcPluginId, this);
+			iResult = -1;
+		}
+		else if( parse_hex_digit(8, &ulResponseAddress)!=true )
+		{
+			fprintf(stderr, "%s(%p): strange response 2 from device", m_pcPluginId, this);
+			iResult = -1;
+		}
+		else if( ulResponseAddress!=ulNetxAddress )
+		{
+			fprintf(stderr, "%s(%p): address does not match request", m_pcPluginId, this);
+			iResult = -1;
+		}
+		else if( expect_string(": ")!=true )
+		{
+			fprintf(stderr, "%s(%p): strange response 3 from device", m_pcPluginId, this);
+			iResult = -1;
+		}
+		else if( parse_hex_digit(8, &ulResponseValue)!=true )
+		{
+			fprintf(stderr, "%s(%p): strange response 4 from device: %s", m_pcPluginId, this);
+			iResult = -1;
+		}
+		else
+		{
+			printf("%s(%p): read_data32: 0x%08lx = 0x%08lx\n", m_pcPluginId, this, ulNetxAddress, ulResponseValue);
+			*pulValue = ulResponseValue;
+		}
+	}
+
+	return iResult;
+}
 
 
 
@@ -1280,7 +1409,7 @@ int romloader_usb_device_libusb0::usb_bulk_pc_to_netx(libusb_device_handle *ptDe
 		{
 			iError = -1;
 		}
-		else if( iError==-110 )
+		else if( iError==-ETIMEDOUT )
 		{
 			iError = LIBUSB_ERROR_TIMEOUT;
 		}
@@ -1319,7 +1448,7 @@ int romloader_usb_device_libusb0::usb_bulk_netx_to_pc(libusb_device_handle *ptDe
 		{
 			iError = -1;
 		}
-		else if( iError==-110 )
+		else if( iError==-ETIMEDOUT )
 		{
 			iError = LIBUSB_ERROR_TIMEOUT;
 		}
