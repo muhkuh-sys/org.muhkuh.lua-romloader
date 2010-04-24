@@ -221,12 +221,9 @@ void *romloader_usb_device_libusb0::localRxThread(void)
 				if( iError>0 )
 				{
 					/* transfer ok! */
-					printf("received data:\n");
-					hexdump(uBuffer.auc, iError);
-					
 					writeCards(uBuffer.auc, iError);
 					/* Send a signal to any waiting threads. */
-					int pthread_cond_signal(pthread_cond_t *cond);
+					pthread_cond_signal(m_ptRxDataAvail_Condition);
 					iError = 0;
 				}
 				else if( iError==-ETIMEDOUT )
@@ -240,6 +237,7 @@ void *romloader_usb_device_libusb0::localRxThread(void)
 		}
 	}
 
+	fprintf(stderr, "rxThread exit with %d\n", iError);
 	pthread_exit((void*)iError);
 }
 #endif
@@ -299,10 +297,13 @@ int romloader_usb_device_libusb0::start_rx_thread(void)
 		iResult = 0;
 	}
 #else
-	iResult = pthread_create(&m_tRxThread, NULL, romloader_usb_device_libusb0::rxThread, (void*)this);
+	m_ptRxThread = new pthread_t;
+	iResult = pthread_create(m_ptRxThread, NULL, romloader_usb_device_libusb0::rxThread, (void*)this);
 	if( iResult!=0 )
 	{
 		fprintf(stderr, "%s(%p): Failed to create card mutex: %d:%s\n", m_pcPluginId, this, errno, strerror(errno));
+		delete m_ptRxThread;
+		m_ptRxThread = NULL;
 	}
 #endif
 	return iResult;
@@ -312,6 +313,8 @@ int romloader_usb_device_libusb0::start_rx_thread(void)
 int romloader_usb_device_libusb0::stop_rx_thread(void)
 {
 	int iResult;
+	void *pvStatus;
+	int iStatus;
 
 
 #if defined(WIN32)
@@ -321,23 +324,29 @@ int romloader_usb_device_libusb0::stop_rx_thread(void)
 	m_hRxThread = NULL;
 	iResult = 0;
 #else
-	iResult = pthread_cancel(m_tRxThread);
-	if( iResult!=0 )
+	if( m_ptRxThread!=NULL )
 	{
-		fprintf(stderr, "pthread_cancel failed: %d\n", iResult);
-	}
-	else
-	{
-		iResult = pthread_join(m_tRxThread, &pvStatus);
+		iResult = pthread_cancel(*m_ptRxThread);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "pthread_join failed: %d\n", iResult);
+			fprintf(stderr, "pthread_cancel failed: %d\n", iResult);
 		}
 		else
 		{
-			iStatus = (int)pvStatus;
-			printf("rxthread finished with status %d\n", iStatus);
+			iResult = pthread_join(*m_ptRxThread, &pvStatus);
+			if( iResult!=0 )
+			{
+				fprintf(stderr, "pthread_join failed: %d\n", iResult);
+			}
+			else
+			{
+				iStatus = (int)pvStatus;
+				printf("rxthread finished with status %d\n", iStatus);
+			}
 		}
+
+		delete m_ptRxThread;
+		m_ptRxThread = NULL;
 	}
 #endif
 	return iResult;
@@ -1153,6 +1162,7 @@ size_t romloader_usb_device_libusb0::usb_receive(unsigned char *pucBuffer, size_
 #define MILLISEC_PER_SEC 1000UL
 #define NANOSEC_PER_MILLISEC 1000000UL
 #define NANOSEC_PER_MICROSEC 1000UL
+#define NANOSEC_PER_SEC 1000000000UL
 
 int romloader_usb_device_libusb0::get_end_time(unsigned int uiTimeoutMs, struct timespec *ptEndTime)
 {
@@ -1181,9 +1191,9 @@ int romloader_usb_device_libusb0::get_end_time(unsigned int uiTimeoutMs, struct 
 		/* Add the timeout to the current time. */
 		tSumTime.tv_sec = tCurTime.tv_sec   + tAddTime.tv_sec;
 		tSumTime.tv_nsec = tCurTime.tv_nsec + tAddTime.tv_nsec;
-		while( tSumTime.tv_nsec>NANOSEC_PER_MILLISEC )
+		while( tSumTime.tv_nsec>NANOSEC_PER_SEC )
 		{
-			tSumTime.tv_nsec -= NANOSEC_PER_MILLISEC;
+			tSumTime.tv_nsec -= NANOSEC_PER_SEC;
 			++tSumTime.tv_sec;
 		}
 
