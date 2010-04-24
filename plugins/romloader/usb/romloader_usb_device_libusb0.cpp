@@ -105,6 +105,7 @@ romloader_usb_device_libusb0::romloader_usb_device_libusb0(const char *pcPluginI
 
 romloader_usb_device_libusb0::~romloader_usb_device_libusb0(void)
 {
+	stop_rx_thread();
 #if defined(WIN32)
 	if( m_hRxDataAvail!=NULL )
 	{
@@ -1387,6 +1388,9 @@ int romloader_usb_device_libusb0::read_data32(unsigned long ulNetxAddress, unsig
 		{
 			printf("%s(%p): read_data32: 0x%08lx = 0x%08lx\n", m_pcPluginId, this, ulNetxAddress, ulResponseValue);
 			*pulValue = ulResponseValue;
+			
+			/* FIXME: drop rest of buffer. */
+			flushCards();
 		}
 	}
 
