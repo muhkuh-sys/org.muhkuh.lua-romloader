@@ -66,9 +66,11 @@ SET(lua_lib_lua_HEADERS
 
 IF(UNIX)
 	add_definitions(-DLUA_USE_LINUX)
+	set(lua_libs m dl readline)
 ELSE(UNIX)
 	IF(WIN32)
 		add_definitions(-DLUA_BUILD_AS_DLL)
+		set(lua_libs )
 	ENDIF(WIN32)
 ENDIF(UNIX)
 
@@ -76,7 +78,7 @@ ENDIF(UNIX)
 add_library(lualib SHARED ${lua_lib_lua_SOURCES})
 
 add_executable(luaexe src/lua.c)
-target_link_libraries(luaexe lualib)
+target_link_libraries(luaexe lualib ${lua_libs})
 set_target_properties(luaexe PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/)
 
 set_target_properties(lualib PROPERTIES OUTPUT_NAME lua)
