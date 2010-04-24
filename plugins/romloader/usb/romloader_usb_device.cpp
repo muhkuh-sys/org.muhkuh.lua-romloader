@@ -275,6 +275,8 @@ void romloader_usb_device::flushCards(void)
 		{
 			/* Skip all data in this card. */
 			m_ptFirstCard->pucRead = m_ptFirstCard->pucWrite;
+			/* This must be the last card. */
+			break;
 		}
 		else
 		{
