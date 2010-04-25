@@ -269,10 +269,14 @@ void romloader_usb_device::flushCards(void)
 	tBufferCard *ptNextCard;
 
 
+	printf("flushing cards:\n");
+
 	while( m_ptFirstCard!=NULL )
 	{
 		if( m_ptFirstCard->pucWrite!=NULL )
 		{
+			hexdump(m_ptFirstCard->pucRead, m_ptFirstCard->pucWrite-m_ptFirstCard->pucRead);
+
 			/* Skip all data in this card. */
 			m_ptFirstCard->pucRead = m_ptFirstCard->pucWrite;
 			/* This must be the last card. */
@@ -280,6 +284,8 @@ void romloader_usb_device::flushCards(void)
 		}
 		else
 		{
+			hexdump(m_ptFirstCard->pucRead, m_ptFirstCard->pucEnd-m_ptFirstCard->pucRead);
+
 			/* The card is not used by the write part. */
 			ptNextCard = m_ptFirstCard->ptNext;
 			if( ptNextCard!=NULL )
@@ -314,6 +320,15 @@ bool romloader_usb_device::expect_string(const char *pcString)
 	fFound  = true;
 	fFound &= (sizReceived==sizString);
 	fFound &= ( memcmp(pucBuffer, pcString, sizString)==0 );
+
+	/* FIXME: debug routines, remove */
+	if( fFound!=true )
+	{
+		printf("want:\n");
+		hexdump((const unsigned char*)pcString, sizString);
+		printf("got:\n");
+		hexdump(pucBuffer, sizReceived);
+	}
 
 	delete pucBuffer;
 

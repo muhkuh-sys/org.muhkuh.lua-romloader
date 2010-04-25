@@ -80,7 +80,7 @@ public:
 	void Disconnect(void);
 
 	int read_data32(unsigned long ulNetxAddress, unsigned long *pulValue);
-
+	int write_data32(unsigned long ulNetxAddress, unsigned long ulData);
 
 	size_t usb_receive(unsigned char *pucBuffer, size_t sizBuffer, unsigned int uiTimeoutMs);
 	int usb_send(const char *pcBuffer, size_t sizBuffer);

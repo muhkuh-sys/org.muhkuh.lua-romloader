@@ -1355,62 +1355,29 @@ void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData)
 {
 	int iResult;
-	char acCommand[28];
-	size_t sizCommand;
-	DATA_BUFFER_T tBuffer;
+	unsigned long ulResponseValue;
 	bool fOk;
 
 
-	// assume failure
+	ulResponseValue = 0;
+
+	/* Expect failure. */
 	fOk = false;
 
-	/* Construct the command. */
-	if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
-	{
-		sizCommand = snprintf(acCommand, sizeof(acCommand), "m %08lX %08X\r", ulNetxAddress, ulData);
-	}
-	else
-	{
-		sizCommand = snprintf(acCommand, sizeof(acCommand), "FILL %08lX %08X LONG", ulNetxAddress, ulData);
-	}
-
-	if( m_fIsConnected==false )
+	if( m_ptUsbDevice==NULL )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
 	}
 	else
 	{
-		// send the command
-		iResult = usb_executeCommand(acCommand, sizCommand);
+		iResult = m_ptUsbDevice->write_data32(ulNetxAddress, ulData);
 		if( iResult!=LIBUSB_SUCCESS )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to send command: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
 		}
 		else
 		{
-			if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 && expect_string(&tBuffer, acCommand)!=true )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): strange response from netx: %s", m_pcName, this, tBuffer.pucData);
-			}
-			else if( m_tChiptyp!=ROMLOADER_CHIPTYP_NETX10 && expect_string(&tBuffer, "\n>")!=true )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): strange response from netx: %s", m_pcName, this, tBuffer.pucData);
-			}
-			else
-			{
-			
-			
-//				printf("want:\n");
-//				hexdump((const unsigned char*)acCommand, strlen(acCommand), 0);
-//				printf("got:\n");
-//				hexdump(tBuffer.pucData, tBuffer.sizData, 0);
-
-			
-				printf("%s(%p): write_data32: 0x%08lx = 0x%08x\n", m_pcName, this, ulNetxAddress, ulData);
-				fOk = true;
-			}
-
-			free(tBuffer.pucData);
+			fOk = true;
 		}
 	}
 

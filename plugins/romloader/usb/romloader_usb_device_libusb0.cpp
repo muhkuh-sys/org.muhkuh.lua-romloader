@@ -1385,7 +1385,6 @@ int romloader_usb_device_libusb0::read_data32(unsigned long ulNetxAddress, unsig
 	size_t sizCommand;
 	unsigned long ulResponseAddress;
 	unsigned long ulResponseValue;
-	bool fOk;
 	size_t sizOldData;
 	size_t sizReceived;
 	int iScanCnt;
@@ -1397,9 +1396,6 @@ int romloader_usb_device_libusb0::read_data32(unsigned long ulNetxAddress, unsig
 
 
 	ulResponseValue = 0;
-
-	/* Expect failure. */
-	fOk = false;
 
 	/* Construct the command. */
 	if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
@@ -1434,6 +1430,7 @@ int romloader_usb_device_libusb0::read_data32(unsigned long ulNetxAddress, unsig
 		}
 		else
 		{
+			/* FIXME: this should be something like a linebased receive routine. */
 			sizReceived = usb_receive(uResult.auc, sizeof(uResult.auc), 200);
 			if( sizReceived!=sizeof(uResult.auc) )
 			{
@@ -1472,6 +1469,58 @@ int romloader_usb_device_libusb0::read_data32(unsigned long ulNetxAddress, unsig
 }
 
 
+int romloader_usb_device_libusb0::write_data32(unsigned long ulNetxAddress, unsigned long ulData)
+{
+	int iResult;
+	char acCommand[28];
+	size_t sizCommand;
+	size_t sizOldData;
+
+
+	/* Construct the command. */
+	if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
+	{
+		sizCommand = snprintf(acCommand, sizeof(acCommand), "m %08lX %08X\r\n", ulNetxAddress, ulData);
+	}
+	else
+	{
+		sizCommand = snprintf(acCommand, sizeof(acCommand), "FILL %08lX %08X LONG", ulNetxAddress, ulData);
+	}
+
+	/* Flush any old data. */
+	sizOldData = getCardSize();
+	if( sizOldData!=0 )
+	{
+		fprintf(stderr, "Old data in card buffer left!\n");
+		flushCards();
+	}
+
+	/* send the command */
+	iResult = usb_send(acCommand, sizCommand);
+	if( iResult!=LIBUSB_SUCCESS )
+	{
+		fprintf(stderr, "%s(%p): failed to send command: %d:%s", m_pcPluginId, this, iResult, libusb_strerror(iResult));
+	}
+	else
+	{
+		if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 && expect_string(acCommand)!=true )
+		{
+			fprintf(stderr, "%s(%p): strange response 1 from device", m_pcPluginId, this);
+			iResult = -1;
+		}
+		else if( expect_string("Result: 0\r\n\r\n>")!=true )
+		{
+			fprintf(stderr, "%s(%p): Failed to get result line!", m_pcPluginId, this);
+			iResult = -1;
+		}
+		else
+		{
+			printf("%s(%p): write_data32: 0x%08lx = 0x%08x\n", m_pcPluginId, this, ulNetxAddress, ulData);
+		}
+	}
+
+	return iResult;
+}
 
 
 int romloader_usb_device_libusb0::usb_bulk_pc_to_netx(libusb_device_handle *ptDevHandle, unsigned char ucEndPointOut, const unsigned char *pucDataOut, int iLength, int *piProcessed, unsigned int uiTimeoutMs)
