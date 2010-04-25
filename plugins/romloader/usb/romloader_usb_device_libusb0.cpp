@@ -44,6 +44,7 @@
 	const char *romloader_usb_device_libusb0::m_pcLibUsb_DevicePattern = "%u";
 
 	#include <pthread.h>
+	#include <sched.h>
 #endif
 
 
@@ -298,13 +299,73 @@ int romloader_usb_device_libusb0::start_rx_thread(void)
 		iResult = 0;
 	}
 #else
-	m_ptRxThread = new pthread_t;
-	iResult = pthread_create(m_ptRxThread, NULL, romloader_usb_device_libusb0::rxThread, (void*)this);
+	pthread_attr_t tAttr;
+	sched_param tParam;
+	int iPolicy;
+
+
+	/* initialized with default attributes */
+	iResult = pthread_attr_init(&tAttr);
 	if( iResult!=0 )
 	{
-		fprintf(stderr, "%s(%p): Failed to create card mutex: %d:%s\n", m_pcPluginId, this, errno, strerror(errno));
-		delete m_ptRxThread;
-		m_ptRxThread = NULL;
+		fprintf(stderr, "Failed to init the thread attributes: %d\n", iResult);
+	}
+	else
+	{
+		/* safe to get existing scheduling param */
+		iResult = pthread_attr_getschedparam (&tAttr, &tParam);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "Failed to get the scheduling parameter: %d\n", iResult);
+		}
+		else
+		{
+			iResult = pthread_attr_getschedpolicy(&tAttr, &iPolicy);
+			if( iResult!=0 )
+			{
+				fprintf(stderr, "Failed to get the scheduling policy: %d\n", iResult);
+			}
+			else
+			{
+				printf("scheduling policy is: %d\n", iPolicy);
+				if( iPolicy==SCHED_OTHER )
+				{
+					/* Change policy to RR. */
+					printf("Changing policy from OTHER to RR.\n");
+					iResult = pthread_attr_setschedpolicy(&tAttr, SCHED_RR);
+					if(  iResult!=0 )
+					{
+						fprintf(stderr, "Failed to set the scheduling policy: %d\n", iResult);
+					}
+				}
+
+				if( iResult==0 )
+				{
+					printf("Old rxThread priority is: %d\n", tParam.sched_priority);
+					/* set the priority; others are unchanged */
+					++tParam.sched_priority;
+					printf("New rxThread priority is: %d\n", tParam.sched_priority);
+	
+					/* setting the new scheduling param */
+					iResult = pthread_attr_setschedparam (&tAttr, &tParam);
+					if( iResult!=0 )
+					{
+						fprintf(stderr, "Failed to set the scheduling parameter: %d\n", iResult);
+					}
+					else
+					{
+						m_ptRxThread = new pthread_t;
+						iResult = pthread_create(m_ptRxThread, &tAttr, romloader_usb_device_libusb0::rxThread, (void*)this);
+						if( iResult!=0 )
+						{
+							fprintf(stderr, "%s(%p): Failed to create card mutex: %d:%s\n", m_pcPluginId, this, errno, strerror(errno));
+							delete m_ptRxThread;
+							m_ptRxThread = NULL;
+						}
+					}
+				}
+			}
+		}
 	}
 #endif
 	return iResult;
@@ -1326,6 +1387,13 @@ int romloader_usb_device_libusb0::read_data32(unsigned long ulNetxAddress, unsig
 	unsigned long ulResponseValue;
 	bool fOk;
 	size_t sizOldData;
+	size_t sizReceived;
+	int iScanCnt;
+	union
+	{
+		char ac[52];
+		unsigned char auc[52];
+	} uResult;
 
 
 	ulResponseValue = 0;
@@ -1364,33 +1432,39 @@ int romloader_usb_device_libusb0::read_data32(unsigned long ulNetxAddress, unsig
 			fprintf(stderr, "%s(%p): strange response 1 from device", m_pcPluginId, this);
 			iResult = -1;
 		}
-		else if( parse_hex_digit(8, &ulResponseAddress)!=true )
-		{
-			fprintf(stderr, "%s(%p): strange response 2 from device", m_pcPluginId, this);
-			iResult = -1;
-		}
-		else if( ulResponseAddress!=ulNetxAddress )
-		{
-			fprintf(stderr, "%s(%p): address does not match request", m_pcPluginId, this);
-			iResult = -1;
-		}
-		else if( expect_string(": ")!=true )
-		{
-			fprintf(stderr, "%s(%p): strange response 3 from device", m_pcPluginId, this);
-			iResult = -1;
-		}
-		else if( parse_hex_digit(8, &ulResponseValue)!=true )
-		{
-			fprintf(stderr, "%s(%p): strange response 4 from device: %s", m_pcPluginId, this);
-			iResult = -1;
-		}
 		else
 		{
-			printf("%s(%p): read_data32: 0x%08lx = 0x%08lx\n", m_pcPluginId, this, ulNetxAddress, ulResponseValue);
-			*pulValue = ulResponseValue;
-			
-			/* FIXME: drop rest of buffer. */
-			flushCards();
+			sizReceived = usb_receive(uResult.auc, sizeof(uResult.auc), 200);
+			if( sizReceived!=sizeof(uResult.auc) )
+			{
+				fprintf(stderr, "%s(%p): failed to receive %d bytes, got only %d", m_pcPluginId, this, sizeof(uResult.auc), sizReceived);
+				iResult = -1;
+			}
+			else
+			{
+				hexdump(uResult.auc, sizeof(uResult.auc));
+				iScanCnt = sscanf(uResult.ac, "%lx: %lx ", &ulResponseAddress, &ulResponseValue);
+				if( iScanCnt!=2 )
+				{
+					fprintf(stderr, "%s(%p): strange response 2 from device", m_pcPluginId, this);
+					iResult = -1;
+				}
+				else if( ulResponseAddress!=ulNetxAddress )
+				{
+					fprintf(stderr, "%s(%p): address does not match request", m_pcPluginId, this);
+					iResult = -1;
+				}
+				else if( expect_string("Result: 0\r\n\r\n>")!=true )
+				{
+					fprintf(stderr, "%s(%p): Failed to get result line!", m_pcPluginId, this);
+					iResult = -1;
+				}
+				else
+				{
+					printf("%s(%p): read_data32: 0x%08lx = 0x%08lx\n", m_pcPluginId, this, ulNetxAddress, ulResponseValue);
+					*pulValue = ulResponseValue;
+				}
+			}
 		}
 	}
 
