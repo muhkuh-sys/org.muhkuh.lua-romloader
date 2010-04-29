@@ -46,8 +46,8 @@ if(${LUA51_FOUND})
 	# Build the Lua module.
 	SWIG_ADD_MODULE(romloader lua romloader.i)
 	SWIG_LINK_LIBRARIES(romloader romloader_lib ${LUA_LIBRARIES})
-	set_property(TARGET romloader PROPERTY LIBRARY_OUTPUT_DIRECTORY ${MODULE_LUA_OUTPUT_PATH})
 	set_property(TARGET romloader PROPERTY PREFIX "")
+
 	# Install the targets.
 	INSTALL(TARGETS romloader DESTINATION ${CMAKE_BINARY_DIR}/build/)
 endif(${LUA51_FOUND})
