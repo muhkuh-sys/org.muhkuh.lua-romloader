@@ -54,8 +54,10 @@ public:
 	void flushCards(void);
 	bool expect_string(const char *pcString);
 	bool parse_hex_digit(size_t sizDigits, unsigned long *pulResult);
+	int parse_uue(size_t sizLength, unsigned char *pucData);
 
 	virtual size_t usb_receive(unsigned char *pucBuffer, size_t sizBuffer, unsigned int uiTimeoutMs) = 0;
+	virtual int usb_receive_line(char *pcBuffer, size_t sizBuffer, unsigned int uiTimeoutMs, size_t *psizReceived) = 0;
 	virtual int usb_send(const char *pcBuffer, size_t sizBuffer) = 0;
 
 protected:

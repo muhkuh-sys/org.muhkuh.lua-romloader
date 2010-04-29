@@ -1321,6 +1321,128 @@ size_t romloader_usb_device_libusb0::usb_receive(unsigned char *pucBuffer, size_
 
 	return sizReceived;
 }
+
+
+int romloader_usb_device_libusb0::usb_receive_line(char *pcBuffer, size_t sizBuffer, unsigned int uiTimeoutMs, size_t *psizReceived)
+{
+	int iResult;
+	struct timespec tEndTime;
+	unsigned char *pucCnt;
+	size_t sizProcessed;
+	const unsigned char aucEol[3] = { '\r', '\n', 0 };
+	int iState;
+	tBufferCard *ptCard;
+	size_t sizReceived;
+	union
+	{
+		unsigned char *puc;
+		char *pc;
+	} uBuffer;
+
+
+	/* Start to check for EOL at the first card. */
+	pucCnt = m_ptFirstCard->pucRead;
+	sizProcessed = 0;
+	iState = 0;
+	ptCard = m_ptFirstCard;
+	sizReceived = 0;
+
+	iResult = get_end_time(uiTimeoutMs, &tEndTime);
+	if( iResult!=0 )
+	{
+		fprintf(stderr, "get_end_time failed with result %d, errno: %d (%s)", iResult, errno, strerror(errno));
+	}
+	else
+	{
+		while( sizProcessed<sizBuffer )
+		{
+			/* Is the write pointer is in first card? */
+			if( ptCard->pucWrite!=NULL )
+			{
+				/* Are more chars available? */
+				if( pucCnt<ptCard->pucWrite )
+				{
+					if( *(pucCnt++)==aucEol[iState] )
+					{
+						++iState;
+						if( aucEol[iState]==0 )
+						{
+							/* Ok, EOL found! */
+							break;
+						}
+					}
+					else
+					{
+						/* Reset EOL detect counter. */
+						iState = 0;
+					}
+				}
+				else
+				{
+					/* Wait for data. */
+					pthread_mutex_lock(m_ptRxDataAvail_Mutex);
+					iResult = pthread_cond_timedwait(m_ptRxDataAvail_Condition, m_ptRxDataAvail_Mutex, &tEndTime);
+					pthread_mutex_unlock(m_ptRxDataAvail_Mutex);
+
+					if( iResult==ETIMEDOUT )
+					{
+						/* Timeout, no more data arrived. */
+						iResult = 0;
+						break;
+					}
+					else if( iResult!=0 )
+					{
+						fprintf(stderr, "failed to wait for data available condition: %d\n", iResult);
+						break;
+					}
+				}
+			}
+			else
+			{
+				/* Are more chars available? */
+				if( pucCnt<ptCard->pucEnd )
+				{
+					if( *(pucCnt++)==aucEol[iState] )
+					{
+						++iState;
+						if( aucEol[iState]==0 )
+						{
+							/* Ok, EOL found! */
+							break;
+						}
+					}
+					else
+					{
+						/* Reset EOL detect counter. */
+						iState = 0;
+					}
+				}
+				else
+				{
+					ptCard = ptCard->ptNext;
+				}
+			}
+		}
+
+		printf("iResult=%d, sizProcessed=%d\n", iResult, sizProcessed);
+		if( iResult==0 && sizProcessed>0 )
+		{
+			uBuffer.pc = pcBuffer;
+			sizReceived = usb_receive(uBuffer.puc, sizProcessed, 1);
+			if( sizReceived==sizProcessed )
+			{
+				/* Remove linefeed from buffer. */
+				sizReceived -= iState;
+				uBuffer.puc[sizReceived] = 0;
+			}
+			*psizReceived = sizReceived;
+
+			printf("Line: '%s'\n", uBuffer.pc);
+		}
+	}
+
+	return iResult;
+}
 #endif
 
 
@@ -1469,6 +1591,43 @@ int romloader_usb_device_libusb0::read_data32(unsigned long ulNetxAddress, unsig
 }
 
 
+int romloader_usb_device_libusb0::read_image(unsigned long ulNetxAddress, size_t sizData, unsigned char *pucData)
+{
+	size_t sizCommand;
+	int iResult;
+	char acCommand[28];
+	unsigned char *pucUueData;
+
+
+	sizCommand = snprintf(acCommand, sizeof(acCommand), "s %08lX ++%08lX\r", ulNetxAddress, sizData);
+
+	/* send the command */
+	iResult = usb_send(acCommand, sizCommand);
+	if( iResult!=LIBUSB_SUCCESS )
+	{
+		fprintf(stderr, "%s(%p): failed to send command: %d:%s", m_pcPluginId, this, iResult, libusb_strerror(iResult));
+	}
+	else
+	{
+		if( expect_string(acCommand)!=true )
+		{
+			fprintf(stderr, "%s(%p): strange response 1 from device", m_pcPluginId, this);
+			iResult = -1;
+		}
+		else
+		{
+			iResult = parse_uue(sizData, pucData);
+			if( iResult!=0 )
+			{
+				fprintf(stderr, "%s(%p): failed to parse uue data.", m_pcPluginId, this);
+			}
+		}
+	}
+
+	return iResult;
+}
+
+
 int romloader_usb_device_libusb0::write_data32(unsigned long ulNetxAddress, unsigned long ulData)
 {
 	int iResult;
@@ -1520,82 +1679,5 @@ int romloader_usb_device_libusb0::write_data32(unsigned long ulNetxAddress, unsi
 	}
 
 	return iResult;
-}
-
-
-int romloader_usb_device_libusb0::usb_bulk_pc_to_netx(libusb_device_handle *ptDevHandle, unsigned char ucEndPointOut, const unsigned char *pucDataOut, int iLength, int *piProcessed, unsigned int uiTimeoutMs)
-{
-	int iError;
-#ifdef _WINDOWS
-	char *pcDataOut = (char*)pucDataOut;
-#else
-	const char *pcDataOut = (const char*)pucDataOut;
-#endif
-
-
-	iError = usb_bulk_write(ptDevHandle, ucEndPointOut, pcDataOut, iLength, uiTimeoutMs);
-	if( iError==iLength )
-	{
-		/* transfer ok! */
-		iError = 0;
-	}
-	else
-	{
-		/* do not return 0 in case of an error */
-		if( iError==0 )
-		{
-			iError = -1;
-		}
-		else if( iError==-ETIMEDOUT )
-		{
-			iError = LIBUSB_ERROR_TIMEOUT;
-		}
-		/* transfer failed */
-		iLength = 0;
-	}
-
-	if( piProcessed!=NULL )
-	{
-		*piProcessed = iLength;
-	}
-
-	return iError;
-}
-
-
-int romloader_usb_device_libusb0::usb_bulk_netx_to_pc(libusb_device_handle *ptDevHandle, unsigned char ucEndPointIn, unsigned char *pucDataIn, int iLength, int *piProcessed, unsigned int uiTimeoutMs)
-{
-	int iError;
-
-
-	iError = usb_bulk_read(ptDevHandle, ucEndPointIn, (char*)pucDataIn, iLength, uiTimeoutMs);
-	if( iError>0 )
-	{
-		/* transfer ok! */
-		if( piProcessed!=NULL )
-		{
-			*piProcessed = iError;
-		}
-		iError = 0;
-	}
-	else
-	{
-		/* do not return 0 in case of an error */
-		if( iError==0 )
-		{
-			iError = -1;
-		}
-		else if( iError==-ETIMEDOUT )
-		{
-			iError = LIBUSB_ERROR_TIMEOUT;
-		}
-		/* transfer failed */
-		if( piProcessed!=NULL )
-		{
-			*piProcessed = 0;
-		}
-	}
-
-	return iError;
 }
 

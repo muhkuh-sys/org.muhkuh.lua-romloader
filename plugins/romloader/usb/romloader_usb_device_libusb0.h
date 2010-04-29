@@ -71,18 +71,17 @@ public:
 
 	const char *libusb_strerror(int iError);
 
-	int usb_bulk_pc_to_netx(libusb_device_handle *ptDevHandle, unsigned char ucEndPointOut, const unsigned char *pucDataOut, int iLength, int *piProcessed, unsigned int uiTimeoutMs);
-	int usb_bulk_netx_to_pc(libusb_device_handle *ptDevHandle, unsigned char ucEndPointIn, unsigned char *pucDataIn, int iLength, int *piProcessed, unsigned int uiTimeoutMs);
-
-
 	int detect_interfaces(romloader_usb_reference ***ppptReferences, size_t *psizReferences, romloader_usb_provider *ptProvider);
 	int Connect(unsigned int uiBusNr, unsigned int uiDeviceAdr);
 	void Disconnect(void);
 
 	int read_data32(unsigned long ulNetxAddress, unsigned long *pulValue);
+	int read_image(unsigned long ulNetxAddress, size_t sizData, unsigned char *pucData);
+
 	int write_data32(unsigned long ulNetxAddress, unsigned long ulData);
 
 	size_t usb_receive(unsigned char *pucBuffer, size_t sizBuffer, unsigned int uiTimeoutMs);
+	int usb_receive_line(char *pcBuffer, size_t sizBuffer, unsigned int uiTimeoutMs, size_t *psizReceived);
 	int usb_send(const char *pcBuffer, size_t sizBuffer);
 
 #if defined(WIN32)
