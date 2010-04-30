@@ -902,11 +902,6 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 	/* Expect error. */
 	fOk = false;
 
-	/* Init the buffer. */
-	tBuffer.pucData = NULL;
-	tBuffer.sizData = 0;
-	tBuffer.sizPos = 0;
-
 	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
@@ -916,9 +911,40 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 		/* Construct the command. */
 		if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
 		{
+			pucData = (unsigned char*)malloc(ulSize);
+			if( pucData==NULL )
+			{
+				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to alloc %d bytes!", m_pcName, this, ulSize);
+				ulSize = 0;
+			}
+			else
+			{
+				iResult = m_ptUsbDevice->read_image(ulNetxAddress, ulSize, pucData);
+				if( iResult!=LIBUSB_SUCCESS )
+				{
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to read image: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
+
+					free(pucData);
+					pucData = NULL;
+					ulSize = 0;
+				}
+				else
+				{
+					fOk = true;
+				}
+
+			}
+
+			*ppcBUFFER_OUT = (char*)pucData;
+			*psizBUFFER_OUT = (size_t)ulSize;
 		}
 		else
 		{
+			/* Init the buffer. */
+			tBuffer.pucData = NULL;
+			tBuffer.sizData = 0;
+			tBuffer.sizPos = 0;
+
 			snprintf(acCommand, sizeof(acCommand), "DUMP %08lX %08lX BYTE", ulNetxAddress, ulSize);
 
 			/* Send the command. */
@@ -1002,12 +1028,12 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 					*psizBUFFER_OUT = (size_t)ulSize;
 				}
 			}
-		}
-	}
 
-	if( tBuffer.pucData!=NULL )
-	{
-		free(tBuffer.pucData);
+			if( tBuffer.pucData!=NULL )
+			{
+				free(tBuffer.pucData);
+			}
+		}
 	}
 
 	if( fOk!=true )

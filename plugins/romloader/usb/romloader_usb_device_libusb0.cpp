@@ -36,7 +36,7 @@
 
 
 
-#ifdef _WINDOWS
+#if defined(WIN32)
 	const char *romloader_usb_device_libusb0::m_pcLibUsb_BusPattern = "bus-%u";
 	const char *romloader_usb_device_libusb0::m_pcLibUsb_DevicePattern = "\\\\.\\libusb0-%u";
 #else
@@ -374,18 +374,21 @@ int romloader_usb_device_libusb0::start_rx_thread(void)
 
 int romloader_usb_device_libusb0::stop_rx_thread(void)
 {
-	int iResult;
-	void *pvStatus;
-	int iStatus;
-
-
 #if defined(WIN32)
+	int iResult;
+
+
 	m_fRxThread_RequestTermination = true;
 	WaitForSingleObject(m_hRxThread, INFINITE);
 	CloseHandle(m_hRxThread);
 	m_hRxThread = NULL;
 	iResult = 0;
 #else
+	int iResult;
+	void *pvStatus;
+	int iStatus;
+
+
 	if( m_ptRxThread!=NULL )
 	{
 		iResult = pthread_cancel(*m_ptRxThread);
@@ -1220,6 +1223,141 @@ size_t romloader_usb_device_libusb0::usb_receive(unsigned char *pucBuffer, size_
 
 	return sizReceived;
 }
+
+
+int romloader_usb_device_libusb0::usb_receive_line(char *pcBuffer, size_t sizBuffer, unsigned int uiTimeoutMs, size_t *psizReceived)
+{
+	int iResult;
+	unsigned char *pucCnt;
+	size_t sizProcessed;
+	const unsigned char aucEol[3] = { '\r', '\n', 0 };
+	int iState;
+	tBufferCard *ptCard;
+	size_t sizReceived;
+	union
+	{
+		unsigned char *puc;
+		char *pc;
+	} uBuffer;
+	DWORD dwStartTime;
+	DWORD dwTimeElapsed;
+	DWORD dwTimeLeft;
+	DWORD dwWaitResult;
+	DWORD dwTimeoutMs;
+
+
+	dwTimeoutMs = uiTimeoutMs;
+	dwStartTime = GetTickCount();
+
+	/* Start to check for EOL at the first card. */
+	pucCnt = m_ptFirstCard->pucRead;
+	sizProcessed = 0;
+	iState = 0;
+	ptCard = m_ptFirstCard;
+	sizReceived = 0;
+
+	/* Expect success. */
+	iResult = 0;
+
+	while( sizProcessed<sizBuffer )
+	{
+		/* Is the write pointer is in first card? */
+		if( ptCard->pucWrite!=NULL )
+		{
+			/* Are more chars available? */
+			if( pucCnt<ptCard->pucWrite )
+			{
+				++sizProcessed;
+				if( *(pucCnt++)==aucEol[iState] )
+				{
+					++iState;
+					if( aucEol[iState]==0 )
+					{
+						/* Ok, EOL found! */
+						break;
+					}
+				}
+				else
+				{
+					/* Reset EOL detect counter. */
+					iState = 0;
+				}
+			}
+			else
+			{
+				/* No data left, wait for input. */
+				dwTimeElapsed = GetTickCount() - dwStartTime;
+				if( dwTimeElapsed>=uiTimeoutMs )
+				{
+					/* Timeout, no more data arrived. */
+					break;
+				}
+				else
+				{
+					dwTimeLeft = dwTimeoutMs - dwTimeElapsed;
+
+					/* Wait for new data to arrive. */
+					dwWaitResult = WaitForSingleObject(m_hRxDataAvail, dwTimeLeft);
+					if( dwWaitResult==WAIT_TIMEOUT )
+					{
+						/* Timeout or error -> no new data arrived. */
+						break;
+					}
+					else if( dwWaitResult!=WAIT_OBJECT_0 )
+					{
+						/* Error. */
+						iResult = -1;
+						break;
+					}
+				}
+			}
+		}
+		else
+		{
+			/* Are more chars available? */
+			if( pucCnt<ptCard->pucEnd )
+			{
+				++sizProcessed;
+				if( *(pucCnt++)==aucEol[iState] )
+				{
+					++iState;
+					if( aucEol[iState]==0 )
+					{
+						/* Ok, EOL found! */
+						break;
+					}
+				}
+				else
+				{
+					/* Reset EOL detect counter. */
+					iState = 0;
+				}
+			}
+			else
+			{
+				ptCard = ptCard->ptNext;
+			}
+		}
+	}
+
+	printf("iResult=%d, sizProcessed=%d\n", iResult, sizProcessed);
+	if( iResult==0 && sizProcessed>0 )
+	{
+		uBuffer.pc = pcBuffer;
+		sizReceived = usb_receive(uBuffer.puc, sizProcessed, 1);
+		if( sizReceived==sizProcessed )
+		{
+			/* Remove linefeed from buffer. */
+			sizReceived -= iState;
+			uBuffer.puc[sizReceived] = 0;
+		}
+		*psizReceived = sizReceived;
+
+		printf("Line: '%s'\n", uBuffer.pc);
+	}
+
+	return iResult;
+}
 #else
 #define MILLISEC_PER_SEC 1000UL
 #define NANOSEC_PER_MILLISEC 1000000UL
@@ -1596,7 +1734,6 @@ int romloader_usb_device_libusb0::read_image(unsigned long ulNetxAddress, size_t
 	size_t sizCommand;
 	int iResult;
 	char acCommand[28];
-	unsigned char *pucUueData;
 
 
 	sizCommand = snprintf(acCommand, sizeof(acCommand), "s %08lX ++%08lX\r", ulNetxAddress, sizData);
@@ -1621,6 +1758,17 @@ int romloader_usb_device_libusb0::read_image(unsigned long ulNetxAddress, size_t
 			{
 				fprintf(stderr, "%s(%p): failed to parse uue data.", m_pcPluginId, this);
 			}
+			else if( expect_string("Result: 0\r\n\r\n>")!=true )
+			{
+				fprintf(stderr, "%s(%p): Failed to get result line!", m_pcPluginId, this);
+				iResult = -1;
+			}
+			else
+			{
+				printf("%s(%p): read_image: 0x%08lx =\n", m_pcPluginId, this, ulNetxAddress);
+				hexdump(pucData, sizData);
+			}
+
 		}
 	}
 

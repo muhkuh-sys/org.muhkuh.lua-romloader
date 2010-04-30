@@ -24,6 +24,10 @@
 #include <errno.h>
 
 
+#if defined(WIN32)
+#	define strncasecmp _strnicmp
+#endif
+
 const romloader_usb_device::NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[2] =
 {
 	{
@@ -406,7 +410,6 @@ int romloader_usb_device::parse_uue(size_t sizLength, unsigned char *pucData)
 {
 	int iResult;
 	char acLine[82];
-	const unsigned char *pucLine;
 	int iMatch;
 	size_t sizLine;
 	size_t sizUueBytesInLine;
@@ -414,7 +417,6 @@ int romloader_usb_device::parse_uue(size_t sizLength, unsigned char *pucData)
 	size_t sizByteCnt;
 	const char *pcCnt;
 	unsigned long ulResult;
-	unsigned int uiMaxLineSize;
 
 
 	/* Wait for 'begin'. */
