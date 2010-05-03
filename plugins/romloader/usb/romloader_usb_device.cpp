@@ -406,7 +406,7 @@ bool romloader_usb_device::parse_hex_digit(size_t sizDigits, unsigned long *pulR
 }
 
 
-int romloader_usb_device::parse_uue(size_t sizLength, unsigned char *pucData)
+int romloader_usb_device::parse_uue(size_t sizLength, unsigned char *pucData, unsigned long ulStart, unsigned long ulEnd)
 {
 	int iResult;
 	char acLine[82];
@@ -417,123 +417,230 @@ int romloader_usb_device::parse_uue(size_t sizLength, unsigned char *pucData)
 	size_t sizByteCnt;
 	const char *pcCnt;
 	unsigned long ulResult;
+	unsigned long ulBeginLineStart;
+	unsigned long ulBeginLineEnd;
 
 
 	/* Wait for 'begin'. */
-	iMatch = 1;
 	do
 	{
 		/* Receive line. */
 		iResult = usb_receive_line(acLine, sizeof(acLine), 100, &sizLine);
-		if( iResult!=0 )
+		if( iResult==0 && sizLine>6 && strncasecmp(acLine, "begin ", 6)==0 )
 		{
-			/* Error! */
+			/* Ok, iResult is 0. */
 			break;
 		}
-		else if( sizLine>=6 )
-		{
-			iMatch = strncasecmp(acLine, "begin ", 6);
-		}
-	} while( iMatch!=0 );
+	} while( iResult==0 );
 
 	if( iResult==0 )
 	{
-		/* found begin, now parse all lines until 'end' is reached */
-		do
+		iMatch = sscanf(acLine, "begin 666 %lx_%lx.bin", &ulBeginLineStart, &ulBeginLineEnd);
+		if( iMatch!=2 )
 		{
-			/* receive line */
-			iResult = usb_receive_line(acLine, sizeof(acLine), 100, &sizLine);
-			if( iResult!=0 )
+			fprintf(stderr, "first line does not match expected pattern.\n");
+			fprintf(stderr, "got:  '%s'\n", acLine);
+			fprintf(stderr, "want: 'begin 666 %08x_%08x.bin'", ulStart, ulEnd);
+		}
+		else if( ulStart!=ulBeginLineStart || ulEnd!=ulBeginLineEnd )
+		{
+			fprintf(stderr, "received invalid address range!\n");
+			fprintf(stderr, "got:  '%s'\n", acLine);
+			fprintf(stderr, "want: 'begin 666 %08x_%08x.bin'", ulStart, ulEnd);
+		}
+		else
+		{
+			/* found begin, now parse all lines until 'end' is reached */
+			do
 			{
-				break;
-			}
-			else if( strncasecmp(acLine, "end", 3)==0 )
-			{
-				/* found 'end' */
-				break;
-			}
-			else if( sizLine>0 )
-			{
-				/* no end or empty line -> must be uencoded line */
-
-				/*
-				 * get the linelength character
-				 * NOTE: this will warp for numbers smaller than 0x20, and that's what we want
-				 */
-				sizUueBytesInLine = acLine[0] - 0x20U;
-				/*
-					* the length must be between 0x40 and 0x40
-					* NOTE: 0x40 is special as it's used for a 'end of line' marker. it equals 0
-					*/
-				if( sizUueBytesInLine>0x40 )
+				/* receive line */
+				iResult = usb_receive_line(acLine, sizeof(acLine), 100, &sizLine);
+				if( iResult!=0 )
 				{
-					/* illegal line number, break */
-					iResult = -1;
 					break;
 				}
-				else
+				else if( strncasecmp(acLine, "end", 3)==0 )
 				{
-					/* 0x40 must equal 0x00 */
-					sizUueBytesInLine &= 0x3f;
-					if( sizUueBytesInLine>0 )
-					{
-						/* check if the real line length matches the uee length */
-						sizCharCnt = 1;
-						sizByteCnt = 0;
-						/* NOTE: this could be done with div and modulo, but that would pull libm in :( */
-						while( sizByteCnt<sizUueBytesInLine )
-						{
-							/* each block needs 4 chars */
-							sizCharCnt += 4;
-							/* ...and encodes 3 bytes */
-							sizByteCnt += 3;
-						}
-						if( sizCharCnt>sizLine )
-						{
-							/* line is not long enough for the expected data, seems to be cut off */
-							iResult = -1;
-							break;
-						}
-						else
-						{
-							/* ok, line matches, decode all data */
-							pcCnt = acLine + 1;
-							do
-							{
-								/* grab the next 4 chars */
-								sizCharCnt = 4;
-								ulResult = 0;
-								do
-								{
-									ulResult <<= 6;
-									ulResult |= (*(pcCnt++)-0x20) & 0x3f;
-								} while( --sizCharCnt!=0 );
+					/* found 'end' */
+					break;
+				}
+				else if( sizLine>0 )
+				{
+					/* no end or empty line -> must be uencoded line */
 
-								/* write 3 decoded chars */
-								sizByteCnt = 3;
-								if( sizByteCnt>sizUueBytesInLine )
-								{
-									sizByteCnt = sizUueBytesInLine;
-								}
+					/*
+					 * get the linelength character
+					 * NOTE: this will warp for numbers smaller than 0x20, and that's what we want
+					 */
+					sizUueBytesInLine = acLine[0] - 0x20U;
+					/*
+					 * the length must be between 0x40 and 0x40
+					 * NOTE: 0x40 is special as it's used for a 'end of line' marker. it equals 0
+					 */
+					if( sizUueBytesInLine>0x40 )
+					{
+						/* illegal line number, break */
+						iResult = -1;
+						break;
+					}
+					else
+					{
+						/* 0x40 must equal 0x00 */
+						sizUueBytesInLine &= 0x3f;
+						if( sizUueBytesInLine>0 )
+						{
+							/* check if the real line length matches the uee length */
+							sizCharCnt = 2;
+							sizByteCnt = 0;
+							/* NOTE: this could be done with div and modulo, but that would pull libm in :( */
+							while( sizByteCnt<sizUueBytesInLine )
+							{
+								/* each block needs 4 chars */
+								sizCharCnt += 4;
+								/* ...and encodes 3 bytes */
+								sizByteCnt += 3;
+							}
+							if( sizCharCnt>sizLine )
+							{
+								/* line is not long enough for the expected data, seems to be cut off */
+								iResult = -1;
+								break;
+							}
+							else
+							{
+								/* ok, line matches, decode all data */
+								pcCnt = acLine + 1;
 								do
 								{
-									/* NOTE: this must be before the data write line, the bits must be in 31..8 */
-									ulResult <<= 8;
-									*(pucData++) = (unsigned char)(ulResult>>24U);
-									--sizUueBytesInLine;
-								} while( --sizByteCnt!=0 );
-							} while( sizUueBytesInLine!=0 );
+									/* grab the next 4 chars */
+									sizCharCnt = 4;
+									ulResult = 0;
+									do
+									{
+										ulResult <<= 6;
+										ulResult |= (*(pcCnt++)-0x20) & 0x3f;
+									} while( --sizCharCnt!=0 );
+
+									/* write 3 decoded chars */
+									sizByteCnt = 3;
+									if( sizByteCnt>sizUueBytesInLine )
+									{
+										sizByteCnt = sizUueBytesInLine;
+									}
+									do
+									{
+										/* NOTE: this must be before the data write line, the bits must be in 31..8 */
+										ulResult <<= 8;
+										*(pucData++) = (unsigned char)(ulResult>>24U);
+										--sizUueBytesInLine;
+									} while( --sizByteCnt!=0 );
+								} while( sizUueBytesInLine!=0 );
+							}
 						}
 					}
 				}
-			}
-		} while( iResult==0 );
+			} while( iResult==0 );
+		}
 	}
 
 	return iResult;
 }
 
 
+int romloader_usb_device::uue_generate(const unsigned char *pucData, size_t sizData, char **ppcUueData, size_t *psizUueData)
+{
+	size_t sizUueData;
+	size_t sizMaxUueData;
+	char *pcUueData;
+	char *pcUueDataCnt;
+	const unsigned char *pucDataCnt;
+	const unsigned char *pucDataEnd;
+	int iResult;
+	size_t sizChunk;
+	unsigned long ulUueBuf;
+	int iCnt;
+
+
+	/* Expect error. */
+	iResult = -1;
+
+	/* Allocate the output buffer. */
+	sizUueData = 0;
+	sizMaxUueData = 76 + ((sizData+44)/45)*63;
+	pcUueData = (char*)malloc(sizMaxUueData);
+	if( pcUueData!=NULL )
+	{
+		pcUueDataCnt = pcUueData;
+
+		/* Generate the header. */
+		iCnt = sprintf(pcUueDataCnt, "begin 666 data.bin\n");
+		pcUueDataCnt += iCnt;
+
+		/* Dump all memory. */
+		pucDataCnt = pucData;
+		pucDataEnd = pucData + sizData;
+		while( pucDataCnt<pucDataEnd )
+		{
+			/* get the rest of the bytes to dump */
+			sizChunk = pucDataEnd - pucDataCnt;
+			/* limit to max uuencode line size */
+			if( sizChunk>45 )
+			{
+				sizChunk = 45;
+			}
+
+			/* print the length character for the line */
+			*(pcUueDataCnt++) = (unsigned char)(0x20 + sizChunk);
+
+			/* print one line */
+			do
+			{
+				/* clear uuencode buffer */
+				ulUueBuf = 0;
+
+				/* get max 3 chars into the buffer */
+				iCnt = 3;
+				do
+				{
+					/* still bytes left? */
+					if( sizChunk>0 )
+					{
+						ulUueBuf |= *(pucDataCnt++);
+						--sizChunk;
+					}
+					/* NOTE: the shift operation must be executed after the new data is masked in, the result must be in 8..31 */
+					ulUueBuf <<= 8;
+				} while( --iCnt>0 );
+
+				/* encode the buffer */
+				iCnt = 4;
+				do
+				{
+					*(pcUueDataCnt++) = (unsigned char)(0x20 + (ulUueBuf>>26));
+					ulUueBuf <<= 6;
+				} while( --iCnt!=0 );
+			} while( sizChunk!=0 );
+
+			/* end the line */
+			*(pcUueDataCnt++) = '`';
+			*(pcUueDataCnt++) = '\n';
+		}
+	
+		/* print last line */
+		iCnt = sprintf(pcUueDataCnt, "`\nend\n");
+		pcUueDataCnt += iCnt+1;
+
+		/* Get the size of the UUencoded data. */
+		sizUueData = pcUueDataCnt - pcUueData;
+
+		iResult = 0;
+	}
+
+	*ppcUueData = pcUueData;
+	*psizUueData = sizUueData;
+
+	return iResult;
+}
 
 
 void romloader_usb_device::hexdump(const unsigned char *pucData, unsigned long ulSize)

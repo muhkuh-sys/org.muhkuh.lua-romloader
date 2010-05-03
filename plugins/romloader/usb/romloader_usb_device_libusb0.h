@@ -79,6 +79,7 @@ public:
 	int read_image(unsigned long ulNetxAddress, size_t sizData, unsigned char *pucData);
 
 	int write_data32(unsigned long ulNetxAddress, unsigned long ulData);
+	int write_image(unsigned long ulNetxAddress, const unsigned char *pucData, size_t sizData);
 
 	size_t usb_receive(unsigned char *pucBuffer, size_t sizBuffer, unsigned int uiTimeoutMs);
 	int usb_receive_line(char *pcBuffer, size_t sizBuffer, unsigned int uiTimeoutMs, size_t *psizReceived);

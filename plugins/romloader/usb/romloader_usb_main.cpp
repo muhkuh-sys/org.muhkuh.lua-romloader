@@ -788,102 +788,6 @@ bool romloader_usb::parseDumpLine(DATA_BUFFER_T *ptBuffer, unsigned long ulAddre
 }
 
 
-int romloader_usb::uue_generate(const unsigned char *pucData, size_t sizData, char **ppcUueData, size_t *psizUueData)
-{
-	size_t sizUueData;
-	size_t sizMaxUueData;
-	char *pcUueData;
-	char *pcUueDataCnt;
-	const unsigned char *pucDataCnt;
-	const unsigned char *pucDataEnd;
-	int iResult;
-	size_t sizChunk;
-	unsigned long ulUueBuf;
-	int iCnt;
-
-
-	/* Expect error. */
-	iResult = -1;
-
-	/* Allocate the output buffer. */
-	sizUueData = 0;
-	sizMaxUueData = 76 + ((sizData+44)/45)*63;
-	pcUueData = (char*)malloc(sizMaxUueData);
-	if( pcUueData!=NULL )
-	{
-		pcUueDataCnt = pcUueData;
-
-		/* Generate the header. */
-		iCnt = sprintf(pcUueDataCnt, "begin 666 data.bin\n");
-		pcUueDataCnt += iCnt;
-
-		/* Dump all memory. */
-		pucDataCnt = pucData;
-		pucDataEnd = pucData + sizData;
-		while( pucDataCnt<pucDataEnd )
-		{
-			/* get the rest of the bytes to dump */
-			sizChunk = pucDataEnd - pucDataCnt;
-			/* limit to max uuencode line size */
-			if( sizChunk>45 )
-			{
-				sizChunk = 45;
-			}
-
-			/* print the length character for the line */
-			*(pcUueDataCnt++) = (unsigned char)(0x20 + sizChunk);
-
-			/* print one line */
-			do
-			{
-				/* clear uuencode buffer */
-				ulUueBuf = 0;
-
-				/* get max 3 chars into the buffer */
-				iCnt = 3;
-				do
-				{
-					/* still bytes left? */
-					if( sizChunk>0 )
-					{
-						ulUueBuf |= *(pucDataCnt++);
-						--sizChunk;
-					}
-					/* NOTE: the shift operation must be executed after the new data is masked in, the result must be in 8..31 */
-					ulUueBuf <<= 8;
-				} while( --iCnt>0 );
-
-				/* encode the buffer */
-				iCnt = 4;
-				do
-				{
-					*(pcUueDataCnt++) = (unsigned char)(0x20 + (ulUueBuf>>26));
-					ulUueBuf <<= 6;
-				} while( --iCnt!=0 );
-			} while( sizChunk!=0 );
-
-			/* end the line */
-			*(pcUueDataCnt++) = '`';
-			*(pcUueDataCnt++) = '\n';
-		}
-	
-		/* print last line */
-		iCnt = sprintf(pcUueDataCnt, "`\nend\n");
-		pcUueDataCnt += iCnt+1;
-
-		/* Get the size of the UUencoded data. */
-		sizUueData = pcUueDataCnt - pcUueData;
-
-		iResult = 0;
-	}
-
-	*ppcUueData = pcUueData;
-	*psizUueData = sizUueData;
-
-	return iResult;
-}
-
-
 /* read a byte array from the netx to the pc */
 void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
@@ -932,7 +836,6 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 				{
 					fOk = true;
 				}
-
 			}
 
 			*ppcBUFFER_OUT = (char*)pucData;
@@ -1209,116 +1112,27 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 {
 	int iResult;
 	bool fOk;
-	DATA_BUFFER_T tBuffer;
 	const unsigned char *pucInputData;
-	char *pcUueData;
-	size_t sizUueData;
-	char acCommand[16];
-	size_t sizCommand;
 
 
 	/* Expect error. */
 	fOk = false;
 
-	pucInputData = (const unsigned char*)pcBUFFER_IN;
-
-	if( m_fIsConnected==false )
+	if( m_ptUsbDevice==NULL )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
 	}
 	else
 	{
-		if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
+		pucInputData = (const unsigned char*)pcBUFFER_IN;
+		iResult = m_ptUsbDevice->write_image(ulNetxAddress, pucInputData, sizBUFFER_IN);
+		if( iResult!=LIBUSB_SUCCESS )
 		{
-			printf("hihi 1\n");
-			/* Generate the command. */
-			sizCommand = snprintf(acCommand, sizeof(acCommand), "l %08lX\r", ulNetxAddress);
-			/* Send the command. */
-			iResult = usb_executeCommand(acCommand, sizCommand);
-			if( iResult!=LIBUSB_SUCCESS )
-			{
-				printf("err 1\n");
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to send command: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
-			}
-			else if( expect_string(&tBuffer, acCommand)!=true )
-			{
-				printf("err 2\n");
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): strange response from netx: %s", m_pcName, this, tBuffer.pucData);
-			}
-			else
-			{
-				printf("hihi 2\n");
-				pcUueData = NULL;
-				sizUueData = 0;
-				iResult = uue_generate(pucInputData, sizBUFFER_IN, &pcUueData, &sizUueData);
-				printf("uue data: '%s'\n", pcUueData);
-				printf("result: %d\n", iResult);
-				if( iResult==0 )
-				{
-					/* Send the complete data block. */
-					iResult = m_ptUsbDevice->usb_send(pcUueData, sizUueData);
-					printf("done: %d\n", iResult);
-					free(pcUueData);
-
-					if( iResult==0 )
-					{
-						/* Get the response. */
-						iResult = usb_getNetxData(&tBuffer, &tLuaFn, lCallbackUserData);
-						if( iResult!=LIBUSB_SUCCESS )
-						{
-							printf("err 3\n");
-							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to get response from netx", m_pcName, this);
-						}
-						else if( expect_string(&tBuffer, "Result: 0\r\r>")!=true )
-						{
-							printf("err 4\n");
-							hexdump(tBuffer.pucData, tBuffer.sizData, 0);
-							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): strange response from netx: %s", m_pcName, this, tBuffer.pucData);
-						}
-						else
-						{
-							printf("Yay!\n");
-//							printf("want:\n");
-//							hexdump((const unsigned char*)"Result: 0\r\r>", sizeof("Result: 0\r\r>"), 0);
-//							printf("got:\n");
-//							hexdump(tBuffer.pucData, tBuffer.sizData, 0);
-							
-							fOk = true;
-						}
-					}
-				}
-			}
+			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to write image: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
 		}
 		else
 		{
-			/* Send the command. */
-			iResult = usb_load(pucInputData, sizBUFFER_IN, ulNetxAddress, &tLuaFn, lCallbackUserData);
-			if( iResult!=LIBUSB_SUCCESS )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to send command: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
-			}
-			else
-			{
-				/* Get the response. */
-				iResult = usb_getNetxData(&tBuffer, &tLuaFn, lCallbackUserData);
-				if( iResult!=LIBUSB_SUCCESS )
-				{
-					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to get response from netx", m_pcName, this);
-				}
-				else
-				{
-					if( expect_string(&tBuffer, "\n>")!=true )
-					{
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): strange response from netx: %s", m_pcName, this, tBuffer.pucData);
-					}
-					else
-					{
-						fOk = true;
-					}
-
-					free(tBuffer.pucData);
-				}
-			}
+			fOk = true;
 		}
 	}
 
