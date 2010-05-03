@@ -1353,7 +1353,6 @@ int romloader_usb_device_libusb0::usb_receive_line(char *pcBuffer, size_t sizBuf
 		}
 	}
 
-	printf("iResult=%d, sizProcessed=%d\n", iResult, sizProcessed);
 	if( iResult==0 && sizProcessed>0 )
 	{
 		uBuffer.pc = pcBuffer;
@@ -1365,9 +1364,6 @@ int romloader_usb_device_libusb0::usb_receive_line(char *pcBuffer, size_t sizBuf
 			uBuffer.puc[sizReceived] = 0;
 		}
 		*psizReceived = sizReceived;
-
-		printf("Line: '%s'\n", uBuffer.pc);
-		hexdump(uBuffer.puc, sizReceived);
 	}
 
 	return iResult;
@@ -1868,7 +1864,6 @@ int romloader_usb_device_libusb0::write_image(unsigned long ulNetxAddress, const
 	char acCommand[16];
 	size_t sizCommand;
 	size_t sizOldData;
-	unsigned char aucBuf[8];
 
 
 	/* Generate the command. */
@@ -1898,8 +1893,6 @@ int romloader_usb_device_libusb0::write_image(unsigned long ulNetxAddress, const
 		pcUueData = NULL;
 		sizUueData = 0;
 		iResult = uue_generate(pucData, sizData, &pcUueData, &sizUueData);
-		printf("uue data: '%s'\n", pcUueData);
-		printf("result: %d\n", iResult);
 		if( iResult==0 )
 		{
 			/* Send the complete data block. */
@@ -1918,13 +1911,8 @@ int romloader_usb_device_libusb0::write_image(unsigned long ulNetxAddress, const
 					fprintf(stderr, "%s(%p): Failed to get result line!", m_pcPluginId, this);
 					iResult = -1;
 				}
-				else if( usb_receive(aucBuf, 1, 100)!=1 )
-				{
-					fprintf(stderr, "%s(%p): failed to receive trailing 0.\n", m_pcPluginId, this);
-				}
 				else
 				{
-					printf("trailing data: 0x%02x\n", aucBuf[0]);
 					printf("%s(%p): write_image: 0x%08lx =\n", m_pcPluginId, this, ulNetxAddress);
 					hexdump(pucData, sizData);
 				}

@@ -566,14 +566,14 @@ int romloader_usb_device::uue_generate(const unsigned char *pucData, size_t sizD
 
 	/* Allocate the output buffer. */
 	sizUueData = 0;
-	sizMaxUueData = 76 + ((sizData+44)/45)*63;
+	sizMaxUueData = 80 + ((sizData+44)/45)*64;
 	pcUueData = (char*)malloc(sizMaxUueData);
 	if( pcUueData!=NULL )
 	{
 		pcUueDataCnt = pcUueData;
 
 		/* Generate the header. */
-		iCnt = sprintf(pcUueDataCnt, "begin 666 data.bin\n");
+		iCnt = sprintf(pcUueDataCnt, "begin 666 data.bin\r\n");
 		pcUueDataCnt += iCnt;
 
 		/* Dump all memory. */
@@ -623,12 +623,13 @@ int romloader_usb_device::uue_generate(const unsigned char *pucData, size_t sizD
 
 			/* end the line */
 			*(pcUueDataCnt++) = '`';
+			*(pcUueDataCnt++) = '\r';
 			*(pcUueDataCnt++) = '\n';
 		}
 	
 		/* print last line */
-		iCnt = sprintf(pcUueDataCnt, "`\nend\n");
-		pcUueDataCnt += iCnt+1;
+		memcpy(pcUueDataCnt, "`\r\nend\r\n", 8);
+		pcUueDataCnt += 8;
 
 		/* Get the size of the UUencoded data. */
 		sizUueData = pcUueDataCnt - pcUueData;
