@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 
+#include <ctype.h>
 #include <stdio.h>
 
 #include "romloader_usb_device_libusb0.h"
