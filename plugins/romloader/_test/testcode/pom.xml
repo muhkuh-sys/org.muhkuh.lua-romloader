@@ -2,11 +2,11 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.hilscher</groupId>
-	<artifactId>spi_master_and_servants</artifactId>
+	<artifactId>romloader_test</artifactId>
 	<packaging>jar</packaging>
 	<version>1.0</version>
 	<name>netX romloader testcode</name>
-	<url>http://www.hilscher.com</url>
+	<url>http://muhkuh.sourceforge.net</url>
 
 	<description>
 		This is a netX testcode for the Muhkuh romloader plugins.
@@ -30,8 +30,8 @@
 	<!--*                                                            *-->
 	<!--**************************************************************-->
 	<organization>
-		<name>Hilscher GmbH</name>
-		<url>http://www.hilscher.com</url>
+		<name>Muhkuh</name>
+		<url>http://muhkuh.sourceforge.net</url>
 	</organization>
 
 	<developers>
