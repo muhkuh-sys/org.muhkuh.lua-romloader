@@ -1150,23 +1150,16 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 	bool fOk;
 
 
+	/* Expect error. */
 	fOk = false;
 
-	if( m_fIsConnected==false )
+	if( m_ptUsbDevice==NULL )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
 	}
 	else
 	{
-		if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
-		{
-			iResult = usb_call_netx10(ulNetxAddress, ulParameterR0, &tLuaFn, lCallbackUserData);
-		}
-		else
-		{
-			iResult = usb_call(ulNetxAddress, ulParameterR0, &tLuaFn, lCallbackUserData);
-		}
-
+		iResult = m_ptUsbDevice->call(ulNetxAddress, ulParameterR0);
 		if( iResult!=LIBUSB_SUCCESS )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute call: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
@@ -1346,60 +1339,6 @@ int romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long ulParamet
 	{
 		aucSend[0] = 0x00;
 		iResult = libusb_exchange(aucSend, aucRec);
-	}
-
-	return iResult;
-}
-
-
-int romloader_usb::usb_call_netx10(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF *ptLuaFn, long lCallbackUserData)
-{
-	int iResult;
-	char acCommand[23];
-	unsigned char aucRec[64];
-	bool fIsRunning;
-//	size_t sizProgressData;
-	unsigned char aucSbuf[2] = { 0, 0 };
-	const char *pcCallbackData;
-	int iProcessed;
-
-
-	/* Construct the command. */
-	snprintf(acCommand, sizeof(acCommand), "g %08lX %08X\r", ulNetxAddress, ulParameterR0);
-
-	/* Send the command. */
-	iResult = usb_sendCommand(acCommand);
-	if( iResult==LIBUSB_SUCCESS )
-	{
-		aucRec[0] = 0x00;
-
-		/* Wait for the call to finish. */
-		do
-		{
-//			iResult = m_ptUsbDevice->usb_bulk_netx_to_pc(m_ptUsbDevHandle, 0x83, aucRec, sizeof(aucRec), &iProcessed, 200);
-			if( iResult==LIBUSB_SUCCESS )
-			{
-				/* Execute callback. */
-//				printf("raw data len: %d\n", sizProgressData);
-				if( iProcessed>0 && iProcessed<=64 )
-				{
-					printf("run callback with %d bytes of data\n", iProcessed);
-					hexdump(aucRec, iProcessed, 0);
-					pcCallbackData = (const char*)aucRec;
-					fIsRunning = callback_string(ptLuaFn, pcCallbackData, iProcessed, lCallbackUserData);
-					if( fIsRunning!=true )
-					{
-						iResult = LIBUSB_ERROR_INTERRUPTED;
-					}
-					/* Last packet has '\n>' at the end. */
-					else if( iProcessed>2 && aucRec[iProcessed-2]=='\n' && aucRec[iProcessed-1]=='>' )
-					{
-						iResult = LIBUSB_SUCCESS;
-						break;
-					}
-				}
-			}
-		} while( iResult!=LIBUSB_SUCCESS && iResult!=LIBUSB_ERROR_TIMEOUT );
 	}
 
 	return iResult;

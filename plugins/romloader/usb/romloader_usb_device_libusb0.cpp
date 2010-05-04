@@ -1663,6 +1663,89 @@ int romloader_usb_device_libusb0::usb_send(const char *pcBuffer, size_t sizBuffe
 }
 
 
+int romloader_usb_device_libusb0::read_data08(unsigned long ulNetxAddress, unsigned char *pucValue)
+{
+	int iResult;
+	char acCommand[19];
+	size_t sizCommand;
+	unsigned long ulResponseAddress;
+	unsigned long ulResponseValue;
+	size_t sizOldData;
+	size_t sizReceived;
+	int iScanCnt;
+	char acBuffer[82];
+	const unsigned int uiCommandTimeoutMs = 100;
+
+
+	ulResponseValue = 0;
+
+	/* Construct the command. */
+	sizCommand = snprintf(acCommand, sizeof(acCommand), "db %08lX ++1\r\n", ulNetxAddress);
+
+	/* Flush any old data. */
+	sizOldData = getCardSize();
+	if( sizOldData!=0 )
+	{
+		fprintf(stderr, "Old data in card buffer left!\n");
+		flushCards();
+	}
+
+	/* send the command */
+	iResult = usb_send(acCommand, sizCommand);
+	if( iResult!=LIBUSB_SUCCESS )
+	{
+		fprintf(stderr, "%s(%p): failed to send command: %d:%s", m_pcPluginId, this, iResult, libusb_strerror(iResult));
+	}
+	else
+	{
+		if( expect_string(acCommand)!=true )
+		{
+			fprintf(stderr, "%s(%p): strange response 1 from device", m_pcPluginId, this);
+			iResult = -1;
+		}
+		else
+		{
+			iResult = usb_receive_line(acBuffer, sizeof(acBuffer), uiCommandTimeoutMs, &sizReceived);
+			if( iResult!=LIBUSB_SUCCESS )
+			{
+				fprintf(stderr, "%s(%p): failed to receive response: %d:%s", m_pcPluginId, this, iResult, libusb_strerror(iResult));
+			}
+			else
+			{
+/*
+				hexdump((const unsigned char*)acBuffer, sizReceived);
+*/
+				iScanCnt = sscanf(acBuffer, "%lx: %lx ", &ulResponseAddress, &ulResponseValue);
+				if( iScanCnt!=2 )
+				{
+					fprintf(stderr, "%s(%p): strange response 2 from device", m_pcPluginId, this);
+					iResult = -1;
+				}
+				else if( ulResponseAddress!=ulNetxAddress )
+				{
+					fprintf(stderr, "%s(%p): address does not match request", m_pcPluginId, this);
+					iResult = -1;
+				}
+				else if( expect_string("Result: 0\r\n\r\n>")!=true )
+				{
+					fprintf(stderr, "%s(%p): Failed to get result line!", m_pcPluginId, this);
+					iResult = -1;
+				}
+				else
+				{
+/*
+					printf("%s(%p): read_data08: 0x%08lx = 0x%02lx\n", m_pcPluginId, this, ulNetxAddress, ulResponseValue);
+*/
+					*pucValue = (unsigned char)(ulResponseValue & 0xffU);
+				}
+			}
+		}
+	}
+
+	return iResult;
+}
+
+
 int romloader_usb_device_libusb0::read_data32(unsigned long ulNetxAddress, unsigned long *pulValue)
 {
 	int iResult;
@@ -1725,7 +1808,9 @@ int romloader_usb_device_libusb0::read_data32(unsigned long ulNetxAddress, unsig
 			}
 			else
 			{
+/*
 				hexdump(uResult.auc, sizeof(uResult.auc));
+*/
 				iScanCnt = sscanf(uResult.ac, "%lx: %lx ", &ulResponseAddress, &ulResponseValue);
 				if( iScanCnt!=2 )
 				{
@@ -1744,7 +1829,9 @@ int romloader_usb_device_libusb0::read_data32(unsigned long ulNetxAddress, unsig
 				}
 				else
 				{
+/*
 					printf("%s(%p): read_data32: 0x%08lx = 0x%08lx\n", m_pcPluginId, this, ulNetxAddress, ulResponseValue);
+*/
 					*pulValue = ulResponseValue;
 				}
 			}
@@ -1789,12 +1876,13 @@ int romloader_usb_device_libusb0::read_image(unsigned long ulNetxAddress, size_t
 				fprintf(stderr, "%s(%p): Failed to get result line!", m_pcPluginId, this);
 				iResult = -1;
 			}
+/*
 			else
 			{
 				printf("%s(%p): read_image: 0x%08lx =\n", m_pcPluginId, this, ulNetxAddress);
 				hexdump(pucData, sizData);
 			}
-
+*/
 		}
 	}
 
@@ -1846,10 +1934,12 @@ int romloader_usb_device_libusb0::write_data32(unsigned long ulNetxAddress, unsi
 			fprintf(stderr, "%s(%p): Failed to get result line!", m_pcPluginId, this);
 			iResult = -1;
 		}
+/*
 		else
 		{
 			printf("%s(%p): write_data32: 0x%08lx = 0x%08x\n", m_pcPluginId, this, ulNetxAddress, ulData);
 		}
+*/
 	}
 
 	return iResult;
@@ -1911,14 +2001,139 @@ int romloader_usb_device_libusb0::write_image(unsigned long ulNetxAddress, const
 					fprintf(stderr, "%s(%p): Failed to get result line!", m_pcPluginId, this);
 					iResult = -1;
 				}
+/*
 				else
 				{
 					printf("%s(%p): write_image: 0x%08lx =\n", m_pcPluginId, this, ulNetxAddress);
 					hexdump(pucData, sizData);
 				}
+*/
 			}
 		}
 	}
 
 	return iResult;
 }
+
+
+int romloader_usb_device_libusb0::call(unsigned long ulNetxAddress, unsigned long ulR0)
+{
+	size_t sizCommand;
+	int iResult;
+	char acCommand[28];
+	unsigned char aucOutput[64];
+	size_t sizReceived;
+	bool fEndFound;
+	const char *pcEndPattern = "\r\nResult: 0x********\r\nResult: 0\r\n\r\n>";
+	int iState;
+	const size_t sizWarpBackFrom = 31;
+	const size_t sizWarpBackTo = 11;
+	size_t sizCnt;
+	char cPattern;
+	char cReceived;
+	unsigned long ulResultValue;
+	int iMatch;
+
+
+	sizCommand = snprintf(acCommand, sizeof(acCommand), "g %08lX %08lX\r\n", ulNetxAddress, ulR0);
+
+	/* send the command */
+	iResult = usb_send(acCommand, sizCommand);
+	if( iResult!=LIBUSB_SUCCESS )
+	{
+		fprintf(stderr, "%s(%p): failed to send command: %d:%s", m_pcPluginId, this, iResult, libusb_strerror(iResult));
+	}
+	else
+	{
+		if( expect_string(acCommand)!=true )
+		{
+			fprintf(stderr, "%s(%p): strange response 1 from device", m_pcPluginId, this);
+			iResult = -1;
+		}
+		else
+		{
+			/* Capture output. */
+			fEndFound = false;
+			iState = 0;
+			ulResultValue = 0;
+			do
+			{
+				sizReceived = usb_receive(aucOutput, sizeof(aucOutput), 200);
+				if( sizReceived!=0 )
+				{
+//					hexdump(aucOutput, sizReceived);
+					fwrite(aucOutput, sizReceived, 1, stdout);
+
+					/* Loop over the complete input and look for the end pattern. */
+					sizCnt = 0;
+					do
+					{
+						iMatch = 0;
+						cPattern = pcEndPattern[iState];
+						cReceived = (char)aucOutput[sizCnt];
+						if( cPattern=='*' )
+						{
+							cReceived = tolower(cReceived);
+							ulResultValue <<= 4;
+							/* The received digit must be a hex digit. */
+							if( cReceived>='0' && cReceived<='9' )
+							{
+//								printf("%c\n", cReceived);
+								cReceived &= 0x0fU;
+								ulResultValue |= cReceived;
+								iMatch = 1;
+							}
+							else if( cReceived>='a' && cReceived<='f' )
+							{
+//								printf("%c\n", cReceived);
+								cReceived -= 'a';
+								cReceived += 10;
+								ulResultValue |= cReceived;
+								iMatch = 1;
+							}
+						}
+						else if( cPattern==cReceived )
+						{
+//							printf("%c\n", cReceived);
+							iMatch = 1;
+						}
+
+						if( iMatch==0 )
+						{
+//							printf("\nNo match %02x!=%02x\n", cReceived, cPattern);
+							/* Go back. */
+							if( iState==sizWarpBackFrom )
+							{
+								iState = sizWarpBackTo;
+							}
+							else if( iState!=0 )
+							{
+								iState = 0;
+							}
+							else
+							{
+								++sizCnt;
+							}
+						}
+						else
+						{
+							++sizCnt;
+							++iState;
+						}
+
+						if( pcEndPattern[iState]=='\0' )
+						{
+//							printf("\nEOP!\n");
+							fEndFound = true;
+							break;
+						}
+					} while( sizCnt<sizReceived );
+//					printf("\n");
+				}
+			} while( fEndFound==false );
+		}
+	}
+
+	return iResult;
+}
+

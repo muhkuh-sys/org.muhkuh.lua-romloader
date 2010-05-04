@@ -75,11 +75,15 @@ public:
 	int Connect(unsigned int uiBusNr, unsigned int uiDeviceAdr);
 	void Disconnect(void);
 
+	int read_data08(unsigned long ulNetxAddress, unsigned char *pucValue);
+	int read_data16(unsigned long ulNetxAddress, unsigned short *pusValue);
 	int read_data32(unsigned long ulNetxAddress, unsigned long *pulValue);
 	int read_image(unsigned long ulNetxAddress, size_t sizData, unsigned char *pucData);
 
 	int write_data32(unsigned long ulNetxAddress, unsigned long ulData);
 	int write_image(unsigned long ulNetxAddress, const unsigned char *pucData, size_t sizData);
+
+	int call(unsigned long ulNetxAddress, unsigned long ulR0);
 
 	size_t usb_receive(unsigned char *pucBuffer, size_t sizBuffer, unsigned int uiTimeoutMs);
 	int usb_receive_line(char *pcBuffer, size_t sizBuffer, unsigned int uiTimeoutMs, size_t *psizReceived);
