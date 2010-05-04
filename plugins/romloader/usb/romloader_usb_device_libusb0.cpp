@@ -107,6 +107,7 @@ romloader_usb_device_libusb0::romloader_usb_device_libusb0(const char *pcPluginI
 romloader_usb_device_libusb0::~romloader_usb_device_libusb0(void)
 {
 	stop_rx_thread();
+	libusb_close();
 #if defined(WIN32)
 	if( m_hRxDataAvail!=NULL )
 	{
@@ -1074,6 +1075,7 @@ int romloader_usb_device_libusb0::Connect(unsigned int uiBusNr, unsigned int uiD
 
 void romloader_usb_device_libusb0::Disconnect(void)
 {
+	stop_rx_thread();
 	libusb_close();
 }
 
