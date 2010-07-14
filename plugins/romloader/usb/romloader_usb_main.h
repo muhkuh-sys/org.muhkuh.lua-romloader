@@ -43,8 +43,8 @@ typedef unsigned char uint8_t;
 	#include "romloader_usb_device_libusb0.h"
 	#define romloader_usb_device_platform romloader_usb_device_libusb0
 #elif ROMLOADER_USB_LIBUSB_VERSION==1
-	#include "romloader_usb_device_libusb1.h"
-	#define romloader_usb_device_platform romloader_usb_device_libusb1
+	#include "romloader_usb_device_libusb0.h"
+	#define romloader_usb_device_platform romloader_usb_device_libusb0
 #else
 	#error "The define ROMLOADER_USB_LIBUSB_VERSION specifies an unknown libusb version!"
 #endif

@@ -23,7 +23,7 @@
 #define __ROMLOADER_USB_DEVICE_LIBUSB0_H__
 
 
-#include <usb.h>
+#include <libusb-1.0/libusb.h>
 
 #include "romloader_usb_device.h"
 
@@ -36,28 +36,7 @@
 #endif
 
 
-typedef usb_dev_handle libusb_device_handle;
-typedef void* libusb_context;
-typedef struct usb_device libusb_device;
 typedef struct usb_device_descriptor LIBUSB_DEVICE_DESCRIPTOR_T;
-
-typedef enum
-{
-	LIBUSB_SUCCESS = 0,
-	LIBUSB_ERROR_IO = -1,
-	LIBUSB_ERROR_INVALID_PARAM = -2,
-	LIBUSB_ERROR_ACCESS = -3,
-	LIBUSB_ERROR_NO_DEVICE = -4,
-	LIBUSB_ERROR_NOT_FOUND = -5,
-	LIBUSB_ERROR_BUSY = -6,
-	LIBUSB_ERROR_TIMEOUT = -7,
-	LIBUSB_ERROR_OVERFLOW = -8,
-	LIBUSB_ERROR_PIPE = -9,
-	LIBUSB_ERROR_INTERRUPTED = -10,
-	LIBUSB_ERROR_NO_MEM = -11,
-	LIBUSB_ERROR_NOT_SUPPORTED = -12,
-	LIBUSB_ERROR_OTHER = -99,
-} LIBUSB_ERROR_T;
 
 
 class romloader_usb_provider;
@@ -107,30 +86,21 @@ protected:
 private:
 	bool fIsDeviceNetx(libusb_device *ptDevice);
 
-	int libusb_get_device_descriptor(libusb_device *dev, LIBUSB_DEVICE_DESCRIPTOR_T *desc);
-	ssize_t libusb_get_device_list(libusb_device ***list);
-	void libusb_free_device_list(libusb_device **list, int unref_devices);
 	libusb_device *find_netx_device(libusb_device **ptDeviceList, ssize_t ssizDevList, unsigned int uiBusNr, unsigned int uiDeviceAdr);
 	int setup_netx_device(libusb_device *ptNetxDevice);
 
-	unsigned char libusb_get_bus_number(libusb_device *dev);
-	unsigned char libusb_get_device_address(libusb_device *dev);
-
-	int libusb_init(libusb_context **pptContext);
-	void libusb_exit(libusb_context *ptContext);
-
-	int libusb_open(libusb_device *ptDevice);
-	void libusb_close(void);
+//	int libusb_open(libusb_device *ptDevice);
+//	void libusb_close(void);
 	int libusb_reset_and_close_device(void);
 	int libusb_release_and_close_device(void);
 
-	int libusb_set_configuration(int iConfiguration);
-
-	int libusb_claim_interface(void);
-	int libusb_release_interface(void);
-
 	int start_rx_thread(void);
 	int stop_rx_thread(void);
+
+
+	const int m_iConfiguration;
+	const int m_iInterface;
+
 
 
 	static const char *m_pcPluginNamePattern;
@@ -156,7 +126,7 @@ private:
 
 	typedef struct
 	{
-		LIBUSB_ERROR_T tError;
+		int iError;
 		const char *pcMessage;
 	} LIBUSB_STRERROR_T;
 

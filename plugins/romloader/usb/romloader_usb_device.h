@@ -52,6 +52,7 @@ public:
 	size_t readCards(unsigned char *pucBuffer, size_t sizBufferSize);
 	size_t getCardSize(void) const;
 	void flushCards(void);
+	void dump_all_cards(void);
 	bool expect_string(const char *pcString);
 	bool parse_hex_digit(size_t sizDigits, unsigned long *pulResult);
 	int parse_uue(size_t sizLength, unsigned char *pucData, unsigned long ulStart, unsigned long ulEnd);

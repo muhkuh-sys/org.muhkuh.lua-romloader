@@ -25,6 +25,7 @@
 #include "romloader_usb_device_libusb0.h"
 
 #include <errno.h>
+#include <unistd.h>
 
 #if defined(WIN32)
 #	define snprintf _snprintf
@@ -54,6 +55,8 @@ romloader_usb_device_libusb0::romloader_usb_device_libusb0(const char *pcPluginI
  : romloader_usb_device(pcPluginId)
  , m_ucEndpoint_In(0)
  , m_ucEndpoint_Out(0)
+ , m_iConfiguration(1)
+ , m_iInterface(0)
  , m_ptLibUsbContext(NULL)
  , m_ptDevHandle(NULL)
 #if defined(WIN32)
@@ -68,7 +71,8 @@ romloader_usb_device_libusb0::romloader_usb_device_libusb0(const char *pcPluginI
 	int iResult;
 
 
-	usb_init();
+	libusb_init(&m_ptLibUsbContext);
+	libusb_set_debug(m_ptLibUsbContext, 3);
 
 #if defined(WIN32)
 	m_hRxDataAvail = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -107,8 +111,21 @@ romloader_usb_device_libusb0::romloader_usb_device_libusb0(const char *pcPluginI
 
 romloader_usb_device_libusb0::~romloader_usb_device_libusb0(void)
 {
+	printf("Destructor 1\n");
 	stop_rx_thread();
-	libusb_close();
+	printf("Destructor 2\n");
+	if( m_ptDevHandle!=NULL )
+	{
+		printf("m_ptDevHandle=%p, m_iInterface=%d\n", m_ptDevHandle, m_iInterface);
+		libusb_release_interface(m_ptDevHandle, m_iInterface);
+		printf("a\n");
+		libusb_close(m_ptDevHandle);
+		printf("b\n");
+		m_ptDevHandle = NULL;
+	}
+	printf("Destructor 3\n");
+	m_ptDevHandle = NULL;
+	printf("Destructor 4\n");
 #if defined(WIN32)
 	if( m_hRxDataAvail!=NULL )
 	{
@@ -130,6 +147,13 @@ romloader_usb_device_libusb0::~romloader_usb_device_libusb0(void)
 		m_ptRxDataAvail_Mutex = NULL;
 	}
 #endif
+
+	printf("Destructor 5\n");
+	if( m_ptLibUsbContext!=NULL )
+	{
+		libusb_exit(m_ptLibUsbContext);
+	}
+	printf("Destructor 6\n");
 }
 
 
@@ -204,12 +228,10 @@ void *romloader_usb_device_libusb0::localRxThread(void)
 {
 	int iError;
 	int iOldValue;
-	const size_t sizBufferSize = 4096;
-	union
-	{
-		unsigned char auc[sizBufferSize];
-		char ac[sizBufferSize];
-	} uBuffer;
+	const int iBufferSize = 4096;
+	unsigned char aucBuffer[iBufferSize];
+	int iTransfered;
+	const unsigned int uiRxTimeout = 200;
 
 
 	/* Allow exit at cancellation points. */
@@ -221,23 +243,19 @@ void *romloader_usb_device_libusb0::localRxThread(void)
 		{
 			do
 			{
-				iError = usb_bulk_read(m_ptDevHandle, m_ucEndpoint_In, uBuffer.ac, sizBufferSize, 200);
-				if( iError>0 )
+				iError = libusb_bulk_transfer(m_ptDevHandle, m_ucEndpoint_In, aucBuffer, iBufferSize, &iTransfered, uiRxTimeout);
+				if( iError==LIBUSB_SUCCESS || iError==LIBUSB_ERROR_TIMEOUT )
 				{
-					/* transfer ok! */
-					writeCards(uBuffer.auc, iError);
+					/* Transfer ok! */
+					writeCards(aucBuffer, iTransfered);
 					/* Send a signal to any waiting threads. */
 					pthread_cond_signal(m_ptRxDataAvail_Condition);
-					iError = 0;
-				}
-				else if( iError==-ETIMEDOUT )
-				{
-					/* Timeout. */
-					iError = 0;
+					/* Ignore Timeout errors. */
+					iError = LIBUSB_SUCCESS;
 				}
 
 				pthread_testcancel();
-			} while( iError>=0 );
+			} while( iError==LIBUSB_SUCCESS );
 		}
 	}
 
@@ -248,38 +266,6 @@ void *romloader_usb_device_libusb0::localRxThread(void)
 
 
 const char *romloader_usb_device_libusb0::m_pcPluginNamePattern = "romloader_usb_%02x_%02x";
-
-int romloader_usb_device_libusb0::libusb_open(libusb_device *ptDevice)
-{
-	libusb_device_handle *ptDevHandle;
-	int iError;
-
-
-	ptDevHandle = usb_open(ptDevice);
-	if( ptDevHandle!=NULL )
-	{
-		/* NOTE: m_ptDevHandle must be assigned before the thread starts. */
-		m_ptDevHandle = ptDevHandle;
-		iError = 0;
-	}
-	else
-	{
-		m_ptDevHandle = NULL;
-		iError = -1;
-	}
-
-	return iError;
-}
-
-
-void romloader_usb_device_libusb0::libusb_close(void)
-{
-	if( m_ptDevHandle!=NULL )
-	{
-		usb_close(m_ptDevHandle);
-		m_ptDevHandle = NULL;
-	}
-}
 
 
 int romloader_usb_device_libusb0::start_rx_thread(void)
@@ -330,6 +316,7 @@ int romloader_usb_device_libusb0::start_rx_thread(void)
 			else
 			{
 				printf("scheduling policy is: %d\n", iPolicy);
+#if 0
 				if( iPolicy==SCHED_OTHER )
 				{
 					/* Change policy to RR. */
@@ -356,6 +343,7 @@ int romloader_usb_device_libusb0::start_rx_thread(void)
 					}
 					else
 					{
+#endif
 						m_ptRxThread = new pthread_t;
 						iResult = pthread_create(m_ptRxThread, &tAttr, romloader_usb_device_libusb0::rxThread, (void*)this);
 						if( iResult!=0 )
@@ -364,8 +352,8 @@ int romloader_usb_device_libusb0::start_rx_thread(void)
 							delete m_ptRxThread;
 							m_ptRxThread = NULL;
 						}
-					}
-				}
+//					}
+//				}
 			}
 		}
 	}
@@ -391,6 +379,8 @@ int romloader_usb_device_libusb0::stop_rx_thread(void)
 	int iStatus;
 
 
+	printf("m_ptRxThread=%p\n", m_ptRxThread);
+
 	if( m_ptRxThread!=NULL )
 	{
 		iResult = pthread_cancel(*m_ptRxThread);
@@ -415,120 +405,40 @@ int romloader_usb_device_libusb0::stop_rx_thread(void)
 		delete m_ptRxThread;
 		m_ptRxThread = NULL;
 	}
+	else
+	{
+		printf("No rxthread running!");
+
+		iResult = 0;
+	}
 #endif
 	return iResult;
 }
 
-
+/*
 int romloader_usb_device_libusb0::libusb_get_device_descriptor(libusb_device *dev, LIBUSB_DEVICE_DESCRIPTOR_T *desc)
 {
 	*desc = dev->descriptor;
 	return LIBUSB_SUCCESS;
 }
-
-
-unsigned char romloader_usb_device_libusb0::libusb_get_bus_number(libusb_device *dev)
-{
-	unsigned char ucBusNr;
-	usb_bus *ptBus;
-	const char *pcBusName;
-	int iResult;
-	unsigned int uiBusNumber;
-
-
-	/* expect failure */
-	ucBusNr = 0xffU;
-
-	/* is the device valid? */
-	if( dev!=NULL )
-	{
-		/* does the device have a bus assigned? */
-		ptBus = dev->bus;
-		if( ptBus!=NULL )
-		{
-			/* does the bus have a directory name? */
-			pcBusName = ptBus->dirname;
-			if( pcBusName!=NULL )
-			{
-				/* parse the directory name */
-				iResult = sscanf(pcBusName, m_pcLibUsb_BusPattern, &uiBusNumber);
-				/* does the directory name have the expected format? */
-				if( iResult==1 )
-				{
-					/* is the bus number in the valid range? */
-					if( uiBusNumber<0x80U )
-					{
-						/* set the result */
-						ucBusNr = (unsigned char)uiBusNumber;
-					}
-				}
-			}
-		}
-	}
-
-	return ucBusNr;
-}
-
-
-unsigned char romloader_usb_device_libusb0::libusb_get_device_address(libusb_device *dev)
-{
-	unsigned char ucDeviceAddress;
-	const char *pcFilename;
-	int iResult;
-	unsigned int uiDeviceNumber;
-
-
-	/* expect failure */
-	ucDeviceAddress = 0xffU;
-
-	/* is the device valid? */
-	if( dev!=NULL )
-	{
-		/* does the bus have a directory name? */
-		pcFilename = dev->filename;
-		if( pcFilename!=NULL )
-		{
-			/* parse the directory name */
-			iResult = sscanf(pcFilename, m_pcLibUsb_DevicePattern, &uiDeviceNumber);
-			/* does the directory name have the expected format? */
-			if( iResult==1 )
-			{
-				/* is the bus number in the valid range? */
-				if( uiDeviceNumber<0x80U )
-				{
-					/* set the result */
-					ucDeviceAddress = (unsigned char)uiDeviceNumber;
-				}
-			}
-		}
-	}
-
-	return ucDeviceAddress;
-}
-
-
-int romloader_usb_device_libusb0::libusb_set_configuration(int iConfiguration)
-{
-	return usb_set_configuration(m_ptDevHandle, iConfiguration);
-}
-
-
+*/
+/*
 int romloader_usb_device_libusb0::libusb_claim_interface(void)
 {
-	const int iInterface = 0;
+	const int m_iInterface = 0;
 
-	return usb_claim_interface(m_ptDevHandle, iInterface);
+	return usb_claim_interface(m_ptDevHandle, m_iInterface);
 }
 
 
 int romloader_usb_device_libusb0::libusb_release_interface(void)
 {
-	const int iInterface = 0;
+	const int m_iInterface = 0;
 
-	return usb_release_interface(m_ptDevHandle, iInterface);
+	return usb_release_interface(m_ptDevHandle, m_iInterface);
 }
-
-
+*/
+#if 0
 ssize_t romloader_usb_device_libusb0::libusb_get_device_list(libusb_device ***list)
 {
 	libusb_device **ptDeviceList;
@@ -615,7 +525,7 @@ void romloader_usb_device_libusb0::libusb_free_device_list(libusb_device **list,
 	/* free the complete list */
 	free(list);
 }
-
+#endif
 
 int romloader_usb_device_libusb0::libusb_reset_and_close_device(void)
 {
@@ -624,15 +534,11 @@ int romloader_usb_device_libusb0::libusb_reset_and_close_device(void)
 
 	if( m_ptDevHandle!=NULL )
 	{
-		iResult = usb_reset(m_ptDevHandle);
-		if( iResult==LIBUSB_SUCCESS )
+		iResult = libusb_reset_device(m_ptDevHandle);
+		if( iResult==LIBUSB_SUCCESS || iResult==LIBUSB_ERROR_NOT_FOUND )
 		{
-			libusb_close();
-		}
-		else if( iResult==LIBUSB_ERROR_NOT_FOUND )
-		{
-			/* The old device is already gone -> that's good, ignore the error. */
-			libusb_close();
+			libusb_close(m_ptDevHandle);
+			m_ptDevHandle = NULL;
 			iResult = LIBUSB_SUCCESS;
 		}
 	}
@@ -654,7 +560,7 @@ int romloader_usb_device_libusb0::libusb_release_and_close_device(void)
 	if( m_ptDevHandle!=NULL )
 	{
 		/* release the interface */
-		iResult = libusb_release_interface();
+		iResult = libusb_release_interface(m_ptDevHandle, m_iInterface);
 		if( iResult!=LIBUSB_SUCCESS )
 		{
 			/* failed to release interface */
@@ -663,7 +569,8 @@ int romloader_usb_device_libusb0::libusb_release_and_close_device(void)
 		else
 		{
 			/* close the netx device */
-			libusb_close();
+			libusb_close(m_ptDevHandle);
+			m_ptDevHandle = NULL;
 		}
 	}
 	else
@@ -696,6 +603,7 @@ int romloader_usb_device_libusb0::detect_interfaces(romloader_usb_reference ***p
 	size_t sizRefMax;
 	romloader_usb_reference **pptRef;
 	romloader_usb_reference **pptRefNew;
+	int iCurrentConfiguration;
 
 
 	/* Expect success. */
@@ -714,7 +622,7 @@ int romloader_usb_device_libusb0::detect_interfaces(romloader_usb_reference ***p
 	{
 		/* detect devices */
 		ptDeviceList = NULL;
-		ssizDevList = libusb_get_device_list(&ptDeviceList);
+		ssizDevList = libusb_get_device_list(m_ptLibUsbContext, &ptDeviceList);
 		if( ssizDevList<0 )
 		{
 			/* failed to detect devices */
@@ -738,7 +646,7 @@ int romloader_usb_device_libusb0::detect_interfaces(romloader_usb_reference ***p
 					snprintf(acName, sizMaxName-1, m_pcPluginNamePattern, uiBusNr, uiDevAdr);
 
 					/* open the device */
-					iResult = libusb_open(ptDev);
+					iResult = libusb_open(ptDev, &m_ptDevHandle);
 					if( iResult!=LIBUSB_SUCCESS )
 					{
 						/* failed to open the interface, do not add it to the list */
@@ -746,17 +654,27 @@ int romloader_usb_device_libusb0::detect_interfaces(romloader_usb_reference ***p
 					}
 					else
 					{
-						/* set the configuration */
-						iResult = libusb_set_configuration(1);
+						iResult = libusb_get_configuration(m_ptDevHandle, &iCurrentConfiguration);
 						if( iResult!=LIBUSB_SUCCESS )
 						{
-							/* failed to set the configuration */
-							printf("%s(%p): failed to set the configuration of device %s: %d:%s\n", m_pcPluginId, this, acName, iResult, libusb_strerror(iResult));
+							/* failed to get the configuration */
+							printf("%s(%p): failed to get the configuration of device %s: %d:%s\n", m_pcPluginId, this, acName, iResult, libusb_strerror(iResult));
 						}
-						else
+						else if( iCurrentConfiguration!=m_iConfiguration )
+						{
+							/* set the configuration */
+							iResult = libusb_set_configuration(m_ptDevHandle, m_iConfiguration);
+							if( iResult!=LIBUSB_SUCCESS )
+							{
+								/* failed to set the configuration */
+								printf("%s(%p): failed to set the configuration of device %s: %d:%s\n", m_pcPluginId, this, acName, iResult, libusb_strerror(iResult));
+							}
+						}
+
+						if( iResult==LIBUSB_SUCCESS )
 						{
 							/* claim the interface, 0 is the interface number */
-							iResult = libusb_claim_interface();
+							iResult = libusb_claim_interface(m_ptDevHandle, m_iInterface);
 							if( iResult!=LIBUSB_SUCCESS && iResult!=LIBUSB_ERROR_BUSY )
 							{
 								/* failed to claim the interface */
@@ -778,7 +696,7 @@ int romloader_usb_device_libusb0::detect_interfaces(romloader_usb_reference ***p
 									 * This function _must_not_ keep the claim on the device or other applications will
 									 * not be able to use it.
 									 */
-									iResult = libusb_release_interface();
+									iResult = libusb_release_interface(m_ptDevHandle, m_iInterface);
 									if( iResult!=LIBUSB_SUCCESS )
 									{
 										/* failed to release the interface */
@@ -813,7 +731,8 @@ int romloader_usb_device_libusb0::detect_interfaces(romloader_usb_reference ***p
 						}
 
 						/* close the device */
-						libusb_close();
+						libusb_close(m_ptDevHandle);
+						m_ptDevHandle = NULL;
 					}
 				}
 				/* next list item */
@@ -862,7 +781,7 @@ libusb_device *romloader_usb_device_libusb0::find_netx_device(libusb_device **pt
 	int iResult;
 	const NETX_USB_DEVICE_T *ptIdCnt;
 	const NETX_USB_DEVICE_T *ptIdEnd;
-	LIBUSB_DEVICE_DESCRIPTOR_T sDevDesc;
+	struct libusb_device_descriptor sDevDesc;
 
 
 	/* No netx found. */
@@ -920,10 +839,11 @@ int romloader_usb_device_libusb0::setup_netx_device(libusb_device *ptNetxDevice)
 	const size_t sizMaxData = 524288;
 	unsigned char aucChunkBuffer[sizMaxChunk];
 	const unsigned int uiChunkReceiveTimeoutMs = 100;
+	int iCurrentConfiguration;
 
 
 	printf("%s(%p): open device.\n", m_pcPluginId, this);
-	iResult = libusb_open(ptNetxDevice);
+	iResult = libusb_open(ptNetxDevice, &m_ptDevHandle);
 	if( iResult!=LIBUSB_SUCCESS )
 	{
 		fprintf(stderr, "%s(%p): failed to open the device: %d:%s", m_pcPluginId, this, iResult, libusb_strerror(iResult));
@@ -932,17 +852,30 @@ int romloader_usb_device_libusb0::setup_netx_device(libusb_device *ptNetxDevice)
 	{
 		/* Set the configuration. */
 		printf("%s(%p): set device configuration to 1.\n", m_pcPluginId, this);
-		iResult = libusb_set_configuration(1);
+
+
+
+		iResult = libusb_get_configuration(m_ptDevHandle, &iCurrentConfiguration);
 		if( iResult!=LIBUSB_SUCCESS )
 		{
-			/* Failed to set the configuration. */
-			fprintf(stderr, "%s(%p): failed to set the configuration of device: %d:%s\n", m_pcPluginId, this, iResult, libusb_strerror(iResult));
+			/* failed to get the configuration */
+			printf("%s(%p): failed to get the configuration of device: %d:%s\n", m_pcPluginId, this, iResult, libusb_strerror(iResult));
 		}
-		else
+		else if( iCurrentConfiguration!=m_iConfiguration )
+		{
+			/* set the configuration */
+			iResult = libusb_set_configuration(m_ptDevHandle, m_iConfiguration);
+			if( iResult!=LIBUSB_SUCCESS )
+			{
+				/* failed to set the configuration */
+				printf("%s(%p): failed to set the configuration of device: %d:%s\n", m_pcPluginId, this, iResult, libusb_strerror(iResult));
+			}
+		}
+		if( iResult==LIBUSB_SUCCESS )
 		{
 			/* Claim interface 0. */
 			printf("%s(%p): claim interface 0.\n", m_pcPluginId, this);
-			iResult = libusb_claim_interface();
+			iResult = libusb_claim_interface(m_ptDevHandle, m_iInterface);
 			if( iResult!=LIBUSB_SUCCESS )
 			{
 				/* Failed to claim the interface. */
@@ -986,7 +919,7 @@ int romloader_usb_device_libusb0::setup_netx_device(libusb_device *ptNetxDevice)
 				if( iResult!=LIBUSB_SUCCESS )
 				{
 					/* Release the interface. */
-					libusb_release_interface();
+					libusb_release_interface(m_ptDevHandle, m_iInterface);
 				}
 			}
 		}
@@ -995,7 +928,8 @@ int romloader_usb_device_libusb0::setup_netx_device(libusb_device *ptNetxDevice)
 		if( iResult!=LIBUSB_SUCCESS )
 		{
 			/* Close the device. */
-			libusb_close();
+			libusb_close(m_ptDevHandle);
+			m_ptDevHandle = NULL;
 		}
 	}
 
@@ -1022,7 +956,7 @@ int romloader_usb_device_libusb0::Connect(unsigned int uiBusNr, unsigned int uiD
 	printf("Connect\n");
 
 	/* Search device with bus and address. */
-	ssizDevList = libusb_get_device_list(&ptDeviceList);
+	ssizDevList = libusb_get_device_list(m_ptLibUsbContext, &ptDeviceList);
 	if( ssizDevList<0 )
 	{
 		/* Failed to detect devices. */
@@ -1049,8 +983,9 @@ int romloader_usb_device_libusb0::Connect(unsigned int uiBusNr, unsigned int uiD
 				if( iResult!=LIBUSB_SUCCESS )
 				{
 					fprintf(stderr, "%s(%p): failed to reset the netx, giving up: %d:%s", m_pcPluginId, this, iResult, libusb_strerror(iResult));
-					libusb_release_interface();
-					libusb_close();
+					libusb_release_interface(m_ptDevHandle, m_iInterface);
+					libusb_close(m_ptDevHandle);
+					m_ptDevHandle = NULL;
 				}
 				else
 				{
@@ -1076,8 +1011,13 @@ int romloader_usb_device_libusb0::Connect(unsigned int uiBusNr, unsigned int uiD
 
 void romloader_usb_device_libusb0::Disconnect(void)
 {
+	printf("Disconnect 1\n");
 	stop_rx_thread();
-	libusb_close();
+	printf("Disconnect 2: %p\n", m_ptDevHandle);
+	libusb_close(m_ptDevHandle);
+	printf("Disconnect 3\n");
+	m_ptDevHandle = NULL;
+	printf("Disconnect 4\n");
 }
 
 
@@ -1087,7 +1027,7 @@ bool romloader_usb_device_libusb0::fIsDeviceNetx(libusb_device *ptDevice)
 {
 	bool fDeviceIsNetx;
 	int iResult;
-	LIBUSB_DEVICE_DESCRIPTOR_T sDevDesc;
+	struct libusb_device_descriptor sDevDesc;
 
 
 	fDeviceIsNetx = false;
@@ -1158,7 +1098,7 @@ const char *romloader_usb_device_libusb0::libusb_strerror(int iError)
 	ptEnd = atStrError + (sizeof(atStrError)/sizeof(atStrError[0]));
 	while( ptCnt<ptEnd )
 	{
-		if(ptCnt->tError==iError)
+		if(ptCnt->iError==iError)
 		{
 			pcMessage = ptCnt->pcMessage;
 			break;
@@ -1451,6 +1391,9 @@ size_t romloader_usb_device_libusb0::usb_receive(unsigned char *pucBuffer, size_
 			else
 			{
 				/* No data left, wait for input. */
+#if !defined(WIN32)
+				sched_yield();
+#endif
 				/* Wait for data. */
 				pthread_mutex_lock(m_ptRxDataAvail_Mutex);
 				iWaitResult = pthread_cond_timedwait(m_ptRxDataAvail_Condition, m_ptRxDataAvail_Mutex, &tEndTime);
@@ -1614,51 +1557,59 @@ int romloader_usb_device_libusb0::usb_receive_line(char *pcBuffer, size_t sizBuf
 
 int romloader_usb_device_libusb0::usb_send(const char *pcBuffer, size_t sizBuffer)
 {
-	const char *pcCnt;
-	const char *pcEnd;
-	const unsigned int uiChunkTimeoutMs = 500;
-	size_t sizChunk;
+	unsigned char *pucCnt;
+	unsigned char *pucEnd;
+	const unsigned int uiChunkTimeoutMs = 1000;
+	int iChunk;
+	int iTransfered;
 	int iResult;
 
 
 	/* Send the complete data block. */
-	pcCnt = pcBuffer;
-	pcEnd = pcBuffer + sizBuffer;
-	while( pcCnt<pcEnd )
+	pucCnt = (unsigned char*)pcBuffer;
+	pucEnd = (unsigned char*)pcBuffer + sizBuffer;
+	while( pucCnt<pucEnd )
 	{
 		/* Limit the next data chunk to the maximum USB packet size of 64 bytes. */
-		sizChunk = pcEnd - pcCnt;
-		if( sizChunk>64 )
+		iChunk = pucEnd - pucCnt;
+		if( iChunk>64 )
 		{
-			sizChunk = 64;
+			iChunk = 64;
 		}
 
 		/* Send the next data chunk. */
 #if defined(WIN32)
-		iResult = usb_bulk_write(m_ptDevHandle, m_ucEndpoint_Out, (char*)pcCnt, sizChunk, uiChunkTimeoutMs);
-#else
 		iResult = usb_bulk_write(m_ptDevHandle, m_ucEndpoint_Out, pcCnt, sizChunk, uiChunkTimeoutMs);
+#else
+		iResult = libusb_bulk_transfer(m_ptDevHandle, m_ucEndpoint_Out, pucCnt, iChunk, &iTransfered, uiChunkTimeoutMs);
 #endif
-		if( iResult<0 )
+		if( iResult==LIBUSB_SUCCESS || iResult==LIBUSB_ERROR_TIMEOUT )
 		{
-			/* Translate timeout error. */
-			if( iResult==-ETIMEDOUT )
+			if( iResult==LIBUSB_ERROR_TIMEOUT )
 			{
-				iResult = LIBUSB_ERROR_TIMEOUT;
+				printf("Timeout, transfered %d bytes.\n", iTransfered);
+				if( iTransfered==0 )
+				{
+					printf("Clearing halt\n");
+					libusb_clear_halt(m_ptDevHandle, m_ucEndpoint_Out);
+					printf("In Chars: 0x%08x\n", getCardSize());
+					dump_all_cards();
+					libusb_clear_halt(m_ptDevHandle, m_ucEndpoint_In);
+				}
 			}
 
-			/* Transfer failed. */
-			break;
-		}
-		else if( iResult==0 )
-		{
-			printf("usb_send: retry\n");
+			/* Transfer ok! */
+			pucCnt += iTransfered;
+			iResult = LIBUSB_SUCCESS;
+#if !defined(WIN32)
+			usleep(1000);
+			sched_yield();
+#endif
 		}
 		else
 		{
-			/* Transfer ok! */
-			pcCnt += iResult;
-			iResult = 0;
+			/* Transfer failed. */
+			break;
 		}
 	}
 

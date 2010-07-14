@@ -644,6 +644,34 @@ int romloader_usb_device::uue_generate(const unsigned char *pucData, size_t sizD
 }
 
 
+void romloader_usb_device::dump_all_cards(void)
+{
+	tBufferCard *ptCard;
+
+
+	ptCard = m_ptFirstCard;
+	while( ptCard!=NULL )
+	{
+		printf("Card: %p\n", ptCard);
+		printf("  Size: %d\n", ptCard->pucEnd - ptCard->aucData);
+		printf("  Start: %p\n", ptCard->aucData);
+		printf("  Read:  %p\n", ptCard->pucRead);
+		printf("  Write: %p\n", ptCard->pucWrite);
+		printf("  Next:  %p\n", ptCard->ptNext);
+		if( ptCard->pucWrite!=NULL )
+		{
+			hexdump(ptCard->pucRead, ptCard->pucWrite-ptCard->pucRead);
+		}
+		else
+		{
+			hexdump(ptCard->pucRead, ptCard->pucEnd-ptCard->pucRead);
+		}
+		
+		ptCard = ptCard->ptNext;
+	}
+}
+
+
 void romloader_usb_device::hexdump(const unsigned char *pucData, unsigned long ulSize)
 {
 	const unsigned char *pucDumpCnt, *pucDumpEnd;
