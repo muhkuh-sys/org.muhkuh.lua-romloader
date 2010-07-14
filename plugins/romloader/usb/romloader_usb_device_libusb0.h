@@ -89,8 +89,6 @@ private:
 	libusb_device *find_netx_device(libusb_device **ptDeviceList, ssize_t ssizDevList, unsigned int uiBusNr, unsigned int uiDeviceAdr);
 	int setup_netx_device(libusb_device *ptNetxDevice);
 
-//	int libusb_open(libusb_device *ptDevice);
-//	void libusb_close(void);
 	int libusb_reset_and_close_device(void);
 	int libusb_release_and_close_device(void);
 
