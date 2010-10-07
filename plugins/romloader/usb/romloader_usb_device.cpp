@@ -28,23 +28,35 @@
 #	define strncasecmp _strnicmp
 #endif
 
-const romloader_usb_device::NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[2] =
+const romloader_usb_device::NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[3] =
 {
 	{
 		"netX500",
 		0x0cc4,
 		0x0815,
+		0x0001,
 		ROMLOADER_CHIPTYP_NETX500,
 		ROMLOADER_ROMCODE_ABOOT,
 		0x81,
 		0x01
 	},
 	{
-		"netX10",
+		"netX10 V1",
 		0x1939,
 		0x000c,
+		0x0001,
 		ROMLOADER_CHIPTYP_NETX10,
 		ROMLOADER_ROMCODE_HBOOT,
+		0x83,
+		0x04
+	},
+	{
+		"netX10 HBootV2 Emulation",
+		0x1939,
+		0x000c,
+		0x0002,
+		ROMLOADER_CHIPTYP_NETX10,
+		ROMLOADER_ROMCODE_HBOOT2_SOFT,
 		0x83,
 		0x04
 	}
@@ -311,7 +323,7 @@ bool romloader_usb_device::expect_string(const char *pcString)
 	unsigned char *pucBuffer;
 	size_t sizString;
 	size_t sizReceived;
-	const unsigned int uiTimeoutMs = 200;
+	const unsigned int uiTimeoutMs = 2000;
 	bool fFound;
 
 
