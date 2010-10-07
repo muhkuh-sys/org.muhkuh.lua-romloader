@@ -111,21 +111,9 @@ romloader_usb_device_libusb0::romloader_usb_device_libusb0(const char *pcPluginI
 
 romloader_usb_device_libusb0::~romloader_usb_device_libusb0(void)
 {
-	printf("Destructor 1\n");
-	stop_rx_thread();
-	printf("Destructor 2\n");
-	if( m_ptDevHandle!=NULL )
-	{
-		printf("m_ptDevHandle=%p, m_iInterface=%d\n", m_ptDevHandle, m_iInterface);
-		libusb_release_interface(m_ptDevHandle, m_iInterface);
-		printf("a\n");
-		libusb_close(m_ptDevHandle);
-		printf("b\n");
-		m_ptDevHandle = NULL;
-	}
-	printf("Destructor 3\n");
-	m_ptDevHandle = NULL;
-	printf("Destructor 4\n");
+	Disconnect();
+
+ 	printf("Destructor 1\n");
 #if defined(WIN32)
 	if( m_hRxDataAvail!=NULL )
 	{
@@ -148,12 +136,12 @@ romloader_usb_device_libusb0::~romloader_usb_device_libusb0(void)
 	}
 #endif
 
-	printf("Destructor 5\n");
+	printf("Destructor 2\n");
 	if( m_ptLibUsbContext!=NULL )
 	{
 		libusb_exit(m_ptLibUsbContext);
 	}
-	printf("Destructor 6\n");
+	printf("Destructor 3\n");
 }
 
 
@@ -368,11 +356,14 @@ int romloader_usb_device_libusb0::stop_rx_thread(void)
 	int iResult;
 
 
-	m_fRxThread_RequestTermination = true;
-	WaitForSingleObject(m_hRxThread, INFINITE);
-	CloseHandle(m_hRxThread);
-	m_hRxThread = NULL;
-	iResult = 0;
+	if( m_hRxThread!=NULL )
+	{
+		m_fRxThread_RequestTermination = true;
+		WaitForSingleObject(m_hRxThread, INFINITE);
+		CloseHandle(m_hRxThread);
+		m_hRxThread = NULL;
+		iResult = 0;
+	}
 #else
 	int iResult;
 	void *pvStatus;
@@ -429,37 +420,6 @@ int romloader_usb_device_libusb0::libusb_reset_and_close_device(void)
 			libusb_close(m_ptDevHandle);
 			m_ptDevHandle = NULL;
 			iResult = LIBUSB_SUCCESS;
-		}
-	}
-	else
-	{
-		/* No open device found. */
-		iResult = LIBUSB_ERROR_NOT_FOUND;
-	}
-
-	return iResult;
-}
-
-
-int romloader_usb_device_libusb0::libusb_release_and_close_device(void)
-{
-	int iResult;
-
-
-	if( m_ptDevHandle!=NULL )
-	{
-		/* release the interface */
-		iResult = libusb_release_interface(m_ptDevHandle, m_iInterface);
-		if( iResult!=LIBUSB_SUCCESS )
-		{
-			/* failed to release interface */
-			printf("%s(%p): failed to release the usb interface: %d:%s\n", m_pcPluginId, this, iResult, libusb_strerror(iResult));
-		}
-		else
-		{
-			/* close the netx device */
-			libusb_close(m_ptDevHandle);
-			m_ptDevHandle = NULL;
 		}
 	}
 	else
@@ -828,12 +788,10 @@ int romloader_usb_device_libusb0::setup_netx_device(libusb_device *ptNetxDevice)
 int romloader_usb_device_libusb0::Connect(unsigned int uiBusNr, unsigned int uiDeviceAdr)
 {
 	int iResult;
-//	bool fFoundDevice;
 	SWIGLUA_REF tRef;
 	ssize_t ssizDevList;
 	libusb_device **ptDeviceList;
 	libusb_device *ptUsbDevice;
-//	libusb_device_handle *ptUsbDevHandle;
 
 
 	tRef.L = NULL;
@@ -901,14 +859,19 @@ void romloader_usb_device_libusb0::Disconnect(void)
 {
 	printf("Disconnect 1\n");
 	stop_rx_thread();
-	printf("Disconnect 2: %p\n", m_ptDevHandle);
-	libusb_close(m_ptDevHandle);
+	printf("Disconnect 2\n");
+	if( m_ptDevHandle!=NULL )
+	{
+		printf("m_ptDevHandle=%p, m_iInterface=%d\n", m_ptDevHandle, m_iInterface);
+		libusb_release_interface(m_ptDevHandle, m_iInterface);
+		printf("a\n");
+		libusb_close(m_ptDevHandle);
+		printf("b\n");
+		m_ptDevHandle = NULL;
+	}
 	printf("Disconnect 3\n");
 	m_ptDevHandle = NULL;
-	printf("Disconnect 4\n");
 }
-
-
 
 
 bool romloader_usb_device_libusb0::fIsDeviceNetx(libusb_device *ptDevice)

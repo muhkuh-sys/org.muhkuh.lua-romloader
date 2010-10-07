@@ -90,7 +90,7 @@ private:
 	int setup_netx_device(libusb_device *ptNetxDevice);
 
 	int libusb_reset_and_close_device(void);
-	int libusb_release_and_close_device(void);
+//	int libusb_release_and_close_device(void);
 
 	int start_rx_thread(void);
 	int stop_rx_thread(void);
