@@ -1,0 +1,198 @@
+# -*- coding: utf-8 -*-
+
+# TODO:
+#  * more than one system include dir (for arg parsing etc)
+#  * set a default location for the compiler dir (but where could this be?)
+#
+# Done:
+#  * print help even if the site dir for the compiler stuff is missing.
+#  * generate relocated sources from list of real locations
+#  * set compiler flags from build properties
+#  * show command line summary (e.g. "Cc blah.o") for the actions, but show complete line if the command failed.
+#  * accept 'clean' target like make
+#  * auto dependency for LDFILE
+#
+
+import scons_common
+
+import build_properties
+import data_array
+import uuencode
+
+build_properties.Read()
+
+#----------------------------------------------------------------------------
+#
+# set help text
+#
+Help("""
+	Set the compiler dir with all the gcc_*.py files with --site-dir=path .
+	Example: The compiler dir is usually in the folder '.ant' in the users home directory.
+	This expands for the user 'brunhild' to '/home/brunhild/.ant'.
+
+	Type: 'scons --site-dir=compiler_dir' to build the production program,
+	      'scons --site-dir=compiler_dir clean' to clean everything.
+""")
+
+build_properties.GenerateHelp()
+
+
+#----------------------------------------------------------------------------
+# This is the list of sources. The elements must be separated with whitespace
+# (i.e. spaces, tabs, newlines). The amount of whitespace does not matter.
+sources_common = """
+	src/header.S
+	src/init_netx_test.S
+	src/main.c
+	src/netx_test.c
+	src/options.c
+	src/systime.c
+	src/uart.c
+	src/usb.c
+	src/uprintf.c
+"""
+
+
+sources_custom_netx500 = """
+	src/netx500/netx500_io_areas.c
+"""
+
+
+sources_custom_netx50 = """
+	src/netx50/netx50_io_areas.c
+"""
+
+
+sources_custom_netx10 = """
+	src/netx10/netx10_io_areas.c
+"""
+
+
+default_ccflags = """
+	-ffreestanding
+	-mlong-calls
+	-Wall
+	-Wextra
+	-Wconversion
+	-Wshadow
+	-Wcast-qual
+	-Wwrite-strings
+	-Wcast-align
+	-Wpointer-arith
+	-Wmissing-prototypes
+	-Wstrict-prototypes
+	-mapcs
+	-g3
+	-gdwarf-2
+	-std=c99
+"""
+
+#----------------------------------------------------------------------------
+# Only execute this part if the help text is not requested.
+# This keeps the help message functional even if no include path for the
+# compiler definitions was specified.
+if not GetOption('help'):
+	# Show summary of the build properties.
+	build_properties.PrintSummary()
+	
+	
+	#----------------------------------------------------------------------------
+	#
+	# import the compiler definitions
+	#
+	# NOTE: it would be possible to use execfile instead of import here. This
+	gcc_arm_elf_4_3_3_3 = scons_common.get_tool('gcc-arm-elf_linux_i386-4.3.3_3')
+	
+	
+	#----------------------------------------------------------------------------
+	#
+	# create the default environment
+	#
+	env_default = Environment()
+	gcc_arm_elf_4_3_3_3.ApplyToEnv(env_default)
+	data_array.ApplyToEnv(env_default)
+	uuencode.ApplyToEnv(env_default)
+	env_default.Decider('timestamp-newer')
+	env_default.Append(CPPPATH = ['src'])
+	env_default.Replace(CCFLAGS = Split(default_ccflags))
+	env_default.Replace(LIBS = ['m', 'c', 'gcc'])
+	env_default.Replace(LINKFLAGS = ['-nostdlib', '-static', '-Map=${TARGET}.map'])
+	build_properties.ApplyToEnv(env_default)
+	
+	
+	# create environments for both builds
+	env_netx500 = env_default.Clone()
+	env_netx500.Append(CCFLAGS = ['-mcpu=arm926ej-s'])
+	env_netx500.Replace(LDFILE = 'src/netx500/netx500.ld')
+	env_netx500.Replace(LIBPATH = ['${GCC_DIR}/arm-elf/lib/arm926ej-s', '${GCC_DIR}/lib/gcc/arm-elf/${GCC_VERSION}/arm926ej-s'])
+	env_netx500.Append(CPPDEFINES = [['ASIC_TYP', '500']])
+	env_netx500.Append(CPPPATH = ['src/netx500'])
+	env_netx500.VariantDir('targets/netx500', 'src', duplicate=0)
+	
+	env_netx50 = env_default.Clone()
+	env_netx50.Append(CCFLAGS = ['-mcpu=arm966e-s'])
+	env_netx50.Replace(LIBPATH = ['${GCC_DIR}/arm-elf/lib/arm966e-s', '${GCC_DIR}/lib/gcc/arm-elf/${GCC_VERSION}/arm966e-s'])
+	env_netx50.Append(CPPDEFINES = [['ASIC_TYP', '50']])
+	env_netx50.Append(CPPPATH = ['src/netx50'])
+	env_netx50.Replace(UUE_PRE = """
+FILL 1C000140 0
+FILL 1C000144 00A12151
+FILL 1C000148 00000023
+FILL 1C000140 010D0001
+LUUE 80008000
+""")
+	env_netx50.Replace(UUE_POST = """
+CALL 80008000
+""")
+	
+	env_netx10 = env_default.Clone()
+	env_netx10.Append(CCFLAGS = ['-mcpu=arm966e-s'])
+	env_netx10.Replace(LIBPATH = ['${GCC_DIR}/arm-elf/lib/arm966e-s', '${GCC_DIR}/lib/gcc/arm-elf/${GCC_VERSION}/arm966e-s'])
+	env_netx10.Append(CPPDEFINES = [['ASIC_TYP', '10']])
+	env_netx10.Append(CPPPATH = ['src/netx10'])
+	env_netx10.Replace(UUE_PRE = """
+L 00020000
+""")
+	env_netx10.Replace(UUE_POST = """
+""")
+	
+	
+	#----------------------------------------------------------------------------
+	#
+	# Build the netX500 files.
+	#
+	
+	#sources_netx500 = [src.replace('src', 'targets/netx500') for src in Split(sources_common+sources_custom_netx500)]
+	#eth_echo_netx500_elf = env_netx500.Elf('targets/eth_echo_netx500', sources_netx500)
+	#env_netx500.ObjCopy('targets/eth_echo_netx500', eth_echo_netx500_elf)
+	
+	#----------------------------------------------------------------------------
+	#
+	# Build the netX50 files.
+	#
+	
+	# Get the list of source files.
+	#src_netx50 = Split(sources_common+sources_custom_netx50)
+	
+	#env_netx50_sdram = env_netx50.Clone()
+	#src_netx50_sdram = scons_common.set_build_path(env_netx50_sdram, 'targets/netx50_sdram', 'src', src_netx50)
+	#env_netx50_sdram.Replace(LDFILE = 'src/netx50/netx50_sdram.ld')
+	#elf_netx50_sdram = env_netx50_sdram.Elf('targets/eth_echo_netx50', src_netx50_sdram)
+	#bin_netx50_sdram = env_netx50_sdram.ObjCopy('targets/ethecho_netx50_sdram', elf_netx50_sdram)
+	#env_netx50_sdram.UUEncode('targets/ethecho_netx50_sdram.uue', bin_netx50_sdram)
+	
+	#----------------------------------------------------------------------------
+	#
+	# Build the netX10 files.
+	#
+	
+	# Get the list of source files.
+	src_netx10 = Split(sources_common+sources_custom_netx10)
+	
+	env_netx10_intram = env_netx10.Clone()
+	src_netx10_intram = scons_common.set_build_path(env_netx10_intram, 'targets/netx10_intram', 'src', src_netx10)
+	env_netx10_intram.Replace(LDFILE = 'src/netx10/netx10_intram.ld')
+	elf_netx10_intram = env_netx10_intram.Elf('targets/usbmon_netx10_intram', src_netx10_intram)
+	bin_netx10_intram = env_netx10_intram.ObjCopy('targets/usbmon_netx10_intram', elf_netx10_intram)
+	env_netx10_intram.UUEncode('targets/usbmon_netx10_intram.uue', bin_netx10_intram)
+	env_netx10_intram.DataArray('targets/usbmon_netx10_intram.c', bin_netx10_intram, DATAARRAY_NAME='auc_usbmon_netx10_intram')
