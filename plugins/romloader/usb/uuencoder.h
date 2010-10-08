@@ -32,7 +32,7 @@ public:
 	uuencoder(const unsigned char *pucData, size_t sizData);
 	~uuencoder(void);
 
-	size_t process(unsigned char *pucLine, size_t sizMaxLine);
+	size_t process(char *pcLine, size_t sizMaxLine);
 	bool isFinished(void) const;
 
 
