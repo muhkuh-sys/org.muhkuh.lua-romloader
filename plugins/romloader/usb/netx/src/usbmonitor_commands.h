@@ -38,9 +38,10 @@ typedef enum
 typedef enum
 {
 	USBMON_STATUS_Ok			= 0x00,
-	USBMON_STATUS_CallFinished		= 0x01,
-	USBMON_STATUS_InvalidPacketSize		= 0x02,
-	USBMON_STATUS_InvalidSizeParameter	= 0x03
+	USBMON_STATUS_CallMessage		= 0x01,
+	USBMON_STATUS_CallFinished		= 0x02,
+	USBMON_STATUS_InvalidPacketSize		= 0x03,
+	USBMON_STATUS_InvalidSizeParameter	= 0x04,
 } USBMON_STATUS_T;
 
 typedef enum
