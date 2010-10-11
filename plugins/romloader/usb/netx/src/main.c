@@ -1,10 +1,21 @@
 /***************************************************************************
- *   Copyright (C) 2010 by Hilscher GmbH                                   *
+ *   Copyright (C) 2010 by Christoph Thelen                                *
+ *   doc_bacardi@users.sourceforge.net                                     *
  *                                                                         *
- *   Author: Christoph Thelen (cthelen@hilscher.com)                       *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
  *                                                                         *
- *   Redistribution or unauthorized use without expressed written          *
- *   agreement from the Hilscher GmbH is forbidden.                        *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
 
@@ -13,37 +24,10 @@
 #include <string.h>
 
 #include "netx_io_areas.h"
-#include "netx_test.h"
 #include "options.h"
-#include "serial_vectors.h"
 #include "systime.h"
-#include "uprintf.h"
-#include "uart.h"
 #include "usb.h"
-
-
-#if ASIC_DEBUGMSG==1
-	#define DEBUGZONE(n)  (g_t_options.t_debug_settings.ul_main&(0x00000001<<(n)))
-
-	//
-	// These defines must match the ZONE_* defines
-	//
-	#define DBG_ZONE_ERROR		0
-	#define DBG_ZONE_WARNING	1
-	#define DBG_ZONE_FUNCTION	2
-	#define DBG_ZONE_INIT		3
-	#define DBG_ZONE_VERBOSE	7
-
-	#define ZONE_ERROR		DEBUGZONE(DBG_ZONE_ERROR)
-	#define ZONE_WARNING		DEBUGZONE(DBG_ZONE_WARNING)
-	#define ZONE_FUNCTION		DEBUGZONE(DBG_ZONE_FUNCTION)
-	#define ZONE_INIT		DEBUGZONE(DBG_ZONE_INIT)
-	#define ZONE_VERBOSE		DEBUGZONE(DBG_ZONE_VERBOSE)
-
-	#define DEBUGMSG(cond,...) ((void)((cond)?(uprintf(__VA_ARGS__)),1:0))
-#else
-	#define DEBUGMSG(cond,...) ((void)0)
-#endif
+#include "usbmon.h"
 
 
 /*-----------------------------------*/
@@ -93,73 +77,26 @@ static void gen_usb_string(unsigned int uiOffset, unsigned long ulParameter0, un
 }
 
 
-static const UART_CONFIGURATION_T tUartCfg =
+void usb_monitor(unsigned long ulParameter0, unsigned long ulParameter1, unsigned long ulParameter2, unsigned long ulParameter3)
 {
-	.uc_rx_mmio = 20U,
-	.uc_tx_mmio = 21U,
-	.uc_rts_mmio = 0xffU,
-	.uc_cts_mmio = 0xffU,
-	.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
-};
-
-
-TEST_RESULT_T test(unsigned long ulParameter0, unsigned long ulParameter1, unsigned long ulParameter2, unsigned long ulParameter3)
-{
-	TEST_RESULT_T tResult;
-
-
 	options_set_default();
 	systime_init();
 
+	/* TODO: save the current configuration. */
 
-	uart_init(0, &tUartCfg);
-	tSerialVectors.fn.fnGet   = uart_get;
-	tSerialVectors.fn.fnPut   = uart_put;
-	tSerialVectors.fn.fnPeek  = uart_peek;
-	tSerialVectors.fn.fnFlush = uart_flush;
-
-
-	/* say hi! */
-	DEBUGMSG(ZONE_VERBOSE, ".*** USB Monitor ***\n");
-	DEBUGMSG(ZONE_VERBOSE, "\n\n");
-
-	/* show compile settings */
-	DEBUGMSG(ZONE_VERBOSE, ".system:\n");
-	DEBUGMSG(ZONE_VERBOSE, ".  ASIC_TYP   = %d\n", ASIC_TYP);
-	DEBUGMSG(ZONE_VERBOSE, ".  parameter0 = 0x%08x\n", ulParameter0);
-	DEBUGMSG(ZONE_VERBOSE, ".  parameter1 = 0x%08x\n", ulParameter1);
-	DEBUGMSG(ZONE_VERBOSE, ".  parameter2 = 0x%08x\n", ulParameter2);
-	DEBUGMSG(ZONE_VERBOSE, ".  parameter3 = 0x%08x\n", ulParameter3);
-	DEBUGMSG(ZONE_VERBOSE, "\n\n");
-
-	DEBUGMSG(ZONE_VERBOSE, " Disable usb core.\n");
 	usb_deinit();
-
-	DEBUGMSG(ZONE_VERBOSE, " Delay for 200ms...\n");
 	systime_delay(200);
 
 	/* Convert the parameters to a device and serial string. */
-	hexdump(g_t_options.t_usb_settings.uCfg.auc, sizeof(USB_CONFIGURATION_T));
 	gen_usb_string(20+8, ulParameter0, ulParameter1);
 	gen_usb_string(38+8, ulParameter2, ulParameter3);
-	hexdump(g_t_options.t_usb_settings.uCfg.auc, sizeof(USB_CONFIGURATION_T));
 
-	DEBUGMSG(ZONE_VERBOSE, " Init the USB core.\n");
-	if( usb_init()==0 )
-	{
-		uprintf("! Enum RAM data verification failed!");
-		while(1) {};
-	}
-	else
-	{
-		usb_loop();
-	}
+	usb_init();
+	usbmon_loop();
 
-	while(1) {};
+	usb_deinit();
 
-	tResult = TEST_RESULT_OK;
-
-	return tResult;
+	/* TODO: restore the old configuration. */
 }
 
 
