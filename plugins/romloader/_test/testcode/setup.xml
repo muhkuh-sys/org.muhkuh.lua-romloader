@@ -1,0 +1,65 @@
+<muhkuh_buildsystem>
+	<project_version>
+		<major>1</major>
+		<minor>0</minor>
+	</project_version>
+
+	<paths>
+		<marker>~/.m2/depack</marker>
+		<repository>~/.m2/repository</repository>
+		<depack>~/.m2/depack</depack>
+	</paths>
+
+	<repositories>
+		<repository>http://netx01/maven2</repository>
+	</repositories>
+
+	<scons>
+		<group>org.scons</group>
+		<name>scons-local</name>
+		<version>2.0.1_1</version>
+		<typ>tar.bz2</typ>
+		<folder>scons</folder>
+	</scons>
+
+	<tools>
+		<tool>
+			<group>nz.co.methods</group>
+			<name>asciidoc</name>
+			<version>8.5.3_1</version>
+			<typ>tar.bz2</typ>
+			<folder>asciidoc</folder>
+		</tool>
+<!--
+		<tool>
+			<group>org.gnu.gcc</group>
+			<name>gcc-arm-elf-none-eabi_${platform}_${machine}</name>
+			<version>4.5.1_1</version>
+			<typ>tar.bz2</typ>
+			<folder>gcc</folder>
+		</tool>
+-->
+		<tool>
+			<group>org.gnu.gcc</group>
+			<name>gcc-arm-elf_${platform}_${machine}</name>
+			<version>4.3.3_3</version>
+			<typ>tar.bz2</typ>
+			<folder>gcc</folder>
+		</tool>
+	</tools>
+
+	<filters>
+		<filter>
+			<template>templates/scons.bat</template>
+			<destination>scons.bat</destination>
+		</filter>
+		<filter>
+			<template>templates/scons.sh</template>
+			<destination>scons.sh</destination>
+		</filter>
+		<filter>
+			<template>templates/site_init.py</template>
+			<destination>site_scons/site_init.py</destination>
+		</filter>
+	</filters>
+</muhkuh_buildsystem>
