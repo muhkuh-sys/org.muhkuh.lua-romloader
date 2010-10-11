@@ -35,7 +35,7 @@
 #endif
 
 #include "romloader_usb_main.h"
-
+#include "uuencoder.h"
 
 
 #if defined(WIN32)
@@ -59,14 +59,6 @@ romloader_usb_device_libusb0::romloader_usb_device_libusb0(const char *pcPluginI
  , m_iInterface(0)
  , m_ptLibUsbContext(NULL)
  , m_ptDevHandle(NULL)
-#if defined(WIN32)
- , m_hRxThread(NULL)
- , m_hRxDataAvail(NULL)
-#else
- , m_ptRxThread(NULL)
- , m_ptRxDataAvail_Condition(NULL)
- , m_ptRxDataAvail_Mutex(NULL)
-#endif
 {
 	int iResult;
 
@@ -74,38 +66,6 @@ romloader_usb_device_libusb0::romloader_usb_device_libusb0(const char *pcPluginI
 	libusb_init(&m_ptLibUsbContext);
 	libusb_set_debug(m_ptLibUsbContext, 3);
 
-#if defined(WIN32)
-	m_hRxDataAvail = CreateEvent(NULL, FALSE, FALSE, NULL);
-	if( m_hRxDataAvail==NULL )
-	{
-		fprintf(stderr, "%s(%p): Failed to create card mutex: %ul\n", m_pcPluginId, this, GetLastError());
-		iResult = -1;
-	}
-#else
-	m_ptRxDataAvail_Condition = new pthread_cond_t;
-	iResult = pthread_cond_init(m_ptRxDataAvail_Condition, NULL);
-	if( iResult!=0 )
-	{
-		fprintf(stderr, "failed to init m_ptRxDataAvail_Condition: %d\n", iResult);
-		delete m_ptRxDataAvail_Condition;
-		m_ptRxDataAvail_Condition = NULL;
-	}
-	else
-	{
-		m_ptRxDataAvail_Mutex = new pthread_mutex_t;
-		iResult = pthread_mutex_init(m_ptRxDataAvail_Mutex, NULL);
-		if( iResult!=0 )
-		{
-			fprintf(stderr, "failed to init m_ptRxDataAvail_Condition: %d\n", iResult);
-			pthread_cond_destroy(m_ptRxDataAvail_Condition);
-			delete m_ptRxDataAvail_Condition;
-			m_ptRxDataAvail_Condition = NULL;
-
-			delete m_ptRxDataAvail_Mutex;
-			m_ptRxDataAvail_Mutex = NULL;
-		}
-	}
-#endif
 }
 
 
@@ -113,298 +73,14 @@ romloader_usb_device_libusb0::~romloader_usb_device_libusb0(void)
 {
 	Disconnect();
 
- 	printf("Destructor 1\n");
-#if defined(WIN32)
-	if( m_hRxDataAvail!=NULL )
-	{
-		CloseHandle(m_hRxDataAvail);
-		m_hRxDataAvail = NULL;
-	}
-#else
-	if( m_ptRxDataAvail_Condition!=NULL )
-	{
-		pthread_cond_destroy(m_ptRxDataAvail_Condition);
-		delete m_ptRxDataAvail_Condition;
-		m_ptRxDataAvail_Condition = NULL;
-	}
-
-	if( m_ptRxDataAvail_Mutex!=NULL )
-	{
-		pthread_mutex_destroy(m_ptRxDataAvail_Mutex);
-		delete m_ptRxDataAvail_Mutex;
-		m_ptRxDataAvail_Mutex = NULL;
-	}
-#endif
-
-	printf("Destructor 2\n");
 	if( m_ptLibUsbContext!=NULL )
 	{
 		libusb_exit(m_ptLibUsbContext);
 	}
-	printf("Destructor 3\n");
 }
-
-
-#if defined(WIN32)
-DWORD WINAPI romloader_usb_device_libusb0::rxThread(LPVOID lpParam)
-{
-	romloader_usb_device_libusb0 *ptParent;
-
-
-	/* Get the parent class. */
-	ptParent = (romloader_usb_device_libusb0*)lpParam;
-	return ptParent->localRxThread();
-}
-
-
-DWORD romloader_usb_device_libusb0::localRxThread(void)
-{
-	int iError;
-	DWORD dwResult;
-	const size_t sizBufferSize = 4096;
-	union
-	{
-		unsigned char auc[sizBufferSize];
-		char ac[sizBufferSize];
-	} uBuffer;
-
-
-	/* Expect error. */
-	dwResult = FALSE;
-
-	do
-	{
-		iError = usb_bulk_read(m_ptDevHandle, m_ucEndpoint_In, uBuffer.ac, sizBufferSize, 200);
-		if( iError>0 )
-		{
-			/* transfer ok! */
-			writeCards(uBuffer.auc, iError);
-
-			/* Send a signal to any waiting threads. */
-			SetEvent(m_hRxDataAvail);
-			iError = 0;
-		}
-		else if( iError==-ETIMEDOUT )
-		{
-			/* Timeout. */
-			iError = 0;
-		}
-
-		/* Check for thread cancelation. */
-		if( m_fRxThread_RequestTermination==true )
-		{
-			dwResult = TRUE;
-			break;
-		}
-	} while( iError>=0 );
-
-	return dwResult;
-}
-#else
-void *romloader_usb_device_libusb0::rxThread(void *pvParameter)
-{
-	romloader_usb_device_libusb0 *ptParent;
-
-
-	/* Get the parent class. */
-	ptParent = (romloader_usb_device_libusb0*)pvParameter;
-	return ptParent->localRxThread();
-}
-
-
-void *romloader_usb_device_libusb0::localRxThread(void)
-{
-	int iError;
-	int iOldValue;
-	const int iBufferSize = 4096;
-	unsigned char aucBuffer[iBufferSize];
-	int iTransfered;
-	const unsigned int uiRxTimeout = 200;
-
-
-	/* Allow exit at cancellation points. */
-	iError = pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &iOldValue);
-	if( iError==0 )
-	{
-		iError = pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, &iOldValue);
-		if( iError==0 )
-		{
-			do
-			{
-				iError = libusb_bulk_transfer(m_ptDevHandle, m_ucEndpoint_In, aucBuffer, iBufferSize, &iTransfered, uiRxTimeout);
-				if( iError==LIBUSB_SUCCESS || iError==LIBUSB_ERROR_TIMEOUT )
-				{
-					/* Transfer ok! */
-					writeCards(aucBuffer, iTransfered);
-					/* Send a signal to any waiting threads. */
-					pthread_cond_signal(m_ptRxDataAvail_Condition);
-					/* Ignore Timeout errors. */
-					iError = LIBUSB_SUCCESS;
-				}
-
-				pthread_testcancel();
-			} while( iError==LIBUSB_SUCCESS );
-		}
-	}
-
-	fprintf(stderr, "rxThread exit with %d\n", iError);
-	pthread_exit((void*)iError);
-}
-#endif
 
 
 const char *romloader_usb_device_libusb0::m_pcPluginNamePattern = "romloader_usb_%02x_%02x";
-
-
-int romloader_usb_device_libusb0::start_rx_thread(void)
-{
-	int iResult;
-
-
-	/* Create the receive thread. */
-#if defined(WIN32)
-	m_fRxThread_RequestTermination = false;
-	m_hRxThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) romloader_usb_device_libusb0::rxThread, (void*)this, 0, NULL);
-	if( m_hRxThread==NULL )
-	{
-		fprintf(stderr, "%s(%p): Failed to create card mutex: %d:%s\n", m_pcPluginId, this, errno, strerror(errno));
-		iResult = -1;
-	}
-	else
-	{
-		iResult = 0;
-	}
-#else
-	pthread_attr_t tAttr;
-	sched_param tParam;
-	int iPolicy;
-
-
-	/* initialized with default attributes */
-	iResult = pthread_attr_init(&tAttr);
-	if( iResult!=0 )
-	{
-		fprintf(stderr, "Failed to init the thread attributes: %d\n", iResult);
-	}
-	else
-	{
-		/* safe to get existing scheduling param */
-		iResult = pthread_attr_getschedparam (&tAttr, &tParam);
-		if( iResult!=0 )
-		{
-			fprintf(stderr, "Failed to get the scheduling parameter: %d\n", iResult);
-		}
-		else
-		{
-			iResult = pthread_attr_getschedpolicy(&tAttr, &iPolicy);
-			if( iResult!=0 )
-			{
-				fprintf(stderr, "Failed to get the scheduling policy: %d\n", iResult);
-			}
-			else
-			{
-				printf("scheduling policy is: %d\n", iPolicy);
-#if 0
-				if( iPolicy==SCHED_OTHER )
-				{
-					/* Change policy to RR. */
-					printf("Changing policy from OTHER to RR.\n");
-					iResult = pthread_attr_setschedpolicy(&tAttr, SCHED_RR);
-					if(  iResult!=0 )
-					{
-						fprintf(stderr, "Failed to set the scheduling policy: %d\n", iResult);
-					}
-				}
-
-				if( iResult==0 )
-				{
-					printf("Old rxThread priority is: %d\n", tParam.sched_priority);
-					/* set the priority; others are unchanged */
-					++tParam.sched_priority;
-					printf("New rxThread priority is: %d\n", tParam.sched_priority);
-	
-					/* setting the new scheduling param */
-					iResult = pthread_attr_setschedparam (&tAttr, &tParam);
-					if( iResult!=0 )
-					{
-						fprintf(stderr, "Failed to set the scheduling parameter: %d\n", iResult);
-					}
-					else
-					{
-#endif
-						m_ptRxThread = new pthread_t;
-						iResult = pthread_create(m_ptRxThread, &tAttr, romloader_usb_device_libusb0::rxThread, (void*)this);
-						if( iResult!=0 )
-						{
-							fprintf(stderr, "%s(%p): Failed to create card mutex: %d:%s\n", m_pcPluginId, this, errno, strerror(errno));
-							delete m_ptRxThread;
-							m_ptRxThread = NULL;
-						}
-//					}
-//				}
-			}
-		}
-	}
-#endif
-	return iResult;
-}
-
-
-int romloader_usb_device_libusb0::stop_rx_thread(void)
-{
-#if defined(WIN32)
-	int iResult;
-
-
-	if( m_hRxThread!=NULL )
-	{
-		m_fRxThread_RequestTermination = true;
-		WaitForSingleObject(m_hRxThread, INFINITE);
-		CloseHandle(m_hRxThread);
-		m_hRxThread = NULL;
-		iResult = 0;
-	}
-#else
-	int iResult;
-	void *pvStatus;
-	int iStatus;
-
-
-	printf("m_ptRxThread=%p\n", m_ptRxThread);
-
-	if( m_ptRxThread!=NULL )
-	{
-		iResult = pthread_cancel(*m_ptRxThread);
-		if( iResult!=0 )
-		{
-			fprintf(stderr, "pthread_cancel failed: %d\n", iResult);
-		}
-		else
-		{
-			iResult = pthread_join(*m_ptRxThread, &pvStatus);
-			if( iResult!=0 )
-			{
-				fprintf(stderr, "pthread_join failed: %d\n", iResult);
-			}
-			else
-			{
-				iStatus = (int)pvStatus;
-				printf("rxthread finished with status %d\n", iStatus);
-			}
-		}
-
-		delete m_ptRxThread;
-		m_ptRxThread = NULL;
-	}
-	else
-	{
-		printf("No rxthread running!\n");
-
-		iResult = 0;
-	}
-#endif
-	return iResult;
-}
 
 
 int romloader_usb_device_libusb0::libusb_reset_and_close_device(void)
@@ -628,9 +304,7 @@ libusb_device *romloader_usb_device_libusb0::find_netx_device(libusb_device **pt
 	libusb_device *ptDev;
 	libusb_device *ptNetxDevice;
 	int iResult;
-	const NETX_USB_DEVICE_T *ptIdCnt;
-	const NETX_USB_DEVICE_T *ptIdEnd;
-	struct libusb_device_descriptor sDevDesc;
+	const NETX_USB_DEVICE_T *ptId;
 
 
 	/* No netx found. */
@@ -644,32 +318,16 @@ libusb_device *romloader_usb_device_libusb0::find_netx_device(libusb_device **pt
 		ptDev = *ptDevCnt;
 		if( libusb_get_bus_number(ptDev)==uiBusNr && libusb_get_device_address(ptDev)==uiDeviceAdr )
 		{
-			/* Get the vendor and product id. */
-			iResult = libusb_get_device_descriptor(ptDev, &sDevDesc);
-			if( iResult==LIBUSB_SUCCESS )
+			ptId = fIsDeviceNetx(ptDev);
+			if( ptId!=NULL )
 			{
-				printf("Hello device (VID=0x%04x, PID=0x%04x)\n", sDevDesc.idVendor, sDevDesc.idProduct);
-				/* Loop over all known devices. */
-				ptIdCnt = atNetxUsbDevices;
-				ptIdEnd = atNetxUsbDevices + (sizeof(atNetxUsbDevices)/sizeof(atNetxUsbDevices[0]));
-				printf("probing %d devices\n", sizeof(atNetxUsbDevices)/sizeof(atNetxUsbDevices[0]));
-				while(ptIdCnt<ptIdEnd)
-				{
-					printf("Are you a %s?\n", ptIdCnt->pcName);
-					if( sDevDesc.idVendor==ptIdCnt->usVendorId && sDevDesc.idProduct==ptIdCnt->usDeviceId )
-					{
-						printf("Found VID=0x%04x, PID=0x%04x -> %s\n", sDevDesc.idVendor, sDevDesc.idProduct, ptIdCnt->pcName);
-						m_tChiptyp = ptIdCnt->tChiptyp;
-						m_tRomcode = ptIdCnt->tRomcode;
-						m_ucEndpoint_In = ptIdCnt->ucEndpoint_In;
-						m_ucEndpoint_Out = ptIdCnt->ucEndpoint_Out;
-						ptNetxDevice = ptDev;
-						break;
-					}
-					++ptIdCnt;
-				}
-				printf("End of search\n");
+				m_tChiptyp = ptId->tChiptyp;
+				m_tRomcode = ptId->tRomcode;
+				m_ucEndpoint_In = ptId->ucEndpoint_In;
+				m_ucEndpoint_Out = ptId->ucEndpoint_Out;
+				ptNetxDevice = ptDev;
 			}
+			break;
 		}
 
 		++ptDevCnt;
@@ -682,12 +340,6 @@ libusb_device *romloader_usb_device_libusb0::find_netx_device(libusb_device **pt
 int romloader_usb_device_libusb0::setup_netx_device(libusb_device *ptNetxDevice)
 {
 	int iResult;
-	size_t sizReceivedTotal;
-	size_t sizChunk;
-	const size_t sizMaxChunk = 65536;
-	const size_t sizMaxData = 524288;
-	unsigned char aucChunkBuffer[sizMaxChunk];
-	const unsigned int uiChunkReceiveTimeoutMs = 100;
 	int iCurrentConfiguration;
 
 
@@ -729,39 +381,9 @@ int romloader_usb_device_libusb0::setup_netx_device(libusb_device *ptNetxDevice)
 				/* Failed to claim the interface. */
 				fprintf(stderr, "%s(%p): failed to claim interface %d: %d:%s\n", m_pcPluginId, this, m_iInterface, iResult, libusb_strerror(iResult));
 			}
+#if 0
 			else
 			{
-				printf("%s(%p): start rx thread.\n", m_pcPluginId, this);
-				iResult = start_rx_thread();
-				if( iResult!=0 )
-				{
-					/* Failed to start the receive thread. */
-					fprintf(stderr, "%s(%p): failed to start the receive thread: %d\n", m_pcPluginId, this, iResult);
-				}
-				else
-				{
-					/* Get any waiting data. This can be garbage from the last connection or the netx welcome message. */
-					printf("%s(%p): receive welcome message.\n", m_pcPluginId, this);
-
-					sizReceivedTotal = 0;
-					do
-					{
-						/* Receive a chunk of data. */
-						sizChunk = usb_receive(aucChunkBuffer, sizMaxChunk, uiChunkReceiveTimeoutMs);
-						printf("received %d bytes of data:\n", sizChunk);
-						hexdump(aucChunkBuffer, sizChunk);
-						/* Is the maximum already reached? */
-						sizReceivedTotal += sizChunk;
-						if( sizReceivedTotal>=sizMaxData )
-						{
-							/* Guess the device will never shut up! */
-							fprintf(stderr, "%s(%p): received too much initial data from the device, guess it will never shut up!\n", m_pcPluginId, this);
-							iResult = -1;
-							stop_rx_thread();
-							break;
-						}
-					} while( sizChunk!=0 );
-				}
 
 				/* Cleanup in error case. */
 				if( iResult!=LIBUSB_SUCCESS )
@@ -770,6 +392,7 @@ int romloader_usb_device_libusb0::setup_netx_device(libusb_device *ptNetxDevice)
 					libusb_release_interface(m_ptDevHandle, m_iInterface);
 				}
 			}
+#endif
 		}
 
 		/* Cleanup in error case. */
@@ -857,64 +480,54 @@ int romloader_usb_device_libusb0::Connect(unsigned int uiBusNr, unsigned int uiD
 
 void romloader_usb_device_libusb0::Disconnect(void)
 {
-	printf("Disconnect 1\n");
-	stop_rx_thread();
-	printf("Disconnect 2\n");
 	if( m_ptDevHandle!=NULL )
 	{
-		printf("m_ptDevHandle=%p, m_iInterface=%d\n", m_ptDevHandle, m_iInterface);
 		libusb_release_interface(m_ptDevHandle, m_iInterface);
-		printf("a\n");
 		libusb_close(m_ptDevHandle);
-		printf("b\n");
 		m_ptDevHandle = NULL;
 	}
-	printf("Disconnect 3\n");
 	m_ptDevHandle = NULL;
 }
 
 
-bool romloader_usb_device_libusb0::fIsDeviceNetx(libusb_device *ptDevice)
+const NETX_USB_DEVICE_T *romloader_usb_device_libusb0::fIsDeviceNetx(libusb_device *ptDevice) const
 {
-	bool fDeviceIsNetx;
+	const NETX_USB_DEVICE_T *ptDevHit;
 	int iResult;
 	struct libusb_device_descriptor sDevDesc;
+	const NETX_USB_DEVICE_T *ptDevCnt;
+	const NETX_USB_DEVICE_T *ptDevEnd;
 
 
-	fDeviceIsNetx = false;
+	ptDevHit = NULL;
 	if( ptDevice!=NULL )
 	{
 		iResult = libusb_get_device_descriptor(ptDevice, &sDevDesc);
 		if( iResult==LIBUSB_SUCCESS )
 		{
-			if(
-				sDevDesc.bDeviceClass==0x00 &&
-				sDevDesc.bDeviceSubClass==0x00 &&
-				sDevDesc.bDeviceProtocol==0x00 &&
-				sDevDesc.idVendor==0x0cc4 &&
-				sDevDesc.idProduct==0x0815 &&
-				sDevDesc.bcdDevice==0x0100
-			  )
+			ptDevCnt = atNetxUsbDevices;
+			ptDevEnd = atNetxUsbDevices + (sizeof(atNetxUsbDevices)/sizeof(atNetxUsbDevices[0]));
+			while( ptDevCnt<ptDevEnd )
 			{
-				/* This seems to be a netX500 ABoot device. */
-				fDeviceIsNetx  = true;
-			}
-			else if(
-				sDevDesc.bDeviceClass==0xff &&
-				sDevDesc.bDeviceSubClass==0x00 &&
-				sDevDesc.bDeviceProtocol==0xff &&
-				sDevDesc.idVendor==0x1939 &&
-				sDevDesc.idProduct==0x000c &&
-				sDevDesc.bcdDevice==0x0001
-			       )
-			{
-				/* This seems to be a netX10 HBoot device. */
-				fDeviceIsNetx  = true;
+				if(
+					sDevDesc.idVendor==ptDevCnt->usVendorId &&
+					sDevDesc.idProduct==ptDevCnt->usDeviceId &&
+					sDevDesc.bcdDevice==ptDevCnt->usBcdDevice
+				)
+				{
+					/* Found a matching device. */
+					ptDevHit = ptDevCnt;
+					break;
+				}
+				else
+				{
+					++ptDevCnt;
+				}
 			}
 		}
 	}
 
-	return fDeviceIsNetx;
+	return ptDevHit;
 }
 
 
@@ -961,984 +574,207 @@ const char *romloader_usb_device_libusb0::libusb_strerror(int iError)
 }
 
 
-
-#if defined(WIN32)
-size_t romloader_usb_device_libusb0::usb_receive(unsigned char *pucBuffer, size_t sizBuffer, unsigned int uiTimeoutMs)
+int romloader_usb_device_libusb0::discard_until_timeout(libusb_device_handle *ptDevHandle)
 {
-	size_t sizReceived;
-	size_t sizChunk;
-	DWORD dwStartTime;
-	DWORD dwTimeElapsed;
-	DWORD dwTimeLeft;
-	DWORD dwWaitResult;
-	DWORD dwTimeoutMs;
-
-
-	/* No data received. */
-	sizReceived = 0;
-
-	dwTimeoutMs = uiTimeoutMs;
-	dwStartTime = GetTickCount();
-
-	while( sizBuffer>0 )
-	{
-		/* Receive as much of the requested data as possible. */
-		sizChunk = readCards(pucBuffer, sizBuffer);
-		if( sizChunk>0 )
-		{
-			/* Received some data. */
-			pucBuffer += sizChunk;
-			sizBuffer -= sizChunk;
-			sizReceived += sizChunk;
-		}
-		else
-		{
-			/* No data left, wait for input. */
-			dwTimeElapsed = GetTickCount() - dwStartTime;
-			if( dwTimeElapsed>=uiTimeoutMs )
-			{
-				/* Timeout, no more data arrived. */
-				break;
-			}
-			else
-			{
-				dwTimeLeft = dwTimeoutMs - dwTimeElapsed;
-
-				/* Wait for new data to arrive. */
-				dwWaitResult = WaitForSingleObject(m_hRxDataAvail, dwTimeLeft);
-				if( dwWaitResult!=WAIT_OBJECT_0 )
-				{
-					/* Timeout or error -> no new data arrived. */
-					break;
-				}
-			}
-		}
-	}
-
-	return sizReceived;
-}
-
-
-int romloader_usb_device_libusb0::usb_receive_line(char *pcBuffer, size_t sizBuffer, unsigned int uiTimeoutMs, size_t *psizReceived)
-{
+	unsigned char aucBuffer[64];
 	int iResult;
-	unsigned char *pucCnt;
-	size_t sizProcessed;
-	const unsigned char aucEol[3] = { '\r', '\n', 0 };
-	int iState;
-	tBufferCard *ptCard;
-	size_t sizReceived;
-	union
+	int iProcessed;
+	unsigned int uiTimeoutMs;
+
+
+	uiTimeoutMs = 100;
+
+	do
 	{
-		unsigned char *puc;
-		char *pc;
-	} uBuffer;
-	DWORD dwStartTime;
-	DWORD dwTimeElapsed;
-	DWORD dwTimeLeft;
-	DWORD dwWaitResult;
-	DWORD dwTimeoutMs;
-
-
-	dwTimeoutMs = uiTimeoutMs;
-	dwStartTime = GetTickCount();
-
-	/* Start to check for EOL at the first card. */
-	pucCnt = m_ptFirstCard->pucRead;
-	sizProcessed = 0;
-	iState = 0;
-	ptCard = m_ptFirstCard;
-	sizReceived = 0;
-
-	/* Expect success. */
-	iResult = 0;
-
-	while( sizProcessed<sizBuffer )
-	{
-		/* Is the write pointer is in first card? */
-		if( ptCard->pucWrite!=NULL )
+		iResult = libusb_bulk_transfer(ptDevHandle, m_ucEndpoint_In, aucBuffer, sizeof(aucBuffer), &iProcessed, uiTimeoutMs);
+		if( iResult==LIBUSB_ERROR_TIMEOUT )
 		{
-			/* Are more chars available? */
-			if( pucCnt<ptCard->pucWrite )
-			{
-				if( *pucCnt==aucEol[iState] )
-				{
-					++sizProcessed;
-					++pucCnt;
-					++iState;
-					if( aucEol[iState]==0 )
-					{
-						/* Ok, EOL found! */
-						break;
-					}
-				}
-				else
-				{
-					if( iState==0 )
-					{
-						++sizProcessed;
-						++pucCnt;
-					}
-					/* Reset EOL detect counter. */
-					iState = 0;
-				}
-			}
-			else
-			{
-				/* No data left, wait for input. */
-				dwTimeElapsed = GetTickCount() - dwStartTime;
-				if( dwTimeElapsed>=uiTimeoutMs )
-				{
-					/* Timeout, no more data arrived. */
-					break;
-				}
-				else
-				{
-					dwTimeLeft = dwTimeoutMs - dwTimeElapsed;
-
-					/* Wait for new data to arrive. */
-					dwWaitResult = WaitForSingleObject(m_hRxDataAvail, dwTimeLeft);
-					if( dwWaitResult==WAIT_TIMEOUT )
-					{
-						/* Timeout or error -> no new data arrived. */
-						break;
-					}
-					else if( dwWaitResult!=WAIT_OBJECT_0 )
-					{
-						/* Error. */
-						iResult = -1;
-						break;
-					}
-				}
-			}
-		}
-		else
-		{
-			/* Are more chars available? */
-			if( pucCnt<ptCard->pucEnd )
-			{
-				if( *pucCnt==aucEol[iState] )
-				{
-					++sizProcessed;
-					++pucCnt;
-					++iState;
-					if( aucEol[iState]==0 )
-					{
-						/* Ok, EOL found! */
-						break;
-					}
-				}
-				else
-				{
-					if( iState==0 )
-					{
-						++sizProcessed;
-						++pucCnt;
-					}
-					/* Reset EOL detect counter. */
-					iState = 0;
-				}
-			}
-			else
-			{
-				ptCard = ptCard->ptNext;
-				pucCnt = ptCard->aucData;
-			}
-		}
-	}
-
-	if( iResult==0 && sizProcessed>0 )
-	{
-		uBuffer.pc = pcBuffer;
-		sizReceived = usb_receive(uBuffer.puc, sizProcessed, 1);
-		if( sizReceived==sizProcessed )
-		{
-			/* Remove linefeed from buffer. */
-			sizReceived -= iState;
-			uBuffer.puc[sizReceived] = 0;
-		}
-		*psizReceived = sizReceived;
-	}
-
-	return iResult;
-}
-#else
-#define MILLISEC_PER_SEC 1000UL
-#define NANOSEC_PER_MILLISEC 1000000UL
-#define NANOSEC_PER_MICROSEC 1000UL
-#define NANOSEC_PER_SEC 1000000000UL
-
-int romloader_usb_device_libusb0::get_end_time(unsigned int uiTimeoutMs, struct timespec *ptEndTime)
-{
-	int iResult;
-	struct timeval tTimeVal;
-	struct timespec tCurTime;
-	struct timespec tAddTime;
-	struct timespec tSumTime;
-
-
-	iResult = gettimeofday(&tTimeVal, NULL);
-	if( iResult!=0 )
-	{
-		fprintf(stderr, "clock_gettime failed with result %d, errno: %d (%s)", iResult, errno, strerror(errno));
-	}
-	else
-	{
-		/* Convert the current time in a timeval structure to timespec. */
-		tCurTime.tv_sec  = tTimeVal.tv_sec;
-		tCurTime.tv_nsec = tTimeVal.tv_usec * NANOSEC_PER_MICROSEC;
-
-		/* Convert the timeout value in milliseconds to a timespec. */
-		tAddTime.tv_sec  = uiTimeoutMs/MILLISEC_PER_SEC;
-		tAddTime.tv_nsec = (uiTimeoutMs%MILLISEC_PER_SEC) * NANOSEC_PER_MILLISEC;
-	
-		/* Add the timeout to the current time. */
-		tSumTime.tv_sec = tCurTime.tv_sec   + tAddTime.tv_sec;
-		tSumTime.tv_nsec = tCurTime.tv_nsec + tAddTime.tv_nsec;
-		while( tSumTime.tv_nsec>NANOSEC_PER_SEC )
-		{
-			tSumTime.tv_nsec -= NANOSEC_PER_SEC;
-			++tSumTime.tv_sec;
-		}
-
-		/* Set result. */
-		ptEndTime->tv_sec  = tSumTime.tv_sec;
-		ptEndTime->tv_nsec = tSumTime.tv_nsec;
-	}
-
-	return iResult;
-}
-
-
-size_t romloader_usb_device_libusb0::usb_receive(unsigned char *pucBuffer, size_t sizBuffer, unsigned int uiTimeoutMs)
-{
-	int iResult;
-	int iWaitResult;
-	size_t sizReceived;
-	size_t sizChunk;
-	struct timespec tEndTime;
-
-
-	/* No data received. */
-	sizReceived = 0;
-	iResult = get_end_time(uiTimeoutMs, &tEndTime);
-	if( iResult!=0 )
-	{
-		fprintf(stderr, "get_end_time failed with result %d, errno: %d (%s)", iResult, errno, strerror(errno));
-	}
-	else
-	{
-		while( sizBuffer>0 )
-		{
-			/* Receive as much of the requested data as possible. */
-			sizChunk = readCards(pucBuffer, sizBuffer);
-			if( sizChunk>0 )
-			{
-				/* Received some data. */
-				pucBuffer += sizChunk;
-				sizBuffer -= sizChunk;
-				sizReceived += sizChunk;
-			}
-			else
-			{
-				/* No data left, wait for input. */
-#if !defined(WIN32)
-				sched_yield();
-#endif
-				/* Wait for data. */
-				pthread_mutex_lock(m_ptRxDataAvail_Mutex);
-				iWaitResult = pthread_cond_timedwait(m_ptRxDataAvail_Condition, m_ptRxDataAvail_Mutex, &tEndTime);
-				pthread_mutex_unlock(m_ptRxDataAvail_Mutex);
-
-				if( iWaitResult==ETIMEDOUT )
-				{
-					/* Timeout, no more data arrived. */
-					break;
-				}
-				else if( iWaitResult!=0 )
-				{
-					fprintf(stderr, "failed to wait for data available condition: %d\n", iWaitResult);
-					break;
-				}
-			}
-		}
-	}
-
-	return sizReceived;
-}
-
-
-int romloader_usb_device_libusb0::usb_receive_line(char *pcBuffer, size_t sizBuffer, unsigned int uiTimeoutMs, size_t *psizReceived)
-{
-	int iResult;
-	struct timespec tEndTime;
-	unsigned char *pucCnt;
-	size_t sizProcessed;
-	const unsigned char aucEol[3] = { '\r', '\n', 0 };
-	int iState;
-	tBufferCard *ptCard;
-	size_t sizReceived;
-	union
-	{
-		unsigned char *puc;
-		char *pc;
-	} uBuffer;
-
-
-	/* Start to check for EOL at the first card. */
-	pucCnt = m_ptFirstCard->pucRead;
-	sizProcessed = 0;
-	iState = 0;
-	ptCard = m_ptFirstCard;
-	sizReceived = 0;
-
-	iResult = get_end_time(uiTimeoutMs, &tEndTime);
-	if( iResult!=0 )
-	{
-		fprintf(stderr, "get_end_time failed with result %d, errno: %d (%s)", iResult, errno, strerror(errno));
-	}
-	else
-	{
-		while( sizProcessed<sizBuffer )
-		{
-			/* Is the write pointer is in first card? */
-			if( ptCard->pucWrite!=NULL )
-			{
-				/* Are more chars available? */
-				if( pucCnt<ptCard->pucWrite )
-				{
-					if( *pucCnt==aucEol[iState] )
-					{
-						++sizProcessed;
-						++pucCnt;
-						++iState;
-						if( aucEol[iState]==0 )
-						{
-							/* Ok, EOL found! */
-							break;
-						}
-					}
-					else
-					{
-						if( iState==0 )
-						{
-							++sizProcessed;
-							++pucCnt;
-						}
-						/* Reset EOL detect counter. */
-						iState = 0;
-					}
-				}
-				else
-				{
-					/* Wait for data. */
-					pthread_mutex_lock(m_ptRxDataAvail_Mutex);
-					iResult = pthread_cond_timedwait(m_ptRxDataAvail_Condition, m_ptRxDataAvail_Mutex, &tEndTime);
-					pthread_mutex_unlock(m_ptRxDataAvail_Mutex);
-
-					if( iResult==ETIMEDOUT )
-					{
-						/* Timeout, no more data arrived. */
-						iResult = 0;
-						break;
-					}
-					else if( iResult!=0 )
-					{
-						fprintf(stderr, "failed to wait for data available condition: %d\n", iResult);
-						break;
-					}
-				}
-			}
-			else
-			{
-				/* Are more chars available? */
-				if( pucCnt<ptCard->pucEnd )
-				{
-					if( *pucCnt==aucEol[iState] )
-					{
-						++sizProcessed;
-						++pucCnt;
-						++iState;
-						if( aucEol[iState]==0 )
-						{
-							/* Ok, EOL found! */
-							break;
-						}
-					}
-					else
-					{
-						if( iState==0 )
-						{
-							++sizProcessed;
-							++pucCnt;
-						}
-						/* Reset EOL detect counter. */
-						iState = 0;
-					}
-				}
-				else
-				{
-					ptCard = ptCard->ptNext;
-					pucCnt = ptCard->aucData;
-				}
-			}
-		}
-
-		printf("iResult=%d, sizProcessed=%d\n", iResult, sizProcessed);
-		if( iResult==0 && sizProcessed>0 )
-		{
-			uBuffer.pc = pcBuffer;
-			sizReceived = usb_receive(uBuffer.puc, sizProcessed, 1);
-			if( sizReceived==sizProcessed )
-			{
-				/* Remove linefeed from buffer. */
-				sizReceived -= iState;
-				uBuffer.puc[sizReceived] = 0;
-			}
-			*psizReceived = sizReceived;
-
-			printf("Line: '%s'\n", uBuffer.pc);
-		}
-	}
-
-	return iResult;
-}
-#endif
-
-
-int romloader_usb_device_libusb0::usb_send(const char *pcBuffer, size_t sizBuffer)
-{
-	unsigned char *pucCnt;
-	unsigned char *pucEnd;
-	const unsigned int uiChunkTimeoutMs = 1000;
-	int iChunk;
-	int iTransfered;
-	int iResult;
-
-
-	/* Send the complete data block. */
-	pucCnt = (unsigned char*)pcBuffer;
-	pucEnd = (unsigned char*)pcBuffer + sizBuffer;
-	while( pucCnt<pucEnd )
-	{
-		/* Limit the next data chunk to the maximum USB packet size of 64 bytes. */
-		iChunk = pucEnd - pucCnt;
-		if( iChunk>64 )
-		{
-			iChunk = 64;
-		}
-
-		/* Send the next data chunk. */
-#if defined(WIN32)
-		iResult = usb_bulk_write(m_ptDevHandle, m_ucEndpoint_Out, pcCnt, sizChunk, uiChunkTimeoutMs);
-#else
-		iResult = libusb_bulk_transfer(m_ptDevHandle, m_ucEndpoint_Out, pucCnt, iChunk, &iTransfered, uiChunkTimeoutMs);
-#endif
-		if( iResult==LIBUSB_SUCCESS || iResult==LIBUSB_ERROR_TIMEOUT )
-		{
-			if( iResult==LIBUSB_ERROR_TIMEOUT )
-			{
-				printf("Timeout, transfered %d bytes.\n", iTransfered);
-				if( iTransfered==0 )
-				{
-					printf("Clearing halt\n");
-					libusb_clear_halt(m_ptDevHandle, m_ucEndpoint_Out);
-					printf("In Chars: 0x%08x\n", getCardSize());
-					dump_all_cards();
-					libusb_clear_halt(m_ptDevHandle, m_ucEndpoint_In);
-				}
-			}
-
-			/* Transfer ok! */
-			pucCnt += iTransfered;
-			iResult = LIBUSB_SUCCESS;
-#if !defined(WIN32)
-			usleep(1000);
-			sched_yield();
-#endif
-		}
-		else
-		{
-			/* Transfer failed. */
+			/* Timeouts are great! */
+			iResult = 0;
 			break;
 		}
-	}
+		else if( iResult!=0 )
+		{
+			printf("Failed to receive data: %s\n", libusb_strerror(iResult));
+			break;
+		}
+	} while( iResult==0 );
 
 	return iResult;
 }
 
-
-int romloader_usb_device_libusb0::read_data08(unsigned long ulNetxAddress, unsigned char *pucValue)
+#if 0
+static int romloader_usb_device_libusb0::netx10_load_code(libusb_device_handle *ptDevHandle)
 {
+	size_t sizLine;
+	unsigned char ucData;
+	unsigned long ulLoadAddress;
+	unsigned char aucBuffer[64];
+	unsigned int uiTimeoutMs;
+	int iProcessed;
 	int iResult;
-	char acCommand[19];
-	size_t sizCommand;
-	unsigned long ulResponseAddress;
-	unsigned long ulResponseValue;
-	size_t sizOldData;
-	size_t sizReceived;
-	int iScanCnt;
-	char acBuffer[82];
-	const unsigned int uiCommandTimeoutMs = 100;
+	const unsigned char *pucNetxCode;
+	size_t sizNetxCode;
+	uuencoder tUuencoder;
 
 
-	ulResponseValue = 0;
+	/* Be optimistic. */
+	iResult = 0;
+
+	pucNetxCode = auc_usbmon_netx10_intram;
+	sizNetxCode = sizeof(auc_usbmon_netx10_intram);
 
 	/* Construct the command. */
-	sizCommand = snprintf(acCommand, sizeof(acCommand), "db %08lX ++1\r\n", ulNetxAddress);
-
-	/* Flush any old data. */
-	sizOldData = getCardSize();
-	if( sizOldData!=0 )
+	ulLoadAddress  = pucNetxCode[0];
+	ulLoadAddress |= pucNetxCode[1]<<8;
+	ulLoadAddress |= pucNetxCode[2]<<16;
+	ulLoadAddress |= pucNetxCode[3]<<24;
+	sizLine = snprintf(aucBuffer, sizeof(aucBuffer), "l %x\n", ulLoadAddress);
+	iResult = usb_bulk_pc_to_netx(ptDevHandle, EP_OUT, aucBuffer, sizLine, &iProcessed, uiTimeoutMs);
+	if( iResult!=0 )
 	{
-		fprintf(stderr, "Old data in card buffer left!\n");
-		flushCards();
+		printf("! Failed to send packet!\n");
+		iResult = -1;
 	}
-
-	/* send the command */
-	iResult = usb_send(acCommand, sizCommand);
-	if( iResult!=LIBUSB_SUCCESS )
+	else if( sizLine!=iProcessed )
 	{
-		fprintf(stderr, "%s(%p): failed to send command: %d:%s\n", m_pcPluginId, this, iResult, libusb_strerror(iResult));
-	}
-	else
-	{
-		if( expect_string(acCommand)!=true )
-		{
-			fprintf(stderr, "%s(%p): strange response 1 from device\n", m_pcPluginId, this);
-			iResult = -1;
-		}
-		else
-		{
-			iResult = usb_receive_line(acBuffer, sizeof(acBuffer), uiCommandTimeoutMs, &sizReceived);
-			if( iResult!=LIBUSB_SUCCESS )
-			{
-				fprintf(stderr, "%s(%p): failed to receive response: %d:%s\n", m_pcPluginId, this, iResult, libusb_strerror(iResult));
-			}
-			else
-			{
-/*
-				hexdump((const unsigned char*)acBuffer, sizReceived);
-*/
-				iScanCnt = sscanf(acBuffer, "%lx: %lx ", &ulResponseAddress, &ulResponseValue);
-				if( iScanCnt!=2 )
-				{
-					fprintf(stderr, "%s(%p): strange response 2 from device\n", m_pcPluginId, this);
-					iResult = -1;
-				}
-				else if( ulResponseAddress!=ulNetxAddress )
-				{
-					fprintf(stderr, "%s(%p): address does not match request\n", m_pcPluginId, this);
-					iResult = -1;
-				}
-				else if( expect_string("Result: 0\r\n\r\n>")!=true )
-				{
-					fprintf(stderr, "%s(%p): Failed to get result line!\n", m_pcPluginId, this);
-					iResult = -1;
-				}
-				else
-				{
-/*
-					printf("%s(%p): read_data08: 0x%08lx = 0x%02lx\n", m_pcPluginId, this, ulNetxAddress, ulResponseValue);
-*/
-					*pucValue = (unsigned char)(ulResponseValue & 0xffU);
-				}
-			}
-		}
-	}
-
-	return iResult;
-}
-
-
-int romloader_usb_device_libusb0::read_data32(unsigned long ulNetxAddress, unsigned long *pulValue)
-{
-	int iResult;
-	char acCommand[19];
-	size_t sizCommand;
-	unsigned long ulResponseAddress;
-	unsigned long ulResponseValue;
-	size_t sizOldData;
-	size_t sizReceived;
-	int iScanCnt;
-	union
-	{
-		char ac[52];
-		unsigned char auc[52];
-	} uResult;
-
-
-	ulResponseValue = 0;
-
-	/* Construct the command. */
-	if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
-	{
-		sizCommand = snprintf(acCommand, sizeof(acCommand), "d %08lX ++4\r\n", ulNetxAddress);
-	}
-	else
-	{
-		sizCommand = snprintf(acCommand, sizeof(acCommand), "DUMP %08lX LONG", ulNetxAddress);
-	}
-
-	/* Flush any old data. */
-	sizOldData = getCardSize();
-	if( sizOldData!=0 )
-	{
-		fprintf(stderr, "Old data in card buffer left!\n");
-		flushCards();
-	}
-
-	/* send the command */
-	iResult = usb_send(acCommand, sizCommand);
-	if( iResult!=LIBUSB_SUCCESS )
-	{
-		fprintf(stderr, "%s(%p): failed to send command: %d:%s\n", m_pcPluginId, this, iResult, libusb_strerror(iResult));
-	}
-	else
-	{
-		if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 && expect_string(acCommand)!=true )
-		{
-			fprintf(stderr, "%s(%p): strange response 1 from device\n", m_pcPluginId, this);
-			iResult = -1;
-		}
-		else
-		{
-			/* FIXME: this should be something like a linebased receive routine. */
-			sizReceived = usb_receive(uResult.auc, sizeof(uResult.auc), 200);
-			if( sizReceived!=sizeof(uResult.auc) )
-			{
-				fprintf(stderr, "%s(%p): failed to receive %d bytes, got only %d\n", m_pcPluginId, this, sizeof(uResult.auc), sizReceived);
-				hexdump(uResult.auc, sizReceived);
-				iResult = -1;
-			}
-			else
-			{
-/*
-				hexdump(uResult.auc, sizeof(uResult.auc));
-*/
-				iScanCnt = sscanf(uResult.ac, "%lx: %lx ", &ulResponseAddress, &ulResponseValue);
-				if( iScanCnt!=2 )
-				{
-					fprintf(stderr, "%s(%p): strange response 2 from device\n", m_pcPluginId, this);
-					iResult = -1;
-				}
-				else if( ulResponseAddress!=ulNetxAddress )
-				{
-					fprintf(stderr, "%s(%p): address does not match request\n", m_pcPluginId, this);
-					iResult = -1;
-				}
-				else if( expect_string("Result: 0\r\n\r\n>")!=true )
-				{
-					fprintf(stderr, "%s(%p): Failed to get result line!\n", m_pcPluginId, this);
-					iResult = -1;
-				}
-				else
-				{
-/*
-					printf("%s(%p): read_data32: 0x%08lx = 0x%08lx\n", m_pcPluginId, this, ulNetxAddress, ulResponseValue);
-*/
-					*pulValue = ulResponseValue;
-				}
-			}
-		}
-	}
-
-	return iResult;
-}
-
-
-int romloader_usb_device_libusb0::read_image(unsigned long ulNetxAddress, size_t sizData, unsigned char *pucData)
-{
-	size_t sizCommand;
-	int iResult;
-	char acCommand[28];
-
-
-	sizCommand = snprintf(acCommand, sizeof(acCommand), "s %08lX ++%08lX\r\n", ulNetxAddress, sizData);
-
-	/* send the command */
-	iResult = usb_send(acCommand, sizCommand);
-	if( iResult!=LIBUSB_SUCCESS )
-	{
-		fprintf(stderr, "%s(%p): failed to send command: %d:%s\n", m_pcPluginId, this, iResult, libusb_strerror(iResult));
-	}
-	else
-	{
-		if( expect_string(acCommand)!=true )
-		{
-			fprintf(stderr, "%s(%p): strange response 1 from device\n", m_pcPluginId, this);
-			iResult = -1;
-		}
-		else
-		{
-			iResult = parse_uue(sizData, pucData, ulNetxAddress, ulNetxAddress+sizData);
-			if( iResult!=0 )
-			{
-				fprintf(stderr, "%s(%p): failed to parse uue data.\n", m_pcPluginId, this);
-			}
-			else if( expect_string("Result: 0\r\n\r\n>")!=true )
-			{
-				fprintf(stderr, "%s(%p): Failed to get result line!\n", m_pcPluginId, this);
-				iResult = -1;
-			}
-/*
-			else
-			{
-				printf("%s(%p): read_image: 0x%08lx =\n", m_pcPluginId, this, ulNetxAddress);
-				hexdump(pucData, sizData);
-			}
-*/
-		}
-	}
-
-	return iResult;
-}
-
-
-int romloader_usb_device_libusb0::write_data32(unsigned long ulNetxAddress, unsigned long ulData)
-{
-	int iResult;
-	char acCommand[28];
-	size_t sizCommand;
-	size_t sizOldData;
-
-
-	/* Construct the command. */
-	if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
-	{
-		sizCommand = snprintf(acCommand, sizeof(acCommand), "m %08lX %08X\r\n", ulNetxAddress, ulData);
-	}
-	else
-	{
-		sizCommand = snprintf(acCommand, sizeof(acCommand), "FILL %08lX %08X LONG", ulNetxAddress, ulData);
-	}
-
-	/* Flush any old data. */
-	sizOldData = getCardSize();
-	if( sizOldData!=0 )
-	{
-		fprintf(stderr, "Old data in card buffer left!\n");
-		flushCards();
-	}
-
-	/* send the command */
-	iResult = usb_send(acCommand, sizCommand);
-	if( iResult!=LIBUSB_SUCCESS )
-	{
-		fprintf(stderr, "%s(%p): failed to send command: %d:%s\n", m_pcPluginId, this, iResult, libusb_strerror(iResult));
-	}
-	else
-	{
-		if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 && expect_string(acCommand)!=true )
-		{
-			fprintf(stderr, "%s(%p): strange response 1 from device\n", m_pcPluginId, this);
-			iResult = -1;
-		}
-		else if( expect_string("Result: 0\r\n\r\n>")!=true )
-		{
-			fprintf(stderr, "%s(%p): Failed to get result line!\n", m_pcPluginId, this);
-			iResult = -1;
-		}
-/*
-		else
-		{
-			printf("%s(%p): write_data32: 0x%08lx = 0x%08x\n", m_pcPluginId, this, ulNetxAddress, ulData);
-		}
-*/
-	}
-
-	return iResult;
-}
-
-
-int romloader_usb_device_libusb0::write_image(unsigned long ulNetxAddress, const unsigned char *pucData, size_t sizData)
-{
-	int iResult;
-	char *pcUueData;
-	size_t sizUueData;
-	char acCommand[16];
-	size_t sizCommand;
-	size_t sizOldData;
-
-
-	/* Generate the command. */
-	sizCommand = snprintf(acCommand, sizeof(acCommand), "l %08lx\r\n", ulNetxAddress);
-
-	/* Flush any old data. */
-	sizOldData = getCardSize();
-	if( sizOldData!=0 )
-	{
-		fprintf(stderr, "Old data in card buffer left!\n");
-		flushCards();
-	}
-
-	/* Send the command. */
-	iResult = usb_send(acCommand, sizCommand);
-	if( iResult!=LIBUSB_SUCCESS )
-	{
-		fprintf(stderr, "%s(%p): failed to send command: %d:%s\n", m_pcPluginId, this, iResult, libusb_strerror(iResult));
-	}
-	else if( expect_string(acCommand)!=true )
-	{
-		fprintf(stderr, "%s(%p): strange response 1 from device\n", m_pcPluginId, this);
+		printf("! Requested to send %d bytes, but only %d were processed!\n", sizLine, iProcessed);
 		iResult = -1;
 	}
 	else
 	{
-		pcUueData = NULL;
-		sizUueData = 0;
-		iResult = uue_generate(pucData, sizData, &pcUueData, &sizUueData);
+		skip_until_prompt(ptDevHandle);
+
+		uuencoder_init(pucNetxCode, sizNetxCode, &tUuencoder);
+
+		/* Send the data line by line with a delay of 10ms. */
+		do
+		{
+			sizLine = uuencoder_process(&tUuencoder, aucBuffer, sizeof(aucBuffer));
+			if( sizLine!=0 )
+			{
+				uiTimeoutMs = 100;
+
+				{
+					size_t sizCnt;
+					sizCnt = 0;
+					while( sizCnt<sizLine )
+					{
+						printf("%c", aucBuffer[sizCnt]);
+						++sizCnt;
+					}
+				}
+
+				iResult = usb_bulk_pc_to_netx(ptDevHandle, EP_OUT, aucBuffer, sizLine, &iProcessed, uiTimeoutMs);
+				if( iResult!=0 )
+				{
+					printf("! Failed to send packet!\n");
+					iResult = -1;
+					break;
+				}
+				else if( sizLine!=iProcessed )
+				{
+					printf("! Requested to send %d bytes, but only %d were processed!\n", sizLine, iProcessed);
+					iResult = -1;
+					break;
+				}
+				/* usleep delays in us, i.e. a parameter of 10000 means 10ms. */
+				usleep(10000);
+			}
+		} while( uuencoder_isFinished(&tUuencoder)==0 );
+
 		if( iResult==0 )
 		{
-			/* Send the complete data block. */
-			iResult = usb_send(pcUueData, sizUueData);
-			printf("done: %d\n", iResult);
-			free(pcUueData);
-
-			if( iResult!=0 )
-			{
-				fprintf(stderr, "%s(%p): Failed to send uue data: %d:%s\n", m_pcPluginId, this, iResult, libusb_strerror(iResult));
-			}
-			else
-			{
-				if( expect_string("Result: 0\r\n\r\n>")!=true )
-				{
-					fprintf(stderr, "%s(%p): Failed to get result line!\n", m_pcPluginId, this);
-					iResult = -1;
-				}
-/*
-				else
-				{
-					printf("%s(%p): write_image: 0x%08lx =\n", m_pcPluginId, this, ulNetxAddress);
-					hexdump(pucData, sizData);
-				}
-*/
-			}
+			skip_until_prompt(ptDevHandle);
 		}
 	}
 
 	return iResult;
 }
+#endif
 
 
-int romloader_usb_device_libusb0::call(unsigned long ulNetxAddress, unsigned long ulR0)
+int romloader_usb_device_libusb0::execute_command(const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned char *aucInBuf, size_t *psizInBuf)
 {
-	size_t sizCommand;
 	int iResult;
-	char acCommand[28];
-	unsigned char aucOutput[64];
-	size_t sizReceived;
-	bool fEndFound;
-	const char *pcEndPattern = "\r\nResult: 0x********\r\nResult: 0\r\n\r\n>";
-	int iState;
-	const size_t sizWarpBackFrom = 31;
-	const size_t sizWarpBackTo = 11;
-	size_t sizCnt;
-	char cPattern;
-	char cReceived;
-	unsigned long ulResultValue;
-	int iMatch;
+	int iProcessed;
+	unsigned int uiTimeoutMs;
 
 
-	sizCommand = snprintf(acCommand, sizeof(acCommand), "g %08lX %08lX\r\n", ulNetxAddress, ulR0);
+	uiTimeoutMs = 100;
 
-	/* send the command */
-	iResult = usb_send(acCommand, sizCommand);
-	if( iResult!=LIBUSB_SUCCESS )
+//	printf("Send Command:\n", iProcessed);
+//	hexdump(aucOutBuf, sizOutBuf);
+
+	iResult = libusb_bulk_transfer(m_ptDevHandle, m_ucEndpoint_Out, (unsigned char*)aucOutBuf, sizOutBuf, &iProcessed, uiTimeoutMs);
+	if( iResult!=0 )
 	{
-		fprintf(stderr, "%s(%p): failed to send command: %d:%s\n", m_pcPluginId, this, iResult, libusb_strerror(iResult));
+		printf("Failed to send data: %s\n", libusb_strerror(iResult));
+	}
+	else if( sizOutBuf!=iProcessed )
+	{
+		printf("! Requested to send %d bytes, but only %d were processed!\n", sizOutBuf, iProcessed);
+		iResult = 1;
 	}
 	else
 	{
-		if( expect_string(acCommand)!=true )
+		iResult = libusb_bulk_transfer(m_ptDevHandle, m_ucEndpoint_In, aucInBuf, 64, &iProcessed, uiTimeoutMs);
+		if( iResult!=0 )
 		{
-			fprintf(stderr, "%s(%p): strange response 1 from device\n", m_pcPluginId, this);
-			iResult = -1;
+			printf("Failed to receive data: %s\n", libusb_strerror(iResult));
+		}
+		else if( iProcessed==0 )
+		{
+			printf("Received empty packet!\n");
+			iResult = 1;
 		}
 		else
 		{
-			/* Capture output. */
-			fEndFound = false;
-			iState = 0;
-			ulResultValue = 0;
-			do
-			{
-				sizReceived = usb_receive(aucOutput, sizeof(aucOutput), 200);
-				if( sizReceived!=0 )
-				{
-//					hexdump(aucOutput, sizReceived);
-					fwrite(aucOutput, sizReceived, 1, stdout);
-
-					/* Loop over the complete input and look for the end pattern. */
-					sizCnt = 0;
-					do
-					{
-						iMatch = 0;
-						cPattern = pcEndPattern[iState];
-						cReceived = (char)aucOutput[sizCnt];
-						if( cPattern=='*' )
-						{
-							cReceived = tolower(cReceived);
-							ulResultValue <<= 4;
-							/* The received digit must be a hex digit. */
-							if( cReceived>='0' && cReceived<='9' )
-							{
-//								printf("%c\n", cReceived);
-								cReceived &= 0x0fU;
-								ulResultValue |= cReceived;
-								iMatch = 1;
-							}
-							else if( cReceived>='a' && cReceived<='f' )
-							{
-//								printf("%c\n", cReceived);
-								cReceived -= 'a';
-								cReceived += 10;
-								ulResultValue |= cReceived;
-								iMatch = 1;
-							}
-						}
-						else if( cPattern==cReceived )
-						{
-//							printf("%c\n", cReceived);
-							iMatch = 1;
-						}
-
-						if( iMatch==0 )
-						{
-//							printf("\nNo match %02x!=%02x\n", cReceived, cPattern);
-							/* Go back. */
-							if( iState==sizWarpBackFrom )
-							{
-								iState = sizWarpBackTo;
-							}
-							else if( iState!=0 )
-							{
-								iState = 0;
-							}
-							else
-							{
-								++sizCnt;
-							}
-						}
-						else
-						{
-							++sizCnt;
-							++iState;
-						}
-
-						if( pcEndPattern[iState]=='\0' )
-						{
-//							printf("\nEOP!\n");
-							fEndFound = true;
-							break;
-						}
-					} while( sizCnt<sizReceived );
-//					printf("\n");
-				}
-			} while( fEndFound==false );
+			*psizInBuf = iProcessed;
+//			printf("Received %d bytes:\n", iProcessed);
+//			hexdump(aucInBuf, iProcessed);
 		}
 	}
 
 	return iResult;
 }
 
+
+int romloader_usb_device_libusb0::receive_packet(unsigned char *aucInBuf, size_t *psizInBuf)
+{
+	int iResult;
+	int iProcessed;
+	unsigned int uiTimeoutMs;
+
+
+	uiTimeoutMs = 100;
+
+//	printf("Send Command:\n", iProcessed);
+//	hexdump(aucOutBuf, sizOutBuf);
+
+	iResult = libusb_bulk_transfer(m_ptDevHandle, m_ucEndpoint_In, aucInBuf, 64, &iProcessed, uiTimeoutMs);
+	if( iResult==LIBUSB_ERROR_TIMEOUT )
+	{
+		printf("Timeout: iProcessed=%d\n", iProcessed);
+		/* Nothing received. */
+		*psizInBuf = 0;
+		iResult = 0;
+	}
+	else if( iResult!=0 )
+	{
+		printf("Failed to receive data: %s\n", libusb_strerror(iResult));
+	}
+	else if( iProcessed==0 )
+	{
+		printf("Received empty packet!\n");
+		iResult = 1;
+	}
+	else
+	{
+		*psizInBuf = iProcessed;
+//		printf("Received %d bytes:\n", iProcessed);
+//		hexdump(aucInBuf, iProcessed);
+	}
+
+	return iResult;
+}

@@ -25,70 +25,49 @@
 #include "../romloader.h"
 
 
+#ifdef WIN32
+#	include <Rpc.h>
+#else
+#	include <uuid/uuid.h>
+#	include <memory.h>
+#endif
+
+
+typedef struct
+{
+	const char *pcName;
+	unsigned short usVendorId;
+	unsigned short usDeviceId;
+	unsigned short usBcdDevice;
+	ROMLOADER_CHIPTYP tChiptyp;
+	ROMLOADER_ROMCODE tRomcode;
+	unsigned char ucEndpoint_In;
+	unsigned char ucEndpoint_Out;
+} NETX_USB_DEVICE_T;
+
+
 class romloader_usb_device
 {
 public:
 	romloader_usb_device(const char *pcPluginId);
 	~romloader_usb_device(void);
 
-	/*
-	 * The card buffer interface.
-	 */
-	static const size_t mc_sizCardSize = 16384;
-	struct sBufferCard;
-
-	typedef struct sBufferCard
-	{
-		unsigned char *pucEnd;
-		unsigned char *pucRead;
-		unsigned char *pucWrite;
-		sBufferCard *ptNext;
-		unsigned char aucData[mc_sizCardSize];
-	} tBufferCard;
-
-	void initCards(void);
-	void deleteCards(void);
-	void writeCards(const unsigned char *pucBuffer, size_t sizBufferSize);
-	size_t readCards(unsigned char *pucBuffer, size_t sizBufferSize);
-	size_t getCardSize(void) const;
-	void flushCards(void);
-	void dump_all_cards(void);
-	bool expect_string(const char *pcString);
-	bool parse_hex_digit(size_t sizDigits, unsigned long *pulResult);
-	int parse_uue(size_t sizLength, unsigned char *pucData, unsigned long ulStart, unsigned long ulEnd);
-	int uue_generate(const unsigned char *pucData, size_t sizData, char **ppcUueData, size_t *psizUueData);
-
-	virtual size_t usb_receive(unsigned char *pucBuffer, size_t sizBuffer, unsigned int uiTimeoutMs) = 0;
-	virtual int usb_receive_line(char *pcBuffer, size_t sizBuffer, unsigned int uiTimeoutMs, size_t *psizReceived) = 0;
-	virtual int usb_send(const char *pcBuffer, size_t sizBuffer) = 0;
-
 protected:
-	tBufferCard *m_ptFirstCard;
-	tBufferCard *m_ptLastCard;
-
 	char *m_pcPluginId;
 
 
-	typedef struct
-	{
-		const char *pcName;
-		unsigned short usVendorId;
-		unsigned short usDeviceId;
-		unsigned short usBcdDevice;
-		ROMLOADER_CHIPTYP tChiptyp;
-		ROMLOADER_ROMCODE tRomcode;
-		unsigned char ucEndpoint_In;
-		unsigned char ucEndpoint_Out;
-	} NETX_USB_DEVICE_T;
-
 	static const NETX_USB_DEVICE_T atNetxUsbDevices[3];
+
+	typedef union
+	{
+		unsigned char auc[16];
+		unsigned long aul[4];
+	} UUID_T;
+	void uuid_generate(UUID_T *ptUuid);
 
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);
 
 private:
-	size_t readCardData(unsigned char *pucBuffer, size_t sizBufferSize);
-
-
 };
 
 

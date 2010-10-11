@@ -101,30 +101,6 @@ private:
 
 	bool chip_init(lua_State *ptClientData);
 
-	bool parse_hex_digit(DATA_BUFFER_T *ptBuffer, size_t sizDigits, unsigned long *pulResult);
-	bool expect_string(DATA_BUFFER_T *ptBuffer, const char *pcMatch);
-	bool skip_line(DATA_BUFFER_T *ptBuffer);
-	size_t get_line_length(DATA_BUFFER_T *ptBuffer);
-
-	bool parseDumpLine(DATA_BUFFER_T *ptBuffer, unsigned long ulAddress, unsigned long ulElements, unsigned char *pucBuffer);
-	int parse_uue(DATA_BUFFER_T *ptBuffer, unsigned long ulStart, size_t sizLength, unsigned char **ppucData);
-	int uue_generate(const unsigned char *pucData, size_t sizData, char **ppcUueData, size_t *psizUueData);
-
-	int usb_call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF *ptLuaFn, long lCallbackUserData);
-	int usb_call_netx10(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF *ptLuaFn, long lCallbackUserData);
-
-	int usb_load(const unsigned char *pucData, size_t sizDataLen, unsigned long ulLoadAdr, SWIGLUA_REF *ptLuaFn, long lCallbackUserData);
-
-	int usb_executeCommand(const char *pcCommand, size_t sizCommand);
-	int usb_sendCommand(const char *pcCommand);
-	int usb_getNetxData(DATA_BUFFER_T *ptBuffer, SWIGLUA_REF *ptLuaFn, long lCallbackUserData, size_t sizInitialSize=4096);
-
-
-	// lowlevel functions
-	int libusb_readBlock(unsigned char *pucReceiveBuffer, unsigned int uiSize, int iTimeoutMs);
-	int libusb_writeBlock(unsigned char *pucSendBuffer, unsigned int uiSize, int iTimeoutMs);
-	int libusb_exchange(unsigned char *pucSendBuffer, unsigned char *pucReceiveBuffer);
-
 	romloader_usb_provider *m_ptUsbProvider;
 
 	unsigned int m_uiBusNr;
@@ -132,18 +108,6 @@ private:
 
 	/* pointer to the usb device and the usb device handle */
 	romloader_usb_device_platform *m_ptUsbDevice;
-//	libusb_device *m_ptUsbDev;
-//	libusb_device_handle *m_ptUsbDevHandle;
-
-	/* bus number and device address for the connection */
-//	uint8_t m_uiNetxBusNr;
-//	uint8_t m_uiNetxDeviceAddress;
-
-	// buffer for the read_image command
-	size_t sizBufLen;
-	size_t sizBufPos;
-	bool fEof;
-	char acBuf[64];
 };
 
 /*-----------------------------------*/

@@ -20,6 +20,17 @@ endif(${LUA51_FOUND})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 
+#----------------------------------------------------------------------------
+#
+# Detect libuuid
+#
+
+IF(UNIX)
+	FIND_LIBRARY(LIBUUID uuid)
+	IF(DEFINED LIBUUID_NOTFOUND)
+		MESSAGE(FATAL_ERROR "No libuuid found!")
+	ENDIF(DEFINED LIBUUID_NOTFOUND)
+ENDIF(UNIX)
 
 IF(UNIX)
 	# Use libusb-0.1
@@ -48,11 +59,13 @@ SET(romloader_usb_SOURCES
 	romloader_usb_device.cpp
 	romloader_usb_device_libusb0.cpp
 	romloader_usb_main.cpp
+	uuencoder.cpp
 )
 
 SET(romloader_usb_HEADERS
 	romloader_usb_device_libusb0.h
 	romloader_usb_main.h
+	uuencoder.h
 )
 
 add_definitions(${USB_DEFINES})
@@ -63,7 +76,7 @@ add_library(romloader_usb_lib STATIC ${romloader_usb_SOURCES})
 if(${LUA51_FOUND})
 	# Build the Lua module.
 	SWIG_ADD_MODULE(romloader_usb lua romloader_usb.i)
-	SWIG_LINK_LIBRARIES(romloader_usb romloader_usb_lib ${LUA_LIBRARIES} ${USB_LIBRARIES} romloader_lib)
+	SWIG_LINK_LIBRARIES(romloader_usb romloader_usb_lib ${LUA_LIBRARIES} ${USB_LIBRARIES} ${LIBUUID} romloader_lib)
 	set_property(TARGET romloader_usb PROPERTY PREFIX "")
 
 	# Install the targets.

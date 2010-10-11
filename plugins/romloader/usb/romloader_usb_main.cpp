@@ -23,6 +23,7 @@
 #include <stdio.h>
 
 #include "romloader_usb_main.h"
+#include "netx/src/usbmonitor_commands.h"
 
 #ifdef _WINDOWS
 	#define snprintf _snprintf
@@ -344,225 +345,66 @@ void romloader_usb::Disconnect(lua_State *ptClientData)
 }
 
 
-bool romloader_usb::parse_hex_digit(DATA_BUFFER_T *ptBuffer, size_t sizDigits, unsigned long *pulResult)
-{
-	const unsigned char *pucData;
-	unsigned long ulResult;
-	bool fOk;
-	unsigned char uc;
-	unsigned int uiDigit;
-	size_t sizCnt;
-
-	if( ptBuffer->sizPos+sizDigits>ptBuffer->sizData )
-	{
-		// not enough chars left in the buffer -> this can not work!
-		fOk = false;
-	}
-	else
-	{
-		pucData = ptBuffer->pucData + ptBuffer->sizPos;
-		ulResult = 0;
-		fOk = true;
-		sizCnt = 0;
-		while( sizCnt<sizDigits )
-		{
-			uc = *(pucData++);
-			uc = tolower(uc);
-			if( uc>='0' && uc<='9' )
-			{
-				uiDigit = uc - '0';
-			}
-			else if( uc>='a' && uc<='f' )
-			{
-				uiDigit = uc - 'a' + 10;
-			}
-			else
-			{
-				fOk = false;
-				break;
-			}
-			ulResult <<= 4;
-			ulResult |= uiDigit;
-
-			++sizCnt;
-		}
-
-		if( fOk==true )
-		{
-			if( pulResult!=NULL )
-			{
-				*pulResult = ulResult;
-			}
-			ptBuffer->sizPos += sizDigits;
-		}
-	}
-
-	return fOk;
-}
-
-
-bool romloader_usb::expect_string(DATA_BUFFER_T *ptBuffer, const char *pcMatch)
-{
-	size_t sizMatch;
-	const unsigned char *pucMatch;
-	const unsigned char *pucData;
-	bool fOk;
-	unsigned char uc;
-	size_t sizCnt;
-
-
-	sizMatch = strlen(pcMatch);
-	pucMatch = (unsigned char*)pcMatch;
-
-	if( ptBuffer->sizPos+sizMatch>ptBuffer->sizData )
-	{
-		fOk = false;
-	}
-	else
-	{
-		pucData = ptBuffer->pucData + ptBuffer->sizPos;
-		fOk = true;
-		sizCnt = 0;
-		do
-		{
-			uc = *(pucMatch++);
-			fOk = ( uc==*(pucData++) );
-			++sizCnt;
-		} while( fOk==true && sizCnt<sizMatch );
-	}
-
-	if( fOk==true )
-	{
-		ptBuffer->sizPos += sizMatch;
-	}
-
-	return fOk;
-}
-
-
-bool romloader_usb::skip_line(DATA_BUFFER_T *ptBuffer)
-{
-	size_t sizCnt;
-	unsigned char ucData;
-	bool fFoundEol;
-
-
-	/* No eol found yet. */
-	fFoundEol = false;
-
-	sizCnt = ptBuffer->sizPos;
-
-	/* Skip until the end of the line. */
-	do
-	{
-		ucData = ptBuffer->pucData[sizCnt++];
-		if( ucData=='\n' || ucData=='\r' )
-		{
-			ptBuffer->sizPos = sizCnt;
-			fFoundEol = true;
-			break;
-		}
-	} while( sizCnt<ptBuffer->sizData );
-
-	return fFoundEol;
-}
-
-
-size_t romloader_usb::get_line_length(DATA_BUFFER_T *ptBuffer)
-{
-	size_t sizLine;
-	unsigned char ucData;
-	const unsigned char *pucCnt;
-	const unsigned char *pucEnd;
-
-
-	/* Get the line length. */
-	sizLine = 0;
-	pucCnt = ptBuffer->pucData + ptBuffer->sizPos;
-	pucEnd = ptBuffer->pucData + ptBuffer->sizData;
-
-	/* Search for lineend. */
-	while( pucCnt<pucEnd )
-	{
-		ucData = *(pucCnt++);
-		if( ucData!='\n' && ucData!='\r' )
-		{
-			++sizLine;
-		}
-		else
-		{
-			break;
-		}
-	}
-
-	return sizLine;
-}
-
-
 /* read a byte (8bit) from the netx to the pc */
 unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
-	int iResult;
-	char acCommand[19];
-	size_t sizCommand;
-	DATA_BUFFER_T tBuffer;
-	unsigned long ulResponseAddress;
-	unsigned long ulResponseValue;
+	unsigned char ucData;
 	bool fOk;
+	int iResult;
+	unsigned char aucOutBuf[64];
+	unsigned char aucInBuf[64];
+	size_t sizOutBuf;
+	size_t sizInBuf;
+	unsigned char ucCommand;
+	unsigned char ucStatus;
 
-
-	ulResponseValue = 0;
-
-	/* Expect failure. */
-	fOk = false;
-
-	/* Construct the command. */
-	if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
-	{
-		sizCommand = snprintf(acCommand, sizeof(acCommand), "db %08lX ++1", ulNetxAddress);
-	}
-	else
-	{
-		sizCommand = snprintf(acCommand, sizeof(acCommand), "DUMP %08lX BYTE", ulNetxAddress);
-	}
 
 	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+		fOk = false;
 	}
 	else
 	{
-		/* Send the command. */
-		iResult = usb_executeCommand(acCommand, sizCommand);
-		if( iResult!=LIBUSB_SUCCESS )
+		/* Construct the command packet. */
+		ucCommand  = USBMON_COMMAND_Read_Byte << 5U;
+		ucCommand |= 1;
+		aucOutBuf[0x00] = ucCommand;
+		aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
+		aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
+		aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
+		aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
+		sizOutBuf = 5;
+
+		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
+		if( iResult!=0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to send command: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to transfer command!", m_pcName, this);
+			fOk = false;
+		}
+		else if( sizInBuf==0 )
+		{
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): received empty answer!", m_pcName, this);
+			fOk = false;
 		}
 		else
 		{
-			if( parse_hex_digit(&tBuffer, 8, &ulResponseAddress)!=true )
+			ucStatus = aucInBuf[0];
+			if( ucStatus!=USBMON_STATUS_Ok )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): strange response from device: %s", m_pcName, this, tBuffer.pucData);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+				fOk = false;
 			}
-			else if( ulResponseAddress!=ulNetxAddress )
+			else if( sizInBuf!=2 )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): address does not match request: %s", m_pcName, this, tBuffer.pucData);
-			}
-			else if( expect_string(&tBuffer, ": ")!=true )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): strange response from device: %s", m_pcName, this, tBuffer.pucData);
-			}
-			else if( parse_hex_digit(&tBuffer, 2, &ulResponseValue)!=true )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): strange response from device: %s", m_pcName, this, tBuffer.pucData);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer has invalid size!", m_pcName, this);
+				fOk = false;
 			}
 			else
 			{
-				printf("%s(%p): read_data08: 0x%08lx = 0x%02lx\n", m_pcName, this, ulNetxAddress, ulResponseValue);
+				ucData  = aucInBuf[1];
 				fOk = true;
 			}
-
-			free(tBuffer.pucData);
 		}
 	}
 
@@ -571,74 +413,71 @@ unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long 
 		MUHKUH_PLUGIN_EXIT_ERROR(ptClientData);
 	}
 
-	return (unsigned char)ulResponseValue;
+	return ucData;
 }
 
 
 /* read a word (16bit) from the netx to the pc */
 unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
-	int iResult;
-	char acCommand[19];
-	size_t sizCommand;
-	DATA_BUFFER_T tBuffer;
-	unsigned long ulResponseAddress;
-	unsigned long ulResponseValue;
+	unsigned short usData;
 	bool fOk;
+	int iResult;
+	unsigned char aucOutBuf[64];
+	unsigned char aucInBuf[64];
+	size_t sizOutBuf;
+	size_t sizInBuf;
+	unsigned char ucCommand;
+	unsigned char ucStatus;
 
-
-	ulResponseValue = 0;
-
-	/* Expect failure. */
-	fOk = false;
-
-	/* Construct the command. */
-	if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
-	{
-		sizCommand = snprintf(acCommand, sizeof(acCommand), "dw %08lX ++2", ulNetxAddress);
-	}
-	else
-	{
-		sizCommand = snprintf(acCommand, sizeof(acCommand), "DUMP %08lX WORD", ulNetxAddress);
-	}
 
 	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+		fOk = false;
 	}
 	else
 	{
-		/* Send the command. */
-		iResult = usb_executeCommand(acCommand, sizCommand);
-		if( iResult!=LIBUSB_SUCCESS )
+		/* Construct the command packet. */
+		ucCommand  = USBMON_COMMAND_Read_Word << 5U;
+		ucCommand |= 1;
+		aucOutBuf[0x00] = ucCommand;
+		aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
+		aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
+		aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
+		aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
+		sizOutBuf = 5;
+
+		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
+		if( iResult!=0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to send command: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to transfer command!", m_pcName, this);
+			fOk = false;
+		}
+		else if( sizInBuf==0 )
+		{
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): received empty answer!", m_pcName, this);
+			fOk = false;
 		}
 		else
 		{
-			if( parse_hex_digit(&tBuffer, 8, &ulResponseAddress)!=true )
+			ucStatus = aucInBuf[0];
+			if( ucStatus!=USBMON_STATUS_Ok )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): strange response from device: %s", m_pcName, this, tBuffer.pucData);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+				fOk = false;
 			}
-			else if( ulResponseAddress!=ulNetxAddress )
+			else if( sizInBuf!=3 )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): address does not match request: %s", m_pcName, this, tBuffer.pucData);
-			}
-			else if( expect_string(&tBuffer, ": ")!=true )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): strange response from device: %s", m_pcName, this, tBuffer.pucData);
-			}
-			else if( parse_hex_digit(&tBuffer, 4, &ulResponseValue)!=true )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): strange response from device: %s", m_pcName, this, tBuffer.pucData);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer has invalid size!", m_pcName, this);
+				fOk = false;
 			}
 			else
 			{
-				printf("%s(%p): read_data16: 0x%08lx = 0x%04lx\n", m_pcName, this, ulNetxAddress, ulResponseValue);
+				usData  = aucInBuf[1];
+				usData |= aucInBuf[2] << 8;
 				fOk = true;
 			}
-
-			free(tBuffer.pucData);
 		}
 	}
 
@@ -647,37 +486,73 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 		MUHKUH_PLUGIN_EXIT_ERROR(ptClientData);
 	}
 
-	return (unsigned short)ulResponseValue;
+	return usData;
 }
 
 
 /* read a long (32bit) from the netx to the pc */
 unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
-	int iResult;
-	unsigned long ulResponseValue;
+	unsigned long ulData;
 	bool fOk;
+	int iResult;
+	unsigned char aucOutBuf[64];
+	unsigned char aucInBuf[64];
+	size_t sizOutBuf;
+	size_t sizInBuf;
+	unsigned char ucCommand;
+	unsigned char ucStatus;
 
 
-	ulResponseValue = 0;
-
-	/* Expect failure. */
-	fOk = false;
-
-	if( m_ptUsbDevice==NULL )
+	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+		fOk = false;
 	}
 	else
 	{
-		iResult = m_ptUsbDevice->read_data32(ulNetxAddress, &ulResponseValue);
-		if( iResult!=LIBUSB_SUCCESS )
+		/* Construct the command packet. */
+		ucCommand  = USBMON_COMMAND_Read_Long << 5U;
+		ucCommand |= 4;
+		aucOutBuf[0x00] = ucCommand;
+		aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
+		aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
+		aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
+		aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
+		sizOutBuf = 5;
+
+		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
+		if( iResult!=0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to send command: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to transfer command!", m_pcName, this);
+			fOk = false;
+		}
+		else if( sizInBuf==0 )
+		{
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): received empty answer!", m_pcName, this);
+			fOk = false;
 		}
 		else
 		{
-			fOk = true;
+			ucStatus = aucInBuf[0];
+			if( ucStatus!=USBMON_STATUS_Ok )
+			{
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+				fOk = false;
+			}
+			else if( sizInBuf!=5 )
+			{
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer has invalid size!", m_pcName, this);
+				fOk = false;
+			}
+			else
+			{
+				ulData  = aucInBuf[1];
+				ulData |= aucInBuf[2] << 8;
+				ulData |= aucInBuf[3] << 16;
+				ulData |= aucInBuf[4] << 24;
+				fOk = true;
+			}
 		}
 	}
 
@@ -686,256 +561,118 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 		MUHKUH_PLUGIN_EXIT_ERROR(ptClientData);
 	}
 
-	return ulResponseValue;
-}
-
-
-bool romloader_usb::parseDumpLine(DATA_BUFFER_T *ptBuffer, unsigned long ulAddress, unsigned long ulElements, unsigned char *pucBuffer)
-{
-	bool fResult;
-	unsigned long ulResponseAddress;
-	unsigned long ulChunkCnt;
-	unsigned long ulByte;
-	size_t sizBufferLeft;
-	size_t sizPos;
-	size_t sizMax;
-	char c;
-
-
-	// expect success
-	fResult = true;
-
-	// get remaining size of buffer
-	sizBufferLeft = ptBuffer->sizData - ptBuffer->sizPos;
-	// is enough input data left?
-	if( sizBufferLeft<(10+ulElements*3) )
-	{
-		fResult = false;
-	}
-	else if( parse_hex_digit(ptBuffer, 8, &ulResponseAddress)!=true )
-	{
-		fResult = false;
-	}
-	else if( ulResponseAddress!=ulAddress )
-	{
-		fResult = false;
-	}
-	else if( expect_string(ptBuffer, ": ")!=true )
-	{
-		fResult = false;
-	}
-	else
-	{
-		// get all bytes
-		ulChunkCnt = ulElements;
-		while( ulChunkCnt!=0 )
-		{
-			// get one hex digit
-			if( parse_hex_digit(ptBuffer, 2, &ulByte)!=true )
-			{
-				fResult = false;
-				break;
-			}
-			else if( expect_string(ptBuffer, " ")!=true )
-			{
-				fResult = false;
-				break;
-			}
-			else
-			{
-				*(pucBuffer++) = (char)ulByte;
-				// one number processed
-				--ulChunkCnt;
-			}
-		}
-	}
-
-	if( fResult==true )
-	{
-		/* skip until the end of the line */
-		sizPos = ptBuffer->sizPos;
-		sizMax = ptBuffer->sizData;
-		/* wait for eol */
-		while( sizPos<sizMax )
-		{
-			c = ptBuffer->pucData[sizPos];
-			if( c!='\r' && c!='\n' )
-			{
-				++sizPos;
-			}
-			else
-			{
-				break;
-			}
-		}
-		/* wait for eol gone */
-		while( sizPos<sizMax )
-		{
-			c = ptBuffer->pucData[sizPos];
-			if( c!='\r' && c!='\n' )
-			{
-				break;
-			}
-			else
-			{
-				++sizPos;
-			}
-		}
-		ptBuffer->sizPos = sizPos;
-	}
-
-	return fResult;
+	return ulData;
 }
 
 
 /* read a byte array from the netx to the pc */
 void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
-	int iResult;
-	char acCommand[28];
+	char *pcBuffer;
+	size_t sizBuffer;
 	bool fOk;
-	DATA_BUFFER_T tBuffer;
-	size_t sizDataExpected;
-	unsigned char *pucData;
-	unsigned char *pucDataCnt;
-	unsigned long ulBytesLeft;
-	unsigned long ulExpectedAddress;
-	unsigned long ulChunkSize;
+	size_t sizChunk;
+	int iResult;
+	unsigned char aucOutBuf[64];
+	unsigned char aucInBuf[64];
+	size_t sizOutBuf;
+	size_t sizInBuf;
+	unsigned char ucCommand;
+	unsigned char ucStatus;
+	bool fIsRunning;
+	long lBytesProcessed;
 
 
-	/* Expect error. */
-	fOk = false;
+	/* Be optimistic. */
+	fOk = true;
 
 	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
+		fOk = false;
+	}
+	else if( ulSize==0 )
+	{
+		pcBuffer = NULL;
+		sizBuffer = 0;
 	}
 	else
 	{
-		/* Construct the command. */
-		if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
+		sizBuffer = ulSize;
+		pcBuffer = (char*)malloc(sizBuffer);
+		if( pcBuffer==NULL )
 		{
-			pucData = (unsigned char*)malloc(ulSize);
-			if( pucData==NULL )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to alloc %d bytes!", m_pcName, this, ulSize);
-				ulSize = 0;
-			}
-			else
-			{
-				iResult = m_ptUsbDevice->read_image(ulNetxAddress, ulSize, pucData);
-				if( iResult!=LIBUSB_SUCCESS )
-				{
-					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to read image: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
-
-					free(pucData);
-					pucData = NULL;
-					ulSize = 0;
-				}
-				else
-				{
-					fOk = true;
-				}
-			}
-
-			*ppcBUFFER_OUT = (char*)pucData;
-			*psizBUFFER_OUT = (size_t)ulSize;
+			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to allocate %d bytes!", m_pcName, this, ulSize);
+			fOk = false;
 		}
 		else
 		{
-			/* Init the buffer. */
-			tBuffer.pucData = NULL;
-			tBuffer.sizData = 0;
-			tBuffer.sizPos = 0;
+			*ppcBUFFER_OUT = pcBuffer;
+			*psizBUFFER_OUT = sizBuffer;
 
-			snprintf(acCommand, sizeof(acCommand), "DUMP %08lX %08lX BYTE", ulNetxAddress, ulSize);
-
-			/* Send the command. */
-			iResult = usb_sendCommand(acCommand);
-			if( iResult!=LIBUSB_SUCCESS )
+			lBytesProcessed = 0;
+			do
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to send command: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
-			}
-			else
-			{
-/*
-00000010: 09 CF 9F 09 D5 52 65 6F 86 BA F1 A4 10 98 C4 83   .....Reo........
-10 + 3*16 + 2 + 16 + 1 = 77
-*/
-				/* Init the buffer. */
-				sizDataExpected = ((ulSize+15)/16)*77;
-				printf("%s(%p): expecting %d bytes\n", m_pcName, this, sizDataExpected);
-				/* Rounding up to a multiple of 4096. */
-				if( (sizDataExpected & 4095)!=0 )
+				sizChunk = ulSize;
+				if( sizChunk>31 )
 				{
-					sizDataExpected += 4096 - (sizDataExpected & 4095);
+					sizChunk = 31;
 				}
-				iResult = usb_getNetxData(&tBuffer, &tLuaFn, lCallbackUserData, sizDataExpected);
-				if( iResult!=LIBUSB_SUCCESS )
+
+				/* Construct the command packet. */
+				ucCommand  = USBMON_COMMAND_Read_Byte << 5U;
+				ucCommand |= sizChunk;
+				aucOutBuf[0x00] = ucCommand;
+				aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
+				aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
+				aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
+				aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
+				sizOutBuf = 5;
+
+				iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
+				if( iResult!=0 )
 				{
-					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to send command: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to transfer command!", m_pcName, this);
+					fOk = false;
+					break;
+				}
+				else if( sizInBuf==0 )
+				{
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): received empty answer!", m_pcName, this);
+					fOk = false;
+					break;
 				}
 				else
 				{
-					sizBufLen = 0;
-					sizBufPos = 0;
-					fEof = false;
-
-					// alloc buffer
-					pucData = (unsigned char*)malloc(ulSize);
-					if( pucData==NULL )
+					ucStatus = aucInBuf[0];
+					if( ucStatus!=USBMON_STATUS_Ok )
 					{
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to alloc %d bytes of input buffer!", m_pcName, this, ulSize);
-						iResult = LIBUSB_ERROR_NO_MEM;
+						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+						fOk = false;
+						break;
+					}
+					else if( sizInBuf!=sizChunk+1 )
+					{
+						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer has invalid size!", m_pcName, this);
+						fOk = false;
+						break;
 					}
 					else
 					{
-						pucDataCnt = pucData;
-						// parse the result
-						ulBytesLeft = ulSize;
-						ulExpectedAddress = ulNetxAddress;
-						while( ulBytesLeft>0 )
+						memcpy(pcBuffer, aucInBuf+1, sizChunk);
+						pcBuffer += sizChunk;
+						ulSize -= sizChunk;
+						ulNetxAddress += sizChunk;
+						lBytesProcessed += sizChunk;
+
+						fIsRunning = callback_long(&tLuaFn, lBytesProcessed, lCallbackUserData);
+						if( fIsRunning!=true )
 						{
-							// get the number of expected bytes in the next row
-							ulChunkSize = 16;
-							if( ulChunkSize>ulBytesLeft )
-							{
-								ulChunkSize = ulBytesLeft;
-							}
-							fOk = parseDumpLine(&tBuffer, ulExpectedAddress, ulChunkSize, pucDataCnt);
-							if( fOk!=true )
-							{
-								MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to parse response!", m_pcName, this);
-								iResult = LIBUSB_ERROR_OTHER;
-								break;
-							}
-							else
-							{
-								ulBytesLeft -= ulChunkSize;
-								// inc address
-								ulExpectedAddress += ulChunkSize;
-								// inc buffer ptr
-								pucDataCnt += ulChunkSize;
-							}
+							break;
 						}
 					}
-
-					if( fOk!=true )
-					{
-						free(pucData);
-						pucData = NULL;
-						ulSize = 0;
-					}
-
-					*ppcBUFFER_OUT = (char*)pucData;
-					*psizBUFFER_OUT = (size_t)ulSize;
 				}
-			}
-
-			if( tBuffer.pucData!=NULL )
-			{
-				free(tBuffer.pucData);
-			}
+			} while( ulSize!=0 );
 		}
 	}
 
@@ -949,55 +686,62 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 /* write a byte (8bit) from the pc to the netx */
 void romloader_usb::write_data08(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned char ucData)
 {
-	int iResult;
-	char acCommand[22];
-	size_t sizCommand;
-	DATA_BUFFER_T tBuffer;
 	bool fOk;
+	int iResult;
+	unsigned char aucOutBuf[64];
+	unsigned char aucInBuf[64];
+	size_t sizOutBuf;
+	size_t sizInBuf;
+	unsigned char ucCommand;
+	unsigned char ucStatus;
 
-
-	// assume failure
-	fOk = false;
-
-	/* Construct the command. */
-	if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
-	{
-		sizCommand = snprintf(acCommand, sizeof(acCommand), "mb %08lX %02X\r", ulNetxAddress, ucData);
-	}
-	else
-	{
-		sizCommand = snprintf(acCommand, sizeof(acCommand), "FILL %08lX %02X BYTE", ulNetxAddress, ucData);
-	}
 
 	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+		fOk = false;
 	}
 	else
 	{
-		// send the command
-		iResult = usb_executeCommand(acCommand, sizCommand);
-		if( iResult!=LIBUSB_SUCCESS )
+		/* Construct the command packet. */
+		ucCommand  = USBMON_COMMAND_Write_Byte << 5U;
+		ucCommand |= 1;
+		aucOutBuf[0x00] = ucCommand;
+		aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
+		aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
+		aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
+		aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
+		aucOutBuf[0x05] = ucData;
+		sizOutBuf = 6;
+
+		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
+		if( iResult!=0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to send command: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to transfer command!", m_pcName, this);
+			fOk = false;
+		}
+		else if( sizInBuf==0 )
+		{
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): received empty answer!", m_pcName, this);
+			fOk = false;
 		}
 		else
 		{
-			if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 && expect_string(&tBuffer, acCommand)!=true )
+			ucStatus = aucInBuf[0];
+			if( ucStatus!=USBMON_STATUS_Ok )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): strange response from netx: %s", m_pcName, this, tBuffer.pucData);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+				fOk = false;
 			}
-			else if( m_tChiptyp!=ROMLOADER_CHIPTYP_NETX10 && expect_string(&tBuffer, "\n>")!=true )
+			else if( sizInBuf!=1 )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): strange response from netx: %s", m_pcName, this, tBuffer.pucData);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer has invalid size!", m_pcName, this);
+				fOk = false;
 			}
 			else
 			{
-				printf("%s(%p): write_data08: 0x%08lx = 0x%02x\n", m_pcName, this, ulNetxAddress, ucData);
 				fOk = true;
 			}
-
-			free(tBuffer.pucData);
 		}
 	}
 
@@ -1011,55 +755,63 @@ void romloader_usb::write_data08(lua_State *ptClientData, unsigned long ulNetxAd
 /* write a word (16bit) from the pc to the netx */
 void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned short usData)
 {
-	int iResult;
-	char acCommand[24];
-	size_t sizCommand;
-	DATA_BUFFER_T tBuffer;
 	bool fOk;
+	int iResult;
+	unsigned char aucOutBuf[64];
+	unsigned char aucInBuf[64];
+	size_t sizOutBuf;
+	size_t sizInBuf;
+	unsigned char ucCommand;
+	unsigned char ucStatus;
 
-
-	// assume failure
-	fOk = false;
-
-	/* Construct the command. */
-	if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
-	{
-		sizCommand = snprintf(acCommand, sizeof(acCommand), "mw %08lX %04X\r", ulNetxAddress, usData);
-	}
-	else
-	{
-		sizCommand = snprintf(acCommand, sizeof(acCommand), "FILL %08lX %04X WORD", ulNetxAddress, usData);
-	}
 
 	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+		fOk = false;
 	}
 	else
 	{
-		// send the command
-		iResult = usb_executeCommand(acCommand, sizCommand);
-		if( iResult!=LIBUSB_SUCCESS )
+		/* Construct the command packet. */
+		ucCommand  = USBMON_COMMAND_Write_Word << 5U;
+		ucCommand |= 1;
+		aucOutBuf[0x00] = ucCommand;
+		aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
+		aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
+		aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
+		aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
+		aucOutBuf[0x05] =  usData      & 0xff;
+		aucOutBuf[0x06] = (usData>>8 ) & 0xff;
+		sizOutBuf = 7;
+
+		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
+		if( iResult!=0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to send command: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to transfer command!", m_pcName, this);
+			fOk = false;
+		}
+		else if( sizInBuf==0 )
+		{
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): received empty answer!", m_pcName, this);
+			fOk = false;
 		}
 		else
 		{
-			if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 && expect_string(&tBuffer, acCommand)!=true )
+			ucStatus = aucInBuf[0];
+			if( ucStatus!=USBMON_STATUS_Ok )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): strange response from netx: %s", m_pcName, this, tBuffer.pucData);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+				fOk = false;
 			}
-			else if( m_tChiptyp!=ROMLOADER_CHIPTYP_NETX10 && expect_string(&tBuffer, "\n>")!=true )
+			else if( sizInBuf!=1 )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): strange response from netx: %s", m_pcName, this, tBuffer.pucData);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer has invalid size!", m_pcName, this);
+				fOk = false;
 			}
 			else
 			{
-				printf("%s(%p): write_data16: 0x%08lx = 0x%04x\n", m_pcName, this, ulNetxAddress, usData);
 				fOk = true;
 			}
-
-			free(tBuffer.pucData);
 		}
 	}
 
@@ -1073,30 +825,65 @@ void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 /* write a long (32bit) from the pc to the netx */
 void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData)
 {
-	int iResult;
-	unsigned long ulResponseValue;
 	bool fOk;
+	int iResult;
+	unsigned char aucOutBuf[64];
+	unsigned char aucInBuf[64];
+	size_t sizOutBuf;
+	size_t sizInBuf;
+	unsigned char ucCommand;
+	unsigned char ucStatus;
 
 
-	ulResponseValue = 0;
-
-	/* Expect failure. */
-	fOk = false;
-
-	if( m_ptUsbDevice==NULL )
+	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+		fOk = false;
 	}
 	else
 	{
-		iResult = m_ptUsbDevice->write_data32(ulNetxAddress, ulData);
-		if( iResult!=LIBUSB_SUCCESS )
+		/* Construct the command packet. */
+		ucCommand  = USBMON_COMMAND_Write_Long << 5U;
+		ucCommand |= 1;
+		aucOutBuf[0x00] = ucCommand;
+		aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
+		aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
+		aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
+		aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
+		aucOutBuf[0x05] =  ulData      & 0xff;
+		aucOutBuf[0x06] = (ulData>>8 ) & 0xff;
+		aucOutBuf[0x07] = (ulData>>16) & 0xff;
+		aucOutBuf[0x08] = (ulData>>24) & 0xff;
+		sizOutBuf = 9;
+
+		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
+		if( iResult!=0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to send command: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to transfer command!", m_pcName, this);
+			fOk = false;
+		}
+		else if( sizInBuf==0 )
+		{
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): received empty answer!", m_pcName, this);
+			fOk = false;
 		}
 		else
 		{
-			fOk = true;
+			ucStatus = aucInBuf[0];
+			if( ucStatus!=USBMON_STATUS_Ok )
+			{
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+				fOk = false;
+			}
+			else if( sizInBuf!=1 )
+			{
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer has invalid size!", m_pcName, this);
+				fOk = false;
+			}
+			else
+			{
+				fOk = true;
+			}
 		}
 	}
 
@@ -1110,30 +897,82 @@ void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 /* write a byte array from the pc to the netx */
 void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
-	int iResult;
 	bool fOk;
-	const unsigned char *pucInputData;
+	size_t sizChunk;
+	int iResult;
+	unsigned char aucOutBuf[64];
+	unsigned char aucInBuf[64];
+	size_t sizOutBuf;
+	size_t sizInBuf;
+	unsigned char ucCommand;
+	unsigned char ucStatus;
 
 
-	/* Expect error. */
-	fOk = false;
+	/* Be optimistic. */
+	fOk = true;
 
-	if( m_ptUsbDevice==NULL )
+	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
+		fOk = false;
 	}
-	else
+	else if( sizBUFFER_IN!=0 )
 	{
-		pucInputData = (const unsigned char*)pcBUFFER_IN;
-		iResult = m_ptUsbDevice->write_image(ulNetxAddress, pucInputData, sizBUFFER_IN);
-		if( iResult!=LIBUSB_SUCCESS )
+		do
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to write image: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
-		}
-		else
-		{
-			fOk = true;
-		}
+			sizChunk = sizBUFFER_IN;
+			if( sizChunk>27 )
+			{
+				sizChunk = 27;
+			}
+
+			/* Construct the command packet. */
+			ucCommand  = USBMON_COMMAND_Write_Byte << 5U;
+			ucCommand |= sizChunk;
+			aucOutBuf[0x00] = ucCommand;
+			aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
+			aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
+			aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
+			aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
+			memcpy(aucOutBuf+5, pcBUFFER_IN, sizChunk);
+			sizOutBuf = sizChunk+5;
+
+			iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
+			if( iResult!=0 )
+			{
+				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to transfer command!", m_pcName, this);
+				fOk = false;
+				break;
+			}
+			else if( sizInBuf==0 )
+			{
+				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): received empty answer!", m_pcName, this);
+				fOk = false;
+				break;
+			}
+			else
+			{
+				ucStatus = aucInBuf[0];
+				if( ucStatus!=USBMON_STATUS_Ok )
+				{
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+					fOk = false;
+					break;
+				}
+				else if( sizInBuf!=1 )
+				{
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer has invalid size!", m_pcName, this);
+					fOk = false;
+					break;
+				}
+				else
+				{
+					pcBUFFER_IN += sizChunk;
+					sizBUFFER_IN -= sizChunk;
+					ulNetxAddress += sizChunk;
+				}
+			}
+		} while( sizBUFFER_IN!=0 );
 	}
 
 	if( fOk!=true )
@@ -1146,27 +985,98 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 /* call routine */
 void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
-	int iResult;
 	bool fOk;
+	int iResult;
+	unsigned char aucOutBuf[64];
+	unsigned char aucInBuf[64];
+	size_t sizOutBuf;
+	size_t sizInBuf;
+	unsigned char ucCommand;
+	unsigned char ucStatus;
 
 
-	/* Expect error. */
-	fOk = false;
-
-	if( m_ptUsbDevice==NULL )
+	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
+		fOk = false;
 	}
 	else
 	{
-		iResult = m_ptUsbDevice->call(ulNetxAddress, ulParameterR0);
-		if( iResult!=LIBUSB_SUCCESS )
+		/* Construct the command packet. */
+		ucCommand = USBMON_COMMAND_Execute << 5U;
+		aucOutBuf[0x00] = ucCommand;
+		aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
+		aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
+		aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
+		aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
+		aucOutBuf[0x05] =  ulParameterR0      & 0xff;
+		aucOutBuf[0x06] = (ulParameterR0>>8 ) & 0xff;
+		aucOutBuf[0x07] = (ulParameterR0>>16) & 0xff;
+		aucOutBuf[0x08] = (ulParameterR0>>24) & 0xff;
+		sizOutBuf = 9;
+
+		printf("Executing call command:\n");
+		hexdump(aucOutBuf, sizOutBuf, 0);
+		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
+		if( iResult!=0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute call: %d:%s", m_pcName, this, iResult, m_ptUsbDevice->libusb_strerror(iResult));
+			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to transfer command!", m_pcName, this);
+			fOk = false;
+		}
+		else if( sizInBuf==0 )
+		{
+			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): received empty answer!", m_pcName, this);
+			fOk = false;
 		}
 		else
 		{
-			fOk = true;
+			printf("Received call status:\n");
+			hexdump(aucInBuf, sizInBuf, 0);
+
+			ucStatus = aucInBuf[0];
+			if( ucStatus!=USBMON_STATUS_Ok )
+			{
+				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+				fOk = false;
+			}
+			else if( sizInBuf!=1 )
+			{
+				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer has invalid size!", m_pcName, this);
+				fOk = false;
+			}
+			else
+			{
+				/* Receive message packets. */
+				while(1)
+				{
+					iResult = m_ptUsbDevice->receive_packet(aucInBuf, &sizInBuf);
+					if( iResult!=0 )
+					{
+						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to receive packet!", m_pcName, this);
+						fOk = false;
+						break;
+					}
+					else
+					{
+						if( sizInBuf==1 && aucInBuf[0]==USBMON_STATUS_CallFinished )
+						{
+							fOk = true;
+							break;
+						}
+						else if( sizInBuf>=1 && aucInBuf[0]==USBMON_STATUS_CallMessage )
+						{
+							printf("Received message:\n");
+							hexdump(aucInBuf+1, sizInBuf-1, 0);
+						}
+						else
+						{
+							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): received invalid packet!", m_pcName, this);
+							fOk = false;
+							break;
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -1174,456 +1084,6 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 	{
 		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
 	}
-}
-
-
-/*-------------------------------------*/
-
-
-int romloader_usb::usb_load(const unsigned char *pucData, size_t sizDataLen, unsigned long ulLoadAdr, SWIGLUA_REF *ptLuaFn, long lCallbackUserData)
-{
-	const unsigned char *pucDataCnt, *pucDataEnd;
-	int iResult;
-	unsigned int uiCrc;
-	char acCommand[28];
-	unsigned char aucBufSend[64];
-	unsigned char aucBufRec[64];
-	size_t sizChunkSize;
-	bool fIsRunning;
-	long lBytesProcessed;
-
-
-	pucDataCnt = pucData;
-	pucDataEnd = pucDataCnt + sizDataLen;
-	// generate crc checksum
-	uiCrc = 0xffff;
-	// loop over all bytes
-	while( pucDataCnt<pucDataEnd )
-	{
-		uiCrc = crc16(uiCrc, *(pucDataCnt++));
-	}
-
-	// construct the command
-	snprintf(acCommand, sizeof(acCommand), "LOAD %08lX %08X %04X", ulLoadAdr, sizDataLen, uiCrc);
-
-	// send the command
-	iResult = usb_sendCommand(acCommand);
-	if( iResult==LIBUSB_SUCCESS )
-	{
-		// now send the data part
-		pucDataCnt = pucData;
-		lBytesProcessed = 0;
-		while( pucDataCnt<pucDataEnd )
-		{
-			// get the size of the next data chunk
-			sizChunkSize = pucDataEnd - pucDataCnt;
-			if( sizChunkSize>63 )
-			{
-				sizChunkSize = 63;
-			}
-			// copy data to the packet
-			memcpy(aucBufSend+1, pucDataCnt, sizChunkSize);
-			aucBufSend[0] = sizChunkSize+1;
-
-			fIsRunning = callback_long(ptLuaFn, lBytesProcessed, lCallbackUserData);
-			if( fIsRunning!=true )
-			{
-				printf("***********************************\n");
-				printf("*** operation canceled by user! ***\n");
-				printf("***********************************\n");
-				iResult = LIBUSB_ERROR_INTERRUPTED;
-				break;
-			}
-
-			iResult = libusb_exchange(aucBufSend, aucBufRec);
-			if( iResult!=LIBUSB_SUCCESS )
-			{
-				break;
-			}
-			pucDataCnt += sizChunkSize;
-			lBytesProcessed += sizChunkSize;
-		}
-
-		if( pucDataCnt==pucDataEnd )
-		{
-			iResult = LIBUSB_SUCCESS;
-		}
-	}
-
-	return iResult;
-}
-
-
-int romloader_usb::usb_call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF *ptLuaFn, long lCallbackUserData)
-{
-	int iResult;
-	char acCommand[23];
-	unsigned char aucSend[64];
-	unsigned char aucRec[64];
-	bool fIsRunning;
-	size_t sizProgressData;
-	unsigned char aucSbuf[2] = { 0, 0 };
-	char *pcCallbackData;
-
-
-	/* Construct the command. */
-	snprintf(acCommand, sizeof(acCommand), "CALL %08lX %08X", ulNetxAddress, ulParameterR0);
-
-	/* Send the command. */
-	iResult = usb_sendCommand(acCommand);
-	if( iResult==LIBUSB_SUCCESS )
-	{
-		aucRec[0] = 0x00;
-		pcCallbackData = (char*)(aucRec+1);
-
-		// wait for the call to finish
-		do
-		{
-			// send handshake
-			aucSend[0] = 0x00;
-			iResult = libusb_writeBlock(aucSend, 64, 200);
-			if( iResult==LIBUSB_SUCCESS )
-			{
-				do
-				{
-					// execute callback
-					sizProgressData = aucRec[0];
-//					printf("raw data len: %d\n", sizProgressData);
-					if( sizProgressData>1 && sizProgressData<=64 )
-					{
-						--sizProgressData;
-					}
-					else
-					{
-						sizProgressData = 0;
-					}
-//					printf("run callback with %d bytes of data\n", sizProgressData);
-					fIsRunning = callback_string(ptLuaFn, pcCallbackData, sizProgressData, lCallbackUserData);
-					aucRec[0] = 0x00;
-					if( fIsRunning!=true )
-					{
-						iResult = LIBUSB_ERROR_INTERRUPTED;
-					}
-					else
-					{
-						// look for data from netx
-						iResult = libusb_readBlock(aucRec, 64, 200);
-						if( iResult==LIBUSB_SUCCESS )
-						{
-//							printf("received a packet!\n");
-//							hexdump(aucRec, 64, 0);
-
-							iResult = LIBUSB_ERROR_TIMEOUT;
-
-							// received netx data, check for prompt
-							sizProgressData = aucRec[0];
-							if( sizProgressData>1 && sizProgressData<=64 )
-							{
-								// last packet has '\n>' at the end
-								if( sizProgressData>2 && aucRec[sizProgressData-2]=='\n' && aucRec[sizProgressData-1]=='>' )
-								{
-									// send the rest of the data
-									callback_string(ptLuaFn, pcCallbackData, sizProgressData-1, lCallbackUserData);
-									iResult = LIBUSB_SUCCESS;
-								}
-							}
-							break;
-						}
-					}
-				} while( iResult==LIBUSB_ERROR_TIMEOUT );
-			}
-		} while( iResult==LIBUSB_ERROR_TIMEOUT );
-	}
-
-	if( iResult==LIBUSB_SUCCESS )
-	{
-		aucSend[0] = 0x00;
-		iResult = libusb_exchange(aucSend, aucRec);
-	}
-
-	return iResult;
-}
-
-
-int romloader_usb::usb_sendCommand(const char *pcCommand)
-{
-	int iResult;
-	size_t sizCmdLen;
-	unsigned char abSend[64];
-	unsigned char abRec[64];
-	unsigned char *pucData;
-//	int iProcessed;
-
-
-	if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
-	{
-		sizCmdLen = strlen(pcCommand);
-		if( sizCmdLen>64 )
-		{
-			printf("%s(%p): command exceeds maximum length of 64 chars: %s\n", m_pcName, this, pcCommand);
-			iResult = LIBUSB_ERROR_OVERFLOW;
-		}
-		else
-		{
-			pucData = (unsigned char*)pcCommand;
-//			iResult = m_ptUsbDevice->usb_bulk_pc_to_netx(m_ptUsbDevHandle, 0x04, pucData, sizCmdLen, &iProcessed, 100);
-		}
-	}
-	else
-	{
-		/* Check the command size.
-		 * Commands must fit into one usb packet of 64 bytes, the first byte
-		 * is the length and the last byte must be 0x0a. This means the max
-		 * command size is 62 bytes.
-		 */
-		sizCmdLen = strlen(pcCommand);
-		if( sizCmdLen>62 )
-		{
-			printf("%s(%p): command exceeds maximum length of 62 chars: %s\n", m_pcName, this, pcCommand);
-			iResult = LIBUSB_ERROR_OVERFLOW;
-		}
-		else
-		{
-			/* Construct the command. */
-			memcpy(abSend+1, pcCommand, sizCmdLen);
-			abSend[0] = sizCmdLen+2;
-			abSend[sizCmdLen+1] = 0x0a;
-
-			/* Send the command. */
-			iResult = libusb_exchange(abSend, abRec);
-			if( iResult==LIBUSB_SUCCESS )
-			{
-				/* Terminate command. */
-				abSend[0] = 0x00;
-				iResult = libusb_exchange(abSend, abRec);
-			}
-		}
-	}
-
-	return iResult;
-}
-
-
-int romloader_usb::usb_getNetxData(DATA_BUFFER_T *ptBuffer, SWIGLUA_REF *ptLuaFn, long lCallbackUserData, size_t sizInitialSize)
-{
-	int iResult;
-	unsigned char aucSendBuf[64];
-	unsigned char aucRecBuf[64];
-	size_t sizChunk;
-	size_t sizBuffer;
-	size_t sizNewBuffer;
-	size_t sizBufferPos;
-	unsigned char *pucBuffer;
-	unsigned char *pucNewBuffer;
-	int iTransfered;
-	unsigned char *pucInputData;
-
-
-	/* The buffer is empty. */
-	sizBufferPos = 0;
-
-	/* Clear the send buffer. */
-	memset(aucSendBuf, 0, sizeof(aucSendBuf));
-
-	/* Init buffer with the initial size. */
-	sizBuffer = sizInitialSize;
-	pucBuffer = (unsigned char*)malloc(sizBuffer);
-	if( pucBuffer==NULL )
-	{
-		iResult = LIBUSB_ERROR_NO_MEM;
-	}
-	else
-	{
-		/* Receive netx data. */
-		do
-		{
-			if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
-			{
-//				iResult = m_ptUsbDevice->usb_bulk_netx_to_pc(m_ptUsbDevHandle, 0x83, aucRecBuf, 64, &iTransfered, 500);
-				pucInputData = aucRecBuf;
-				sizChunk = iTransfered;
-				if( iResult==LIBUSB_ERROR_TIMEOUT )
-				{
-					iResult = LIBUSB_SUCCESS;
-					sizChunk = 0;
-				}
-			}
-			else
-			{
-				iResult = libusb_exchange(aucSendBuf, aucRecBuf);
-				pucInputData = aucRecBuf + 1;
-				sizChunk = aucRecBuf[0];
-			}
-			if( iResult!=LIBUSB_SUCCESS )
-			{
-				break;
-			}
-			else if( sizChunk!=0 )
-			{
-				/* Remove the size byte from the data length. */
-				--sizChunk;
-
-				/* Is still enough space in the buffer left? */
-				if( sizBufferPos+sizChunk>sizBuffer )
-				{
-					/* No -> double the buffer. */
-					sizNewBuffer = sizBuffer * 2;
-					if( sizBuffer>sizNewBuffer )
-					{
-						iResult = LIBUSB_ERROR_NO_MEM;
-						break;
-					}
-					else
-					{
-						pucNewBuffer = (unsigned char*)realloc(pucBuffer, sizNewBuffer);
-						if( pucNewBuffer==NULL )
-						{
-							/* Out of memory, */
-							iResult = LIBUSB_ERROR_NO_MEM;
-							break;
-						}
-						else
-						{
-							pucBuffer = pucNewBuffer;
-							sizBuffer = sizNewBuffer;
-						}
-					}
-				}
-
-				/* Copy the new data chunk to the buffer. */
-				memcpy(pucBuffer+sizBufferPos, pucInputData, sizChunk);
-				sizBufferPos += sizChunk;
-			}
-		} while( sizChunk!=0 );
-
-		if( iResult==LIBUSB_SUCCESS )
-		{
-			/* Shrink buffer to optimal size. */
-			if( sizBufferPos<sizBuffer )
-			{
-				/* Do not resize with length=0, this would free the memory! */
-				if( sizBufferPos==0 )
-				{
-					sizBufferPos = 1;
-				}
-
-				pucNewBuffer = (unsigned char*)realloc(pucBuffer, sizBufferPos);
-				if( pucNewBuffer!=NULL )
-				{
-					pucBuffer = pucNewBuffer;
-					sizBuffer = sizBufferPos;
-				}
-			}
-		}
-		else
-		{
-			if( pucBuffer!=NULL )
-			{
-				free(pucBuffer);
-				pucBuffer = NULL;
-				sizBufferPos = 0;
-			}
-		}
-	}
-
-	ptBuffer->pucData = pucBuffer;
-	ptBuffer->sizData = sizBufferPos;
-	ptBuffer->sizPos = 0;
-
-	return iResult;
-}
-
-
-int romloader_usb::usb_executeCommand(const char *pcCommand, size_t sizCommand)
-{
-	size_t sizOldData;
-	int iResult;
-
-
-	/* Flush any old data. */
-	sizOldData = m_ptUsbDevice->getCardSize();
-	if( sizOldData!=0 )
-	{
-		fprintf(stderr, "Old data in card buffer left!\n");
-		m_ptUsbDevice->flushCards();
-	}
-
-	/* send the command */
-	iResult = m_ptUsbDevice->usb_send(pcCommand, sizCommand);
-	if( iResult==LIBUSB_SUCCESS )
-	{
-	
-//		usleep(10000);
-	
-	
-		/* get the response */
-//		iResult = usb_getNetxData(ptBuffer, &tRef, 0);
-	}
-
-	return iResult;
-}
-
-
-/*-------------------------------------*/
-
-
-int romloader_usb::libusb_readBlock(unsigned char *pucReceiveBuffer, unsigned int uiSize, int iTimeoutMs)
-{
-	int iRet;
-	int iSize;
-//	int iTransfered;
-	unsigned char ucEndPoint;
-
-
-	iSize = (int)uiSize;
-
-	if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
-	{
-		ucEndPoint = 0x83;
-	}
-	else
-	{
-		ucEndPoint = 0x81;
-	}
-//	iRet = m_ptUsbDevice->usb_bulk_netx_to_pc(m_ptUsbDevHandle, ucEndPoint, pucReceiveBuffer, iSize, &iTransfered, iTimeoutMs);
-	return iRet;
-}
-
-
-int romloader_usb::libusb_writeBlock(unsigned char *pucSendBuffer, unsigned int uiSize, int iTimeoutMs)
-{
-	int iRet;
-	int iSize;
-//	int iTransfered;
-	unsigned char ucEndPoint;
-
-
-	iSize = (int)uiSize;
-
-	if( m_tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
-	{
-		ucEndPoint = 0x04;
-	}
-	else
-	{
-		ucEndPoint = 0x01;
-	}
-//	iRet = m_ptUsbDevice->usb_bulk_pc_to_netx(m_ptUsbDevHandle, ucEndPoint, pucSendBuffer, iSize, &iTransfered, iTimeoutMs);
-	return iRet;
-}
-
-
-int romloader_usb::libusb_exchange(unsigned char *pucSendBuffer, unsigned char *pucReceiveBuffer)
-{
-	int iResult;
-
-
-	iResult = libusb_writeBlock(pucSendBuffer, 64, 200);
-	if( iResult==LIBUSB_SUCCESS )
-	{
-		iResult = libusb_readBlock(pucReceiveBuffer, 64, 200);
-	}
-	return iResult;
 }
 
 
@@ -1688,8 +1148,4 @@ romloader_usb_reference::romloader_usb_reference(const romloader_usb_reference *
 
 
 /*-------------------------------------*/
-
-
-
-
 
