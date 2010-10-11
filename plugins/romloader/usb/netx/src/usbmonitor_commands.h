@@ -32,7 +32,7 @@ typedef enum
 	USBMON_COMMAND_Write_Byte		= 0x04,
 	USBMON_COMMAND_Write_Word		= 0x05,
 	USBMON_COMMAND_Write_Long		= 0x06,
-	USBMON_COMMAND_Reserved			= 0x07
+	USBMON_COMMAND_Exit			= 0x07
 } USBMON_COMMAND_T;
 
 typedef enum
@@ -50,6 +50,13 @@ typedef enum
 	USBMON_ACCESSSIZE_Word			= 1,
 	USBMON_ACCESSSIZE_Long			= 2
 } USBMON_ACCESSSIZE_T;
+
+
+typedef struct
+{
+	unsigned char ucStatus;
+	unsigned char aucText[63];
+} USBMON_PACKET_MESSAGE_T;
 
 
 #endif  /* __USBMONITOR_COMMANDS_H__ */
