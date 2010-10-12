@@ -906,6 +906,8 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 	size_t sizInBuf;
 	unsigned char ucCommand;
 	unsigned char ucStatus;
+	bool fIsRunning;
+	long lBytesProcessed;
 
 
 	/* Be optimistic. */
@@ -918,6 +920,7 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 	}
 	else if( sizBUFFER_IN!=0 )
 	{
+		lBytesProcessed = 0;
 		do
 		{
 			sizChunk = sizBUFFER_IN;
@@ -970,6 +973,13 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 					pcBUFFER_IN += sizChunk;
 					sizBUFFER_IN -= sizChunk;
 					ulNetxAddress += sizChunk;
+					lBytesProcessed += sizChunk;
+
+					fIsRunning = callback_long(&tLuaFn, lBytesProcessed, lCallbackUserData);
+					if( fIsRunning!=true )
+					{
+						break;
+					}
 				}
 			}
 		} while( sizBUFFER_IN!=0 );
@@ -993,6 +1003,9 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 	size_t sizInBuf;
 	unsigned char ucCommand;
 	unsigned char ucStatus;
+	bool fIsRunning;
+	char *pcProgressData;
+	size_t sizProgressData;
 
 
 	if( m_fIsConnected==false )
@@ -1049,8 +1062,13 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 				/* Receive message packets. */
 				while(1)
 				{
-					iResult = m_ptUsbDevice->receive_packet(aucInBuf, &sizInBuf);
-					if( iResult!=0 )
+					iResult = m_ptUsbDevice->receive_packet(aucInBuf, &sizInBuf, 500);
+					if( iResult==LIBUSB_ERROR_TIMEOUT )
+					{
+						pcProgressData = NULL;
+						sizProgressData = 0;
+					}
+					else if( iResult!=0 )
 					{
 						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to receive packet!", m_pcName, this);
 						fOk = false;
@@ -1058,6 +1076,9 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 					}
 					else
 					{
+						pcProgressData = NULL;
+						sizProgressData = 0;
+
 						if( sizInBuf==1 && aucInBuf[0]==USBMON_STATUS_CallFinished )
 						{
 							fOk = true;
@@ -1065,15 +1086,28 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 						}
 						else if( sizInBuf>=1 && aucInBuf[0]==USBMON_STATUS_CallMessage )
 						{
-							printf("Received message:\n");
-							hexdump(aucInBuf+1, sizInBuf-1, 0);
+//							printf("Received message:\n");
+//							hexdump(aucInBuf+1, sizInBuf-1, 0);
+							pcProgressData = (char*)aucInBuf+1;
+							sizProgressData = sizInBuf-1;
 						}
-						else
+						else if( sizInBuf!=0 )
 						{
+							printf("Received invalid packet:\n");
+							hexdump(aucInBuf, sizInBuf, 0);
+
 							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): received invalid packet!", m_pcName, this);
 							fOk = false;
 							break;
 						}
+					}
+
+					printf("sending %p/%d\n", pcProgressData, sizProgressData);
+
+					fIsRunning = callback_string(&tLuaFn, pcProgressData, sizProgressData, lCallbackUserData);
+					if( fIsRunning!=true )
+					{
+						break;
 					}
 				}
 			}

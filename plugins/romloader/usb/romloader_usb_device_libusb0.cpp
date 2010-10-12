@@ -740,27 +740,17 @@ int romloader_usb_device_libusb0::execute_command(const unsigned char *aucOutBuf
 }
 
 
-int romloader_usb_device_libusb0::receive_packet(unsigned char *aucInBuf, size_t *psizInBuf)
+int romloader_usb_device_libusb0::receive_packet(unsigned char *aucInBuf, size_t *psizInBuf, unsigned int uiTimeoutMs)
 {
 	int iResult;
 	int iProcessed;
-	unsigned int uiTimeoutMs;
 
-
-	uiTimeoutMs = 100;
 
 //	printf("Send Command:\n", iProcessed);
 //	hexdump(aucOutBuf, sizOutBuf);
 
 	iResult = libusb_bulk_transfer(m_ptDevHandle, m_ucEndpoint_In, aucInBuf, 64, &iProcessed, uiTimeoutMs);
-	if( iResult==LIBUSB_ERROR_TIMEOUT )
-	{
-		printf("Timeout: iProcessed=%d\n", iProcessed);
-		/* Nothing received. */
-		*psizInBuf = 0;
-		iResult = 0;
-	}
-	else if( iResult!=0 )
+	if( iResult!=0 )
 	{
 		printf("Failed to receive data: %s\n", libusb_strerror(iResult));
 	}

@@ -53,7 +53,7 @@ public:
 	void Disconnect(void);
 
 	int execute_command(const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned char *aucInBuf, size_t *psizInBuf);
-	int receive_packet(unsigned char *aucInBuf, size_t *psizInBuf);
+	int receive_packet(unsigned char *aucInBuf, size_t *psizInBuf, unsigned int uiTimeoutMs);
 protected:
 	ROMLOADER_CHIPTYP m_tChiptyp;
 	ROMLOADER_ROMCODE m_tRomcode;
