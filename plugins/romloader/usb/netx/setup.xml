@@ -1,4 +1,7 @@
-<muhkuh_buildsystem>
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="setup2html.xsl"?>
+
+<muhkuh_buildsystem project="usbmonitor">
 	<project_version>
 		<major>1</major>
 		<minor>0</minor>
@@ -11,7 +14,7 @@
 	</paths>
 
 	<repositories>
-		<repository>http://netx01/maven2</repository>
+		<repository name="muhkuh@netx01">http://netx01/maven2</repository>
 	</repositories>
 
 	<scons>
@@ -30,7 +33,7 @@
 			<typ>tar.bz2</typ>
 			<folder>asciidoc</folder>
 		</tool>
-<!--
+
 		<tool>
 			<group>org.gnu.gcc</group>
 			<name>gcc-arm-elf-none-eabi_${platform}_${machine}</name>
@@ -38,7 +41,7 @@
 			<typ>tar.bz2</typ>
 			<folder>gcc</folder>
 		</tool>
--->
+<!--
 		<tool>
 			<group>org.gnu.gcc</group>
 			<name>gcc-arm-elf_${platform}_${machine}</name>
@@ -46,6 +49,7 @@
 			<typ>tar.bz2</typ>
 			<folder>gcc</folder>
 		</tool>
+-->
 	</tools>
 
 	<filters>
