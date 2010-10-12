@@ -22,11 +22,12 @@ ENTRY(start)
 
 MEMORY
 {
-	ASSERT_EMPTY(rwx)	: ORIGIN = 0x00000000, LENGTH = 0
+	ASSERT_EMPTY(rwx):  ORIGIN = 0x00000000,  LENGTH = 0
 
-	INTRAM2_ITCM(rwx)	: ORIGIN = 0x00020000, LENGTH = 0x00010000
-	INTRAM0_DTCM(rwx)	: ORIGIN = 0x04000000, LENGTH = 0x00010000
-	INTRAM3_DTCM(rwx)	: ORIGIN = 0x04030000, LENGTH = 0x00010000
+	INTRAM0_ITCM(rwx):  ORIGIN = 0x00000000,  LENGTH = 0x00010000
+	INTRAM2_ITCM(rwx):  ORIGIN = 0x00020000,  LENGTH = 0x00010000
+	INTRAM0_DTCM(rwx):  ORIGIN = 0x04000000,  LENGTH = 0x00010000
+	INTRAM3_DTCM(rwx):  ORIGIN = 0x04030000,  LENGTH = 0x00010000
 }
 
 
@@ -47,26 +48,28 @@ SECTIONS
 	} >ASSERT_EMPTY
 
 
-	.code ORIGIN(INTRAM2_ITCM) :
+	.code_init ORIGIN(INTRAM2_ITCM) :
 	{
 		load_address = . ;
 
 		*(.header)
 		*(.init_code)
-		*(.text)
 	} >INTRAM2_ITCM
 
+	/* set the top of the stack to the end of INTRAM1 */
+	stack_top = ORIGIN(INTRAM0_ITCM) + LENGTH(INTRAM0_ITCM) - 0x1000;
 
-	.data ORIGIN(INTRAM3_DTCM) : AT(ORIGIN(INTRAM2_ITCM)+SIZEOF(.code))
+
+	.code ORIGIN(INTRAM0_ITCM)+LENGTH(INTRAM0_ITCM)-0x1000 : AT(ORIGIN(INTRAM2_ITCM)+SIZEOF(.code_init))
 	{
-		__data_start__ = . ;
+		__copy_dst_start__ = . ;
 
-		/* ro data */
+		*(.text)
 		*(.rodata*)
 
-		__data_end__ = . ;
-	} >INTRAM3_DTCM
-	__data_loadaddr__ = LOADADDR(.data) ;
+		__copy_dst_end__ = . ;
+	} >INTRAM0_ITCM
+	__copy_src_start__ = LOADADDR(.code);
 
 
 	.serial_vectors ORIGIN(INTRAM0_DTCM)+LENGTH(INTRAM0_DTCM)-0x10 :
@@ -74,6 +77,7 @@ SECTIONS
 		tSerialVectors = . ;
 		. = . + 0x10;
 	} >INTRAM0_DTCM
+
 
 	.bss :
 	{
@@ -86,10 +90,6 @@ SECTIONS
 
 		__bss_end__ = . ;
 	} >INTRAM3_DTCM
-
-
-	/* set the top of the stack to the end of INTRAM1 */
-	stack_top = ORIGIN(INTRAM3_DTCM) + LENGTH(INTRAM3_DTCM) ;
 
 
 	/* Stabs debugging sections.  */
