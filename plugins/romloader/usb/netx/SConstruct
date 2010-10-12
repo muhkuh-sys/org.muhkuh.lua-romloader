@@ -17,7 +17,6 @@ import scons_common
 
 import build_properties
 import data_array
-import uuencode
 
 build_properties.Read()
 
@@ -65,6 +64,10 @@ sources_custom_netx10 = """
 	src/netx10/netx10_io_areas.c
 """
 
+src_netx500 = Split(sources_common+sources_custom_netx500)
+src_netx50  = Split(sources_common+sources_custom_netx50)
+src_netx10  = Split(sources_common+sources_custom_netx10)
+
 
 default_ccflags = """
 	-ffreestanding
@@ -98,18 +101,17 @@ if not GetOption('help'):
 	#
 	# import the compiler definitions
 	#
-	# NOTE: it would be possible to use execfile instead of import here. This
-	gcc_arm_elf_4_3_3_3 = scons_common.get_tool('gcc-arm-elf_linux_i386-4.3.3_3')
+	gcc_arm_elf = scons_common.get_tool('gcc-arm-elf_linux_i386-4.3.3_3')
+	asciidoc = scons_common.get_tool('asciidoc-8.5.3_1')
 	
 	
 	#----------------------------------------------------------------------------
 	#
-	# create the default environment
+	# Create the default environment.
 	#
 	env_default = Environment()
-	gcc_arm_elf_4_3_3_3.ApplyToEnv(env_default)
+	gcc_arm_elf.ApplyToEnv(env_default)
 	data_array.ApplyToEnv(env_default)
-	uuencode.ApplyToEnv(env_default)
 	env_default.Decider('timestamp-newer')
 	env_default.Append(CPPPATH = ['src'])
 	env_default.Replace(CCFLAGS = Split(default_ccflags))
@@ -118,49 +120,33 @@ if not GetOption('help'):
 	build_properties.ApplyToEnv(env_default)
 	
 	
-	# create environments for both builds
+	#----------------------------------------------------------------------------
+	#
+	# Create environments for all cpus.
+	#
 	env_netx500 = env_default.Clone()
 	env_netx500.Append(CCFLAGS = ['-mcpu=arm926ej-s'])
-	env_netx500.Replace(LDFILE = 'src/netx500/netx500.ld')
 	env_netx500.Replace(LIBPATH = ['${GCC_DIR}/arm-elf/lib/arm926ej-s', '${GCC_DIR}/lib/gcc/arm-elf/${GCC_VERSION}/arm926ej-s'])
 	env_netx500.Append(CPPDEFINES = [['ASIC_TYP', '500']])
 	env_netx500.Append(CPPPATH = ['src/netx500'])
-	env_netx500.VariantDir('targets/netx500', 'src', duplicate=0)
 	
 	env_netx50 = env_default.Clone()
 	env_netx50.Append(CCFLAGS = ['-mcpu=arm966e-s'])
 	env_netx50.Replace(LIBPATH = ['${GCC_DIR}/arm-elf/lib/arm966e-s', '${GCC_DIR}/lib/gcc/arm-elf/${GCC_VERSION}/arm966e-s'])
 	env_netx50.Append(CPPDEFINES = [['ASIC_TYP', '50']])
 	env_netx50.Append(CPPPATH = ['src/netx50'])
-	env_netx50.Replace(UUE_PRE = """
-FILL 1C000140 0
-FILL 1C000144 00A12151
-FILL 1C000148 00000023
-FILL 1C000140 010D0001
-LUUE 80008000
-""")
-	env_netx50.Replace(UUE_POST = """
-CALL 80008000
-""")
 	
 	env_netx10 = env_default.Clone()
 	env_netx10.Append(CCFLAGS = ['-mcpu=arm966e-s'])
 	env_netx10.Replace(LIBPATH = ['${GCC_DIR}/arm-elf/lib/arm966e-s', '${GCC_DIR}/lib/gcc/arm-elf/${GCC_VERSION}/arm966e-s'])
 	env_netx10.Append(CPPDEFINES = [['ASIC_TYP', '10']])
 	env_netx10.Append(CPPPATH = ['src/netx10'])
-	env_netx10.Replace(UUE_PRE = """
-L 00020000
-""")
-	env_netx10.Replace(UUE_POST = """
-""")
 	
 	
 	#----------------------------------------------------------------------------
 	#
 	# Build the netX500 files.
 	#
-	
-	#sources_netx500 = [src.replace('src', 'targets/netx500') for src in Split(sources_common+sources_custom_netx500)]
 	#eth_echo_netx500_elf = env_netx500.Elf('targets/eth_echo_netx500', sources_netx500)
 	#env_netx500.ObjCopy('targets/eth_echo_netx500', eth_echo_netx500_elf)
 	
@@ -168,10 +154,6 @@ L 00020000
 	#
 	# Build the netX50 files.
 	#
-	
-	# Get the list of source files.
-	#src_netx50 = Split(sources_common+sources_custom_netx50)
-	
 	#env_netx50_sdram = env_netx50.Clone()
 	#src_netx50_sdram = scons_common.set_build_path(env_netx50_sdram, 'targets/netx50_sdram', 'src', src_netx50)
 	#env_netx50_sdram.Replace(LDFILE = 'src/netx50/netx50_sdram.ld')
@@ -183,14 +165,10 @@ L 00020000
 	#
 	# Build the netX10 files.
 	#
-	
-	# Get the list of source files.
-	src_netx10 = Split(sources_common+sources_custom_netx10)
-	
 	env_netx10_intram = env_netx10.Clone()
 	src_netx10_intram = scons_common.set_build_path(env_netx10_intram, 'targets/netx10_intram', 'src', src_netx10)
 	env_netx10_intram.Replace(LDFILE = 'src/netx10/netx10_intram.ld')
 	elf_netx10_intram = env_netx10_intram.Elf('targets/usbmon_netx10_intram', src_netx10_intram)
 	bin_netx10_intram = env_netx10_intram.ObjCopy('targets/usbmon_netx10_intram', elf_netx10_intram)
-	env_netx10_intram.UUEncode('targets/usbmon_netx10_intram.uue', bin_netx10_intram)
 	env_netx10_intram.DataArray('targets/usbmon_netx10_intram.c', bin_netx10_intram, DATAARRAY_NAME='auc_usbmon_netx10_intram')
+	
