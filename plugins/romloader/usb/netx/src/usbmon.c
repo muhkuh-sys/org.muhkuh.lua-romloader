@@ -184,7 +184,7 @@ static void netx10_serial_put(unsigned int uiHandle __attribute__((unused)), uns
 	usb_send_byte((unsigned char)uiChar);
 
 	/* Reached the maximum packet size? */
-	ulFillLevel = usb_get_rx_fill_level();
+	ulFillLevel = usb_get_tx_fill_level();
 	if( ulFillLevel>=sizeof(USBMON_PACKET_MESSAGE_T) )
 	{
 		/* Yes -> send the packet. */
@@ -208,7 +208,11 @@ static unsigned int netx10_serial_peek(unsigned int uiHandle __attribute__((unus
 
 static void netx10_serial_flush(unsigned int uiHandle __attribute__((unused)))
 {
+	/* Flush all waiting data. */
 	usb_send_packet();
+
+	/* Start the new message packet. */
+	usb_send_byte(USBMON_STATUS_CallMessage);
 }
 
 

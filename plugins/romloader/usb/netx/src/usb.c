@@ -154,8 +154,19 @@ void usb_send_byte(unsigned char ucData)
 
 void usb_send_packet(void)
 {
+	unsigned long ulFillLevel;
+
+
+	/* Trigger packet send. */
 	ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_in_handshake = 1<<USB_FIFO_Uart_TX;
 	ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_in_handshake = 0;
+
+	/* Wait until all data is out. */
+	do
+	{
+		ulFillLevel = usb_get_tx_fill_level();
+	} while( ulFillLevel!=0 );
+
 }
 
 
