@@ -56,11 +56,13 @@ SECTIONS
 		*(.init_code)
 	} >INTRAM2_ITCM
 
+	__CODE_OFFSET__ = 0x1800;
+
 	/* set the top of the stack to the end of INTRAM1 */
-	stack_top = ORIGIN(INTRAM0_ITCM) + LENGTH(INTRAM0_ITCM) - 0x1000;
+	stack_top = ORIGIN(INTRAM0_ITCM) + LENGTH(INTRAM0_ITCM) - __CODE_OFFSET__;
 
 
-	.code ORIGIN(INTRAM0_ITCM)+LENGTH(INTRAM0_ITCM)-0x1000 : AT(ORIGIN(INTRAM2_ITCM)+SIZEOF(.code_init))
+	.code ORIGIN(INTRAM0_ITCM)+LENGTH(INTRAM0_ITCM)-__CODE_OFFSET__ : AT(ORIGIN(INTRAM2_ITCM)+SIZEOF(.code_init))
 	{
 		__copy_dst_start__ = . ;
 
@@ -72,24 +74,23 @@ SECTIONS
 	__copy_src_start__ = LOADADDR(.code);
 
 
-	.serial_vectors ORIGIN(INTRAM0_DTCM)+LENGTH(INTRAM0_DTCM)-0x10 :
-	{
-		tSerialVectors = . ;
-		. = . + 0x10;
-	} >INTRAM0_DTCM
-
-
 	.bss :
 	{
 		/* zero-initialized data */
-
 		__bss_start__ = . ;
 
 		*(.bss)
 		*(COMMON)
 
 		__bss_end__ = . ;
-	} >INTRAM3_DTCM
+	} >INTRAM0_DTCM
+
+
+	.serial_vectors ORIGIN(INTRAM0_DTCM)+LENGTH(INTRAM0_DTCM)-0x10 :
+	{
+		tSerialVectors = . ;
+		. = . + 0x10;
+	} >INTRAM0_DTCM
 
 
 	/* Stabs debugging sections.  */
