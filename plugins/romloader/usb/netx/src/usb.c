@@ -24,6 +24,7 @@
 #include "netx_io_areas.h"
 #include "options.h"
 
+#include "uprintf.h"
 
 /*-----------------------------------*/
 
@@ -154,19 +155,22 @@ void usb_send_byte(unsigned char ucData)
 
 void usb_send_packet(void)
 {
-	unsigned long ulFillLevel;
+	unsigned long ulRawIrq;
 
 
 	/* Trigger packet send. */
 	ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_in_handshake = 1<<USB_FIFO_Uart_TX;
 	ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_in_handshake = 0;
 
-	/* Wait until all data is out. */
+	/* Wait until the packet is sent. */
 	do
 	{
-		ulFillLevel = usb_get_tx_fill_level();
-	} while( ulFillLevel!=0 );
+		ulRawIrq  = ptUsbDevCtrlArea->ulUsb_dev_irq_raw;
+		ulRawIrq &= HOSTMSK(usb_dev_irq_raw_uart_tx_packet_sent);
+	} while( ulRawIrq==0 );
 
+	/* Acknowledge the irq. */
+	ptUsbDevCtrlArea->ulUsb_dev_irq_raw = HOSTMSK(usb_dev_irq_raw_uart_tx_packet_sent);
 }
 
 
