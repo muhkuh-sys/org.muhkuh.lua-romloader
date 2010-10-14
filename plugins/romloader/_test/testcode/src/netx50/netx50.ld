@@ -47,6 +47,8 @@ SECTIONS
 
 	.code 0x08008000 :
 	{
+		load_address = . ;
+		*(.header)
 		*(.init_code)
 		*(.text)
 	
@@ -60,6 +62,13 @@ SECTIONS
 		*(.bss)
 		*(COMMON)
 		PROVIDE ( __bss_end__ = . );
+	} >INTRAM
+
+	.parameter ALIGN(0x0100) :
+	{
+		parameter_start_address = . ;
+		. = . + 0x0100;
+		parameter_end_address = . ;
 	} >INTRAM
 
 

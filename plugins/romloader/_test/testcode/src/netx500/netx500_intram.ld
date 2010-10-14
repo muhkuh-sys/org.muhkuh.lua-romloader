@@ -11,19 +11,23 @@ ENTRY(start)
 
 MEMORY
 {
-	ASSERT_EMPTY(rwx)	: ORIGIN = 0x00000000, LENGTH = 0
+	ASSERT_EMPTY(rwx) :	ORIGIN = 0x00000000, LENGTH = 0
 
-	DTCM(rw)		: ORIGIN = 0x10000000, LENGTH = 0x00002000
-	INTRAM(rwx)		: ORIGIN = 0x00000000, LENGTH = 0x00020000
+	INTRAM0(rwx) :		ORIGIN = 0x00008000, LENGTH = 0x00008000
+	INTRAM1(rwx) :		ORIGIN = 0x00010000, LENGTH = 0x00008000
+	DTCM(rw) :		ORIGIN = 0x10000000, LENGTH = 0x00002000
 }
 
 
 /* Section Definitions */
 SECTIONS
 {
+	/* These sections must be empty, put them in a memory with a size of
+	 * 0 bytes
+	 */
 	.assert_empty (NOLOAD) :
 	{
-		/* NOTE: include all sections here whioch should be empty.
+		/* NOTE: include all sections here which should be empty.
 		 */
 		*(.data)
 		*(.glue*)
@@ -32,35 +36,45 @@ SECTIONS
 	} >ASSERT_EMPTY
 
 
-	.serialvectors ORIGIN(DTCM)+LENGTH(DTCM)-0x10 :
+	.code ORIGIN(INTRAM0) :
 	{
-		PROVIDE ( tSerialVectors = . );
-		. = . + 0x10;
-	} >DTCM
-
-	.stack ORIGIN(INTRAM)+4 :
-	{
-		. = . + 0x7ffc;
-		PROVIDE ( stack_top = . );
-	} >INTRAM
-
-
-	.code ORIGIN(INTRAM)+0x8000 :
-	{
+		load_address = .;
+		*(.header)
 		*(.init_code)
 		*(.text)
-	
-		/* .rodata section which is used for read-only data (constants) */
 		*(.rodata*)
-	} >INTRAM
+	} >INTRAM0
 
 	.bss :
 	{
-		PROVIDE ( __bss_start__ = . );
+		/* zero-initialized data */
+
+		__bss_start__ = . ;
+
 		*(.bss)
 		*(COMMON)
-		PROVIDE ( __bss_end__ = . );
-	} >INTRAM
+
+		__bss_end__ = . ;
+	} >INTRAM0
+
+
+	.parameter ALIGN(0x0100) :
+	{
+		parameter_start_address = . ;
+		. = . + 0x0100;
+		parameter_end_address = . ;
+	} >INTRAM0
+
+
+	.serialvectors ORIGIN(DTCM)+LENGTH(DTCM)-0x10 :
+	{
+		tSerialVectors = . ;
+		. = . + 0x10;
+	} >DTCM
+
+
+	/* set the top of the stack to the end of INTRAM1 */
+	stack_top = ORIGIN(INTRAM1) + LENGTH(INTRAM1) ;
 
 
 	/* Stabs debugging sections.  */

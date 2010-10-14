@@ -29,6 +29,8 @@
 
 	.word load_address
 	.word start
+	.word parameter_start_address
+	.word parameter_end_address
 
 @--------------------------------------
 
