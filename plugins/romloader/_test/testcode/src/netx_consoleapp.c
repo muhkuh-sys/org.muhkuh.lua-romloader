@@ -20,7 +20,6 @@
 
 #include "netx_consoleapp.h"
 
-extern unsigned int NetxConsoleParameter_Init;
 
 //-------------------------------------
 
