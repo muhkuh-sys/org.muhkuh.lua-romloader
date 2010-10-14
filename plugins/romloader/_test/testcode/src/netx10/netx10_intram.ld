@@ -1,16 +1,29 @@
-/*---------------------------------------------------------------------------
-  Author : Christoph Thelen
-
-           Hilscher GmbH, Copyright (c) 2010, All Rights Reserved
-
-           Redistribution or unauthorized use without expressed written 
-           agreement from the Hilscher GmbH is forbidden
----------------------------------------------------------------------------*/
+/***************************************************************************
+ *   Copyright (C) 2010 by Christoph Thelen                                *
+ *   doc_bacardi@users.sourceforge.net                                     *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
 
 ENTRY(start)
 
 MEMORY
 {
+	ASSERT_EMPTY(rwx)	: ORIGIN = 0x00000000, LENGTH = 0
+
 	INTRAM2_ITCM(rwx)	: ORIGIN = 0x00020000, LENGTH = 0x00010000
 	INTRAM0_DTCM(rwx)	: ORIGIN = 0x04000000, LENGTH = 0x00010000
 	INTRAM3_DTCM(rwx)	: ORIGIN = 0x04030000, LENGTH = 0x00010000
@@ -20,29 +33,28 @@ MEMORY
 /* Section Definitions */
 SECTIONS
 {
-	.code ORIGIN(INTRAM2_ITCM) :
+	/* These sections must be empty, put them in a memory with a size of
+	 * 0 bytes
+	 */
+	.assert_empty (NOLOAD) :
 	{
-		*(.init_code)
-		*(.text)
+		/* NOTE: include all sections here which should be empty.
+		 */
+		*(.data)
 		*(.glue*)
 		*(.vfp11_veneer)
 		*(.v4_bx)
-	} >INTRAM2_ITCM
+	} >ASSERT_EMPTY
 
 
-	.data ORIGIN(INTRAM3_DTCM) : AT(ORIGIN(INTRAM2_ITCM)+SIZEOF(.code))
+	.code ORIGIN(INTRAM2_ITCM) :
 	{
-		__data_start__ = . ;
+		load_address = . ;
 
-		/* ro data */
-		*(.rodata*)
-
-		/* rw data */
-		*(.data)
-
-		__data_end__ = . ;
-	} >INTRAM3_DTCM
-	__data_loadaddr__ = LOADADDR(.data) ;
+		*(.header)
+		*(.init_code)
+		*(.text)
+	} >INTRAM2_ITCM
 
 
 	.serial_vectors ORIGIN(INTRAM0_DTCM)+LENGTH(INTRAM0_DTCM)-0x10 :
@@ -61,6 +73,26 @@ SECTIONS
 		*(COMMON)
 
 		__bss_end__ = . ;
+	} >INTRAM3_DTCM
+
+
+	.data ORIGIN(INTRAM3_DTCM) : AT(ORIGIN(INTRAM2_ITCM)+SIZEOF(.code))
+	{
+		__data_start__ = . ;
+
+		/* ro data */
+		*(.rodata*)
+
+		__data_end__ = . ;
+	} >INTRAM3_DTCM
+	__data_loadaddr__ = LOADADDR(.data) ;
+
+
+	.parameter ORIGIN(INTRAM3_DTCM)+LENGTH(INTRAM3_DTCM)-0x100 :
+	{
+		parameter_start_address = . ;
+		. = . + 0x0100;
+		parameter_end_address = . ;
 	} >INTRAM3_DTCM
 
 
