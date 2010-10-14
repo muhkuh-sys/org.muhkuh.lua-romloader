@@ -1,4 +1,7 @@
-<muhkuh_buildsystem>
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="setup2html.xsl"?>
+
+<muhkuh_buildsystem project="monitor_test">
 	<project_version>
 		<major>1</major>
 		<minor>0</minor>
@@ -11,7 +14,7 @@
 	</paths>
 
 	<repositories>
-		<repository>http://netx01/maven2</repository>
+		<repository name="muhkuh@netx01">http://netx01/maven2</repository>
 	</repositories>
 
 	<scons>
