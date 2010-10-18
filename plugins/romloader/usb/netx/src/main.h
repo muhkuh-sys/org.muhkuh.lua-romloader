@@ -23,7 +23,7 @@
 #define __MAIN_H__
 
 
-void usb_monitor(unsigned long ulParameter0, unsigned long ulParameter1, unsigned long ulParameter2, unsigned long ulParameter3);
+void usb_monitor(void);
 
 
 #endif  /* __MAIN_H__ */
