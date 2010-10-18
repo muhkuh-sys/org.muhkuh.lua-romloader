@@ -33,7 +33,7 @@
 			<typ>tar.bz2</typ>
 			<folder>asciidoc</folder>
 		</tool>
-
+<!--
 		<tool>
 			<group>org.gnu.gcc</group>
 			<name>gcc-arm-elf-none-eabi_${platform}_${machine}</name>
@@ -41,7 +41,7 @@
 			<typ>tar.bz2</typ>
 			<folder>gcc</folder>
 		</tool>
-<!--
+-->
 		<tool>
 			<group>org.gnu.gcc</group>
 			<name>gcc-arm-elf_${platform}_${machine}</name>
@@ -49,7 +49,6 @@
 			<typ>tar.bz2</typ>
 			<folder>gcc</folder>
 		</tool>
--->
 	</tools>
 
 	<filters>
