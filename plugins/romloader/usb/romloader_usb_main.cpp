@@ -38,7 +38,7 @@ romloader_usb_provider::romloader_usb_provider(swig_type_info *p_romloader_usb, 
  : muhkuh_plugin_provider("romloader_usb")
  , m_ptUsbDevice(NULL)
 {
-	printf("%s(%p): provider create\n", m_pcPluginId, this);
+/*	printf("%s(%p): provider create\n", m_pcPluginId, this); */
 
 	/* get the romloader_usb lua type */
 	m_ptPluginTypeInfo = p_romloader_usb;
@@ -51,7 +51,7 @@ romloader_usb_provider::romloader_usb_provider(swig_type_info *p_romloader_usb, 
 
 romloader_usb_provider::~romloader_usb_provider(void)
 {
-	printf("%s(%p): provider delete\n", m_pcPluginId, this);
+/*	printf("%s(%p): provider delete\n", m_pcPluginId, this); */
 
 	if( m_ptUsbDevice!=NULL )
 	{
@@ -193,7 +193,7 @@ romloader_usb::romloader_usb(const char *pcName, const char *pcTyp, romloader_us
  , m_uiDeviceAdr(uiDeviceAdr)
  , m_ptUsbDevice(NULL)
 {
-	printf("%s(%p): created in romloader_usb\n", m_pcName, this);
+/*	printf("%s(%p): created in romloader_usb\n", m_pcName, this); */
 
 	/* create a new libusb context */
 	m_ptUsbDevice = new romloader_usb_device_platform(m_pcName);
@@ -202,7 +202,7 @@ romloader_usb::romloader_usb(const char *pcName, const char *pcTyp, romloader_us
 
 romloader_usb::~romloader_usb(void)
 {
-	printf("%s(%p): deleted in romloader_usb\n", m_pcName, this);
+/*	printf("%s(%p): deleted in romloader_usb\n", m_pcName, this); */
 
 	if( m_ptUsbDevice!=NULL )
 	{
@@ -234,6 +234,10 @@ bool romloader_usb::chip_init(lua_State *ptClientData)
 			// hboot needs no special init
 			fResult = true;
 			break;
+		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
+			/* hboot2 software emu needs no special init. */
+			fResult = true;
+			break;
 		case ROMLOADER_ROMCODE_UNKNOWN:
 			fResult = false;
 			break;
@@ -249,6 +253,10 @@ bool romloader_usb::chip_init(lua_State *ptClientData)
 			break;
 		case ROMLOADER_ROMCODE_HBOOT:
 			// hboot needs no special init
+			fResult = true;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
+			/* hboot2 software emu needs no special init. */
 			fResult = true;
 			break;
 		case ROMLOADER_ROMCODE_UNKNOWN:
@@ -268,12 +276,17 @@ bool romloader_usb::chip_init(lua_State *ptClientData)
 			// hboot needs no special init
 			fResult = true;
 			break;
+		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
+			/* hboot2 software emu needs no special init. */
+			fResult = true;
+			break;
 		case ROMLOADER_ROMCODE_UNKNOWN:
 			fResult = false;
 			break;
 		}
 		break;
 
+	case ROMLOADER_CHIPTYP_NETX5:
 	case ROMLOADER_CHIPTYP_UNKNOWN:
 		fResult = false;
 		break;
@@ -370,10 +383,10 @@ unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long 
 		ucCommand  = USBMON_COMMAND_Read_Byte << 5U;
 		ucCommand |= 1;
 		aucOutBuf[0x00] = ucCommand;
-		aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
-		aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
-		aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
-		aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
+		aucOutBuf[0x01] = (unsigned char)( ulNetxAddress      & 0xff);
+		aucOutBuf[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xff);
+		aucOutBuf[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xff);
+		aucOutBuf[0x04] = (unsigned char)((ulNetxAddress>>24) & 0xff);
 		sizOutBuf = 5;
 
 		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
@@ -442,10 +455,10 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 		ucCommand  = USBMON_COMMAND_Read_Word << 5U;
 		ucCommand |= 1;
 		aucOutBuf[0x00] = ucCommand;
-		aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
-		aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
-		aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
-		aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
+		aucOutBuf[0x01] = (unsigned char)( ulNetxAddress      & 0xff);
+		aucOutBuf[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xff);
+		aucOutBuf[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xff);
+		aucOutBuf[0x04] = (unsigned char)((ulNetxAddress>>24) & 0xff);
 		sizOutBuf = 5;
 
 		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
@@ -474,8 +487,7 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 			}
 			else
 			{
-				usData  = aucInBuf[1];
-				usData |= aucInBuf[2] << 8;
+				usData = (unsigned short)(aucInBuf[1] | (aucInBuf[2]<<8U));
 				fOk = true;
 			}
 		}
@@ -515,10 +527,10 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 		ucCommand  = USBMON_COMMAND_Read_Long << 5U;
 		ucCommand |= 4;
 		aucOutBuf[0x00] = ucCommand;
-		aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
-		aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
-		aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
-		aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
+		aucOutBuf[0x01] = (unsigned char)( ulNetxAddress      & 0xff);
+		aucOutBuf[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xff);
+		aucOutBuf[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xff);
+		aucOutBuf[0x04] = (unsigned char)((ulNetxAddress>>24) & 0xff);
 		sizOutBuf = 5;
 
 		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
@@ -621,12 +633,12 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 
 				/* Construct the command packet. */
 				ucCommand  = USBMON_COMMAND_Read_Byte << 5U;
-				ucCommand |= sizChunk;
+				ucCommand |= (unsigned char)sizChunk;
 				aucOutBuf[0x00] = ucCommand;
-				aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
-				aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
-				aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
-				aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
+				aucOutBuf[0x01] = (unsigned char)( ulNetxAddress      & 0xff);
+				aucOutBuf[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xff);
+				aucOutBuf[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xff);
+				aucOutBuf[0x04] = (unsigned char)((ulNetxAddress>>24) & 0xff);
 				sizOutBuf = 5;
 
 				iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
@@ -707,10 +719,10 @@ void romloader_usb::write_data08(lua_State *ptClientData, unsigned long ulNetxAd
 		ucCommand  = USBMON_COMMAND_Write_Byte << 5U;
 		ucCommand |= 1;
 		aucOutBuf[0x00] = ucCommand;
-		aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
-		aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
-		aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
-		aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
+		aucOutBuf[0x01] = (unsigned char)( ulNetxAddress      & 0xff);
+		aucOutBuf[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xff);
+		aucOutBuf[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xff);
+		aucOutBuf[0x04] = (unsigned char)((ulNetxAddress>>24) & 0xff);
 		aucOutBuf[0x05] = ucData;
 		sizOutBuf = 6;
 
@@ -776,12 +788,12 @@ void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 		ucCommand  = USBMON_COMMAND_Write_Word << 5U;
 		ucCommand |= 1;
 		aucOutBuf[0x00] = ucCommand;
-		aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
-		aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
-		aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
-		aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
-		aucOutBuf[0x05] =  usData      & 0xff;
-		aucOutBuf[0x06] = (usData>>8 ) & 0xff;
+		aucOutBuf[0x01] = (unsigned char)( ulNetxAddress      & 0xff);
+		aucOutBuf[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xff);
+		aucOutBuf[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xff);
+		aucOutBuf[0x04] = (unsigned char)((ulNetxAddress>>24) & 0xff);
+		aucOutBuf[0x05] = (unsigned char)( usData      & 0xff);
+		aucOutBuf[0x06] = (unsigned char)((usData>>8 ) & 0xff);
 		sizOutBuf = 7;
 
 		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
@@ -846,14 +858,14 @@ void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 		ucCommand  = USBMON_COMMAND_Write_Long << 5U;
 		ucCommand |= 1;
 		aucOutBuf[0x00] = ucCommand;
-		aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
-		aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
-		aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
-		aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
-		aucOutBuf[0x05] =  ulData      & 0xff;
-		aucOutBuf[0x06] = (ulData>>8 ) & 0xff;
-		aucOutBuf[0x07] = (ulData>>16) & 0xff;
-		aucOutBuf[0x08] = (ulData>>24) & 0xff;
+		aucOutBuf[0x01] = (unsigned char)( ulNetxAddress      & 0xff);
+		aucOutBuf[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xff);
+		aucOutBuf[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xff);
+		aucOutBuf[0x04] = (unsigned char)((ulNetxAddress>>24) & 0xff);
+		aucOutBuf[0x05] = (unsigned char)( ulData      & 0xff);
+		aucOutBuf[0x06] = (unsigned char)((ulData>>8 ) & 0xff);
+		aucOutBuf[0x07] = (unsigned char)((ulData>>16) & 0xff);
+		aucOutBuf[0x08] = (unsigned char)((ulData>>24) & 0xff);
 		sizOutBuf = 9;
 
 		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
@@ -931,12 +943,12 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 
 			/* Construct the command packet. */
 			ucCommand  = USBMON_COMMAND_Write_Byte << 5U;
-			ucCommand |= sizChunk;
+			ucCommand |= (unsigned char)sizChunk;
 			aucOutBuf[0x00] = ucCommand;
-			aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
-			aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
-			aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
-			aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
+			aucOutBuf[0x01] = (unsigned char)( ulNetxAddress      & 0xff);
+			aucOutBuf[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xff);
+			aucOutBuf[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xff);
+			aucOutBuf[0x04] = (unsigned char)((ulNetxAddress>>24) & 0xff);
 			memcpy(aucOutBuf+5, pcBUFFER_IN, sizChunk);
 			sizOutBuf = sizChunk+5;
 
@@ -1018,14 +1030,14 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 		/* Construct the command packet. */
 		ucCommand = USBMON_COMMAND_Execute << 5U;
 		aucOutBuf[0x00] = ucCommand;
-		aucOutBuf[0x01] =  ulNetxAddress      & 0xff;
-		aucOutBuf[0x02] = (ulNetxAddress>>8 ) & 0xff;
-		aucOutBuf[0x03] = (ulNetxAddress>>16) & 0xff;
-		aucOutBuf[0x04] = (ulNetxAddress>>24) & 0xff;
-		aucOutBuf[0x05] =  ulParameterR0      & 0xff;
-		aucOutBuf[0x06] = (ulParameterR0>>8 ) & 0xff;
-		aucOutBuf[0x07] = (ulParameterR0>>16) & 0xff;
-		aucOutBuf[0x08] = (ulParameterR0>>24) & 0xff;
+		aucOutBuf[0x01] = (unsigned char)( ulNetxAddress      & 0xff);
+		aucOutBuf[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xff);
+		aucOutBuf[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xff);
+		aucOutBuf[0x04] = (unsigned char)((ulNetxAddress>>24) & 0xff);
+		aucOutBuf[0x05] = (unsigned char)( ulParameterR0      & 0xff);
+		aucOutBuf[0x06] = (unsigned char)((ulParameterR0>>8 ) & 0xff);
+		aucOutBuf[0x07] = (unsigned char)((ulParameterR0>>16) & 0xff);
+		aucOutBuf[0x08] = (unsigned char)((ulParameterR0>>24) & 0xff);
 		sizOutBuf = 9;
 
 		printf("Executing call command:\n");

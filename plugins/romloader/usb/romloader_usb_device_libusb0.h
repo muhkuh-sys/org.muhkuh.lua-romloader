@@ -72,9 +72,16 @@ private:
 
 
 	/* General update routines. */
+	char nibble_to_asciihex(unsigned char ucNibble);
+	void convert_buffer_to_asciihex(const unsigned char *pucData, size_t sizData, char *pcOutput);
+	int compare_uuid_from_string_descriptors(libusb_device *ptDevice, const char *pcUuid);
+	int update_old_netx_device(libusb_device *ptNetxDevice, libusb_device **pptUpdatedNetxDevice);
 	int discard_until_timeout(libusb_device_handle *ptDevHandle);
+	libusb_device *find_device_by_uuid(const char *pcUuid);
 	/* netx10 update routines. */
-	
+	int load_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode, size_t sizNetxCode);
+	int start_code(libusb_device_handle *ptDevHandle);
+	int upgrade_netx10_romcode(libusb_device *ptDevice, libusb_device **pptUpdatedNetxDevice);
 
 
 	const int m_iConfiguration;

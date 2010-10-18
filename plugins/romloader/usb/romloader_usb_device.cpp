@@ -30,7 +30,6 @@
 
 const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[3] =
 {
-#if 0
 	{
 		"netX500",
 		0x0cc4,
@@ -51,7 +50,6 @@ const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[3] =
 		0x83,
 		0x04
 	},
-#endif
 	{
 		"netX10 HBootV2 Emulation",
 		0x1939,
