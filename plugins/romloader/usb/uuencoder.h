@@ -29,9 +29,9 @@
 class uuencoder
 {
 public:
-	uuencoder(const unsigned char *pucData, size_t sizData);
-	~uuencoder(void);
+	uuencoder(void);
 
+	void set_data(const unsigned char *pucData, size_t sizData);
 	size_t process(char *pcLine, size_t sizMaxLine);
 	bool isFinished(void) const;
 

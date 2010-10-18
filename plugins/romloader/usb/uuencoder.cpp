@@ -24,7 +24,16 @@
 #include <stdio.h>
 
 
-uuencoder::uuencoder(const unsigned char *pucData, size_t sizData)
+uuencoder::uuencoder(void)
+{
+	m_pucStart = NULL;
+	m_pucCnt   = NULL;
+	m_pucEnd   = NULL;
+	m_tState   = UUENCODE_STATE_Finished;
+}
+
+
+void uuencoder::set_data(const unsigned char *pucData, size_t sizData)
 {
 	m_pucStart = pucData;
 	m_pucCnt   = pucData;
@@ -122,6 +131,10 @@ size_t uuencoder::process(char *pcLine, size_t sizMaxLine)
 		sizLine = snprintf(pcLine, sizMaxLine, "end\n");
 		m_tState = UUENCODE_STATE_Finished;
 		break;
+
+	case UUENCODE_STATE_Finished:
+		sizLine = 0;
+		break;
 	}
 
 	return sizLine;
@@ -134,7 +147,6 @@ bool uuencoder::isFinished(void) const
 
 
 	iResult = (m_tState==UUENCODE_STATE_Finished);
-	printf("is finished: %d\n", iResult);
 
 	return iResult;
 }
