@@ -103,7 +103,7 @@ if not GetOption('help'):
 	#
 	# import the compiler definitions
 	#
-	gcc_arm_elf = scons_common.get_tool('gcc-arm-elf_linux_i386-4.3.3_3')
+	gcc_arm_elf = scons_common.get_tool('gcc-arm-elf_linux_i386-4.3.3_4')
 	asciidoc = scons_common.get_tool('asciidoc-8.5.3_1')
 	
 	

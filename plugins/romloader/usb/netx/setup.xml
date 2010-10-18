@@ -45,7 +45,7 @@
 		<tool>
 			<group>org.gnu.gcc</group>
 			<name>gcc-arm-elf_${platform}_${machine}</name>
-			<version>4.3.3_3</version>
+			<version>4.3.3_4</version>
 			<typ>tar.bz2</typ>
 			<folder>gcc</folder>
 		</tool>
