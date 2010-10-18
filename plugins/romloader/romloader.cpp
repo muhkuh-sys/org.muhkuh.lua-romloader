@@ -29,13 +29,13 @@ romloader::romloader(const char *pcName, const char *pcTyp, muhkuh_plugin_provid
  , m_tChiptyp(ROMLOADER_CHIPTYP_UNKNOWN)
  , m_tRomcode(ROMLOADER_ROMCODE_UNKNOWN)
 {
-	printf("%s(%p): created in romloader\n", m_pcName, this);
+/*	printf("%s(%p): created in romloader\n", m_pcName, this); */
 }
 
 
 romloader::~romloader(void)
 {
-	printf("%s(%p): deleted in romloader\n", m_pcName, this);
+/*	printf("%s(%p): deleted in romloader\n", m_pcName, this); */
 }
 
 
