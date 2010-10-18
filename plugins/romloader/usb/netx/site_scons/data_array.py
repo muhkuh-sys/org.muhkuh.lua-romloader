@@ -20,6 +20,9 @@
 #-------------------------------------------------------------------------#
 
 
+import os
+import string
+
 from SCons.Script import *
 
 
@@ -43,6 +46,20 @@ def dataarray_action(target, source, env):
 		file_target.write("\n")
 	file_target.write("};\n");
 	file_target.close()
+	
+	
+	# Write the header file.
+	strDefineName = string.replace(string.upper(os.path.basename(target[1].get_path())), '.', '_')
+	file_target = open(target[1].get_path(), 'w')
+	file_target.write("#ifndef __%s__\n" % strDefineName)
+	file_target.write("#define __%s__\n" % strDefineName)
+	file_target.write("\n")
+	file_target.write("extern const unsigned char %s[%d];\n\n"%(strArrayName,sizSourceData))
+	file_target.write("\n")
+	file_target.write("#endif  /* __%s__ */\n" % strDefineName)
+	file_target.write("\n")
+	file_target.close()
+	
 	return 0
 
 
@@ -50,6 +67,11 @@ def dataarray_emitter(target, source, env):
 	# Make the target depend on the parameter.
 	Depends(target, SCons.Node.Python.Value(env['DATAARRAY_NAME']))
 	Depends(target, SCons.Node.Python.Value(env['DATAARRAY_BYTES_PER_LINE']))
+	
+	# Add the header file to the list of targets.
+	strBase,strOldExt = os.path.splitext(target[0].get_path())
+	strHeader = strBase + '.h'
+	target.append(strHeader)
 	
 	return target, source
 
