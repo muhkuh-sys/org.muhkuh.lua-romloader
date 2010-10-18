@@ -60,12 +60,14 @@ SET(romloader_usb_SOURCES
 	romloader_usb_device_libusb0.cpp
 	romloader_usb_main.cpp
 	uuencoder.cpp
+	netx/targets/usbmon_netx10_intram.c
 )
 
 SET(romloader_usb_HEADERS
 	romloader_usb_device_libusb0.h
 	romloader_usb_main.h
 	uuencoder.h
+	netx/targets/usbmon_netx10_intram.h
 )
 
 add_definitions(${USB_DEFINES})
