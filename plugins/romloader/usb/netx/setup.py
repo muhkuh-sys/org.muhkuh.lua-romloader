@@ -40,6 +40,7 @@ def download_file(strUrl, strFile):
 	fOutput = None
 	sizDownloaded = 0
 	
+	print 'Downloading %s' % strUrl
 	try:
 		aSocket = urllib2.urlopen(strUrl)
 		aInfo = aSocket.info()
@@ -74,6 +75,8 @@ def download_file(strUrl, strFile):
 def check_sha1_sum(strSha1File, strBinFile):
 	bResult = False
 	strRemoteHash = None
+	
+	print 'Checking sha1 sum.'
 	
 	tRegObj = re.compile('([0-9a-fA-F]+)\*?[ \t]+'+ re.escape(os.path.basename(strBinFile)))
 	fInput = open(strSha1File, 'rt')
