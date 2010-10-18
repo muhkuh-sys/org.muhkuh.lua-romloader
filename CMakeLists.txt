@@ -13,6 +13,7 @@ SET(CMAKE_SWIG_OUTDIR ${MODULE_PYTHON_OUTPUT_PATH})
 
 FIND_PACKAGE(wxWidgets REQUIRED base core xml net aui adv html xrc)
 
+FIND_PACKAGE(PythonInterp REQUIRED)
 
 OPTION(USE_SYSTEM_LUA "Use the systemwide installed lua version instead of the muhkuh internal one." OFF)
 IF(USE_SYSTEM_LUA)
@@ -102,8 +103,23 @@ MACRO(SWIG_BUILD_WRAPPER target_variable language infile)
 ENDMACRO(SWIG_BUILD_WRAPPER)
 
 
-# Do not show msvs security warnings about unsafe functions.
-add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+if(CMAKE_BUILD_TOOL MATCHES "(msdev|devenv|nmake)")
+	# Do not show msvs security warnings about unsafe functions.
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+	# Set warning level to 2.
+	add_definitions(/W2)
+elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+	add_definitions(-Wall)
+	add_definitions(-Wextra)
+	add_definitions(-Wconversion)
+	add_definitions(-Wshadow)
+	add_definitions(-Wcast-qual)
+	add_definitions(-Wwrite-strings)
+	add_definitions(-Wcast-align)
+	add_definitions(-Wpointer-arith)
+	add_definitions(-Wmissing-prototypes)
+	add_definitions(-Wstrict-prototypes)
+endif()
 
 
 add_subdirectory(lua)

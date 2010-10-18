@@ -20,6 +20,9 @@ endif(${LUA51_FOUND})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 
+
+add_custom_target(netx_usb_firmware ${PYTHON_EXECUTABLE} setup.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/netx COMMENT "Build the netx usb firmware" VERBATIM)
+
 #----------------------------------------------------------------------------
 #
 # Detect libuuid
@@ -73,7 +76,7 @@ SET(romloader_usb_HEADERS
 add_definitions(${USB_DEFINES})
 
 add_library(romloader_usb_lib STATIC ${romloader_usb_SOURCES})
-
+add_dependencies(romloader_usb_lib netx_usb_firmware)
 
 if(${LUA51_FOUND})
 	# Build the Lua module.
