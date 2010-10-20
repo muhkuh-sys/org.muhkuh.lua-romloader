@@ -26,6 +26,7 @@ import platform
 import re
 import runpy
 import shutil
+import string
 import subprocess
 import sys
 import tarfile
@@ -213,7 +214,7 @@ def install_package(aCfg, aTool):
 
 def create_substitute_dict(aCfg):
 	# Get the scons path.
-	strSconsPath = aCfg['scons_path']
+	strSconsPath = string.replace(aCfg['scons_path'], '\\', '/')
 	
 	# Get the project version.
 	strProjectVersion = '%d.%d' % (aCfg['project_version_maj'], aCfg['project_version_min'])
@@ -221,7 +222,7 @@ def create_substitute_dict(aCfg):
 	# Get the tools.
 	aToolPaths = []
 	for aTool in aCfg['tools']:
-		strToolPath = os.path.join(aCfg['depack_path'], aTool[4])
+		strToolPath = string.replace(os.path.join(aCfg['depack_path'], aTool[4]), '\\', '/')
 		aToolPaths.append('\'%s-%s\': \'%s\'' % (aTool[1],aTool[2], strToolPath))
 	
 	strTools  = 'dict({' + ','.join(aToolPaths) + '})'
