@@ -21,8 +21,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 
 
-add_custom_target(netx_usb_firmware ${PYTHON_EXECUTABLE} setup.py WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/netx COMMENT "Build the netx usb firmware" VERBATIM)
-
 #----------------------------------------------------------------------------
 #
 # Detect libuuid
@@ -33,13 +31,36 @@ IF(UNIX)
 	IF(DEFINED LIBUUID_NOTFOUND)
 		MESSAGE(FATAL_ERROR "No libuuid found!")
 	ENDIF(DEFINED LIBUUID_NOTFOUND)
+ELSE(UNIX)
+	IF(WIN32)
+		SET(LIBUUID Rpcrt4)
+	ENDIF(WIN32)
 ENDIF(UNIX)
 
-IF(UNIX)
-	# Use libusb-0.1
-	#SET(USB_LIBRARIES usb pthread)
-	#SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=0)
 
+#----------------------------------------------------------------------------
+#
+# Compile the netX USB firmware.
+#
+
+ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h
+                   COMMAND ${PYTHON_EXECUTABLE} setup.py
+                   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/netx
+                   COMMENT "Build the netx usb firmware"
+                   VERBATIM)
+
+ADD_CUSTOM_TARGET(netx_usb_firmware
+                  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h)
+
+
+#----------------------------------------------------------------------------
+#
+# Set the libusb include paths.
+#
+
+IF(UNIX)
 	# Use libusb-1.0
 	SET(USB_LIBRARIES usb-1.0)
 	SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=0)
@@ -49,7 +70,7 @@ ELSE(UNIX)
 		SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=0)
 		INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/include/)
 		LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/lib/msvc/)
-		SET(USB_LIBRARIES libusb setupapi)
+		SET(USB_LIBRARIES libusb-1.0 setupapi)
 	ENDIF(WIN32)
 ENDIF(UNIX)
 
@@ -63,20 +84,30 @@ SET(romloader_usb_SOURCES
 	romloader_usb_device_libusb0.cpp
 	romloader_usb_main.cpp
 	uuencoder.cpp
-	netx/targets/usbmon_netx10_intram.c
+	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
 )
 
 SET(romloader_usb_HEADERS
 	romloader_usb_device_libusb0.h
 	romloader_usb_main.h
 	uuencoder.h
-	netx/targets/usbmon_netx10_intram.h
+	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h
 )
 
 add_definitions(${USB_DEFINES})
 
 add_library(romloader_usb_lib STATIC ${romloader_usb_SOURCES})
+SET_SOURCE_FILES_PROPERTIES(${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
+                            ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h
+                            PROPERTIES GENERATED 1)
+
 add_dependencies(romloader_usb_lib netx_usb_firmware)
+
+
+#----------------------------------------------------------------------------
+#
+# Build the lua plugin.
+#
 
 if(${LUA51_FOUND})
 	# Build the Lua module.
@@ -88,6 +119,11 @@ if(${LUA51_FOUND})
 	INSTALL(TARGETS romloader_usb DESTINATION ${CMAKE_BINARY_DIR}/build/)
 endif(${LUA51_FOUND})
 
+
+#----------------------------------------------------------------------------
+#
+# Build the python plugin.
+#
 
 #if(${PYTHONLIBS_FOUND})
 #	# Build the Python module.
