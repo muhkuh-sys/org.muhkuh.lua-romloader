@@ -24,6 +24,12 @@ Set the wxWidgets directory
 
 
 
+Set the Python interpreter
+--------------------------
+
+ cmake -D PYTHON_EXECUTABLE=c:\Python27\python.exe ..
+
+
 Select the build type
 ---------------------
 
@@ -46,3 +52,12 @@ Verbose Output
 Execute the Makefile with verbose output to see the complete commands instead of the summary:
   make VERBOSE=1
 
+
+Select the Genarator
+--------------------
+
+The generator defines the output type (Visual Studio, Unix make or whatever.)
+
+Select NMake:
+
+ cmake -G "NMake Makefiles" ..
