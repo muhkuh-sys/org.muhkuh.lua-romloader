@@ -14,6 +14,7 @@
 	</paths>
 
 	<repositories>
+<!--		<repository name="muhkuh@sf">http://downloads.sourceforge.net/project/muhkuh/maven2</repository> -->
 		<repository name="muhkuh@netx01">http://netx01/maven2</repository>
 	</repositories>
 
@@ -29,25 +30,25 @@
 		<tool>
 			<group>nz.co.methods</group>
 			<name>asciidoc</name>
+			<host_id></host_id>
 			<version>8.5.3_1</version>
 			<typ>tar.bz2</typ>
-			<folder>asciidoc</folder>
 		</tool>
 <!--
 		<tool>
 			<group>org.gnu.gcc</group>
-			<name>gcc-arm-elf-none-eabi_${platform}_${machine}</name>
+			<name>gcc-arm-elf-none-eabi</name>
+			<host_id>${platform}_${machine}</host_id>
 			<version>4.5.1_1</version>
 			<typ>tar.bz2</typ>
-			<folder>gcc</folder>
 		</tool>
 -->
 		<tool>
 			<group>org.gnu.gcc</group>
-			<name>gcc-arm-elf_${platform}_${machine}</name>
+			<name>gcc-arm-elf</name>
+			<host_id>${platform}_${machine}</host_id>
 			<version>4.3.3_4</version>
 			<typ>tar.bz2</typ>
-			<folder>gcc</folder>
 		</tool>
 	</tools>
 
