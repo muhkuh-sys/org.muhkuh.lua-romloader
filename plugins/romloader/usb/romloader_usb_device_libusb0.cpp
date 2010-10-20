@@ -26,13 +26,15 @@
 
 #include <errno.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #if defined(WIN32)
 #	define snprintf _snprintf
 #	define ETIMEDOUT 116
+#	define SLEEP_MS(ms) Sleep(ms)
 #else
 #	include <sys/time.h>
+#	include <unistd.h>
+#	define SLEEP_MS(ms) usleep(ms*1000)
 #endif
 
 #include "romloader_usb_main.h"
@@ -688,8 +690,8 @@ int romloader_usb_device_libusb0::load_code(libusb_device_handle* ptDevHandle, c
 						iResult = -1;
 						break;
 					}
-					/* usleep delays in us, i.e. a parameter of 10000 means 10ms. */
-					usleep(10000);
+					/* Sleep for 10ms. */
+					SLEEP_MS(10);
 				}
 			} while( tUuencoder.isFinished()==false );
 
@@ -960,7 +962,7 @@ int romloader_usb_device_libusb0::upgrade_netx10_romcode(libusb_device *ptDevice
 					iCnt = 0;
 					do
 					{
-						usleep(200000);
+						SLEEP_MS(200);
 						/* Search for device with uuid. */
 						ptUpdatedDevice = find_device_by_uuid(acUuid);
 						++iCnt;

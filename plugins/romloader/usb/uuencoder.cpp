@@ -23,6 +23,9 @@
 
 #include <stdio.h>
 
+#if defined(WIN32)
+#	define snprintf _snprintf
+#endif
 
 uuencoder::uuencoder(void)
 {

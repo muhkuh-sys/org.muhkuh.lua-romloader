@@ -30,7 +30,6 @@
 
 #if defined(WIN32)
 #	include <windows.h>
-	typedef int ssize_t;
 #endif
 
 
