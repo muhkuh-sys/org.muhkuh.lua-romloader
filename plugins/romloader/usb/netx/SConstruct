@@ -47,7 +47,6 @@ sources_common = """
 	src/systime.c
 	src/uart.c
 	src/uprintf.c
-	src/usb.c
 	src/usbmon.c
 """
 
@@ -58,6 +57,7 @@ sources_custom_netx500 = """
 
 
 sources_custom_netx10 = """
+	src/netx10/usb.c
 	src/netx10/netx10_io_areas.c
 """
 
