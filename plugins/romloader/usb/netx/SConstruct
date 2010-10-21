@@ -57,17 +57,11 @@ sources_custom_netx500 = """
 """
 
 
-sources_custom_netx50 = """
-	src/netx50/netx50_io_areas.c
-"""
-
-
 sources_custom_netx10 = """
 	src/netx10/netx10_io_areas.c
 """
 
 src_netx500 = Split(sources_common+sources_custom_netx500)
-src_netx50  = Split(sources_common+sources_custom_netx50)
 src_netx10  = Split(sources_common+sources_custom_netx10)
 
 
@@ -132,12 +126,6 @@ if not GetOption('help'):
 	env_netx500.Append(CPPDEFINES = [['ASIC_TYP', '500']])
 	env_netx500.Append(CPPPATH = ['src/netx500'])
 	
-	env_netx50 = env_default.Clone()
-	env_netx50.Append(CCFLAGS = ['-mcpu=arm966e-s'])
-	env_netx50.Replace(LIBPATH = ['${GCC_DIR}/arm-elf/lib/arm966e-s', '${GCC_DIR}/lib/gcc/arm-elf/${GCC_VERSION}/arm966e-s'])
-	env_netx50.Append(CPPDEFINES = [['ASIC_TYP', '50']])
-	env_netx50.Append(CPPPATH = ['src/netx50'])
-	
 	env_netx10 = env_default.Clone()
 	env_netx10.Append(CCFLAGS = ['-mcpu=arm966e-s'])
 	env_netx10.Replace(LIBPATH = ['${GCC_DIR}/arm-elf/lib/arm966e-s', '${GCC_DIR}/lib/gcc/arm-elf/${GCC_VERSION}/arm966e-s'])
@@ -149,19 +137,12 @@ if not GetOption('help'):
 	#
 	# Build the netX500 files.
 	#
-	#eth_echo_netx500_elf = env_netx500.Elf('targets/eth_echo_netx500', sources_netx500)
-	#env_netx500.ObjCopy('targets/eth_echo_netx500', eth_echo_netx500_elf)
-	
-	#----------------------------------------------------------------------------
-	#
-	# Build the netX50 files.
-	#
-	#env_netx50_sdram = env_netx50.Clone()
-	#src_netx50_sdram = scons_common.set_build_path(env_netx50_sdram, 'targets/netx50_sdram', 'src', src_netx50)
-	#env_netx50_sdram.Replace(LDFILE = 'src/netx50/netx50_sdram.ld')
-	#elf_netx50_sdram = env_netx50_sdram.Elf('targets/eth_echo_netx50', src_netx50_sdram)
-	#bin_netx50_sdram = env_netx50_sdram.ObjCopy('targets/ethecho_netx50_sdram', elf_netx50_sdram)
-	#env_netx50_sdram.UUEncode('targets/ethecho_netx50_sdram.uue', bin_netx50_sdram)
+	env_netx500_intram = env_netx500.Clone()
+	src_netx500_intram = scons_common.set_build_path(env_netx500_intram, 'targets/netx500_intram', 'src', src_netx500)
+	env_netx500_intram.Replace(LDFILE = 'src/netx500/netx500_intram.ld')
+	elf_netx500_intram = env_netx500_intram.Elf('targets/usbmon_netx500_intram', src_netx500_intram)
+	bin_netx500_intram = env_netx500_intram.ObjCopy('targets/usbmon_netx500_intram', elf_netx500_intram)
+	env_netx500_intram.DataArray('targets/usbmon_netx500_intram.c', bin_netx500_intram, DATAARRAY_NAME='auc_usbmon_netx500_intram')
 	
 	#----------------------------------------------------------------------------
 	#
