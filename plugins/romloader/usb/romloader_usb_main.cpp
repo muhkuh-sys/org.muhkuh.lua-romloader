@@ -193,8 +193,6 @@ romloader_usb::romloader_usb(const char *pcName, const char *pcTyp, romloader_us
  , m_uiDeviceAdr(uiDeviceAdr)
  , m_ptUsbDevice(NULL)
 {
-/*	printf("%s(%p): created in romloader_usb\n", m_pcName, this); */
-
 	/* create a new libusb context */
 	m_ptUsbDevice = new romloader_usb_device_platform(m_pcName);
 }
@@ -202,8 +200,6 @@ romloader_usb::romloader_usb(const char *pcName, const char *pcTyp, romloader_us
 
 romloader_usb::~romloader_usb(void)
 {
-/*	printf("%s(%p): deleted in romloader_usb\n", m_pcName, this); */
-
 	if( m_ptUsbDevice!=NULL )
 	{
 		delete(m_ptUsbDevice);
