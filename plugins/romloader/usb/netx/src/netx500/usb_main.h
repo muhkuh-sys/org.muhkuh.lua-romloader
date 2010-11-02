@@ -19,11 +19,18 @@
  ***************************************************************************/
 
 
-#ifndef __USBMON_H__
-#define __USBMON_H__
+#include "usb_globals.h"
 
+#ifndef __usb__
+#define __usb__
 
-int usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacketSize);
+//-------------------------------------
 
+void usb_main_init(void);
+void usb_main_deinit(void);
+void usb_handleReset(void);
 
-#endif  /* __USBMON_H__ */
+//-------------------------------------
+
+#endif  // __usb__
+

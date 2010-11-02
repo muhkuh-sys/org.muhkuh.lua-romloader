@@ -18,12 +18,33 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include "usb_globals.h"
 
-#ifndef __USBMON_H__
-#define __USBMON_H__
+//---------------------------------------------------------------------------
 
+USB_State_t globalState;
 
-int usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacketSize);
+unsigned int currentConfig;
 
+// buffer for setup and data packets
+unsigned char setupBuffer[Usb_Ep0_PacketSize];
+unsigned char receiveBuffer[Usb_Ep2_PacketSize];
+unsigned char sendBuffer[Usb_Ep3_PacketSize];
 
-#endif  /* __USBMON_H__ */
+// decoded packet
+setupPacket_t tSetupPkt;
+// out transaction needed
+USB_SetupTransaction_t tOutTransactionNeeded;
+
+USB_ReceiveEndpoint_t tReceiveEpState;
+USB_SendEndpoint_t tSendEpState;
+unsigned int uiLastPacketSize;
+
+// new address for pending address change
+unsigned int uiNewAddress;
+
+// CDC Connection State
+USB_CDC_ConnectionState_t tCdcConnectionState;
+
+//---------------------------------------------------------------------------
+

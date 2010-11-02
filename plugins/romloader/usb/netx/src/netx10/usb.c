@@ -25,6 +25,8 @@
 #include "options.h"
 
 #include "uprintf.h"
+#include "usbmonitor_commands.h"
+#include "usbmon.h"
 
 /*-----------------------------------*/
 
@@ -60,6 +62,12 @@ typedef enum
 	USB_FIFO_Uart_RX		= 5,
 	USB_FIFO_Interrupt_In		= 6
 } USB_FIFO_T;
+
+
+/*-----------------------------------*/
+
+
+static unsigned char aucPacketRx[64];
 
 
 /*-----------------------------------*/
@@ -206,5 +214,110 @@ unsigned char usb_get_byte(void)
 	/* Get a byte from the fifo. */
 	ucData = (unsigned char)ptUsvDevFifoArea->aulUsb_dev_fifo[USB_FIFO_Uart_RX];
 	return ucData;
+}
+
+
+/*-----------------------------------*/
+
+
+unsigned char usb_call_console_get(unsigned int uiHandle __attribute__((unused)))
+{
+	unsigned long ulFillLevel;
+	unsigned char ucData;
+
+
+	/* Wait for a byte in the fifo. */
+	do
+	{
+		ulFillLevel = usb_get_rx_fill_level();
+	} while( ulFillLevel!=0 );
+
+	/* Get a byte from the fifo. */
+	ucData = usb_get_byte();
+	return ucData;
+}
+
+
+void usb_call_console_put(unsigned int uiHandle __attribute__((unused)), unsigned int uiChar)
+{
+	unsigned long ulFillLevel;
+
+
+	/* Add the byte to the fifo. */
+	usb_send_byte((unsigned char)uiChar);
+
+	/* Reached the maximum packet size? */
+	ulFillLevel = usb_get_tx_fill_level();
+	if( ulFillLevel>=sizeof(USBMON_PACKET_MESSAGE_T) )
+	{
+		/* Yes -> send the packet. */
+		usb_send_packet();
+
+		/* Start a new packet. */
+		usb_send_byte(USBMON_STATUS_CallMessage);
+	}
+}
+
+
+unsigned int usb_call_console_peek(unsigned int uiHandle __attribute__((unused)))
+{
+	unsigned long ulFillLevel;
+
+
+	ulFillLevel = usb_get_rx_fill_level();
+	return (ulFillLevel==0) ? 0U : 1U;
+}
+
+
+void usb_call_console_flush(unsigned int uiHandle __attribute__((unused)))
+{
+	/* Flush all waiting data. */
+	usb_send_packet();
+
+	/* Start the new message packet. */
+	usb_send_byte(USBMON_STATUS_CallMessage);
+}
+
+
+/*-----------------------------------*/
+
+
+void usb_loop(void)
+{
+	unsigned long ulFillLevel;
+	unsigned char *pucCnt;
+	unsigned char *pucEnd;
+	int iTerminate;
+
+
+	/* start loopback */
+	iTerminate = 0;
+	while( iTerminate==0 )
+	{
+		/* wait for a character in the input fifo */
+
+		/* get the Uart RX input fill level */
+		ulFillLevel = usb_get_rx_fill_level();
+		if( ulFillLevel>0 )
+		{
+			/* Is the fill level valid? */
+			if( ulFillLevel>64 )
+			{
+				ulFillLevel = 64;
+			}
+			else
+			{
+				/* Copy the complete packet to the buffer. */
+				pucCnt = aucPacketRx;
+				pucEnd = aucPacketRx + ulFillLevel;
+				do
+				{
+					*(pucCnt++) = usb_get_byte();
+				} while( pucCnt<pucEnd );
+
+				iTerminate = usbmon_process_packet(aucPacketRx, ulFillLevel);
+			}
+		}
+	}
 }
 

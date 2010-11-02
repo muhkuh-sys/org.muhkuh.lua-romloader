@@ -1,11 +1,22 @@
-/*---------------------------------------------------------------------------
-  Author : Christoph Thelen
-
-           Hilscher GmbH, Copyright (c) 2009, All Rights Reserved
-
-           Redistribution or unauthorized use without expressed written 
-           agreement from the Hilscher GmbH is forbidden
----------------------------------------------------------------------------*/
+/***************************************************************************
+ *   Copyright (C) 2010 by Christoph Thelen                                *
+ *   doc_bacardi@users.sourceforge.net                                     *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
 
 #include "uart.h"
 
@@ -17,10 +28,12 @@
 typedef struct
 {
 	HOSTADEF(UART) * const ptArea;
+#if ASIC_TYP==10 || ASIC_TYP==50
 	MMIO_CFG_T tMmioRx;
 	MMIO_CFG_T tMmioTx;
 	MMIO_CFG_T tMmioRts;
 	MMIO_CFG_T tMmioCts;
+#endif
 } UART_INSTANCE_T;
 
 
@@ -66,6 +79,30 @@ static const UART_INSTANCE_T atUartInstances[] =
 		MMIO_CFG_uart2_rts,
 		MMIO_CFG_uart2_cts
 	}
+#elif ASIC_TYP==100
+	{
+		(NX100_UART_AREA_T * const)Addr_NX100_uart0,
+	},
+
+	{
+		(NX100_UART_AREA_T * const)Addr_NX100_uart1,
+	},
+
+	{
+		(NX100_UART_AREA_T * const)Addr_NX100_uart2,
+	}
+#elif ASIC_TYP==500
+	{
+		(NX500_UART_AREA_T * const)Addr_NX500_uart0,
+	},
+
+	{
+		(NX500_UART_AREA_T * const)Addr_NX500_uart1,
+	},
+
+	{
+		(NX500_UART_AREA_T * const)Addr_NX500_uart2,
+	}
 #endif
 };
 
@@ -75,6 +112,9 @@ int uart_init(unsigned int uiUartUnit, const UART_CONFIGURATION_T *ptCfg)
 	unsigned long ulValue;
 	HOSTADEF(UART) *ptUartArea;
 	int iResult;
+#if ASIC_TYP==500 || ASIC_TYP==100
+	unsigned int uiGpioOffset;
+#endif
 
 
 	/* expect error */
@@ -110,17 +150,29 @@ int uart_init(unsigned int uiUartUnit, const UART_CONFIGURATION_T *ptCfg)
 		/* enable the uart */
 		ptUartArea->ulUartcr = HOSTMSK(uartcr_uartEN);
 
+#if ASIC_TYP==10 || ASIC_TYP==50
 		/* setup the MMIO pins */
 		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 		ptMmioCtrlArea->aulMmio_cfg[ptCfg->uc_rx_mmio] = atUartInstances[uiUartUnit].tMmioRx;
-
+#endif
 		/* enable the drivers */
 		ulValue = HOSTMSK(uartdrvout_DRVTX);
 		ptUartArea->ulUartdrvout = ulValue;
 
+#if ASIC_TYP==10 || ASIC_TYP==50
 		/* setup the MMIO pins */
 		ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 		ptMmioCtrlArea->aulMmio_cfg[ptCfg->uc_tx_mmio] = atUartInstances[uiUartUnit].tMmioTx;
+#endif
+
+#if ASIC_TYP==500 || ASIC_TYP==100
+		/* Configure the GPIO pins. */
+		uiGpioOffset = uiUartUnit << 2U;
+		ptGpioArea->aulGpio_cfg[uiGpioOffset+0] = 2;
+		ptGpioArea->aulGpio_cfg[uiGpioOffset+1] = 2;
+		ptGpioArea->aulGpio_cfg[uiGpioOffset+2] = 2;
+		ptGpioArea->aulGpio_cfg[uiGpioOffset+3] = 2;
+#endif
 
 		iResult = 0;
 	}
@@ -128,26 +180,6 @@ int uart_init(unsigned int uiUartUnit, const UART_CONFIGURATION_T *ptCfg)
 	return iResult;
 }
 
-#if 0
-void uart_init_transfer(CONSOLE_DEVICE_SPECIFIC_DATA_T *ptData)
-{
-	unsigned long ulValue;
-	unsigned long ulMode;
-	int fUseRtsCts;
-	HOSTADEF(UART) *ptUartArea;
-	UART_CONFIGURATION_T *ptCfg;
-	unsigned int uiUartUnit;
-
-
-	/* get the uart area */
-	ptUartArea = ptData->tUart.ptUartArea;
-	/* get the uart instance */
-	uiUartUnit = ptData->tUart.uiUnit;
-	/* get the config */
-	ptCfg = g_t_romloader_options.at_uart + uiUartUnit;
-
-}
-#endif
 
 void uart_put(unsigned int uiUartUnit, unsigned char ucChar)
 {
@@ -250,12 +282,24 @@ unsigned int uart_peek(unsigned int uiUartUnit)
 void uart_close(unsigned int uiUartUnit)
 {
 	HOSTADEF(UART) *ptUartArea;
+#if ASIC_TYP==500 || ASIC_TYP==100
+	unsigned int uiGpioOffset;
+#endif
 
 
 	if( uiUartUnit<ARRAYSIZE(atUartInstances) )
 	{
 		/* flush the buffer */
 		uart_flush(uiUartUnit);
+
+#if ASIC_TYP==500 || ASIC_TYP==100
+		/* Configure the GPIO pins. */
+		uiGpioOffset = uiUartUnit << 2U;
+		ptGpioArea->aulGpio_cfg[uiGpioOffset+0] = 2;
+		ptGpioArea->aulGpio_cfg[uiGpioOffset+1] = 2;
+		ptGpioArea->aulGpio_cfg[uiGpioOffset+2] = 2;
+		ptGpioArea->aulGpio_cfg[uiGpioOffset+3] = 2;
+#endif
 
 		/* get the uart area */
 		ptUartArea = atUartInstances[uiUartUnit].ptArea;

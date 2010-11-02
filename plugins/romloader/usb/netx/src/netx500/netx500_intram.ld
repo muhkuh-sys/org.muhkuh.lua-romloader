@@ -1,21 +1,31 @@
-/*---------------------------------------------------------------------------
-  Author : Christoph Thelen
-
-           Hilscher GmbH, Copyright (c) 2010, All Rights Reserved
-
-           Redistribution or unauthorized use without expressed written 
-           agreement from the Hilscher GmbH is forbidden
----------------------------------------------------------------------------*/
+/***************************************************************************
+ *   Copyright (C) 2010 by Christoph Thelen                                *
+ *   doc_bacardi@users.sourceforge.net                                     *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
 
 ENTRY(start)
 
 MEMORY
 {
-	ASSERT_EMPTY(rwx) :	ORIGIN = 0x00000000, LENGTH = 0
+	ASSERT_EMPTY(rwx) :     ORIGIN = 0x00000000, LENGTH = 0
 
-	INTRAM0(rwx) :		ORIGIN = 0x00008000, LENGTH = 0x00008000
-	INTRAM1(rwx) :		ORIGIN = 0x00010000, LENGTH = 0x00008000
-	DTCM(rw) :		ORIGIN = 0x10000000, LENGTH = 0x00002000
+	INTRAM0(rwx) :          ORIGIN = 0x00000000, LENGTH = 0x00008000
+	DTCM(rw) :              ORIGIN = 0x10000000, LENGTH = 0x00002000
 }
 
 
@@ -35,36 +45,18 @@ SECTIONS
 		*(.v4_bx)
 	} >ASSERT_EMPTY
 
-	.code_xip ORIGIN(INTRAM0)+0x40 :
+	.code ORIGIN(INTRAM0)+0x100 :
 	{
+		load_address = . ;
+
+		*(.header)
 		*(.init_code)
-	} >INTRAM0
-
-	.code_ram ORIGIN(INTRAM1) : AT(ORIGIN(INTRAM0)+0x40+SIZEOF(.code_xip))
-	{
-		__copy_start__ = . ;
-
 		*(.text)
-
-		__copy_end__ = . ;
-	} >INTRAM1
-	__copy_loadaddr__ = LOADADDR(.code_ram) ;
-
-
-	.rodata ORIGIN(INTRAM0)+0x40+SIZEOF(.code_xip)+SIZEOF(.code_ram) :
-	{
 		*(.rodata*)
 	} >INTRAM0
 
 
-	.serialvectors ORIGIN(DTCM)+LENGTH(DTCM)-0x10 :
-	{
-		tSerialVectors = . ;
-		. = . + 0x10;
-	} >DTCM
-
-
-	.bss ORIGIN(INTRAM1)+SIZEOF(.code_ram) : AT(ORIGIN(INTRAM1)+SIZEOF(.code_ram))
+	.bss ORIGIN(DTCM) :
 	{
 		/* zero-initialized data */
 
@@ -74,11 +66,18 @@ SECTIONS
 		*(COMMON)
 
 		__bss_end__ = . ;
-	} >INTRAM1
+	} >DTCM
+
+
+	.serialvectors ORIGIN(DTCM)+LENGTH(DTCM)-0x10 :
+	{
+		tSerialVectors = . ;
+		. = . + 0x10;
+	} >DTCM
 
 
 	/* set the top of the stack to the end of INTRAM1 */
-	stack_top = ORIGIN(INTRAM1) + LENGTH(INTRAM1) ;
+	stack_top = ORIGIN(DTCM) + LENGTH(DTCM) - 0x10;
 
 
 	/* Stabs debugging sections.  */

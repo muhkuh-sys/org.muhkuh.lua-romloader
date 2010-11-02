@@ -18,12 +18,13 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#ifndef __usb_io_h__
+#define __usb_io_h__
 
-#ifndef __USBMON_H__
-#define __USBMON_H__
+void usb_io_read_fifo(unsigned int uiDwOffset, unsigned int uiByteCount, unsigned char *pucBuffer);
+void usb_io_write_fifo(unsigned int uiDwOffset, unsigned int uiByteCount, const unsigned char *pucBuffer);
 
+void usb_io_sendStall(void);
+void usb_io_sendDataPacket(unsigned int uiPipeNr, unsigned int uiPacketSize);
 
-int usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacketSize);
-
-
-#endif  /* __USBMON_H__ */
+#endif  // __usb_io_h__

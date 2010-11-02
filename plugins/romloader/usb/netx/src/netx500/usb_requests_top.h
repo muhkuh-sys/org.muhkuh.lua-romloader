@@ -19,11 +19,13 @@
  ***************************************************************************/
 
 
-#ifndef __USBMON_H__
-#define __USBMON_H__
+#include "usb_requests_common.h"
 
 
-int usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacketSize);
+#ifndef __USB_REQUESTS_TOP_H__
+#define __USB_REQUESTS_TOP_H__
 
+void usb_requests_handle_request_top(setupPacket_t *ptSetupPkt);
 
-#endif  /* __USBMON_H__ */
+#endif  /* __USB_REQUESTS_TOP_H__ */
+

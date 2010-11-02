@@ -44,7 +44,6 @@ typedef union
 typedef void (*PFN_MONITOR_CALL_T)(unsigned long ulR0);
 
 
-static unsigned char aucPacketRx[64];
 static SERIAL_COMM_UI_FN_T tOldVectors;
 
 
@@ -111,7 +110,7 @@ static void usbmon_read(unsigned long ulAddress, unsigned long ulSize, USBMON_AC
 }
 
 
-static void usbmon_write(unsigned long ulAddress, unsigned long ulDataSize, USBMON_ACCESSSIZE_T tAccessSize)
+static void usbmon_write(const unsigned char *pucPacket, unsigned long ulAddress, unsigned long ulDataSize, USBMON_ACCESSSIZE_T tAccessSize)
 {
 	const unsigned char *pucCnt;
 	const unsigned char *pucEnd;
@@ -120,9 +119,9 @@ static void usbmon_write(unsigned long ulAddress, unsigned long ulDataSize, USBM
 
 
 	/* Get the source start address. */
-	pucCnt = aucPacketRx + 5;
+	pucCnt = pucPacket + 5;
 	/* Get the source end address. */
-	pucEnd = aucPacketRx + 5 + ulDataSize;
+	pucEnd = pucPacket + 5 + ulDataSize;
 	/* Get the destination end address. */
 	uAdrDst.ul = ulAddress;
 
@@ -157,74 +156,25 @@ static void usbmon_write(unsigned long ulAddress, unsigned long ulDataSize, USBM
 }
 
 
-static unsigned char netx10_serial_get(unsigned int uiHandle __attribute__((unused)))
-{
-	unsigned long ulFillLevel;
-	unsigned char ucData;
-
-
-	/* Wait for a byte in the fifo. */
-	do
-	{
-		ulFillLevel = usb_get_rx_fill_level();
-	} while( ulFillLevel!=0 );
-
-	/* Get a byte from the fifo. */
-	ucData = usb_get_byte();
-	return ucData;
-}
-
-
-static void netx10_serial_put(unsigned int uiHandle __attribute__((unused)), unsigned int uiChar)
-{
-	unsigned long ulFillLevel;
-
-
-	/* Add the byte to the fifo. */
-	usb_send_byte((unsigned char)uiChar);
-
-	/* Reached the maximum packet size? */
-	ulFillLevel = usb_get_tx_fill_level();
-	if( ulFillLevel>=sizeof(USBMON_PACKET_MESSAGE_T) )
-	{
-		/* Yes -> send the packet. */
-		usb_send_packet();
-
-		/* Start a new packet. */
-		usb_send_byte(USBMON_STATUS_CallMessage);
-	}
-}
-
-
-static unsigned int netx10_serial_peek(unsigned int uiHandle __attribute__((unused)))
-{
-	unsigned long ulFillLevel;
-
-
-	ulFillLevel = usb_get_rx_fill_level();
-	return (ulFillLevel==0) ? 0U : 1U;
-}
-
-
-static void netx10_serial_flush(unsigned int uiHandle __attribute__((unused)))
-{
-	/* Flush all waiting data. */
-	usb_send_packet();
-
-	/* Start the new message packet. */
-	usb_send_byte(USBMON_STATUS_CallMessage);
-}
-
-
 static const SERIAL_COMM_UI_FN_T tUsbCallConsole =
 {
+#if ASIC_TYP==10
 	.fn =
 	{
-		.fnGet = netx10_serial_get,
-		.fnPut = netx10_serial_put,
-		.fnPeek = netx10_serial_peek,
-		.fnFlush = netx10_serial_flush
+		.fnGet = usb_call_console_get,
+		.fnPut = usb_call_console_put,
+		.fnPeek = usb_call_console_peek,
+		.fnFlush = usb_call_console_flush
 	}
+#else
+	.fn =
+	{
+		.fnGet = usb_call_console_get,
+		.fnPut = usb_call_console_put,
+		.fnPeek = usb_call_console_peek,
+		.fnFlush = usb_call_console_flush
+	}
+#endif
 };
 
 
@@ -275,7 +225,7 @@ static unsigned long get_unaligned_dword(const unsigned char *pucBuffer)
 }
 
 
-static int usbmon_process_packet(unsigned long ulPacketSize)
+int usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacketSize)
 {
 	USBMON_COMMAND_T tCmd;
 	unsigned long ulDataSize;
@@ -289,11 +239,11 @@ static int usbmon_process_packet(unsigned long ulPacketSize)
 	iTerminate = 0;
 
 	/* Get the command and the data size from the first byte. */
-	tCmd = (USBMON_COMMAND_T)(aucPacketRx[0] >> 5U);
-	ulDataSize = aucPacketRx[0] & 0x1fU;
+	tCmd = (USBMON_COMMAND_T)(pucPacket[0] >> 5U);
+	ulDataSize = pucPacket[0] & 0x1fU;
 
 	/* Get the address. */
-	ulAddress = get_unaligned_dword(aucPacketRx + 1);
+	ulAddress = get_unaligned_dword(pucPacket + 1);
 
 	if( tCmd==USBMON_COMMAND_Execute )
 	{
@@ -303,7 +253,7 @@ static int usbmon_process_packet(unsigned long ulPacketSize)
 		}
 		else
 		{
-			ulR0 = get_unaligned_dword(aucPacketRx + 5);
+			ulR0 = get_unaligned_dword(pucPacket + 5);
 			usbmon_call(ulAddress, ulR0);
 		}
 	}
@@ -354,7 +304,7 @@ static int usbmon_process_packet(unsigned long ulPacketSize)
 			}
 			else
 			{
-				usbmon_write(ulAddress, ulDataSize, tAccessSize);
+				usbmon_write(pucPacket, ulAddress, ulDataSize, tAccessSize);
 			}
 		}
 	}
@@ -362,42 +312,3 @@ static int usbmon_process_packet(unsigned long ulPacketSize)
 	return iTerminate;
 }
 
-
-void usbmon_loop(void)
-{
-	unsigned long ulFillLevel;
-	unsigned char *pucCnt;
-	unsigned char *pucEnd;
-	int iTerminate;
-
-
-	/* start loopback */
-	iTerminate = 0;
-	while( iTerminate==0 )
-	{
-		/* wait for a character in the input fifo */
-
-		/* get the Uart RX input fill level */
-		ulFillLevel = usb_get_rx_fill_level();
-		if( ulFillLevel>0 )
-		{
-			/* Is the fill level valid? */
-			if( ulFillLevel>64 )
-			{
-				ulFillLevel = 64;
-			}
-			else
-			{
-				/* Copy the complete packet to the buffer. */
-				pucCnt = aucPacketRx;
-				pucEnd = aucPacketRx + ulFillLevel;
-				do
-				{
-					*(pucCnt++) = usb_get_byte();
-				} while( pucCnt<pucEnd );
-
-				iTerminate = usbmon_process_packet(ulFillLevel);
-			}
-		}
-	}
-}

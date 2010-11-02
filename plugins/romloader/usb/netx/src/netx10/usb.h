@@ -20,5 +20,12 @@ unsigned long usb_get_rx_fill_level(void);
 unsigned long usb_get_tx_fill_level(void);
 unsigned char usb_get_byte(void);
 
+unsigned char usb_call_console_get(unsigned int uiHandle);
+void usb_call_console_put(unsigned int uiHandle, unsigned int uiChar);
+unsigned int usb_call_console_peek(unsigned int uiHandle);
+void usb_call_console_flush(unsigned int uiHandle);
+
+void usb_loop(void);
+
 
 #endif  /* __USB_H__ */

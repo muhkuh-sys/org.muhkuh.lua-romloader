@@ -53,12 +53,18 @@ sources_common = """
 
 sources_custom_netx500 = """
 	src/netx500/netx500_io_areas.c
+	src/netx500/usb.c
+	src/netx500/usb_descriptors.c
+	src/netx500/usb_globals.c
+	src/netx500/usb_io.c
+	src/netx500/usb_main.c
+	src/netx500/usb_requests_top.c
 """
 
 
 sources_custom_netx10 = """
-	src/netx10/usb.c
 	src/netx10/netx10_io_areas.c
+	src/netx10/usb.c
 """
 
 src_netx500 = Split(sources_common+sources_custom_netx500)

@@ -88,13 +88,6 @@ start:
 #	error "Unknown ASIC_TYP"
 #endif
 
-	@ Save all parameters.
-	ldr     r4, =NetxTestParameter_Init
-	str     r0, [r4, #0x0]
-	str     r1, [r4, #0x4]
-	str     r2, [r4, #0x8]
-	str     r3, [r4, #0xc]
-
 	@ Remember romcode stack position.
 	mov     r1, sp
 	@ Get working register.
@@ -128,25 +121,9 @@ clear_bss:
 	cmp     r1, r2
 	strlo   r0, [r1], #4
 	blo     clear_bss
-
-	ldr     r4, =NetxTestParameter_Init
-	ldr     r0, [r4, #0x0]
-	ldr     r1, [r4, #0x4]
-	ldr     r2, [r4, #0x8]
-	ldr     r3, [r4, #0xc]
 	bl      usb_monitor
 
   .endfunc
-
-@--------------------------------------
-
-	.align 4
-
-NetxTestParameter_Init:
-	.word 0
-	.word 0
-	.word 0
-	.word 0
 
 @--------------------------------------
 

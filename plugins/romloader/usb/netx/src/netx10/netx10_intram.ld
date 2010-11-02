@@ -56,7 +56,8 @@ SECTIONS
 		*(.init_code)
 	} >INTRAM2_ITCM
 
-	__CODE_OFFSET__ = 0x1800;
+/*	__CODE_OFFSET__ = 0x1800; */
+	__CODE_OFFSET__ = 0x2000;
 
 	/* set the top of the stack to the end of INTRAM1 */
 	stack_top = ORIGIN(INTRAM0_ITCM) + LENGTH(INTRAM0_ITCM) - __CODE_OFFSET__;

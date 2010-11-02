@@ -27,6 +27,7 @@
 #include "options.h"
 #include "systime.h"
 #include "uart.h"
+#include "uprintf.h"
 #include "usb.h"
 #include "usbmon.h"
 
@@ -36,7 +37,8 @@
 extern const unsigned char aucUuid[32];
 
 #if ASIC_DEBUGMSG!=0
-static const UART_CONFIGURATION_T tUartCfg_nxhx10_etm =
+#if ASIC_TYP==10
+static const UART_CONFIGURATION_T tUartCfg =
 {
 	.uc_rx_mmio = 20U,
 	.uc_tx_mmio = 21U,
@@ -44,6 +46,16 @@ static const UART_CONFIGURATION_T tUartCfg_nxhx10_etm =
 	.uc_cts_mmio = 0xffU,
 	.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
 };
+#elif ASIC_TYP==500 || ASIC_TYP==100
+static const UART_CONFIGURATION_T tUartCfg =
+{
+	.uc_rx_mmio = 0xffU,
+	.uc_tx_mmio = 0xffU,
+	.uc_rts_mmio = 0xffU,
+	.uc_cts_mmio = 0xffU,
+	.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
+};
+#endif
 #endif
 
 
@@ -55,7 +67,8 @@ void usb_monitor(void)
 	/* TODO: save the current configuration. */
 
 #if ASIC_DEBUGMSG!=0
-	uart_init(0, &tUartCfg_nxhx10_etm);
+	uart_init(0, &tUartCfg);
+	uprintf("Hi!\n");
 #endif
 
 	usb_deinit();
@@ -66,7 +79,7 @@ void usb_monitor(void)
 	memcpy(g_t_options.t_usb_settings.uCfg.auc+38+8, aucUuid+16, 16);
 
 	usb_init();
-	usbmon_loop();
+	usb_loop();
 
 	usb_deinit();
 
