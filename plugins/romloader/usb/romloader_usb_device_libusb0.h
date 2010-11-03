@@ -53,6 +53,7 @@ public:
 
 	int execute_command(const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned char *aucInBuf, size_t *psizInBuf);
 	int receive_packet(unsigned char *aucInBuf, size_t *psizInBuf, unsigned int uiTimeoutMs);
+
 protected:
 	ROMLOADER_CHIPTYP m_tChiptyp;
 	ROMLOADER_ROMCODE m_tRomcode;
@@ -75,13 +76,19 @@ private:
 	void convert_buffer_to_asciihex(const unsigned char *pucData, size_t sizData, char *pcOutput);
 	int compare_uuid_from_string_descriptors(libusb_device *ptDevice, const char *pcUuid);
 	int update_old_netx_device(libusb_device *ptNetxDevice, libusb_device **pptUpdatedNetxDevice);
-	int discard_until_timeout(libusb_device_handle *ptDevHandle);
+	unsigned short crc16(const unsigned char *pucData, size_t sizData);
 	libusb_device *find_device_by_uuid(const char *pcUuid);
 	/* netx10 update routines. */
-	int load_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode, size_t sizNetxCode);
-	int start_code(libusb_device_handle *ptDevHandle);
-	int upgrade_netx10_romcode(libusb_device *ptDevice, libusb_device **pptUpdatedNetxDevice);
-
+	int netx10_discard_until_timeout(libusb_device_handle *ptDevHandle);
+	int netx10_load_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode, size_t sizNetxCode);
+	int netx10_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode, size_t sizNetxCode);
+	int netx10_upgrade_romcode(libusb_device *ptDevice, libusb_device **pptUpdatedNetxDevice);
+	/* netx500 update routines. */
+	int netx500_exchange_data(libusb_device_handle *ptDevHandle, const unsigned char *pucOutBuffer, unsigned char *pucInBuffer);
+	int netx500_discard_until_timeout(libusb_device_handle *ptDevHandle);
+	int netx500_load_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode, size_t sizNetxCode);
+	int netx500_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode, size_t sizNetxCode);
+	int netx500_upgrade_romcode(libusb_device *ptDevice, libusb_device **pptUpdatedNetxDevice);
 
 	const int m_iConfiguration;
 	const int m_iInterface;

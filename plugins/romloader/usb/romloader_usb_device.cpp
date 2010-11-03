@@ -34,7 +34,7 @@ const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[3] =
 		"netX500",
 		0x0cc4,
 		0x0815,
-		0x0001,
+		0x0100,
 		ROMLOADER_CHIPTYP_NETX500,
 		ROMLOADER_ROMCODE_ABOOT,
 		0x81,
