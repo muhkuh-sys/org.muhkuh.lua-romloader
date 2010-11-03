@@ -19,14 +19,18 @@
  ***************************************************************************/
 
 
+#include "usb_requests_common.h"
+
+
 #ifndef __descriptors__
 #define __descriptors__
 
+
 //---------------------------------------------------------------------------
 
-void sendDescriptor(unsigned int requiredLength, unsigned int descriptorLength, const unsigned char *descriptor);
+void usb_descriptors_init(void);
 packet_handler_stall_req_t getDescriptor(setupPacket_t *pPacket);
-void sendStringDescriptor(unsigned int languageId, unsigned int stringIdx, unsigned int wLength);
+void sendDescriptor(unsigned int requiredLength, unsigned int descriptorLength, const unsigned char *descriptor);
 
 //---------------------------------------------------------------------------
 

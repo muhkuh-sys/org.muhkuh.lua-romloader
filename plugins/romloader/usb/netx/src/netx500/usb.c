@@ -27,6 +27,7 @@
 #include "uprintf.h"
 #include "usbmonitor_commands.h"
 
+#include "usb_descriptors.h"
 #include "usb_main.h"
 
 /*-----------------------------------*/
@@ -86,6 +87,8 @@ void usb_init(void)
 	ptUsbCoreArea->ulPORT_CTRL = 0;
 
 	sizSendData = 0;
+
+	usb_descriptors_init();
 }
 
 
