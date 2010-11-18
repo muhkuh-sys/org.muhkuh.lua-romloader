@@ -35,6 +35,16 @@ import urlparse
 from string import Template
 from xml.etree.ElementTree import ElementTree
 
+
+def get_tool_path(aCfg, aTool):
+	return os.path.join(aCfg['depack_path'], aTool['group'], aTool['name'], '%s-%s'%(aTool['name'],aTool['version']))
+
+
+#
+# Download the URL 'strUrl' to the file 'strFile'.
+#
+# Returns 'True' on success, 'False' on error.
+#
 def download_file(strUrl, strFile):
 	bResult = False
 	fOutput = None
@@ -71,6 +81,14 @@ def download_file(strUrl, strFile):
 	return bResult
 
 
+#
+# Check the Sha1 sum for a file.
+# First extract the precalculated sha1 sum from the textfile 'strSha1File'.
+# Then build our own sha1 sum of file 'strBinFile' and compare it with the sum
+# from the textfile.
+#
+# Returns 'True' on success and 'False' on error.
+#
 def check_sha1_sum(strSha1File, strBinFile):
 	bResult = False
 	strRemoteHash = None
@@ -105,13 +123,7 @@ def check_sha1_sum(strSha1File, strBinFile):
 
 
 def install_package(aCfg, aTool):
-	strGroup = aTool[0]
-	strName = aTool[1]
-	strVersion = aTool[2]
-	strType = aTool[3]
-	strInstallFolder = aTool[4]
-	
-	print 'Processing package %s, version %s' % (strName, strVersion)
+	print 'Processing package %s, version %s' % (aTool['name'], aTool['version'])
 	
 	# Construct the path for the depack marker.
 	strLocalMarkerFolder = aCfg['marker_path']
@@ -120,18 +132,18 @@ def install_package(aCfg, aTool):
 	strLocalRepositoryPath = aCfg['repository_path']
 	
 	# Construct the path to the depack folder.
-	strPacketDepackPath = os.path.join(aCfg['depack_path'], strInstallFolder)
+	strPacketDepackPath = os.path.join(aCfg['depack_path'], aTool['group'], aTool['name'])
 	
 	# Construct the package name.
-	strPackageName = '%s-%s.%s'%(strName,strVersion,strType)
+	strPackageName = '%s-%s.%s'%(aTool['package'],aTool['version'],aTool['typ'])
 	strSha1Name = strPackageName + '.sha1'
 	
-	aPathElements = strGroup.split('.')
-	aPathElements.append(strName)
-	aPathElements.append(strVersion)
+	aPathElements = aTool['group'].split('.')
+	aPathElements.append(aTool['package'])
+	aPathElements.append(aTool['version'])
 	
-	strLocalMarkerPath = os.path.join(strLocalMarkerFolder, '%s-%s-%s-%s.marker'%(strGroup,strName,strType,strVersion))
-
+	strLocalMarkerPath = os.path.join(strLocalMarkerFolder, '%s-%s-%s-%s.marker'%(aTool['group'],aTool['name'],aTool['typ'],aTool['version']))
+	
 	# Construct the path in the repository.
 	strLocalPackageFolder = os.path.join(strLocalRepositoryPath, *aPathElements)
 	strLocalPackagePath = os.path.join(strLocalPackageFolder, strPackageName)
@@ -149,7 +161,7 @@ def install_package(aCfg, aTool):
 	
 	if os.path.isdir(strPacketDepackPath)==False:
 		os.makedirs(strPacketDepackPath)
-
+	
 	if os.path.isfile(strLocalMarkerPath)==True:
 		print 'The package is already installed.'
 	else:
@@ -168,7 +180,7 @@ def install_package(aCfg, aTool):
 				print 'Checksum mismatch, discarding downloaded files!'
 				os.remove(strLocalPackagePath)
 				os.remove(strLocalSha1Path)
-
+		
 		if bDownloadOk==False:
 			print 'The package must be downloaded.'
 			
@@ -218,8 +230,8 @@ def create_substitute_dict(aCfg):
 	# Get the tools.
 	aToolPaths = []
 	for aTool in aCfg['tools']:
-		strToolPath = os.path.join(aCfg['depack_path'], aTool[4])
-		aToolPaths.append('\'%s-%s\': \'%s\'' % (aTool[1],aTool[2], strToolPath))
+		strToolPath = os.path.join(aCfg['depack_path'], aTool['group'], aTool['name']).replace('\\', '/')
+		aToolPaths.append('\'%s-%s\': \'%s\'' % (aTool['name'],aTool['version'], strToolPath))
 	
 	strTools  = 'dict({' + ','.join(aToolPaths) + '})'
 	
@@ -269,9 +281,9 @@ def read_tool(tNode):
 	
 	strGroup = tNode.findtext('group')
 	strName = tNode.findtext('name')
+	strPackage = tNode.findtext('package')
 	strVersion = tNode.findtext('version')
 	strTyp = tNode.findtext('typ')
-	strFolder = tNode.findtext('folder')
 	
 	strMachineName = platform.machine()
 	if strMachineName in aBaseMachine:
@@ -282,18 +294,15 @@ def read_tool(tNode):
 		'machine': strMachineName
 	})
 	
-	tTemplate = Template(strName)
-	strName = tTemplate.safe_substitute(aToolSubstutite)
+	tTemplate = Template(strPackage)
 	
-	return [strGroup, strName, strVersion, strTyp, strFolder]
-
-
-def read_filter(tNode):
-	strTemplate = tNode.findtext('template')
-	strDst = tNode.findtext('destination')
-	
-	
-	return [strGroup, strName, strVersion, strTyp, strFolder]
+	return dict({
+		'group': strGroup,
+		'name': strName,
+		'package': tTemplate.safe_substitute(aToolSubstutite),
+		'version': strVersion,
+		'typ': strTyp
+	})
 
 
 def read_config(strPath):
@@ -342,7 +351,7 @@ aCfg = read_config('setup.xml')
 # Install Scons.
 install_package(aCfg, aCfg['scons'])
 aToolScons = aCfg['scons']
-aCfg['scons_path'] = os.path.join(aCfg['depack_path'], aToolScons[4], '%s-%s'%(aToolScons[1],aToolScons[2]), 'scons.py')
+aCfg['scons_path'] = os.path.join(get_tool_path(aCfg, aToolScons), 'scons.py')
 
 
 # Install all other tools.

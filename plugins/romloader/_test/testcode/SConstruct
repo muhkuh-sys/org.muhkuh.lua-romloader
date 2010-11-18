@@ -99,8 +99,8 @@ if not GetOption('help'):
 	#
 	# Import the tool definitions.
 	#
-	gcc_arm_elf_4_3_3_3 = scons_common.get_tool('gcc-arm-elf_linux_i386-4.3.3_3')
-	asciidoc_8_5_3_1 = scons_common.get_tool('asciidoc-8.5.3_1')
+	gcc_arm_elf = scons_common.get_tool('gcc-arm-elf-4.3.3_4')
+	asciidoc = scons_common.get_tool('asciidoc-8.5.3_1')
 	
 	
 	#----------------------------------------------------------------------------
@@ -109,13 +109,13 @@ if not GetOption('help'):
 	#
 	env_default = Environment()
 	env_default.Decider('MD5')
-	gcc_arm_elf_4_3_3_3.ApplyToEnv(env_default)
+	gcc_arm_elf.ApplyToEnv(env_default)
 	env_default.Append(CPPPATH = ['src'])
 	env_default.Replace(CCFLAGS = Split(default_ccflags))
 	env_default.Replace(LIBS = ['m', 'c', 'gcc'])
 	env_default.Replace(LINKFLAGS = ['-nostdlib', '-static', '-Map=${TARGET}.map'])
 	
-	asciidoc_8_5_3_1.ApplyToEnv(env_default)
+	asciidoc.ApplyToEnv(env_default)
 	build_properties.ApplyToEnv(env_default)
 	
 	
