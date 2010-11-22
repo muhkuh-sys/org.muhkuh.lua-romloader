@@ -45,6 +45,8 @@ ENDIF(UNIX)
 
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
                           ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.c
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.h
                    COMMAND ${PYTHON_EXECUTABLE} setup.py
                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/netx
                    COMMENT "Build the netx usb firmware"
@@ -52,7 +54,9 @@ ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10
 
 ADD_CUSTOM_TARGET(netx_usb_firmware
                   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h)
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.c
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.h)
 
 
 #----------------------------------------------------------------------------
@@ -85,6 +89,7 @@ SET(romloader_usb_SOURCES
 	romloader_usb_main.cpp
 	uuencoder.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
+	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.c
 )
 
 SET(romloader_usb_HEADERS
@@ -92,6 +97,7 @@ SET(romloader_usb_HEADERS
 	romloader_usb_main.h
 	uuencoder.h
 	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h
+	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.h
 )
 
 add_definitions(${USB_DEFINES})
@@ -99,9 +105,11 @@ add_definitions(${USB_DEFINES})
 add_library(romloader_usb_lib STATIC ${romloader_usb_SOURCES})
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
                             ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h
+                            ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.c
+                            ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.h
                             PROPERTIES GENERATED 1)
 
-add_dependencies(romloader_usb_lib netx_usb_firmware)
+ADD_DEPENDENCIES(romloader_usb_lib netx_usb_firmware)
 
 
 #----------------------------------------------------------------------------
