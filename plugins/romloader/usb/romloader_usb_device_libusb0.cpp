@@ -705,7 +705,7 @@ int romloader_usb_device_libusb0::netx500_load_code(libusb_device_handle *ptDevH
 		/* Generate load command. */
 		sizLine = snprintf((char*)(aucOutBuffer+1), sizeof(aucOutBuffer), "load %lx %x %04X\n", ulLoadAddress, sizNetxCode, usCrc);
 		/* Set the length. */
-		aucOutBuffer[0] = sizLine + 1;
+		aucOutBuffer[0] = (unsigned char)(sizLine + 1);
 
 		/* Send the command. */
 		iResult = netx500_exchange_data(ptDevHandle, aucOutBuffer, aucInBuffer);
@@ -729,7 +729,7 @@ int romloader_usb_device_libusb0::netx500_load_code(libusb_device_handle *ptDevH
 					}
 					/* Copy data to the packet. */
 					memcpy(aucOutBuffer+1, pucDataCnt, sizChunkSize);
-					aucOutBuffer[0] = sizChunkSize+1;
+					aucOutBuffer[0] = (unsigned char)(sizChunkSize+1);
 
 					iResult = netx500_exchange_data(ptDevHandle, aucOutBuffer, aucInBuffer);
 					if( iResult!=LIBUSB_SUCCESS )
@@ -829,7 +829,7 @@ int romloader_usb_device_libusb0::netx10_load_code(libusb_device_handle* ptDevHa
 }
 
 
-int romloader_usb_device_libusb0::netx500_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode, size_t sizNetxCode)
+int romloader_usb_device_libusb0::netx500_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode)
 {
 	int iResult;
 	unsigned long ulExecAddress;
@@ -861,7 +861,7 @@ int romloader_usb_device_libusb0::netx500_start_code(libusb_device_handle *ptDev
 }
 
 
-int romloader_usb_device_libusb0::netx10_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode, size_t sizNetxCode)
+int romloader_usb_device_libusb0::netx10_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode)
 {
 	unsigned char aucBuffer[64];
 	size_t sizBlock;
@@ -1103,10 +1103,10 @@ int romloader_usb_device_libusb0::netx10_upgrade_romcode(libusb_device *ptDevice
 
 					/* Load data. */
 					netx10_load_code(ptDevHandle, pucCode, sizeof(auc_usbmon_netx10_intram));
-					free(pucCode);
 
 					/* Start the code with the uuid as parameter. */
-					netx10_start_code(ptDevHandle, pucCode, sizeof(auc_usbmon_netx10_intram));
+					netx10_start_code(ptDevHandle, pucCode);
+					free(pucCode);
 
 					/* Release the interface. */
 					libusb_release_interface(ptDevHandle, m_iInterface);
@@ -1205,7 +1205,7 @@ int romloader_usb_device_libusb0::netx500_upgrade_romcode(libusb_device *ptDevic
 					netx500_discard_until_timeout(ptDevHandle);
 
 					/* Start the code with the UUID as parameter. */
-					netx500_start_code(ptDevHandle, pucCode, sizeof(auc_usbmon_netx500_intram));
+					netx500_start_code(ptDevHandle, pucCode);
 
 					free(pucCode);
 

@@ -81,13 +81,13 @@ private:
 	/* netx10 update routines. */
 	int netx10_discard_until_timeout(libusb_device_handle *ptDevHandle);
 	int netx10_load_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode, size_t sizNetxCode);
-	int netx10_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode, size_t sizNetxCode);
+	int netx10_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode);
 	int netx10_upgrade_romcode(libusb_device *ptDevice, libusb_device **pptUpdatedNetxDevice);
 	/* netx500 update routines. */
 	int netx500_exchange_data(libusb_device_handle *ptDevHandle, const unsigned char *pucOutBuffer, unsigned char *pucInBuffer);
 	int netx500_discard_until_timeout(libusb_device_handle *ptDevHandle);
 	int netx500_load_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode, size_t sizNetxCode);
-	int netx500_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode, size_t sizNetxCode);
+	int netx500_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode);
 	int netx500_upgrade_romcode(libusb_device *ptDevice, libusb_device **pptUpdatedNetxDevice);
 
 	const int m_iConfiguration;
