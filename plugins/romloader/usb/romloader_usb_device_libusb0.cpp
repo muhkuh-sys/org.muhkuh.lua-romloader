@@ -23,6 +23,7 @@
 #include <stdio.h>
 
 #include "romloader_usb_device_libusb0.h"
+#include "netx/src/usbmonitor_commands.h"
 
 #include <errno.h>
 #include <stdlib.h>
@@ -50,9 +51,6 @@
 #else
 	const char *romloader_usb_device_libusb0::m_pcLibUsb_BusPattern = "%u";
 	const char *romloader_usb_device_libusb0::m_pcLibUsb_DevicePattern = "%u";
-
-	#include <pthread.h>
-	#include <sched.h>
 #endif
 
 
@@ -901,46 +899,47 @@ int romloader_usb_device_libusb0::netx10_start_code(libusb_device_handle *ptDevH
 }
 
 
-int romloader_usb_device_libusb0::compare_uuid_from_string_descriptors(libusb_device *ptDevice, const char *pcUuid)
+int romloader_usb_device_libusb0::compare_uuid_from_device(libusb_device *ptDevice, const NETX_USB_DEVICE_T *ptId, const char *pcUuid)
 {
 	int iResult;
-	struct libusb_device_descriptor sDevDesc;
 	libusb_device_handle *ptDeviceHandle;
-	const int iStringDescSize = 16;
-	/* Each descriptor must be 16 bytes long and one trailing 0. */
-	unsigned char aucUuid[2*iStringDescSize+1];
+	int iProcessed;
+	size_t sizOutBuf;
+	unsigned char aucOutBuf[64];
+	unsigned char aucInBuf[64];
 
 
-	/* Get the device descriptor. */
-	iResult = libusb_get_device_descriptor(ptDevice, &sDevDesc);
+	printf("Looking for '%.32s'\n", pcUuid);
+
+	/* Open the device. */
+	iResult = libusb_open(ptDevice, &ptDeviceHandle);
 	if( iResult==LIBUSB_SUCCESS )
 	{
-		/* Open the device. */
-		iResult = libusb_open(ptDevice, &ptDeviceHandle);
-		if( iResult==LIBUSB_SUCCESS )
+		/* Construct the command packet. */
+		aucOutBuf[0x00] = USBMON_COMMAND_SendUUID << 5U;
+		sizOutBuf = 1;
+		iResult = libusb_bulk_transfer(ptDeviceHandle, ptId->ucEndpoint_Out, (unsigned char*)aucOutBuf, sizOutBuf, &iProcessed, 10);
+		printf("iResult=%d, iProcessed=%d\n", iResult, iProcessed);
+		if( iResult==0 && iProcessed==sizOutBuf )
 		{
-			/* Get the string descriptor. */
-			iResult = libusb_get_string_descriptor_ascii(ptDeviceHandle, sDevDesc.iProduct, aucUuid, iStringDescSize+1);
-			if( iResult==iStringDescSize )
+			iResult = libusb_bulk_transfer(ptDeviceHandle, ptId->ucEndpoint_In, aucInBuf, 64, &iProcessed, 10);
+			printf("iResult=%d, iProcessed=%d, aucInBuf[0]=0x%02x\n", iResult, iProcessed, aucInBuf[0]);
+			if( iResult==0 && iProcessed==33 && aucInBuf[0]==USBMON_STATUS_Ok )
 			{
-				/* Convert the serial number string. */
-				iResult = libusb_get_string_descriptor_ascii(ptDeviceHandle, sDevDesc.iSerialNumber, aucUuid+16, iStringDescSize+1);
-				if( iResult==iStringDescSize )
+				printf("Hit '%.32s'\n", aucInBuf+1);
+				iResult = memcmp(aucInBuf+1, pcUuid, 32);
+				if( iResult!=0 )
 				{
-					iResult = memcmp(aucUuid, pcUuid, 2*iStringDescSize);
-					if( iResult!=0 )
-					{
-						iResult = LIBUSB_ERROR_OTHER;
-					}
-					else
-					{
-						iResult = LIBUSB_SUCCESS;
-					}
+					iResult = LIBUSB_ERROR_OTHER;
+				}
+				else
+				{
+					iResult = LIBUSB_SUCCESS;
 				}
 			}
-
-			libusb_close(ptDeviceHandle);
 		}
+
+		libusb_close(ptDeviceHandle);
 	}
 
 	return iResult;
@@ -982,8 +981,9 @@ libusb_device *romloader_usb_device_libusb0::find_device_by_uuid(const char *pcU
 			ptId = fIsDeviceNetx(ptDev);
 			if( ptId!=NULL )
 			{
+				printf("Examining %s\n", ptId->pcName);
 				/* Yes, this device is a netx. Get the device descriptor. */
-				iResult = compare_uuid_from_string_descriptors(ptDev, pcUuid);
+				iResult = compare_uuid_from_device(ptDev, ptId, pcUuid);
 				if( iResult==LIBUSB_SUCCESS )
 				{
 					m_tChiptyp = ptId->tChiptyp;
@@ -1108,12 +1108,33 @@ int romloader_usb_device_libusb0::netx10_upgrade_romcode(libusb_device *ptDevice
 					netx10_start_code(ptDevHandle, pucCode);
 					free(pucCode);
 
-					/* Release the interface. */
-					libusb_release_interface(ptDevHandle, m_iInterface);
+					printf("Update: Code started.\n");
 
+					/* Release the interface. */
+					//libusb_release_interface(ptDevHandle, m_iInterface);
+
+					printf("Update: 2\n");
+					/* Give the firmware time to start up. */
+					SLEEP_MS(500);
+
+					printf("Update: 3\n");
 					/* Reset and close the device. */
-					libusb_reset_device(ptDevHandle);
+					{
+						int iResult;
+						iResult = libusb_reset_device(ptDevHandle);
+						printf("Reset: %d\n", iResult);
+					}
+					printf("Update: 4\n");
 					libusb_close(ptDevHandle);
+					printf("Update: 5\n");
+
+
+					/* DEBUG: try this only on win. */
+					libusb_exit(m_ptLibUsbContext);
+					SLEEP_MS(500);
+					libusb_init(&m_ptLibUsbContext);
+
+
 
 					/* Poll all 200ms for the new device. */
 					iCnt = 0;

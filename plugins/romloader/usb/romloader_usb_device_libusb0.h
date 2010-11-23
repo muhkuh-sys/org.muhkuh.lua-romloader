@@ -74,7 +74,7 @@ private:
 	/* General update routines. */
 	char nibble_to_asciihex(unsigned char ucNibble);
 	void convert_buffer_to_asciihex(const unsigned char *pucData, size_t sizData, char *pcOutput);
-	int compare_uuid_from_string_descriptors(libusb_device *ptDevice, const char *pcUuid);
+	int compare_uuid_from_device(libusb_device *ptDevice, const NETX_USB_DEVICE_T *ptId, const char *pcUuid);
 	int update_old_netx_device(libusb_device *ptNetxDevice, libusb_device **pptUpdatedNetxDevice);
 	unsigned short crc16(const unsigned char *pucData, size_t sizData);
 	libusb_device *find_device_by_uuid(const char *pcUuid);
