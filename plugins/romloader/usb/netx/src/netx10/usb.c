@@ -24,7 +24,6 @@
 #include "netx_io_areas.h"
 #include "options.h"
 
-#include "uprintf.h"
 #include "usbmonitor_commands.h"
 #include "usbmon.h"
 

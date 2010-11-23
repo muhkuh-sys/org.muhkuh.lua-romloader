@@ -21,10 +21,11 @@
 
 #include "usb.h"
 
+#include <stddef.h>
+
 #include "netx_io_areas.h"
 #include "options.h"
 
-#include "uprintf.h"
 #include "usbmonitor_commands.h"
 
 #include "usb_descriptors.h"
