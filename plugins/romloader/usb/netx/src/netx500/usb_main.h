@@ -29,6 +29,7 @@
 void usb_main_init(void);
 void usb_main_deinit(void);
 void usb_handleReset(void);
+void usb_pingpong(void);
 
 //-------------------------------------
 

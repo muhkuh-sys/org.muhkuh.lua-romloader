@@ -28,6 +28,7 @@
 #include "usbmonitor_commands.h"
 
 #include "usb_descriptors.h"
+#include "usb_io.h"
 #include "usb_main.h"
 
 /*-----------------------------------*/
@@ -197,11 +198,9 @@ void usb_call_console_flush(void)
 void usb_loop(void)
 {
 	unsigned long ulPortEvent;
-	int iTerminate;
 
 
-	iTerminate = 0;
-	do
+	while(1)
 	{
 		if( globalState==USB_State_Powered )
 		{
@@ -217,8 +216,8 @@ void usb_loop(void)
 		else
 		{
 			/* Handle enumeration. */
-			iTerminate = usb_pingpong();
+			usb_pingpong();
 		}
-	} while( iTerminate==0 );
+	}
 }
 

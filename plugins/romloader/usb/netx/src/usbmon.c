@@ -29,6 +29,8 @@
 #include "usbmonitor_commands.h"
 
 
+extern const unsigned char aucUuid[32];
+
 /*-----------------------------------*/
 
 
@@ -211,6 +213,28 @@ static void usbmon_call(unsigned long ulAddress, unsigned long ulR0)
 }
 
 
+static void usbmon_send_uuid(void)
+{
+	const unsigned char *pucCnt;
+	const unsigned char *pucEnd;
+
+
+	/* Write status "Ok" to the fifo. */
+	usb_send_byte(USBMON_STATUS_Ok);
+
+	/* Write data bytes to the fifo. */
+	pucCnt = aucUuid;
+	pucEnd = pucCnt + 32;
+	do
+	{
+		usb_send_byte(*(pucCnt++));
+	} while( pucCnt<pucEnd );
+
+	/* Send the packet. */
+	usb_send_packet();
+}
+
+
 static unsigned long get_unaligned_dword(const unsigned char *pucBuffer)
 {
 	unsigned long ulValue;
@@ -225,18 +249,14 @@ static unsigned long get_unaligned_dword(const unsigned char *pucBuffer)
 }
 
 
-int usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacketSize)
+void usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacketSize)
 {
 	USBMON_COMMAND_T tCmd;
 	unsigned long ulDataSize;
 	unsigned long ulAddress;
 	USBMON_ACCESSSIZE_T tAccessSize;
 	unsigned long ulR0;
-	int iTerminate;
 
-
-	/* Default is to keep running after the command. */
-	iTerminate = 0;
 
 	/* Get the command and the data size from the first byte. */
 	tCmd = (USBMON_COMMAND_T)(pucPacket[0] >> 5U);
@@ -257,7 +277,7 @@ int usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacket
 			usbmon_call(ulAddress, ulR0);
 		}
 	}
-	else if( tCmd==USBMON_COMMAND_Exit )
+	else if( tCmd==USBMON_COMMAND_SendUUID )
 	{
 		if( ulPacketSize!=1U )
 		{
@@ -265,9 +285,7 @@ int usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacket
 		}
 		else
 		{
-			/* This is a request to terminate the usb monitor. */
-			usbmon_send_status(USBMON_STATUS_Ok);
-			iTerminate = 1;
+			usbmon_send_uuid();
 		}
 	}
 	else
@@ -308,7 +326,5 @@ int usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacket
 			}
 		}
 	}
-
-	return iTerminate;
 }
 

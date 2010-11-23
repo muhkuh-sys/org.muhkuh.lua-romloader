@@ -287,12 +287,10 @@ void usb_loop(void)
 	unsigned long ulFillLevel;
 	unsigned char *pucCnt;
 	unsigned char *pucEnd;
-	int iTerminate;
 
 
 	/* start loopback */
-	iTerminate = 0;
-	while( iTerminate==0 )
+	while(1)
 	{
 		/* wait for a character in the input fifo */
 
@@ -315,7 +313,7 @@ void usb_loop(void)
 					*(pucCnt++) = usb_get_byte();
 				} while( pucCnt<pucEnd );
 
-				iTerminate = usbmon_process_packet(aucPacketRx, ulFillLevel);
+				usbmon_process_packet(aucPacketRx, ulFillLevel);
 			}
 		}
 	}

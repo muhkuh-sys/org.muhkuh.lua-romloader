@@ -27,8 +27,6 @@
 #include "usb_globals.h"
 #include "usb_descriptors.h"
 
-#include "uprintf.h"
-
 
 static packet_handler_stall_req_t getStatus(setupPacket_t *pPacket)
 {
@@ -45,7 +43,6 @@ static packet_handler_stall_req_t getStatus(setupPacket_t *pPacket)
 	usStatus = 0;
 
 	uiReqTyp = pPacket->tHeader.reqType;
-	uprintf("ReqestType: 0x%08x\n", uiReqTyp);
 
 	uiReqTyp &= 3U;
 	switch(uiReqTyp)
@@ -66,7 +63,6 @@ static packet_handler_stall_req_t getStatus(setupPacket_t *pPacket)
 	case 3:
 		/* Get the endpoint status. */
 		uiEndpoint = pPacket->tHeader.wIndex & 0xffU;
-		uprintf("endpoint: 0x%08x\n", uiEndpoint);
 		iSendStatus = 1;
 		usStatus = 0x0000;
 	}
@@ -212,9 +208,9 @@ void usb_requests_handle_request_top(setupPacket_t *ptSetupPkt)
 			break;
 
 		default:
-			uprintf("unknown request!\n");
-			uprintf("id: %08x\n", ptSetupPkt->tHeader.reqId);
-			uprintf("rec: %08x\n", ptSetupPkt->tHeader.reqRec);
+//			uprintf("unknown request!\n");
+//			uprintf("id: %08x\n", ptSetupPkt->tHeader.reqId);
+//			uprintf("rec: %08x\n", ptSetupPkt->tHeader.reqRec);
 			break;
 	        }
 	}

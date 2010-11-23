@@ -23,7 +23,7 @@
 #define __MAIN_H__
 
 
-void usb_monitor(void);
+void usb_monitor(void) __attribute__ ((noreturn));
 
 
 #endif  /* __MAIN_H__ */

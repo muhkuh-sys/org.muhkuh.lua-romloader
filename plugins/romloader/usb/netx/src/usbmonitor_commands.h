@@ -32,7 +32,7 @@ typedef enum
 	USBMON_COMMAND_Write_Byte		= 0x04,
 	USBMON_COMMAND_Write_Word		= 0x05,
 	USBMON_COMMAND_Write_Long		= 0x06,
-	USBMON_COMMAND_Exit			= 0x07
+	USBMON_COMMAND_SendUUID			= 0x07
 } USBMON_COMMAND_T;
 
 typedef enum

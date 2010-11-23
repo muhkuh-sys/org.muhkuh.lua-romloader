@@ -129,9 +129,8 @@ extern USB_CDC_ConnectionState_t tCdcConnectionState;
 
 //-------------------------------------
 
-int usb_pingpong(void);
-void usb_sendPendingPacket(void);
-void usb_activateInputPipe(void);
+// void usb_sendPendingPacket(void);
+// void usb_activateInputPipe(void);
 
 //-------------------------------------
 

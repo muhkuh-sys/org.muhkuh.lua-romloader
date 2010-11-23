@@ -45,8 +45,6 @@ sources_common = """
 	src/main.c
 	src/options.c
 	src/systime.c
-	src/uart.c
-	src/uprintf.c
 	src/usbmon.c
 """
 

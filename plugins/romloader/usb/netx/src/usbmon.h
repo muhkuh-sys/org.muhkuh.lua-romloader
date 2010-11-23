@@ -23,7 +23,7 @@
 #define __USBMON_H__
 
 
-int usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacketSize);
+void usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacketSize);
 
 
 #endif  /* __USBMON_H__ */

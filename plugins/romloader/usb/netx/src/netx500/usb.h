@@ -36,7 +36,7 @@ void usb_call_console_put(unsigned int uiChar);
 unsigned int usb_call_console_peek(void);
 void usb_call_console_flush(void);
 
-void usb_loop(void);
+void usb_loop(void) __attribute__ ((noreturn));
 
 
 #endif  /* __USB_H__ */

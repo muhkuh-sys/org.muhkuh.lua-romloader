@@ -127,20 +127,34 @@ static const unsigned char aucTopStringDescriptor[] =
 /* stringDescriptor for the Manufacturer */
 static const unsigned char aucManufacturer_eng[] =
 {
-	0x1c,
+	0x22,
 	0x03,
 
 	'H', 0, 'i', 0, 'l', 0, 's', 0, 'c', 0, 'h', 0, 'e', 0, 'r', 0,
-	' ', 0, 'G', 0, 'm', 0, 'b', 0, 'H', 0
+	' ', 0, 'G', 0, 'm', 0, 'b', 0, 'H', 0, ' ', 0, ' ', 0, ' ', 0
 };
 
 
 /* stringDescriptor for the product name */
-static unsigned char aucProduct_eng[34];
+static const unsigned char aucProduct_eng[] =
+{
+	0x22,
+	0x03,
+
+	'H', 0, 'B', 0, 'o', 0, 'o', 0, 't', 0, ' ', 0, 'm', 0, 'o', 0, 
+	'n', 0, 'i', 0, 't', 0, 'o', 0, 'r', 0, ' ', 0, ' ', 0, ' ', 0
+};
 
 
 /* stringDescriptor for the Serial Number */
-static unsigned char aucSerialNumber_eng[34];
+static const unsigned char aucSerialNumber_eng[] =
+{
+	0x22,
+	0x03,
+
+	'0', 0, '0', 0, '0', 0, '0', 0, '0', 0, '0', 0, '0', 0, '0', 0,
+	'0', 0, '0', 0, '0', 0, '0', 0, '0', 0, '0', 0, '0', 0, '2', 0
+};
 
 
 static const unsigned char * const apucEngStrings[] =
@@ -150,7 +164,7 @@ static const unsigned char * const apucEngStrings[] =
 	aucSerialNumber_eng
 };
 
-
+#if 0
 static void to_unicode_simple(const unsigned char *pucAsciiString, unsigned char *pucUnicodeBuffer, size_t sizUnicodeBuffer)
 {
 	const unsigned char *pucSrcCnt;
@@ -168,10 +182,11 @@ static void to_unicode_simple(const unsigned char *pucAsciiString, unsigned char
 		*(pucDstCnt++) = '\0';
 	} while( pucDstCnt<pucDstEnd );
 }
-
+#endif
 
 void usb_descriptors_init(void)
 {
+/*
 	aucProduct_eng[0] = sizeof(aucProduct_eng);
 	aucProduct_eng[1] = 3;
 	to_unicode_simple(g_t_options.t_usb_settings.uCfg.auc+20+8, aucProduct_eng+2, 32);
@@ -180,6 +195,7 @@ void usb_descriptors_init(void)
 	aucSerialNumber_eng[0] = sizeof(aucSerialNumber_eng);
 	aucSerialNumber_eng[1] = 3;
 	to_unicode_simple(g_t_options.t_usb_settings.uCfg.auc+38+8, aucSerialNumber_eng+2, 32);
+*/
 }
 
 

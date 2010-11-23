@@ -18,9 +18,6 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "uart.h"
-#include "uprintf.h"
-
 #include "usb_main.h"
 #include "usb_io.h"
 #include "usb_requests_top.h"
@@ -29,15 +26,23 @@
 
 //---------------------------------------------------------------------------
 
-int usb_pingpong(void)
+static void usb_activateInputPipe(void)
+{
+	// select pipe 2
+	ptUsbCoreArea->ulPIPE_SEL = 0x02;
+	// set data pointer to Usb_Ep2_Buffer
+	ptUsbCoreArea->ulPIPE_DATA_PTR = Usb_Ep2_Buffer>>2;
+	// enable pipe 2
+	ptUsbCoreArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV | Usb_Ep2_PacketSize;
+}
+
+
+void usb_pingpong(void)
 {
 	unsigned long ulMainEvent;
 	unsigned long ulPipeEvent;
 	unsigned long ulPacketSize;
-	int iTerminate;
 
-
-	iTerminate = 0;
 
 	ulMainEvent = ptUsbCoreArea->ulMAIN_EV;
 	if( (ulMainEvent&MSK_USB_MAIN_EV_GPORT_EV)!=0 )
@@ -50,7 +55,6 @@ int usb_pingpong(void)
 	{
 		// yes -> test all relevant bits (0-2) of the pipe_ev register
 		ulPipeEvent = ptUsbCoreArea->ulPIPE_EV;
-		uprintf("Pipe Event: 0x%x\n", ulPipeEvent);
 
 		// test for pipe0 event
 		if( (ulPipeEvent&(1<<0))!=0 )
@@ -154,13 +158,11 @@ int usb_pingpong(void)
 			{
 				/* Get the packetsize in bytes. */
 				ulPacketSize = Usb_Ep2_PacketSize - (ptUsbCoreArea->ulPIPE_DATA_TBYTES&(~MSK_USB_PIPE_DATA_TBYTES_DBV));
-				uprintf("Received 0x%x bytes:\n", ulPacketSize);
 				if( ulPacketSize<=Usb_Ep2_PacketSize )
 				{
 					usb_io_read_fifo((Usb_Ep2_Buffer>>2), ulPacketSize, receiveBuffer);
-					hexdump(receiveBuffer, ulPacketSize);
 
-					iTerminate = usbmon_process_packet(receiveBuffer, ulPacketSize);
+					usbmon_process_packet(receiveBuffer, ulPacketSize);
 				}
 			}
 		}
@@ -181,8 +183,6 @@ int usb_pingpong(void)
 			usb_activateInputPipe();
 		}
 	}
-
-	return iTerminate;
 }
 
 
@@ -211,17 +211,6 @@ void usb_sendPendingPacket(void)
 	}
 }
 #endif
-
-void usb_activateInputPipe(void)
-{
-	// select pipe 2
-	ptUsbCoreArea->ulPIPE_SEL = 0x02;
-	// set data pointer to Usb_Ep2_Buffer
-	ptUsbCoreArea->ulPIPE_DATA_PTR = Usb_Ep2_Buffer>>2;
-	// enable pipe 2
-	ptUsbCoreArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV | Usb_Ep2_PacketSize;
-}
-
 
 void usb_handleReset(void)
 {
