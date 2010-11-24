@@ -45,7 +45,7 @@ romloader_usb_provider::romloader_usb_provider(swig_type_info *p_romloader_usb, 
 	m_ptReferenceTypeInfo = p_romloader_usb_reference;
 
 	/* create a new libusb context */
-	m_ptUsbDevice = new romloader_usb_device_platform(m_pcPluginId);
+	m_ptUsbDevice = new romloader_usb_device_libusb(m_pcPluginId);
 }
 
 
@@ -194,7 +194,7 @@ romloader_usb::romloader_usb(const char *pcName, const char *pcTyp, romloader_us
  , m_ptUsbDevice(NULL)
 {
 	/* create a new libusb context */
-	m_ptUsbDevice = new romloader_usb_device_platform(m_pcName);
+	m_ptUsbDevice = new romloader_usb_device_libusb(m_pcName);
 }
 
 

@@ -67,14 +67,14 @@ ADD_CUSTOM_TARGET(netx_usb_firmware
 IF(UNIX)
 	# Use libusb-1.0
 	SET(USB_LIBRARIES usb-1.0)
-	SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=0)
+	SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=1)
 ELSE(UNIX)
 	IF(WIN32)
 		# Win has only libusb-0.1 .
 		SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=0)
 		INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/include/)
-		LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/lib/MS32/dll)
-		SET(USB_LIBRARIES libusb-1.0 setupapi)
+		LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/lib/msvc)
+		SET(USB_LIBRARIES libusb setupapi)
 	ENDIF(WIN32)
 ENDIF(UNIX)
 
@@ -85,7 +85,7 @@ set_property(SOURCE romloader_usb.i PROPERTY SWIG_FLAGS ${USB_DEFINES} -I${CMAKE
 
 SET(romloader_usb_SOURCES
 	romloader_usb_device.cpp
-	romloader_usb_device_libusb0.cpp
+	romloader_usb_device_libusb.cpp
 	romloader_usb_main.cpp
 	uuencoder.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
@@ -93,7 +93,7 @@ SET(romloader_usb_SOURCES
 )
 
 SET(romloader_usb_HEADERS
-	romloader_usb_device_libusb0.h
+	romloader_usb_device_libusb.h
 	romloader_usb_main.h
 	uuencoder.h
 	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h

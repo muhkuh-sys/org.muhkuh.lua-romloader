@@ -19,11 +19,43 @@
  ***************************************************************************/
 
 
-#ifndef __ROMLOADER_USB_DEVICE_LIBUSB0_H__
-#define __ROMLOADER_USB_DEVICE_LIBUSB0_H__
+#ifndef __ROMLOADER_USB_DEVICE_LIBUSB_H__
+#define __ROMLOADER_USB_DEVICE_LIBUSB_H__
 
 
-#include <libusb-1.0/libusb.h>
+#if ROMLOADER_USB_LIBUSB_VERSION==0
+#	include <usb.h>
+
+	typedef struct usb_device libusb_device;
+	typedef usb_dev_handle libusb_device_handle;
+	typedef void libusb_context;
+#	ifdef _WIN64
+		typedef __int64 ssize_t;
+#	else
+		typedef int ssize_t;
+#	endif /* _WIN64 */
+
+	enum libusb_error
+	{
+		LIBUSB_SUCCESS = 0,
+		LIBUSB_ERROR_IO = -1,
+		LIBUSB_ERROR_INVALID_PARAM = -2,
+		LIBUSB_ERROR_ACCESS = -3,
+		LIBUSB_ERROR_NO_DEVICE = -4,
+		LIBUSB_ERROR_NOT_FOUND = -5,
+		LIBUSB_ERROR_BUSY = -6,
+		LIBUSB_ERROR_TIMEOUT = -116,
+		LIBUSB_ERROR_OVERFLOW = -8,
+		LIBUSB_ERROR_PIPE = -9,
+		LIBUSB_ERROR_INTERRUPTED = -10,
+		LIBUSB_ERROR_NO_MEM = -11,
+		LIBUSB_ERROR_NOT_SUPPORTED = -12,
+		LIBUSB_ERROR_OTHER = -99
+	};
+
+#else
+#	include <libusb-1.0/libusb.h>
+#endif
 
 #include "romloader_usb_device.h"
 
@@ -39,11 +71,11 @@ typedef struct usb_device_descriptor LIBUSB_DEVICE_DESCRIPTOR_T;
 class romloader_usb_provider;
 class romloader_usb_reference;
 
-class romloader_usb_device_libusb0 : public romloader_usb_device
+class romloader_usb_device_libusb : public romloader_usb_device
 {
 public:
-	romloader_usb_device_libusb0(const char *pcPluginId);
-	~romloader_usb_device_libusb0(void);
+	romloader_usb_device_libusb(const char *pcPluginId);
+	~romloader_usb_device_libusb(void);
 
 	const char *libusb_strerror(int iError);
 
@@ -113,5 +145,5 @@ private:
 };
 
 
-#endif	/* __ROMLOADER_USB_DEVICE_LIBUSB0_H__ */
+#endif	/* __ROMLOADER_USB_DEVICE_LIBUSB_H__ */
 

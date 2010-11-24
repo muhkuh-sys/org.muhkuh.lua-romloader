@@ -32,22 +32,7 @@ typedef unsigned char uint8_t;
 
 /*-----------------------------------*/
 
-/* NOTE: Seems like libusb-0.1 was the last version with a common api for
- * linux and windows. The windows port has it's own 1.0 api.
- * This plugin uses the libusb-1.0 api. It offers wrapper functions to link
- * with an old libusb-0.1 api.
- */
-#ifndef ROMLOADER_USB_LIBUSB_VERSION
-	#error "Missing libusb version, please define ROMLOADER_USB_LIBUSB_VERSION!"
-#elif ROMLOADER_USB_LIBUSB_VERSION==0
-	#include "romloader_usb_device_libusb0.h"
-	#define romloader_usb_device_platform romloader_usb_device_libusb0
-#elif ROMLOADER_USB_LIBUSB_VERSION==1
-	#include "romloader_usb_device_libusb0.h"
-	#define romloader_usb_device_platform romloader_usb_device_libusb0
-#else
-	#error "The define ROMLOADER_USB_LIBUSB_VERSION specifies an unknown libusb version!"
-#endif
+#include "romloader_usb_device_libusb.h"
 
 /*-----------------------------------*/
 
@@ -107,7 +92,7 @@ private:
 	unsigned int m_uiDeviceAdr;
 
 	/* pointer to the usb device and the usb device handle */
-	romloader_usb_device_platform *m_ptUsbDevice;
+	romloader_usb_device_libusb *m_ptUsbDevice;
 };
 
 /*-----------------------------------*/
@@ -126,7 +111,7 @@ public:
 private:
 	static const char *m_pcPluginNamePattern;
 
-	romloader_usb_device_platform *m_ptUsbDevice;
+	romloader_usb_device_libusb *m_ptUsbDevice;
 };
 
 /*-----------------------------------*/
