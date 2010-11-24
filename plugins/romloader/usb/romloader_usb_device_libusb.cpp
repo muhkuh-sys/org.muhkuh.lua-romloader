@@ -1249,43 +1249,15 @@ int romloader_usb_device_libusb::netx10_upgrade_romcode(libusb_device *ptDevice,
 					netx10_start_code(ptDevHandle, pucCode);
 					free(pucCode);
 
-					printf("Update: Code started.\n");
-
 					/* Release the interface. */
 					libusb_release_interface(ptDevHandle, m_iInterface);
 
-					printf("Update: 2\n");
 					/* Give the firmware time to start up. */
-					SLEEP_MS(1000);
+					SLEEP_MS(200);
 
-/*
-From user mode: You can do this by ejecting the device through the CfgMgr API. For example, to go over all USB hubs and eject all devices:
-
-   1. Find all devices having device interface GUID_DEVINTERFACE_USB_HUB with SetupDiGetClassDevs(... DIGCF_DEVICEINTERFACE).
-   2. Enumerate over the returned device information set (SetupDiEnumDeviceInfo).
-   3. For each device, get the DevInst member:
-         1. Invoke CM_Get_Child(DevInst) and then CM_Get_Sibling repeatedly to go over all child nodes of the hub (i.e. the USB devices).
-         2. For each child node, call CM_Request_Device_Eject.
-*/
-
-					printf("Update: 3\n");
 					/* Reset and close the device. */
-					{
-						int iResult;
-						iResult = libusb_reset_device(ptDevHandle);
-						printf("Reset: %d\n", iResult);
-					}
-					printf("Update: 4\n");
+					libusb_reset_device(ptDevHandle);
 					libusb_close(ptDevHandle);
-					printf("Update: 5\n");
-
-#if 1
-					/* DEBUG: try this only on win. */
-					libusb_exit(m_ptLibUsbContext);
-					SLEEP_MS(1000);
-					libusb_init(&m_ptLibUsbContext);
-#endif
-
 
 					/* Poll all 200ms for the new device. */
 					iCnt = 0;
