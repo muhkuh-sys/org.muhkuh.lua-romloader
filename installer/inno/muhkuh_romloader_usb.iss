@@ -61,20 +61,20 @@ Source: "build\build\tester.lua";                             DestDir: "{app}\ap
 ;Source: "plugins\romloader\usb\win\driver\libusb0.dll";      DestDir: "{app}\application";          Components: plugin_romloader_usb
 
 ; Copy the driver to the application folder.
-Source: "plugins\romloader\usb\win\driver\amd64\libusb0.dll"; DestDir: "{app}\driver\amd64\romloader_usb"; Components: plugin_romloader_usb
-Source: "plugins\romloader\usb\win\driver\amd64\libusb0.sys"; DestDir: "{app}\driver\amd64\romloader_usb"; Components: plugin_romloader_usb
-Source: "plugins\romloader\usb\win\driver\ia64\libusb0.dll";  DestDir: "{app}\driver\ia64\romloader_usb"; Components: plugin_romloader_usb
-Source: "plugins\romloader\usb\win\driver\ia64\libusb0.sys";  DestDir: "{app}\driver\ia64\romloader_usb"; Components: plugin_romloader_usb
-Source: "plugins\romloader\usb\win\driver\x86\libusb0.dll";   DestDir: "{app}\driver\x86\romloader_usb"; Components: plugin_romloader_usb
-Source: "plugins\romloader\usb\win\driver\x86\libusb0.sys";   DestDir: "{app}\driver\x86\romloader_usb"; Components: plugin_romloader_usb
+Source: "plugins\romloader\usb\win\driver\amd64\libusb0.dll"; DestDir: "{app}\driver\romloader_usb\amd64"; Components: plugin_romloader_usb
+Source: "plugins\romloader\usb\win\driver\amd64\libusb0.sys"; DestDir: "{app}\driver\romloader_usb\amd64"; Components: plugin_romloader_usb
+Source: "plugins\romloader\usb\win\driver\ia64\libusb0.dll";  DestDir: "{app}\driver\romloader_usb\ia64"; Components: plugin_romloader_usb
+Source: "plugins\romloader\usb\win\driver\ia64\libusb0.sys";  DestDir: "{app}\driver\romloader_usb\ia64"; Components: plugin_romloader_usb
+Source: "plugins\romloader\usb\win\driver\x86\libusb0_x86.dll";   DestDir: "{app}\driver\romloader_usb\x86"; Components: plugin_romloader_usb
+Source: "plugins\romloader\usb\win\driver\x86\libusb0.sys";   DestDir: "{app}\driver\romloader_usb\x86"; Components: plugin_romloader_usb
 Source: "plugins\romloader\usb\win\driver\netX_Romcode.cat";  DestDir: "{app}\driver\romloader_usb"; Components: plugin_romloader_usb
 Source: "plugins\romloader\usb\win\driver\netX_Romcode.inf";  DestDir: "{app}\driver\romloader_usb"; Components: plugin_romloader_usb
 
 ; Copy the driver to the system folder.
-Source: "plugins\romloader\usb\win\driver\x86\libusb0.dll";   DestDir: "{sys}"; Flags: uninsneveruninstall replacesameversion restartreplace promptifolder; Check: IsX86; Components: plugin_romloader_usb
+Source: "plugins\romloader\usb\win\driver\x86\libusb0_x86.dll"; DestName: "libusb0.dll"; DestDir: "{sys}"; Flags: uninsneveruninstall replacesameversion restartreplace promptifolder; Check: IsX86; Components: plugin_romloader_usb
 Source: "plugins\romloader\usb\win\driver\amd64\libusb0.dll"; DestDir: "{sys}"; Flags: uninsneveruninstall replacesameversion restartreplace promptifolder; Check: IsX64; Components: plugin_romloader_usb
-Source: "plugins\romloader\usb\win\driver\ia64\libusb0.dll";  DestDir: "{sys}"; Flags: uninsneveruninstall replacesameversion restartreplace promptifolder; Check: IsI64; Components: plugin_romloader_usb
+Source: "plugins\romloader\usb\win\driver\ia64\libusb0.dll"; DestDir: "{sys}"; Flags: uninsneveruninstall replacesameversion restartreplace promptifolder; Check: IsI64; Components: plugin_romloader_usb
 
 
 [Run]
-Filename: "rundll32"; Parameters: "libusb0.dll,usb_install_driver_np_rundll {app}\driver\netX_Romcode.inf"; StatusMsg: "Installing driver (this may take a few seconds) ..."
+Filename: "rundll32"; Parameters: "libusb0.dll,usb_install_driver_np_rundll {app}\driver\romloader_usb\netX_Romcode.inf"; StatusMsg: "Installing driver (this may take a few seconds) ..."
