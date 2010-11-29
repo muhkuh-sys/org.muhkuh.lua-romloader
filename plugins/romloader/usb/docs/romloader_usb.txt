@@ -1,0 +1,15 @@
+
+
+netx10 memory layout:
+
+08000000 - 08000100 : Reserved for system vectors
+08000100 - 08000110 : I/O vectors
+08000110 - 08002000 : Reserved for code
+08002000 - 08004000 : Reserved for stack
+
+
+netX500 memory layout:
+00000000 - 00000100 : Reserved for system vectors
+00000100 - 00002000 : Reserved for code
+10000000 - 10002000 : Reserved for data, stack and I/O vectors
+

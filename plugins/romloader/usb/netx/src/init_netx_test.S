@@ -121,7 +121,9 @@ clear_bss:
 	cmp     r1, r2
 	strlo   r0, [r1], #4
 	blo     clear_bss
-	bl      usb_monitor
+
+	ldr     r0, =usb_monitor
+	bx      r0
 
   .endfunc
 

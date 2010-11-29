@@ -24,10 +24,8 @@ MEMORY
 {
 	ASSERT_EMPTY(rwx):  ORIGIN = 0x00000000,  LENGTH = 0
 
-	INTRAM0_ITCM(rwx):  ORIGIN = 0x00000000,  LENGTH = 0x00010000
+	INTRAM0_MON(rwx):   ORIGIN = 0x08000100,  LENGTH = 0x00003f00
 	INTRAM2_ITCM(rwx):  ORIGIN = 0x00020000,  LENGTH = 0x00010000
-	INTRAM0_DTCM(rwx):  ORIGIN = 0x04000000,  LENGTH = 0x00010000
-	INTRAM3_DTCM(rwx):  ORIGIN = 0x04030000,  LENGTH = 0x00010000
 }
 
 
@@ -48,6 +46,9 @@ SECTIONS
 	} >ASSERT_EMPTY
 
 
+	/* This is the installer part. It copies the code to its execution
+	 * place. After that, it is no longer needed.
+	 */
 	.code_init ORIGIN(INTRAM2_ITCM) :
 	{
 		load_address = . ;
@@ -56,14 +57,14 @@ SECTIONS
 		*(.init_code)
 	} >INTRAM2_ITCM
 
-/*	__CODE_OFFSET__ = 0x1800; */
-	__CODE_OFFSET__ = 0x2000;
 
-	/* set the top of the stack to the end of INTRAM1 */
-	stack_top = ORIGIN(INTRAM0_ITCM) + LENGTH(INTRAM0_ITCM) - __CODE_OFFSET__;
+	.serial_vectors ORIGIN(INTRAM0_MON) :
+	{
+		tSerialVectors = . ;
+		. = . + 0x10;
+	} >INTRAM0_MON
 
-
-	.code ORIGIN(INTRAM0_ITCM)+LENGTH(INTRAM0_ITCM)-__CODE_OFFSET__ : AT(ORIGIN(INTRAM2_ITCM)+SIZEOF(.code_init))
+	.code ORIGIN(INTRAM0_MON)+SIZEOF(.serial_vectors) : AT(ORIGIN(INTRAM2_ITCM)+SIZEOF(.code_init))
 	{
 		__copy_dst_start__ = . ;
 
@@ -71,9 +72,8 @@ SECTIONS
 		*(.rodata*)
 
 		__copy_dst_end__ = . ;
-	} >INTRAM0_ITCM
+	} >INTRAM0_MON
 	__copy_src_start__ = LOADADDR(.code);
-
 
 	.bss :
 	{
@@ -84,14 +84,10 @@ SECTIONS
 		*(COMMON)
 
 		__bss_end__ = . ;
-	} >INTRAM0_DTCM
+	} >INTRAM0_MON
 
-
-	.serial_vectors ORIGIN(INTRAM0_DTCM)+LENGTH(INTRAM0_DTCM)-0x10 :
-	{
-		tSerialVectors = . ;
-		. = . + 0x10;
-	} >INTRAM0_DTCM
+	/* Set the top of the stack to the start of the code. */
+	stack_top = ORIGIN(INTRAM0_MON) + LENGTH(INTRAM0_MON);
 
 
 	/* Stabs debugging sections.  */
