@@ -23,23 +23,6 @@ INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 
 #----------------------------------------------------------------------------
 #
-# Detect libuuid
-#
-
-IF(UNIX)
-	FIND_LIBRARY(LIBUUID uuid)
-	IF(DEFINED LIBUUID_NOTFOUND)
-		MESSAGE(FATAL_ERROR "No libuuid found!")
-	ENDIF(DEFINED LIBUUID_NOTFOUND)
-ELSE(UNIX)
-	IF(WIN32)
-		SET(LIBUUID Rpcrt4)
-	ENDIF(WIN32)
-ENDIF(UNIX)
-
-
-#----------------------------------------------------------------------------
-#
 # Compile the netX USB firmware.
 #
 
@@ -70,7 +53,9 @@ IF(UNIX)
 	SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=1)
 ELSE(UNIX)
 	IF(WIN32)
-		# Win has only libusb-0.1 .
+		# Use libusb-0 on Windows to get a proper reset.
+		# NOTE: The current version of libusb-1.0 on windows uses the driver winusb.
+		#       It does not allow a complete device reset.
 		SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=0)
 		INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/include/)
 		LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/lib/msvc)
@@ -120,7 +105,7 @@ ADD_DEPENDENCIES(romloader_usb_lib netx_usb_firmware)
 if(${LUA51_FOUND})
 	# Build the Lua module.
 	SWIG_ADD_MODULE(romloader_usb lua romloader_usb.i)
-	SWIG_LINK_LIBRARIES(romloader_usb romloader_usb_lib ${LUA_LIBRARIES} ${USB_LIBRARIES} ${LIBUUID} romloader_lib)
+	SWIG_LINK_LIBRARIES(romloader_usb romloader_usb_lib ${LUA_LIBRARIES} ${USB_LIBRARIES} romloader_lib)
 	set_property(TARGET romloader_usb PROPERTY PREFIX "")
 
 	# Install the targets.

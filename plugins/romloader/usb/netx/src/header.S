@@ -22,7 +22,6 @@
 	.section .header, "a"
 	.arm
 
-	.global aucUuid
 	.extern load_address
 	.extern start
 
@@ -31,10 +30,6 @@
 	.ascii "mooh"
 	.word load_address
 	.word start
-
-	@ This will be patched with the UUID by the updater.
-aucUuid:
-	.space 32, 0x00
 
 @--------------------------------------
 

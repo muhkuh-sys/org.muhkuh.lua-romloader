@@ -128,20 +128,3 @@ void romloader_usb_device::hexdump(const unsigned char *pucData, unsigned long u
 	}
 }
 
-
-void romloader_usb_device::uuid_generate(UUID_T *ptUuid)
-{
-#ifdef WIN32
-	UUID uuid;
-
-
-	UuidCreate(&uuid);
-	memcpy(&(ptUuid->auc), &uuid, sizeof(UUID));
-#else
-	uuid_t uuid;
-	uuid_generate_random(uuid);
-
-	memcpy(&(ptUuid->auc), &uuid, sizeof(uuid_t));
-#endif
-}
-

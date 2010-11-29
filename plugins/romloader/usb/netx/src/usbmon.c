@@ -29,8 +29,6 @@
 #include "usbmonitor_commands.h"
 
 
-extern const unsigned char aucUuid[32];
-
 /*-----------------------------------*/
 
 
@@ -213,25 +211,9 @@ static void usbmon_call(unsigned long ulAddress, unsigned long ulR0)
 }
 
 
-static void usbmon_send_uuid(void)
+static void usbmon_reserved(void)
 {
-	const unsigned char *pucCnt;
-	const unsigned char *pucEnd;
-
-
-	/* Write status "Ok" to the fifo. */
-	usb_send_byte(USBMON_STATUS_Ok);
-
-	/* Write data bytes to the fifo. */
-	pucCnt = aucUuid;
-	pucEnd = pucCnt + 32;
-	do
-	{
-		usb_send_byte(*(pucCnt++));
-	} while( pucCnt<pucEnd );
-
-	/* Send the packet. */
-	usb_send_packet();
+	usbmon_send_status(USBMON_STATUS_InvalidCommand);
 }
 
 
@@ -277,7 +259,7 @@ void usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacke
 			usbmon_call(ulAddress, ulR0);
 		}
 	}
-	else if( tCmd==USBMON_COMMAND_SendUUID )
+	else if( tCmd==USBMON_COMMAND_RESERVED )
 	{
 		if( ulPacketSize!=1U )
 		{
@@ -285,7 +267,7 @@ void usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacke
 		}
 		else
 		{
-			usbmon_send_uuid();
+			usbmon_reserved();
 		}
 	}
 	else

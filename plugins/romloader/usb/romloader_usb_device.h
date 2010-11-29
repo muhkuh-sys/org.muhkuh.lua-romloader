@@ -25,14 +25,6 @@
 #include "../romloader.h"
 
 
-#ifdef WIN32
-#	include <Rpc.h>
-#else
-#	include <uuid/uuid.h>
-#	include <memory.h>
-#endif
-
-
 typedef struct
 {
 	const char *pcName;
@@ -57,13 +49,6 @@ protected:
 
 
 	static const NETX_USB_DEVICE_T atNetxUsbDevices[4];
-
-	typedef union
-	{
-		unsigned char auc[16];
-		unsigned long aul[4];
-	} UUID_T;
-	void uuid_generate(UUID_T *ptUuid);
 
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);
 

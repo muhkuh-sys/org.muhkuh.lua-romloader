@@ -1046,149 +1046,12 @@ int romloader_usb_device_libusb::netx10_start_code(libusb_device_handle *ptDevHa
 	}
 	else
 	{
+		netx10_discard_until_timeout(ptDevHandle);
+
 		iResult = 0;
 	}
 
 	return iResult;
-}
-
-
-int romloader_usb_device_libusb::compare_uuid_from_device(libusb_device *ptDevice, const NETX_USB_DEVICE_T *ptId, const char *pcUuid)
-{
-	int iResult;
-	int iProcessed;
-	size_t sizOutBuf;
-	unsigned char aucOutBuf[64];
-	unsigned char aucInBuf[64];
-
-
-	/* Open the device. */
-	iResult = setup_netx_device(ptDevice);
-	if( iResult==LIBUSB_SUCCESS )
-	{
-		/* Construct the command packet. */
-		aucOutBuf[0x00] = USBMON_COMMAND_SendUUID << 5U;
-		sizOutBuf = 1;
-		iResult = libusb_bulk_transfer(m_ptDevHandle, ptId->ucEndpoint_Out, (unsigned char*)aucOutBuf, sizOutBuf, &iProcessed, 10);
-		if( iResult==0 && iProcessed==sizOutBuf )
-		{
-			iResult = libusb_bulk_transfer(m_ptDevHandle, ptId->ucEndpoint_In, aucInBuf, 33, &iProcessed, 10);
-			if( iResult==0 && iProcessed==33 && aucInBuf[0]==USBMON_STATUS_Ok )
-			{
-				iResult = memcmp(aucInBuf+1, pcUuid, 32);
-				if( iResult!=0 )
-				{
-					iResult = LIBUSB_ERROR_OTHER;
-				}
-				else
-				{
-					iResult = LIBUSB_SUCCESS;
-				}
-			}
-		}
-
-		Disconnect();
-	}
-
-	return iResult;
-}
-
-
-libusb_device *romloader_usb_device_libusb::find_device_by_uuid(const char *pcUuid)
-{
-	int iResult;
-	ssize_t ssizDevList;
-	libusb_device **ptDeviceList;
-	libusb_device **ptDevCnt, **ptDevEnd;
-	libusb_device *ptDev;
-	libusb_device *ptUpdatedDevice;
-	const NETX_USB_DEVICE_T *ptId;
-
-
-	/* Expect error. */
-	ptUpdatedDevice = NULL;
-
-	/* Detect devices. */
-	ptDeviceList = NULL;
-	ssizDevList = libusb_get_device_list(m_ptLibUsbContext, &ptDeviceList);
-	if( ssizDevList<0 )
-	{
-		/* Failed to detect devices. */
-		fprintf(stderr, "%s(%p): failed to detect usb devices: %d:%s\n", m_pcPluginId, this, ssizDevList, libusb_strerror(ssizDevList));
-		iResult = -1;
-	}
-	else
-	{
-		/* Loop over all devices. */
-		ptDevCnt = ptDeviceList;
-		ptDevEnd = ptDevCnt + ssizDevList;
-		while( ptDevCnt<ptDevEnd )
-		{
-			/* Is this device a netx? */
-			ptDev = *ptDevCnt;
-			ptId = fIsDeviceNetx(ptDev);
-			if( ptId!=NULL )
-			{
-				/* Yes, this device is a netx. Get the device descriptor. */
-				iResult = compare_uuid_from_device(ptDev, ptId, pcUuid);
-				if( iResult==LIBUSB_SUCCESS )
-				{
-					m_tChiptyp = ptId->tChiptyp;
-					m_tRomcode = ptId->tRomcode;
-					m_ucEndpoint_In = ptId->ucEndpoint_In;
-					m_ucEndpoint_Out = ptId->ucEndpoint_Out;
-
-					ptUpdatedDevice = ptDev;
-					libusb_ref_device(ptUpdatedDevice);
-					break;
-				}
-			}
-			/* next list item */
-			++ptDevCnt;
-		}
-		/* free the device list */
-		if( ptDeviceList!=NULL )
-		{
-			libusb_free_device_list(ptDeviceList, 1);
-		}
-	}
-
-	return ptUpdatedDevice;
-}
-
-
-char romloader_usb_device_libusb::nibble_to_asciihex(unsigned char ucNibble)
-{
-	int iHex;
-
-
-	iHex = ucNibble + '0';
-	if( iHex>'9' )
-	{
-		iHex += 'a' - '9' - 1;
-	}
-	return (char)iHex;
-}
-
-
-void romloader_usb_device_libusb::convert_buffer_to_asciihex(const unsigned char *pucData, size_t sizData, char *pcOutput)
-{
-	const unsigned char *pucSrcCnt;
-	const unsigned char *pucSrcEnd;
-	char *pcDstCnt;
-	unsigned char ucByte;
-
-
-	/* Convert the uuid to a string. */
-	pucSrcCnt = pucData;
-	pucSrcEnd = pucData + sizData;
-	pcDstCnt = pcOutput;
-	do
-	{
-		ucByte = *(pucSrcCnt++);
-		*(pcDstCnt++) = nibble_to_asciihex((unsigned char)(ucByte>>4U));
-		*(pcDstCnt++) = nibble_to_asciihex(ucByte&0x0fU);
-	} while( pucSrcCnt<pucSrcEnd );
 }
 
 
@@ -1197,10 +1060,7 @@ int romloader_usb_device_libusb::netx10_upgrade_romcode(libusb_device *ptDevice,
 	int iResult;
 	libusb_device_handle *ptDevHandle;
 	libusb_device *ptUpdatedDevice;
-	UUID_T tUuid;
-	char acUuid[32];
 	int iCnt;
-	unsigned char *pucCode;
 
 
 //	printf(". Found old netX10 romcode, starting download.\n");
@@ -1232,67 +1092,18 @@ int romloader_usb_device_libusb::netx10_upgrade_romcode(libusb_device *ptDevice,
 				/* Read data until 'newline''>' or timeout. */
 				netx10_discard_until_timeout(ptDevHandle);
 
-				/* Generate a UUID to identify the device when it reappears. */
-				uuid_generate(&tUuid);
-				convert_buffer_to_asciihex(tUuid.auc, sizeof(tUuid), acUuid);
+				/* Load data. */
+				netx10_load_code(ptDevHandle, auc_usbmon_netx10_intram, sizeof(auc_usbmon_netx10_intram));
 
-				pucCode = (unsigned char*)malloc(sizeof(auc_usbmon_netx10_intram));
-				if( pucCode==NULL )
-				{
-					fprintf(stderr, "%s(%p): Failed to allocate memory!\n", m_pcPluginId, this);
-					iResult = -1;
-				}
-				else
-				{
-					memcpy(pucCode, auc_usbmon_netx10_intram, sizeof(auc_usbmon_netx10_intram));
-					/* Copy the UUID to the image. */
-					memcpy(pucCode+0x0c, acUuid, sizeof(acUuid));
+				/* Start the code. */
+				netx10_start_code(ptDevHandle, auc_usbmon_netx10_intram);
 
-					/* Load data. */
-					netx10_load_code(ptDevHandle, pucCode, sizeof(auc_usbmon_netx10_intram));
+				libusb_release_interface(ptDevHandle, m_iInterface);
+				libusb_close(ptDevHandle);
 
-					/* Start the code with the uuid as parameter. */
-					netx10_start_code(ptDevHandle, pucCode);
-					free(pucCode);
+				*pptUpdatedNetxDevice = ptDevice;
 
-					netx10_discard_until_timeout(ptDevHandle);
-#if 0
-					/* Release the interface. */
-					libusb_release_interface(ptDevHandle, m_iInterface);
-
-					/* Give the firmware time to start up. */
-					SLEEP_MS(200);
-
-					/* Reset and close the device. */
-					libusb_reset_device(ptDevHandle);
-					libusb_close(ptDevHandle);
-
-					/* Poll all 200ms for the new device. */
-					iCnt = 0;
-					do
-					{
-						SLEEP_MS(200);
-						/* Search for device with uuid. */
-						ptUpdatedDevice = find_device_by_uuid(acUuid);
-						++iCnt;
-					} while( ptUpdatedDevice==NULL && iCnt<10 );
-
-					if( ptUpdatedDevice==NULL )
-					{
-						iResult = -1;
-					}
-					else
-					{
-						*pptUpdatedNetxDevice = ptUpdatedDevice;
-						iResult = 0;
-					}
-#else
-					libusb_release_interface(ptDevHandle, m_iInterface);
-					libusb_close(ptDevHandle);
-					*pptUpdatedNetxDevice = ptDevice;
-					iResult = 0;
-#endif
-				}
+				iResult = 0;
 			}
 		}
 	}
@@ -1306,10 +1117,7 @@ int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice
 	int iResult;
 	libusb_device_handle *ptDevHandle;
 	libusb_device *ptUpdatedDevice;
-	UUID_T tUuid;
-	char acUuid[32];
 	int iCnt;
-	unsigned char *pucCode;
 
 
 	printf(". Found old netX500 romcode, starting download.\n");
@@ -1341,59 +1149,38 @@ int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice
 				/* Read data until 'newline''>' or timeout. */
 				netx500_discard_until_timeout(ptDevHandle);
 
-				/* Generate a UUID to identify the device when it reappears. */
-				uuid_generate(&tUuid);
-				convert_buffer_to_asciihex(tUuid.auc, sizeof(tUuid), acUuid);
+				/* Load data. */
+				netx500_load_code(ptDevHandle, auc_usbmon_netx500_intram, sizeof(auc_usbmon_netx500_intram));
+				/* Discard load response. */
+				netx500_discard_until_timeout(ptDevHandle);
 
-				pucCode = (unsigned char*)malloc(sizeof(auc_usbmon_netx500_intram));
-				if( pucCode==NULL )
+				/* Start the code parameter. */
+				netx500_start_code(ptDevHandle, auc_usbmon_netx500_intram);
+
+				/* FIXME: Why is this dummy read necessary? */
 				{
-					fprintf(stderr, "%s(%p): Failed to allocate memory!\n", m_pcPluginId, this);
-					iResult = -1;
+					unsigned char aucOutBuf[64];
+					unsigned char aucInBuf[64];
+					size_t sizInBuf;
+					int iRes;
+
+					m_ptDevHandle = ptDevHandle;
+					aucOutBuf[0x00] = (USBMON_COMMAND_Read_Long<<5U)|4;
+					aucOutBuf[0x01] = 0;
+					aucOutBuf[0x02] = 0;
+					aucOutBuf[0x03] = 0;
+					aucOutBuf[0x04] = 0;
+					iRes = execute_command(aucOutBuf, 5, aucInBuf, &sizInBuf);
+					//printf("Dummy exec: %d %d 0x%02x\n", iRes, sizInBuf, aucInBuf[0]);
 				}
-				else
-				{
-					memcpy(pucCode, auc_usbmon_netx500_intram, sizeof(auc_usbmon_netx500_intram));
-					/* Copy the UUID to the image. */
-					memcpy(pucCode+0x0c, acUuid, sizeof(acUuid));
 
-					/* Load data. */
-					netx500_load_code(ptDevHandle, pucCode, sizeof(auc_usbmon_netx500_intram));
-					/* Discard load response. */
-					netx500_discard_until_timeout(ptDevHandle);
+				/* Release the interface. */
+				libusb_release_interface(ptDevHandle, m_iInterface);
 
-					/* Start the code with the UUID as parameter. */
-					netx500_start_code(ptDevHandle, pucCode);
-					free(pucCode);
+				libusb_close(ptDevHandle);
 
-					/* FIXME: Why is this dummy read necessary? */
-					{
-						unsigned char aucOutBuf[64];
-						unsigned char aucInBuf[64];
-						size_t sizInBuf;
-						int iRes;
-
-						m_ptDevHandle = ptDevHandle;
-						aucOutBuf[0x00] = (USBMON_COMMAND_Read_Long<<5U)|4;
-						aucOutBuf[0x01] = 0;
-						aucOutBuf[0x02] = 0;
-						aucOutBuf[0x03] = 0;
-						aucOutBuf[0x04] = 0;
-						iRes = execute_command(aucOutBuf, 5, aucInBuf, &sizInBuf);
-						//printf("Dummy exec: %d %d 0x%02x\n", iRes, sizInBuf, aucInBuf[0]);
-					}
-
-
-					/* Release the interface. */
-					libusb_release_interface(ptDevHandle, m_iInterface);
-
-					/* Reset and close the device. */
-//					libusb_reset_device(ptDevHandle);
-					libusb_close(ptDevHandle);
-
-					*pptUpdatedNetxDevice = ptDevice;
-					iResult = 0;
-				}
+				*pptUpdatedNetxDevice = ptDevice;
+				iResult = 0;
 			}
 		}
 	}
