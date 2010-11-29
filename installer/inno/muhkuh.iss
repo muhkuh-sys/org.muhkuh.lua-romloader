@@ -33,6 +33,11 @@ SetupIconFile=icons\custom\muhkuh.ico
 BeveledLabel=Muhkuh
 
 
+[Files]
+Source: "icons\custom\muhkuh.ico"; DestDir: "{app}\application";
+Source: "icons\custom\muhkuh_uninstall.ico"; DestDir: "{app}\application";
+
+
 ; include the components
 ;#include "muhkuh_app.iss"
 ;#include "muhkuh_romloader_baka.iss"
