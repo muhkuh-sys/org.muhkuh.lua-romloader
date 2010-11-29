@@ -51,6 +51,7 @@ static unsigned char aucSendData[64];
 
 void usb_deinit(void)
 {
+#if 0
 	unsigned long ulCnt;
 
 
@@ -66,19 +67,19 @@ void usb_deinit(void)
 
 	/* Clear the termination. */
 	ptUsbCoreArea->ulUsb_core_ctrl = 0;
+#endif
 }
 
 
 void usb_init(void)
 {
-	globalState = USB_State_Powered;
+	/* NOTE: This is a kickstart. The core must start in running mode! */
 
-	/* No configuration set. */
+	globalState = USB_State_Configured;
+
+	/* Configuration 0 is set. */
 	currentConfig = 0;
-
-	/* No connection established. */
-	tCdcConnectionState = USB_CDC_ConnectionState_Idle;
-
+#if 0
 	/* Soft reset. */
 	ptUsbCoreArea->ulUsb_core_ctrl = 1;
 	/* Release reset and set ID Func. */
@@ -87,8 +88,12 @@ void usb_init(void)
 	/* Set ID pullup and read connector ID value. */
 	ptUsbCoreArea->ulPORT_CTRL = MSK_USB_PORT_CTRL_ID_PU;
 	ptUsbCoreArea->ulPORT_CTRL = 0;
-
+#endif
 	sizSendData = 0;
+
+	tOutTransactionNeeded = USB_SetupTransaction_NoOutTransaction;
+	tReceiveEpState = USB_ReceiveEndpoint_Running;
+	tSendEpState = USB_SendEndpoint_Idle;
 
 	usb_descriptors_init();
 }
@@ -109,9 +114,9 @@ void usb_send_byte(unsigned char ucData)
 void usb_send_packet(void)
 {
 	/* Write the packet data to the fifo. */
-	usb_io_write_fifo(Usb_Ep3_Buffer>>2, sizSendData, aucSendData);
+	usb_io_write_fifo(Usb_Ep1_Buffer>>2, sizSendData, aucSendData);
 	/* Send the packet. */
-	usb_io_sendDataPacket(3, sizSendData);
+	usb_io_sendDataPacket(1, sizSendData);
 
 	/* Remember the last packet size. */
 	uiLastPacketSize = sizSendData;

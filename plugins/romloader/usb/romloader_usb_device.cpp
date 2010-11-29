@@ -28,15 +28,25 @@
 #	define strncasecmp _strnicmp
 #endif
 
-const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[3] =
+const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[4] =
 {
 	{
-		"netX500",
+		"netX500 V1",
 		0x0cc4,
 		0x0815,
 		0x0100,
 		ROMLOADER_CHIPTYP_NETX500,
 		ROMLOADER_ROMCODE_ABOOT,
+		0x81,
+		0x01
+	},
+	{
+		"netX500 HBootV2 Emulation",
+		0x1939,
+		0x0015,
+		0x0001,
+		ROMLOADER_CHIPTYP_NETX500,
+		ROMLOADER_ROMCODE_HBOOT2_SOFT,
 		0x81,
 		0x01
 	},

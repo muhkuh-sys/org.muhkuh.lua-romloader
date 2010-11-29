@@ -56,7 +56,7 @@ protected:
 	char *m_pcPluginId;
 
 
-	static const NETX_USB_DEVICE_T atNetxUsbDevices[3];
+	static const NETX_USB_DEVICE_T atNetxUsbDevices[4];
 
 	typedef union
 	{

@@ -145,6 +145,22 @@ void usb_pingpong(void)
 			}
 		}
 
+		/* Test for pipe 1 event (data to host has been sent?). */
+		if( (ulPipeEvent&(1<<1))!=0 )
+		{
+			/* Clear the event. */
+			ptUsbCoreArea->ulPIPE_EV = 1<<1;
+
+			/* Was the last packet a complete packet? */
+			if( tSendEpState==USB_SendEndpoint_Running && uiLastPacketSize==Usb_Ep1_PacketSize )
+			{
+				usb_io_sendDataPacket(1, 0);
+			}
+
+			/* Ready for new commands. Reactivate the input pipe. */
+			usb_activateInputPipe();
+		}
+
 		/* Test for pipe 2 event (data from host arrived?). */
 		if( (ulPipeEvent&(1<<2))!=0 )
 		{
@@ -165,22 +181,6 @@ void usb_pingpong(void)
 					usbmon_process_packet(receiveBuffer, ulPacketSize);
 				}
 			}
-		}
-
-		/* Test for pipe 3 event (data to host has been sent?). */
-		if( (ulPipeEvent&(1<<3))!=0 )
-		{
-			/* Clear the event. */
-			ptUsbCoreArea->ulPIPE_EV = 1<<3;
-
-			/* Was the last packet a complete packet? */
-			if( tSendEpState==USB_SendEndpoint_Running && uiLastPacketSize==Usb_Ep3_PacketSize )
-			{
-				usb_io_sendDataPacket(3, 0);
-			}
-
-			/* Ready for new commands. Reactivate the input pipe. */
-			usb_activateInputPipe();
 		}
 	}
 }
@@ -222,7 +222,8 @@ void usb_handleReset(void)
         event &= MSK_USB_PSC_EV_URES_EV;
 
         // check for USB Reset event
-        if( event!=0 ) {
+        if( event!=0 )
+	{
                 // clear the reset event
                 ptUsbCoreArea->ulPSC_EV = event;
 
@@ -241,36 +242,29 @@ void usb_handleReset(void)
 
                 // configure the pipes
 
-		// select pipe #1
+		/* Select pipe #1. */
 		ptUsbCoreArea->ulPIPE_SEL = 1;
-		// set endpoint number
+		/* Set endpoint number. */
 		ptUsbCoreArea->ulPIPE_ADDR = 1;
-		// set max packet size
+		/* Set max packet size. */
 		ptUsbCoreArea->ulPIPE_CFG = Usb_Ep1_PacketSize;
-		// activate pipe and set direction to 'input'
-		ptUsbCoreArea->ulPIPE_CTRL = (1<<2)|1;
-
-		// select pipe #2
+		/* Activate pipe and set direction to 'input'. */
+		ptUsbCoreArea->ulPIPE_CTRL = MSK_USB_PIPE_CTRL_ACT | DEF_USB_PIPE_CTRL_TPID_IN;
+		/* No data to send yet. */
+		ptUsbCoreArea->ulPIPE_DATA_TBYTES = 0;
+		
+		/* Select pipe #2. */
 		ptUsbCoreArea->ulPIPE_SEL = 2;
-		// set endpoint number
-		ptUsbCoreArea->ulPIPE_ADDR = 0x04;
-		// set max packet size
+		/* Set endpoint number. */
+		ptUsbCoreArea->ulPIPE_ADDR = 1;
+		/* Set max packet size. */
 		ptUsbCoreArea->ulPIPE_CFG = Usb_Ep2_PacketSize;
-		// set data pointer to Usb_Ep2_Buffer
+		/* Set data pointer to Usb_Ep2_Buffer. */
 		ptUsbCoreArea->ulPIPE_DATA_PTR = Usb_Ep2_Buffer>>2;
-		// data buffer valid, ready to receive bytes
+		/* Data buffer valid, ready to receive bytes. */
 		ptUsbCoreArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV | Usb_Ep2_PacketSize;
-		// activate pipe and set direction to 'output'
-		ptUsbCoreArea->ulPIPE_CTRL = (1<<2)|0;
-
-		// select pipe #3
-		ptUsbCoreArea->ulPIPE_SEL = 3;
-		// set endpoint number
-		ptUsbCoreArea->ulPIPE_ADDR = 0x83;
-		// set max packet size
-		ptUsbCoreArea->ulPIPE_CFG = Usb_Ep3_PacketSize;
-		// activate pipe and set direction to 'input'
-		ptUsbCoreArea->ulPIPE_CTRL = (1<<2)|1;
+		/* Activate pipe and set direction to 'output'. */
+		ptUsbCoreArea->ulPIPE_CTRL = MSK_USB_PIPE_CTRL_ACT | DEF_USB_PIPE_CTRL_TPID_OUT;
 	}
 }
 

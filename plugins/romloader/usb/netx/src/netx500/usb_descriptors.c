@@ -43,7 +43,7 @@ static const unsigned char Device_Descriptor[] =
 	Usb_Ep0_PacketSize,                     // max packet size
 	(VendorID&0xff), (VendorID>>8),         // vendor ID
 	(ProductID&0xff), (ProductID>>8),       // product ID
-	(ProductRel>>8), (ProductRel&0xff),     // product release ID (BCD)
+	(ProductRel&0xff), (ProductRel>>8),     // product release ID (BCD)
 	0x01,                                   // index of manufacturer StringDesc
 	0x02,                                   // index of product StringDesc
 	0x03,                                   // index of serial number StringDesc
@@ -55,7 +55,7 @@ static const unsigned char Configuration_Descriptor[] =
 {
 	0x09,                                   // length of desc
 	0x02,                                   // descriptor type
-	0x35, 0x00,                             // total length of returned data
+	0x20, 0x00,                             // total length of returned data
 	0x01,                                   // number of interfaces
 	0x01,                                   // number of this configuration
 	0x02,                                   // index of config StringDescriptor
@@ -67,7 +67,7 @@ static const unsigned char Configuration_Descriptor[] =
 	0x04,                                   // descriptor type = interface descriptor
 	0x00,                                   // interface number
 	0x00,                                   // alternate setting
-	0x05,                                   // number of (non-zero) EPs
+	0x02,                                   // number of (non-zero) EPs
 	0xff,                                   // interface class
 	0x01,                                   // interface subclass
 	0xff,                                   // interface protocol
@@ -76,7 +76,7 @@ static const unsigned char Configuration_Descriptor[] =
 	// endpoint 1 descriptor
 	0x07,                                   // length
 	0x05,                                   // descriptor type = endpoint descriptor
-	0x81,                                   // endpoint 0x01
+	0x81,                                   // endpoint 0x81
 	0x02,                                   // bulk endpoint
 	Usb_Ep1_PacketSize, 0x00,               // max packet size
 	0x01,                                   // polling interval
@@ -84,33 +84,9 @@ static const unsigned char Configuration_Descriptor[] =
 	// endpoint 2 descriptor
 	0x07,                                   // length
 	0x05,                                   // descriptor type = endpoint descriptor
-	0x02,                                   // endpoint 0x02
+	0x01,                                   // endpoint 0x01
 	0x02,                                   // bulk endpoint
 	Usb_Ep2_PacketSize, 0x00,               // max packet size
-	0x01,                                   // polling interval (ignored for bulk)
-
-	// endpoint 3 descriptor
-	0x07,                                   // length
-	0x05,                                   // descriptor type = endpoint descriptor
-	0x83,                                   // endpoint 0x83
-	0x02,                                   // bulk endpoint
-	Usb_Ep3_PacketSize, 0x00,               // max packet size
-	0x01,                                   // polling interval (ignored for bulk)
-
-	// endpoint 4 descriptor
-	0x07,                                   // length
-	0x05,                                   // descriptor type = endpoint descriptor
-	0x04,                                   // endpoint 0x02
-	0x02,                                   // bulk endpoint
-	Usb_Ep4_PacketSize, 0x00,               // max packet size
-	0x01,                                   // polling interval (ignored for bulk)
-
-	// endpoint 5 descriptor
-	0x07,                                   // length
-	0x05,                                   // descriptor type = endpoint descriptor
-	0x85,                                   // endpoint 0x85
-	0x03,                                   // interrupt endpoint
-	Usb_Ep5_PacketSize, 0x00,               // max packet size
 	0x01                                    // polling interval (ignored for bulk)
 };
 
@@ -127,22 +103,22 @@ static const unsigned char aucTopStringDescriptor[] =
 /* stringDescriptor for the Manufacturer */
 static const unsigned char aucManufacturer_eng[] =
 {
-	0x22,
+	0x1c,
 	0x03,
 
 	'H', 0, 'i', 0, 'l', 0, 's', 0, 'c', 0, 'h', 0, 'e', 0, 'r', 0,
-	' ', 0, 'G', 0, 'm', 0, 'b', 0, 'H', 0, ' ', 0, ' ', 0, ' ', 0
+	' ', 0, 'G', 0, 'm', 0, 'b', 0, 'H', 0
 };
 
 
 /* stringDescriptor for the product name */
 static const unsigned char aucProduct_eng[] =
 {
-	0x22,
+	0x1c,
 	0x03,
 
 	'H', 0, 'B', 0, 'o', 0, 'o', 0, 't', 0, ' ', 0, 'm', 0, 'o', 0, 
-	'n', 0, 'i', 0, 't', 0, 'o', 0, 'r', 0, ' ', 0, ' ', 0, ' ', 0
+	'n', 0, 'i', 0, 't', 0, 'o', 0, 'r', 0
 };
 
 
@@ -153,7 +129,7 @@ static const unsigned char aucSerialNumber_eng[] =
 	0x03,
 
 	'0', 0, '0', 0, '0', 0, '0', 0, '0', 0, '0', 0, '0', 0, '0', 0,
-	'0', 0, '0', 0, '0', 0, '0', 0, '0', 0, '0', 0, '0', 0, '2', 0
+	'0', 0, '0', 0, '0', 0, '0', 0, '0', 0, '0', 0, '0', 0, '0', 0
 };
 
 

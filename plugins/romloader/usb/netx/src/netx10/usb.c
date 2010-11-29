@@ -99,10 +99,12 @@ static void enum_write_config_data(void)
 
 void usb_deinit(void)
 {
+#if 0
 	/* Reset the USB core. */
 	ptUsbDevCtrlArea->ulUsb_dev_cfg = HOSTMSK(usb_dev_cfg_usb_dev_reset);
 	/* Release reset and disable the core with JTAG. */
 	ptUsbDevCtrlArea->ulUsb_dev_cfg = 0;
+#endif
 }
 
 
@@ -110,12 +112,12 @@ void usb_init(void)
 {
 	unsigned long ulValue;
 
-
+#if 0
 	/* Reset the USB core. */
 	ptUsbDevCtrlArea->ulUsb_dev_cfg = HOSTMSK(usb_dev_cfg_usb_dev_reset);
 	/* Release reset and enable the core with JTAG. */
 	ptUsbDevCtrlArea->ulUsb_dev_cfg = HOSTMSK(usb_dev_cfg_usb_core_enable) | HOSTMSK(usb_dev_cfg_usb_to_jtag_enable);
-
+#endif
 	/* Set irq mask to 0. */
 	ptUsbDevCtrlArea->ulUsb_dev_irq_mask = 0;
 

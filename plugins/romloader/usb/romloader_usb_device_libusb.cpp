@@ -502,7 +502,7 @@ int romloader_usb_device_libusb::setup_netx_device(libusb_device *ptNetxDevice)
 	int iCurrentConfiguration;
 
 
-	printf("%s(%p): open device.\n", m_pcPluginId, this);
+//	printf("%s(%p): open device.\n", m_pcPluginId, this);
 	iResult = libusb_open(ptNetxDevice, &m_ptDevHandle);
 	if( iResult!=LIBUSB_SUCCESS )
 	{
@@ -511,7 +511,7 @@ int romloader_usb_device_libusb::setup_netx_device(libusb_device *ptNetxDevice)
 	else
 	{
 		/* Set the configuration. */
-		printf("%s(%p): set device configuration to %d.\n", m_pcPluginId, this, m_iConfiguration);
+//		printf("%s(%p): set device configuration to %d.\n", m_pcPluginId, this, m_iConfiguration);
 
 		iResult = libusb_set_configuration(m_ptDevHandle, m_iConfiguration);
 		if( iResult!=LIBUSB_SUCCESS )
@@ -522,7 +522,7 @@ int romloader_usb_device_libusb::setup_netx_device(libusb_device *ptNetxDevice)
 		else
 		{
 			/* Claim the interface. */
-			printf("%s(%p): claim interface %d.\n", m_pcPluginId, this, m_iInterface);
+//			printf("%s(%p): claim interface %d.\n", m_pcPluginId, this, m_iInterface);
 			iResult = libusb_claim_interface(m_ptDevHandle, m_iInterface);
 			if( iResult!=LIBUSB_SUCCESS )
 			{
@@ -614,7 +614,7 @@ int romloader_usb_device_libusb::Connect(unsigned int uiBusNr, unsigned int uiDe
 				iResult = setup_netx_device(ptUsbDevice);
 				if( iResult!=LIBUSB_SUCCESS )
 				{
-					printf("%s(%p): failed to setup the device, trying to reset it.\n", m_pcPluginId, this);
+					fprintf(stderr, "%s(%p): failed to setup the device, trying to reset it.\n", m_pcPluginId, this);
 
 					/* Reset the device and try again. */
 					iResult = libusb_reset_and_close_device();
@@ -627,7 +627,7 @@ int romloader_usb_device_libusb::Connect(unsigned int uiBusNr, unsigned int uiDe
 					}
 					else
 					{
-						printf("%s(%p): reset ok!\n", m_pcPluginId, this);
+						fprintf(stderr, "%s(%p): reset ok!\n", m_pcPluginId, this);
 
 						iResult = setup_netx_device(ptUsbDevice);
 						if( iResult!=LIBUSB_SUCCESS )
@@ -810,6 +810,8 @@ int romloader_usb_device_libusb::netx500_discard_until_timeout(libusb_device_han
 			/* Error! */
 			break;
 		}
+//		printf("discard packet:\n");
+//		hexdump(aucInBuffer, 64);
 	} while( aucInBuffer[0]!=0 );
 
 	return iResult;
@@ -844,6 +846,8 @@ int romloader_usb_device_libusb::netx500_load_code(libusb_device_handle *ptDevHa
 		ulLoadAddress |= pucNetxCode[0x05]<<8;
 		ulLoadAddress |= pucNetxCode[0x06]<<16;
 		ulLoadAddress |= pucNetxCode[0x07]<<24;
+
+//		printf("Load 0x%08x bytes to 0x%08x.\n", sizNetxCode, ulLoadAddress);
 
 		/* Generate crc16 checksum. */
 		usCrc = crc16(pucNetxCode, sizNetxCode);
@@ -993,6 +997,8 @@ int romloader_usb_device_libusb::netx500_start_code(libusb_device_handle *ptDevH
 	sizLine = snprintf((char*)(aucOutBuffer+1), sizeof(aucOutBuffer), "call %lx 0\n", ulExecAddress);
 	/* Set the length. */
 	aucOutBuffer[0] = (unsigned char)(sizLine + 1);
+
+//	printf("Start code at 0x%08x.\n", ulExecAddress);
 
 	/* Send the command. */
 	iResult = netx500_exchange_data(ptDevHandle, aucOutBuffer, aucInBuffer);
@@ -1197,7 +1203,7 @@ int romloader_usb_device_libusb::netx10_upgrade_romcode(libusb_device *ptDevice,
 	unsigned char *pucCode;
 
 
-	printf(". Found old netX10 romcode, starting download.\n");
+//	printf(". Found old netX10 romcode, starting download.\n");
 
 	iResult = libusb_open(ptDevice, &ptDevHandle);
 	if( iResult!=0 )
@@ -1249,6 +1255,8 @@ int romloader_usb_device_libusb::netx10_upgrade_romcode(libusb_device *ptDevice,
 					netx10_start_code(ptDevHandle, pucCode);
 					free(pucCode);
 
+					netx10_discard_until_timeout(ptDevHandle);
+#if 0
 					/* Release the interface. */
 					libusb_release_interface(ptDevHandle, m_iInterface);
 
@@ -1278,6 +1286,12 @@ int romloader_usb_device_libusb::netx10_upgrade_romcode(libusb_device *ptDevice,
 						*pptUpdatedNetxDevice = ptUpdatedDevice;
 						iResult = 0;
 					}
+#else
+					libusb_release_interface(ptDevHandle, m_iInterface);
+					libusb_close(ptDevHandle);
+					*pptUpdatedNetxDevice = ptDevice;
+					iResult = 0;
+#endif
 				}
 			}
 		}
@@ -1350,35 +1364,35 @@ int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice
 
 					/* Start the code with the UUID as parameter. */
 					netx500_start_code(ptDevHandle, pucCode);
-
 					free(pucCode);
+
+					/* FIXME: Why is this dummy read necessary? */
+					{
+						unsigned char aucOutBuf[64];
+						unsigned char aucInBuf[64];
+						size_t sizInBuf;
+						int iRes;
+
+						m_ptDevHandle = ptDevHandle;
+						aucOutBuf[0x00] = (USBMON_COMMAND_Read_Long<<5U)|4;
+						aucOutBuf[0x01] = 0;
+						aucOutBuf[0x02] = 0;
+						aucOutBuf[0x03] = 0;
+						aucOutBuf[0x04] = 0;
+						iRes = execute_command(aucOutBuf, 5, aucInBuf, &sizInBuf);
+						//printf("Dummy exec: %d %d 0x%02x\n", iRes, sizInBuf, aucInBuf[0]);
+					}
+
 
 					/* Release the interface. */
 					libusb_release_interface(ptDevHandle, m_iInterface);
 
 					/* Reset and close the device. */
-					libusb_reset_device(ptDevHandle);
+//					libusb_reset_device(ptDevHandle);
 					libusb_close(ptDevHandle);
 
-					/* Poll all 200ms for the new device. */
-					iCnt = 0;
-					do
-					{
-						SLEEP_MS(200);
-						/* Search for device with uuid. */
-						ptUpdatedDevice = find_device_by_uuid(acUuid);
-						++iCnt;
-					} while( ptUpdatedDevice==NULL && iCnt<10 );
-
-					if( ptUpdatedDevice==NULL )
-					{
-						iResult = -1;
-					}
-					else
-					{
-						*pptUpdatedNetxDevice = ptUpdatedDevice;
-						iResult = 0;
-					}
+					*pptUpdatedNetxDevice = ptDevice;
+					iResult = 0;
 				}
 			}
 		}
@@ -1416,11 +1430,13 @@ int romloader_usb_device_libusb::execute_command(const unsigned char *aucOutBuf,
 		}
 		else if( iProcessed==0 )
 		{
-			printf("Received empty packet!\n");
+			fprintf(stderr, "%s(%p): Received empty packet!\n", m_pcPluginId, this);
 			iResult = 1;
 		}
 		else
 		{
+//			printf("received:\n");
+//			hexdump(aucInBuf, iProcessed);
 			*psizInBuf = iProcessed;
 		}
 	}
@@ -1442,7 +1458,7 @@ int romloader_usb_device_libusb::receive_packet(unsigned char *aucInBuf, size_t 
 	}
 	else if( iProcessed==0 )
 	{
-		printf("Received empty packet!\n");
+		fprintf(stderr, "%s(%p): Received empty packet!\n", m_pcPluginId, this);
 		iResult = 1;
 	}
 	else
@@ -1457,6 +1473,8 @@ int romloader_usb_device_libusb::receive_packet(unsigned char *aucInBuf, size_t 
 int romloader_usb_device_libusb::update_old_netx_device(libusb_device *ptNetxDevice, libusb_device **pptUpdatedNetxDevice)
 {
 	int iResult;
+	const NETX_USB_DEVICE_T *ptId;
+	libusb_device *ptUpdatedDevice;
 
 
 	switch(m_tChiptyp)
@@ -1467,12 +1485,12 @@ int romloader_usb_device_libusb::update_old_netx_device(libusb_device *ptNetxDev
 
 	case ROMLOADER_CHIPTYP_NETX500:
 		/* TODO: insert update code for the netX500. */
-		iResult = netx500_upgrade_romcode(ptNetxDevice, pptUpdatedNetxDevice);
+		iResult = netx500_upgrade_romcode(ptNetxDevice, &ptUpdatedDevice);
 		break;
 
 	case ROMLOADER_CHIPTYP_NETX100:
 		/* TODO: insert update code for the netX100. */
-		iResult = netx500_upgrade_romcode(ptNetxDevice, pptUpdatedNetxDevice);
+		iResult = netx500_upgrade_romcode(ptNetxDevice, &ptUpdatedDevice);
 		break;
 
 	case ROMLOADER_CHIPTYP_NETX50:
@@ -1486,8 +1504,31 @@ int romloader_usb_device_libusb::update_old_netx_device(libusb_device *ptNetxDev
 		break;
 
 	case ROMLOADER_CHIPTYP_NETX10:
-		iResult = netx10_upgrade_romcode(ptNetxDevice, pptUpdatedNetxDevice);
+		iResult = netx10_upgrade_romcode(ptNetxDevice, &ptUpdatedDevice);
 		break;
+	}
+
+	/* Did the update succeed? */
+	if( iResult==LIBUSB_SUCCESS )
+	{
+		/* Yes -> try to identify the device again. */
+		ptId = fIsDeviceNetx(ptUpdatedDevice);
+		if( ptId==NULL )
+		{
+			fprintf(stderr, "%s(%p): Failed to identify the updated device!\n", m_pcPluginId, this);
+			iResult = LIBUSB_ERROR_OTHER;
+		}
+		else
+		{
+//			printf("After update: %s\n", ptId->pcName);
+			/* Update the settings. */
+			m_tChiptyp = ptId->tChiptyp;
+			m_tRomcode = ptId->tRomcode;
+			m_ucEndpoint_In = ptId->ucEndpoint_In;
+			m_ucEndpoint_Out = ptId->ucEndpoint_Out;
+
+			*pptUpdatedNetxDevice = ptUpdatedDevice;
+		}
 	}
 
 	return iResult;
