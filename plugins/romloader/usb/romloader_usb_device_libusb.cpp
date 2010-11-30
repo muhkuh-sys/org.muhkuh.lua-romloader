@@ -963,8 +963,6 @@ int romloader_usb_device_libusb::netx10_load_code(libusb_device_handle* ptDevHan
 						iResult = -1;
 						break;
 					}
-					/* Sleep for 10ms. */
-					SLEEP_MS(10);
 				}
 			} while( tUuencoder.isFinished()==false );
 
