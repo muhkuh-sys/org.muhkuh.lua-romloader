@@ -53,7 +53,7 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(NETX_CONSOLEAPP_PARAMETER_T *ptTes
 	uprintf(". counting from 0 to %d\n", iMax);
 	for(iCnt=0; iCnt<iMax; ++iCnt)
 	{
-		uprintf("%% %08x/%08x\n", iCnt, iMax);
+		uprintf("%% %d/%d\n", iCnt, iMax);
 	}
 
 	/* write parameter to return message */
