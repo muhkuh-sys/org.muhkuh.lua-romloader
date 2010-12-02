@@ -23,17 +23,26 @@
 #define __ROMLOADER_USB_DEVICE_LIBUSB_H__
 
 
+#include <errno.h>
+
 #if ROMLOADER_USB_LIBUSB_VERSION==0
 #	include <usb.h>
 
 	typedef struct usb_device libusb_device;
 	typedef usb_dev_handle libusb_device_handle;
 	typedef void libusb_context;
-#	ifdef _WIN64
-		typedef __int64 ssize_t;
-#	else
-		typedef int ssize_t;
-#	endif /* _WIN64 */
+#	ifdef _WIN32
+#		ifdef _WIN64
+			typedef __int64 ssize_t;
+#		else
+			typedef int ssize_t;
+#		endif /* _WIN64 */
+#	endif /* _WIN32 */
+
+
+#	ifdef _WIN32
+#	define ETIMEDOUT 110
+#	endif /* _WIN32 */
 
 	enum libusb_error
 	{
@@ -44,7 +53,7 @@
 		LIBUSB_ERROR_NO_DEVICE = -4,
 		LIBUSB_ERROR_NOT_FOUND = -5,
 		LIBUSB_ERROR_BUSY = -6,
-		LIBUSB_ERROR_TIMEOUT = -116,
+		LIBUSB_ERROR_TIMEOUT = -ETIMEDOUT,
 		LIBUSB_ERROR_OVERFLOW = -8,
 		LIBUSB_ERROR_PIPE = -9,
 		LIBUSB_ERROR_INTERRUPTED = -10,
