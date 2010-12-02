@@ -1219,12 +1219,13 @@ int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice
 					int iRes;
 
 					m_ptDevHandle = ptDevHandle;
-					aucOutBuf[0x00] = (USBMON_COMMAND_Read_Long<<5U)|4;
-					aucOutBuf[0x01] = 0;
+					aucOutBuf[0x00] = USBMON_COMMAND_Read|(USBMON_ACCESSSIZE_Long<<6U);
+					aucOutBuf[0x01] = 4;
 					aucOutBuf[0x02] = 0;
 					aucOutBuf[0x03] = 0;
 					aucOutBuf[0x04] = 0;
-					iRes = execute_command(aucOutBuf, 5, aucInBuf, &sizInBuf);
+					aucOutBuf[0x05] = 0;
+					iRes = execute_command(aucOutBuf, 6, aucInBuf, &sizInBuf);
 					//printf("Dummy exec: %d %d 0x%02x\n", iRes, sizInBuf, aucInBuf[0]);
 				}
 

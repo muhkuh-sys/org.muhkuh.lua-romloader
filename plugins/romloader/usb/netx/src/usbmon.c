@@ -110,7 +110,7 @@ static void usbmon_read(unsigned long ulAddress, unsigned long ulSize, USBMON_AC
 }
 
 
-static void usbmon_write(const unsigned char *pucPacket, unsigned long ulAddress, unsigned long ulDataSize, USBMON_ACCESSSIZE_T tAccessSize)
+static void usbmon_write(const unsigned char *pucData, unsigned long ulAddress, unsigned long ulDataSize, USBMON_ACCESSSIZE_T tAccessSize)
 {
 	const unsigned char *pucCnt;
 	const unsigned char *pucEnd;
@@ -119,9 +119,9 @@ static void usbmon_write(const unsigned char *pucPacket, unsigned long ulAddress
 
 
 	/* Get the source start address. */
-	pucCnt = pucPacket + 5;
+	pucCnt = pucData;
 	/* Get the source end address. */
-	pucEnd = pucPacket + 5 + ulDataSize;
+	pucEnd = pucData + ulDataSize;
 	/* Get the destination end address. */
 	uAdrDst.ul = ulAddress;
 
@@ -211,12 +211,6 @@ static void usbmon_call(unsigned long ulAddress, unsigned long ulR0)
 }
 
 
-static void usbmon_reserved(void)
-{
-	usbmon_send_status(USBMON_STATUS_InvalidCommand);
-}
-
-
 static unsigned long get_unaligned_dword(const unsigned char *pucBuffer)
 {
 	unsigned long ulValue;
@@ -241,14 +235,16 @@ void usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacke
 
 
 	/* Get the command and the data size from the first byte. */
-	tCmd = (USBMON_COMMAND_T)(pucPacket[0] >> 5U);
-	ulDataSize = pucPacket[0] & 0x1fU;
+	tCmd = (USBMON_COMMAND_T)(pucPacket[0]&0x3fU);
+	tAccessSize = (USBMON_ACCESSSIZE_T)(pucPacket[0]>>6U);
+	ulDataSize = pucPacket[1];
 
-	/* Get the address. */
-	ulAddress = get_unaligned_dword(pucPacket + 1);
 
 	if( tCmd==USBMON_COMMAND_Execute )
 	{
+		/* Get the address. */
+		ulAddress = get_unaligned_dword(pucPacket + 1);
+
 		if( ulPacketSize!=9U )
 		{
 			usbmon_send_status(USBMON_STATUS_InvalidPacketSize);
@@ -259,54 +255,45 @@ void usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacke
 			usbmon_call(ulAddress, ulR0);
 		}
 	}
-	else if( tCmd==USBMON_COMMAND_RESERVED )
+	else if( tCmd==USBMON_COMMAND_Read )
 	{
-		if( ulPacketSize!=1U )
+		/* Get the address. */
+		ulAddress = get_unaligned_dword(pucPacket + 2);
+
+		if( ulPacketSize!=6 )
 		{
 			usbmon_send_status(USBMON_STATUS_InvalidPacketSize);
 		}
+		else if( ulDataSize>63 )
+		{
+			usbmon_send_status(USBMON_STATUS_InvalidSizeParameter);
+		}
 		else
 		{
-			usbmon_reserved();
+			usbmon_read(ulAddress, ulDataSize, tAccessSize);
+		}
+	}
+	else if( tCmd==USBMON_COMMAND_Write )
+	{
+		/* Get the address. */
+		ulAddress = get_unaligned_dword(pucPacket + 2);
+
+		if( ulPacketSize!=(6+ulDataSize) )
+		{
+			usbmon_send_status(USBMON_STATUS_InvalidPacketSize);
+		}
+		else if( ulDataSize>58 )
+		{
+			usbmon_send_status(USBMON_STATUS_InvalidSizeParameter);
+		}
+		else
+		{
+			usbmon_write(pucPacket+6, ulAddress, ulDataSize, tAccessSize);
 		}
 	}
 	else
 	{
-		tAccessSize = (USBMON_ACCESSSIZE_T)(tCmd&3);
-
-		/* Distinguish read and write commands by bit 2.
-		   NOTE: This works because read commands start at 0 and write
-		         commands at 4. */
-		if( (tCmd&4)==0 )
-		{
-			if( ulPacketSize!=5 )
-			{
-				usbmon_send_status(USBMON_STATUS_InvalidPacketSize);
-			}
-			else if( ulDataSize>31 )
-			{
-				usbmon_send_status(USBMON_STATUS_InvalidSizeParameter);
-			}
-			else
-			{
-				usbmon_read(ulAddress, ulDataSize, tAccessSize);
-			}
-		}
-		else
-		{
-			if( ulPacketSize<6 )
-			{
-				usbmon_send_status(USBMON_STATUS_InvalidPacketSize);
-			}
-			else if( ulDataSize>27 )
-			{
-				usbmon_send_status(USBMON_STATUS_InvalidSizeParameter);
-			}
-			else
-			{
-				usbmon_write(pucPacket, ulAddress, ulDataSize, tAccessSize);
-			}
-		}
+		usbmon_send_status(USBMON_STATUS_InvalidCommand);
 	}
 }
 
