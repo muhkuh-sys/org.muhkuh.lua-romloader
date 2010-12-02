@@ -25,12 +25,10 @@
 #include "romloader_usb_device_libusb.h"
 #include "netx/src/usbmonitor_commands.h"
 
-#include <errno.h>
 #include <stdlib.h>
 
 #if defined(WIN32)
 #	define snprintf _snprintf
-#	define ETIMEDOUT 116
 #	define SLEEP_MS(ms) Sleep(ms)
 #else
 #	include <sys/time.h>
@@ -70,7 +68,7 @@ int libusb_get_device_descriptor(libusb_device *dev, struct libusb_device_descri
 	memcpy(desc, &(dev->descriptor), sizeof(struct libusb_device_descriptor));
 	return LIBUSB_SUCCESS;
 }
-	
+
 int libusb_init(libusb_context **ctx)
 {
 	usb_init();
@@ -298,7 +296,6 @@ int romloader_usb_device_libusb::detect_interfaces(romloader_usb_reference ***pp
 	size_t sizRefMax;
 	romloader_usb_reference **pptRef;
 	romloader_usb_reference **pptRefNew;
-	int iCurrentConfiguration;
 
 
 	/* Expect success. */
@@ -499,7 +496,6 @@ libusb_device *romloader_usb_device_libusb::find_netx_device(libusb_device **ptD
 int romloader_usb_device_libusb::setup_netx_device(libusb_device *ptNetxDevice)
 {
 	int iResult;
-	int iCurrentConfiguration;
 
 
 //	printf("%s(%p): open device.\n", m_pcPluginId, this);
@@ -1057,8 +1053,6 @@ int romloader_usb_device_libusb::netx10_upgrade_romcode(libusb_device *ptDevice,
 {
 	int iResult;
 	libusb_device_handle *ptDevHandle;
-	libusb_device *ptUpdatedDevice;
-	int iCnt;
 
 
 //	printf(". Found old netX10 romcode, starting download.\n");
@@ -1114,8 +1108,6 @@ int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice
 {
 	int iResult;
 	libusb_device_handle *ptDevHandle;
-	libusb_device *ptUpdatedDevice;
-	int iCnt;
 
 
 	printf(". Found old netX500 romcode, starting download.\n");
