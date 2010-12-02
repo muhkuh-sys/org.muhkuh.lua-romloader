@@ -1110,8 +1110,6 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 						}
 					}
 
-					printf("sending %p/%d\n", pcProgressData, sizProgressData);
-
 					fIsRunning = callback_string(&tLuaFn, pcProgressData, sizProgressData, lCallbackUserData);
 					if( fIsRunning!=true )
 					{
