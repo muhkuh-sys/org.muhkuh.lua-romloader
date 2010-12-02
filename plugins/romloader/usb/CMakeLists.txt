@@ -48,9 +48,9 @@ ADD_CUSTOM_TARGET(netx_usb_firmware
 #
 
 IF(UNIX)
-	# Use libusb-1.0
-	SET(USB_LIBRARIES usb-1.0)
-	SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=1)
+	# Use libusb-0
+	SET(USB_LIBRARIES usb)
+	SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=0)
 ELSE(UNIX)
 	IF(WIN32)
 		# Use libusb-0 on Windows to get a proper reset.
