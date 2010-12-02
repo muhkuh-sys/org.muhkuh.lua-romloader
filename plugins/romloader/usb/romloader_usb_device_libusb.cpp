@@ -69,6 +69,8 @@ int libusb_get_device_descriptor(libusb_device *dev, struct libusb_device_descri
 	return LIBUSB_SUCCESS;
 }
 
+#define libusb_get_descriptor usb_get_descriptor
+
 int libusb_init(libusb_context **ctx)
 {
 	usb_init();
@@ -219,6 +221,19 @@ void libusb_free_device_list(libusb_device **list, int unref_devices)
 {
 	free(list);
 }
+
+enum libusb_descriptor_type
+{ 
+	LIBUSB_DT_DEVICE = 0x01,
+	LIBUSB_DT_CONFIG = 0x02,
+	LIBUSB_DT_STRING = 0x03,
+	LIBUSB_DT_INTERFACE = 0x04,
+	LIBUSB_DT_ENDPOINT = 0x05,
+	LIBUSB_DT_HID = 0x21,
+	LIBUSB_DT_REPORT = 0x22,
+	LIBUSB_DT_PHYSICAL = 0x23,
+	LIBUSB_DT_HUB = 0x29
+};
 
 #endif
 
@@ -474,7 +489,7 @@ libusb_device *romloader_usb_device_libusb::find_netx_device(libusb_device **ptD
 		ptDev = *ptDevCnt;
 		if( libusb_get_bus_number(ptDev)==uiBusNr && libusb_get_device_address(ptDev)==uiDeviceAdr )
 		{
-			ptId = fIsDeviceNetx(ptDev);
+			ptId = identifyDevice(ptDev);
 			if( ptId!=NULL )
 			{
 				m_tChiptyp = ptId->tChiptyp;
@@ -656,16 +671,18 @@ void romloader_usb_device_libusb::Disconnect(void)
 }
 
 
-const NETX_USB_DEVICE_T *romloader_usb_device_libusb::fIsDeviceNetx(libusb_device *ptDevice) const
+bool romloader_usb_device_libusb::fIsDeviceNetx(libusb_device *ptDevice) const
 {
-	const NETX_USB_DEVICE_T *ptDevHit;
+	bool fDeviceIsNetx;
 	int iResult;
 	struct libusb_device_descriptor sDevDesc;
 	const NETX_USB_DEVICE_T *ptDevCnt;
 	const NETX_USB_DEVICE_T *ptDevEnd;
 
 
-	ptDevHit = NULL;
+	/* Be pessimistic. */
+	fDeviceIsNetx = false;
+
 	if( ptDevice!=NULL )
 	{
 		iResult = libusb_get_device_descriptor(ptDevice, &sDevDesc);
@@ -682,7 +699,7 @@ const NETX_USB_DEVICE_T *romloader_usb_device_libusb::fIsDeviceNetx(libusb_devic
 				)
 				{
 					/* Found a matching device. */
-					ptDevHit = ptDevCnt;
+					fDeviceIsNetx = true;
 					break;
 				}
 				else
@@ -693,9 +710,56 @@ const NETX_USB_DEVICE_T *romloader_usb_device_libusb::fIsDeviceNetx(libusb_devic
 		}
 	}
 
-	return ptDevHit;
+	return fDeviceIsNetx;
 }
 
+
+const NETX_USB_DEVICE_T *romloader_usb_device_libusb::identifyDevice(libusb_device *ptDevice) const
+{
+	const NETX_USB_DEVICE_T *ptDevHit;
+	int iResult;
+	struct libusb_device_descriptor sDevDesc;
+	const NETX_USB_DEVICE_T *ptDevCnt;
+	const NETX_USB_DEVICE_T *ptDevEnd;
+	libusb_device_handle *ptDevHandle;
+
+
+	ptDevHit = NULL;
+	if( ptDevice!=NULL )
+	{
+		/* Try to open the device. */
+		iResult = libusb_open(ptDevice, &ptDevHandle);
+		if( iResult==LIBUSB_SUCCESS )
+		{
+			iResult = libusb_get_descriptor(ptDevHandle, LIBUSB_DT_DEVICE, 0, &sDevDesc, sizeof(struct libusb_device_descriptor));
+			if( iResult==sizeof(struct libusb_device_descriptor) )
+			{
+				ptDevCnt = atNetxUsbDevices;
+				ptDevEnd = atNetxUsbDevices + (sizeof(atNetxUsbDevices)/sizeof(atNetxUsbDevices[0]));
+				while( ptDevCnt<ptDevEnd )
+				{
+					if(
+						sDevDesc.idVendor==ptDevCnt->usVendorId &&
+						sDevDesc.idProduct==ptDevCnt->usDeviceId &&
+						sDevDesc.bcdDevice==ptDevCnt->usBcdDevice
+					)
+					{
+						/* Found a matching device. */
+						ptDevHit = ptDevCnt;
+						break;
+					}
+					else
+					{
+						++ptDevCnt;
+					}
+				}
+			}
+			libusb_close(ptDevHandle);
+		}
+	}
+
+	return ptDevHit;
+}
 
 
 const romloader_usb_device_libusb::LIBUSB_STRERROR_T romloader_usb_device_libusb::atStrError[14] =
@@ -1289,7 +1353,7 @@ int romloader_usb_device_libusb::update_old_netx_device(libusb_device *ptNetxDev
 	if( iResult==LIBUSB_SUCCESS )
 	{
 		/* Yes -> try to identify the device again. */
-		ptId = fIsDeviceNetx(ptUpdatedDevice);
+		ptId = identifyDevice(ptUpdatedDevice);
 		if( ptId==NULL )
 		{
 			fprintf(stderr, "%s(%p): Failed to identify the updated device!\n", m_pcPluginId, this);

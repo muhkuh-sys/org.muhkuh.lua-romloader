@@ -103,7 +103,8 @@ protected:
 	unsigned char m_ucEndpoint_Out;
 
 private:
-	const NETX_USB_DEVICE_T *fIsDeviceNetx(libusb_device *ptDevice) const;
+	bool fIsDeviceNetx(libusb_device *ptDevice) const;
+	const NETX_USB_DEVICE_T *identifyDevice(libusb_device *ptDevice) const;
 
 	libusb_device *find_netx_device(libusb_device **ptDeviceList, ssize_t ssizDevList, unsigned int uiBusNr, unsigned int uiDeviceAdr);
 	int setup_netx_device(libusb_device *ptNetxDevice);
