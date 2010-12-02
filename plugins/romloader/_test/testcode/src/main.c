@@ -48,6 +48,10 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(NETX_CONSOLEAPP_PARAMETER_T *ptTes
 	uprintf(". Parameter Address: 0x%08x\n", (unsigned long)ptTestParam);
 	uprintf(". Parameter: 0x%08x\n", ulParameter);
 
+	/* Print a very long line (longer than 1 USB packet). */
+	uprintf("012345678901234567890123456789012345678901234567890123456789012345678901234567\n");
+	uprintf("000000000011111111112222222222333333333344444444445555555555666666666677777777\n");
+
 	/* print a lot of messages */
 	iMax = 100;
 	uprintf(". counting from 0 to %d\n", iMax);
