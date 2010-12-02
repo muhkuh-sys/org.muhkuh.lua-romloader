@@ -201,8 +201,8 @@ unsigned long usb_get_tx_fill_level(void)
 
 
 	ulFillLevel   = ptUsbDevFifoCtrlArea->aulUsb_dev_fifo_ctrl_status[USB_FIFO_Uart_TX];
-	ulFillLevel  &= HOSTMSK(usb_dev_fifo_ctrl_status0_out_fill_level);
-	ulFillLevel >>= HOSTSRT(usb_dev_fifo_ctrl_status0_out_fill_level);
+	ulFillLevel  &= HOSTMSK(usb_dev_fifo_ctrl_status0_in_fill_level);
+	ulFillLevel >>= HOSTSRT(usb_dev_fifo_ctrl_status0_in_fill_level);
 	return ulFillLevel;
 }
 
