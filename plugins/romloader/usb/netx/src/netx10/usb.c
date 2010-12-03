@@ -221,7 +221,7 @@ unsigned char usb_get_byte(void)
 /*-----------------------------------*/
 
 
-unsigned char usb_call_console_get(unsigned int uiHandle __attribute__((unused)))
+unsigned char usb_call_console_get(void)
 {
 	unsigned long ulFillLevel;
 	unsigned char ucData;
@@ -239,7 +239,7 @@ unsigned char usb_call_console_get(unsigned int uiHandle __attribute__((unused))
 }
 
 
-void usb_call_console_put(unsigned int uiHandle __attribute__((unused)), unsigned int uiChar)
+void usb_call_console_put(unsigned int uiChar)
 {
 	unsigned long ulFillLevel;
 
@@ -260,7 +260,7 @@ void usb_call_console_put(unsigned int uiHandle __attribute__((unused)), unsigne
 }
 
 
-unsigned int usb_call_console_peek(unsigned int uiHandle __attribute__((unused)))
+unsigned int usb_call_console_peek(void)
 {
 	unsigned long ulFillLevel;
 
@@ -270,7 +270,7 @@ unsigned int usb_call_console_peek(unsigned int uiHandle __attribute__((unused))
 }
 
 
-void usb_call_console_flush(unsigned int uiHandle __attribute__((unused)))
+void usb_call_console_flush(void)
 {
 	/* Flush all waiting data. */
 	usb_send_packet();

@@ -158,7 +158,6 @@ static void usbmon_write(const unsigned char *pucData, unsigned long ulAddress, 
 
 static const SERIAL_COMM_UI_FN_T tUsbCallConsole =
 {
-#if ASIC_TYP==10
 	.fn =
 	{
 		.fnGet = usb_call_console_get,
@@ -166,15 +165,6 @@ static const SERIAL_COMM_UI_FN_T tUsbCallConsole =
 		.fnPeek = usb_call_console_peek,
 		.fnFlush = usb_call_console_flush
 	}
-#else
-	.fn =
-	{
-		.fnGet = usb_call_console_get,
-		.fnPut = usb_call_console_put,
-		.fnPeek = usb_call_console_peek,
-		.fnFlush = usb_call_console_flush
-	}
-#endif
 };
 
 
