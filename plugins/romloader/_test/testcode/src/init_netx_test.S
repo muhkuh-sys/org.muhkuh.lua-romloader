@@ -10,7 +10,7 @@
   .func start_init_s
 
 start:
-	stmfd   sp!, {r0, r1, r2, r3, r4, lr}
+	stmfd   sp!, {r0, r1, r2, r3, lr}
 
 	@ clear .bss section (zero init)
 	mov     r1, #0
@@ -23,7 +23,7 @@ clear_bss:
 
 	bl      netx_consoleapp_init
 
-	ldmfd   sp!, {r0, r1, r2, r3, r4, pc}
+	ldmfd   sp!, {r0, r1, r2, r3, pc}
 
   .endfunc
 
