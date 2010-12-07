@@ -11,11 +11,10 @@ ENTRY(start)
 
 MEMORY
 {
-	ASSERT_EMPTY(rwx) :	ORIGIN = 0x00000000, LENGTH = 0
+	ASSERT_EMPTY(rwx) :  ORIGIN = 0x00000000, LENGTH = 0
 
-	INTRAM0(rwx) :		ORIGIN = 0x00008000, LENGTH = 0x00008000
-	INTRAM1(rwx) :		ORIGIN = 0x00010000, LENGTH = 0x00008000
-	DTCM(rw) :		ORIGIN = 0x10000000, LENGTH = 0x00002000
+	IOVECTORS(rx) :      ORIGIN = 0x10001ff0, LENGTH = 0x00000010
+	INTRAM(rwx) :        ORIGIN = 0x00004000, LENGTH = 0x0001c000
 }
 
 
@@ -35,15 +34,32 @@ SECTIONS
 		*(.v4_bx)
 	} >ASSERT_EMPTY
 
+	.serialvectors ORIGIN(IOVECTORS) :
+	{
+		tSerialVectors = . ;
+		. = . + LENGTH(IOVECTORS);
+	} >IOVECTORS
 
-	.code ORIGIN(INTRAM0) :
+
+	.code ORIGIN(INTRAM) :
 	{
 		load_address = .;
 		*(.header)
 		*(.init_code)
 		*(.text)
+	} >INTRAM
+
+	.data :
+	{
 		*(.rodata*)
-	} >INTRAM0
+	} >INTRAM
+
+	.parameter ALIGN(0x0100) :
+	{
+		parameter_start_address = . ;
+		. = . + 0x0100;
+		parameter_end_address = . ;
+	} >INTRAM
 
 	.bss :
 	{
@@ -55,26 +71,11 @@ SECTIONS
 		*(COMMON)
 
 		__bss_end__ = . ;
-	} >INTRAM0
-
-
-	.parameter ALIGN(0x0100) :
-	{
-		parameter_start_address = . ;
-		. = . + 0x0100;
-		parameter_end_address = . ;
-	} >INTRAM0
-
-
-	.serialvectors ORIGIN(DTCM)+LENGTH(DTCM)-0x10 :
-	{
-		tSerialVectors = . ;
-		. = . + 0x10;
-	} >DTCM
+	} >INTRAM
 
 
 	/* set the top of the stack to the end of INTRAM1 */
-	stack_top = ORIGIN(INTRAM1) + LENGTH(INTRAM1) ;
+	stack_top = ORIGIN(INTRAM) + LENGTH(INTRAM) ;
 
 
 	/* Stabs debugging sections.  */
