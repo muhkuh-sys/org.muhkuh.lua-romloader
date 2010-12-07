@@ -108,7 +108,6 @@ extern USB_SetupTransaction_t tOutTransactionNeeded;
 
 extern USB_ReceiveEndpoint_t tReceiveEpState;
 extern USB_SendEndpoint_t tSendEpState;
-extern unsigned int uiLastPacketSize;
 
 // new address for pending address change
 extern unsigned int uiNewAddress;

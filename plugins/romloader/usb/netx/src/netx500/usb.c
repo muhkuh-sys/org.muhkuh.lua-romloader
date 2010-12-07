@@ -113,14 +113,39 @@ void usb_send_byte(unsigned char ucData)
 
 void usb_send_packet(void)
 {
+	unsigned long ulPipeEvent;
+
+
 	/* Write the packet data to the fifo. */
 	usb_io_write_fifo(Usb_Ep1_Buffer>>2, sizSendData, aucSendData);
 	/* Send the packet. */
 	usb_io_sendDataPacket(1, sizSendData);
 
-	/* Remember the last packet size. */
-	uiLastPacketSize = sizSendData;
+	/* Wait until the packet is sent. */
+	do
+	{
+		ulPipeEvent = ptUsbCoreArea->ulPIPE_EV;
+	} while( (ulPipeEvent&(1<<1))==0 );
 
+	/* Clear the event. */
+	ptUsbCoreArea->ulPIPE_EV = (1<<1);
+#if 0
+	/* Was the last packet a complete packet? */
+	if( sizSendData==Usb_Ep1_PacketSize )
+	{
+		/* Yes -> send a 0 byte packet. */
+		usb_io_sendDataPacket(1, 0);
+
+		/* Wait until the packet is sent. */
+		do
+		{
+			ulPipeEvent = ptUsbCoreArea->ulPIPE_EV;
+		} while( (ulPipeEvent&(1<<1))==0 );
+
+		/* Clear the event. */
+		ptUsbCoreArea->ulPIPE_EV = (1<<1);
+	}
+#endif
 	/* No more packet data waiting. */
 	sizSendData = 0;
 }

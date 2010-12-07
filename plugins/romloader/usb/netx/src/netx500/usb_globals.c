@@ -37,7 +37,6 @@ USB_SetupTransaction_t tOutTransactionNeeded;
 
 USB_ReceiveEndpoint_t tReceiveEpState;
 USB_SendEndpoint_t tSendEpState;
-unsigned int uiLastPacketSize;
 
 // new address for pending address change
 unsigned int uiNewAddress;

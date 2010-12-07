@@ -70,10 +70,11 @@ void usb_io_write_fifo(unsigned int uiDwOffset, unsigned int uiByteCount, const 
 	}
 }
 
+
 void usb_io_sendDataPacket(unsigned int uiPipeNr, unsigned int uiPacketSize)
 {
 	ptUsbCoreArea->ulPIPE_SEL = uiPipeNr;
 	ptUsbCoreArea->ulPIPE_CTRL = MSK_USB_PIPE_CTRL_ACT | DEF_USB_PIPE_CTRL_TPID_IN;
-	ptUsbCoreArea->ulPIPE_DATA_PTR = uiPipeNr<<5;
+	ptUsbCoreArea->ulPIPE_DATA_PTR = uiPipeNr<<5U;
 	ptUsbCoreArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV|uiPacketSize;
 }

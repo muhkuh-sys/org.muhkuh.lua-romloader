@@ -117,7 +117,7 @@ void usb_pingpong(void)
 					globalState = USB_State_Address;
 				}
 
-				ptUsbCoreArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV|Usb_Ep0_PacketSize;	
+				ptUsbCoreArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV|Usb_Ep0_PacketSize;
 
 				tOutTransactionNeeded = USB_SetupTransaction_NoOutTransaction;
 
@@ -144,7 +144,7 @@ void usb_pingpong(void)
 				break;
 			}
 		}
-
+#if 0
 		/* Test for pipe 1 event (data to host has been sent?). */
 		if( (ulPipeEvent&(1<<1))!=0 )
 		{
@@ -156,11 +156,8 @@ void usb_pingpong(void)
 			{
 				usb_io_sendDataPacket(1, 0);
 			}
-
-			/* Ready for new commands. Reactivate the input pipe. */
-			usb_activateInputPipe();
 		}
-
+#endif
 		/* Test for pipe 2 event (data from host arrived?). */
 		if( (ulPipeEvent&(1<<2))!=0 )
 		{
@@ -179,6 +176,9 @@ void usb_pingpong(void)
 					usb_io_read_fifo((Usb_Ep2_Buffer>>2), ulPacketSize, receiveBuffer);
 
 					usbmon_process_packet(receiveBuffer, ulPacketSize);
+
+					/* Ready for new commands. Reactivate the input pipe. */
+					usb_activateInputPipe();
 				}
 			}
 		}
