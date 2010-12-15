@@ -1023,6 +1023,8 @@ int romloader_usb_device_libusb::netx10_load_code(libusb_device_handle* ptDevHan
 						iResult = -1;
 						break;
 					}
+
+					SLEEP_MS(10);
 				}
 			} while( tUuencoder.isFinished()==false );
 
@@ -1294,18 +1296,17 @@ int romloader_usb_device_libusb::receive_packet(unsigned char *aucInBuf, size_t 
 
 
 	iResult = libusb_bulk_transfer(m_ptDevHandle, m_ucEndpoint_In, aucInBuf, 64, &iProcessed, uiTimeoutMs);
-	if( iResult!=0 )
+	if( iResult==0 )
 	{
-		fprintf(stderr, "%s(%p): Failed to receive data: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
-	}
-	else if( iProcessed==0 )
-	{
-		fprintf(stderr, "%s(%p): Received empty packet!\n", m_pcPluginId, this);
-		iResult = 1;
-	}
-	else
-	{
-		*psizInBuf = iProcessed;
+		if( iProcessed==0 )
+		{
+			fprintf(stderr, "%s(%p): Received empty packet!\n", m_pcPluginId, this);
+			iResult = 1;
+		}
+		else
+		{
+			*psizInBuf = iProcessed;
+		}
 	}
 
 	return iResult;
