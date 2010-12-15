@@ -1,0 +1,16 @@
+
+* "muhkuh.load" needs the global __MUHKUH_TEST_XML at the moment to get the base url of the current running test. This was set by the muhkuh application. How can this be done in the plain cmdline mode?
+
+* distribute lua modules like the tester as a lua rock (see http://luarocks.org)?
+
+* in cmake: copy files with a custom command instead of the "install" task. I always forget "make install".
+
+* remove autostart from the application.
+
+* remove the debugger from the application
+
+* re-create lua state after the config dialog
+
+* cancel request for a running tester
+
+
