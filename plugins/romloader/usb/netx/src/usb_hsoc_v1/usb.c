@@ -231,7 +231,7 @@ unsigned char usb_call_console_get(void)
 	do
 	{
 		ulFillLevel = usb_get_rx_fill_level();
-	} while( ulFillLevel!=0 );
+	} while( ulFillLevel==0 );
 
 	/* Get a byte from the fifo. */
 	ucData = usb_get_byte();
