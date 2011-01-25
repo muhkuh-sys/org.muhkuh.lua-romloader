@@ -98,7 +98,7 @@ if(${LUA51_FOUND})
 	set_property(TARGET mhash PROPERTY PREFIX "")
 
 	# install the lua module
-	INSTALL(TARGETS mhash DESTINATION ${CMAKE_BINARY_DIR}/build/)
+	INSTALL(TARGETS mhash DESTINATION ${INSTALL_DIR_LUA_MODULES})
 endif(${LUA51_FOUND})
 
 

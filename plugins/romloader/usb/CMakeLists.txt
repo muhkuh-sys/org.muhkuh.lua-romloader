@@ -109,7 +109,7 @@ if(${LUA51_FOUND})
 	set_property(TARGET romloader_usb PROPERTY PREFIX "")
 
 	# Install the targets.
-	INSTALL(TARGETS romloader_usb DESTINATION ${CMAKE_BINARY_DIR}/build/)
+	INSTALL(TARGETS romloader_usb DESTINATION ${INSTALL_DIR_LUA_MODULES})
 endif(${LUA51_FOUND})
 
 

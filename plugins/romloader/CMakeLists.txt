@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 
 add_subdirectory(usb)
-#add_subdirectory(uart)
+add_subdirectory(uart)
 
 #-----------------------------------------------------------------------------
 
@@ -49,7 +49,7 @@ if(${LUA51_FOUND})
 	set_property(TARGET romloader PROPERTY PREFIX "")
 
 	# Install the targets.
-	INSTALL(TARGETS romloader DESTINATION ${CMAKE_BINARY_DIR}/build/)
+	INSTALL(TARGETS romloader DESTINATION ${INSTALL_DIR_LUA_MODULES})
 endif(${LUA51_FOUND})
 
 

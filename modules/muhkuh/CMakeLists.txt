@@ -49,7 +49,7 @@ if(${LUA51_FOUND})
 	SET_TARGET_PROPERTIES(module_muhkuh PROPERTIES PREFIX "" OUTPUT_NAME "muhkuh")
 
 	# Install the targets.
-	INSTALL(TARGETS module_muhkuh DESTINATION ${CMAKE_BINARY_DIR}/build/)
+	INSTALL(TARGETS module_muhkuh DESTINATION ${INSTALL_DIR_LUA_MODULES})
 endif(${LUA51_FOUND})
 
 
