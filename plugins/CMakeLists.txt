@@ -22,9 +22,9 @@ SET(muhkuh_plugin_interface_HEADERS
 	muhkuh_plugin_interface.h
 )
 
-add_library(muhkuh_plugin_interface SHARED ${muhkuh_plugin_interface_SOURCES})
-target_link_libraries(muhkuh_plugin_interface ${LUA_LIBRARIES})
-add_dependencies(muhkuh_plugin_interface SWIG_LUA_RUNTIME)
+ADD_LIBRARY(muhkuh_plugin_interface SHARED ${muhkuh_plugin_interface_SOURCES})
+ADD_DEPENDENCIES(muhkuh_plugin_interface swigluarun)
+TARGET_LINK_LIBRARIES(muhkuh_plugin_interface ${LUA_LIBRARIES})
 
 # Install the targets.
 INSTALL(TARGETS muhkuh_plugin_interface DESTINATION ${CMAKE_BINARY_DIR}/build/)
