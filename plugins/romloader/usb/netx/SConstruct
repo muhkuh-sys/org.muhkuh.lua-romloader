@@ -1,40 +1,32 @@
 # -*- coding: utf-8 -*-
+#-------------------------------------------------------------------------#
+#   Copyright (C) 2011 by Christoph Thelen                                #
+#   doc_bacardi@users.sourceforge.net                                     #
+#                                                                         #
+#   This program is free software; you can redistribute it and/or modify  #
+#   it under the terms of the GNU General Public License as published by  #
+#   the Free Software Foundation; either version 2 of the License, or     #
+#   (at your option) any later version.                                   #
+#                                                                         #
+#   This program is distributed in the hope that it will be useful,       #
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
+#   GNU General Public License for more details.                          #
+#                                                                         #
+#   You should have received a copy of the GNU General Public License     #
+#   along with this program; if not, write to the                         #
+#   Free Software Foundation, Inc.,                                       #
+#   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             #
+#-------------------------------------------------------------------------#
 
-# TODO:
-#  * more than one system include dir (for arg parsing etc)
-#  * set a default location for the compiler dir (but where could this be?)
-#
-# Done:
-#  * print help even if the site dir for the compiler stuff is missing.
-#  * generate relocated sources from list of real locations
-#  * set compiler flags from build properties
-#  * show command line summary (e.g. "Cc blah.o") for the actions, but show complete line if the command failed.
-#  * accept 'clean' target like make
-#  * auto dependency for LDFILE
-#
-
-import scons_common
-
-import build_properties
-import data_array
-
-build_properties.Read()
 
 #----------------------------------------------------------------------------
 #
-# set help text
+# Set up the Muhkuh Build System.
 #
-Help("""
-	Set the compiler dir with all the gcc_*.py files with --site-dir=path .
-	Example: The compiler dir is usually in the folder '.ant' in the users home directory.
-	This expands for the user 'brunhild' to '/home/brunhild/.ant'.
 
-	Type: 'scons --site-dir=compiler_dir' to build the production program,
-	      'scons --site-dir=compiler_dir clean' to clean everything.
-""")
-
-build_properties.GenerateHelp()
-
+SConscript('mbs/SConscript')
+Import('env_default', 'env_netx500_default', 'env_netx50_default', 'env_netx10_default')
 
 #----------------------------------------------------------------------------
 # This is the list of sources. The elements must be separated with whitespace
@@ -51,111 +43,47 @@ sources_common = """
 
 sources_custom_netx500 = """
 	src/netx500/netx500_io_areas.c
-	src/netx500/usb.c
-	src/netx500/usb_descriptors.c
-	src/netx500/usb_globals.c
-	src/netx500/usb_io.c
-	src/netx500/usb_main.c
-	src/netx500/usb_requests_top.c
+	src/usb_emsys/usb.c
+	src/usb_emsys/usb_descriptors.c
+	src/usb_emsys/usb_globals.c
+	src/usb_emsys/usb_io.c
+	src/usb_emsys/usb_main.c
+	src/usb_emsys/usb_requests_top.c
 """
 
 
 sources_custom_netx10 = """
 	src/netx10/netx10_io_areas.c
-	src/netx10/usb.c
+	src/usb_hsoc_v1/usb.c
 """
 
 src_netx500 = Split(sources_common+sources_custom_netx500)
 src_netx10  = Split(sources_common+sources_custom_netx10)
 
 
-default_ccflags = """
-	-ffreestanding
-	-mlong-calls
-	-Wall
-	-Wextra
-	-Wconversion
-	-Wshadow
-	-Wcast-qual
-	-Wwrite-strings
-	-Wcast-align
-	-Wpointer-arith
-	-Wmissing-prototypes
-	-Wstrict-prototypes
-	-mapcs
-	-g3
-	-gdwarf-2
-	-std=c99
-"""
+#----------------------------------------------------------------------------
+#
+# Build the netX500 files.
+#
+env_netx500_intram = env_netx500_default.Clone()
+env_netx500_intram.Replace(LDFILE = 'src/netx500/netx500_intram.ld')
+env_netx500_intram.Append(CPPPATH = ['src', 'src/netx500', 'src/usb_emsys'])
+src_netx500_intram = env_netx500_intram.SetBuildPath('targets/netx500_intram', 'src', src_netx500)
+elf_netx500_intram = env_netx500_intram.Elf('targets/usbmon_netx500_intram', src_netx500_intram)
+bin_netx500_intram = env_netx500_intram.ObjCopy('targets/usbmon_netx500_intram', elf_netx500_intram)
+env_netx500_intram.DataArray('targets/usbmon_netx500_intram.c', bin_netx500_intram, DATAARRAY_NAME='auc_usbmon_netx500_intram')
+
 
 #----------------------------------------------------------------------------
-# Only execute this part if the help text is not requested.
-# This keeps the help message functional even if no include path for the
-# compiler definitions was specified.
-if not GetOption('help'):
-	# Show summary of the build properties.
-	build_properties.PrintSummary()
-	
-	
-	#----------------------------------------------------------------------------
-	#
-	# Import the tool definitions.
-	#
-	gcc_arm_elf = scons_common.get_tool('gcc-arm-elf-4.3.3_4')
-	asciidoc = scons_common.get_tool('asciidoc-8.5.3_1')
-	
-	
-	#----------------------------------------------------------------------------
-	#
-	# Create the default environment.
-	#
-	env_default = Environment()
-	gcc_arm_elf.ApplyToEnv(env_default)
-	data_array.ApplyToEnv(env_default)
-	env_default.Decider('MD5')
-	env_default.Append(CPPPATH = ['src'])
-	env_default.Replace(CCFLAGS = Split(default_ccflags))
-	env_default.Replace(LIBS = ['m', 'c', 'gcc'])
-	env_default.Replace(LINKFLAGS = ['-nostdlib', '-static', '-Map=${TARGET}.map'])
-	build_properties.ApplyToEnv(env_default)
-	
-	
-	#----------------------------------------------------------------------------
-	#
-	# Create environments for all cpus.
-	#
-	env_netx500 = env_default.Clone()
-	env_netx500.Append(CCFLAGS = ['-mcpu=arm926ej-s'])
-	env_netx500.Replace(LIBPATH = ['${GCC_DIR}/arm-elf/lib/arm926ej-s', '${GCC_DIR}/lib/gcc/arm-elf/${GCC_VERSION}/arm926ej-s'])
-	env_netx500.Append(CPPDEFINES = [['ASIC_TYP', '500']])
-	env_netx500.Append(CPPPATH = ['src/netx500'])
-	
-	env_netx10 = env_default.Clone()
-	env_netx10.Append(CCFLAGS = ['-mcpu=arm966e-s'])
-	env_netx10.Replace(LIBPATH = ['${GCC_DIR}/arm-elf/lib/arm966e-s', '${GCC_DIR}/lib/gcc/arm-elf/${GCC_VERSION}/arm966e-s'])
-	env_netx10.Append(CPPDEFINES = [['ASIC_TYP', '10']])
-	env_netx10.Append(CPPPATH = ['src/netx10'])
-	
-	
-	#----------------------------------------------------------------------------
-	#
-	# Build the netX500 files.
-	#
-	env_netx500_intram = env_netx500.Clone()
-	src_netx500_intram = scons_common.set_build_path(env_netx500_intram, 'targets/netx500_intram', 'src', src_netx500)
-	env_netx500_intram.Replace(LDFILE = 'src/netx500/netx500_intram.ld')
-	elf_netx500_intram = env_netx500_intram.Elf('targets/usbmon_netx500_intram', src_netx500_intram)
-	bin_netx500_intram = env_netx500_intram.ObjCopy('targets/usbmon_netx500_intram', elf_netx500_intram)
-	env_netx500_intram.DataArray('targets/usbmon_netx500_intram.c', bin_netx500_intram, DATAARRAY_NAME='auc_usbmon_netx500_intram')
-	
-	#----------------------------------------------------------------------------
-	#
-	# Build the netX10 files.
-	#
-	env_netx10_intram = env_netx10.Clone()
-	src_netx10_intram = scons_common.set_build_path(env_netx10_intram, 'targets/netx10_intram', 'src', src_netx10)
-	env_netx10_intram.Replace(LDFILE = 'src/netx10/netx10_intram.ld')
-	elf_netx10_intram = env_netx10_intram.Elf('targets/usbmon_netx10_intram', src_netx10_intram)
-	bin_netx10_intram = env_netx10_intram.ObjCopy('targets/usbmon_netx10_intram', elf_netx10_intram)
-	env_netx10_intram.DataArray('targets/usbmon_netx10_intram.c', bin_netx10_intram, DATAARRAY_NAME='auc_usbmon_netx10_intram')
-	
+#
+# Build the netX10 files.
+#
+env_netx10_intram = env_netx10_default.Clone()
+env_netx10_intram.Replace(LDFILE = 'src/netx10/netx10_intram.ld')
+env_netx10_intram.Append(CPPPATH = ['src', 'src/netx10', 'src/usb_hsoc_v1'])
+src_netx10_intram = env_netx10_intram.SetBuildPath('targets/netx10_intram', 'src', src_netx10)
+env_netx10_intram.Replace(LDFILE = 'src/netx10/netx10_intram.ld')
+elf_netx10_intram = env_netx10_intram.Elf('targets/usbmon_netx10_intram', src_netx10_intram)
+bin_netx10_intram = env_netx10_intram.ObjCopy('targets/usbmon_netx10_intram', elf_netx10_intram)
+env_netx10_intram.DataArray('targets/usbmon_netx10_intram.c', bin_netx10_intram, DATAARRAY_NAME='auc_usbmon_netx10_intram')
+
