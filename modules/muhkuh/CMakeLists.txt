@@ -44,12 +44,12 @@ add_library(module_muhkuh_lib STATIC ${module_muhkuh_SOURCES})
 
 if(${LUA51_FOUND})
 	# Build the Lua module.
-	swig_add_module(muhkuh lua muhkuh.i)
-	swig_link_libraries(muhkuh module_muhkuh_lib ${wxWidgets_LIBRARIES} ${LUA_LIBRARIES})
-	set_property(TARGET muhkuh PROPERTY PREFIX "")
+	swig_add_module(module_muhkuh lua muhkuh.i)
+	swig_link_libraries(module_muhkuh module_muhkuh_lib ${wxWidgets_LIBRARIES} ${LUA_LIBRARIES})
+	SET_TARGET_PROPERTIES(module_muhkuh PROPERTIES PREFIX "" OUTPUT_NAME "muhkuh")
 
 	# Install the targets.
-	INSTALL(TARGETS muhkuh DESTINATION ${CMAKE_BINARY_DIR}/build/)
+	INSTALL(TARGETS module_muhkuh DESTINATION ${CMAKE_BINARY_DIR}/build/)
 endif(${LUA51_FOUND})
 
 
