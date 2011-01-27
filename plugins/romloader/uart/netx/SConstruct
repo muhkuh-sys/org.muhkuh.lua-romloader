@@ -84,9 +84,9 @@ src_netx50_intram = env_netx50_intram.SetBuildPath('targets/netx50_intram', 'src
 elf_netx50_intram = env_netx50_intram.Elf('targets/uartmon_netx50_intram', src_netx50_intram)
 bin_netx50_intram = env_netx50_intram.ObjCopy('targets/uartmon_netx50_intram', elf_netx50_intram)
 env_netx50_intram.DataArray('targets/uartmon_netx50_intram.c', bin_netx50_intram, DATAARRAY_NAME='auc_uartmon_netx50_intram')
-env_netx50_intram.UUEncode('targets/uartmon_netx50_intram.uue', bin_netx50_intram, UUE_PRE = """
-LUUE 08008000
-""", UUE_POST = "")
+env_netx50_intram.UUEncode('targets/uartmon_netx50_intram.uue', bin_netx50_intram, UUE_ELF=elf_netx50_intram, UUE_PRE = """
+LUUE ${LOAD_HEX}
+""", UUE_POST = "CALL ${EXEC_HEX}")
 
 #----------------------------------------------------------------------------
 #
