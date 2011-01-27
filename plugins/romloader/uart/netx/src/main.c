@@ -199,10 +199,14 @@ static void uart_loop(void)
 		ucByte = uart_buffer_get();
 	} while( ucByte!=UARTMON_PACKET_START );
 
+	uprintf("Startchar\n");
+
 	/* Get the size of the data packet in bytes. */
 	uart_buffer_fill(2, UART_BUFFER_NO_TIMEOUT);
 	sizPacket  = uart_buffer_peek(0);
 	sizPacket |= uart_buffer_peek(1) << 8U;
+
+	uprintf("Size: 0x%08x\n", sizPacket);
 
 	/* Is the packet's size valid? */
 	if( sizPacket>=4 && sizPacket<=MAX_PACKET_SIZE )
