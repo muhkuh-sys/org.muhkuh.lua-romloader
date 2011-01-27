@@ -1,3 +1,8 @@
+
+%define lua_version 5.1
+%define wxwidgets_version 2.8.11
+
+
 Name:           muhkuh
 Version:        1.0.0
 Release:        1%{dist}
@@ -7,11 +12,16 @@ License:        GPL
 URL:            http://www.sf.net/projects/muhkuh
 Source0:        file://tmp/muhkuh_%{version}/muhkuh-%{version}.tar.gz
 #Source0:        http://downloads.sourceforge.net/project/muhkuh/muhkuh/muhkuh-%{version}/muhkuh-%{version}.tar.gz
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+Patch0:         muhkuh-1.0.0-fwpatch.diff
+BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
-BuildRequires:  cmake
+BuildRequires:  gcc-c++ cmake
+BuildRequires:  python >= 2.6
 BuildRequires:  swig
-Requires:       lua
+BuildRequires:  lua-devel >= %{lua_version}
+BuildRequires:  wxGTK-devel >= 2.8.10
+BuildRequires:  libusb-devel < 1.0
+
 
 %description
 Muhkuh is a powerful and flexible test tool for hardware designs. Plugins are
@@ -22,6 +32,7 @@ written in Lua and can be easily extended by the plugins.
 
 %prep
 %setup -q -n muhkuh-%{version}
+%patch -P 0 -p 1
 
 %build
 mkdir compile
@@ -61,9 +72,41 @@ written in Lua and can be easily extended by the plugins.
 
 #----------------------------------------------------------------------------
 
+%package lua-bit
+Summary:        Bit operations for Lua
+Group:          Applications/Engineering
+Requires:       lua >= %{lua_version}
+
+%description lua-bit
+Muhkuh is a powerful and flexible test tool for hardware designs. Plugins are
+used to access the device under test or the testing equipment. Testcases are
+written in Lua and can be easily extended by the plugins.
+
+%files lua-bit
+%{_libdir}/lua/5.1/bit.so
+
+#----------------------------------------------------------------------------
+
+%package lua-mhash
+Summary:        MHash binding for Lua
+Group:          Applications/Engineering
+Requires:       lua >= %{lua_version}
+
+%description lua-mhash
+Muhkuh is a powerful and flexible test tool for hardware designs. Plugins are
+used to access the device under test or the testing equipment. Testcases are
+written in Lua and can be easily extended by the plugins.
+
+%files lua-mhash
+%{_libdir}/lua/5.1/mhash.so
+
+#----------------------------------------------------------------------------
+
 %package lua
 Summary:        The lua binding and scripts
 Group:          Applications/Engineering
+Requires:       lua >= %{lua_version}
+Requires:       muhkuh-common
 
 %description lua
 Muhkuh is a powerful and flexible test tool for hardware designs. Plugins are
@@ -71,8 +114,6 @@ used to access the device under test or the testing equipment. Testcases are
 written in Lua and can be easily extended by the plugins.
 
 %files lua
-%{_libdir}/lua/5.1/bit.so
-%{_libdir}/lua/5.1/mhash.so
 %{_libdir}/lua/5.1/muhkuh.so
 %{_libdir}/lua/5.1/romloader.so
 %{_libdir}/lua/5.1/romloader_uart.so
