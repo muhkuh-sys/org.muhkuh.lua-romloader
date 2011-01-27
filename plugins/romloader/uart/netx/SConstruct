@@ -35,14 +35,19 @@ sources_common = """
 	src/header.S
 	src/init_netx_test.S
 	src/main.c
-	src/options.c
 	src/systime.c
-	src/uartmon.c
+	src/uprintf.c
 """
+#	src/uartmon.c
 
 
 sources_custom_netx500 = """
 	src/netx500/netx500_io_areas.c
+"""
+
+
+sources_custom_netx50 = """
+	src/netx50/netx50_io_areas.c
 """
 
 
@@ -51,6 +56,7 @@ sources_custom_netx10 = """
 """
 
 src_netx500 = Split(sources_common+sources_custom_netx500)
+src_netx50  = Split(sources_common+sources_custom_netx50)
 src_netx10  = Split(sources_common+sources_custom_netx10)
 
 
@@ -66,6 +72,21 @@ elf_netx500_intram = env_netx500_intram.Elf('targets/uartmon_netx500_intram', sr
 bin_netx500_intram = env_netx500_intram.ObjCopy('targets/uartmon_netx500_intram', elf_netx500_intram)
 env_netx500_intram.DataArray('targets/uartmon_netx500_intram.c', bin_netx500_intram, DATAARRAY_NAME='auc_uartmon_netx500_intram')
 
+
+#----------------------------------------------------------------------------
+#
+# Build the netX50 files.
+#
+env_netx50_intram = env_netx50_default.Clone()
+env_netx50_intram.Replace(LDFILE = 'src/netx50/netx50.ld')
+env_netx50_intram.Append(CPPPATH = ['src', 'src/netx50'])
+src_netx50_intram = env_netx50_intram.SetBuildPath('targets/netx50_intram', 'src', src_netx50)
+elf_netx50_intram = env_netx50_intram.Elf('targets/uartmon_netx50_intram', src_netx50_intram)
+bin_netx50_intram = env_netx50_intram.ObjCopy('targets/uartmon_netx50_intram', elf_netx50_intram)
+env_netx50_intram.DataArray('targets/uartmon_netx50_intram.c', bin_netx50_intram, DATAARRAY_NAME='auc_uartmon_netx50_intram')
+env_netx50_intram.UUEncode('targets/uartmon_netx50_intram.uue', bin_netx50_intram, UUE_PRE = """
+LUUE 08008000
+""", UUE_POST = "")
 
 #----------------------------------------------------------------------------
 #

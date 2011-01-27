@@ -32,43 +32,36 @@ SECTIONS
 	} >ASSERT_EMPTY
 
 
-	.serialvectors 0x04000ff0 :
+	.bss ORIGIN(DTCM) :
+	{
+		/* zero-initialized data */
+
+		__bss_start__ = . ;
+
+		*(.bss)
+		*(COMMON)
+
+		__bss_end__ = . ;
+	} >DTCM
+
+
+	.serialvectors ORIGIN(DTCM)+LENGTH(DTCM)-0x10 :
 	{
 		PROVIDE ( tSerialVectors = . );
 		. = . + 0x10;
 	} >DTCM
 
-	.stack 0x08000004 :
-	{
-		. = . + 0x7ffc;
-		PROVIDE ( stack_top = . );
-	} >INTRAM
+	/* set the top of the stack to the end of INTRAM1 */
+	stack_top = ORIGIN(DTCM) + LENGTH(DTCM) - 0x10;
 
-
-	.code 0x08008000 :
+	.code ORIGIN(INTRAM)+0x100 :
 	{
 		load_address = . ;
+
 		*(.header)
 		*(.init_code)
 		*(.text)
-	
-		/* .rodata section which is used for read-only data (constants) */
 		*(.rodata*)
-	} >INTRAM
-
-	.bss :
-	{
-		PROVIDE ( __bss_start__ = . );
-		*(.bss)
-		*(COMMON)
-		PROVIDE ( __bss_end__ = . );
-	} >INTRAM
-
-	.parameter ALIGN(0x0100) :
-	{
-		parameter_start_address = . ;
-		. = . + 0x0100;
-		parameter_end_address = . ;
 	} >INTRAM
 
 

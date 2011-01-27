@@ -23,6 +23,9 @@
 #define __USBMONITOR_COMMANDS_H__
 
 
+#define UARTMON_PACKET_START 0x2a
+
+
 typedef enum
 {
 	USBMON_COMMAND_Read                    = 0x00,
