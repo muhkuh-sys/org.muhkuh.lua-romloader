@@ -1122,7 +1122,14 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 					fIsRunning = callback_string(&tLuaFn, pcProgressData, sizProgressData, lCallbackUserData);
 					if( fIsRunning!=true )
 					{
-						break;
+						/* Send a cancel request to the device. */
+						aucOutBuf[0] = 0x2b;
+						iResult = m_ptUsbDevice->send_packet(aucOutBuf, 1, 100);
+
+//						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): the call was canceled!", m_pcName, this);
+//						fOk = false;
+//						fOk = true;
+//						break;
 					}
 				}
 			}

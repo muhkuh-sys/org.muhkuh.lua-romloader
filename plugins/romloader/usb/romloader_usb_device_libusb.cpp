@@ -20,6 +20,7 @@
 
 
 #include <ctype.h>
+#include <stddef.h>
 #include <stdio.h>
 
 #include "romloader_usb_device_libusb.h"
@@ -1246,14 +1247,11 @@ int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice
 }
 
 
-int romloader_usb_device_libusb::execute_command(const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned char *aucInBuf, size_t *psizInBuf)
+int romloader_usb_device_libusb::send_packet(const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned int uiTimeoutMs)
 {
 	int iResult;
 	int iProcessed;
-	unsigned int uiTimeoutMs;
 
-
-	uiTimeoutMs = 100;
 
 	iResult = libusb_bulk_transfer(m_ptDevHandle, m_ucEndpoint_Out, (unsigned char*)aucOutBuf, sizOutBuf, &iProcessed, uiTimeoutMs);
 	if( iResult!=0 )
@@ -1264,25 +1262,6 @@ int romloader_usb_device_libusb::execute_command(const unsigned char *aucOutBuf,
 	{
 		fprintf(stderr, "%s(%p): Requested to send %d bytes, but only %d were processed!\n", m_pcPluginId, this, sizOutBuf, iProcessed);
 		iResult = 1;
-	}
-	else
-	{
-		iResult = libusb_bulk_transfer(m_ptDevHandle, m_ucEndpoint_In, aucInBuf, 64, &iProcessed, uiTimeoutMs);
-		if( iResult!=0 )
-		{
-			fprintf(stderr, "%s(%p): Failed to receive data: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
-		}
-		else if( iProcessed==0 )
-		{
-			fprintf(stderr, "%s(%p): Received empty packet!\n", m_pcPluginId, this);
-			iResult = 1;
-		}
-		else
-		{
-//			printf("received:\n");
-//			hexdump(aucInBuf, iProcessed);
-			*psizInBuf = iProcessed;
-		}
 	}
 
 	return iResult;
@@ -1306,6 +1285,40 @@ int romloader_usb_device_libusb::receive_packet(unsigned char *aucInBuf, size_t 
 		else
 		{
 			*psizInBuf = iProcessed;
+		}
+	}
+
+	return iResult;
+}
+
+
+int romloader_usb_device_libusb::execute_command(const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned char *aucInBuf, size_t *psizInBuf)
+{
+	int iResult;
+	size_t sizProcessed;
+	unsigned int uiTimeoutMs;
+
+
+	uiTimeoutMs = 100;
+
+	iResult = send_packet(aucOutBuf, sizOutBuf, uiTimeoutMs);
+	if( iResult!=0 )
+	{
+		fprintf(stderr, "%s(%p): Failed to send data: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
+	}
+	else
+	{
+		
+		iResult = receive_packet(aucInBuf, &sizProcessed, uiTimeoutMs);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "%s(%p): Failed to receive data: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
+		}
+		else
+		{
+//			printf("received:\n");
+//			hexdump(aucInBuf, iProcessed);
+			*psizInBuf = sizProcessed;
 		}
 	}
 
