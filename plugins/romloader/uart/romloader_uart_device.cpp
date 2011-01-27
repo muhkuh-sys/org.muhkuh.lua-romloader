@@ -21,20 +21,43 @@
 
 #include "romloader_uart_device.h"
 
-#include <wx/regex.h>
+#include <string.h>
+
+#ifdef _WINDOWS
+	#define CRITICAL_SECTION_ENTER(cs) EnterCriticalSection(&cs)
+	#define CRITICAL_SECTION_LEAVE(cs) LeaveCriticalSection(&cs)
+#else
+	#define CRITICAL_SECTION_ENTER(cs) pthread_mutex_lock(&cs)
+	#define CRITICAL_SECTION_LEAVE(cs) pthread_mutex_unlock(&cs)
+#endif
 
 
-romloader_uart_device::romloader_uart_device(wxString strPortName)
- : m_strPortName(strPortName)
+#ifndef _WINDOWS
+static const pthread_mutex_t s_mutex_init = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
+romloader_uart_device::romloader_uart_device(const char *pcPortName)
+ : m_pcPortName(NULL)
  , m_ptFirstCard(NULL)
  , m_ptLastCard(NULL)
 {
+	m_pcPortName = strdup(pcPortName);
+
+#ifdef _WINDOWS
+	InitializeCriticalSection(&m_csCardLock);
+#else
+	memcpy(&m_csCardLock, &s_mutex_init, sizeof(pthread_mutex_t));
+#endif
 }
 
 
 romloader_uart_device::~romloader_uart_device(void)
 {
 	deleteCards();
+
+#ifdef _WINDOWS
+	DeleteCriticalSection(&m_csCardLock);
+#endif
 }
 
 
@@ -63,8 +86,9 @@ void romloader_uart_device::deleteCards(void)
 {
 	tBufferCard *ptCard;
 	tBufferCard *ptNextCard;
-	wxCriticalSectionLocker locker(m_cCardLock);
 
+
+	CRITICAL_SECTION_ENTER(m_csCardLock);
 
 	ptCard = m_ptFirstCard;
 	while( ptCard!=NULL )
@@ -75,6 +99,8 @@ void romloader_uart_device::deleteCards(void)
 	}
 	m_ptFirstCard = NULL;
 	m_ptLastCard = NULL;
+
+	CRITICAL_SECTION_LEAVE(m_csCardLock);
 }
 
 
@@ -83,8 +109,9 @@ void romloader_uart_device::writeCards(const unsigned char *pucBuffer, size_t si
 	size_t sizLeft;
 	size_t sizChunk;
 	tBufferCard *ptCard;
-	wxCriticalSectionLocker locker(m_cCardLock);
 
+
+	CRITICAL_SECTION_ENTER(m_csCardLock);
 
 	sizLeft = sizBufferSize;
 	while( sizLeft>0 )
@@ -120,6 +147,13 @@ void romloader_uart_device::writeCards(const unsigned char *pucBuffer, size_t si
 		pucBuffer += sizChunk;
 		sizLeft -= sizChunk;
 	}
+
+	CRITICAL_SECTION_LEAVE(m_csCardLock);
+
+	/* Set the signal for received data. */
+	pthread_mutex_lock(&m_tRxDataAvail_Mutex);
+	pthread_cond_signal(&m_tRxDataAvail_Condition);
+	pthread_mutex_unlock(&m_tRxDataAvail_Mutex);
 }
 
 
@@ -155,7 +189,7 @@ size_t romloader_uart_device::readCardData(unsigned char *pucBuffer, size_t sizB
 	else if( m_ptFirstCard->pucWrite!=NULL )
 	{
 		// the first card is used by the write part -> lock the cards
-		wxCriticalSectionLocker locker(m_cCardLock);
+		CRITICAL_SECTION_ENTER(m_csCardLock);
 
 		// get the number of bytes left in this card
 		sizRead = m_ptFirstCard->pucWrite - m_ptFirstCard->pucRead;
@@ -171,6 +205,8 @@ size_t romloader_uart_device::readCardData(unsigned char *pucBuffer, size_t sizB
 			// advance the read pointer
 			m_ptFirstCard->pucRead += sizRead;
 		}
+
+		CRITICAL_SECTION_LEAVE(m_csCardLock);
 	}
 	else
 	{
@@ -235,8 +271,8 @@ size_t romloader_uart_device::getCardSize(void) const
   return sizData;
 }
 
-
-bool romloader_uart_device::SendString(wxString strData, unsigned long ulTimeout)
+/*
+bool romloader_uart_device::SendString(const char pcData, size_t sizData, unsigned long ulTimeout)
 {
 	unsigned long ulSentBytes;
 	unsigned long ulDataLength;
@@ -454,7 +490,7 @@ bool romloader_uart_device::GetPrompt(unsigned long ulTimeout)
 	// all ok!
 	return true;
 }
-
+*/
 
 unsigned int romloader_uart_device::CalcCrc16(unsigned int uiCrc, unsigned int uiData)
 {
@@ -467,7 +503,7 @@ unsigned int romloader_uart_device::CalcCrc16(unsigned int uiCrc, unsigned int u
 	return uiCrc;
 }
 
-
+/*
 bool romloader_uart_device::GetLine(wxString &strData, const char *pcEol, unsigned long ulTimeout)
 {
 	bool fRet = false;
@@ -490,7 +526,7 @@ bool romloader_uart_device::GetLine(wxString &strData, const char *pcEol, unsign
 	{
 		if(0 == RecvRaw(&bRecv, 1, ulTimeout))
 		{
-			/* timeout receiving char */
+			// timeout receiving char
 			break;
 		}
 		else
@@ -575,159 +611,159 @@ bool romloader_uart_device::WaitForResponse(wxString &strData, size_t sizMaxLen,
 
 	return fOk;
 }
-
+*/
 
 bool romloader_uart_device::IdentifyLoader(void)
 {
 	bool fResult = false;
-	wxRegEx reFirstResponse(wxT("netX.* Step [A-Za-z0-9]"));
-	wxRegEx reInvalidCmd(wxT(".*\\?[0-9]{8}[\r\n]*>"));
-
-	const unsigned char abKnock[2]        = { '*', '#' };
-
-    wxString            strMsg;
-    wxString            strHexValue;
-    unsigned long       ulLength;
-    unsigned char       ucData;
-    wxString            strResponse;
-    unsigned char       abData[3];
-    wxString            strNewInterfaceName;
+	//wxRegEx reFirstResponse(wxT("netX.* Step [A-Za-z0-9]"));
+	//wxRegEx reInvalidCmd(wxT(".*\\?[0-9]{8}[\r\n]*>"));
+	const unsigned char aucKnock[2] = { '*', '#' };
+	unsigned long ulLength;
+	unsigned char aucData[1];
+	unsigned char *pucResponse;
 
 
-    wxASSERT(reFirstResponse.IsValid());
-    wxASSERT(reInvalidCmd.IsValid());
-
-
-	// send knock sequence with 1 second timeout
-	wxLogMessage(wxT("sending knock sequence..."));
-	if( SendRaw(abKnock, 2, 1000)!=2 )
+	/* Send knock sequence with 1 second timeout. */
+	if( SendRaw(aucKnock, sizeof(aucKnock), 1000)!=sizeof(aucKnock) )
 	{
-		wxLogError(wxT("failed to send knock sequence to device"));
+		/* Failed to send knock sequence to device. */
+		fprintf(stderr, "Failed to send knock sequence to device.\n");
 	}
 	else if( Flush()!=true )
 	{
-		wxLogError(wxT("failed to flush the knock sequence"));
-	}
-	else if( (ulLength=RecvRaw(&ucData, 1, 5000))!=1 )
-	{
-		wxLogMessage(wxT("failed to receive first char of knock response"));
+		/* Failed to flush the knock sequence. */
+		fprintf(stderr, "Failed to flush the knock sequence.\n");
 	}
 	else
 	{
-		wxLogMessage(wxT("received knock response: 0x%02x"), ucData);
-		// this should be '\f', but the first bits might be trashed
-		if( ucData<0x20 )
-		{
-			// this seems to be the welcome message
-
-			// receive the rest of the line
-			wxLogMessage(wxT("receive the rest of the knock response"));
-			fResult = GetLine(strResponse, "\r\n", 1000);
-			if( fResult!=true )
-			{
-				wxLogMessage(wxT("failed to receive the rest of the knock response"));
-			}
-			else
-			{
-				// check for initial bootloader message
-				fResult = reFirstResponse.Matches(strResponse);
-				if( fResult!=true )
-				{
-					// seems to be no netX bootloader
-					wxLogMessage(wxT("the knock response does not match the romloader message"));
-					wxLogMessage(wxT("received this response: '") + strResponse + wxT("'"));
-				}
-				else
-				{
-					// get prompt, the real console eats the first space, the usb console will echo it
-					fResult = false;
-					ulLength = RecvRaw(abData, 3, 1000);
-					if( ulLength==0 )
-					{
-						wxLogMessage(wxT("received no further data after romloader message"));
-					}
-					else if( abData[0]!='>' )
-					{
-						wxLogMessage(wxT("received strange response after romloader message"));
-						wxLogMessage(wxT("len: %d, data = 0x%02x, 0x%02x, 0x%02x"), ulLength, abData[0], abData[1], abData[2]);
-					}
-					else if( ulLength==1 )
-					{
-						wxLogMessage(wxT("ok, received prompt!"));
-						fResult = true;
-					}
-					else if( ulLength==2 && abData[1]=='#' )
-					{
-						wxLogMessage(wxT("ok, received hash!"));
-						fResult = true;
-					}
-					else if( ulLength==3 && abData[1]=='*' && abData[2]=='#' )
-					{
-						wxLogMessage(wxT("ok, received star and hash!"));
-						fResult = true;
-					}
-					else
-					{
-						wxLogMessage(wxT("received strange response after romloader message"));
-						wxLogMessage(wxT("len: %d, data = 0x%02x, 0x%02x, 0x%02x"), ulLength, abData[0], abData[1], abData[2]);
-					}
-				}
-			}
-		}
-		// knock echoed -> this is the prompt
-		else if( ucData=='*' )
-		{
-			wxLogMessage(wxT("ok, received star!"));
-
-			// get rest of knock sequence
-			ulLength = RecvRaw(abData, 1, 1000);
-			if( ulLength==0 )
-			{
-				wxLogMessage(wxT("failed to receive response after the star"));
-			}
-			else if( abData[0]!='#' )
-			{
-				wxLogMessage(wxT("received strange response after the star: 0x%02x"), abData[0]);
-			}
-			else
-			{
-				wxLogMessage(wxT("ok, received hash!"));
-				fResult = true;
-			}
-		}
-		else if( ucData=='#' )
-		{
-			wxLogMessage(wxT("ok, received hash!"));
-
-			fResult = true;
+		ulLength = RecvRaw(aucData, 1, 5000);
+	 	if( ulLength!=1 )
+	 	{
+			/* Failed to receive first char of knock response. */
+			fprintf(stderr, "Failed to receive first char of knock response.\n");
 		}
 		else
 		{
-			wxLogMessage(wxT("strange or no response from device, seems to be no netx"));
+			// wxLogMessage(wxT("received knock response: 0x%02x"), ucData);
+			printf("received knock response: 0x%02x", aucData);
+			/* This should be '\f', but the first bits might be trashed. */
+			if( aucData[0]<0x20 )
+			{
+				/* This seems to be the welcome message. */
+#if 0
+				// receive the rest of the line
+				//wxLogMessage(wxT("receive the rest of the knock response"));
+				fResult = GetLine(&pucResponse, "\r\n", 1000);
+				if( fResult!=true )
+				{
+					// failed to receive the rest of the knock response
+				}
+				else
+				{
+					// check for initial bootloader message
+					fResult = reFirstResponse.Matches(pucResponse);
+					if( fResult!=true )
+					{
+						// seems to be no netX bootloader
+						//wxLogMessage(wxT("the knock response does not match the romloader message"));
+						//wxLogMessage(wxT("received this response: '") + strResponse + wxT("'"));
+					}
+					else
+					{
+						// get prompt, the real console eats the first space, the usb console will echo it
+						fResult = false;
+						ulLength = RecvRaw(abData, 3, 1000);
+						if( ulLength==0 )
+						{
+							//wxLogMessage(wxT("received no further data after romloader message"));
+						}
+						else if( abData[0]!='>' )
+						{
+							//wxLogMessage(wxT("received strange response after romloader message"));
+							//wxLogMessage(wxT("len: %d, data = 0x%02x, 0x%02x, 0x%02x"), ulLength, abData[0], abData[1], abData[2]);
+						}
+						else if( ulLength==1 )
+						{
+							//wxLogMessage(wxT("ok, received prompt!"));
+							fResult = true;
+						}
+						else if( ulLength==2 && abData[1]=='#' )
+						{
+							//wxLogMessage(wxT("ok, received hash!"));
+							fResult = true;
+						}
+						else if( ulLength==3 && abData[1]=='*' && abData[2]=='#' )
+						{
+							//wxLogMessage(wxT("ok, received star and hash!"));
+							fResult = true;
+						}
+						else
+						{
+							//wxLogMessage(wxT("received strange response after romloader message"));
+							//wxLogMessage(wxT("len: %d, data = 0x%02x, 0x%02x, 0x%02x"), ulLength, abData[0], abData[1], abData[2]);
+						}
+					}
+				}
+#endif
+			}
+			/* Knock echoed -> this is the prompt. */
+			else if( aucData[0]=='*' )
+			{
+				printf("ok, received star!\n");
+
+				// get rest of knock sequence
+				ulLength = RecvRaw(aucData, 1, 1000);
+				if( ulLength==0 )
+				{
+					printf("failed to receive response after the star\n");
+				}
+				else if( aucData[0]!='#' )
+				{
+					printf("received strange response after the star: 0x%02x\n", aucData[0]);
+				}
+				else
+				{
+					printf("ok, received hash!\n");
+					fResult = true;
+				}
+			}
+			else if( aucData[0]=='#' )
+			{
+				printf("ok, received hash!\n");
+
+				fResult = true;
+			}
+			else
+			{
+				printf("strange or no response from device, seems to be no netx\n");
+			}
 		}
 	}
 
 	if( fResult==true )
 	{
+#if 0
 		// send enter
-		wxLogMessage(wxT("sending enter to netx"));
-		fResult = SendCommand(wxT(""), 1000);
+		//wxLogMessage(wxT("sending enter to netx"));
+		fResult = SendCommand("", 1000);
 		if( fResult!=true )
 		{
-			wxLogError(wxT("failed to send enter to device"));
+			//wxLogError(wxT("failed to send enter to device"));
 		}
 		else
 		{
-			fResult = WaitForResponse(strResponse, 65536, 1024);
+			fResult = WaitForResponse(&pucResponse, 65536, 1024);
 			if( fResult!=true )
 			{
-				wxLogMessage(wxT("failed to receive response after enter"));
+				//wxLogMessage(wxT("failed to receive response after enter"));
 			}
 			else
 			{
-				wxLogMessage(wxT("knock response:") + strResponse);
+				//wxLogMessage(wxT("knock response:") + strResponse);
 			}
 		}
+#endif
 	}
 
 

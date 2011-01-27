@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2008 by Christoph Thelen                                *
+ *   Copyright (C) 2010 by Christoph Thelen                                *
  *   doc_bacardi@users.sourceforge.net                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,99 +18,95 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include <wx/wx.h>
 
-#include <vector>
+#include "../romloader.h"
 
 #ifndef __ROMLOADER_UART_MAIN_H__
 #define __ROMLOADER_UART_MAIN_H__
 
-#include "../romloader.h"
 
-#ifdef __LINUX__
-	#include "romloader_uart_device_linux.h"
-	typedef romloader_uart_device_linux romloader_uart_device_platform;
+#ifdef _WIN32
+	#include "romloader_uart_device_win.h"
+	#define romloader_uart_device_platform romloader_uart_device_win
 #else
-	#ifdef __WINDOWS__
-		#include "romloader_uart_device_win.h"
-		typedef romloader_uart_device_win romloader_uart_device_platform;
-	#else
-		#error "Unknown platform, please add uart handler!"
-	#endif
+	#include "romloader_uart_device_linux.h"
+	#define romloader_uart_device_platform romloader_uart_device_linux
 #endif
+
 
 /*-----------------------------------*/
 
-extern "C"
-{
-	WXEXPORT int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId);
-	WXEXPORT int fn_init_lua(wxLuaState *ptLuaState);
-	WXEXPORT int fn_leave(void);
-	WXEXPORT const muhkuh_plugin_desc *fn_get_desc(void);
-	WXEXPORT int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList);
+class romloader_uart_provider;
 
-	WXEXPORT romloader *romloader_uart_create(void *pvHandle);
-}
-
-
-typedef void (*romloader_uart_plugin_fn_close_instance)(wxString &strInterface);
-
+/*-----------------------------------*/
 
 class romloader_uart : public romloader
 {
 public:
-	romloader_uart(wxString strName, wxString strTyp, const romloader_functioninterface *ptFn, void *pvHandle, romloader_uart_plugin_fn_close_instance fn_close, wxLuaState *ptLuaState);
+	romloader_uart(const char *pcName, const char *pcTyp, romloader_uart_provider *ptProvider, const char *pcDeviceName);
 	~romloader_uart(void);
 
 // *** lua interface start ***
 	// open the connection to the device
-	virtual void connect(void);
+	virtual void Connect(lua_State *ptClientData);
 	// close the connection to the device
-	virtual void disconnect(void);
-	// returns the connection state of the device
-	virtual bool is_connected(void) const;
+	virtual void Disconnect(lua_State *ptClientData);
 
 	// read a byte (8bit) from the netx to the pc
-	virtual double read_data08(double dNetxAddress);
+	virtual unsigned char read_data08(lua_State *ptClientData, unsigned long ulNetxAddress);
 	// read a word (16bit) from the netx to the pc
-	virtual double read_data16(double dNetxAddress);
+	virtual unsigned short read_data16(lua_State *ptClientData, unsigned long ulNetxAddress);
 	// read a long (32bit) from the netx to the pc
-	virtual double read_data32(double dNetxAddress);
+	virtual unsigned long read_data32(lua_State *ptClientData, unsigned long ulNetxAddress);
 	// read a byte array from the netx to the pc
-	virtual wxString read_image(double dNetxAddress, double dSize, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+	virtual void read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 
 	// write a byte (8bit) from the pc to the netx
-	virtual void write_data08(double dNetxAddress, double dData);
+	virtual void write_data08(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned char ucData);
 	// write a word (16bit) from the pc to the netx
-	virtual void write_data16(double dNetxAddress, double dData);
+	virtual void write_data16(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned short usData);
 	// write a long (32bit) from the pc to the netx
-	virtual void write_data32(double dNetxAddress, double dData);
+	virtual void write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData);
 	// write a byte array from the pc to the netx
-	virtual void write_image(double dNetxAddress, wxString strData, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+	virtual void write_image(unsigned long ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 
 	// call routine
-	virtual void call(double dNetxAddress, double dParameterR0, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData);
+	virtual void call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 // *** lua interface end ***
 
 private:
-	bool chip_init(void);
-	int write_data(wxString &strData, unsigned long ulLoadAdr, lua_State *L, int iLuaCallbackTag, void *pvCallbackUserData, wxString &strErrorMsg);
-	bool parseDumpLine(const char *pcLine, size_t sizLineLen, unsigned long ulAddress, unsigned long ulElements, unsigned char *pucBuffer, wxString &strErrorMsg);
-  unsigned int buildCrc(const char *pcData, size_t sizDataLen);
+	bool chip_init(lua_State *ptClientData);
 
 	bool m_fIsConnected;
-
-	romloader_uart_device *m_ptUartDev;
-
-	romloader_uart_plugin_fn_close_instance m_fn_uart_close;
-
-	wxString m_strInterface;
-	wxString m_strTyp;
-
-	// formatted name for log message
-	wxString m_strMe;
+	romloader_uart_device_platform *m_ptUartDev;
 };
 
+/*-----------------------------------*/
+
+class romloader_uart_provider : public muhkuh_plugin_provider
+{
+public:
+	romloader_uart_provider(swig_type_info *p_romloader_uart, swig_type_info *p_romloader_uart_reference);
+	~romloader_uart_provider(void);
+
+	int DetectInterfaces(lua_State *ptLuaStateForTableAccess);
+
+	virtual romloader_uart *ClaimInterface(const muhkuh_plugin_reference *ptReference);
+	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin);
+
+private:
+	static const char *m_pcPluginNamePattern;
+};
+
+/*-----------------------------------*/
+
+class romloader_uart_reference : public muhkuh_plugin_reference
+{
+public:
+	romloader_uart_reference(void);
+	romloader_uart_reference(const char *pcName, const char *pcTyp, bool fIsUsed, romloader_uart_provider *ptProvider);
+	romloader_uart_reference(const romloader_uart_reference *ptCloneMe);
+};
 
 /*-----------------------------------*/
 

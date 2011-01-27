@@ -49,7 +49,7 @@ public:
   bool                  Flush(void);
   unsigned long         Peek(void);
 
-  static unsigned long  ScanForPorts(wxArrayString *ptArray);
+  static unsigned long  ScanForPorts(lua_State *ptLuaState, muhkuh_plugin_provider *ptProvider);
 
 protected:
   unsigned long GetMaxBlockSize(void) { return 4096; }

@@ -22,17 +22,21 @@
 #define __ROMLOADER_UART_DEVICE_H__
 
 
-#include <wx/wx.h>
+#include "../romloader.h"
+
+#ifdef _WINDOWS
+	#include <windows.h>
+#else
+	#include <pthread.h>
+#endif
+
 
 typedef bool(*PFN_LOAD_CALLBACK)(void* pvUser, unsigned long ulTransferred, unsigned long ulTotalSize);
-
-typedef bool(*PFN_PROGRESS_CALLBACK)(void* pvUser, int iProgress, wxString strMessage);
-
 
 class romloader_uart_device
 {
 public:
-	romloader_uart_device(wxString strPortName);
+	romloader_uart_device(const char *pcPortName);
 	~romloader_uart_device(void);
 
 	/* low level interface is platform specific */
@@ -48,13 +52,14 @@ public:
 
 	/* higher level interface */
 	bool IdentifyLoader(void);
+/*
 	bool WaitForResponse(wxString &strData, size_t sizMaxLen, unsigned long ulTimeout);
 	bool SendString(wxString strData, unsigned long ulTimeout);
 	bool GetLine(wxString &strData, const char *pcEol, unsigned long ulTimeout);
 	bool SendCommand(wxString strCmd, unsigned long ulTimeout);
 	bool Load(const unsigned char* pbData, unsigned long ulDataLen, unsigned long ulLoadAddress, PFN_LOAD_CALLBACK pfnCallback = NULL, void* pvUser = NULL);
 	bool GetPrompt(unsigned long ulTimeout);
-
+*/
 
 	static unsigned int CalcCrc16(unsigned int uiCrc, unsigned int uiData);
 
@@ -80,15 +85,21 @@ public:
 
 
 protected:
-	wxString m_strPortName;
+	char *m_pcPortName;
 
 	tBufferCard *m_ptFirstCard;
 	tBufferCard *m_ptLastCard;
-	wxCriticalSection m_cCardLock;
+#ifdef _WINDOWS
+	CRITICAL_SECTION m_csCardLock;
+#else
+	pthread_mutex_t m_csCardLock;
+
+	pthread_cond_t		m_tRxDataAvail_Condition;
+	pthread_mutex_t		m_tRxDataAvail_Mutex;
+#endif
 
 private:
 	size_t readCardData(unsigned char *pucBuffer, size_t sizBufferSize);
-
 };
 
 

@@ -18,9 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include <wx/wx.h>
-#include <wx/thread.h>
-
+#include <pthread.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -31,13 +29,19 @@
 #include "romloader_uart_device.h"
 
 
-class rxThread;
+class romloader_uart_device_linux;
+
+typedef struct
+{
+	int hPort;
+	romloader_uart_device_linux *ptParent;
+} RXTHREAD_PDATA_T;
 
 
 class romloader_uart_device_linux : public romloader_uart_device
 {
 public:
-	romloader_uart_device_linux(wxString strPortName);
+	romloader_uart_device_linux(const char *pcPortName);
 	virtual ~romloader_uart_device_linux();
 
 	virtual bool		Open(void);
@@ -46,14 +50,13 @@ public:
 	unsigned long		SendRaw(const unsigned char *pbData, unsigned long ulDataLen, unsigned long ulTimeout);
 	bool			Cancel(void);
 	unsigned long		RecvRaw(unsigned char *pbData, unsigned long ulDataLen, unsigned long ulTimeout);
-	bool			GetLine(wxString &strData, const char *pcEol, unsigned long ulTimeout);
+//	bool			GetLine(wxString &strData, const char *pcEol, unsigned long ulTimeout);
 	bool			Flush(void);
 	unsigned long		Peek(void);
 
-	static bool		scanSysFs(wxArrayString *ptArray);
-	static void		ScanForPorts(wxArrayString *ptArray);
+	static size_t		scanSysFs(char ***pppcPortNames);
+	static size_t		ScanForPorts(char ***pppcPortNames);
 
-	wxCondition *m_ptConditionRxDataAvail;
 protected:
 	unsigned long GetMaxBlockSize(void) { return 4096; }
 
@@ -61,22 +64,13 @@ protected:
 	struct termios m_tOldAttribs;
 
 private:
-	PFN_PROGRESS_CALLBACK m_pfnProgressCallback;
+//	PFN_PROGRESS_CALLBACK m_pfnProgressCallback;
 	void *m_pvCallbackUserData;
-	rxThread *m_ptRxThread;
-	wxMutex mutexRxDataAvail;
-};
 
-
-class rxThread : public wxThread
-{
-public:
-	rxThread(int hPort, romloader_uart_device_linux *ptParent);
-	ExitCode Entry(void);
-
-private:
-	int m_hPort;
-	romloader_uart_device_linux *m_ptParent;
+	/* the rx thread and its data structure */
+	bool m_fRxThreadIsRunning;
+	pthread_t m_tRxThread;
+	RXTHREAD_PDATA_T m_tRxPData;
 };
 
 
