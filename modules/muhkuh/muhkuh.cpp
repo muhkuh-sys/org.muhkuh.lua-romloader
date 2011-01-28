@@ -1,6 +1,9 @@
 
 #include "muhkuh.h"
 
+#include <wx/fs_inet.h>
+#include <wx/fs_zip.h>
+
 #include "growbuffer.h"
 #include "readFsFile.h"
 
@@ -59,15 +62,31 @@ const INT_CODE_TO_MESSAGE_T atLuaTypeToString[] =
 // DEBUG
 #include <stdio.h>
 
+
+
+void muhkuh_internal_init(void)
+{
+	wxFileSystem::AddHandler(new wxLocalFSHandler);
+	wxFileSystem::AddHandler(new wxZipFSHandler);
+	wxFileSystem::AddHandler(new wxInternetFSHandler);
+}
+
+
 wxString get_xml_url(lua_State *ptLua_State)
 {
 	wxString strXmlUrl;
+	wxFileName tFileName;
 
 
 	lua_getglobal(ptLua_State, "__MUHKUH_TEST_XML");
 	if( lua_isstring(ptLua_State, -1)==1 )
 	{
 		strXmlUrl = wxString::FromAscii(lua_tostring(ptLua_State, -1));
+	}
+	else
+	{
+		tFileName.AssignCwd();
+		strXmlUrl = wxFileSystem::FileNameToURL(tFileName);
 	}
 
 	return strXmlUrl;
@@ -263,13 +282,12 @@ void load(lua_State *ptLuaState, char *pcUrl, char **ppcBUFFER_OUT, size_t *psiz
 	growbuffer *ptGrowBuffer;
 
 
-	/* expect failure */
-	fResult = false;
-
 	strXmlUrl = get_xml_url(ptLuaState);
+
 	if( strXmlUrl.IsEmpty()==true )
 	{
 		lua_pushfstring(ptLuaState, "lua load: failed to get global __MUHKUH_TEST_XML");
+		fResult = false;
 	}
 	else
 	{
@@ -280,17 +298,21 @@ void load(lua_State *ptLuaState, char *pcUrl, char **ppcBUFFER_OUT, size_t *psiz
 		{
 			// the filename parameter is invalid
 			lua_pushfstring(ptLuaState, "lua load failed: empty filename");
+			fResult = false;
 		}
 		else
 		{
-//			strFileUrl = m_strTestBaseUrl + wxFileName::GetPathSeparator() + strFileName;
-			strFileUrl = strBaseUrl + strFileName;
-//			wxLogMessage(_("lua load: searching '%s'"), strFileUrl.fn_str());
+			/* Use the URI class to get rid of backsteps ("..") in the path. */
+			wxURI tURI(strBaseUrl + strFileName);
+			strFileUrl = tURI.BuildURI();
+
 			tUrlError = filelistUrl.SetURL(strFileUrl);
 			if( tUrlError!=wxURL_NOERR )
 			{
-			// show the error message
+				// show the error message
+				wxLogMessage(wxT("lua load: invalid URL '%s': %s"), strFileUrl.c_str(), muhkuh_lua_GetUrlErrorString(tUrlError));
 				lua_pushfstring(ptLuaState, "lua load: invalid URL '%s': %s", strFileUrl.c_str(), muhkuh_lua_GetUrlErrorString(tUrlError));
+				fResult = false;
 			}
 			else
 			{
@@ -298,6 +320,7 @@ void load(lua_State *ptLuaState, char *pcUrl, char **ppcBUFFER_OUT, size_t *psiz
 				fResult = readFsFile(ptGrowBuffer, strFileUrl);
 				if( fResult!=true )
 				{
+					wxLogMessage(wxT("lua load: failed to read file"));
 					lua_pushfstring(ptLuaState, "lua load: failed to read file");
 				}
 				else
@@ -313,6 +336,7 @@ void load(lua_State *ptLuaState, char *pcUrl, char **ppcBUFFER_OUT, size_t *psiz
 
 	if( fResult!=true )
 	{
+		wxLogMessage(wxT("Error!"));
 		lua_error(ptLuaState);
 	}
 }

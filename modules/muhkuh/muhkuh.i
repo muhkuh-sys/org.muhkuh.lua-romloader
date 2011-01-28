@@ -6,6 +6,12 @@
 	#include "muhkuh.h"
 %}
 
+
+%init %{
+	muhkuh_internal_init();
+%}
+
+
 #ifdef SWIGLUA
 /* This Lua code is executed on the first "require" operation for this
  * module. It adds some pure lua functions to the module.

@@ -10,6 +10,8 @@ extern "C"
 }
 
 
+void muhkuh_internal_init(void);
+
 const wxChar *muhkuh_lua_GetUrlErrorString(wxURLError tUrlError);
 const wxChar *muhkuh_lua_GetLuaErrorString(int iLuaError);
 const wxChar *muhkuh_lua_GetLuaTypeString(int iLuaType);

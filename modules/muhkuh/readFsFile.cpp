@@ -29,29 +29,36 @@ bool readFsFile(growbuffer *ptGrowBuffer, wxString strBinFile)
 	wxFSFile *ptFsFile;
 	wxInputStream *ptInputStream;
 	size_t sizLastRead;
+	bool fResult;
 
 
 	// test if file exists
 	ptFsFile = fileSystem.OpenFile(strBinFile);
 	if( ptFsFile==NULL )
 	{
-		return false;
+		wxLogMessage(wxT("failed to open the file!\n"));
+		fResult = false;
 	}
-
-	// ok, file exists. read all data into a string
-	ptInputStream = ptFsFile->GetStream();
-	while( ptInputStream->Eof()==false )
+	else
 	{
-		ptInputStream->Read(aucReadBuffer, uiReadBufferSize);
-		sizLastRead = ptInputStream->LastRead();
-		if( sizLastRead==0 )
+		// ok, file exists. read all data into a string
+		ptInputStream = ptFsFile->GetStream();
+		while( ptInputStream->Eof()==false )
 		{
-			break;
+			ptInputStream->Read(aucReadBuffer, uiReadBufferSize);
+			sizLastRead = ptInputStream->LastRead();
+			if( sizLastRead==0 )
+			{
+				break;
+			}
+			ptGrowBuffer->add(aucReadBuffer, sizLastRead);
 		}
-		ptGrowBuffer->add(aucReadBuffer, sizLastRead);
+
+		delete ptFsFile;
+
+		fResult = true;
 	}
 
-	delete ptFsFile;
-	return true;
+	return fResult;
 }
 
