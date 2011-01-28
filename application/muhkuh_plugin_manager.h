@@ -19,10 +19,11 @@
  ***************************************************************************/
 
 
+#include <stddef.h>
+
 #include <vector>
 
 #include <wx/defs.h>
-#include <wx/dynlib.h>
 #include <wx/filename.h>
 
 

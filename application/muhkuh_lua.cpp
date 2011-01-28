@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2007 by Christoph Thelen                                *
+ *   Copyright (C) 2010 by Christoph Thelen                                *
  *   doc_bacardi@users.sourceforge.net                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -19,30 +19,15 @@
  ***************************************************************************/
 
 
-#include <wx/wx.h>
+#include "muhkuh_version.h"
 
-#include <wx/app.h>
-#include <wx/config.h>
-#include <wx/fileconf.h>
-#include <wx/filename.h>
-
-
-#include "muhkuh_mainFrame.h"
-
-
-#ifndef __MUHKUH_APP_H__
-#define __MUHKUH_APP_H__
-
-class muhkuh_app : public wxApp
+static const char *pcMuhkuhVersion =
 {
-public:
-	bool OnInit(void);
-	int OnExit(void);
-
-	muhkuh_mainFrame *ptMainframe;
+	MUHKUH_APPLICATION_NAME " " MUHKUH_VERSION_STRING
 };
 
-DECLARE_APP(muhkuh_app);
-
-#endif	// __MUHKUH_APP_H__
+const char *get_version(void)
+{
+	return pcMuhkuhVersion;
+}
 

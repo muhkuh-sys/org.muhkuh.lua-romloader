@@ -30,16 +30,24 @@
 #include <wx/image.h>
 #include <wx/intl.h>
 #include <wx/listctrl.h>
+#include <wx/process.h>
 #include <wx/progdlg.h>
 #include <wx/splitter.h>
 #include <wx/tipdlg.h>
 
 
+#if defined(USE_LUA)
+extern "C" {
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
+}
+#endif
+
 #ifndef __MUHKUH_MAINFRAME_H__
 #define __MUHKUH_MAINFRAME_H__
 
 #include "muhkuh_id.h"
-#include "muhkuh_debugger.h"
 #include "muhkuh_plugin_manager.h"
 #include "muhkuh_repository_manager.h"
 #include "muhkuh_testTreeItemData.h"
@@ -49,16 +57,17 @@
 //-------------------------------------
 // the wxLua entries
 
-#include <wxlua/include/wxlua.h>
-#include <wxluasocket/include/wxldserv.h>
-#include <wxluasocket/include/wxldtarg.h>
-#include "plugins/_luaif/muhkuh_wxlua_bindings.h"
-#include "plugins/_luaif/bit_wxlua_bindings.h"
-
-extern "C"
+class muhkuh_server_process : public wxProcess
 {
-	#include <lualib.h>
-}
+public:
+        muhkuh_server_process(wxEvtHandler *parent, int id)
+        : wxProcess(parent, id)
+        {
+                /* catch stdout and stderr */
+                Redirect();
+        }
+};
+
 
 //-------------------------------------
 // Define the main frame
@@ -74,12 +83,12 @@ public:
 	void OnAbout(wxCommandEvent &event);
 	void OnConfigDialog(wxCommandEvent &event);
 	void OnHelp(wxCommandEvent &event);
-	void OnShowTip(wxCommandEvent &event);
-	void OnRestoreDefaultPerspective(wxCommandEvent &event);
+        void OnShowTip(wxCommandEvent &event);
+        void OnRestoreDefaultPerspective(wxCommandEvent &event);
 
-	void OnIdle(wxIdleEvent &event);
+        void OnIdle(wxIdleEvent &event);
 
-	void OnTestExecute(wxCommandEvent &event);
+        void OnTestExecute(wxCommandEvent &event);
 	void OnTestHelp(wxCommandEvent &event);
 	void OnTestRescan(wxCommandEvent &event);
 	void OnTestCancel(wxCommandEvent &event);
@@ -96,32 +105,18 @@ public:
 	void OnTestTreeItemActivated(wxTreeEvent &event);
 	void OnTestTreeItemSelected(wxTreeEvent &event);
 
-	void OnMtdLinkClicked(wxHtmlLinkEvent &event);
+        void OnMtdLinkClicked(wxHtmlLinkEvent &event);
 
-	// process the lua events
-	void OnLuaPrint(wxLuaEvent &event);
-	void OnLuaError(wxLuaEvent &event);
-
-	void OnNotebookPageClose(wxAuiNotebookEvent &event);
-	void OnPaneClose(wxAuiManagerEvent &event);
+        void OnNotebookPageClose(wxAuiNotebookEvent &event);
+        void OnPaneClose(wxAuiManagerEvent &event);
 
 	void OnServerProcessTerminate(wxProcessEvent &event);
 
-	void OnMove(wxMoveEvent &event);
-	void OnSize(wxSizeEvent &event);
+        void OnMove(wxMoveEvent &event);
+        void OnSize(wxSizeEvent &event);
 
-	// the lua functions
-	wxString luaLoad(wxString strFileName);
-	void luaInclude(wxString strFileName);
-	void luaScanPlugins(wxString strPattern);
-	muhkuh_plugin_instance *luaGetNextPlugin(void);
-	muhkuh_wrap_xml *luaGetSelectedTest(void);
-
-	static wxString htmlTag_lua(const wxString &strLuaCode);
-	wxString local_htmlTag_lua(const wxString &strLuaCode);
-
-	static bool repositoryScannerCallback(void *pvUser, wxString strMessage, int iProgressPos, int iProgressMax);
-	static const int m_iRepositoryProgressMax = 10000;
+        static bool repositoryScannerCallback(void *pvUser, wxString strMessage, int iProgressPos, int iProgressMax);
+        static const int m_iRepositoryProgressMax = 10000;
 
 	// main frame status
 	typedef enum {
@@ -135,27 +130,41 @@ public:
 	{
 		MAINFRAME_INIT_STATE_UNCONFIGURED,
 		MAINFRAME_INIT_STATE_CONFIGURED,
-		MAINFRAME_INIT_STATE_SCANNED
-	} MAINFRAME_INIT_STATE_E;
+                MAINFRAME_INIT_STATE_SCANNED
+        } MAINFRAME_INIT_STATE_E;
+
+#if defined(USE_LUA)
+        static wxString htmlTag_lua(const wxString &strLuaCode);
+        wxString local_htmlTag_lua(const wxString &strLuaCode);
+
+        typedef struct
+        {
+                int iLuaError;
+                const wxChar *pcMessage;
+        } LUA_ERROR_TO_STR_T;
+
+        typedef struct
+        {
+                int iLuaError;
+                const wxChar *pcMessage;
+        } LUA_TYPE_TO_STR_T;
+#endif
 
 private:
-	void init_lua(void);
-	void createMenu(void);
-	void createControls(void);
-	void createTipProvider(void);
+        void createMenu(void);
+        void createControls(void);
+        void createTipProvider(void);
 	void createWelcomeWindow(void);
 	void createTestDetailsWindow(void);
 
-	void read_config(void);
-	void write_config(void);
+        void read_config(void);
+        void write_config(void);
 
-	bool initLuaState(void);
-	void clearLuaState(void);
+        void executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex);
+        bool process_server_output(void);
+        void finishTest(void);
 
-	void executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex);
-	void finishTest(void);
-
-	void setState(muhkuh_mainFrame_state tNewState);
+        void setState(muhkuh_mainFrame_state tNewState);
 
 	void scanTests(int iActiveRepositoryIdx);
 	void addAllTests(int iActiveRepositoryIdx);
@@ -167,14 +176,14 @@ private:
 	bool addTestTree(testTreeItemData *ptTestTreeItem);
 
 	wxString loadHtmlString(wxString strFileUrl);
-	void reloadWelcomePage(void);
-	void reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml);
+        void reloadWelcomePage(void);
+        void reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml);
 
-	bool check_plugins(void);
+        bool check_plugins(void);
 
-	// main frame controls
-	wxAuiManager m_auiMgr;
-	// the default perspective
+        // main frame controls
+        wxAuiManager m_auiMgr;
+        // the default perspective
 	wxString strDefaultPerspective;
 
 	// gui elements
@@ -196,22 +205,16 @@ private:
 	// the application icons in different sizes
 	wxIconBundle m_frameIcons;
 
-	// state of the init process
-	MAINFRAME_INIT_STATE_E m_eInitState;
+        // state of the init process
+        MAINFRAME_INIT_STATE_E m_eInitState;
 
-	// the lua state
-	wxLuaState *m_ptLuaState;
-	// the debugger panel
-	muhkuh_debugger *m_debuggerPanel;
-	// the process id of the server task
-	long m_lServerPid;
-	// the debug server port
-	unsigned short m_usDebugServerPort;
-	// the server process notification
-	muhkuh_server_process *m_ptServerProcess;
+        // the process id of the server task
+        long m_lServerPid;
+        // the server process notification
+        muhkuh_server_process *m_ptServerProcess;
 
-	// main frame state
-	muhkuh_mainFrame_state m_state;
+        // main frame state
+        muhkuh_mainFrame_state m_state;
 	// TODO: replace the test name and idx with the xml wrapper object
 	// name of the running test
 	wxString m_strRunningTestName;
@@ -221,14 +224,14 @@ private:
 	// scanner progress dialog
 	wxProgressDialog *m_scannerProgress;
 
-	// number of loaded test descriptions
-	size_t m_sizTestCnt;
+        // number of loaded test descriptions
+        size_t m_sizTestCnt;
 
-	// the plugin manager
-	muhkuh_plugin_manager *m_ptPluginManager;
+        // the plugin manager
+        muhkuh_plugin_manager *m_ptPluginManager;
 
-	// the repository manager
-	muhkuh_repository_manager *m_ptRepositoryManager;
+        // the repository manager
+        muhkuh_repository_manager *m_ptRepositoryManager;
 
 	// help controller
 	wxHtmlHelpController *m_ptHelp;
@@ -242,36 +245,48 @@ private:
 
 	// the welcome page
 	wxString m_strWelcomePage;
-	// the test details page
-	wxString m_strTestDetails;
+        // the test details page
+        wxString m_strTestDetails;
 
-	// the lua include path
-	wxString m_strLuaIncludePath;
-	// lua startup code
-	wxString m_strLuaStartupCode;
-	// lua debugger startup code
-	wxString m_strLuaDebuggerCode;
+        /* NOTE: Keep the configuration dialog the same, even if lua or python
+                 is not compiled in. Just disable the controls, but show the
+                 user that it is there.
+        */
+        // the lua include path
+        wxString m_strLuaIncludePath;
+        // lua startup code
+        wxString m_strLuaStartupCode;
+        // the temp file with the settings and the startup code
+        wxString m_strRunningTestTempFileName;
 
-	// the welcome page file
-	wxString m_strWelcomePageFile;
-	// the details page file
-	wxString m_strDetailsPageFile;
+        // the welcome page file
+        wxString m_strWelcomePageFile;
+        // the details page file
+        wxString m_strDetailsPageFile;
 
-	bool m_fAutoStart;
-	bool m_fAutoExit;
-	wxString m_strAutoStartTest;
-	bool m_fRunningTestIsAutostart;
-
-	// the application title
-	wxString m_strApplicationTitle;
-	wxString m_strApplicationIcon;
+        // the application title
+        wxString m_strApplicationTitle;
+        wxString m_strApplicationIcon;
 
 	// the locale object
 	wxLocale m_locale;
 
 	// frame size and position
-	wxPoint m_framePosition;
-	wxSize m_frameSize;
+        wxPoint m_framePosition;
+        wxSize m_frameSize;
+
+
+        // lua stuff
+#if defined(USE_LUA)
+        void init_lua(void);
+
+        static const LUA_ERROR_TO_STR_T atLuaErrorToString[];
+        wxString lua_error_to_string(int iLuaError);
+        static const LUA_TYPE_TO_STR_T atLuaTypeToString[];
+        wxString lua_type_to_string(int iLuaType);
+        bool lua_get_errorinfo(lua_State *L, int iStatus, int iTop, wxString *pstrErrorMsg, int *piLineNum);
+        lua_State *m_ptLua_State;
+#endif
 
     DECLARE_EVENT_TABLE()
 };

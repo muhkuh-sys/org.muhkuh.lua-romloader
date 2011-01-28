@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2007 by Christoph Thelen                                *
+ *   Copyright (C) 2010 by Christoph Thelen                                *
  *   doc_bacardi@users.sourceforge.net                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -19,26 +19,10 @@
  ***************************************************************************/
 
 
-#include <wx/wx.h>
+%module muhkuh
 
-#include "muhkuh_plugin_manager.h"
-#include "muhkuh_wrap_xml.h"
+%{
+	#include "muhkuh_lua.h"
+%}
 
-
-#ifndef __MUHKUH_LUA_INTERFACE_H__
-#define __MUHKUH_LUA_INTERFACE_H__
-
-
-wxString load(wxString strFileName);
-void include(wxString strFileName);
-
-void setLogMarker(void);
-wxString getMarkedLog(void);
-
-void ScanPlugins(wxString strPattern);
-muhkuh_plugin_instance *GetNextPlugin(void);
-
-muhkuh_wrap_xml *GetSelectedTest();
-
-#endif	// __MUHKUH_LUA_INTERFACE_H__
-
+const char *get_version();

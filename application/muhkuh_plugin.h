@@ -23,15 +23,31 @@
 
 #include <wx/defs.h>
 #include <wx/confbase.h>
-#include <wx/dynlib.h>
 #include <wx/filename.h>
+#include <wx/xml/xml.h>
 
 
-#include "plugins/muhkuh_plugin_interface.h"
+#if defined(USE_LUA)
+extern "C" {
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
+}
+#endif
 
 
 #ifndef __MUHKUH_PLUGIN_H__
 #define __MUHKUH_PLUGIN_H__
+
+
+typedef struct
+{
+	wxString strPluginName;                                                                                                                                                                                      
+	wxString strPluginId;
+	unsigned int uiVersionMajor;                                                                                                                                                                                                     
+	unsigned int uiVersionMinor;                                                                                                                                                                                                     
+	unsigned int uiVersionSub;
+} MUHKUH_PLUGIN_DESCRIPTION_T;
 
 
 class muhkuh_plugin
@@ -54,63 +70,53 @@ public:
 	void write_config(wxConfigBase *pConfig);
 
 	bool Load(wxString strPluginCfgPath);
-
-	int fn_init_lua(wxLuaState *ptLuaState);
-	const muhkuh_plugin_desc *fn_get_desc(void) const;
-	int fn_detect_interfaces(std::vector<muhkuh_plugin_instance*> *pvInterfaceList);
-
-	typedef struct
-	{
-		const wxChar *pcSymbolName;
-		size_t sizOffset;
-	} muhkuh_plugin_symbol_offset_t;
+#if defined(USE_LUA)
+	bool LoadLua(lua_State *ptLuaState);
+#endif
 
 private:
 	// set prefix for messages
 	void setMe(void);
 
+	wxXmlNode *find_child_node(wxXmlNode *ptParentNode, wxString strNodeName);
 	bool openXml(wxString strXmlPath);
 	bool open(wxString strPluginPath);
 	void close(void);
 
-	int fn_init(wxLog *ptLogTarget, wxXmlNode *ptCfgNode, wxString &strPluginId);
-	int fn_leave(void);
-
 	void setInitError(wxString strMessage, wxString strPath);
 
 
-	// list of symbols for the plugin interface
-	static const muhkuh_plugin_symbol_offset_t atPluginSymbolOffsets[];
-
-	muhkuh_plugin_desc tPluginDesc;
-
 	bool m_fPluginIsEnabled;
-	muhkuh_plugin_interface m_tPluginIf;
 
-	wxLuaState *m_ptLuaState;
+	/* Full path and filename of the plugin's xml configuration. */
+	wxString m_strPluginCfgFullPath;
 
-	// full path to the plugins xml configuration
+	/* Path of the plugin's xml configuration without the filename. */
 	wxString m_strPluginCfgPath;
-	// the xml configuration
-	wxXmlDocument m_xmldoc;
-	// plugin name from the xml config (defaults to m_strPluginCfgPath)
-	wxString m_strCfgName;
-	// config node for the plugin settings (here the plugin reads/writes the settings)
-	wxXmlNode *m_ptCfgNode;
-	// complete path to the plugin dll
-	wxString m_strSoName;
-	// plugin id from the config xml
-	wxString m_strPluginId;
 
-	// plugin state
+	/* The complete xml document. */
+	wxXmlDocument m_xmldoc;
+
+	/* The plugin description from the xml file. */
+	MUHKUH_PLUGIN_DESCRIPTION_T m_tPluginDescription;
+
+	/* The contents of the context node as xml text. */
+	wxString m_strConfigNodeContents;
+
+#if defined(USE_LUA)
+	/* Complete path to the lua module. */
+	wxString m_strLuaModuleName;
+#endif
+
+	/* Plugin state. */
 	bool m_fPluginIsOk;
-	// init error
+	/* Init error message. */
 	wxString m_strInitError;
 
-	// prefix for messages
+	/* Common prefix for messages. */
 	wxString m_strMe;
 };
 
 
-#endif	/* __MUHKUH_PLUGIN_H__ */
+#endif  /* __MUHKUH_PLUGIN_H__ */
 

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2008 by Christoph Thelen                                *
+ *   Copyright (C) 2010 by Christoph Thelen                                *
  *   doc_bacardi@users.sourceforge.net                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -19,23 +19,11 @@
  ***************************************************************************/
 
 
-#ifndef __MUHKUH_DEBUG_MESSAGES_H__
-#define __MUHKUH_DEBUG_MESSAGES_H__
+#ifndef __MUHKUH_LUA_H__
+#define __MUHKUH_LUA_H__
 
 
-typedef enum
-{
-	MUHDBG_InterpreterHalted			= 0,
-	MUHDBG_CmdStepInto				= 1,
-	MUHDBG_CmdStepOver				= 2,
-	MUHDBG_CmdStepOut				= 3,
-	MUHDBG_CmdContinue				= 4,
-	MUHDBG_CmdBreak					= 5,
-	MUHDBG_CmdGetStack				= 6,
-	MUHDBG_CmdGetLocal				= 7,
-	MUHDBG_CmdGetUpValue				= 8,
-} tMUHDBG;
+const char *get_version(void);
 
 
-#endif	// __MUHKUH_DEBUG_MESSAGES_H__
-
+#endif	/* __MUHKUH_LUA_H__ */

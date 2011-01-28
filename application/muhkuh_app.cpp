@@ -54,9 +54,6 @@ IMPLEMENT_APP(muhkuh_app)
 
 bool muhkuh_app::OnInit()
 {
-	muhkuh_mainFrame *mainframe;
-
-
 	wxSocketBase::Initialize();
 
 	wxInitAllImageHandlers();
@@ -79,15 +76,15 @@ bool muhkuh_app::OnInit()
 
 	// set application and vendor name, this is needed
 	// for the config file (unix) or registry keys (win)
-	SetVendorName(wxT(MUHKUH_APPLICATION_NAME " team"));
+	SetVendorName(wxT(MUHKUH_APPLICATION_NAME) wxT(" team"));
 	SetAppName(wxT(MUHKUH_APPLICATION_NAME));
 
 	// create the muhkuh main frame
-	mainframe = new muhkuh_mainFrame();
+	ptMainframe = new muhkuh_mainFrame();
 
 	// show the frame
-	mainframe->Show(true);
-	SetTopWindow(mainframe);
+	ptMainframe->Show(true);
+	SetTopWindow(ptMainframe);
 
 	return true;
 }
