@@ -15,7 +15,7 @@
 
 	<repositories>
 		<!-- TODO: add your local repositories here. -->
-		<repository name="muhkuh@sourceforge">http://downloads.sourceforge.net/project/muhkuh/maven2</repository>
+		<repository name="muhkuh@sourceforge">http://downloads.sourceforge.net/project/muhkuh/mbs</repository>
 	</repositories>
 
 	<scons>
