@@ -93,3 +93,12 @@ arr_netx10_intram = env_netx10_intram.DataArray('targets/usbmon_netx10_intram.c'
 # Build the diff.
 #
 env_default.Diff('targets/usbmon_firmware.diff', arr_netx500_intram + arr_netx10_intram, DIFF_PATCHED_FOLDER='plugins/romloader/usb/netx')
+
+
+aTranslate = dict({
+	arr_netx500_intram[0]: 'plugins/romloader/usb/netx/targets/',
+	arr_netx500_intram[1]: 'plugins/romloader/usb/netx/targets/',
+	arr_netx10_intram[0]:  'plugins/romloader/usb/netx/targets/',
+	arr_netx10_intram[1]:  'plugins/romloader/usb/netx/targets/'
+})
+env_default.FlexZip('targets/usbmon_firmware.zip', arr_netx500_intram + arr_netx10_intram, ZIP_PATH_TRANSLATE=aTranslate)
