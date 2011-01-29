@@ -71,7 +71,7 @@ env_netx500_intram.Append(CPPPATH = ['src', 'src/netx500', 'src/usb_emsys'])
 src_netx500_intram = env_netx500_intram.SetBuildPath('targets/netx500_intram', 'src', src_netx500)
 elf_netx500_intram = env_netx500_intram.Elf('targets/usbmon_netx500_intram', src_netx500_intram)
 bin_netx500_intram = env_netx500_intram.ObjCopy('targets/usbmon_netx500_intram', elf_netx500_intram)
-env_netx500_intram.DataArray('targets/usbmon_netx500_intram.c', bin_netx500_intram, DATAARRAY_NAME='auc_usbmon_netx500_intram')
+arr_netx500_intram = env_netx500_intram.DataArray('targets/usbmon_netx500_intram.c', bin_netx500_intram, DATAARRAY_NAME='auc_usbmon_netx500_intram')
 
 
 #----------------------------------------------------------------------------
@@ -85,5 +85,11 @@ src_netx10_intram = env_netx10_intram.SetBuildPath('targets/netx10_intram', 'src
 env_netx10_intram.Replace(LDFILE = 'src/netx10/netx10_intram.ld')
 elf_netx10_intram = env_netx10_intram.Elf('targets/usbmon_netx10_intram', src_netx10_intram)
 bin_netx10_intram = env_netx10_intram.ObjCopy('targets/usbmon_netx10_intram', elf_netx10_intram)
-env_netx10_intram.DataArray('targets/usbmon_netx10_intram.c', bin_netx10_intram, DATAARRAY_NAME='auc_usbmon_netx10_intram')
+arr_netx10_intram = env_netx10_intram.DataArray('targets/usbmon_netx10_intram.c', bin_netx10_intram, DATAARRAY_NAME='auc_usbmon_netx10_intram')
 
+
+#----------------------------------------------------------------------------
+#
+# Build the diff.
+#
+env_default.Diff('targets/usbmon_firmware.diff', arr_netx500_intram + arr_netx10_intram, DIFF_PATCHED_FOLDER='plugins/romloader/usb/netx')
