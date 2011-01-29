@@ -26,12 +26,6 @@
 
 /*-----------------------------------*/
 
-#ifdef _WINDOWS
-typedef unsigned char uint8_t;
-#endif
-
-/*-----------------------------------*/
-
 #include "romloader_usb_device_libusb.h"
 
 /*-----------------------------------*/

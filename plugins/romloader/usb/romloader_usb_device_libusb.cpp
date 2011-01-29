@@ -54,11 +54,11 @@
 
 
 #if ROMLOADER_USB_LIBUSB_VERSION==0
-uint8_t libusb_get_bus_number(libusb_device *dev)
+unsigned char libusb_get_bus_number(libusb_device *dev)
 {
-	return (uint8_t)(dev->bus->location);
+	return (unsigned char)(dev->bus->location);
 }
-uint8_t libusb_get_device_address(libusb_device *dev)
+unsigned char libusb_get_device_address(libusb_device *dev)
 {
 	return dev->devnum;
 }
