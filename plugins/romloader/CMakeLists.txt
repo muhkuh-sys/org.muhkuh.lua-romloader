@@ -41,6 +41,10 @@ SET(romloader_lib_HEADERS
 add_library(romloader_lib STATIC ${romloader_lib_SOURCES})
 target_link_libraries(romloader_lib ${LUA_LIBRARIES} muhkuh_plugin_interface)
 set_target_properties(romloader_lib PROPERTIES PREFIX "")
+# This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
+IF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+	SET_TARGET_PROPERTIES(romloader_lib PROPERTIES COMPILE_FLAGS -fPIC)
+ENDIF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
 
 if(${LUA51_FOUND})
 	# Build the Lua module.

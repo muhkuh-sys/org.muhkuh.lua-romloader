@@ -89,7 +89,10 @@ set(mhash_HEADERS
 
 # Build the library.
 add_library(mhash_lib STATIC ${mhash_SOURCES})
-
+# This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
+IF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+	SET_TARGET_PROPERTIES(mhash_lib PROPERTIES COMPILE_FLAGS -fPIC)
+ENDIF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
 
 if(${LUA51_FOUND})
 	# Build the Lua module.

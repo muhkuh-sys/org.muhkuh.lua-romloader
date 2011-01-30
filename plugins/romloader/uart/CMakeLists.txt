@@ -62,6 +62,10 @@ SET(romloader_uart_HEADERS
 
 
 add_library(romloader_uart_lib STATIC ${romloader_uart_SOURCES})
+# This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
+IF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+	SET_TARGET_PROPERTIES(romloader_uart_lib PROPERTIES COMPILE_FLAGS -fPIC)
+ENDIF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
 
 
 if(${LUA51_FOUND})
