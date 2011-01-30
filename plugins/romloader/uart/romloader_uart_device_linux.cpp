@@ -224,7 +224,6 @@ void romloader_uart_device_linux::Close(void)
 {
 	pid_t pidTerm;
 	void *pvStatus;
-	int iStatus;
 
 
 	if( m_hPort!=-1 )
@@ -243,8 +242,7 @@ void romloader_uart_device_linux::Close(void)
 		pthread_cancel(m_tRxThread);
 		fprintf(stderr, "pthread_join\n");
 		pthread_join(m_tRxThread, &pvStatus);
-		iStatus = (int)pvStatus;
-		printf("rxthread returned status %d.\n", iStatus);
+		printf("rxthread returned status %p.\n", pvStatus);
 
 		m_fRxThreadIsRunning = false;
 	}
