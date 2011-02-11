@@ -4,6 +4,7 @@ require("tester")
 
 --require("romloader_baka")
 require("romloader_usb")
+require("romloader_uart")
 
 local function get_rnd_data(len)
 	local data = ""
@@ -131,7 +132,7 @@ tPlugin:Connect()
 print( tPlugin:IsConnected() )
 
 
-__MUHKUH_TEST_PARAMETER = { ["testarea"]=0x00010000, ["testsize"]=0x00000080, ["loops"]=0 }
+__MUHKUH_TEST_PARAMETER = { ["testarea"]=0x00010000, ["testsize"]=0x00000080, ["loops"]=1 }
 
 
 -- get the test parameters
@@ -190,7 +191,7 @@ while fLoopEndless==true or ulLoopCounter<parameter_loops do
 		print(string.format("write data:    0x%08X = 0x%08X", address, value))
 		tPlugin:write_data32(address, value)
 	end
-	data_readback = tester.stdRead(tPlugin, testarea, data:len())
+	data_readback = tester.stdRead(none, tPlugin, testarea, data:len())
 	print("Readback data:")
 	tester.hexdump(data_readback,16)
 	if data~=data_readback then
@@ -212,7 +213,7 @@ while fLoopEndless==true or ulLoopCounter<parameter_loops do
 		print(string.format("write data:    0x%08X = 0x%04X", address, value))
 		tPlugin:write_data16(address, value)
 	end
-	data_readback = tester.stdRead(tPlugin, testarea, data:len())
+	data_readback = tester.stdRead(none, tPlugin, testarea, data:len())
 	print("Readback data:")
 	tester.hexdump(data_readback,16)
 	if data~=data_readback then
@@ -234,7 +235,7 @@ while fLoopEndless==true or ulLoopCounter<parameter_loops do
 		print(string.format("write data:    0x%08X = 0x%02X", address, value))
 		tPlugin:write_data08(address, value)
 	end
-	data_readback = tester.stdRead(tPlugin, testarea, data:len())
+	data_readback = tester.stdRead(none, tPlugin, testarea, data:len())
 	print("Readback data:")
 	tester.hexdump(data_readback,16)
 	if data~=data_readback then
@@ -248,7 +249,7 @@ while fLoopEndless==true or ulLoopCounter<parameter_loops do
 	data = get_rnd_data(testsize)
 	print("Writing image:")
 	tester.hexdump(data,16)
-	tester.stdWrite(tPlugin, testarea, data)
+	tester.stdWrite(none, tPlugin, testarea, data)
 	data_readback = ""
 	for i=0,data:len()/4-1 do
 		local value
@@ -274,7 +275,7 @@ while fLoopEndless==true or ulLoopCounter<parameter_loops do
 	data = get_rnd_data(testsize)
 	print("Writing image:")
 	tester.hexdump(data,16)
-	tester.stdWrite(tPlugin, testarea, data)
+	tester.stdWrite(none, tPlugin, testarea, data)
 	data_readback = ""
 	for i=0,data:len()/2-1 do
 		local value
@@ -298,7 +299,7 @@ while fLoopEndless==true or ulLoopCounter<parameter_loops do
 	data = get_rnd_data(testsize)
 	print("Writing image:")
 	tester.hexdump(data,16)
-	tester.stdWrite(tPlugin, testarea, data)
+	tester.stdWrite(none, tPlugin, testarea, data)
 	data_readback = ""
 	for i=0,data:len()-1 do
 		local value
