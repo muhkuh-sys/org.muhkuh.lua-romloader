@@ -16,6 +16,7 @@
 /* This Lua code is executed on the first "require" operation for this
  * module. It adds some pure lua functions to the module.
  */
+/*
 %luacode
 {
 function muhkuh.TestHasFinished()
@@ -33,7 +34,19 @@ function muhkuh.TestHasFinished()
 	end
 end
 }
+*/
 #endif
 
 void load(lua_State *ptLuaState, char *pcUrl, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT);
 void include(lua_State *ptLuaState, char *pcUrl, char *pcChunkName);
+
+
+class muhkuh_capture_std
+{
+public:
+	muhkuh_capture_std(wxProcess *ptProcess, wxTextCtrl *ptTextCtrl);
+	~muhkuh_capture_std();
+
+	void execute();
+	void terminate();
+};
