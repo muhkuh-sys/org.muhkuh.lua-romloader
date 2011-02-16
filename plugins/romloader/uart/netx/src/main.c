@@ -60,8 +60,16 @@ static unsigned int crc16(unsigned short usCrc, unsigned char ucData)
 
 static void uart_buffer_init(void)
 {
+	uprintf("init\n");
 	sizBufferHead = 0;
 	sizBufferFill = 0;
+
+
+	uprintf("sizBufferHead = %d\n", sizBufferHead);
+	uprintf("&sizBufferHead = 0x%08x\n", &sizBufferHead);
+
+	uprintf("sizBufferFill = %d\n", sizBufferFill);
+	uprintf("&sizBufferFill = 0x%08x\n", &sizBufferFill);
 }
 
 
@@ -73,6 +81,11 @@ static int uart_buffer_fill(size_t sizRequestedFillLevel, unsigned int uiTimeout
 	unsigned int uiHasData;
 
 
+	uprintf("uart_buffer_fill: sizRequestedFillLevel=%d, uiTimeoutFlag=%d\n", sizRequestedFillLevel, uiTimeoutFlag);
+
+	uprintf("sizBufferHead = %d\n", sizBufferHead);
+	uprintf("sizBufferFill = %d\n", sizBufferFill);
+
 	/* Get the write position. */
 	sizWritePosition = sizBufferHead + sizBufferFill;
 	if( sizWritePosition>=MAX_PACKET_SIZE )
@@ -82,13 +95,16 @@ static int uart_buffer_fill(size_t sizRequestedFillLevel, unsigned int uiTimeout
 
 	iResult = 0;
 
-	if( uiTimeoutFlag==0 )
+	if( uiTimeoutFlag==UART_BUFFER_NO_TIMEOUT )
 	{
 		/* Fillup the buffer to the requested level. */
 		while( sizBufferFill<sizRequestedFillLevel )
 		{
 			/* Write the new byte to the buffer. */
 			aucPacketBuffer[sizWritePosition] = SERIAL_GET();
+
+			uprintf("Buffer[0x%04x] = 0x%02x\n", sizWritePosition, aucPacketBuffer[sizWritePosition]);
+
 			/* Increase the write position. */
 			++sizWritePosition;
 			if( sizWritePosition>=MAX_PACKET_SIZE )
@@ -147,6 +163,8 @@ static unsigned char uart_buffer_get(void)
 
 	ucByte = aucPacketBuffer[sizBufferHead];
 
+	uprintf("Get from %d = 0x%02x\n", sizBufferHead, ucByte);
+
 	++sizBufferHead;
 	if( sizBufferHead>=MAX_PACKET_SIZE )
 	{
@@ -172,6 +190,7 @@ static unsigned char uart_buffer_peek(size_t sizOffset)
 	}
 
 	ucByte = aucPacketBuffer[sizReadPosition];
+	uprintf("peek at offset %d = 0x%02x\n", sizOffset, ucByte);
 
 	return ucByte;
 }
