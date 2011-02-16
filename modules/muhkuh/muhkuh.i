@@ -4,6 +4,7 @@
 
 %{
 	#include "muhkuh.h"
+	#include "muhkuh_capture_std.h"
 %}
 
 
@@ -40,13 +41,27 @@ end
 void load(lua_State *ptLuaState, char *pcUrl, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT);
 void include(lua_State *ptLuaState, char *pcUrl, char *pcChunkName);
 
-
-class muhkuh_capture_std
+class capture_std
 {
 public:
-	muhkuh_capture_std(wxProcess *ptProcess, wxTextCtrl *ptTextCtrl);
-	~muhkuh_capture_std();
+	capture_std(wxString strCommand, wxProcess *ptProcess);
 
-	void execute();
-	void terminate();
+	wxThreadError Create(unsigned int stackSize = 0);
+	wxThreadError Run();
+
+	wxThreadError Delete(void **rc = NULL);
+	void *Wait();
+	wxThreadError Kill();
+
+	wxThreadError Pause();
+	wxThreadError Resume();
+
+	void SetPriority(unsigned int prio);
+	unsigned int GetPriority() const;
+
+	bool IsAlive() const;
+	bool IsRunning() const;
+	bool IsPaused() const;
+	bool IsDetached() const;
 };
+

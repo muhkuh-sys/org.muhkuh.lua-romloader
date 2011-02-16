@@ -21,40 +21,24 @@
 
 #include "muhkuh_capture_std.h"
 
-muhkuh_capture_std::muhkuh_capture_std(wxEvtHandler *ptParent=NULL, int iId=-1)
- : wxProcess(ptParent, iId)
-{
-	wxLogMessage("muhkuh_capture_std created");
-}
-
-muhkuh_capture_std::~muhkuh_capture_std(void)
-{
-	wxLogMessage("muhkuh_capture_std deleted");
-}
+#include <wx/txtstrm.h>
 
 
-void muhkuh_capture_std::OnTerminate(int iPid, int iStatus)
-{
-	wxLogMessage("muhkuh_capture_std process terminated");
-}
-
-
-
-MuhkuhCaptureThread::MuhkuhCaptureThread(wxProcess *ptProcess)
+capture_std::capture_std(wxString strCommand, wxProcess *ptProcess)
  : wxThread()
+ , m_strCommand(strCommand)
  , m_ptProcess(ptProcess)
 {
 }
 
-void MuhkuhCaptureThread::OnExit(void)
-{
-}
-
-void *MuhkuhCaptureThread::Entry(void)
+void *capture_std::Entry(void)
 {
 	wxInputStream *ptStreamError;
 	wxInputStream *ptStreamInput;
 	long lPid;
+	wxString strInput;
+	bool fGotInput;
+	unsigned int uiCnt;
 
 
 	/* Redirect stdin, stdout and stderr. */
@@ -75,8 +59,11 @@ void *MuhkuhCaptureThread::Entry(void)
 		}
 		else
 		{
+			wxTextInputStream tTextStreamError(*ptStreamError);
+			wxTextInputStream tTextStreamInput(*ptStreamInput);
+
 			/* Execute the command. */
-			lPid = wxExecute(char **argv, int flags = wxEXEC_ASYNC, wxProcess *callback = NULL);
+			lPid = wxExecute(m_strCommand, wxEXEC_ASYNC, m_ptProcess);
 			if( lPid==0 )
 			{
 				wxLogError(wxT("Failed to execute the command!"));
@@ -85,7 +72,33 @@ void *MuhkuhCaptureThread::Entry(void)
 			{
 				do
 				{
-				} while( m_ptProcess->);
+					fGotInput = false;
+
+					/* Check the stderr stream for input. */
+					uiCnt = m_uiMaxLinesPerLoop;
+					if( uiCnt>0 && m_ptProcess->IsErrorAvailable()==true )
+					{
+						wxLogError(tTextStreamError.ReadLine());
+						fGotInput = true;
+						--uiCnt;
+					}
+
+					/* Check the stdin stream for input. */
+					uiCnt = m_uiMaxLinesPerLoop;
+					while( uiCnt>0 && m_ptProcess->IsInputAvailable()==true )
+					{
+						wxLogMessage(tTextStreamInput.ReadLine());
+						fGotInput = true;
+						--uiCnt;
+					}
+
+					/* Processed Input in this round? */
+					if( fGotInput==false )
+					{
+						/* No -> give the rest of the timeslice to the other processes. */
+						Yield();
+					}
+				} while( TestDestroy()==false );
 			}
 		}
 	}

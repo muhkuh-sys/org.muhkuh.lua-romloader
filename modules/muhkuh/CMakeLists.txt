@@ -29,12 +29,14 @@ set_source_files_properties(muhkuh.i PROPERTIES SWIG_FLAGS "-I${CMAKE_HOME_DIREC
 set(module_muhkuh_SOURCES
 	growbuffer.cpp
 	muhkuh.cpp
+	muhkuh_capture_std.cpp
 	readFsFile.cpp
 )
 
 set(module_muhkuh_HEADERS
 	growbuffer.h
 	muhkuh.h
+	muhkuh_capture_std.h
 	readFsFile.h
 )
 

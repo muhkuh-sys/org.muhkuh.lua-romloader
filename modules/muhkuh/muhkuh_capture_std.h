@@ -28,27 +28,16 @@
 #define __MUHKUH_CAPTURE_STD_H__
 
 
-class muhkuh_capture_std : public wxProcess
+class capture_std : public wxThread
 {
 public:
-	muhkuh_capture_std(wxEvtHandler *ptParent=NULL, int iId=-1);
-	~muhkuh_capture_std(void);
-
-	void OnTerminate(int iPid, int iStatus);
-
-private:
-	wxT *m_ptTextCtrl;
-};
-
-
-class MuhkuhCaptureThread : public wxThread
-{
-public:
-	MuhkuhCaptureThread(wxProcess *ptProcess);
+	capture_std(wxString strCommand, wxProcess *ptProcess);
 	virtual void *Entry(void);
-	virtual void OnExit(void);
 
 private:
+	static const unsigned int m_uiMaxLinesPerLoop = 256;
+
+	wxString m_strCommand;
 	wxProcess *m_ptProcess;
 };
 
