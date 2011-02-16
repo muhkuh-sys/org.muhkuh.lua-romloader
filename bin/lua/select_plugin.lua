@@ -21,15 +21,15 @@
 module("select_plugin", package.seeall)
 
 local m_dialog = nil
-local m_list_devices = nil
+local m_list_references = nil
 local m_button_ok = nil
-local m_devices = {}
-local m_selected_device = nil
+local m_references = {}
+local m_selected_reference = nil
 local m_strPattern = nil
 
 -- IDs of the controls in the dialog
-local ID_BUTTON_RESCAN   = 1
-local ID_LIST_DEVICES    = 2
+local ID_BUTTON_RESCAN		= 1
+local ID_LIST_REFERENCES	= 2
 
 
 local function create_controls(size, iCol0Width, iCol1Width, iCol2Width)
@@ -46,15 +46,15 @@ local function create_controls(size, iCol0Width, iCol1Width, iCol2Width)
 	local sizer_buttons = wx.wxBoxSizer(wx.wxHORIZONTAL)
 
 	-- create the quick action list
-	local list_devices_style = wx.wxLC_REPORT+wx.wxLC_SINGLE_SEL+wx.wxLC_HRULES+wx.wxSUNKEN_BORDER+wx.wxLC_EDIT_LABELS
-	m_list_devices = wx.wxListCtrl(m_dialog, ID_LIST_DEVICES, wx.wxDefaultPosition, wx.wxDefaultSize, list_devices_style)
-	m_list_devices:SetImageList(imageList, wx.wxIMAGE_LIST_SMALL)
-	m_list_devices:InsertColumn(0, "Name")
-	m_list_devices:InsertColumn(1, "Typ")
-	m_list_devices:InsertColumn(2, "Comment")
-	sizer_main:Add(m_list_devices, 1, wx.wxGROW)
+	local list_references_style = wx.wxLC_REPORT+wx.wxLC_SINGLE_SEL+wx.wxLC_HRULES+wx.wxSUNKEN_BORDER+wx.wxLC_EDIT_LABELS
+	m_list_references = wx.wxListCtrl(m_dialog, ID_LIST_REFERENCES, wx.wxDefaultPosition, wx.wxDefaultSize, list_references_style)
+	m_list_references:SetImageList(imageList, wx.wxIMAGE_LIST_SMALL)
+	m_list_references:InsertColumn(0, "Name")
+	m_list_references:InsertColumn(1, "Typ")
+	m_list_references:InsertColumn(2, "Comment")
+	sizer_main:Add(m_list_references, 1, wx.wxGROW)
 
-	-- create the buttons below the devicelist
+	-- create the buttons below the referencelist
 	m_button_ok		= wx.wxButton(m_dialog, wx.wxID_OK, "Ok")
 	local button_rescan	= wx.wxButton(m_dialog, ID_BUTTON_RESCAN, "Rescan")
 	local button_cancel	= wx.wxButton(m_dialog, wx.wxID_CANCEL, "Cancel")
@@ -97,41 +97,41 @@ local function create_controls(size, iCol0Width, iCol1Width, iCol2Width)
 
 	-- set the size of the list control
 	if iCol0Width==wx.wxLIST_AUTOSIZE then
-		-- get size of the device list
-		iCol0Width = m_list_devices:GetClientSize():GetWidth()
+		-- get size of the reference list
+		iCol0Width = m_list_references:GetClientSize():GetWidth()
 		iCol0Width = iCol0Width / 3
 		iCol1Width = iCol0Width
 		iCol2Width = iCol0Width
 	end
 
-	m_list_devices:SetColumnWidth(0, iCol0Width)
-	m_list_devices:SetColumnWidth(1, iCol1Width)
-	m_list_devices:SetColumnWidth(2, iCol2Width)
+	m_list_references:SetColumnWidth(0, iCol0Width)
+	m_list_references:SetColumnWidth(1, iCol1Width)
+	m_list_references:SetColumnWidth(2, iCol2Width)
 end
 
 
-local function get_device_from_idx(index)
-	local tableindex = nil
-	local device = nil
+local function get_reference_from_idx(iIndex)
+	local iTableIndex = nil
+	local tReference = nil
 
 
-	if index>=0 then
+	if iIndex>=0 then
 		-- get the selected element's data
-		tableindex = m_list_devices:GetItemData(index)
-		if tableindex~=nil and tableindex>0 and tableindex<=#m_devices then
-			device = m_devices[tableindex]
+		iTableIndex = m_list_references:GetItemData(iIndex)
+		if iTableIndex~=nil and iTableIndex>0 and iTableIndex<=#m_references then
+			tReference = m_references[iTableIndex]
 		end
 	end
 
-	return device
+	return tReference
 end
 
 
-local function is_device_ok(device)
+local function is_reference_ok(tReference)
 	local fIsOk = false
 
 
-	if device~=nil and device:IsValid()==true and device:IsUsed()==false then
+	if tReference~=nil and tReference:IsValid()==true and tReference:IsUsed()==false then
 		fIsOk = true
 	end
 
@@ -139,25 +139,25 @@ local function is_device_ok(device)
 end
 
 
-local function device_selected(index)
-	local device
+local function reference_selected(iIndex)
+	local tReference
 
 
-	device = get_device_from_idx(index)
-	m_button_ok:Enable(is_device_ok(device))
+	tReference = get_reference_from_idx(iIndex)
+	m_button_ok:Enable(is_reference_ok(tReference))
 end
 
 
 local function on_ok()
 	local lIdx
-	local device
+	local tReference
 
 
-	-- is a device selected?
-	lIdx = m_list_devices:GetNextItem(-1, wx.wxLIST_NEXT_ALL, wx.wxLIST_STATE_FOCUSED)
-	device = get_device_from_idx(lIdx)
-	if is_device_ok(device)==true then
-		m_selected_device = device
+	-- is a reference selected?
+	lIdx = m_list_references:GetNextItem(-1, wx.wxLIST_NEXT_ALL, wx.wxLIST_STATE_FOCUSED)
+	tReference = get_reference_from_idx(lIdx)
+	if is_reference_ok(tReference)==true then
+		m_selected_reference = tReference
 		m_dialog:EndModal(wx.wxID_OK)
 	end
 end
@@ -171,41 +171,48 @@ local function on_rescan()
 
 
 	-- clear all entries in the list
-	m_list_devices:DeleteAllItems()
+	m_list_references:DeleteAllItems()
 	-- clear all entries in the table
-	m_devices = {}
+	m_references = {}
 
-	-- scan for the pattern
-	muhkuh.ScanPlugins(m_strPattern)
-
-	-- enter all devices into the list
-	while true do
-		plugin = muhkuh.GetNextPlugin()
-		if plugin==nil then
-			break
-		elseif plugin:IsValid()==false then
-			break
+	-- detect all interfaces
+	local aDetectedInterfaces = {}
+	for i,v in ipairs(__MUHKUH_PLUGINS) do
+		local iDetected
+		local strId = v:GetID()
+		if strId:match(m_strPattern) then
+			print(string.format("Detecting interfaces with plugin %s", strId))
+			iDetected = v:DetectInterfaces(aDetectedInterfaces)
+			print(string.format("Found %d interfaces with plugin %s", iDetected, strId))
 		else
+			print(string.format("Ignoring plugin %s. It does not match the pattern.", strId))
+		end
+	end
+	print(string.format("Found a total of %d interfaces with %d plugins", #aDetectedInterfaces, #__MUHKUH_PLUGINS))
+
+	-- enter all references into the list
+	for iIndex,tReference in pairs(aDetectedInterfaces) do
+		if tReference:IsValid()==true then
 			-- append the item to the table
-			table.insert(m_devices, plugin)
+			table.insert(m_references, tReference)
 			-- append new item at the end of the list
-			item_id = m_list_devices:GetItemCount()
+			item_id = m_list_references:GetItemCount()
 			-- create the new list item
 			list_item:Clear()
 			list_item:SetMask(wx.wxLIST_MASK_TEXT+wx.wxLIST_MASK_IMAGE+wx.wxLIST_MASK_DATA)
 			list_item:SetId(item_id)
-			list_item:SetData(#m_devices)
-			list_item:SetText(plugin:GetName())
-			if plugin:IsUsed()==false then
+			list_item:SetData(#m_references)
+			list_item:SetText(tReference:GetName())
+			if tReference:IsUsed()==false then
 				list_item:SetImage(1)
 				comment = "free"
 			else
 				list_item:SetImage(0)
 				comment = "in use"
 			end
-			item_id = m_list_devices:InsertItem(list_item)
-			m_list_devices:SetItem(item_id, 1, plugin:GetTyp())
-			m_list_devices:SetItem(item_id, 2, comment)
+			item_id = m_list_references:InsertItem(list_item)
+			m_list_references:SetItem(item_id, 1, tReference:GetTyp())
+			m_list_references:SetItem(item_id, 2, comment)
 		end
 	end
 end
@@ -217,25 +224,25 @@ local function on_item_selected(event)
 
 	-- get the selected element
 	lIdx = event:GetIndex()
-	device_selected(lIdx);
+	reference_selected(lIdx);
 end
 
 
 local function on_item_deselected(event)
-	device_selected(-1)
+	reference_selected(-1)
 end
 
 
 local function on_item_activated(event)
 	local lIdx
-	local device
+	local tReference
 
 
 	-- get the selected element
 	lIdx = event:GetIndex()
-	device = get_device_from_idx(lIdx)
-	if is_device_ok(device)==true then
-		m_selected_device = device
+	tReference = get_reference_from_idx(lIdx)
+	if is_reference_ok(tReference)==true then
+		m_selected_reference = tReference
 		m_dialog:EndModal(wx.wxID_OK)
 	end
 end
@@ -260,32 +267,19 @@ function SelectPlugin(pattern, dialog_size, dialog_iCol0Width, dialog_iCol1Width
 
 	m_dialog:Connect(wx.wxID_OK,		wx.wxEVT_COMMAND_BUTTON_CLICKED,	on_ok)
 	m_dialog:Connect(ID_BUTTON_RESCAN,	wx.wxEVT_COMMAND_BUTTON_CLICKED,	on_rescan)
-	m_dialog:Connect(ID_LIST_DEVICES,	wx.wxEVT_COMMAND_LIST_ITEM_SELECTED,	on_item_selected)
-	m_dialog:Connect(ID_LIST_DEVICES,	wx.wxEVT_COMMAND_LIST_ITEM_DESELECTED,	on_item_deselected)
-	m_dialog:Connect(ID_LIST_DEVICES,	wx.wxEVT_COMMAND_LIST_ITEM_ACTIVATED,	on_item_activated)
+	m_dialog:Connect(ID_LIST_REFERENCES,	wx.wxEVT_COMMAND_LIST_ITEM_SELECTED,	on_item_selected)
+	m_dialog:Connect(ID_LIST_REFERENCES,	wx.wxEVT_COMMAND_LIST_ITEM_DESELECTED,	on_item_deselected)
+	m_dialog:Connect(ID_LIST_REFERENCES,	wx.wxEVT_COMMAND_LIST_ITEM_ACTIVATED,	on_item_activated)
 
 	-- initial scan
 	on_rescan()
 
 	-- nothing selected at start
-	device_selected(-1)
+	reference_selected(-1)
 
 	-- Show the dialog
 	if m_dialog:ShowModal(true)==wx.wxID_OK then
-		local env = _G
-		local fullname = m_selected_device:GetLuaCreateFn()
-		for w in string.gmatch(fullname, "[^\.]+") do
-			env = env[w]
-			if env==nil then
-				break
-			end
-		end
-
-		if env~=nil and type(env)=="function" then
-			plugin_instance = env(m_selected_device:GetHandle())
-		else
-			error("plugin '"..m_selected_device:GetName().."' specified an invalid contructor: '"..fullname.."'")
-		end
+		plugin_instance = m_selected_reference:Create()
 	end
 
 	return plugin_instance
