@@ -8,8 +8,22 @@ PROJECT("muhkuh")
 # Set some installation folders.
 #
 
-SET(INSTALL_DIR_LUA_MODULES "lib/lua/5.1")
-SET(INSTALL_DIR_SHARED_OBJECTS "lib")
+# This is the new dir structure, use it for packaging.
+IF(UNIX AND NOT WIN32 AND NOT APPLE)
+	SET(INSTALL_DIR_LUA_MODULES "lib/lua/5.1")
+	IF(CMAKE_SIZEOF_VOID_P MATCHES "8")
+		SET(INSTALL_DIR_SHARED_OBJECTS "lib64")
+	ELSE(CMAKE_SIZEOF_VOID_P MATCHES "8")
+		SET(INSTALL_DIR_SHARED_OBJECTS "lib")
+	ENDIF(CMAKE_SIZEOF_VOID_P MATCHES "8")
+	SET(INSTALL_DIR_LUA_SCRIPTS "lib/lua/5.1")
+ELSE(UNIX AND NOT WIN32 AND NOT APPLE)
+	# Install everything in one folder on Win.
+	SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
+	SET(INSTALL_DIR_LUA_MODULES "build")
+	SET(INSTALL_DIR_SHARED_OBJECTS "build")
+	SET(INSTALL_DIR_LUA_SCRIPTS "build")
+ENDIF(UNIX AND NOT WIN32 AND NOT APPLE)
 
 #----------------------------------------------------------------------------
 #
@@ -20,7 +34,7 @@ SET(INSTALL_DIR_SHARED_OBJECTS "lib")
 FIND_PACKAGE(SWIG REQUIRED)
 
 # The python interpreter is required to build the netx firmware. (See plugins/romloader/usb/netx)
-FIND_PACKAGE(PythonInterp REQUIRED)
+FIND_PACKAGE(PythonInterp)
 
 # This is the list of the wxwidgets modules required for the application.
 FIND_PACKAGE(wxWidgets REQUIRED base core xml net aui adv html xrc)
