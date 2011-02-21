@@ -41,7 +41,7 @@
 
 
 #	ifdef _WIN32
-#	define ETIMEDOUT 110
+#	define ETIMEDOUT 116
 #	endif /* _WIN32 */
 
 	enum libusb_error

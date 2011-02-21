@@ -1079,23 +1079,21 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 				/* Receive message packets. */
 				while(1)
 				{
+					pcProgressData = NULL;
+					sizProgressData = 0;
+
 					iResult = m_ptUsbDevice->receive_packet(aucInBuf, &sizInBuf, 500);
 					if( iResult==LIBUSB_ERROR_TIMEOUT )
-					{
-						pcProgressData = NULL;
-						sizProgressData = 0;
+					{ // should we print anything if a timeout occurs?
 					}
 					else if( iResult!=0 )
 					{
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to receive packet!", m_pcName, this);
+						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to receive packet! (error %d)", m_pcName, this, iResult);
 						fOk = false;
 						break;
 					}
 					else
 					{
-						pcProgressData = NULL;
-						sizProgressData = 0;
-
 						if( sizInBuf==1 && aucInBuf[0]==USBMON_STATUS_CallFinished )
 						{
 							fOk = true;
@@ -1118,19 +1116,23 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 							break;
 						}
 					}
-
-					fIsRunning = callback_string(&tLuaFn, pcProgressData, sizProgressData, lCallbackUserData);
-					if( fIsRunning!=true )
+					
+					if (pcProgressData != NULL)
 					{
-						/* Send a cancel request to the device. */
-						aucOutBuf[0] = 0x2b;
-						iResult = m_ptUsbDevice->send_packet(aucOutBuf, 1, 100);
+						fIsRunning = callback_string(&tLuaFn, pcProgressData, sizProgressData, lCallbackUserData);
+						if( fIsRunning!=true )
+						{
+							/* Send a cancel request to the device. */
+							aucOutBuf[0] = 0x2b;
+							iResult = m_ptUsbDevice->send_packet(aucOutBuf, 1, 100);
 
-//						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): the call was canceled!", m_pcName, this);
-//						fOk = false;
-//						fOk = true;
-//						break;
+//							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): the call was canceled!", m_pcName, this);
+//							fOk = false;
+//							fOk = true;
+//							break;
+						}
 					}
+
 				}
 			}
 		}

@@ -1299,7 +1299,7 @@ int romloader_usb_device_libusb::execute_command(const unsigned char *aucOutBuf,
 	unsigned int uiTimeoutMs;
 
 
-	uiTimeoutMs = 100;
+	uiTimeoutMs = 500; // 100
 
 	iResult = send_packet(aucOutBuf, sizOutBuf, uiTimeoutMs);
 	if( iResult!=0 )
@@ -1340,12 +1340,10 @@ int romloader_usb_device_libusb::update_old_netx_device(libusb_device *ptNetxDev
 		break;
 
 	case ROMLOADER_CHIPTYP_NETX500:
-		/* TODO: insert update code for the netX500. */
 		iResult = netx500_upgrade_romcode(ptNetxDevice, &ptUpdatedDevice);
 		break;
 
 	case ROMLOADER_CHIPTYP_NETX100:
-		/* TODO: insert update code for the netX100. */
 		iResult = netx500_upgrade_romcode(ptNetxDevice, &ptUpdatedDevice);
 		break;
 
