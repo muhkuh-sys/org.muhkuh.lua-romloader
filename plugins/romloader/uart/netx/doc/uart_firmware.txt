@@ -1,0 +1,39 @@
+
+uart firmware
+=============
+Christoph Thelen <cthelen@hilscher.com>
+:Author Initials: CT
+
+== About
+
+This document describes the netx uart firmware.
+
+
+
+== Using Seyon
+
+Seyon seems to be broken in some distributions. Use this commandlines to start it:
+
+ seyon -noemulator -nodial -modems /dev/ttyS0
+
+
+== Using Minicom
+
+Create a .minirc.netx file in your home folder 
+ pu pname10          YUNYNplain
+ pu pprog9           /usr/bin/ascii-xfr -s -n -l 10
+ pu pprog10          cat
+ pu port             /dev/ttyS0
+ pu minit            
+ pu mreset           
+ pu mdialpre         
+ pu mdialsuf         
+ pu mdialpre2        
+ pu mdialsuf2        
+ pu mdialpre3        
+ pu mdialsuf3        
+ pu showspeed        l
+ pu updir            ~/Compile/muhkuh_experimental/plugins/romloader/uart/netx/targets
+ pu downdir          ~/Compile/muhkuh_experimental/plugins/romloader/uart/netx/targets
+ pu hasdcd           No
+
