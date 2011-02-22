@@ -51,7 +51,7 @@ static const OPTIONS_T t_default_options =
 		'0', '0', '0', '0', '0', '0', '0', '2'
 	},
 
-#if ASIC_DEBUGMSG==1
+#if CFG_DEBUGMSG==1
 	/* TODO: Always enable this block once the debug messages are
 	 * included in the normal build.
 	 */

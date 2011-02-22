@@ -36,6 +36,7 @@ sources_common = """
 	src/init_netx_test.S
 	src/main.c
 	src/systime.c
+	src/uart.c
 	src/uprintf.c
 """
 #	src/uartmon.c

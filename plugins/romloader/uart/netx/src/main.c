@@ -30,6 +30,8 @@
 #include "uartmonitor_commands.h"
 #include "uprintf.h"
 
+#include "uart.h"
+
 /*-----------------------------------*/
 
 #define MAX_PACKET_SIZE 256
@@ -238,11 +240,11 @@ static void uart_loop(void)
 			/* Loop over all bytes and build the crc16 checksum. */
 			/* NOTE: the size information also contains the size itself and the checksum. */
 			usCrc16 = 0;
-			sizCrcPosition = 1;
+			sizCrcPosition = 0;
 			while( sizCrcPosition<sizPacket )
 			{
-				++sizCrcPosition;
 				usCrc16 = crc16(usCrc16, uart_buffer_peek(sizCrcPosition));
+				++sizCrcPosition;
 			}
 
 			if( usCrc16!=0 )
@@ -256,7 +258,7 @@ static void uart_loop(void)
 				/* TODO: process the packet. */
 
 				uprintf("Received packet (%d bytes): ", sizPacket);
-				sizCrcPosition = 1;
+				sizCrcPosition = 0;
 				while( sizCrcPosition<sizPacket )
 				{
 					++sizCrcPosition;
@@ -268,13 +270,26 @@ static void uart_loop(void)
 }
 
 
-
+static const UART_CONFIGURATION_T tUartCfg_nxhx10_etm =                                                                                                                                                                                     
+{                                                                                                                                                                                                                                           
+	.uc_rx_mmio = 20U,                                                                                                                                                                                                                  
+	.uc_tx_mmio = 21U,                                                                                                                                                                                                                  
+	.uc_rts_mmio = 0xffU,                                                                                                                                                                                                               
+	.uc_cts_mmio = 0xffU,                                                                                                                                                                                                               
+	.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)                                                                                                                                                                              
+};
 
 
 
 void uart_monitor(void)
 {
 	systime_init();
+
+	uart_init(&tUartCfg_nxhx10_etm);
+	tSerialVectors.fn.fnGet = uart_get;
+	tSerialVectors.fn.fnPut = uart_put;
+	tSerialVectors.fn.fnPeek = uart_peek;
+	tSerialVectors.fn.fnFlush = uart_flush;
 
 	uprintf("Hallo!\n");
 
