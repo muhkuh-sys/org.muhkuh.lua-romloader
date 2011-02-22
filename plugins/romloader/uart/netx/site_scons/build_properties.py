@@ -37,14 +37,15 @@ def Read():
 	global _g_env_help
 	
 	# specify the name of the file in which variables are stored
-	_g_build_properties = Variables('build.properties')
+	strFileName = os.path.join(SCons.Node.FS.get_default_fs().SConstruct_dir.abspath, 'build.properties')
+	_g_build_properties = Variables([strFileName])
 	
 	# Register which variables we're interested in and
 	# get values from a saved file if any (defaults, which are
 	# specified in the last argument, are used otherwise).
 	# See http://scons.org/doc/1.2.0.d20090919/HTML/scons-user/x2378.html for details.
-	_g_build_properties.Add(BoolVariable('build_debug', 'Build the project in debug mode.', 'False'))
-	_g_build_properties.Add(BoolVariable('ASIC_DEBUGMSG', 'Enable debug messages.', 'True'))
+	_g_build_properties.Add(EnumVariable('CFG_BUILD', 'Build the project in release or debug mode.', 'release', ('debug', 'release'), ignorecase=1))
+	_g_build_properties.Add(BoolVariable('CFG_DEBUGMSG', 'Enable debug messages.', 'True'))
 
 	_g_env_help = Environment(variables=_g_build_properties)
 
@@ -68,21 +69,22 @@ def PrintSummary():
 	global _g_env_help
 	
 	print 'build properties:'
-	print "\tbuild_debug = %s" % _g_env_help['build_debug']
-	print "\tASIC_DEBUGMSG = %s" % _g_env_help['ASIC_DEBUGMSG']
+	print "\tCFG_BUILD = %s" % _g_env_help['CFG_BUILD']
+	print "\tCFG_DEBUGMSG = %s" % _g_env_help['CFG_DEBUGMSG']
 
 
 def ApplyToEnv(env):
 	global _g_env_help
 	
-	if _g_env_help['build_debug']==0:
+	strBuild = str.lower(_g_env_help['CFG_BUILD'])
+	if strBuild=='release':
 		# this is the release build
 		env.Append(CCFLAGS = ['-O2'])
-	else:
+	elif strBuild=='debug':
 		# this is the debug build
 		env.Append(CCFLAGS = ['-O0'])
 	
-	if _g_env_help['ASIC_DEBUGMSG']==0:
-		env.Append(CPPDEFINES = [['ASIC_DEBUGMSG', '0']])
+	if _g_env_help['CFG_DEBUGMSG']==0:
+		env.Append(CPPDEFINES = [['CFG_DEBUGMSG', '0']])
 	else:
-		env.Append(CPPDEFINES = [['ASIC_DEBUGMSG', '1']])
+		env.Append(CPPDEFINES = [['CFG_DEBUGMSG', '1']])
