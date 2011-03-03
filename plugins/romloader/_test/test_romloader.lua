@@ -1,33 +1,10 @@
 
-require("bit")
-require("tester")
-
---require("romloader_baka")
-require("romloader_usb")
-require("romloader_uart")
-
 local function get_rnd_data(len)
 	local data = ""
 	for i=1,len do
 		data = data .. string.char(math.random(0,255))
 	end
 	return data
-end
-
--- read binary file into string
--- returns the file or nil, message
-function loadBin(strName)
-	print("reading file " .. strName)
-	local bin
-	local f, msg = io.open(strName, "rb")
-	if f then
-		bin = f:read("*all")
-		f:close()
-		print(bin:len() .. " bytes read")
-		return bin
-	else
-		return nil, msg
-	end
 end
 
 local function test32(tPlugin, address, value)
@@ -80,59 +57,12 @@ end
 
 
 
-
-
-
-
-
--- show all providers
-print("Available plugins:")
-for i,v in ipairs(__MUHKUH_PLUGINS) do
-	local strID
-	local tVer
-	strID = v:GetID()
-	tVer = v:GetVersion()
-	print(string.format("%d: %s, v%d.%d.%d", i, strID, tVer.uiVersionMajor, tVer.uiVersionMinor, tVer.uiVersionSub))
+tPlugin = select_plugin.SelectPlugin()
+if not tPlugin then
+	error("Test canceled!")
 end
 
-
-local iInterfaceIdx
-repeat do
-	repeat do
-		-- detect all interfaces
-		aDetectedInterfaces = {}
-		for i,v in ipairs(__MUHKUH_PLUGINS) do
-			local iDetected
-			print(string.format("Detecting interfaces with plugin %s", v:GetID()))
-			iDetected = v:DetectInterfaces(aDetectedInterfaces)
-			print(string.format("Found %d interfaces with plugin %s", iDetected, v:GetID()))
-		end
-		print(string.format("Found a total of %d interfaces with %d plugins", #aDetectedInterfaces, #__MUHKUH_PLUGINS))
-		print("")
-		-- Show all detected interfaces.
-		print("Please select the interface:")
-		for i,v in ipairs(aDetectedInterfaces) do
-			print(string.format("%d: %s (%s) Used: %s, Valid: %s", i, v:GetName(), v:GetTyp(), tostring(v:IsUsed()), tostring(v:IsValid())))
-		end
-		print("R: rescan")
-		-- Get the user input.
-		io.write(">")
-		strInterface = io.read():lower()
-	end until strInterface~="r"
-	iInterfaceIdx = tonumber(strInterface)
-end until iInterfaceIdx~=nil and iInterfaceIdx>0 and iInterfaceIdx<=#aDetectedInterfaces
-
--- create the plugin
-tPlugin = aDetectedInterfaces[iInterfaceIdx]:Create()
--- check if the plugin is connected (should be not)
-print( tPlugin:IsConnected() )
--- connect the plugin
 tPlugin:Connect()
--- check if the plugin is connected (should be connected now)
-print( tPlugin:IsConnected() )
-
-
-__MUHKUH_TEST_PARAMETER = { ["testarea"]=0x00010000, ["testsize"]=0x00000080, ["loops"]=1 }
 
 
 -- get the test parameters
