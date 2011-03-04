@@ -45,7 +45,7 @@ size_t sizBufferHead;
 size_t sizBufferFill;
 
 
-static unsigned int crc16(unsigned short usCrc, unsigned char ucData)
+static unsigned short crc16(unsigned short usCrc, unsigned char ucData)
 {
 	unsigned int uiCrc;
 
@@ -225,7 +225,7 @@ static void uart_loop(void)
 	/* Get the size of the data packet in bytes. */
 	uart_buffer_fill(2, UART_BUFFER_NO_TIMEOUT);
 	sizPacket  = uart_buffer_peek(0);
-	sizPacket |= uart_buffer_peek(1) << 8U;
+	sizPacket |= (size_t)(uart_buffer_peek(1) << 8U);
 
 	uprintf("Size: 0x%08x\n", sizPacket);
 
