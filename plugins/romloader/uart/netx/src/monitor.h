@@ -19,43 +19,11 @@
  ***************************************************************************/
 
 
-#ifndef __USBMONITOR_COMMANDS_H__
-#define __USBMONITOR_COMMANDS_H__
+#ifndef __MONITOR_H__
+#define __MONITOR_H__
 
 
-#define UARTMON_PACKET_START 0x2a
+void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPacketSize);
 
 
-typedef enum
-{
-	USBMON_COMMAND_Read                    = 0x00,
-	USBMON_COMMAND_Write                   = 0x01,
-	USBMON_COMMAND_Execute                 = 0x02
-} USBMON_COMMAND_T;
-
-typedef enum
-{
-	USBMON_STATUS_Ok                        = 0x00,
-	USBMON_STATUS_CallMessage               = 0x01,
-	USBMON_STATUS_CallFinished              = 0x02,
-	USBMON_STATUS_InvalidCommand            = 0x03,
-	USBMON_STATUS_InvalidPacketSize         = 0x04,
-	USBMON_STATUS_InvalidSizeParameter      = 0x05
-} USBMON_STATUS_T;
-
-typedef enum
-{
-	USBMON_ACCESSSIZE_Byte                  = 0,
-	USBMON_ACCESSSIZE_Word                  = 1,
-	USBMON_ACCESSSIZE_Long                  = 2
-} USBMON_ACCESSSIZE_T;
-
-
-typedef struct
-{
-	unsigned char ucStatus;
-	unsigned char aucText[63];
-} USBMON_PACKET_MESSAGE_T;
-
-
-#endif  /* __USBMONITOR_COMMANDS_H__ */
+#endif  /* __MONITOR_H__ */

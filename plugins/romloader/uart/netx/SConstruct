@@ -35,11 +35,12 @@ sources_common = """
 	src/header.S
 	src/init_netx_test.S
 	src/main.c
+	src/monitor.c
 	src/systime.c
+	src/transport.c
 	src/uart.c
 	src/uprintf.c
 """
-#	src/uartmon.c
 
 
 sources_custom_netx500 = """
