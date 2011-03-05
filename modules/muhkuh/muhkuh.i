@@ -44,7 +44,7 @@ void include(lua_State *ptLuaState, char *pcUrl, char *pcChunkName);
 class capture_std
 {
 public:
-	capture_std(void);
+	capture_std(long lMyId, long lEvtHandlerId);
 	~capture_std(void);
 
 	int run(const char *pcCommand, lua_State *ptLuaStateForTableAccess);

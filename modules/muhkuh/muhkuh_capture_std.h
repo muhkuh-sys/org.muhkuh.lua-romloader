@@ -45,7 +45,7 @@ typedef struct
 class capture_std
 {
 public:
-	capture_std(void);
+	capture_std(long lMyId, long lEvtHandlerId);
 	~capture_std(void);
 
 	int run(const char *pcCommand, lua_State *ptLuaStateForTableAccess);
@@ -54,9 +54,10 @@ public:
 private:
 	char **get_strings_from_table(int iIndex, lua_State *ptLuaState) const;
 	int free_string_table(char **ppcTable) const;
+	void send_finished_event(int iPid, int iResult);
 
-	static const unsigned int m_uiMaxLinesPerLoop = 256;
-
+	long m_lMyId;
+	long m_lEvtHandlerId;
 	pid_t m_tCaptureThread;
 	pid_t m_tExecThread;
 };

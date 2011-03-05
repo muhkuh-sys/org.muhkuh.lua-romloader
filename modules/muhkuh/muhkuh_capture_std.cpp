@@ -28,13 +28,17 @@
 
 
 #include <wx/wx.h>
+#include <wx/process.h>
 
 
 #define MAX_COMMANDLINE_ARGUMENT 4096
 
 
-capture_std::capture_std(void)
- : m_tCaptureThread(-1)
+capture_std::capture_std(long lMyId, long lEvtHandlerId)
+ : m_lMyId(lMyId)
+ , m_lEvtHandlerId(lEvtHandlerId)
+ , m_tCaptureThread(-1)
+ , m_tExecThread(-1)
 {
 }
 
@@ -152,6 +156,23 @@ int capture_std::free_string_table(char **ppcTable) const
 }
 
 
+void capture_std::send_finished_event(int iPid, int iResult)
+{
+	wxWindow *ptHandlerWindow;
+	wxProcessEvent tProcessEvent(m_lMyId, iPid, iResult);
+
+
+	if( m_lEvtHandlerId!=wxID_ANY )
+	{
+		ptHandlerWindow = wxWindow::FindWindowById(m_lEvtHandlerId, NULL);
+		if( ptHandlerWindow!=NULL )
+		{
+			ptHandlerWindow->AddPendingEvent(tProcessEvent);
+		}
+	}
+}
+
+
 #define PIPE_READ_END 0
 #define PIPE_WRITE_END 1
 
@@ -169,7 +190,8 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 	fd_set tOpenFdSet;
 	fd_set tReadFdSet;
 	int iMaxFd;
-	int iSelect;
+	int iStatus;
+	int iThreadResult;
 
 
 	/* Init all variables. */
@@ -292,15 +314,15 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 							FD_SET(aiPipeErrFd[PIPE_READ_END], &tReadFdSet);
 						}
 
-						iSelect = select(iMaxFd, &tReadFdSet, NULL, NULL, NULL);
-						printf("select: %d\n", iSelect);
-						if( iSelect==-1 )
+						iStatus = select(iMaxFd, &tReadFdSet, NULL, NULL, NULL);
+						printf("select: %d\n", iStatus);
+						if( iStatus==-1 )
 						{
 							/* Select failed! */
 							iResult = EXIT_FAILURE;
 							break;
 						}
-						else if( iSelect>0 )
+						else if( iStatus>0 )
 						{
 							if( FD_ISSET(aiPipeOutFd[PIPE_READ_END], &tReadFdSet) )
 							{
@@ -346,6 +368,19 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 
 					printf("*** Stop Capture ***\n");
 
+					iStatus = waitpid(m_tExecThread, NULL, 0);
+					if( WIFEXITED(iStatus) )
+					{
+						iThreadResult = WEXITSTATUS(iStatus);
+					}
+					else
+					{
+						iThreadResult = -1;
+					}
+
+					/* Send an event to the handler. */
+					send_finished_event(m_tExecThread, iThreadResult);
+
 					exit(iResult);
 				}
 				else
@@ -355,7 +390,6 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 
 
 					printf("wait until the threads finished.\n");
-					waitpid(m_tExecThread, NULL, 0);
 					waitpid(m_tCaptureThread, NULL, 0);
 					printf("ok, all finished!\n");
 				}
