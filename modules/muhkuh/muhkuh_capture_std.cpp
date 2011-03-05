@@ -21,8 +21,11 @@
 
 #include "muhkuh_capture_std.h"
 
-#include <sys/select.h>
 #include <errno.h>
+#include <sys/select.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
 
 #include <wx/wx.h>
 
@@ -215,18 +218,10 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 
 				/* Dup the write end of the pipes to stdout and stderr. */
 				iNewFd = dup2(aiPipeOutFd[PIPE_WRITE_END], STDOUT_FILENO);
-				if( iNewFd==-1 )
-				{
-					iResult = EXIT_FAILURE;
-				}
-				else
+				if( iNewFd!=-1 )
 				{
 					iNewFd = dup2(aiPipeErrFd[PIPE_WRITE_END], STDERR_FILENO);
-					if( iNewFd==-1 )
-					{
-						iResult = EXIT_FAILURE;
-					}
-					else
+					if( iNewFd!=-1 )
 					{
 						write(STDOUT_FILENO, "This is exec stdout.\n", 22);
 						write(STDERR_FILENO, "This is exec stderr.\n", 22);
@@ -237,8 +232,6 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 
 						/* If this part is reached, the exec command failed. */
 						fprintf(stderr, "execv returned with errorcode %d.\n", iResult);
-
-						iResult = EXIT_FAILURE;
 					}
 				}
 
@@ -261,86 +254,6 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 				fprintf(stdout, "This is capture stdout.\n");
 				fprintf(stderr, "This is capture stderr.\n");
 
-#if 1
-				iMaxFd = aiPipeOutFd[PIPE_READ_END];
-				if( iMaxFd<aiPipeErrFd[PIPE_READ_END] )
-				{
-					iMaxFd = aiPipeErrFd[PIPE_READ_END];
-				}
-				++iMaxFd;
-				printf("aiPipeOutFd[PIPE_READ_END] = %d\n", aiPipeOutFd[PIPE_READ_END]);
-				printf("aiPipeErrFd[PIPE_READ_END] = %d\n", aiPipeErrFd[PIPE_READ_END]);
-				printf("maxfd = %d\n", iMaxFd);
-
-
-				FD_ZERO(&tOpenFdSet);
-				FD_SET(aiPipeOutFd[PIPE_READ_END], &tOpenFdSet);
-				FD_SET(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet);
-
-				do
-				{
-					FD_ZERO(&tReadFdSet);
-					if( FD_ISSET(aiPipeOutFd[PIPE_READ_END], &tOpenFdSet) )
-					{
-						FD_SET(aiPipeOutFd[PIPE_READ_END], &tReadFdSet);
-					}
-					if( FD_ISSET(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet) )
-					{
-						FD_SET(aiPipeErrFd[PIPE_READ_END], &tReadFdSet);
-					}
-
-					iSelect = select(iMaxFd, &tReadFdSet, NULL, NULL, NULL);
-					printf("select: %d\n", iSelect);
-					if( iSelect==-1 )
-					{
-						/* Select failed! */
-						break;
-					}
-					else if( iSelect>0 )
-					{
-						if( FD_ISSET(aiPipeOutFd[PIPE_READ_END], &tReadFdSet) )
-						{
-							ssizRead = read(aiPipeOutFd[PIPE_READ_END], aucBuffer, sizeof(aucBuffer)-1);
-							if( ssizRead<0 )
-							{
-								break;
-							}
-							else if( ssizRead==0 )
-							{
-								FD_CLR(aiPipeOutFd[PIPE_READ_END], &tOpenFdSet);
-							}
-							else
-							{
-								aucBuffer[ssizRead] = 0;
-								printf("<OUT len=%d>%s</OUT>\n", ssizRead, aucBuffer);
-							}
-						}
-						if( FD_ISSET(aiPipeErrFd[PIPE_READ_END], &tReadFdSet) )
-						{
-							ssizRead = read(aiPipeErrFd[PIPE_READ_END], aucBuffer, sizeof(aucBuffer)-1);
-							if( ssizRead<0 )
-							{
-								break;
-							}
-							else if( ssizRead==0 )
-							{
-								FD_CLR(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet);
-							}
-							else
-							{
-								aucBuffer[ssizRead] = 0;
-								printf("<ERR len=%d>%s</ERR>\n", ssizRead, aucBuffer);
-							}
-						}
-					}
-				} while( (FD_ISSET(aiPipeOutFd[PIPE_READ_END], &tOpenFdSet)) || (FD_ISSET(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet)) );
-
-				close(aiPipeOutFd[PIPE_READ_END]);
-				close(aiPipeErrFd[PIPE_READ_END]);
-
-				printf("*** Stop Capture ***\n");
-#endif
-	#if 0
 				tPidCapture = fork();
 				if( tPidCapture==-1 )
 				{
@@ -352,46 +265,100 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 					/* This is the capture thread. */
 					printf("This is the capture thread.\n");
 
-					ssizOutRead = 0;
-					ssizErrRead = 0;
+					iMaxFd = aiPipeOutFd[PIPE_READ_END];
+					if( iMaxFd<aiPipeErrFd[PIPE_READ_END] )
+					{
+						iMaxFd = aiPipeErrFd[PIPE_READ_END];
+					}
+					++iMaxFd;
+					printf("aiPipeOutFd[PIPE_READ_END] = %d\n", aiPipeOutFd[PIPE_READ_END]);
+					printf("aiPipeErrFd[PIPE_READ_END] = %d\n", aiPipeErrFd[PIPE_READ_END]);
+					printf("maxfd = %d\n", iMaxFd);
+
+
+					FD_ZERO(&tOpenFdSet);
+					FD_SET(aiPipeOutFd[PIPE_READ_END], &tOpenFdSet);
+					FD_SET(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet);
+
 					do
 					{
-						if( ssizOutRead>=0 )
+						FD_ZERO(&tReadFdSet);
+						if( FD_ISSET(aiPipeOutFd[PIPE_READ_END], &tOpenFdSet) )
 						{
-							ssizOutRead = read(aiPipeOutFd[0], aucBuffer, sizeof(aucBuffer));
-							if( ssizOutRead>0 )
+							FD_SET(aiPipeOutFd[PIPE_READ_END], &tReadFdSet);
+						}
+						if( FD_ISSET(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet) )
+						{
+							FD_SET(aiPipeErrFd[PIPE_READ_END], &tReadFdSet);
+						}
+
+						iSelect = select(iMaxFd, &tReadFdSet, NULL, NULL, NULL);
+						printf("select: %d\n", iSelect);
+						if( iSelect==-1 )
+						{
+							/* Select failed! */
+							iResult = EXIT_FAILURE;
+							break;
+						}
+						else if( iSelect>0 )
+						{
+							if( FD_ISSET(aiPipeOutFd[PIPE_READ_END], &tReadFdSet) )
 							{
-								printf("Out: %d\n", ssizOutRead);
-								printf("[OUT] :");
-								write(STDOUT_FILENO, aucBuffer, ssizOutRead);
-								printf("\n");
+								ssizRead = read(aiPipeOutFd[PIPE_READ_END], aucBuffer, sizeof(aucBuffer)-1);
+								if( ssizRead<0 )
+								{
+									iResult = EXIT_FAILURE;
+									break;
+								}
+								else if( ssizRead==0 )
+								{
+									FD_CLR(aiPipeOutFd[PIPE_READ_END], &tOpenFdSet);
+								}
+								else
+								{
+									aucBuffer[ssizRead] = 0;
+									printf("<OUT len=%d>%s</OUT>\n", ssizRead, aucBuffer);
+								}
+							}
+							if( FD_ISSET(aiPipeErrFd[PIPE_READ_END], &tReadFdSet) )
+							{
+								ssizRead = read(aiPipeErrFd[PIPE_READ_END], aucBuffer, sizeof(aucBuffer)-1);
+								if( ssizRead<0 )
+								{
+									iResult = EXIT_FAILURE;
+									break;
+								}
+								else if( ssizRead==0 )
+								{
+									FD_CLR(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet);
+								}
+								else
+								{
+									aucBuffer[ssizRead] = 0;
+									printf("<ERR len=%d>%s</ERR>\n", ssizRead, aucBuffer);
+								}
 							}
 						}
-						if( ssizErrRead>=0 )
-						{
-							ssizErrRead = read(aiPipeErrFd[0], aucBuffer, sizeof(aucBuffer));
-							if( ssizErrRead>0 )
-							{
-								printf("Err: %d\n", ssizErrRead);
-								printf("[ERR] :");
-								write(STDERR_FILENO, aucBuffer, ssizErrRead);
-								printf("\n");
-							}
-						}
-					} while( ssizOutRead>=0 or ssizErrRead>=0 );
+					} while( (FD_ISSET(aiPipeOutFd[PIPE_READ_END], &tOpenFdSet)) || (FD_ISSET(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet)) );
 
-					close(aiPipeOutFd[0]);
-					close(aiPipeErrFd[0]);
+					close(aiPipeOutFd[PIPE_READ_END]);
+					close(aiPipeErrFd[PIPE_READ_END]);
 
-					exit(EXIT_SUCCESS);
+					printf("*** Stop Capture ***\n");
+
+					exit(iResult);
 				}
 				else
 				{
 					/* This is the parent. */
 					m_tCaptureThread = tPidCapture;
 
+
+					printf("wait until the threads finished.\n");
+					waitpid(m_tExecThread, NULL, 0);
+					waitpid(m_tCaptureThread, NULL, 0);
+					printf("ok, all finished!\n");
 				}
-	#endif
 			}
 		}
 
