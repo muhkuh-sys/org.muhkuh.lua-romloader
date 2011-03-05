@@ -61,3 +61,10 @@ The generator defines the output type (Visual Studio, Unix make or whatever.)
 Select NMake:
 
  cmake -G "NMake Makefiles" ..
+
+
+Set the install folder
+----------------------
+
+ cmake -D CMAKE_INSTALL_PREFIX=/tmp/muhkuh ..
+
