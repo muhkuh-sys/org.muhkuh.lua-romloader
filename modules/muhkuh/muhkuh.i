@@ -44,24 +44,9 @@ void include(lua_State *ptLuaState, char *pcUrl, char *pcChunkName);
 class capture_std
 {
 public:
-	capture_std(wxString strCommand, wxProcess *ptProcess);
+	capture_std(void);
+	~capture_std(void);
 
-	wxThreadError Create(unsigned int stackSize = 0);
-	wxThreadError Run();
-
-	wxThreadError Delete(void **rc = NULL);
-	void *Wait();
-	wxThreadError Kill();
-
-	wxThreadError Pause();
-	wxThreadError Resume();
-
-	void SetPriority(unsigned int prio);
-	unsigned int GetPriority() const;
-
-	bool IsAlive() const;
-	bool IsRunning() const;
-	bool IsPaused() const;
-	bool IsDetached() const;
+	int run(const char *pcCommand, lua_State *ptLuaStateForTableAccess);
 };
 

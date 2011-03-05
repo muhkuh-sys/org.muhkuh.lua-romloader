@@ -9,6 +9,7 @@ find_package(SWIG REQUIRED)
 
 
 include(${SWIG_USE_FILE})
+
 include(${wxWidgets_USE_FILE})
 
 if(${PYTHONLIBS_FOUND})
@@ -20,6 +21,7 @@ if(${LUA51_FOUND})
 endif(${LUA51_FOUND})
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 
 
 set_source_files_properties(muhkuh.i PROPERTIES CPLUSPLUS ON)

@@ -20,25 +20,45 @@
 
 
 #include <wx/wx.h>
-#include <wx/process.h>
-#include <wx/thread.h>
+
+/* Platform specific includes. */
+#include <unistd.h>
+
+
+#ifndef SWIGRUNTIME
+#include <swigluarun.h>
+
+/* swigluarun does not include the lua specific defines. Add them here. */
+typedef struct
+{
+	lua_State* L; /* the state */
+	int ref;      /* a ref in the lua global index */
+}SWIGLUA_REF;
+#endif
+
 
 
 #ifndef __MUHKUH_CAPTURE_STD_H__
 #define __MUHKUH_CAPTURE_STD_H__
 
 
-class capture_std : public wxThread
+class capture_std
 {
 public:
-	capture_std(wxString strCommand, wxProcess *ptProcess);
-	virtual void *Entry(void);
+	capture_std(void);
+	~capture_std(void);
+
+	int run(const char *pcCommand, lua_State *ptLuaStateForTableAccess);
+
 
 private:
+	char **get_strings_from_table(int iIndex, lua_State *ptLuaState) const;
+	int free_string_table(char **ppcTable) const;
+
 	static const unsigned int m_uiMaxLinesPerLoop = 256;
 
-	wxString m_strCommand;
-	wxProcess *m_ptProcess;
+	pid_t m_tCaptureThread;
+	pid_t m_tExecThread;
 };
 
 
