@@ -34,6 +34,8 @@
 	.equ SR_Irq,            0x80
 	.equ SR_Fiq,            0x40
 
+#include "netx_regdef.S"
+
 @--------------------------------------
 
   .func start_init_s
@@ -101,6 +103,11 @@ start:
 	bic     r4,     r4, #0x1100
 	@ Write back ctrl register.
 	mcr     p15,    0, r4, c1, c0, 0
+
+	@ Enable the TCM.
+	ldr     r0,     =HOSTADR(dTCM_base)
+	orr     r0,     r0, #1
+	mcr     p15,    0, r0, c9, c1, 0
 #else
 #	error "Unknown ASIC_TYP"
 #endif
