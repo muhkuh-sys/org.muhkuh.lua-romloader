@@ -24,7 +24,7 @@ MEMORY
 {
 	ASSERT_EMPTY(rwx) :     ORIGIN = 0x00000000, LENGTH = 0
 
-	INTRAM0(rwx) :          ORIGIN = 0x00000000, LENGTH = 0x00008000
+	INTRAM0_MON(rwx) :      ORIGIN = 0x00000100, LENGTH = 0x00003f00
 	DTCM(rw) :              ORIGIN = 0x10000000, LENGTH = 0x00002000
 }
 
@@ -45,7 +45,7 @@ SECTIONS
 		*(.v4_bx)
 	} >ASSERT_EMPTY
 
-	.code ORIGIN(INTRAM0)+0x100 :
+	.code ORIGIN(INTRAM0_MON) :
 	{
 		load_address = . ;
 
@@ -53,7 +53,7 @@ SECTIONS
 		*(.init_code)
 		*(.text)
 		*(.rodata*)
-	} >INTRAM0
+	} >INTRAM0_MON
 
 
 	.bss ORIGIN(DTCM) :
