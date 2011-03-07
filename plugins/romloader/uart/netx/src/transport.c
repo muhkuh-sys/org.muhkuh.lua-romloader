@@ -225,18 +225,19 @@ void transport_loop(void)
 	uprintf("Size: 0x%08x\n", sizPacket);
 
 	/* Is the packet's size valid? */
-	if( sizPacket>=4 && sizPacket<=MAX_PACKET_SIZE )
+	if( sizPacket>0 && sizPacket<=MAX_PACKET_SIZE-4 )
 	{
 		/* Yes, the packet size is valid. */
 
-		iResult = uart_buffer_fill(sizPacket, UART_BUFFER_TIMEOUT);
+		/* Get the size, data and CRC16. */
+		iResult = uart_buffer_fill(sizPacket+4, UART_BUFFER_TIMEOUT);
 		if( iResult==0 )
 		{
 			/* Loop over all bytes and build the crc16 checksum. */
-			/* NOTE: the size information also contains the size itself and the checksum. */
+			/* NOTE: the size is just for the user data, but the CRC16 includes the size. */
 			usCrc16 = 0;
 			sizCrcPosition = 0;
-			while( sizCrcPosition<sizPacket )
+			while( sizCrcPosition<sizPacket+4 )
 			{
 				usCrc16 = crc16(usCrc16, uart_buffer_peek(sizCrcPosition));
 				++sizCrcPosition;
@@ -252,7 +253,12 @@ void transport_loop(void)
 
 				/* TODO: process the packet. */
 
+				/* Discard the size information. We already have this. */
+				uart_buffer_get();
+				uart_buffer_get();
+
 				uprintf("Received packet (%d bytes): ", sizPacket);
+
 				sizCrcPosition = 0;
 				while( sizCrcPosition<sizPacket )
 				{
@@ -289,26 +295,18 @@ void transport_send_byte(unsigned char ucData)
 
 void transport_send_packet(void)
 {
-	size_t sizPacket;
 	const unsigned char *pucCnt;
 	const unsigned char *pucEnd;
 	unsigned char ucData;
 	unsigned short usCrc;
 
 
-	/* Get the packet size without the start character. */
-	sizPacket  = sizPacketOutputFill;
-	/* Add the size of the length field. */
-	sizPacket += sizeof(unsigned short);
-	/* Add the size of the CRC16 field. */
-	sizPacket += sizeof(unsigned short);
-
 	/* Send the start character. */
 	uart_put(MONITOR_STREAM_PACKET_START);
 
 	/* Send the size. */
-	uart_put(sizPacket&0xffU);
-	uart_put(sizPacket>>8U);
+	uart_put(sizPacketOutputFill&0xffU);
+	uart_put(sizPacketOutputFill>>8U);
 
 	/* Send the packet and build the CRC16. */
 	pucCnt = aucPacketOutputBuffer;
@@ -322,8 +320,8 @@ void transport_send_packet(void)
 	}
 
 	/* Send the CRC16. */
-	uart_put(usCrc&0xffU);
 	uart_put(usCrc>>8U);
+	uart_put(usCrc&0xffU);
 
 	sizPacketOutputFill = 0;
 }
