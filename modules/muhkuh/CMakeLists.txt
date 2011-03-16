@@ -44,6 +44,7 @@ set(module_muhkuh_HEADERS
 
 # Build the library.
 add_library(module_muhkuh_lib STATIC ${module_muhkuh_SOURCES})
+ADD_DEPENDENCIES(module_muhkuh_lib swigluarun)
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
 	SET_TARGET_PROPERTIES(module_muhkuh_lib PROPERTIES COMPILE_FLAGS -fPIC)
