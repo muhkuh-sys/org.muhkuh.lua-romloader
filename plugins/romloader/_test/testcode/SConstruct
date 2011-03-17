@@ -65,13 +65,13 @@ src_netx10  = Split(montest_sources_common + montest_sources_custom_netx10)
 # Create the compiler environments.
 #
 
-env_netx500_default = env_default.CreateCompilerEnv('500', 'arm926ej-s')
+env_netx500_default = env_default.CreateCompilerEnv('500', ['cpu=arm926ej-s'])
 env_netx500_default.Append(CPPPATH = ['src/netx500'])
 
-env_netx50_default  = env_default.CreateCompilerEnv('50',  'arm966e-s')
+env_netx50_default  = env_default.CreateCompilerEnv('50',  ['cpu=arm966e-s'])
 env_netx50_default.Append(CPPPATH = ['src/netx50'])
 
-env_netx10_default  = env_default.CreateCompilerEnv('10',  'arm966e-s')
+env_netx10_default  = env_default.CreateCompilerEnv('10',  ['cpu=arm966e-s'])
 env_netx10_default.Append(CPPPATH = ['src/netx10'])
 
 #----------------------------------------------------------------------------
