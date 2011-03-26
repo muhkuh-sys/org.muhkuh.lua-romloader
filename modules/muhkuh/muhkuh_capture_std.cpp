@@ -173,15 +173,102 @@ void capture_std::send_finished_event(int iPid, int iResult)
 }
 
 
-#define PIPE_READ_END 0
-#define PIPE_WRITE_END 1
+int capture_std::get_pty(void)
+{
+	int iResult;
+
+
+	/* Get an unused pseudo-terminal master device. */
+	m_iFdPtyMaster = posix_openpt(O_RDWR);
+	if( m_iFdPtyMaster<0 )
+	{
+		fprintf(stderr, "Failed to get PTY master: %d %s\n", errno, strerror(errno));
+		iResult = -1;
+	}
+	else
+	{
+		printf("iFdPtyMaster = %d\n", m_iFdPtyMaster);
+		iResult = grantpt(m_iFdPtyMaster);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "grantpt failed: %d %s\n", errno, strerror(errno));
+		}
+		else
+		{
+			iResult = unlockpt(m_iFdPtyMaster);
+			if( iResult!=0 )
+			{
+				fprintf(stderr, "unlockpt failed: %d %s\n", errno, strerror(errno));
+			}
+			else
+			{
+				/* Get the name of the pty. */
+				iResult = ptsname_r(m_iFdPtyMaster, m_acPtsName, c_iMaxPtsName);
+				if( iResult!=0 )
+				{
+					fprintf(stderr, "ptsname_r failed: %d %s\n", errno, strerror(errno));
+				}
+				else
+				{
+					printf("pts name: '%s'\n", m_acPtsName);
+				}
+			}
+		}
+	}
+
+	return iResult;
+}
+
+
+void capture_std::exec_thread(const char *pcCommand, char **ppcCmdArguments)
+{
+	int iPtyFd;
+	int iResult;
+	int iCnt;
+
+
+	fprintf(stderr, "exec_thread start\n");
+	
+	/* Open the slave pty in write mode. */
+	iPtyFd = open(m_acPtsName, O_WRONLY);
+	if( iPtyFd<0 )
+	{
+		fprintf(stderr, "open failed: %d %s\n", errno, strerror(errno));
+	}
+	else
+	{
+		/* Dup the pty to stdout. */
+		iResult = dup2(iPtyFd, STDOUT_FILENO);
+		if( iResult==-1 )
+		{
+			fprintf(stderr, "dup2 failed: %d %s\n", errno, strerror(errno));
+		}
+		else
+		{
+/*
+			for(iCnt=0; iCnt<10; ++iCnt)
+			{
+				write(STDOUT_FILENO, "This is exec stdout.\n", 21);
+				sleep(1);
+			}
+*/
+			/* Run the command. */
+			iResult = execv(pcCommand, ppcCmdArguments);
+
+			/* If this part is reached, the exec command failed. */
+			fprintf(stderr, "execv returned with errorcode %d.\n", iResult);
+		}
+		close(iPtyFd);
+	}
+
+	fprintf(stderr, "exec_thread finish\n");
+}
+
 
 int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 {
 	int iResult;
 	char **ppcCmdArguments;
-	int aiPipeOutFd[2];
-	int aiPipeErrFd[2];
 	pid_t tPidExec;
 	pid_t tPidCapture;
 	ssize_t ssizRead;
@@ -195,10 +282,6 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 
 
 	/* Init all variables. */
-	aiPipeOutFd[PIPE_READ_END] = -1;
-	aiPipeOutFd[PIPE_WRITE_END] = -1;
-	aiPipeErrFd[PIPE_READ_END] = -1;
-	aiPipeErrFd[PIPE_WRITE_END] = -1;
 	tPidExec = -1;
 	tPidCapture = -1;
 
@@ -210,18 +293,9 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 	}
 	else
 	{
-		/* Create the pipes. */
-		if( pipe(aiPipeOutFd)!=0 )
-		{
-			fprintf(stderr, "failed to create out pipe (%d): %s\n", errno, strerror(errno));
-			iResult = -1;
-		}
-		else if( pipe(aiPipeErrFd)!=0 )
-		{
-			fprintf(stderr, "failed to create err pipe (%d): %s\n", errno, strerror(errno));
-			iResult = -1;
-		}
-		else
+		/* Create the pty. */
+		iResult = get_pty();
+		if( iResult==0 )
 		{
 			/* Create the exec thread. */
 			tPidExec = fork();
@@ -233,48 +307,16 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 			else if( tPidExec==0 )
 			{
 				/* This is the exec thread. */
-
-				/* The exec thread only writes to both pipes. Close the read end. */
-				close(aiPipeOutFd[PIPE_READ_END]);
-				close(aiPipeErrFd[PIPE_READ_END]);
-
-				/* Dup the write end of the pipes to stdout and stderr. */
-				iNewFd = dup2(aiPipeOutFd[PIPE_WRITE_END], STDOUT_FILENO);
-				if( iNewFd!=-1 )
-				{
-					iNewFd = dup2(aiPipeErrFd[PIPE_WRITE_END], STDERR_FILENO);
-					if( iNewFd!=-1 )
-					{
-						write(STDOUT_FILENO, "This is exec stdout.\n", 22);
-						write(STDERR_FILENO, "This is exec stderr.\n", 22);
-
-
-						/* Run the command. */
-						iResult = execv(pcCommand, ppcCmdArguments);
-
-						/* If this part is reached, the exec command failed. */
-						fprintf(stderr, "execv returned with errorcode %d.\n", iResult);
-					}
-				}
-
-				close(aiPipeOutFd[PIPE_WRITE_END]);
-				close(aiPipeErrFd[PIPE_WRITE_END]);
-
+				exec_thread(pcCommand, ppcCmdArguments);
 				exit(EXIT_FAILURE);
 			}
 			else
 			{
-				/* Close the write end of both pipes. */
-				close(aiPipeOutFd[PIPE_WRITE_END]);
-				close(aiPipeErrFd[PIPE_WRITE_END]);
-
 				/* This is the parent. */
 				m_tExecThread = tPidExec;
 
 
 				printf("*** Start Capture ***\n");
-				fprintf(stdout, "This is capture stdout.\n");
-				fprintf(stderr, "This is capture stderr.\n");
 
 				tPidCapture = fork();
 				if( tPidCapture==-1 )
@@ -287,32 +329,30 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 					/* This is the capture thread. */
 					printf("This is the capture thread.\n");
 
-					iMaxFd = aiPipeOutFd[PIPE_READ_END];
-					if( iMaxFd<aiPipeErrFd[PIPE_READ_END] )
-					{
-						iMaxFd = aiPipeErrFd[PIPE_READ_END];
-					}
+					iMaxFd = m_iFdPtyMaster;
+//					if( iMaxFd<aiPipeErrFd[PIPE_READ_END] )
+//					{
+//						iMaxFd = aiPipeErrFd[PIPE_READ_END];
+//					}
 					++iMaxFd;
-					printf("aiPipeOutFd[PIPE_READ_END] = %d\n", aiPipeOutFd[PIPE_READ_END]);
-					printf("aiPipeErrFd[PIPE_READ_END] = %d\n", aiPipeErrFd[PIPE_READ_END]);
 					printf("maxfd = %d\n", iMaxFd);
 
 
 					FD_ZERO(&tOpenFdSet);
-					FD_SET(aiPipeOutFd[PIPE_READ_END], &tOpenFdSet);
-					FD_SET(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet);
+					FD_SET(m_iFdPtyMaster, &tOpenFdSet);
+//					FD_SET(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet);
 
 					do
 					{
 						FD_ZERO(&tReadFdSet);
-						if( FD_ISSET(aiPipeOutFd[PIPE_READ_END], &tOpenFdSet) )
+						if( FD_ISSET(m_iFdPtyMaster, &tOpenFdSet) )
 						{
-							FD_SET(aiPipeOutFd[PIPE_READ_END], &tReadFdSet);
+							FD_SET(m_iFdPtyMaster, &tReadFdSet);
 						}
-						if( FD_ISSET(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet) )
-						{
-							FD_SET(aiPipeErrFd[PIPE_READ_END], &tReadFdSet);
-						}
+//						if( FD_ISSET(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet) )
+//						{
+//							FD_SET(aiPipeErrFd[PIPE_READ_END], &tReadFdSet);
+//						}
 
 						iStatus = select(iMaxFd, &tReadFdSet, NULL, NULL, NULL);
 						printf("select: %d\n", iStatus);
@@ -324,17 +364,18 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 						}
 						else if( iStatus>0 )
 						{
-							if( FD_ISSET(aiPipeOutFd[PIPE_READ_END], &tReadFdSet) )
+							if( FD_ISSET(m_iFdPtyMaster, &tReadFdSet) )
 							{
-								ssizRead = read(aiPipeOutFd[PIPE_READ_END], aucBuffer, sizeof(aucBuffer)-1);
+								ssizRead = read(m_iFdPtyMaster, aucBuffer, sizeof(aucBuffer)-1);
 								if( ssizRead<0 )
 								{
+									fprintf(stderr, "read error %d %s\n", errno, strerror(errno));
 									iResult = EXIT_FAILURE;
 									break;
 								}
 								else if( ssizRead==0 )
 								{
-									FD_CLR(aiPipeOutFd[PIPE_READ_END], &tOpenFdSet);
+									FD_CLR(m_iFdPtyMaster, &tOpenFdSet);
 								}
 								else
 								{
@@ -342,6 +383,7 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 									printf("<OUT len=%d>%s</OUT>\n", ssizRead, aucBuffer);
 								}
 							}
+/*
 							if( FD_ISSET(aiPipeErrFd[PIPE_READ_END], &tReadFdSet) )
 							{
 								ssizRead = read(aiPipeErrFd[PIPE_READ_END], aucBuffer, sizeof(aucBuffer)-1);
@@ -360,11 +402,13 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 									printf("<ERR len=%d>%s</ERR>\n", ssizRead, aucBuffer);
 								}
 							}
+*/
 						}
-					} while( (FD_ISSET(aiPipeOutFd[PIPE_READ_END], &tOpenFdSet)) || (FD_ISSET(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet)) );
+					} while( (FD_ISSET(m_iFdPtyMaster, &tOpenFdSet))
+//					         || (FD_ISSET(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet))
+					);
 
-					close(aiPipeOutFd[PIPE_READ_END]);
-					close(aiPipeErrFd[PIPE_READ_END]);
+					close(m_iFdPtyMaster);
 
 					printf("*** Stop Capture ***\n");
 
@@ -379,7 +423,7 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 					}
 
 					/* Send an event to the handler. */
-					send_finished_event(m_tExecThread, iThreadResult);
+//					send_finished_event(m_tExecThread, iThreadResult);
 
 					exit(iResult);
 				}

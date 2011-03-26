@@ -52,14 +52,22 @@ public:
 
 
 private:
+	static const int c_iMaxPtsName = 4096;
+
 	char **get_strings_from_table(int iIndex, lua_State *ptLuaState) const;
 	int free_string_table(char **ppcTable) const;
 	void send_finished_event(int iPid, int iResult);
+
+	int get_pty(void);
+	void exec_thread(const char *pcCommand, char **ppcCmdArguments);
 
 	long m_lMyId;
 	long m_lEvtHandlerId;
 	pid_t m_tCaptureThread;
 	pid_t m_tExecThread;
+
+	int m_iFdPtyMaster;
+	char m_acPtsName[c_iMaxPtsName];
 };
 
 
