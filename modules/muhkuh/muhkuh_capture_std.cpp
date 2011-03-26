@@ -224,7 +224,7 @@ void capture_std::exec_thread(const char *pcCommand, char **ppcCmdArguments)
 {
 	int iPtyFd;
 	int iResult;
-	int iCnt;
+	char **ppcCnt;
 
 
 	fprintf(stderr, "exec_thread start\n");
@@ -233,31 +233,37 @@ void capture_std::exec_thread(const char *pcCommand, char **ppcCmdArguments)
 	iPtyFd = open(m_acPtsName, O_WRONLY);
 	if( iPtyFd<0 )
 	{
-		fprintf(stderr, "open failed: %d %s\n", errno, strerror(errno));
+		fprintf(stderr, "Failed to open the pseudo terminal: (%d) %s\n", errno, strerror(errno));
 	}
 	else
 	{
 		/* Dup the pty to stdout. */
-		iResult = dup2(iPtyFd, STDOUT_FILENO);
-		if( iResult==-1 )
+		if( dup2(iPtyFd, STDOUT_FILENO)==-1 )
 		{
-			fprintf(stderr, "dup2 failed: %d %s\n", errno, strerror(errno));
+			fprintf(stderr, "Failed to connect stdout with the pseudo terminal: (%d) %s\n", errno, strerror(errno));
+		}
+		else if( dup2(iPtyFd, STDERR_FILENO)==-1 )
+		{
+			fprintf(stderr, "Failed to connect stderr with the pseudo terminal: (%d) %s\n", errno, strerror(errno));
 		}
 		else
 		{
-/*
-			for(iCnt=0; iCnt<10; ++iCnt)
-			{
-				write(STDOUT_FILENO, "This is exec stdout.\n", 21);
-				sleep(1);
-			}
-*/
 			/* Run the command. */
 			iResult = execv(pcCommand, ppcCmdArguments);
 
 			/* If this part is reached, the exec command failed. */
-			fprintf(stderr, "execv returned with errorcode %d.\n", iResult);
+			fprintf(stderr, "Command execution failed with errorcode %d.\n", iResult);
+			fprintf(stderr, "Command:   '%s'\n", pcCommand);
+			fprintf(stderr, "Arguments:");
+			ppcCnt = ppcCmdArguments;
+			while( *ppcCnt!=NULL )
+			{
+				fprintf(stderr, " '%s'", *ppcCnt);
+				++ppcCnt;
+			}
+			fprintf(stderr, "\n");
 		}
+
 		close(iPtyFd);
 	}
 
