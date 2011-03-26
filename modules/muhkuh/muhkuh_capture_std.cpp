@@ -102,7 +102,7 @@ char **capture_std::get_strings_from_table(int iIndex, lua_State *ptLuaState) co
 					/* Failed to convert the data to a string. */
 					iResult = -1;
 				}
-				else if( sizString>MAX_COMMANDLINE_ARGUMENT )
+				else if( sizString+1>MAX_COMMANDLINE_ARGUMENT )
 				{
 					/* The argument exceeds the maximum size. */
 					iResult = -1;
@@ -111,7 +111,7 @@ char **capture_std::get_strings_from_table(int iIndex, lua_State *ptLuaState) co
 				{
 					/* Add the string to the array. */
 
-					pcString = (char*)malloc(sizString);
+					pcString = (char*)malloc(sizString+1);
 					/* Copy the string data and the terminating '\0' to the new buffer. */
 					memcpy(pcString, pcLuaString, sizString+1);
 					ppcStrings[sizEntryCnt] = pcString;
@@ -280,9 +280,7 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 	ssize_t ssizRead;
 	unsigned char aucBuffer[4096];
 	int iNewFd;
-	fd_set tOpenFdSet;
 	fd_set tReadFdSet;
-	int iMaxFd;
 	int iStatus;
 	int iThreadResult;
 
@@ -335,32 +333,12 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 					/* This is the capture thread. */
 					printf("This is the capture thread.\n");
 
-					iMaxFd = m_iFdPtyMaster;
-//					if( iMaxFd<aiPipeErrFd[PIPE_READ_END] )
-//					{
-//						iMaxFd = aiPipeErrFd[PIPE_READ_END];
-//					}
-					++iMaxFd;
-					printf("maxfd = %d\n", iMaxFd);
-
-
-					FD_ZERO(&tOpenFdSet);
-					FD_SET(m_iFdPtyMaster, &tOpenFdSet);
-//					FD_SET(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet);
-
 					do
 					{
 						FD_ZERO(&tReadFdSet);
-						if( FD_ISSET(m_iFdPtyMaster, &tOpenFdSet) )
-						{
-							FD_SET(m_iFdPtyMaster, &tReadFdSet);
-						}
-//						if( FD_ISSET(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet) )
-//						{
-//							FD_SET(aiPipeErrFd[PIPE_READ_END], &tReadFdSet);
-//						}
+						FD_SET(m_iFdPtyMaster, &tReadFdSet);
 
-						iStatus = select(iMaxFd, &tReadFdSet, NULL, NULL, NULL);
+						iStatus = select(m_iFdPtyMaster+1, &tReadFdSet, NULL, NULL, NULL);
 						printf("select: %d\n", iStatus);
 						if( iStatus==-1 )
 						{
@@ -370,49 +348,25 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 						}
 						else if( iStatus>0 )
 						{
-							if( FD_ISSET(m_iFdPtyMaster, &tReadFdSet) )
+							ssizRead = read(m_iFdPtyMaster, aucBuffer, sizeof(aucBuffer)-1);
+							if( ssizRead<0 )
 							{
-								ssizRead = read(m_iFdPtyMaster, aucBuffer, sizeof(aucBuffer)-1);
-								if( ssizRead<0 )
-								{
-									fprintf(stderr, "read error %d %s\n", errno, strerror(errno));
-									iResult = EXIT_FAILURE;
-									break;
-								}
-								else if( ssizRead==0 )
-								{
-									FD_CLR(m_iFdPtyMaster, &tOpenFdSet);
-								}
-								else
-								{
-									aucBuffer[ssizRead] = 0;
-									printf("<OUT len=%d>%s</OUT>\n", ssizRead, aucBuffer);
-								}
+								fprintf(stderr, "read error %d %s\n", errno, strerror(errno));
+								iResult = EXIT_FAILURE;
+								break;
 							}
-/*
-							if( FD_ISSET(aiPipeErrFd[PIPE_READ_END], &tReadFdSet) )
+							else if( ssizRead==0 )
 							{
-								ssizRead = read(aiPipeErrFd[PIPE_READ_END], aucBuffer, sizeof(aucBuffer)-1);
-								if( ssizRead<0 )
-								{
-									iResult = EXIT_FAILURE;
-									break;
-								}
-								else if( ssizRead==0 )
-								{
-									FD_CLR(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet);
-								}
-								else
-								{
-									aucBuffer[ssizRead] = 0;
-									printf("<ERR len=%d>%s</ERR>\n", ssizRead, aucBuffer);
-								}
+								iResult = EXIT_SUCCESS;
+								break;
 							}
-*/
+							else
+							{
+								aucBuffer[ssizRead] = 0;
+								printf("<OUT len=%d>%s</OUT>\n", ssizRead, aucBuffer);
+							}
 						}
-					} while( (FD_ISSET(m_iFdPtyMaster, &tOpenFdSet))
-//					         || (FD_ISSET(aiPipeErrFd[PIPE_READ_END], &tOpenFdSet))
-					);
+					} while( iStatus>0 );
 
 					close(m_iFdPtyMaster);
 
