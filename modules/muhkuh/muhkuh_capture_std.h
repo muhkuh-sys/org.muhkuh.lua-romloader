@@ -59,7 +59,7 @@ private:
 	void send_finished_event(int iPid, int iResult);
 
 	int get_pty(void);
-	void exec_thread(const char *pcCommand, char **ppcCmdArguments);
+	int start_exec_thread(const char *pcCommand, char **ppcCmdArguments);
 
 	long m_lMyId;
 	long m_lEvtHandlerId;

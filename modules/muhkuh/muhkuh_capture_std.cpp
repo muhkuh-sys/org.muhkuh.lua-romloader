@@ -220,54 +220,73 @@ int capture_std::get_pty(void)
 }
 
 
-void capture_std::exec_thread(const char *pcCommand, char **ppcCmdArguments)
+int capture_std::start_exec_thread(const char *pcCommand, char **ppcCmdArguments)
 {
+	pid_t tPidExec;
 	int iPtyFd;
 	int iResult;
 	char **ppcCnt;
 
 
-	fprintf(stderr, "exec_thread start\n");
-	
-	/* Open the slave pty in write mode. */
-	iPtyFd = open(m_acPtsName, O_WRONLY);
-	if( iPtyFd<0 )
+	tPidExec = fork();
+	if( tPidExec==-1 )
 	{
-		fprintf(stderr, "Failed to open the pseudo terminal: (%d) %s\n", errno, strerror(errno));
+		fprintf(stderr, "Failed to create the exec thread: %s\n", strerror(errno));
+		return -1;
 	}
-	else
+	else if( tPidExec==0 )
 	{
-		/* Dup the pty to stdout. */
-		if( dup2(iPtyFd, STDOUT_FILENO)==-1 )
+		/* This is the exec thread. */
+		fprintf(stderr, "exec_thread start\n");
+		
+		/* Open the slave pty in write mode. */
+		iPtyFd = open(m_acPtsName, O_WRONLY);
+		if( iPtyFd<0 )
 		{
-			fprintf(stderr, "Failed to connect stdout with the pseudo terminal: (%d) %s\n", errno, strerror(errno));
-		}
-		else if( dup2(iPtyFd, STDERR_FILENO)==-1 )
-		{
-			fprintf(stderr, "Failed to connect stderr with the pseudo terminal: (%d) %s\n", errno, strerror(errno));
+			fprintf(stderr, "Failed to open the pseudo terminal: (%d) %s\n", errno, strerror(errno));
 		}
 		else
 		{
-			/* Run the command. */
-			iResult = execv(pcCommand, ppcCmdArguments);
-
-			/* If this part is reached, the exec command failed. */
-			fprintf(stderr, "Command execution failed with errorcode %d.\n", iResult);
-			fprintf(stderr, "Command:   '%s'\n", pcCommand);
-			fprintf(stderr, "Arguments:");
-			ppcCnt = ppcCmdArguments;
-			while( *ppcCnt!=NULL )
+			/* Dup the pty to stdout. */
+			if( dup2(iPtyFd, STDOUT_FILENO)==-1 )
 			{
-				fprintf(stderr, " '%s'", *ppcCnt);
-				++ppcCnt;
+				fprintf(stderr, "Failed to connect stdout with the pseudo terminal: (%d) %s\n", errno, strerror(errno));
 			}
-			fprintf(stderr, "\n");
+			else if( dup2(iPtyFd, STDERR_FILENO)==-1 )
+			{
+				fprintf(stderr, "Failed to connect stderr with the pseudo terminal: (%d) %s\n", errno, strerror(errno));
+			}
+			else
+			{
+				/* Run the command. */
+				iResult = execv(pcCommand, ppcCmdArguments);
+
+				/* If this part is reached, the exec command failed. */
+				fprintf(stderr, "Command execution failed with errorcode %d.\n", iResult);
+				fprintf(stderr, "Command:   '%s'\n", pcCommand);
+				fprintf(stderr, "Arguments:");
+				ppcCnt = ppcCmdArguments;
+				while( *ppcCnt!=NULL )
+				{
+					fprintf(stderr, " '%s'", *ppcCnt);
+					++ppcCnt;
+				}
+				fprintf(stderr, "\n");
+			}
+
+			close(iPtyFd);
 		}
 
-		close(iPtyFd);
-	}
+		fprintf(stderr, "exec_thread finish\n");
 
-	fprintf(stderr, "exec_thread finish\n");
+		exit(EXIT_FAILURE);
+	}
+	else
+	{
+		/* This is the parent thread. */
+		m_tExecThread = tPidExec;
+		return 0;
+	}
 }
 
 
@@ -275,7 +294,6 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 {
 	int iResult;
 	char **ppcCmdArguments;
-	pid_t tPidExec;
 	pid_t tPidCapture;
 	ssize_t ssizRead;
 	unsigned char aucBuffer[4096];
@@ -286,7 +304,6 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 
 
 	/* Init all variables. */
-	tPidExec = -1;
 	tPidCapture = -1;
 
 	/* The third argument of the function is the table. This is stack index 3. */
@@ -302,24 +319,9 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 		if( iResult==0 )
 		{
 			/* Create the exec thread. */
-			tPidExec = fork();
-			if( tPidExec==-1 )
+			iResult = start_exec_thread(pcCommand, ppcCmdArguments);
+			if( iResult==0 )
 			{
-				fprintf(stderr, "Failed to create the exec thread: %s\n", strerror(errno));
-				iResult = -1;
-			}
-			else if( tPidExec==0 )
-			{
-				/* This is the exec thread. */
-				exec_thread(pcCommand, ppcCmdArguments);
-				exit(EXIT_FAILURE);
-			}
-			else
-			{
-				/* This is the parent. */
-				m_tExecThread = tPidExec;
-
-
 				printf("*** Start Capture ***\n");
 
 				tPidCapture = fork();
@@ -339,7 +341,6 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 						FD_SET(m_iFdPtyMaster, &tReadFdSet);
 
 						iStatus = select(m_iFdPtyMaster+1, &tReadFdSet, NULL, NULL, NULL);
-						printf("select: %d\n", iStatus);
 						if( iStatus==-1 )
 						{
 							/* Select failed! */
@@ -351,13 +352,16 @@ int capture_std::run(const char *pcCommand, lua_State *ptLuaStateForTableAccess)
 							ssizRead = read(m_iFdPtyMaster, aucBuffer, sizeof(aucBuffer)-1);
 							if( ssizRead<0 )
 							{
-								fprintf(stderr, "read error %d %s\n", errno, strerror(errno));
-								iResult = EXIT_FAILURE;
-								break;
-							}
-							else if( ssizRead==0 )
-							{
-								iResult = EXIT_SUCCESS;
+								if( errno==EIO )
+								{
+									/* The terminal was closed. */
+									iResult = EXIT_SUCCESS;
+								}
+								else
+								{
+									fprintf(stderr, "read error %d %s\n", errno, strerror(errno));
+									iResult = EXIT_FAILURE;
+								}
 								break;
 							}
 							else
