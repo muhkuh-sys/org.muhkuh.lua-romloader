@@ -1,14 +1,22 @@
 /***************************************************************************
- *   Copyright (C) 2005, 2006, 2007, 2008, 2009 by Hilscher GmbH           *
+ *   Copyright (C) 2011 by Hilscher GmbH                                   *
+ *   cthelen@hilscher.com                                                  *
  *                                                                         *
- *   Author: Christoph Thelen (cthelen@hilscher.com)                       *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU Library General Public License as       *
+ *   published by the Free Software Foundation; either version 2 of the    *
+ *   License, or (at your option) any later version.                       *
  *                                                                         *
- *   Redistribution or unauthorized use without expressed written          *
- *   agreement from the Hilscher GmbH is forbidden.                        *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU Library General Public     *
+ *   License along with this program; if not, write to the                 *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-
-
-#if ASIC_TYP==50
 
 
 #include "netx50_io_areas.h"
@@ -60,7 +68,4 @@ NX50_FMMUSM_AREA_T * const ptFmmusmArea = (NX50_FMMUSM_AREA_T * const)Addr_NX50_
 NX50_BUF_MAN_AREA_T * const ptBufManArea = (NX50_BUF_MAN_AREA_T * const)Addr_NX50_buf_man;
 NX50_XC_EXTBUS_SEL_AREA_T * const ptXcExtbusSelArea = (NX50_XC_EXTBUS_SEL_AREA_T * const)Addr_NX50_xc_extbus_sel;
 NX50_VIC_AREA_T * const ptVicArea = (NX50_VIC_AREA_T * const)Addr_NX50_vic;
-
-
-#endif	/* ASIC_TYP==50 */
 

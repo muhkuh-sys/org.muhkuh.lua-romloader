@@ -1,10 +1,21 @@
 /***************************************************************************
- *   Copyright (C) 2005, 2006, 2007, 2008, 2009 by Hilscher GmbH           *
+ *   Copyright (C) 2010 by Hilscher GmbH                                   *
+ *   cthelen@hilscher.com                                                  *
  *                                                                         *
- *   Author: Christoph Thelen (cthelen@hilscher.com)                       *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU Library General Public License as       *
+ *   published by the Free Software Foundation; either version 2 of the    *
+ *   License, or (at your option) any later version.                       *
  *                                                                         *
- *   Redistribution or unauthorized use without expressed written          *
- *   agreement from the Hilscher GmbH is forbidden.                        *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU Library General Public     *
+ *   License along with this program; if not, write to the                 *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
 
@@ -126,65 +137,65 @@ extern NX10_HANDSHAKE_BLOCK_AREA_T * const ptHandshakeDtcmArmMirrorArea;
 
 typedef enum
 {
-	MMIO_CFG_xm0_io0		= 0x00,
-	MMIO_CFG_xm0_io1		= 0x01,
-	MMIO_CFG_xm0_io2		= 0x02,
-	MMIO_CFG_xm0_io3		= 0x03,
-	MMIO_CFG_xm0_io4		= 0x04,
-	MMIO_CFG_xm0_io5		= 0x05,
-	MMIO_CFG_xm0_rx			= 0x06,
-	MMIO_CFG_gpio0			= 0x07,
-	MMIO_CFG_gpio1			= 0x08,
-	MMIO_CFG_gpio2			= 0x09,
-	MMIO_CFG_gpio3			= 0x0a,
-	MMIO_CFG_gpio4			= 0x0b,
-	MMIO_CFG_gpio5			= 0x0c,
-	MMIO_CFG_gpio6			= 0x0d,
-	MMIO_CFG_gpio7			= 0x0e,
-	MMIO_CFG_phy0_led0		= 0x0f,
-	MMIO_CFG_phy0_led1		= 0x10,
-	MMIO_CFG_phy0_led2		= 0x11,
-	MMIO_CFG_phy0_led3		= 0x12,
-	MMIO_CFG_spi0_cs1n		= 0x13,
-	MMIO_CFG_spi0_cs2n		= 0x14,
-	MMIO_CFG_spi1_clk		= 0x15,
-	MMIO_CFG_spi1_cs0n		= 0x16,
-	MMIO_CFG_spi1_cs1n		= 0x17,
-	MMIO_CFG_spi1_cs2n		= 0x18,
-	MMIO_CFG_spi1_miso		= 0x19,
-	MMIO_CFG_spi1_mosi		= 0x1a,
-	MMIO_CFG_i2c_scl		= 0x1b,
-	MMIO_CFG_i2c_sda		= 0x1c,
-	MMIO_CFG_uart0_ctsn		= 0x1d,
-	MMIO_CFG_uart0_rtsn		= 0x1e,
-	MMIO_CFG_uart0_rxd		= 0x1f,
-	MMIO_CFG_uart0_txd		= 0x20,
-	MMIO_CFG_uart1_ctsn		= 0x21,
-	MMIO_CFG_uart1_rtsn		= 0x22,
-	MMIO_CFG_uart1_rxd		= 0x23,
-	MMIO_CFG_uart1_txd		= 0x24,
-	MMIO_CFG_pwm_failure_n		= 0x25,
-	MMIO_CFG_pos_enc0_a		= 0x26,
-	MMIO_CFG_pos_enc0_b		= 0x27,
-	MMIO_CFG_pos_enc0_n		= 0x28,
-	MMIO_CFG_pos_enc1_a		= 0x29,
-	MMIO_CFG_pos_enc1_b		= 0x2a,
-	MMIO_CFG_pos_enc1_n		= 0x2b,
-	MMIO_CFG_pos_mp0		= 0x2c,
-	MMIO_CFG_pos_mp1		= 0x2d,
-	MMIO_CFG_io_link0_in		= 0x2e,
-	MMIO_CFG_io_link0_out		= 0x2f,
-	MMIO_CFG_io_link0_oe		= 0x30,
-	MMIO_CFG_io_link1_in		= 0x31,
-	MMIO_CFG_io_link1_out		= 0x32,
-	MMIO_CFG_io_link1_oe		= 0x33,
-	MMIO_CFG_io_link2_in		= 0x34,
-	MMIO_CFG_io_link2_out		= 0x35,
-	MMIO_CFG_io_link2_oe		= 0x36,
-	MMIO_CFG_io_link3_in		= 0x37,
-	MMIO_CFG_io_link3_out		= 0x38,
-	MMIO_CFG_io_link3_oe		= 0x39,
-	MMIO_CFG_PIO			= 0x3f
+	MMIO_CFG_xm0_io0                = 0x00,
+	MMIO_CFG_xm0_io1                = 0x01,
+	MMIO_CFG_xm0_io2                = 0x02,
+	MMIO_CFG_xm0_io3                = 0x03,
+	MMIO_CFG_xm0_io4                = 0x04,
+	MMIO_CFG_xm0_io5                = 0x05,
+	MMIO_CFG_xm0_rx                 = 0x06,
+	MMIO_CFG_gpio0                  = 0x07,
+	MMIO_CFG_gpio1                  = 0x08,
+	MMIO_CFG_gpio2                  = 0x09,
+	MMIO_CFG_gpio3                  = 0x0a,
+	MMIO_CFG_gpio4                  = 0x0b,
+	MMIO_CFG_gpio5                  = 0x0c,
+	MMIO_CFG_gpio6                  = 0x0d,
+	MMIO_CFG_gpio7                  = 0x0e,
+	MMIO_CFG_phy0_led0              = 0x0f,
+	MMIO_CFG_phy0_led1              = 0x10,
+	MMIO_CFG_phy0_led2              = 0x11,
+	MMIO_CFG_phy0_led3              = 0x12,
+	MMIO_CFG_spi0_cs1n              = 0x13,
+	MMIO_CFG_spi0_cs2n              = 0x14,
+	MMIO_CFG_spi1_clk               = 0x15,
+	MMIO_CFG_spi1_cs0n              = 0x16,
+	MMIO_CFG_spi1_cs1n              = 0x17,
+	MMIO_CFG_spi1_cs2n              = 0x18,
+	MMIO_CFG_spi1_miso              = 0x19,
+	MMIO_CFG_spi1_mosi              = 0x1a,
+	MMIO_CFG_i2c_scl                = 0x1b,
+	MMIO_CFG_i2c_sda                = 0x1c,
+	MMIO_CFG_uart0_ctsn             = 0x1d,
+	MMIO_CFG_uart0_rtsn             = 0x1e,
+	MMIO_CFG_uart0_rxd              = 0x1f,
+	MMIO_CFG_uart0_txd              = 0x20,
+	MMIO_CFG_uart1_ctsn             = 0x21,
+	MMIO_CFG_uart1_rtsn             = 0x22,
+	MMIO_CFG_uart1_rxd              = 0x23,
+	MMIO_CFG_uart1_txd              = 0x24,
+	MMIO_CFG_pwm_failure_n          = 0x25,
+	MMIO_CFG_pos_enc0_a             = 0x26,
+	MMIO_CFG_pos_enc0_b             = 0x27,
+	MMIO_CFG_pos_enc0_n             = 0x28,
+	MMIO_CFG_pos_enc1_a             = 0x29,
+	MMIO_CFG_pos_enc1_b             = 0x2a,
+	MMIO_CFG_pos_enc1_n             = 0x2b,
+	MMIO_CFG_pos_mp0                = 0x2c,
+	MMIO_CFG_pos_mp1                = 0x2d,
+	MMIO_CFG_io_link0_in            = 0x2e,
+	MMIO_CFG_io_link0_out           = 0x2f,
+	MMIO_CFG_io_link0_oe            = 0x30,
+	MMIO_CFG_io_link1_in            = 0x31,
+	MMIO_CFG_io_link1_out           = 0x32,
+	MMIO_CFG_io_link1_oe            = 0x33,
+	MMIO_CFG_io_link2_in            = 0x34,
+	MMIO_CFG_io_link2_out           = 0x35,
+	MMIO_CFG_io_link2_oe            = 0x36,
+	MMIO_CFG_io_link3_in            = 0x37,
+	MMIO_CFG_io_link3_out           = 0x38,
+	MMIO_CFG_io_link3_oe            = 0x39,
+	MMIO_CFG_PIO                    = 0x3f
 } MMIO_CFG_T;
 
 #define MMIO_CFG_DISABLE MMIO_CFG_PIO
