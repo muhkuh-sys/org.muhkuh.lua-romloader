@@ -33,6 +33,11 @@ typedef struct
 	MMIO_CFG_T tMmioTx;
 	MMIO_CFG_T tMmioRts;
 	MMIO_CFG_T tMmioCts;
+#elif ASIC_TYP==500 || ASIC_TYP==100
+	unsigned int uiGpioRx;
+	unsigned int uiGpioTx;
+	unsigned int uiGpioRts;
+	unsigned int uiGpioCts;
 #endif
 } UART_INSTANCE_T;
 
@@ -55,9 +60,17 @@ static const UART_INSTANCE_T tUartInstance =
 
 #elif ASIC_TYP==100
 	(NX100_UART_AREA_T * const)Addr_NX100_uart0,
+	0,
+	1,
+	2,
+	3
 
 #elif ASIC_TYP==500
 	(NX500_UART_AREA_T * const)Addr_NX500_uart0,
+	0,
+	1,
+	2,
+	3
 
 #endif
 };
@@ -105,16 +118,18 @@ int uart_init(const UART_CONFIGURATION_T *ptCfg)
 	/* setup the MMIO pins */
 	ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 	ptMmioCtrlArea->aulMmio_cfg[ptCfg->uc_rx_mmio] = tUartInstance.tMmioRx;
+
+	ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
+	ptMmioCtrlArea->aulMmio_cfg[ptCfg->uc_tx_mmio] = tUartInstance.tMmioTx;
+#elif ASIC_TYP==500 || ASIC_TYP==100
+	ptGpioArea->aulGpio_cfg[tUartInstance.uiGpioRx] = 2;
+	ptGpioArea->aulGpio_cfg[tUartInstance.uiGpioTx] = 2;
+	ptGpioArea->aulGpio_cfg[tUartInstance.uiGpioRts] = 2;
+	ptGpioArea->aulGpio_cfg[tUartInstance.uiGpioCts] = 2;
 #endif
 	/* enable the drivers */
 	ulValue = HOSTMSK(uartdrvout_DRVTX);
 	ptUartArea->ulUartdrvout = ulValue;
-
-#if ASIC_TYP==10 || ASIC_TYP==50
-	/* setup the MMIO pins */
-	ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
-	ptMmioCtrlArea->aulMmio_cfg[ptCfg->uc_tx_mmio] = tUartInstance.tMmioTx;
-#endif
 
 	iResult = 0;
 
