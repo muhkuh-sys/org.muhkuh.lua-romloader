@@ -34,18 +34,16 @@
 
 
 
-#define MAX_PACKET_SIZE 256
-
 #define UART_BUFFER_NO_TIMEOUT 0
 #define UART_BUFFER_TIMEOUT 1
 
-unsigned char aucStreamBuffer[MAX_PACKET_SIZE];
+unsigned char aucStreamBuffer[MONITOR_MAX_PACKET_SIZE];
 size_t sizStreamBufferHead;
 size_t sizStreamBufferFill;
 
-unsigned char aucPacketInputBuffer[MAX_PACKET_SIZE];
+unsigned char aucPacketInputBuffer[MONITOR_MAX_PACKET_SIZE];
 
-unsigned char aucPacketOutputBuffer[MAX_PACKET_SIZE];
+unsigned char aucPacketOutputBuffer[MONITOR_MAX_PACKET_SIZE];
 size_t sizPacketOutputFill;
 
 
@@ -82,16 +80,16 @@ static int uart_buffer_fill(size_t sizRequestedFillLevel, unsigned int uiTimeout
 	unsigned int uiHasData;
 
 
-	uprintf("uart_buffer_fill: sizRequestedFillLevel=%d, uiTimeoutFlag=%d\n", sizRequestedFillLevel, uiTimeoutFlag);
+//	uprintf("uart_buffer_fill: sizRequestedFillLevel=%d, uiTimeoutFlag=%d\n", sizRequestedFillLevel, uiTimeoutFlag);
 
-	uprintf("sizStreamBufferHead = %d\n", sizStreamBufferHead);
-	uprintf("sizStreamBufferFill = %d\n", sizStreamBufferFill);
+//	uprintf("sizStreamBufferHead = %d\n", sizStreamBufferHead);
+//	uprintf("sizStreamBufferFill = %d\n", sizStreamBufferFill);
 
 	/* Get the write position. */
 	sizWritePosition = sizStreamBufferHead + sizStreamBufferFill;
-	if( sizWritePosition>=MAX_PACKET_SIZE )
+	if( sizWritePosition>=MONITOR_MAX_PACKET_SIZE )
 	{
-		sizWritePosition -= MAX_PACKET_SIZE;
+		sizWritePosition -= MONITOR_MAX_PACKET_SIZE;
 	}
 
 	iResult = 0;
@@ -104,13 +102,13 @@ static int uart_buffer_fill(size_t sizRequestedFillLevel, unsigned int uiTimeout
 			/* Write the new byte to the buffer. */
 			aucStreamBuffer[sizWritePosition] = SERIAL_GET();
 
-			uprintf("Buffer[0x%04x] = 0x%02x\n", sizWritePosition, aucStreamBuffer[sizWritePosition]);
+//			uprintf("Buffer[0x%04x] = 0x%02x\n", sizWritePosition, aucStreamBuffer[sizWritePosition]);
 
 			/* Increase the write position. */
 			++sizWritePosition;
-			if( sizWritePosition>=MAX_PACKET_SIZE )
+			if( sizWritePosition>=MONITOR_MAX_PACKET_SIZE )
 			{
-				sizWritePosition -= MAX_PACKET_SIZE;
+				sizWritePosition -= MONITOR_MAX_PACKET_SIZE;
 			}
 			/* Increase the fill level. */
 			++sizStreamBufferFill;
@@ -144,9 +142,9 @@ static int uart_buffer_fill(size_t sizRequestedFillLevel, unsigned int uiTimeout
 			aucStreamBuffer[sizWritePosition] = SERIAL_GET();
 			/* Increase the write position. */
 			++sizWritePosition;
-			if( sizWritePosition>=MAX_PACKET_SIZE )
+			if( sizWritePosition>=MONITOR_MAX_PACKET_SIZE )
 			{
-				sizWritePosition -= MAX_PACKET_SIZE;
+				sizWritePosition -= MONITOR_MAX_PACKET_SIZE;
 			}
 			/* Increase the fill level. */
 			++sizStreamBufferFill;
@@ -164,12 +162,12 @@ static unsigned char uart_buffer_get(void)
 
 	ucByte = aucStreamBuffer[sizStreamBufferHead];
 
-	uprintf("Get from %d = 0x%02x\n", sizStreamBufferHead, ucByte);
+//	uprintf("Get from %d = 0x%02x\n", sizStreamBufferHead, ucByte);
 
 	++sizStreamBufferHead;
-	if( sizStreamBufferHead>=MAX_PACKET_SIZE )
+	if( sizStreamBufferHead>=MONITOR_MAX_PACKET_SIZE )
 	{
-		sizStreamBufferHead -= MAX_PACKET_SIZE;
+		sizStreamBufferHead -= MONITOR_MAX_PACKET_SIZE;
 	}
 
 	--sizStreamBufferFill;
@@ -185,13 +183,13 @@ static unsigned char uart_buffer_peek(size_t sizOffset)
 
 
 	sizReadPosition = sizStreamBufferHead + sizOffset;
-	if( sizReadPosition>=MAX_PACKET_SIZE )
+	if( sizReadPosition>=MONITOR_MAX_PACKET_SIZE )
 	{
-		sizReadPosition -= MAX_PACKET_SIZE;
+		sizReadPosition -= MONITOR_MAX_PACKET_SIZE;
 	}
 
 	ucByte = aucStreamBuffer[sizReadPosition];
-	uprintf("peek at offset %d = 0x%02x\n", sizOffset, ucByte);
+//	uprintf("peek at offset %d = 0x%02x\n", sizOffset, ucByte);
 
 	return ucByte;
 }
@@ -215,17 +213,17 @@ void transport_loop(void)
 		ucByte = uart_buffer_get();
 	} while( ucByte!=MONITOR_STREAM_PACKET_START );
 
-	uprintf("Startchar\n");
+//	uprintf("Startchar\n");
 
 	/* Get the size of the data packet in bytes. */
 	uart_buffer_fill(2, UART_BUFFER_NO_TIMEOUT);
 	sizPacket  = uart_buffer_peek(0);
 	sizPacket |= (size_t)(uart_buffer_peek(1) << 8U);
 
-	uprintf("Size: 0x%08x\n", sizPacket);
+//	uprintf("Size: 0x%08x\n", sizPacket);
 
 	/* Is the packet's size valid? */
-	if( sizPacket>0 && sizPacket<=MAX_PACKET_SIZE-4 )
+	if( sizPacket>0 && sizPacket<=MONITOR_MAX_PACKET_SIZE-4 )
 	{
 		/* Yes, the packet size is valid. */
 
@@ -257,7 +255,7 @@ void transport_loop(void)
 				uart_buffer_get();
 				uart_buffer_get();
 
-				uprintf("Received packet (%d bytes): ", sizPacket);
+//				uprintf("Received packet (%d bytes): ", sizPacket);
 
 				sizCrcPosition = 0;
 				while( sizCrcPosition<sizPacket )
@@ -285,7 +283,7 @@ void transport_loop(void)
 
 void transport_send_byte(unsigned char ucData)
 {
-	if( sizPacketOutputFill<MAX_PACKET_SIZE )
+	if( sizPacketOutputFill<MONITOR_MAX_PACKET_SIZE )
 	{
 		aucPacketOutputBuffer[sizPacketOutputFill] = ucData;
 		++sizPacketOutputFill;
