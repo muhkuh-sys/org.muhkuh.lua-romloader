@@ -91,6 +91,7 @@ elf_netx500_intram = env_netx500_intram.Elf('targets/uartmon_netx500_intram.elf'
 bin_netx500_intram = env_netx500_intram.ObjCopy('targets/uartmon_netx500_intram.bin', elf_netx500_intram)
 arr_netx500_intram = env_netx500_intram.DataArray('targets/uartmon_netx500_intram.c', bin_netx500_intram, DATAARRAY_NAME='auc_uartmon_netx500_intram')
 
+nxf_netx500_intram = env_netx500_intram.BootBlock('targets/uartmon_netx500_intram.nxf', elf_netx500_intram, BOOTBLOCK_SRC='SPI_gen_10', BOOTBLOCK_DST='INTRAM')
 
 #----------------------------------------------------------------------------
 #
