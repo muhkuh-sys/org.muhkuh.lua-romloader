@@ -22,10 +22,10 @@
 #include <stdio.h>
 
 #include "romloader_uart_main.h"
-
+#include "netx/src/monitor_commands.h"
 
 #ifdef _WIN32
-	#define snprintf _snprintf
+#       define snprintf _snprintf
 #endif
 
 /*-------------------------------------*/
@@ -279,10 +279,12 @@ void romloader_uart::Connect(lua_State *ptClientData)
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to open device!", m_pcName, this);
 		}
+/*
 		else if( m_ptUartDev->IdentifyLoader()!=true )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to identify loader!", m_pcName, this);
 		}
+*/
 		else if( detect_chiptyp(ptClientData)!=true )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chiptyp!", m_pcName, this);
@@ -319,6 +321,8 @@ void romloader_uart::Disconnect(lua_State *ptClientData)
 }
 
 
+
+
 unsigned char romloader_uart::read_data08(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
 	fprintf(stderr, "read_data08: 0x%08x\n", ulNetxAddress);
@@ -333,7 +337,51 @@ unsigned short romloader_uart::read_data16(lua_State *ptClientData, unsigned lon
 
 unsigned long romloader_uart::read_data32(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
+	unsigned char aucCommand[32];
+	unsigned char aucResponse[32];
+	unsigned short usCrc;
+	unsigned int uiCnt;
+	unsigned long ulResult;
+	unsigned long ulValue;
+
+
 	fprintf(stderr, "read_data32: 0x%08x\n", ulNetxAddress);
+
+	aucCommand[0] = MONITOR_STREAM_PACKET_START;
+	aucCommand[1] = 6;
+	aucCommand[2] = 0;
+	aucCommand[3] = MONITOR_COMMAND_Read | (MONITOR_ACCESSSIZE_Long<<6);
+	aucCommand[4] = 4;
+	aucCommand[5] =  ulNetxAddress      & 0xffU;
+	aucCommand[6] = (ulNetxAddress>>8 ) & 0xffU;
+	aucCommand[7] = (ulNetxAddress>>16) & 0xffU;
+	aucCommand[8] = (ulNetxAddress>>24) & 0xffU;
+
+	usCrc = 0;
+	for(uiCnt=1; uiCnt<9; ++uiCnt)
+	{
+		usCrc = crc16(usCrc, aucCommand[uiCnt]);
+	}
+	aucCommand[9]  = (usCrc>>8 ) & 0xffU;
+	aucCommand[10] =  usCrc      & 0xffU;
+
+	ulResult = m_ptUartDev->SendRaw(aucCommand, 11, 1000);
+	fprintf(stderr, "SendRaw: %d\n", ulResult);
+
+	memset(aucResponse, 0xab, 10);
+	ulResult = m_ptUartDev->RecvRaw(aucResponse, 10, 1000);
+	fprintf(stderr, "RecvRaw: %d\n", ulResult);
+	for(uiCnt=0; uiCnt<10; ++uiCnt)
+	{
+		fprintf(stderr, "aucResponse[%d] = 0x%02x\n", uiCnt, aucResponse[uiCnt]);
+	}
+	if( ulResult==10 && aucResponse[3]==0 )
+	{
+		ulValue = aucResponse[4] |
+		          aucResponse[5]<<8 |
+		          aucResponse[6]<<16 |
+		          aucResponse[7]<<24;
+	}
 }
 
 #if 0
