@@ -302,14 +302,19 @@ void transport_send_packet(void)
 	/* Send the start character. */
 	uart_put(MONITOR_STREAM_PACKET_START);
 
+	usCrc = 0;
+
 	/* Send the size. */
-	uart_put(sizPacketOutputFill&0xffU);
-	uart_put(sizPacketOutputFill>>8U);
+	ucData = sizPacketOutputFill & 0xffU;
+	usCrc = crc16(usCrc, ucData);
+	uart_put(ucData);
+	ucData = (sizPacketOutputFill >> 8U) & 0xffU;
+	usCrc = crc16(usCrc, ucData);
+	uart_put(ucData);
 
 	/* Send the packet and build the CRC16. */
 	pucCnt = aucPacketOutputBuffer;
 	pucEnd = pucCnt + sizPacketOutputFill;
-	usCrc = 0;
 	while( pucCnt<pucEnd )
 	{
 		ucData = *(pucCnt++);
