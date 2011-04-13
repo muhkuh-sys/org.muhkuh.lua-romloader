@@ -29,21 +29,21 @@
 
 typedef enum
 {
-	ROMLOADER_CHIPTYP_UNKNOWN			= 0,
-	ROMLOADER_CHIPTYP_NETX500			= 1,
-	ROMLOADER_CHIPTYP_NETX100			= 2,
-	ROMLOADER_CHIPTYP_NETX50			= 3,
-	ROMLOADER_CHIPTYP_NETX5				= 4,
-	ROMLOADER_CHIPTYP_NETX10			= 5
+	ROMLOADER_CHIPTYP_UNKNOWN       = 0,
+	ROMLOADER_CHIPTYP_NETX500       = 1,
+	ROMLOADER_CHIPTYP_NETX100       = 2,
+	ROMLOADER_CHIPTYP_NETX50        = 3,
+	ROMLOADER_CHIPTYP_NETX5         = 4,
+	ROMLOADER_CHIPTYP_NETX10        = 5
 } ROMLOADER_CHIPTYP;
 
 
 typedef enum
 {
-	ROMLOADER_ROMCODE_UNKNOWN			= 0,
-	ROMLOADER_ROMCODE_ABOOT				= 1,
-	ROMLOADER_ROMCODE_HBOOT				= 2,
-	ROMLOADER_ROMCODE_HBOOT2_SOFT			= 3
+	ROMLOADER_ROMCODE_UNKNOWN       = 0,
+	ROMLOADER_ROMCODE_ABOOT         = 1,
+	ROMLOADER_ROMCODE_HBOOT         = 2,
+	ROMLOADER_ROMCODE_HBOOT2_SOFT   = 3
 } ROMLOADER_ROMCODE;
 
 /*-----------------------------------*/
@@ -87,7 +87,7 @@ public:
 
 protected:
 	bool detect_chiptyp(lua_State *ptClientData);
-	unsigned int crc16(unsigned int uCrc, unsigned int uData);
+	unsigned int crc16(unsigned short usCrc, unsigned char ucData);
 	bool callback_long(SWIGLUA_REF *ptLuaFn, long lProgressData, long lCallbackUserData);
 	bool callback_string(SWIGLUA_REF *ptLuaFn, const char *pcProgressData, size_t sizProgressData, long lCallbackUserData);
 

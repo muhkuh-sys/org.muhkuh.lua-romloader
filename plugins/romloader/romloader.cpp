@@ -213,15 +213,15 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[4] =
 };
 
 
-unsigned int romloader::crc16(unsigned int uCrc, unsigned int uData)
+unsigned int romloader::crc16(unsigned short usCrc, unsigned char ucData)
 {
-	uCrc  = (uCrc >> 8) | ((uCrc & 0xff) << 8);
-	uCrc ^= uData;
-	uCrc ^= (uCrc & 0xff) >> 4;
-	uCrc ^= (uCrc & 0x0f) << 12;
-	uCrc ^= ((uCrc & 0xff) << 4) << 1;
+	usCrc  = (usCrc >> 8) | ((usCrc & 0xff) << 8);
+	usCrc ^= ucData;
+	usCrc ^= (usCrc & 0xff) >> 4;
+	usCrc ^= (usCrc & 0x0f) << 12;
+	usCrc ^= ((usCrc & 0xff) << 4) << 1;
 
-	return uCrc;
+	return usCrc;
 }
 
 
