@@ -44,18 +44,17 @@ public:
 	romloader_uart_device_linux(const char *pcPortName);
 	virtual ~romloader_uart_device_linux();
 
-	virtual bool		Open(void);
-	virtual void		Close(void);
+	virtual bool Open(void);
+	virtual void Close(void);
 
-	unsigned long		SendRaw(const unsigned char *pbData, unsigned long ulDataLen, unsigned long ulTimeout);
-	bool			Cancel(void);
-	unsigned long		RecvRaw(unsigned char *pbData, unsigned long ulDataLen, unsigned long ulTimeout);
-//	bool			GetLine(wxString &strData, const char *pcEol, unsigned long ulTimeout);
-	bool			Flush(void);
-	unsigned long		Peek(void);
+	size_t SendRaw(const unsigned char *pucData, size_t sizData, unsigned long ulTimeout);
+	bool Cancel(void);
+	size_t RecvRaw(unsigned char *pucData, size_t sizData, unsigned long ulTimeout);
+	bool Flush(void);
+	unsigned long Peek(void);
 
-	static size_t		scanSysFs(char ***pppcPortNames);
-	static size_t		ScanForPorts(char ***pppcPortNames);
+	static size_t scanSysFs(char ***pppcPortNames);
+	static size_t ScanForPorts(char ***pppcPortNames);
 
 protected:
 	unsigned long GetMaxBlockSize(void) { return 4096; }
@@ -64,7 +63,6 @@ protected:
 	struct termios m_tOldAttribs;
 
 private:
-//	PFN_PROGRESS_CALLBACK m_pfnProgressCallback;
 	void *m_pvCallbackUserData;
 
 	/* the rx thread and its data structure */
@@ -74,4 +72,4 @@ private:
 };
 
 
-#endif	/* __ROMLOADER_UART_DEVICE_LINUX_H__ */
+#endif  /* __ROMLOADER_UART_DEVICE_LINUX_H__ */

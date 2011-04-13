@@ -22,6 +22,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdio.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -32,7 +33,7 @@
 #include "romloader_uart_device_linux.h"
 
 
-void *romloader_uart_rx_thread (void *pvParameter)
+void *romloader_uart_rx_thread(void *pvParameter)
 {
 	RXTHREAD_PDATA_T *ptPData;
 	int iOldState;
@@ -134,7 +135,7 @@ romloader_uart_device_linux::romloader_uart_device_linux(const char *pcPortName)
 }
 
 
-romloader_uart_device_linux::~romloader_uart_device_linux()
+romloader_uart_device_linux::~romloader_uart_device_linux(void)
 {
 	int iResult;
 
@@ -253,19 +254,19 @@ void romloader_uart_device_linux::Close(void)
 }
 
 
-unsigned long romloader_uart_device_linux::SendRaw(const unsigned char *pbData, unsigned long ulDataLen, unsigned long ulTimeout)
+size_t romloader_uart_device_linux::SendRaw(const unsigned char *pucData, size_t sizData, unsigned long ulTimeout)
 {
 	ssize_t ssizBytesWritten;
 	size_t sizChunk;
-	unsigned long ulBytesWritten;
+	size_t sizBytesWritten;
 	int iErrno;
 
 
-	ulBytesWritten = 0;
+	sizBytesWritten = 0;
 	do
 	{
-		sizChunk = ulDataLen - ulBytesWritten;
-		ssizBytesWritten = write(m_hPort, pbData + ulBytesWritten, sizChunk);
+		sizChunk = sizData - sizBytesWritten;
+		ssizBytesWritten = write(m_hPort, pucData + sizBytesWritten, sizChunk);
 		if( ssizBytesWritten==-1 )
 		{
 			iErrno = errno;
@@ -290,7 +291,7 @@ unsigned long romloader_uart_device_linux::SendRaw(const unsigned char *pbData, 
 			}
 			else
 			{
-				fprintf(stderr, "romloader_uart_device_linux(%p): failed to write %d bytes at offset %d of %d total", this, sizChunk, ulBytesWritten, ulDataLen);
+				fprintf(stderr, "romloader_uart_device_linux(%p): failed to write %d bytes at offset %d of %d total", this, sizChunk, sizBytesWritten, sizData);
 				fprintf(stderr, "write failed with result: %d, errno: %d, strerror: %s", ssizBytesWritten, iErrno, strerror(iErrno));
 				break;
 			}
@@ -298,18 +299,18 @@ unsigned long romloader_uart_device_linux::SendRaw(const unsigned char *pbData, 
 		else if( ssizBytesWritten<0 || ssizBytesWritten>sizChunk )
 		{
 			iErrno = errno;
-			fprintf(stderr, "romloader_uart_device_linux(%p): failed to write %d bytes at offset %d of %d total, result: %d", this, sizChunk, ulBytesWritten, ulDataLen, ssizBytesWritten);
+			fprintf(stderr, "romloader_uart_device_linux(%p): failed to write %d bytes at offset %d of %d total, result: %d", this, sizChunk, sizBytesWritten, sizData, ssizBytesWritten);
 			fprintf(stderr, "write failed with result: %d, errno: %d, strerror: %s", ssizBytesWritten, iErrno, strerror(iErrno));
 			break;
 		}
-		ulBytesWritten += ssizBytesWritten;
-	} while( ulBytesWritten<ulDataLen );
+		sizBytesWritten += ssizBytesWritten;
+	} while( sizBytesWritten<sizData );
 	
-	return ulBytesWritten;
+	return sizBytesWritten;
 }
 
 
-unsigned long romloader_uart_device_linux::RecvRaw(unsigned char *pbData, unsigned long ulDataLen, unsigned long ulTimeout)
+size_t romloader_uart_device_linux::RecvRaw(unsigned char *pucData, size_t sizData, unsigned long ulTimeout)
 {
 	unsigned long ulTimeLeft;
 	size_t sizDataLeft;
@@ -319,7 +320,7 @@ unsigned long romloader_uart_device_linux::RecvRaw(unsigned char *pbData, unsign
 	int iWaitResult;
 
 
-	sizDataLeft = ulDataLen;
+	sizDataLeft = sizData;
 
 	/* Get absolute end time. */
 	iResult = clock_gettime(CLOCK_REALTIME, &tEndTime);
@@ -340,7 +341,7 @@ unsigned long romloader_uart_device_linux::RecvRaw(unsigned char *pbData, unsign
 
 		do
 		{
-			sizRead = readCards(pbData, sizDataLeft);
+			sizRead = readCards(pucData, sizDataLeft);
 			sizDataLeft -= sizRead;
 			if( sizDataLeft>0 )
 			{
@@ -358,7 +359,7 @@ unsigned long romloader_uart_device_linux::RecvRaw(unsigned char *pbData, unsign
 		} while( sizDataLeft>0 );
 	}
 
-	return ulDataLen - sizDataLeft;
+	return sizData - sizDataLeft;
 }
 
 
@@ -539,10 +540,6 @@ size_t romloader_uart_device_linux::ScanForPorts(char ***pppcDeviceNames)
 	size_t sizDevices;
 	static const char *pcFallbackName = "romloader_uart_/dev/ttyS%d";
 
-
-	/* TODO: let user specify a regexp like '/dev/tty.*' and add all of
-	 * them to the list
-	 */
 
 	sizDevices = 0;
 	ppcDeviceNames = NULL;

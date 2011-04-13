@@ -21,6 +21,9 @@
 
 #include "../romloader.h"
 
+#include "netx/src/monitor_commands.h"
+
+
 #ifndef __ROMLOADER_UART_MAIN_H__
 #define __ROMLOADER_UART_MAIN_H__
 
@@ -79,6 +82,23 @@ private:
 
 	bool m_fIsConnected;
 	romloader_uart_device_platform *m_ptUartDev;
+
+	size_t m_sizPacketRingBufferHead;
+	size_t m_sizPacketRingBufferFill;
+	unsigned char m_aucPacketRingBuffer[MONITOR_MAX_PACKET_SIZE];
+
+	unsigned char m_aucPacketInputBuffer[MONITOR_MAX_PACKET_SIZE];
+
+	unsigned char m_aucPacketOutputBuffer[MONITOR_MAX_PACKET_SIZE];
+
+
+	void packet_ringbuffer_init(void);
+	int packet_ringbuffer_fill(size_t sizRequestedFillLevel);
+	unsigned char packet_ringbuffer_get(void);
+	int packet_ringbuffer_peek(size_t sizOffset);
+
+	int send_packet(const unsigned char *pucData, size_t sizData);
+	int receive_packet(void);
 };
 
 /*-----------------------------------*/

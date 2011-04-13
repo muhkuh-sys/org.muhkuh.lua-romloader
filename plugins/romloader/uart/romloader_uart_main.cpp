@@ -22,7 +22,9 @@
 #include <stdio.h>
 
 #include "romloader_uart_main.h"
-#include "netx/src/monitor_commands.h"
+
+#define UART_BASE_TIMEOUT_MS 500
+#define UART_CHAR_TIMEOUT_MS 10
 
 #ifdef _WIN32
 #       define snprintf _snprintf
@@ -184,6 +186,8 @@ romloader_uart::romloader_uart(const char *pcName, const char *pcTyp, romloader_
 	printf("%s(%p): created in romloader_uart\n", m_pcName, this);
 
 	m_ptUartDev = new romloader_uart_device_platform(pcDeviceName);
+
+	packet_ringbuffer_init();
 }
 
 
@@ -322,6 +326,230 @@ void romloader_uart::Disconnect(lua_State *ptClientData)
 
 
 
+void romloader_uart::packet_ringbuffer_init(void)
+{
+	m_sizPacketRingBufferHead = 0;
+	m_sizPacketRingBufferFill = 0;
+}
+
+
+int romloader_uart::packet_ringbuffer_fill(size_t sizRequestedFillLevel)
+{
+	size_t sizWritePosition;
+	int iResult;
+	size_t sizReceiveCnt;
+	size_t sizChunk;
+	size_t sizRead;
+
+
+	/* Expect success. */
+	iResult = 0;
+
+	/* Does the buffer contain enough data? */
+	if( m_sizPacketRingBufferFill<sizRequestedFillLevel )
+	{
+		/* No -> receive the remaining amount of bytes. */
+		sizReceiveCnt = sizRequestedFillLevel - m_sizPacketRingBufferFill;
+		do
+		{
+			/* Get the write position. */
+			sizWritePosition = m_sizPacketRingBufferHead + m_sizPacketRingBufferFill;
+			if( sizWritePosition>=MONITOR_MAX_PACKET_SIZE )
+			{
+				sizWritePosition -= MONITOR_MAX_PACKET_SIZE;
+			}
+
+			/* Get the size of the remaining continuous buffer space. */
+			/* This is the maximum chunk which can be read in one piece. */
+			sizChunk = MONITOR_MAX_PACKET_SIZE - sizWritePosition;
+			/* Limit the chunk size to the requested size. */
+			if( sizChunk>sizReceiveCnt )
+			{
+				sizChunk = sizReceiveCnt;
+			}
+
+			/* Receive the chunk. */
+			sizRead = m_ptUartDev->RecvRaw(m_aucPacketRingBuffer+sizWritePosition, sizChunk, UART_BASE_TIMEOUT_MS + sizChunk*UART_CHAR_TIMEOUT_MS);
+
+			m_sizPacketRingBufferFill += sizChunk;
+			sizReceiveCnt -= sizChunk;
+
+			if( sizRead!=sizChunk )
+			{
+				iResult = -1;
+				break;
+			}
+		} while( sizReceiveCnt>0 );
+	}
+
+	return iResult;
+}
+
+
+unsigned char romloader_uart::packet_ringbuffer_get(void)
+{
+	unsigned char ucByte;
+
+
+	ucByte = m_aucPacketRingBuffer[m_sizPacketRingBufferHead];
+
+	++m_sizPacketRingBufferHead;
+	if( m_sizPacketRingBufferHead>=MONITOR_MAX_PACKET_SIZE )
+	{
+		m_sizPacketRingBufferHead -= MONITOR_MAX_PACKET_SIZE;
+	}
+
+	--m_sizPacketRingBufferFill;
+
+	return ucByte;
+}
+
+
+int romloader_uart::packet_ringbuffer_peek(size_t sizOffset)
+{
+	size_t sizReadPosition;
+
+
+	sizReadPosition = m_sizPacketRingBufferHead + sizOffset;
+	if( sizReadPosition>=MONITOR_MAX_PACKET_SIZE )
+	{
+		sizReadPosition -= MONITOR_MAX_PACKET_SIZE;
+	}
+
+	return m_aucPacketRingBuffer[sizReadPosition];
+}
+
+
+int romloader_uart::send_packet(const unsigned char *pucData, size_t sizData)
+{
+	int iResult;
+	unsigned short usCrc;
+	const unsigned char *pucCnt;
+	const unsigned char *pucEnd;
+	unsigned char ucData;
+	size_t sizSend;
+	size_t sizPacket;
+
+
+	/* Expect failure. */
+	iResult = -1;
+
+	/* The maximum packet size is reduced by the start char (1 byte), the size information (2 bytes) and the crc (2 bytes). */
+	if( sizData<=MONITOR_MAX_PACKET_SIZE-5 )
+	{
+		/* Set the packet start character. */
+		m_aucPacketOutputBuffer[0] = MONITOR_STREAM_PACKET_START;
+		/* Set the size of the user data. */
+		m_aucPacketOutputBuffer[1] = (unsigned char)(sizData & 0xff);
+		m_aucPacketOutputBuffer[2] = (unsigned char)(sizData >> 8);
+
+		/* Copy the user data. */
+		memcpy(m_aucPacketOutputBuffer+3, pucData, sizData);
+
+		/* Generate the crc. */
+		usCrc = 0;
+		pucCnt = m_aucPacketOutputBuffer + 1;
+		pucEnd = m_aucPacketOutputBuffer + 1 + 2 + sizData;
+		while( pucCnt<pucEnd )
+		{
+			usCrc = crc16(usCrc, *pucCnt);
+			++pucCnt;
+		}
+
+		/* Append the crc. */
+		m_aucPacketOutputBuffer[sizData+3] = (usCrc>>8 ) & 0xffU;
+		m_aucPacketOutputBuffer[sizData+4] =  usCrc      & 0xffU;
+
+		/* Send the buffer. */
+		sizPacket = sizData + 5;
+		sizSend = m_ptUartDev->SendRaw(m_aucPacketOutputBuffer, sizPacket, UART_BASE_TIMEOUT_MS + sizPacket*UART_CHAR_TIMEOUT_MS);
+		if( sizSend==sizPacket )
+		{
+			iResult = 0;
+		}
+	}
+
+	return iResult;
+}
+
+
+int romloader_uart::receive_packet(void)
+{
+	size_t sizRead;
+	unsigned int uiRetries;
+	unsigned char ucData;
+	bool fFound;
+	int iResult;
+	size_t sizData;
+	size_t sizPacket;
+	unsigned short usCrc;
+	size_t sizCnt;
+
+
+	/* Wait for the start character. */
+	fFound = false;
+	uiRetries = 10;
+	do
+	{
+		iResult = packet_ringbuffer_fill(1);
+		if( iResult==0 )
+		{
+			ucData = packet_ringbuffer_get();
+		}
+		if( ucData==MONITOR_STREAM_PACKET_START )
+		{
+			fFound = true;
+			break;
+		}
+		--uiRetries;
+	} while( uiRetries>0 );
+
+	if( fFound==true )
+	{
+		/* Get the size information. */
+		iResult = packet_ringbuffer_fill(2);
+		if( iResult==0 )
+		{
+			sizData  = packet_ringbuffer_peek(0);
+			sizData |= packet_ringbuffer_peek(1) << 8;
+
+			/* The complete packet consists of the size info, the user data and the crc.*/
+			sizPacket = 2 + sizData + 2;
+
+			/* Get the rest of the packet. */
+			iResult = packet_ringbuffer_fill(sizPacket);
+			if( iResult==0 )
+			{
+				/* Generate the crc. */
+				usCrc = 0;
+				sizCnt = 0;
+				do
+				{
+					ucData = packet_ringbuffer_peek(sizCnt);
+					usCrc = crc16(usCrc, ucData);
+					++sizCnt;
+				} while( sizCnt<sizPacket );
+				if( usCrc==0 )
+				{
+					/* Get the complete packet. */
+					sizCnt = 0;
+					do
+					{
+						m_aucPacketInputBuffer[sizCnt] = packet_ringbuffer_get();
+						++sizCnt;
+					} while( sizCnt<sizPacket );
+				}
+				else
+				{
+					iResult = -1;
+				}
+			}
+		}
+	}
+
+	return iResult;
+}
+
 
 unsigned char romloader_uart::read_data08(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
@@ -339,49 +567,59 @@ unsigned long romloader_uart::read_data32(lua_State *ptClientData, unsigned long
 {
 	unsigned char aucCommand[32];
 	unsigned char aucResponse[32];
-	unsigned short usCrc;
-	unsigned int uiCnt;
+	int iResult;
 	unsigned long ulResult;
 	unsigned long ulValue;
+	unsigned int uiCnt;
+	size_t sizData;
+	unsigned char ucStatus;
 
 
 	fprintf(stderr, "read_data32: 0x%08x\n", ulNetxAddress);
 
-	aucCommand[0] = MONITOR_STREAM_PACKET_START;
-	aucCommand[1] = 6;
-	aucCommand[2] = 0;
-	aucCommand[3] = MONITOR_COMMAND_Read | (MONITOR_ACCESSSIZE_Long<<6);
-	aucCommand[4] = 4;
-	aucCommand[5] =  ulNetxAddress      & 0xffU;
-	aucCommand[6] = (ulNetxAddress>>8 ) & 0xffU;
-	aucCommand[7] = (ulNetxAddress>>16) & 0xffU;
-	aucCommand[8] = (ulNetxAddress>>24) & 0xffU;
+	ulValue = 0;
 
-	usCrc = 0;
-	for(uiCnt=1; uiCnt<9; ++uiCnt)
+	aucCommand[0] = MONITOR_COMMAND_Read | (MONITOR_ACCESSSIZE_Long<<6);
+	aucCommand[1] = 4;
+	aucCommand[2] =  ulNetxAddress      & 0xffU;
+	aucCommand[3] = (ulNetxAddress>>8 ) & 0xffU;
+	aucCommand[4] = (ulNetxAddress>>16) & 0xffU;
+	aucCommand[5] = (ulNetxAddress>>24) & 0xffU;
+	iResult = send_packet(aucCommand, 6);
+	if( iResult==0 )
 	{
-		usCrc = crc16(usCrc, aucCommand[uiCnt]);
+		iResult = receive_packet();
+		if( iResult==0 )
+		{
+			sizData  = m_aucPacketInputBuffer[0];
+			sizData |= m_aucPacketInputBuffer[1] << 8;
+			if( sizData==0 )
+			{
+				fprintf(stderr, "Error: received zero user data!\n");
+			}
+			else
+			{
+				ucStatus = m_aucPacketInputBuffer[2];
+				if( ucStatus!=0 )
+				{
+					fprintf(stderr, "Error: status is not ok: %d\n", ucStatus);
+				}
+				else if( sizData!=5 )
+				{
+					fprintf(stderr, "Error: packet size should be 5, but is %d\n", sizData);
+				}
+				else
+				{
+					ulValue = m_aucPacketInputBuffer[3] |
+						m_aucPacketInputBuffer[4]<<8 |
+						m_aucPacketInputBuffer[5]<<16 |
+						m_aucPacketInputBuffer[6]<<24;
+				}
+			}
+		}
 	}
-	aucCommand[9]  = (usCrc>>8 ) & 0xffU;
-	aucCommand[10] =  usCrc      & 0xffU;
 
-	ulResult = m_ptUartDev->SendRaw(aucCommand, 11, 1000);
-	fprintf(stderr, "SendRaw: %d\n", ulResult);
-
-	memset(aucResponse, 0xab, 10);
-	ulResult = m_ptUartDev->RecvRaw(aucResponse, 10, 1000);
-	fprintf(stderr, "RecvRaw: %d\n", ulResult);
-	for(uiCnt=0; uiCnt<10; ++uiCnt)
-	{
-		fprintf(stderr, "aucResponse[%d] = 0x%02x\n", uiCnt, aucResponse[uiCnt]);
-	}
-	if( ulResult==10 && aucResponse[3]==0 )
-	{
-		ulValue = aucResponse[4] |
-		          aucResponse[5]<<8 |
-		          aucResponse[6]<<16 |
-		          aucResponse[7]<<24;
-	}
+	return ulValue;
 }
 
 #if 0

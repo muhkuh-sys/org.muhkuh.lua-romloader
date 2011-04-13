@@ -31,8 +31,6 @@
 #endif
 
 
-typedef bool(*PFN_LOAD_CALLBACK)(void* pvUser, unsigned long ulTransferred, unsigned long ulTotalSize);
-
 class romloader_uart_device
 {
 public:
@@ -44,24 +42,16 @@ public:
 	virtual void Close(void) = 0;
 	virtual bool Flush(void) = 0;
 	virtual unsigned long Peek(void) = 0;
-	virtual unsigned long SendRaw(const unsigned char* pbData, unsigned long ulDataLen, unsigned long ulTimeout) = 0;
-	virtual unsigned long RecvRaw(unsigned char* pbData, unsigned long ulDataLen, unsigned long ulTimeout) = 0;
+	virtual size_t SendRaw(const unsigned char *pucData, size_t sizData, unsigned long ulTimeout) = 0;
+	virtual size_t RecvRaw(unsigned char *pucData, size_t sizData, unsigned long ulTimeout) = 0;
 	virtual bool Cancel(void) = 0;
 	virtual unsigned long GetMaxBlockSize(void) = 0;
 
 
 	/* higher level interface */
 	bool IdentifyLoader(void);
-/*
-	bool WaitForResponse(wxString &strData, size_t sizMaxLen, unsigned long ulTimeout);
-	bool SendString(wxString strData, unsigned long ulTimeout);
-	bool GetLine(wxString &strData, const char *pcEol, unsigned long ulTimeout);
-	bool SendCommand(wxString strCmd, unsigned long ulTimeout);
-	bool Load(const unsigned char* pbData, unsigned long ulDataLen, unsigned long ulLoadAddress, PFN_LOAD_CALLBACK pfnCallback = NULL, void* pvUser = NULL);
-	bool GetPrompt(unsigned long ulTimeout);
-*/
 
-	static unsigned int CalcCrc16(unsigned int uiCrc, unsigned int uiData);
+	static unsigned int crc16(unsigned short usCrc, unsigned char ucData);
 
 
 	static const size_t mc_sizCardSize = 16384;
@@ -94,8 +84,8 @@ protected:
 #else
 	pthread_mutex_t m_csCardLock;
 
-	pthread_cond_t		m_tRxDataAvail_Condition;
-	pthread_mutex_t		m_tRxDataAvail_Mutex;
+	pthread_cond_t m_tRxDataAvail_Condition;
+	pthread_mutex_t m_tRxDataAvail_Mutex;
 #endif
 
 private:
@@ -103,5 +93,5 @@ private:
 };
 
 
-#endif	/* __ROMLOADER_UART_DEVICE_H__ */
+#endif  /* __ROMLOADER_UART_DEVICE_H__ */
 
