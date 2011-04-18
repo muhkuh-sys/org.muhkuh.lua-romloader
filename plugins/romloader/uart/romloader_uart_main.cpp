@@ -141,8 +141,7 @@ bool romloader_uart_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 {
 	bool fOk;
 	const char *pcName;
-	unsigned int uiBusNr;
-	unsigned int uiDevAdr;
+	char acDevice[PATH_MAX];
 
 
 	/* expect error */
@@ -160,7 +159,7 @@ bool romloader_uart_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 		{
 			fprintf(stderr, "%s(%p): release_interface(): missing name!\n", m_pcPluginId, this);
 		}
-		else if( sscanf(pcName, m_pcPluginNamePattern, &uiBusNr, &uiDevAdr)!=2 )
+		else if( sscanf(pcName, m_pcPluginNamePattern, acDevice)!=1 )
 		{
 			fprintf(stderr, "%s(%p): release_interface(): invalid name: %s\n", m_pcPluginId, this, pcName);
 		}
