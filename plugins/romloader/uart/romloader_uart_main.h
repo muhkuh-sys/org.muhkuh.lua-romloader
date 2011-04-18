@@ -90,8 +90,6 @@ private:
 	size_t m_sizPacketInputBuffer;
 	unsigned char m_aucPacketInputBuffer[MONITOR_MAX_PACKET_SIZE];
 
-	unsigned char m_aucPacketOutputBuffer[MONITOR_MAX_PACKET_SIZE];
-
 
 	void packet_ringbuffer_init(void);
 	int packet_ringbuffer_fill(size_t sizRequestedFillLevel);
