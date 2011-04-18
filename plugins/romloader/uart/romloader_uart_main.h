@@ -87,6 +87,7 @@ private:
 	size_t m_sizPacketRingBufferFill;
 	unsigned char m_aucPacketRingBuffer[MONITOR_MAX_PACKET_SIZE];
 
+	size_t m_sizPacketInputBuffer;
 	unsigned char m_aucPacketInputBuffer[MONITOR_MAX_PACKET_SIZE];
 
 	unsigned char m_aucPacketOutputBuffer[MONITOR_MAX_PACKET_SIZE];
@@ -99,6 +100,7 @@ private:
 
 	int send_packet(const unsigned char *pucData, size_t sizData);
 	int receive_packet(void);
+	int execute_command(const unsigned char *aucCommand, size_t sizCommand);
 };
 
 /*-----------------------------------*/

@@ -537,6 +537,8 @@ int romloader_uart::receive_packet(void)
 						m_aucPacketInputBuffer[sizCnt] = packet_ringbuffer_get();
 						++sizCnt;
 					} while( sizCnt<sizPacket );
+
+					m_sizPacketInputBuffer = sizPacket;
 				}
 				else
 				{
@@ -550,28 +552,117 @@ int romloader_uart::receive_packet(void)
 }
 
 
+int romloader_uart::execute_command(const unsigned char *aucCommand, size_t sizCommand)
+{
+	int iResult;
+	unsigned char ucStatus;
+
+
+	iResult = send_packet(aucCommand, sizCommand);
+	if( iResult==0 )
+	{
+		iResult = receive_packet();
+		if( iResult==0 )
+		{
+			if( m_sizPacketInputBuffer<5 )
+			{
+				fprintf(stderr, "Error: received zero user data!\n");
+				iResult = -1;
+			}
+			else
+			{
+				ucStatus = m_aucPacketInputBuffer[2];
+				if( ucStatus==0 )
+				{
+					iResult = 0;
+				}
+				else
+				{
+					fprintf(stderr, "Error: status is not ok: %d\n", ucStatus);
+					iResult = -1;
+				}
+			}
+		}
+	}
+
+	return iResult;
+}
+
+
 unsigned char romloader_uart::read_data08(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
+	unsigned char aucCommand[6];
+	int iResult;
+	unsigned char ucValue;
+
+
 	fprintf(stderr, "read_data08: 0x%08x\n", ulNetxAddress);
+
+	ucValue = 0;
+
+	aucCommand[0] = MONITOR_COMMAND_Read | (MONITOR_ACCESSSIZE_Byte<<6);
+	aucCommand[1] = 1;
+	aucCommand[2] =  ulNetxAddress      & 0xffU;
+	aucCommand[3] = (ulNetxAddress>>8 ) & 0xffU;
+	aucCommand[4] = (ulNetxAddress>>16) & 0xffU;
+	aucCommand[5] = (ulNetxAddress>>24) & 0xffU;
+	iResult = execute_command(aucCommand, 6);
+	if( iResult==0 )
+	{
+		if( m_sizPacketInputBuffer!=4+2 )
+		{
+			fprintf(stderr, "Error: packet size should be 6, but is %d\n", m_sizPacketInputBuffer);
+		}
+		else
+		{
+			ucValue = m_aucPacketInputBuffer[3];
+		}
+	}
+
+	return ucValue;
 }
 
 
 unsigned short romloader_uart::read_data16(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
+	unsigned char aucCommand[6];
+	int iResult;
+	unsigned short usValue;
+
+
 	fprintf(stderr, "read_data16: 0x%08x\n", ulNetxAddress);
+
+	usValue = 0;
+
+	aucCommand[0] = MONITOR_COMMAND_Read | (MONITOR_ACCESSSIZE_Word<<6);
+	aucCommand[1] = 2;
+	aucCommand[2] =  ulNetxAddress      & 0xffU;
+	aucCommand[3] = (ulNetxAddress>>8 ) & 0xffU;
+	aucCommand[4] = (ulNetxAddress>>16) & 0xffU;
+	aucCommand[5] = (ulNetxAddress>>24) & 0xffU;
+	iResult = execute_command(aucCommand, 6);
+	if( iResult==0 )
+	{
+		if( m_sizPacketInputBuffer!=4+3 )
+		{
+			fprintf(stderr, "Error: packet size should be 7, but is %d\n", m_sizPacketInputBuffer);
+		}
+		else
+		{
+			usValue = m_aucPacketInputBuffer[3] |
+				m_aucPacketInputBuffer[4]<<8;
+		}
+	}
+
+	return usValue;
 }
 
 
 unsigned long romloader_uart::read_data32(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
-	unsigned char aucCommand[32];
-	unsigned char aucResponse[32];
+	unsigned char aucCommand[6];
 	int iResult;
-	unsigned long ulResult;
 	unsigned long ulValue;
-	unsigned int uiCnt;
-	size_t sizData;
-	unsigned char ucStatus;
 
 
 	fprintf(stderr, "read_data32: 0x%08x\n", ulNetxAddress);
@@ -584,37 +675,19 @@ unsigned long romloader_uart::read_data32(lua_State *ptClientData, unsigned long
 	aucCommand[3] = (ulNetxAddress>>8 ) & 0xffU;
 	aucCommand[4] = (ulNetxAddress>>16) & 0xffU;
 	aucCommand[5] = (ulNetxAddress>>24) & 0xffU;
-	iResult = send_packet(aucCommand, 6);
+	iResult = execute_command(aucCommand, 6);
 	if( iResult==0 )
 	{
-		iResult = receive_packet();
-		if( iResult==0 )
+		if( m_sizPacketInputBuffer!=4+5 )
 		{
-			sizData  = m_aucPacketInputBuffer[0];
-			sizData |= m_aucPacketInputBuffer[1] << 8;
-			if( sizData==0 )
-			{
-				fprintf(stderr, "Error: received zero user data!\n");
-			}
-			else
-			{
-				ucStatus = m_aucPacketInputBuffer[2];
-				if( ucStatus!=0 )
-				{
-					fprintf(stderr, "Error: status is not ok: %d\n", ucStatus);
-				}
-				else if( sizData!=5 )
-				{
-					fprintf(stderr, "Error: packet size should be 5, but is %d\n", sizData);
-				}
-				else
-				{
-					ulValue = m_aucPacketInputBuffer[3] |
-						m_aucPacketInputBuffer[4]<<8 |
-						m_aucPacketInputBuffer[5]<<16 |
-						m_aucPacketInputBuffer[6]<<24;
-				}
-			}
+			fprintf(stderr, "Error: packet size should be 9, but is %d\n", m_sizPacketInputBuffer);
+		}
+		else
+		{
+			ulValue = m_aucPacketInputBuffer[3] |
+				m_aucPacketInputBuffer[4]<<8 |
+				m_aucPacketInputBuffer[5]<<16 |
+				m_aucPacketInputBuffer[6]<<24;
 		}
 	}
 
