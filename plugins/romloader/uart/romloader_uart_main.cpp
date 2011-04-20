@@ -201,6 +201,45 @@ romloader_uart::~romloader_uart(void)
 }
 
 
+void romloader_uart::hexdump(const unsigned char *pucData, unsigned long ulSize)
+{
+	const unsigned char *pucDumpCnt, *pucDumpEnd;
+	unsigned long ulAddressCnt;
+	size_t sizBytesLeft;
+	size_t sizChunkSize;
+	size_t sizChunkCnt;
+
+
+	// show a hexdump of the data
+	pucDumpCnt = pucData;
+	pucDumpEnd = pucData + ulSize;
+	ulAddressCnt = 0;
+	while( pucDumpCnt<pucDumpEnd )
+	{
+		// get number of bytes for the next line
+		sizChunkSize = 16;
+		sizBytesLeft = pucDumpEnd - pucDumpCnt;
+		if( sizChunkSize>sizBytesLeft )
+		{
+			sizChunkSize = sizBytesLeft;
+		}
+
+		// start a line in the dump with the address
+		printf("%08lX: ", ulAddressCnt);
+		// append the data bytes
+		sizChunkCnt = sizChunkSize;
+		while( sizChunkCnt!=0 )
+		{
+			printf("%02X ", *(pucDumpCnt++));
+			--sizChunkCnt;
+		}
+		// next line
+		printf("\n");
+		ulAddressCnt += sizChunkSize;
+	}
+}
+
+
 bool romloader_uart::chip_init(lua_State *ptClientData)
 {
 	bool fResult;
@@ -473,6 +512,14 @@ int romloader_uart::send_packet(const unsigned char *pucData, size_t sizData)
 		{
 			iResult = 0;
 		}
+		else
+		{
+			fprintf(stderr, "! send_packet: failed to send the packet!\n");
+		}
+	}
+	else
+	{
+		fprintf(stderr, "! send_packet: packet too large: %d bytes!\n", sizData);
 	}
 
 	return iResult;
@@ -510,7 +557,12 @@ int romloader_uart::receive_packet(void)
 		--uiRetries;
 	} while( uiRetries>0 );
 
-	if( fFound==true )
+	if( fFound!=true )
+	{
+		fprintf(stderr, "receive_packet: no start char found!\n");
+		iResult = -1;
+	}
+	else
 	{
 		/* Get the size information. */
 		iResult = packet_ringbuffer_fill(2);
@@ -549,6 +601,19 @@ int romloader_uart::receive_packet(void)
 				}
 				else
 				{
+					fprintf(stderr, "! receive_packet: crc failed.\n");
+
+					/* Debug: get the complete packet and dump it. */
+					printf("packet size: 0x%08x bytes\n", sizPacket);
+					sizCnt = 0;
+					do
+					{
+						m_aucPacketInputBuffer[sizCnt] = packet_ringbuffer_get();
+						++sizCnt;
+					} while( sizCnt<sizPacket );
+					printf("Packet data:\n");
+					hexdump(m_aucPacketInputBuffer, sizPacket);
+
 					iResult = -1;
 				}
 			}
@@ -566,14 +631,22 @@ int romloader_uart::execute_command(const unsigned char *aucCommand, size_t sizC
 
 
 	iResult = send_packet(aucCommand, sizCommand);
-	if( iResult==0 )
+	if( iResult!=0 )
+	{
+		fprintf(stderr, "! execute_command: send_packet failed with errorcode %d\n", iResult);
+	}
+	else
 	{
 		iResult = receive_packet();
-		if( iResult==0 )
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "! execute_command: receive_packet failed with errorcode %d\n", iResult);
+		}
+		else
 		{
 			if( m_sizPacketInputBuffer<5 )
 			{
-				fprintf(stderr, "Error: received zero user data!\n");
+				fprintf(stderr, "Error: received no user data!\n");
 				iResult = -1;
 			}
 			else
@@ -603,8 +676,6 @@ unsigned char romloader_uart::read_data08(lua_State *ptClientData, unsigned long
 	unsigned char ucValue;
 	bool fOk;
 
-
-	fprintf(stderr, "read_data08: 0x%08x\n", ulNetxAddress);
 
 	/* Expect error. */
 	fOk = false;
@@ -652,8 +723,6 @@ unsigned short romloader_uart::read_data16(lua_State *ptClientData, unsigned lon
 	bool fOk;
 
 
-	fprintf(stderr, "read_data16: 0x%08x\n", ulNetxAddress);
-
 	/* Expect error. */
 	fOk = false;
 
@@ -700,8 +769,6 @@ unsigned long romloader_uart::read_data32(lua_State *ptClientData, unsigned long
 	unsigned long ulValue;
 	bool fOk;
 
-
-	fprintf(stderr, "read_data32: 0x%08x\n", ulNetxAddress);
 
 	/* Expect error. */
 	fOk = false;
@@ -756,8 +823,6 @@ void romloader_uart::read_image(unsigned long ulNetxAddress, unsigned long ulSiz
 	long lBytesProcessed;
 
 
-	fprintf(stderr, "read_image: 0x%08x, 0x%08x\n", ulNetxAddress, ulSize);
-
 	/* Be optimistic. */
 	fOk = true;
 
@@ -800,6 +865,7 @@ void romloader_uart::read_image(unsigned long ulNetxAddress, unsigned long ulSiz
 				aucCommand[3] = (ulNetxAddress>>8 ) & 0xffU;
 				aucCommand[4] = (ulNetxAddress>>16) & 0xffU;
 				aucCommand[5] = (ulNetxAddress>>24) & 0xffU;
+
 				iResult = execute_command(aucCommand, 6);
 				if( iResult!=0 )
 				{
@@ -849,8 +915,6 @@ void romloader_uart::write_data08(lua_State *ptClientData, unsigned long ulNetxA
 	bool fOk;
 
 
-	fprintf(stderr, "write_data08: 0x%08x, 0x%02x\n", ulNetxAddress, ucData);
-
 	/* Expect error. */
 	fOk = false;
 
@@ -894,8 +958,6 @@ void romloader_uart::write_data16(lua_State *ptClientData, unsigned long ulNetxA
 	unsigned long ulValue;
 	bool fOk;
 
-
-	fprintf(stderr, "write_data16: 0x%08x, 0x%04x\n", ulNetxAddress, usData);
 
 	/* Expect error. */
 	fOk = false;
@@ -941,8 +1003,6 @@ void romloader_uart::write_data32(lua_State *ptClientData, unsigned long ulNetxA
 	unsigned long ulValue;
 	bool fOk;
 
-
-	fprintf(stderr, "write_data32: 0x%08x, 0x%08x\n", ulNetxAddress, ulData);
 
 	/* Expect error. */
 	fOk = false;
@@ -997,8 +1057,6 @@ void romloader_uart::write_image(unsigned long ulNetxAddress, const char *pcBUFF
 	long lBytesProcessed;
 
 
-	fprintf(stderr, "write_image: 0x%08x, 0x%08x\n", ulNetxAddress, sizBUFFER_IN);
-
 	/* Be optimistic. */
 	fOk = true;
 
@@ -1013,9 +1071,9 @@ void romloader_uart::write_image(unsigned long ulNetxAddress, const char *pcBUFF
 		do
 		{
 			sizChunk = sizBUFFER_IN;
-			if( sizChunk>MONITOR_MAX_PACKET_SIZE-5 )
+			if( sizChunk>MONITOR_MAX_PACKET_SIZE-11 )
 			{
-				sizChunk = MONITOR_MAX_PACKET_SIZE-5;
+				sizChunk = MONITOR_MAX_PACKET_SIZE-11;
 			}
 
 			aucCommand[0] = MONITOR_COMMAND_Write | (MONITOR_ACCESSSIZE_Byte<<6);
@@ -1029,6 +1087,8 @@ void romloader_uart::write_image(unsigned long ulNetxAddress, const char *pcBUFF
 			if( iResult!=0 )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
+				fOk = false;
+				break;
 			}
 			else
 			{
