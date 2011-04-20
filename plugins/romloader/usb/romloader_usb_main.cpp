@@ -553,7 +553,6 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 			}
 			else if( sizInBuf!=5 )
 			{
-printf("siz: %d\n", sizInBuf);
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer has invalid size!", m_pcName, this);
 				fOk = false;
 			}
