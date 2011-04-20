@@ -254,7 +254,7 @@ void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPack
 		{
 			send_status(MONITOR_STATUS_InvalidPacketSize);
 		}
-		else if( ulDataSize>63 )
+		else if( ulDataSize>MONITOR_MAX_PACKET_SIZE-6 )
 		{
 			send_status(MONITOR_STATUS_InvalidSizeParameter);
 		}
@@ -272,7 +272,7 @@ void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPack
 		{
 			send_status(MONITOR_STATUS_InvalidPacketSize);
 		}
-		else if( ulDataSize>58 )
+		else if( ulDataSize>MONITOR_MAX_PACKET_SIZE-6 )
 		{
 			send_status(MONITOR_STATUS_InvalidSizeParameter);
 		}
