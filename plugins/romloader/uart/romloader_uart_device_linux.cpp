@@ -343,6 +343,7 @@ size_t romloader_uart_device_linux::RecvRaw(unsigned char *pucData, size_t sizDa
 		{
 			sizRead = readCards(pucData, sizDataLeft);
 			sizDataLeft -= sizRead;
+			pucData += sizRead;
 			if( sizDataLeft>0 )
 			{
 				/* Wait for data. */
