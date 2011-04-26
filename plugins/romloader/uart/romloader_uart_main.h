@@ -99,6 +99,8 @@ private:
 	int send_packet(const unsigned char *pucData, size_t sizData);
 	int receive_packet(void);
 	int execute_command(const unsigned char *aucCommand, size_t sizCommand);
+
+	void hexdump(const unsigned char *pucData, unsigned long ulSize);
 };
 
 /*-----------------------------------*/
