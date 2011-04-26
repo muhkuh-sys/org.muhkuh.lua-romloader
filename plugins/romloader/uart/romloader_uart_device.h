@@ -25,9 +25,10 @@
 #include "../romloader.h"
 
 #ifdef _WINDOWS
-	#include <windows.h>
+#       include <windows.h>
+#       define PATH_MAX 259
 #else
-	#include <pthread.h>
+#       include <pthread.h>
 #endif
 
 

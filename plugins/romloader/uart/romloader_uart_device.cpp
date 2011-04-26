@@ -150,9 +150,11 @@ void romloader_uart_device::writeCards(const unsigned char *pucBuffer, size_t si
 	CRITICAL_SECTION_LEAVE(m_csCardLock);
 
 	/* Set the signal for received data. */
+#ifndef _WINDOWS
 	pthread_mutex_lock(&m_tRxDataAvail_Mutex);
 	pthread_cond_signal(&m_tRxDataAvail_Condition);
 	pthread_mutex_unlock(&m_tRxDataAvail_Mutex);
+#endif
 }
 
 
