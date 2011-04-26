@@ -25,15 +25,13 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include <wx/wx.h>
-
 #include "romloader_uart_device.h"
 
 
 class romloader_uart_device_win : public romloader_uart_device  
 {
 public:
-  romloader_uart_device_win(wxString strPortName);
+  romloader_uart_device_win(const char *pcPortName);
   virtual ~romloader_uart_device_win();
 
   static DWORD WINAPI CheckComStateThread(void* pvParam);
@@ -41,15 +39,13 @@ public:
   virtual bool Open(void);
   virtual void Close(void);
 
+  size_t SendRaw(const unsigned char *pucData, size_t sizData, unsigned long ulTimeout);
+  bool Cancel(void);
+  size_t RecvRaw(unsigned char *pucData, size_t sizData, unsigned long ulTimeout);
+  bool Flush(void);
+  unsigned long Peek(void);
 
-  unsigned long         SendRaw(const unsigned char *pbData, unsigned long ulDataLen, unsigned long ulTimeout);
-  bool                  Cancel(void);
-  unsigned long         RecvRaw(unsigned char *pbData, unsigned long ulDataLen, unsigned long ulTimeout);
-  bool                  GetLine(wxString &strData, const char *pcEol, unsigned long ulTimeout);
-  bool                  Flush(void);
-  unsigned long         Peek(void);
-
-  static unsigned long  ScanForPorts(lua_State *ptLuaState, muhkuh_plugin_provider *ptProvider);
+  static unsigned long  ScanForPorts(char ***pppcDeviceNames);
 
 protected:
   unsigned long GetMaxBlockSize(void) { return 4096; }
@@ -65,7 +61,6 @@ protected:
   HANDLE            m_hNewRxEvent;    /**< Handle to the new RX Data available event */
   
 private:
-	PFN_PROGRESS_CALLBACK m_pfnProgressCallback;
 	void *m_pvCallbackUserData;
 };
 

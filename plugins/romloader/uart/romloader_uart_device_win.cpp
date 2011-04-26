@@ -20,13 +20,15 @@
 
 #include "romloader_uart_device_win.h"
 
-#include <wx/regex.h>
-
 #define DEFAULT_SERIAL_POLLTIMEOUT   500UL  /**< Time in ms to wait for overlapping IO in receiver thread */
 #define THREAD_TERMINATE_TIME       2000UL  /**< Time to wait for RX thread to end, before killing it */
 
-// includes for port enumeration
-#include <setupapi.h>
+#include <stdio.h>
+#include <string.h>
+#include <tchar.h>
+
+// Includes for port enumeration.
+#include <Setupapi.h>
 #include <devguid.h>
 
 // defines for port enumeration
@@ -40,8 +42,8 @@ typedef DWORD (WINAPI *CM_Open_DevNode_Key)(DWORD, DWORD, DWORD, DWORD, ::PHKEY,
 *    \param szPortDesc Human-Readable description of port
 *    \param eType      Boot device type (detected by scan)                   */
 /*****************************************************************************/
-romloader_uart_device_win::romloader_uart_device_win(wxString strPortName)
-  : romloader_uart_device(strPortName)
+romloader_uart_device_win::romloader_uart_device_win(const char *pcPortName)
+  : romloader_uart_device(pcPortName)
   , m_fRunning(false)
   , m_hPort(INVALID_HANDLE_VALUE)
   , m_hComStateThread(NULL)
@@ -110,7 +112,7 @@ void romloader_uart_device_win::CheckComEvents(DWORD dwEventMask)
 		//get the data from the queue
 		BOOL fReadRet = ::ReadFile(m_hPort, pucBuffer, dwBufferSize, &dwBytesRead, &tovRead);
    
-		wxASSERT(fReadRet);
+//		wxASSERT(fReadRet);
 
 		::CloseHandle(tovRead.hEvent);
 
@@ -140,7 +142,7 @@ void romloader_uart_device_win::CheckComEvents(DWORD dwEventMask)
 DWORD romloader_uart_device_win::CheckComState()
 {
   OVERLAPPED tOvWait     = {0};
-  wxString   strMsg;
+
 
   tOvWait.hEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL);
 
@@ -205,7 +207,7 @@ DWORD romloader_uart_device_win::CheckComState()
 *    \param ulTimeout Timeout in ms to wait for send complete
 *    \return Number of bytes that have been sent                             */
 /*****************************************************************************/
-unsigned long romloader_uart_device_win::SendRaw(const unsigned char *pbData, unsigned long ulDataLen, unsigned long ulTimeout)
+size_t romloader_uart_device_win::SendRaw(const unsigned char *pucData, size_t sizData, unsigned long ulTimeout)
 {
   bool  fRet           = false;
   DWORD dwBytesWritten = 0;
@@ -216,12 +218,12 @@ unsigned long romloader_uart_device_win::SendRaw(const unsigned char *pbData, un
   tOverlap.hEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL);
 
   //write the Data to the comport
-  BOOL  fResult = ::WriteFile(m_hPort, pbData, ulDataLen, &dwBytesWritten, &tOverlap);
+  BOOL  fResult = ::WriteFile(m_hPort, pucData, sizData, &dwBytesWritten, &tOverlap);
 
   //check if everything has been written ok. if not, cancel transaction
   if(fResult)
   {
-    if(dwBytesWritten == ulDataLen)
+    if(dwBytesWritten == sizData)
       fRet = true;
     else
       ::CancelIo(m_hPort);
@@ -232,7 +234,7 @@ unsigned long romloader_uart_device_win::SendRaw(const unsigned char *pbData, un
     dwError = GetLastError();
     if( dwError != ERROR_IO_PENDING)
     {
-      wxASSERT(false);
+//      wxASSERT(false);
 
     //check for completion of the write
     } else if(::WaitForSingleObject(tOverlap.hEvent, ulTimeout) == WAIT_OBJECT_0) 
@@ -240,7 +242,7 @@ unsigned long romloader_uart_device_win::SendRaw(const unsigned char *pbData, un
       ::GetOverlappedResult(m_hPort, &tOverlap, &dwBytesWritten, TRUE);
       
       //Check if not all bytes have been written
-      if(dwBytesWritten == ulDataLen)
+      if(dwBytesWritten == sizData)
         fRet = true;
       else
         ::CancelIo(m_hPort);
@@ -286,45 +288,46 @@ unsigned long romloader_uart_device_win::Peek(void)
 *    \param ulTimeout Timeout in ms to wait for receive complete
 *    \return Number of bytes that have been received                         */
 /*****************************************************************************/
-unsigned long romloader_uart_device_win::RecvRaw(unsigned char *pbData, unsigned long ulDataLen, unsigned long ulTimeout)
+size_t romloader_uart_device_win::RecvRaw(unsigned char *pucData, size_t sizData, unsigned long ulTimeout)
 {
-  unsigned long  ulCharsReceived = 0;
-  long           lStartTime;
-  unsigned long  ulDiffTime;
-  size_t         sizLeft;
-  size_t         sizRead;
-  DWORD          dwWaitResult;
+	size_t sizCharsReceived;
+	long lStartTime;
+	unsigned long ulDiffTime;
+	size_t sizLeft;
+	size_t sizRead;
+	DWORD dwWaitResult;
 
 
-  lStartTime = (long)GetTickCount();
-  do
-  {
-    sizLeft = ulDataLen - ulCharsReceived;
-    sizRead = readCards(pbData+ulCharsReceived, sizLeft);
-    ulCharsReceived += sizRead;
+	sizCharsReceived = 0;
+	lStartTime = (long)GetTickCount();
+	do
+	{
+		sizLeft = sizData - sizCharsReceived;
+		sizRead = readCards(pucData+sizCharsReceived, sizLeft);
+		sizCharsReceived += sizRead;
 
-    // check for timeout
-    ulDiffTime = GetTickCount() - lStartTime;
-    if(ulDiffTime >= ulTimeout)
-    {
-      // timeout!
-      break;
-    }
+		/* Check for timeout. */
+		ulDiffTime = GetTickCount() - lStartTime;
+		if( ulDiffTime >= ulTimeout )
+		{
+			/* Timeout! */
+			break;
+		}
 
-    //sleep if we are not finished yet, to allow RX thread to run, if data is available
-    if(ulCharsReceived != ulDataLen)
-    {
-      // wait for new data to arrive
-      dwWaitResult = ::WaitForSingleObject(m_hNewRxEvent, ulTimeout-ulDiffTime);
-      if( dwWaitResult!=WAIT_OBJECT_0 )
-      {
-        // timeout or error -> no new data arrived
-        break;
-      }
-    }
-  } while(ulCharsReceived != ulDataLen);
+		/* Sleep if we are not finished yet, to allow RX thread to run, if data is available. */
+		if( sizCharsReceived!=sizData )
+		{
+			/* Wait for new data to arrive. */
+			dwWaitResult = ::WaitForSingleObject(m_hNewRxEvent, ulTimeout-ulDiffTime);
+			if( dwWaitResult!=WAIT_OBJECT_0 )
+			{
+				/* Timeout or error -> no new data arrived. */
+				break;
+			}
+		}
+	} while( sizCharsReceived!=sizData );
 
-  return ulCharsReceived;
+	return sizCharsReceived;
 }
 
 /*****************************************************************************/
@@ -362,112 +365,108 @@ void romloader_uart_device_win::Close(void)
 /*****************************************************************************/
 bool romloader_uart_device_win::Open()
 {
-  bool fResult = false;
-  const wxChar *pcFilename;
+	bool fResult = false;
+	DCB tDcb;
+	char acPath[MAX_PATH];
 
-  // close any open connection
-  if(m_hPort != INVALID_HANDLE_VALUE)
-  {
-    Close();
-  }
 
-	// create the cards
+	/* Close any open connection. */
+	if( m_hPort!=INVALID_HANDLE_VALUE )
+	{
+		Close();
+	}
+
+	/* Create the cards. */
 	initCards();
 
-  wxString strName(m_strPortName);
-  // append windows specific prefix
-  strName.Prepend(wxT("\\\\.\\"));
-  // try to open the given port
-  pcFilename = strName.c_str();
-  m_hPort= ::CreateFile(pcFilename,
-                        GENERIC_READ | GENERIC_WRITE,
-                        0,
-                        NULL,
-                        OPEN_EXISTING,
-                        FILE_FLAG_OVERLAPPED,
-                        NULL);
+	_snprintf(acPath, sizeof(acPath), "\\\\.\\%s", m_pcPortName);
+  	/* Open the port. */
+	m_hPort= ::CreateFile(acPath,
+			      GENERIC_READ | GENERIC_WRITE,
+	                      0,
+	                      NULL,
+	                      OPEN_EXISTING,
+	                      FILE_FLAG_OVERLAPPED,
+	                      NULL);
+	if( m_hPort==INVALID_HANDLE_VALUE )
+	{
+		/* No -> exit with error. */
+		fprintf(stderr, "failed to open the com port");
+	}
+	else if(!::GetCommState(m_hPort, &tDcb))
+	{
+		/* Read current settings. */
+		fprintf(stderr, "failed to query com settings");
+	}
+	else
+	{
+		/* Apply settigs for netx debug monitor. */
+		tDcb.BaudRate          = CBR_115200;
+		tDcb.ByteSize          = 8;
+		tDcb.Parity            = NOPARITY;
+		tDcb.StopBits          = ONESTOPBIT;
+		tDcb.fBinary           = true;
+		tDcb.fParity           = false;
+		tDcb.fOutxCtsFlow      = false;
+		tDcb.fOutxDsrFlow      = false;
+		tDcb.fDtrControl       = DTR_CONTROL_DISABLE;
+		tDcb.fDsrSensitivity   = false;
+		tDcb.fTXContinueOnXoff = false;
+		tDcb.fOutX             = false;
+		tDcb.fInX              = false;
+		tDcb.fErrorChar        = false;
+		tDcb.fNull             = false;
+		tDcb.fRtsControl       = RTS_CONTROL_DISABLE;
+		tDcb.fAbortOnError     = false;
 
-  DCB tDcb;
-
-  // port open?
-  if( m_hPort == INVALID_HANDLE_VALUE )
-  {
-    // no -> exit with error
-    wxLogError(wxT("failed to open the com port"));
-
-  } else if(!::GetCommState(m_hPort, &tDcb))
-  {
-    // read current settings
-      wxLogError(wxT("failed to query com settings"));
-  } else
-  {
-      
-      // modify settigs for netx debug monitor
-      tDcb.BaudRate          = CBR_115200;
-      tDcb.ByteSize          = 8;
-      tDcb.Parity            = NOPARITY;
-      tDcb.StopBits          = ONESTOPBIT;
-      tDcb.fBinary           = true;
-      tDcb.fParity           = false;
-      tDcb.fOutxCtsFlow      = false;
-      tDcb.fOutxDsrFlow      = false;
-      tDcb.fDtrControl       = DTR_CONTROL_DISABLE;
-      tDcb.fDsrSensitivity   = false;
-      tDcb.fTXContinueOnXoff = false;
-      tDcb.fOutX             = false;
-      tDcb.fInX              = false;
-      tDcb.fErrorChar        = false;
-      tDcb.fNull             = false;
-      tDcb.fRtsControl       = RTS_CONTROL_DISABLE;
-      tDcb.fAbortOnError     = false;
-
-    //Set our communication parameters
-    if(!::SetCommState(m_hPort, &tDcb))
-    {
-      // failed to setup com
-      wxLogError(wxT("failed to configure com"));
-      
-    } else if(!::SetupComm(m_hPort, 1024, 1024))
-    {
-      // recommend rx and tx buffer sizes
-      wxLogError(wxT("failed to setup com"));
-      
-    } else if(!::SetCommMask(m_hPort, EV_RXCHAR | EV_TXEMPTY))
-    {
-      //only monitor RXCHAR and TXEMPTY
-      wxLogError(wxT("failed to set com mask"));
-      
-    } else if(NULL == (m_hComStateThread = CreateThread(NULL,
+		/* Set the communication parameters. */
+		if( !::SetCommState(m_hPort, &tDcb) )
+		{
+			/* Failed to setup com. */
+			fprintf(stderr, "failed to configure com");
+		}
+		/* Recommend rx and tx buffer sizes. */
+		else if( !::SetupComm(m_hPort, 1024, 1024) )
+		{
+			fprintf(stderr, "failed to setup com");
+		}
+		/* Only monitor RXCHAR and TXEMPTY. */
+		else if( !::SetCommMask(m_hPort, EV_RXCHAR | EV_TXEMPTY) )
+		{
+			fprintf(stderr, "failed to set com mask");
+		}
+		else if(NULL == (m_hComStateThread = CreateThread(NULL,
                                                         0,
                                                         CheckComStateThread,
                                                         this,
                                                         CREATE_SUSPENDED,
                                                         NULL)))
-    {
-      // create the receive thread
-      wxLogError(wxT("Can't create receive thread!"));
-      
-    } else
-    {
-      fResult     = true;
-      // signal ready even if DTR and RTS is switched off, a virtual COM port needs this to send the data
-      fResult &= (EscapeCommFunction(m_hPort, SETDTR) == TRUE);
-      fResult &= (EscapeCommFunction(m_hPort, SETRTS) == TRUE);
-    }
-  }
+		{
+			/* Create the receive thread. */
+			fprintf(stderr, "Can't create receive thread!");
+		}
+		else
+		{
+			fResult     = true;
+			// signal ready even if DTR and RTS is switched off, a virtual COM port needs this to send the data
+			fResult &= (EscapeCommFunction(m_hPort, SETDTR) == TRUE);
+			fResult &= (EscapeCommFunction(m_hPort, SETRTS) == TRUE);
+		}
+	}
 
-  m_fRunning  = fResult;
+	m_fRunning  = fResult;
 
-  // close any open connection if something has failed
-  if(!fResult)
-  {
-    Close();
-  } else
-  {
-    ResumeThread(m_hComStateThread);
-  }
+	/* Close any open connection if something has failed. */
+	if( fResult!=true )
+	{
+		Close();
+	}
+	else
+	{
+		ResumeThread(m_hComStateThread);
+	}
 
-  return fResult;
+	return fResult;
 }
 
 
@@ -476,84 +475,179 @@ bool romloader_uart_device_win::Open()
 *    \param cvList  Reference to vector to place found devices in
 *    \return Number of devices found                                         */
 /*****************************************************************************/
-unsigned long romloader_uart_device_win::ScanForPorts(wxArrayString *ptArray)
+unsigned long romloader_uart_device_win::ScanForPorts(char ***pppcDeviceNames)
 {
-  // get the GUID for serial ports
-  const GUID          tDevGuid          = GUID_DEVCLASS_PORTS;
-  CM_Open_DevNode_Key pfnOpenDevNodeKey = NULL;
-  SP_DEVINFO_DATA     tDeviceInfoData   = {0};
-  HKEY                hkDevice          = NULL;
-  HINSTANCE           hCfgMan           = NULL;
-  HDEVINFO            hInfo             = NULL;
-  const TCHAR*        szDeviceId        = _T("netX usb bootmonitor");
-  DWORD               dwDevCnt          = 0;
-  wxString            str;
+	bool fOk;
+	const GUID          tDevGuid          = GUID_DEVCLASS_PORTS;
+	CM_Open_DevNode_Key pfnOpenDevNodeKey = NULL;
+	SP_DEVINFO_DATA     tDeviceInfoData   = {0};
+	HKEY                hkDevice          = NULL;
+	HINSTANCE           hCfgMan           = NULL;
+	HDEVINFO            hInfo             = NULL;
+	const TCHAR*        szDeviceId        = "netX usb bootmonitor";
+	DWORD dwDevCnt;
+	size_t sizRefCnt;
+	size_t sizRefMax;
+	size_t sizEntry;
+	char *pcRef;
+	char **ppcRef;
+	char **ppcRefNew;
 
 
-  // open the mfgmgr32 lib
-  if(NULL == (hCfgMan = LoadLibrary(_T("cfgmgr32"))))
-  {
-    wxLogError(wxT("Failed to open cfgmgr32, can not enumerate ports!"));
-    
-  } else if(NULL == (pfnOpenDevNodeKey = (CM_Open_DevNode_Key)GetProcAddress(hCfgMan, "CM_Open_DevNode_Key")))
-  {
-    wxLogError(wxT("Failed to get function pointer for 'CM_Open_DevNode_Key' from cfgmgr32, can not enumerate ports!"));
+	/* Be optimistic. */
+	fOk = true;
 
-  } else if(INVALID_HANDLE_VALUE == (hInfo = SetupDiGetClassDevs(&tDevGuid, NULL, NULL, DIGCF_PRESENT)))
-  {
-    // failed to enumerate COMM devices
-  } else
-  {
-    // loop over all devices
-    tDeviceInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
+	/* No device list allocated yet. */
+	sizRefCnt = 0;
+	sizRefMax = 0;
+	ppcRef = NULL;
 
-    while(0 != SetupDiEnumDeviceInfo(hInfo, dwDevCnt, &tDeviceInfoData))
-    {
-      TCHAR szPortName[20] = {0};
-      DWORD dwPortNameLen  = sizeof(szPortName);
+	/* Open the mfgmgr32 lib. */
+	hCfgMan = LoadLibrary("cfgmgr32");
+	if( hCfgMan==NULL )
+	{
+		fprintf(stderr, "Failed to open cfgmgr32, can not enumerate ports!");
+		fOk = false;
+	}
+	else
+	{
+		pfnOpenDevNodeKey = (CM_Open_DevNode_Key)GetProcAddress(hCfgMan, "CM_Open_DevNode_Key");
+		if( pfnOpenDevNodeKey==NULL )
+		{
+			fprintf(stderr, "Failed to get function pointer for 'CM_Open_DevNode_Key' from cfgmgr32, can not enumerate ports!");
+			fOk = false;
+		}
+		else
+		{
+			hInfo = SetupDiGetClassDevs(&tDevGuid, NULL, NULL, DIGCF_PRESENT);
+			if( hInfo==INVALID_HANDLE_VALUE )
+			{
+				fprintf(stderr, "failed to enumerate COMM devices.\n");
+				fOk = false;
+			}
+			else
+			{
+				/* Init References array. */
+				sizRefCnt = 0;
+				sizRefMax = 16;
+				ppcRef = (char**)malloc(sizRefMax*sizeof(char*));
+				if( ppcRef==NULL )
+				{
+					fprintf(stderr, "out of memory!\n");
+					fOk = false;
+				}
+				else
+				{
+					/* Count all devices. */
+					tDeviceInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
 
-      // first test if this interface is a com port
-      if( (ERROR_SUCCESS == pfnOpenDevNodeKey(tDeviceInfoData.DevInst, 
-                                          KEY_QUERY_VALUE, 
-                                          0, 
-                                          RegDisposition_OpenExisting, 
-                                          &hkDevice, 
-                                          CM_REGISTRY_HARDWARE)) &&
-        (ERROR_SUCCESS == RegQueryValueEx(hkDevice, 
-                                          _T("Portname"), 
-                                          NULL, 
-                                          NULL, 
-                                          (BYTE*)szPortName, 
-                                          &dwPortNameLen)) )
-      {
+					dwDevCnt = 0;
+					while( SetupDiEnumDeviceInfo(hInfo, dwDevCnt, &tDeviceInfoData)!=0 )
+					{
+						TCHAR szPortName[20] = {0};
+						DWORD dwPortNameLen  = sizeof(szPortName);
 
-        // is this a com port?
-        if(_tcsncmp(szPortName, _T("COM"), 3)==0 )
-        {
-          // found a com port
-          wxLogMessage(wxT("Found COM port ") + wxString::FromAscii(szPortName));
-	  ptArray->Add(szPortName);
-        }
-      }
-      // close the device key
-      RegCloseKey(hkDevice);
+						/* First test if this interface is a com port. */
+						if( (ERROR_SUCCESS == pfnOpenDevNodeKey(tDeviceInfoData.DevInst, 
+				                                        KEY_QUERY_VALUE, 
+				                                        0, 
+				                                        RegDisposition_OpenExisting, 
+				                                        &hkDevice, 
+				                                        CM_REGISTRY_HARDWARE)) &&
+						    (ERROR_SUCCESS == RegQueryValueEx(hkDevice,
+									"Portname",
+									NULL,
+									NULL,
+									(BYTE*)szPortName,
+									&dwPortNameLen)) )
+						{
+							/* Is this a com port? */
+							if(_tcsncmp(szPortName, "COM", 3)==0 )
+							{
+								/* Found a com port. */
 
-      // next device
-      ++dwDevCnt;
-    }
+								/* Is enough space in the array for one more entry? */
+								if( sizRefCnt>=sizRefMax )
+								{
+									/* No -> expand the array. */
+									sizRefMax *= 2;
+									/* Detect overflow or limitation. */
+									if( sizRefMax<=sizRefCnt )
+									{
+										fOk = false;
+										break;
+									}
+									/* Reallocate the array. */
+									ppcRefNew = (char**)realloc(ppcRef, sizRefMax*sizeof(char*));
+									if( ppcRefNew==NULL )
+									{
+										fOk = false;
+										break;
+									}
+									ppcRef = ppcRefNew;
+								}
+								sizEntry = strlen(szPortName) + 1;
+								pcRef = (char*)malloc(sizEntry);
+								if( pcRef==NULL )
+								{
+									fOk = false;
+									break;
+								}
+								memcpy(pcRef, szPortName, sizEntry);
+								ppcRef[sizRefCnt++] = pcRef;
+								printf("Found COM port %s\n", pcRef);
+							}
+						}
 
-    // destroy temp data
-    if( hInfo != INVALID_HANDLE_VALUE )
-    {
-        SetupDiDestroyDeviceInfoList(hInfo);
-    }
-  }
+						/* Close the device key. */
+						RegCloseKey(hkDevice);
 
-    // free the cfgmgr32 library
-  if(NULL != hCfgMan)
-      FreeLibrary(hCfgMan);
+						/* Next device. */
+						++dwDevCnt;
+					}
+				}
 
-  return dwDevCnt - 1;
+				/* Destroy temp data. */
+				if( hInfo!=INVALID_HANDLE_VALUE )
+				{
+					SetupDiDestroyDeviceInfoList(hInfo);
+				}
+			}
+
+			/* Free the cfgmgr32 library. */
+			if( hCfgMan!=NULL )
+			{
+				FreeLibrary(hCfgMan);
+			}
+		}
+	}
+
+	if( fOk!=true )
+	{
+		/* Delete the complete array. */
+		if( ppcRef!=NULL )
+		{
+			char **ppcCnt;
+			char **ppcEnd;
+
+
+			ppcCnt = ppcRef;
+			ppcEnd = ppcRef + sizRefCnt;
+			do
+			{
+				pcRef = *(ppcCnt++);
+				if( pcRef!=NULL )
+				{
+					free(pcRef);
+				}
+			} while( ppcCnt<ppcEnd );
+			free(ppcRef);
+		}
+
+		sizRefCnt = 0;
+	}
+
+	return sizRefCnt;
 }
 
 
