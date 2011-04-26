@@ -35,6 +35,9 @@ IF(UNIX)
 	SET(romloader_uart_platform_HEADERS
 		romloader_uart_device_linux.h
 	)
+	
+	SET(romloader_uart_platform_LIBS
+	)
 ELSE(UNIX)
 	IF(WIN32)
 		SET(romloader_uart_platform_SOURCES
@@ -43,6 +46,10 @@ ELSE(UNIX)
 		
 		SET(romloader_uart_platform_HEADERS
 			romloader_uart_device_win.h
+		)
+		
+		SET(romloader_uart_platform_LIBS
+			Setupapi.lib
 		)
 	ENDIF(WIN32)
 ENDIF(UNIX)
@@ -62,6 +69,7 @@ SET(romloader_uart_HEADERS
 
 
 add_library(romloader_uart_lib STATIC ${romloader_uart_SOURCES})
+target_link_libraries(romloader_uart_lib ${romloader_uart_platform_LIBS})
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
 	SET_TARGET_PROPERTIES(romloader_uart_lib PROPERTIES COMPILE_FLAGS -fPIC)
