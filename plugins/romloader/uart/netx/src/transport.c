@@ -223,7 +223,22 @@ void transport_loop(void)
 //	uprintf("Size: 0x%08x\n", sizPacket);
 
 	/* Is the packet's size valid? */
-	if( sizPacket>0 && sizPacket<=MONITOR_MAX_PACKET_SIZE-4 )
+	if( sizPacket==0 )
+	{
+		/* Get the size, data and CRC16. */
+		iResult = uart_buffer_fill(4, UART_BUFFER_TIMEOUT);
+		if( iResult==0 && uart_buffer_peek(2)=='*' && uart_buffer_peek(3)=='#' )
+		{
+			/* Discard the data. */
+			for(sizCrcPosition=0; sizCrcPosition<4; ++sizCrcPosition)
+			{
+				uart_buffer_get();
+			}
+
+			/* TODO: Send magic cookie and version info. */
+		}
+	}
+	else if( sizPacket<=MONITOR_MAX_PACKET_SIZE-4 )
 	{
 		/* Yes, the packet size is valid. */
 
