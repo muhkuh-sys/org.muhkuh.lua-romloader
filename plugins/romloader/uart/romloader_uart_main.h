@@ -37,6 +37,20 @@
 #endif
 
 
+typedef enum
+{
+	UARTSTATUS_OK           = 0,
+	UARTSTATUS_TIMEOUT      = 1,
+	UARTSTATUS_PACKET_TOO_LARGE = 2,
+	UARTSTATUS_SEND_FAILED = 3,
+	UARTSTATUS_FAILED_TO_SYNC = 4,
+	UARTSTATUS_CRC_MISMATCH = 5,
+	UARTSTATUS_MISSING_USERDATA = 6,
+	UARTSTATUS_COMMAND_EXECUTION_FAILED = 7
+} UARTSTATUS_T;
+
+
+
 /*-----------------------------------*/
 
 class romloader_uart_provider;
@@ -78,6 +92,9 @@ public:
 // *** lua interface end ***
 
 private:
+
+	void hexdump(const unsigned char *pucData, unsigned long ulSize);
+
 	bool chip_init(lua_State *ptClientData);
 
 	bool m_fIsConnected;
@@ -92,15 +109,13 @@ private:
 
 
 	void packet_ringbuffer_init(void);
-	int packet_ringbuffer_fill(size_t sizRequestedFillLevel);
+	UARTSTATUS_T packet_ringbuffer_fill(size_t sizRequestedFillLevel);
 	unsigned char packet_ringbuffer_get(void);
 	int packet_ringbuffer_peek(size_t sizOffset);
 
-	int send_packet(const unsigned char *pucData, size_t sizData);
-	int receive_packet(void);
-	int execute_command(const unsigned char *aucCommand, size_t sizCommand);
-
-	void hexdump(const unsigned char *pucData, unsigned long ulSize);
+	UARTSTATUS_T send_packet(const unsigned char *pucData, size_t sizData);
+	UARTSTATUS_T receive_packet(void);
+	UARTSTATUS_T execute_command(const unsigned char *aucCommand, size_t sizCommand);
 };
 
 /*-----------------------------------*/
