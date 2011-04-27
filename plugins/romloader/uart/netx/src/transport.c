@@ -305,10 +305,10 @@ void transport_send_packet(void)
 	usCrc = 0;
 
 	/* Send the size. */
-	ucData = sizPacketOutputFill & 0xffU;
+	ucData = (unsigned char)( sizPacketOutputFill        & 0xffU);
 	usCrc = crc16(usCrc, ucData);
 	uart_put(ucData);
-	ucData = (sizPacketOutputFill >> 8U) & 0xffU;
+	ucData = (unsigned char)((sizPacketOutputFill >> 8U) & 0xffU);
 	usCrc = crc16(usCrc, ucData);
 	uart_put(ucData);
 
@@ -338,6 +338,18 @@ unsigned char transport_call_console_get(void)
 
 void transport_call_console_put(unsigned int uiChar)
 {
+	/* Add the byte to the fifo. */
+	transport_send_byte((unsigned char)uiChar);
+
+	/* Reached the maximum packet size? */
+	if( sizPacketOutputFill>=MONITOR_MAX_PACKET_SIZE-5 )
+	{
+		/* Yes -> send the packet. */
+		transport_send_packet();
+
+		/* Start a new packet. */
+		transport_send_byte(MONITOR_STATUS_CallMessage);
+	}
 
 }
 
@@ -349,5 +361,10 @@ unsigned int transport_call_console_peek(void)
 
 void transport_call_console_flush(void)
 {
+	/* Send the packet. */
+	transport_send_packet();
+
+	/* Start a new packet. */
+	transport_send_byte(MONITOR_STATUS_CallMessage);
 }
 
