@@ -27,6 +27,9 @@
 
 @--------------------------------------
 
+	.ascii "mooh"
+	.word 0x00010000
+
 	.word load_address
 	.word start
 	.word parameter_start_address
