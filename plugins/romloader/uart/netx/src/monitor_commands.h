@@ -27,6 +27,8 @@
 
 #define MONITOR_STREAM_PACKET_START 0x2a
 
+#define MONITOR_VERSION_MAJOR 1
+#define MONITOR_VERSION_MINOR 0
 
 typedef enum
 {

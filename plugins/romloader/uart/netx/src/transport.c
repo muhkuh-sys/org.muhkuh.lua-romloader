@@ -195,6 +195,18 @@ static unsigned char uart_buffer_peek(size_t sizOffset)
 }
 
 
+static const unsigned char aucMagic[8] =
+{
+	/* Magic. */
+	'M', 'O', 'O', 'H',
+	/* Version. */
+	MONITOR_VERSION_MINOR & 0xff,
+	MONITOR_VERSION_MINOR >> 8,
+	MONITOR_VERSION_MAJOR & 0xff,
+	MONITOR_VERSION_MAJOR >> 8
+};
+
+
 void transport_loop(void)
 {
 	unsigned char ucByte;
@@ -225,17 +237,26 @@ void transport_loop(void)
 	/* Is the packet's size valid? */
 	if( sizPacket==0 )
 	{
-		/* Get the size, data and CRC16. */
+		/* Get the magic "*#". This is the knock sequence of the old romcode. */
 		iResult = uart_buffer_fill(4, UART_BUFFER_TIMEOUT);
 		if( iResult==0 && uart_buffer_peek(2)=='*' && uart_buffer_peek(3)=='#' )
 		{
-			/* Discard the data. */
+			/* Discard the size and magic. */
 			for(sizCrcPosition=0; sizCrcPosition<4; ++sizCrcPosition)
 			{
 				uart_buffer_get();
 			}
 
-			/* TODO: Send magic cookie and version info. */
+			/* Send magic cookie and version info. */
+
+			/* Write status "Ok" to the fifo. */
+			transport_send_byte(MONITOR_STATUS_Ok);
+
+			for(sizCrcPosition=0; sizCrcPosition<sizeof(aucMagic); ++sizCrcPosition)
+			{
+				transport_send_byte(aucMagic[sizCrcPosition]);
+			}
+			transport_send_packet();
 		}
 	}
 	else if( sizPacket<=MONITOR_MAX_PACKET_SIZE-4 )
