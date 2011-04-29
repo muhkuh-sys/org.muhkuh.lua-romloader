@@ -20,6 +20,9 @@
 
 
 #include <wx/wx.h>
+#include <wx/event.h>
+#include <wx/textctrl.h>
+
 
 /* Platform specific includes. */
 #include <unistd.h>
@@ -53,6 +56,7 @@ public:
 
 private:
 	static const int c_iMaxPtsName = 4096;
+	static const int c_iMaxCommandlineArgument = 4096;
 
 	char **get_strings_from_table(int iIndex, lua_State *ptLuaState) const;
 	int free_string_table(char **ppcTable) const;

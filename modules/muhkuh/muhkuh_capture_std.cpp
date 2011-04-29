@@ -31,8 +31,6 @@
 #include <wx/process.h>
 
 
-#define MAX_COMMANDLINE_ARGUMENT 4096
-
 
 capture_std::capture_std(long lMyId, long lEvtHandlerId)
  : m_lMyId(lMyId)
@@ -102,7 +100,7 @@ char **capture_std::get_strings_from_table(int iIndex, lua_State *ptLuaState) co
 					/* Failed to convert the data to a string. */
 					iResult = -1;
 				}
-				else if( sizString+1>MAX_COMMANDLINE_ARGUMENT )
+				else if( sizString+1>c_iMaxCommandlineArgument )
 				{
 					/* The argument exceeds the maximum size. */
 					iResult = -1;
