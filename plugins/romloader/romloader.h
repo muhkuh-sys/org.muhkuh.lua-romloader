@@ -113,5 +113,5 @@ private:
 
 /*-----------------------------------*/
 
-#endif	/* __ROMLOADER_H__ */
+#endif  /* __ROMLOADER_H__ */
 
