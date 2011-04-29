@@ -50,7 +50,6 @@ typedef enum
 } UARTSTATUS_T;
 
 
-
 /*-----------------------------------*/
 
 class romloader_uart_provider;

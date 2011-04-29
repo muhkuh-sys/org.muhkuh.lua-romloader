@@ -24,7 +24,7 @@
 #include "romloader_uart_main.h"
 
 #define UART_BASE_TIMEOUT_MS 500
-#define UART_CHAR_TIMEOUT_MS 10
+#define UART_CHAR_TIMEOUT_MS 50
 
 #ifdef _WIN32
 #       define snprintf _snprintf
@@ -325,12 +325,10 @@ void romloader_uart::Connect(lua_State *ptClientData)
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to open device!", m_pcName, this);
 		}
-/*
 		else if( m_ptUartDev->IdentifyLoader()!=true )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to identify loader!", m_pcName, this);
 		}
-*/
 		else if( detect_chiptyp(ptClientData)!=true )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chiptyp!", m_pcName, this);
@@ -367,7 +365,6 @@ void romloader_uart::Disconnect(lua_State *ptClientData)
 
 	m_fIsConnected = false;
 }
-
 
 
 void romloader_uart::packet_ringbuffer_init(void)
@@ -420,6 +417,7 @@ UARTSTATUS_T romloader_uart::packet_ringbuffer_fill(size_t sizRequestedFillLevel
 
 			if( sizRead!=sizChunk )
 			{
+				fprintf(stderr, "ERROR: requested %d bytes, got only %d.\n", sizChunk, sizRead);
 				tResult = UARTSTATUS_TIMEOUT;
 				break;
 			}
@@ -547,11 +545,15 @@ UARTSTATUS_T romloader_uart::receive_packet(void)
 		if( tResult==UARTSTATUS_OK )
 		{
 			ucData = packet_ringbuffer_get();
-		}
-		if( ucData==MONITOR_STREAM_PACKET_START )
-		{
-			fFound = true;
-			break;
+			if( ucData==MONITOR_STREAM_PACKET_START )
+			{
+				fFound = true;
+				break;
+			}
+			else
+			{
+				fprintf(stderr, "WARNING: Skipping char 0x%02x.\n", ucData);
+			}
 		}
 		--uiRetries;
 	} while( uiRetries>0 );
@@ -627,42 +629,66 @@ UARTSTATUS_T romloader_uart::execute_command(const unsigned char *aucCommand, si
 {
 	UARTSTATUS_T tResult;
 	unsigned char ucStatus;
+	unsigned int uiRetryCnt;
 
 
-	tResult = send_packet(aucCommand, sizCommand);
-	if( tResult!=UARTSTATUS_OK )
+	uiRetryCnt = 10;
+	do
 	{
-		fprintf(stderr, "! execute_command: send_packet failed with errorcode %d\n", tResult);
-	}
-	else
-	{
-		tResult = receive_packet();
+		tResult = send_packet(aucCommand, sizCommand);
 		if( tResult!=UARTSTATUS_OK )
 		{
-			fprintf(stderr, "! execute_command: receive_packet failed with errorcode %d\n", tResult);
+			fprintf(stderr, "! execute_command: send_packet failed with errorcode %d\n", tResult);
 		}
 		else
 		{
-			if( m_sizPacketInputBuffer<5 )
+			tResult = receive_packet();
+			if( tResult!=UARTSTATUS_OK )
 			{
-				fprintf(stderr, "Error: received no user data!\n");
-				tResult = UARTSTATUS_MISSING_USERDATA;
+				fprintf(stderr, "! execute_command: receive_packet failed with errorcode %d\n", tResult);
 			}
 			else
 			{
-				ucStatus = m_aucPacketInputBuffer[2];
-				if( ucStatus==0 )
+				if( m_sizPacketInputBuffer<5 )
 				{
-					tResult = UARTSTATUS_OK;
+					fprintf(stderr, "Error: received no user data!\n");
+					tResult = UARTSTATUS_MISSING_USERDATA;
 				}
 				else
 				{
-					fprintf(stderr, "Error: status is not ok: %d\n", ucStatus);
-					tResult = UARTSTATUS_COMMAND_EXECUTION_FAILED;
+					ucStatus = m_aucPacketInputBuffer[2];
+					if( ucStatus==0 )
+					{
+						tResult = UARTSTATUS_OK;
+					}
+					else
+					{
+						fprintf(stderr, "Error: status is not ok: %d\n", ucStatus);
+						tResult = UARTSTATUS_COMMAND_EXECUTION_FAILED;
+					}
 				}
 			}
 		}
-	}
+
+		if( tResult!=UARTSTATUS_OK )
+		{
+			--uiRetryCnt;
+			if( uiRetryCnt==0 )
+			{
+				fprintf(stderr, "Retried 10 times and nothing happened. Giving up!\n");
+				break;
+			}
+			else
+			{
+				fprintf(stderr, "***************************************\n");
+				fprintf(stderr, "*                                     *\n");
+				fprintf(stderr, "*            retry                    *\n");
+				fprintf(stderr, "*                                     *\n");
+				fprintf(stderr, "***************************************\n");
+			}
+		}
+
+	} while( tResult!=UARTSTATUS_OK );
 
 	return tResult;
 }

@@ -50,6 +50,7 @@ public:
 
 
 	/* higher level interface */
+	bool GetLine(unsigned char **ppucLine, const char *pcEol, unsigned long ulTimeout);
 	bool IdentifyLoader(void);
 
 	static unsigned int crc16(unsigned short usCrc, unsigned char ucData);
@@ -74,9 +75,10 @@ public:
 	size_t readCards(unsigned char *pucBuffer, size_t sizBufferSize);
 	size_t getCardSize(void) const;
 
-
 protected:
 	char *m_pcPortName;
+
+	static const char *apcRomcodeWelcomeStrings[3];
 
 	tBufferCard *m_ptFirstCard;
 	tBufferCard *m_ptLastCard;
@@ -90,7 +92,7 @@ protected:
 #endif
 
 private:
-	size_t readCardData(unsigned char *pucBuffer, size_t sizBufferSize);
+	void hexdump(const unsigned char *pucData, unsigned long ulSize);
 };
 
 
