@@ -50,6 +50,7 @@ public:
 
 
 	/* higher level interface */
+	bool wait_for_prompt(unsigned long ulTimeout);
 	bool GetLine(unsigned char **ppucLine, const char *pcEol, unsigned long ulTimeout);
 	bool IdentifyLoader(void);
 
@@ -77,8 +78,6 @@ public:
 
 protected:
 	char *m_pcPortName;
-
-	static const char *apcRomcodeWelcomeStrings[3];
 
 	tBufferCard *m_ptFirstCard;
 	tBufferCard *m_ptLastCard;

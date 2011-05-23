@@ -288,6 +288,43 @@ unsigned int romloader_uart_device::crc16(unsigned short usCrc, unsigned char uc
 }
 
 
+bool romloader_uart_device::wait_for_prompt(unsigned long ulTimeout)
+{
+	bool fFoundPrompt;
+	const size_t sizMaxSearch = 32;
+	size_t sizCnt;
+	size_t sizReceived;
+	unsigned char ucData;
+
+
+	fFoundPrompt = false;
+
+	sizCnt = 0;
+	do
+	{
+		sizReceived = RecvRaw(&ucData, 1, ulTimeout);
+		printf("rec: 0x%02x, siz: %d\n", ucData, sizReceived);
+		if( sizReceived!=1 )
+		{
+			/* Failed to receive the next char. */
+			fprintf(stderr, "Failed to receive the knock response.\n");
+			break;
+		}
+		else if( ucData=='>' )
+		{
+			fFoundPrompt = true;
+			break;
+		}
+		else
+		{
+			++sizCnt;
+		}
+	} while( sizCnt<sizMaxSearch );
+
+	return fFoundPrompt;
+}
+
+
 bool romloader_uart_device::GetLine(unsigned char **ppucLine, const char *pcEol, unsigned long ulTimeout)
 {
 	bool fOk;
@@ -301,6 +338,8 @@ bool romloader_uart_device::GetLine(unsigned char **ppucLine, const char *pcEol,
 
 
 	/* Receive char by char until the EOL sequence was received. */
+
+	fprintf(stderr, "GetLine\n");
 
 	/* Expect success. */
 	fOk = true;
@@ -325,11 +364,15 @@ bool romloader_uart_device::GetLine(unsigned char **ppucLine, const char *pcEol,
 			if( sizReceived!=1 )
 			{
 				/* Timeout, that's it... */
+				fprintf(stderr, "Timeout!\n");
+
 				fOk = false;
 				break;
 			}
 			else
 			{
+				fprintf(stderr, "Recv: 0x%02x\n", pucBuffer[sizBufferCnt]);
+
 				/* Check for EOL. */
 				if( pcEol[sizEolSeqCnt]==pucBuffer[sizBufferCnt] )
 				{
@@ -383,13 +426,6 @@ bool romloader_uart_device::GetLine(unsigned char **ppucLine, const char *pcEol,
 }
 
 
-const char *romloader_uart_device::apcRomcodeWelcomeStrings[3] =
-{
-	"netX500 Step A\r\n",
-	"netX50 Step B\r\n",
-	"netX10 Step B\r\n"
-};
-
 bool romloader_uart_device::IdentifyLoader(void)
 {
 	bool fResult = false;
@@ -398,6 +434,7 @@ bool romloader_uart_device::IdentifyLoader(void)
 	unsigned char aucData[13];
 	unsigned char *pucResponse;
 	size_t sizCnt;
+	size_t sizTransfered;
 	unsigned long ulMiVersionMaj;
 	unsigned long ulMiVersionMin;
 	bool fDeviceNeedsUpdate;
@@ -421,8 +458,8 @@ bool romloader_uart_device::IdentifyLoader(void)
 	}
 	else
 	{
-		sizCnt = RecvRaw(aucData, 1, 1000);
-		if( sizCnt!=1 )
+		sizTransfered = RecvRaw(aucData, 1, 1000);
+		if( sizTransfered!=1 )
 		{
 			/* Failed to receive first char of knock response. */
 			fprintf(stderr, "Failed to receive first char of knock response.\n");
@@ -430,93 +467,21 @@ bool romloader_uart_device::IdentifyLoader(void)
 		else
 		{
 			printf("received knock response: 0x%02x\n", aucData[0]);
-			/* This should be '\f', but the first bits might be trashed. */
-			if( aucData[0]<0x20 )
-			{
-				/* This seems to be the welcome message. */
-
-				/* Receive the rest of the line. */
-				printf("receive the rest of the knock response\n");
-				fResult = GetLine(&pucResponse, "\r\n", 200);
-				if( fResult!=true )
-				{
-					fprintf(stderr, "Failed to receive the rest of the knock response!\n");
-				}
-				else
-				{
-					fResult = false;
-					for(sizCnt=0; sizCnt<(sizeof(apcRomcodeWelcomeStrings)/sizeof(const char**)); ++sizCnt)
-					{
-						if( strcmp((const char*)pucResponse, apcRomcodeWelcomeStrings[sizCnt])==0 )
-						{
-							fResult = true;
-							break;
-						}
-					}
-					/* Check for initial bootloader message. */
-					if( fResult==false )
-					{
-						/* Seems to be no netX bootloader. */
-						fprintf(stderr, "Received invalid response from the device: '%s'\n", pucResponse);
-						free(pucResponse);
-					}
-					else
-					{
-						free(pucResponse);
-
-						/* Get prompt, the real console eats the first char, the usb console will echo it. */
-						fResult = false;
-						sizCnt = RecvRaw(aucData, 3, 400);
-						if( sizCnt==0 )
-						{
-							printf("received no further data after romloader message.\n");
-						}
-						else if( aucData[0]!='>' )
-						{
-							fprintf(stderr, "received strange response after romloader message!\n");
-							fprintf(stderr, "len: %d, data = 0x%02x, 0x%02x, 0x%02x\n", sizCnt, aucData[0], aucData[1], aucData[2]);
-						}
-						else if( sizCnt==1 )
-						{
-							printf("ok, received prompt!\n");
-							fDeviceNeedsUpdate = true;
-							fResult = true;
-						}
-						else if( sizCnt==2 && aucData[1]=='#' )
-						{
-							printf("ok, received hash!\n");
-							fDeviceNeedsUpdate = true;
-							fResult = true;
-						}
-						else if( sizCnt==3 && aucData[1]=='*' && aucData[2]=='#' )
-						{
-							printf("ok, received star and hash!");
-							fDeviceNeedsUpdate = true;
-							fResult = true;
-						}
-						else
-						{
-							fprintf(stderr, "received strange response after romloader message!\n");
-							printf("len: %d, data = 0x%02x, 0x%02x, 0x%02x", sizCnt, aucData[0], aucData[1], aucData[2]);
-						}
-					}
-				}
-			}
 			/* Knock echoed -> this is the prompt or the machine interface. */
-			else if( aucData[0]=='*' )
+			if( aucData[0]=='*' )
 			{
 				printf("ok, received star!\n");
 
 				/* Get rest of the response. */
-				sizCnt = RecvRaw(aucData, 13, 500);
-				hexdump(aucData, sizCnt);
-				printf("%d\n", sizCnt);
+				sizTransfered = RecvRaw(aucData, 13, 500);
+				hexdump(aucData, sizTransfered);
+				printf("%d\n", sizTransfered);
 				hexdump(aucKnockResponseMi, 7);
-				if( sizCnt==0 )
+				if( sizTransfered==0 )
 				{
 					fprintf(stderr, "Failed to receive response after the star!\n");
 				}
-				else if( sizCnt==13 && memcmp(aucData, aucKnockResponseMi, 7)==0 )
+				else if( sizTransfered==13 && memcmp(aucData, aucKnockResponseMi, 7)==0 )
 				{
 					/* Build the crc for the packet. */
 					usCrc = 0;
@@ -556,7 +521,41 @@ bool romloader_uart_device::IdentifyLoader(void)
 			}
 			else
 			{
-				printf("strange or no response from device, seems to be no netx\n");
+				/* This seems to be the welcome message. */
+
+				/* The welcome message can be quite trashed depending on the driver. Just discard the characters until the first timeout and send enter. */
+
+				/* Discard all data until timeout. */
+				do
+				{
+					sizTransfered = RecvRaw(aucData, 1, 200);
+					if( sizTransfered==1 )
+					{
+						fprintf(stderr, "Discarding 0x%02x\n", aucData[0]);
+					}
+				} while( sizTransfered==1 );
+
+				/* Send enter. */
+				sizTransfered = SendRaw(aucBlankLine, sizeof(aucBlankLine), 200);
+				if( sizTransfered!=1 )
+				{
+					fprintf(stderr, "Failed to send enter to device!\n");
+				}
+				else
+				{
+					/* Receive the rest of the line until '>'. Discard the data. */
+					printf("receive the rest of the knock response\n");
+					fResult = wait_for_prompt(200);
+					if( fResult==true )
+					{
+						/* Found the prompt. */
+						fDeviceNeedsUpdate = true;
+					}
+					else
+					{
+						fprintf(stderr, "received strange response after romloader message!\n");
+					}
+				}
 			}
 		}
 	}
@@ -565,26 +564,12 @@ bool romloader_uart_device::IdentifyLoader(void)
 	{
 		if( fDeviceNeedsUpdate==true )
 		{
-			/* Send enter. */
-			printf("sending enter to netx.\n");
-			sizCnt = SendRaw(aucBlankLine, sizeof(aucBlankLine), 200);
-			if( sizCnt!=1 )
-			{
-				fprintf(stderr, "Failed to send enter to device!\n");
-			}
-			else
-			{
 //				fResult = WaitForResponse(&pucResponse, 65536, 1024);
 /* TODO:
  1) grab data until next newline + '>' Combo.
  2) download new code
  3) start
 */
-
-				fResult = false;
-
-
-			}
 		}
 	}
 
