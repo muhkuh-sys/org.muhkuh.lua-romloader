@@ -122,6 +122,10 @@ elf_netx10_intram = env_netx10_intram.Elf('targets/uartmon_netx10_intram.elf', s
 bin_netx10_intram = env_netx10_intram.ObjCopy('targets/uartmon_netx10_intram.bin', elf_netx10_intram)
 arr_netx10_intram = env_netx10_intram.DataArray('targets/uartmon_netx10_intram.c', bin_netx10_intram, DATAARRAY_NAME='auc_uartmon_netx10_intram')
 
+# This is for debug only.
+env_netx10_intram.UUEncode('targets/uartmon_netx10_intram.uue', bin_netx10_intram, UUE_ELF=elf_netx10_intram, UUE_PRE = """
+l ${LOAD_HEX}
+""", UUE_POST = "g ${EXEC_HEX} 0")
 
 #----------------------------------------------------------------------------
 #
