@@ -7,6 +7,7 @@ if(${LUA51_FOUND})
 		muhkuh_system.lua
 		select_plugin.lua
 		system.lua
+		tester_cli.lua
 		tester_v2/tester.lua
 		tester_v2/tester_control.lua
 		tester_v2/tester_details.lua
