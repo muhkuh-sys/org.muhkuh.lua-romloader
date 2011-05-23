@@ -532,7 +532,7 @@ bool romloader_uart_device::IdentifyLoader(void)
 					{
 						ulMiVersionMin = aucData[7] | (aucData[8]<<8);;
 						ulMiVersionMaj = aucData[9] | (aucData[10]<<8);
-						printf("Found new machine interface V%d.%d.\n", ulMiVersionMaj, ulMiVersionMin);
+						printf("Found new machine interface V%ld.%ld.\n", ulMiVersionMaj, ulMiVersionMin);
 						fResult = true;
 					}
 				}
@@ -580,6 +580,9 @@ bool romloader_uart_device::IdentifyLoader(void)
  2) download new code
  3) start
 */
+
+				fResult = false;
+
 
 			}
 		}
