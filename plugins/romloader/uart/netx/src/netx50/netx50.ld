@@ -34,8 +34,7 @@ SECTIONS
 {
 	.assert_empty (NOLOAD) :
 	{
-		/* NOTE: include all sections here whioch should be empty.
-		 */
+		/* NOTE: include all sections here which should be empty. */
 		*(.data)
 		*(.glue*)
 		*(.vfp11_veneer)
@@ -43,22 +42,9 @@ SECTIONS
 	} >ASSERT_EMPTY
 
 
-	.bss ORIGIN(DTCM) :
-	{
-		/* zero-initialized data */
-
-		__bss_start__ = . ;
-
-		*(.bss)
-		*(COMMON)
-
-		__bss_end__ = . ;
-	} >DTCM
-
-
 	.serialvectors ORIGIN(DTCM)+LENGTH(DTCM)-0x10 :
 	{
-		PROVIDE ( tSerialVectors = . );
+		PROVIDE ( tSerialV2Vectors = . );
 		. = . + 0x10;
 	} >DTCM
 
@@ -73,6 +59,18 @@ SECTIONS
 		*(.init_code)
 		*(.text)
 		*(.rodata*)
+	} >INTRAM
+
+	.bss :
+	{
+		/* zero-initialized data */
+
+		__bss_start__ = . ;
+
+		*(.bss)
+		*(COMMON)
+
+		__bss_end__ = . ;
 	} >INTRAM
 
 
