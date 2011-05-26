@@ -38,7 +38,7 @@
 #endif
 
 #include "romloader_usb_main.h"
-#include "uuencoder.h"
+#include "../uuencoder.h"
 
 #include "netx/targets/usbmon_netx10_intram.h"
 #include "netx/targets/usbmon_netx500_intram.h"

@@ -72,7 +72,6 @@ SET(romloader_usb_SOURCES
 	romloader_usb_device.cpp
 	romloader_usb_device_libusb.cpp
 	romloader_usb_main.cpp
-	uuencoder.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
 	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.c
 )
@@ -80,7 +79,6 @@ SET(romloader_usb_SOURCES
 SET(romloader_usb_HEADERS
 	romloader_usb_device_libusb.h
 	romloader_usb_main.h
-	uuencoder.h
 	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h
 	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.h
 )

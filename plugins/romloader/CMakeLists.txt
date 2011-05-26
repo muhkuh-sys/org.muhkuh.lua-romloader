@@ -32,10 +32,12 @@ set_property(SOURCE romloader.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/mo
 
 SET(romloader_lib_SOURCES
 	romloader.cpp
+	uuencoder.cpp
 )
 
 SET(romloader_lib_HEADERS
 	romloader.h
+	uuencoder.h
 )
 
 add_library(romloader_lib STATIC ${romloader_lib_SOURCES})
