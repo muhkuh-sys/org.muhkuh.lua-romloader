@@ -332,8 +332,7 @@ bool romloader_uart_device::GetLine(unsigned char **ppucLine, const char *pcEol,
 	unsigned char *pucBufferNew;
 	size_t sizBufferCnt;
 	size_t sizBufferMax;
-	size_t sizEolSeqCnt;
-	size_t sizEolSeqMax;
+	size_t sizEolSeq;
 	size_t sizReceived;
 
 
@@ -344,8 +343,7 @@ bool romloader_uart_device::GetLine(unsigned char **ppucLine, const char *pcEol,
 	/* Expect success. */
 	fOk = true;
 
-	sizEolSeqCnt = 0;
-	sizEolSeqMax = strlen(pcEol);
+	sizEolSeq = strlen(pcEol);
 
 	/* Init References array. */
 	sizBufferCnt = 0;
@@ -369,19 +367,14 @@ bool romloader_uart_device::GetLine(unsigned char **ppucLine, const char *pcEol,
 				fOk = false;
 				break;
 			}
-			else
-			{
-				fprintf(stderr, "Recv: 0x%02x\n", pucBuffer[sizBufferCnt]);
 
-				/* Check for EOL. */
-				if( pcEol[sizEolSeqCnt]==pucBuffer[sizBufferCnt] )
-				{
-					++sizEolSeqCnt;
-				}
-				else
-				{
-					sizEolSeqCnt = 0;
-				}
+			fprintf(stderr, "Recv: 0x%02x\n", pucBuffer[sizBufferCnt]);
+
+			/* Check for EOL. */
+			sizBufferCnt++;
+			if( sizBufferCnt>=sizEolSeq && memcmp(pcEol, pucBuffer+sizBufferCnt-sizEolSeq, sizEolSeq)==0 )
+			{
+				break;
 			}
 
 			/* Is enough space in the array for one more entry? */
@@ -406,7 +399,7 @@ bool romloader_uart_device::GetLine(unsigned char **ppucLine, const char *pcEol,
 				}
 				pucBuffer = pucBufferNew;
 			}
-		} while( sizEolSeqCnt<sizEolSeqMax );
+		} while( true );
 	}
 
 	if( fOk==true )
@@ -422,6 +415,186 @@ bool romloader_uart_device::GetLine(unsigned char **ppucLine, const char *pcEol,
 
 	*ppucLine = pucBuffer;
 
+	return fOk;
+}
+
+
+const romloader_uart_device::ROMCODE_RESET_ID_T romloader_uart_device::atResIds[4] =
+{
+	{
+		0xea080001,
+		0x00200008,
+		0x00001000,
+		ROMLOADER_CHIPTYP_NETX500,
+		"netX500",
+		ROMLOADER_ROMCODE_ABOOT,
+		"ABoot"
+	},
+
+	{
+		0xea080002,
+		0x00200008,
+		0x00003002,
+		ROMLOADER_CHIPTYP_NETX100,
+		"netX100",
+		ROMLOADER_ROMCODE_ABOOT,
+		"ABoot"
+	},
+
+	{
+		0xeac83ffc,
+		0x08200008,
+		0x00002001,
+		ROMLOADER_CHIPTYP_NETX50,
+		"netX50",
+		ROMLOADER_ROMCODE_HBOOT,
+		"HBoot"
+	},
+
+	{
+		0xeafdfffa,
+		0x08070008,
+		0x00005003,
+		ROMLOADER_CHIPTYP_NETX10,
+		"netX10",
+		ROMLOADER_ROMCODE_HBOOT,
+		"HBoot"
+	}
+};
+
+
+bool romloader_uart_device::legacy_read(unsigned long ulAddress, unsigned long *pulValue)
+{
+	union
+	{
+		unsigned char auc[32];
+		char ac[32];
+	} uCmd;
+	union
+	{
+		unsigned char *puc;
+		char *pc;
+	} uResponse;
+	size_t sizCmd;
+	bool fOk;
+	int iResult;
+	unsigned long ulReadbackAddress;
+	unsigned long ulValue;
+
+
+	sizCmd = snprintf(uCmd.ac, 32, "DUMP %lx\n", ulAddress);
+	/* Send knock sequence with 500ms second timeout. */
+	if( SendRaw(uCmd.auc, sizCmd, 500)!=sizCmd )
+	{
+		/* Failed to send the command to the device. */
+		fprintf(stderr, "Failed to send the command to the device.\n");
+		fOk = false;
+	}
+	else
+	{
+		/* Receive one line. This is the command echo. */
+		fOk = GetLine(&uResponse.puc, "\r\n", 2000);
+		if( fOk==false )
+		{
+			fprintf(stderr, "failed to get command response!\n");
+		}
+		else
+		{
+			sizCmd = strlen(uResponse.pc);
+			hexdump(uResponse.puc, sizCmd);
+			free(uResponse.puc);
+
+			/* Receive one line. This is the command result. */
+			fOk = GetLine(&uResponse.puc, "\r\n>", 2000);
+			if( fOk==false )
+			{
+				fprintf(stderr, "failed to get command response!\n");
+			}
+			else
+			{
+				iResult = sscanf(uResponse.pc, "%08lx: %08lx", &ulReadbackAddress, &ulValue);
+				if( iResult==2 && ulAddress==ulReadbackAddress )
+				{
+					fprintf(stderr, "Yay, got result 0x%08x\n", ulValue);
+					if( pulValue!=NULL )
+					{
+						*pulValue = ulValue;
+					}
+				}
+				else
+				{
+					fprintf(stderr, "The command response is invalid!\n");
+					fOk = false;
+				}
+				sizCmd = strlen(uResponse.pc);
+				hexdump(uResponse.puc, sizCmd);
+				free(uResponse.puc);
+			}
+		}
+	}
+
+	return fOk;
+}
+
+
+bool romloader_uart_device::update_device(void)
+{
+	bool fOk;
+	unsigned long ulResetVector;
+	unsigned long ulVersion;
+	const ROMCODE_RESET_ID_T *ptCnt;
+	const ROMCODE_RESET_ID_T *ptEnd;
+	const ROMCODE_RESET_ID_T *ptDev;
+
+
+	/* Read the reset vector. */
+	fprintf(stderr, "Get reset vector\n");
+	fOk = legacy_read(0U, &ulResetVector);
+	if( fOk==true )
+	{
+		fprintf(stderr, "Reset vector: 0x%08x\n", ulResetVector);
+		ptCnt = atResIds;
+		ptEnd = atResIds + (sizeof(atResIds)/sizeof(atResIds[0]));
+		ptDev = NULL;
+		while( ptCnt<ptEnd )
+		{
+			fprintf(stderr, "Hit 0x%08x...\n", ptCnt->ulResetVector);
+			if( ptCnt->ulResetVector==ulResetVector )
+			{
+				fOk = legacy_read(ptCnt->ulVersionAddress, &ulVersion);
+				if( fOk==true )
+				{
+					if( ptCnt->ulVersionValue==ulVersion )
+					{
+						ptDev = ptCnt;
+						break;
+					}
+				}
+				else
+				{
+					fprintf(stderr, "Failed to read the version data at address 0x%08x!\n", ptCnt->ulVersionAddress);
+					break;
+				}
+			}
+			++ptCnt;
+		}
+
+		if( ptDev==NULL )
+		{
+			fprintf(stderr, "Failed to identify the device!\n");
+			fOk = false;
+		}
+		else
+		{
+			fprintf(stderr, "Found %s on %s.\n", ptDev->pcRomcodeName, ptDev->pcChiptypName);
+		}
+			
+	}
+	else
+	{
+		fprintf(stderr, "Failed to read the reset vector!\n");
+	}
+	
 	return fOk;
 }
 
@@ -570,6 +743,8 @@ bool romloader_uart_device::IdentifyLoader(void)
  2) download new code
  3) start
 */
+			fResult = update_device();
+
 		}
 	}
 

@@ -91,6 +91,20 @@ protected:
 #endif
 
 private:
+	typedef struct
+	{
+		unsigned long ulResetVector;
+		unsigned long ulVersionAddress;
+		unsigned long ulVersionValue;
+		ROMLOADER_CHIPTYP tChiptyp;
+		const char *pcChiptypName;
+		ROMLOADER_ROMCODE tRomcode;
+		const char *pcRomcodeName;
+	} ROMCODE_RESET_ID_T;
+	static const ROMCODE_RESET_ID_T atResIds[4];
+
+	bool legacy_read(unsigned long ulAddress, unsigned long *pulValue);
+	bool update_device(void);
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);
 };
 
