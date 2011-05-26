@@ -27,7 +27,6 @@
 #include "monitor_commands.h"
 #include "serial_vectors.h"
 #include "systime.h"
-#include "uart.h"
 
 /* This is only for debug messages. */
 #include "uprintf.h"
@@ -64,6 +63,8 @@ static unsigned short crc16(unsigned short usCrc, unsigned char ucData)
 
 void transport_init(void)
 {
+	monitor_init();
+
 	/* Init the stream buffer. */
 	sizStreamBufferHead = 0;
 	sizStreamBufferFill = 0;
@@ -100,7 +101,7 @@ static int uart_buffer_fill(size_t sizRequestedFillLevel, unsigned int uiTimeout
 		while( sizStreamBufferFill<sizRequestedFillLevel )
 		{
 			/* Write the new byte to the buffer. */
-			aucStreamBuffer[sizWritePosition] = SERIAL_GET();
+			aucStreamBuffer[sizWritePosition] = (unsigned char)(SERIAL_V1_GET());
 
 //			uprintf("Buffer[0x%04x] = 0x%02x\n", sizWritePosition, aucStreamBuffer[sizWritePosition]);
 
@@ -129,7 +130,7 @@ static int uart_buffer_fill(size_t sizRequestedFillLevel, unsigned int uiTimeout
 					break;
 				}
 
-				uiHasData = SERIAL_PEEK();
+				uiHasData = SERIAL_V1_PEEK();
 			} while( uiHasData==0 );
 
 			if( uiHasData==0 )
@@ -139,7 +140,7 @@ static int uart_buffer_fill(size_t sizRequestedFillLevel, unsigned int uiTimeout
 			}
 
 			/* Write the new byte to the buffer. */
-			aucStreamBuffer[sizWritePosition] = SERIAL_GET();
+			aucStreamBuffer[sizWritePosition] = (unsigned char)(SERIAL_V1_GET());
 			/* Increase the write position. */
 			++sizWritePosition;
 			if( sizWritePosition>=MONITOR_MAX_PACKET_SIZE )
@@ -277,11 +278,7 @@ void transport_loop(void)
 				++sizCrcPosition;
 			}
 
-			if( usCrc16!=0 )
-			{
-				uprintf("crc failed: %04x\n", usCrc16);
-			}
-			else
+			if( usCrc16==0 )
 			{
 				/* Ok, the CRC matches! */
 
@@ -302,8 +299,26 @@ void transport_loop(void)
 
 				monitor_process_packet(aucPacketInputBuffer, sizPacket);
 			}
+/*
+			else
+			{
+				uprintf("crc failed: %04x\n", usCrc16);
+			}
+*/
 		}
+/*
+		else
+		{
+			uprintf("Failed to fill buffer: %d\n", iResult);
+		}
+*/
 	}
+/*
+	else
+	{
+		uprintf("size %d exceeds maximum %d\n", sizPacket, MONITOR_MAX_PACKET_SIZE-4);
+	}
+*/
 }
 
 
@@ -324,6 +339,12 @@ void transport_send_byte(unsigned char ucData)
 		aucPacketOutputBuffer[sizPacketOutputFill] = ucData;
 		++sizPacketOutputFill;
 	}
+/*
+	else
+	{
+		uprintf("discarding byte 0x%02x\n", ucData);
+	}
+*/
 }
 
 
@@ -335,18 +356,23 @@ void transport_send_packet(void)
 	unsigned short usCrc;
 
 
+//	uprintf("send packet\n");
+
 	/* Send the start character. */
-	uart_put(MONITOR_STREAM_PACKET_START);
+	SERIAL_V1_PUT(MONITOR_STREAM_PACKET_START);
+//	uprintf("%02x ", MONITOR_STREAM_PACKET_START);
 
 	usCrc = 0;
 
 	/* Send the size. */
 	ucData = (unsigned char)( sizPacketOutputFill        & 0xffU);
 	usCrc = crc16(usCrc, ucData);
-	uart_put(ucData);
+	SERIAL_V1_PUT(ucData);
+//	uprintf("%02x ", ucData);
 	ucData = (unsigned char)((sizPacketOutputFill >> 8U) & 0xffU);
 	usCrc = crc16(usCrc, ucData);
-	uart_put(ucData);
+	SERIAL_V1_PUT(ucData);
+//	uprintf("%02x ", ucData);
 
 	/* Send the packet and build the CRC16. */
 	pucCnt = aucPacketOutputBuffer;
@@ -354,13 +380,23 @@ void transport_send_packet(void)
 	while( pucCnt<pucEnd )
 	{
 		ucData = *(pucCnt++);
-		uart_put(ucData);
+		SERIAL_V1_PUT(ucData);
+//		uprintf("%02x ", ucData);
 		usCrc = crc16(usCrc, ucData);
 	}
 
 	/* Send the CRC16. */
-	uart_put(usCrc>>8U);
-	uart_put(usCrc&0xffU);
+	ucData = (unsigned char)(usCrc>>8U);
+	SERIAL_V1_PUT(ucData);
+//	uprintf("%02x ", ucData);
+	ucData = (unsigned char)(usCrc&0xffU);
+	SERIAL_V1_PUT(ucData);
+//	uprintf("%02x ", ucData);
+
+	/* Flush the buffer. */
+	SERIAL_V1_FLUSH();
+
+//	uprintf("\n\n");
 
 	sizPacketOutputFill = 0;
 }

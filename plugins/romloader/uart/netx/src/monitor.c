@@ -44,9 +44,6 @@ typedef union
 typedef void (*PFN_MONITOR_CALL_T)(unsigned long ulR0);
 
 
-static SERIAL_COMM_UI_FN_T tOldVectors;
-
-
 /*-----------------------------------*/
 
 
@@ -67,6 +64,8 @@ static void command_read_memory(unsigned long ulAddress, unsigned long ulSize, M
 	unsigned long ulValue;
 	int iCnt;
 
+
+//	uprintf("read 0x%04x->0x%08x\n", ulSize, ulAddress);
 
 	/* Get the start address. */
 	uAdrCnt.ul = ulAddress;
@@ -118,6 +117,9 @@ static void command_write_memory(const unsigned char *pucData, unsigned long ulA
 	unsigned long ulValue;
 
 
+//	uprintf("write 0x%04x->0x%08x\n", ulDataSize, ulAddress);
+//	hexdump(pucData, ulDataSize);
+
 	/* Get the source start address. */
 	pucCnt = pucData;
 	/* Get the source end address. */
@@ -156,17 +158,6 @@ static void command_write_memory(const unsigned char *pucData, unsigned long ulA
 }
 
 
-static const SERIAL_COMM_UI_FN_T tCallConsole =
-{
-	.fn =
-	{
-		.fnGet = transport_call_console_get,
-		.fnPut = transport_call_console_put,
-		.fnPeek = transport_call_console_peek,
-		.fnFlush = transport_call_console_flush
-	}
-};
-
 
 static void command_call(unsigned long ulAddress, unsigned long ulR0)
 {
@@ -178,12 +169,6 @@ static void command_call(unsigned long ulAddress, unsigned long ulR0)
 	/* Send the status packet. */
 	send_status(MONITOR_STATUS_Ok);
 
-	/* Save the old vectors. */
-	memcpy(&tOldVectors, &tSerialVectors, sizeof(SERIAL_COMM_UI_FN_T));
-
-	/* Set the vectors. */
-	memcpy(&tSerialVectors, &tCallConsole, sizeof(SERIAL_COMM_UI_FN_T));
-
 	/* Start the new message packet. */
 	transport_send_byte(MONITOR_STATUS_CallMessage);
 
@@ -192,9 +177,6 @@ static void command_call(unsigned long ulAddress, unsigned long ulR0)
 
 	/* Flush any remaining bytes in the fifo. */
 	transport_send_packet();
-
-	/* Restore the old vectors. */
-	memcpy(&tSerialVectors, &tOldVectors, sizeof(SERIAL_COMM_UI_FN_T));
 
 	/* The call finished, notify the PC. */
 	send_status(MONITOR_STATUS_CallFinished);
@@ -212,6 +194,25 @@ static unsigned long get_unaligned_dword(const unsigned char *pucBuffer)
 	ulValue |= (unsigned long)(pucBuffer[3]<<24U);
 
 	return ulValue;
+}
+
+
+static const SERIAL_V2_COMM_UI_FN_T tCallConsole =
+{
+	.fn =
+	{
+		.fnGet = transport_call_console_get,
+		.fnPut = transport_call_console_put,
+		.fnPeek = transport_call_console_peek,
+		.fnFlush = transport_call_console_flush
+	}
+};
+
+
+void monitor_init(void)
+{
+	/* Set the vectors. */
+	memcpy(&tSerialV2Vectors, &tCallConsole, sizeof(SERIAL_V2_COMM_UI_FN_T));
 }
 
 

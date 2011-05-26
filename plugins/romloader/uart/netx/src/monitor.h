@@ -23,6 +23,7 @@
 #define __MONITOR_H__
 
 
+void monitor_init(void);
 void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPacketSize);
 
 

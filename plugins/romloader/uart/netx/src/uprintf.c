@@ -13,7 +13,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "serial_vectors.h"
+#include "uart.h"
 
 
 static void uprintf_hex(unsigned long ulValue, size_t sizMinimum, char cFillUpChar)
@@ -42,7 +42,7 @@ static void uprintf_hex(unsigned long ulValue, size_t sizMinimum, char cFillUpCh
 			if( sizCnt<sizMinimum )
 			{
 				/* yes -> print fillup char */
-				SERIAL_PUT(cFillUpChar);
+				uart_put(cFillUpChar);
 			}
 		}
 		else
@@ -53,7 +53,7 @@ static void uprintf_hex(unsigned long ulValue, size_t sizMinimum, char cFillUpCh
 			{
 				uiDigit += 'a'-'9'-1;
 			}
-			SERIAL_PUT((unsigned char)uiDigit);
+			uart_put((unsigned char)uiDigit);
 
 			/* now the leading digit has been printed */
 			fLeadingDigitWasPrinted = 1;
@@ -111,14 +111,14 @@ static void uprintf_dec(unsigned long ulValue, size_t sizMinimum, char cFillUpCh
 			if( sizCnt<sizMinimum )
 			{
 				/* yes -> print fillup char */
-				SERIAL_PUT(cFillUpChar);
+				uart_put(cFillUpChar);
 			}
 		}
 		else
 		{
 			/* print the digit */
 			uiDigit |= '0';
-			SERIAL_PUT((unsigned char)uiDigit);
+			uart_put((unsigned char)uiDigit);
 
 			/* now the leading digit has been printed */
 			fLeadingDigitWasPrinted = 1;
@@ -153,14 +153,14 @@ static void uprintf_bin(unsigned long ulValue, size_t sizMinimum, char cFillUpCh
 			if( sizCnt<sizMinimum )
 			{
 				/* yes -> print fillup char */
-				SERIAL_PUT(cFillUpChar);
+				uart_put(cFillUpChar);
 			}
 		}
 		else
 		{
 			/* print the digit */
 			uiDigit |= '0';
-			SERIAL_PUT((unsigned char)uiDigit);
+			uart_put((unsigned char)uiDigit);
 
 			/* now the leading digit has been printed */
 			fLeadingDigitWasPrinted = 1;
@@ -192,7 +192,7 @@ static void uprintf_str(const char *pcString, size_t sizMinimum, char cFillUpCha
 	sizCnt = sizString;
 	while( sizCnt<sizMinimum )
 	{
-		SERIAL_PUT(cFillUpChar);
+		uart_put(cFillUpChar);
 		++sizCnt;
 	}
 
@@ -203,7 +203,7 @@ static void uprintf_str(const char *pcString, size_t sizMinimum, char cFillUpCha
 		cChar = *(pcCnt++);
 		if( cChar!='\0' )
 		{
-			SERIAL_PUT(cChar);
+			uart_put(cChar);
 		}
 	} while( cChar!='\0' );
 }
@@ -225,41 +225,8 @@ void uprintf(const char *pcFmt, ...)
 	int iArgument;
 	CONSOLE_LINEFEED_T tLinefeedMode;
 	typedef void (*pfnSerialInit_t)(void);
-	unsigned long ulResVec;
-	unsigned long ulChipId;
 
 
-	/* Check the output handlers. */
-	if( tSerialVectors.fn.fnPut==NULL )
-	{
-		/* NOTE:
-		   On netX500 and netX100 the romcode disables the UART before the call and reenables it when the call
-		   returns. This means we have to init the uart here.
-		*/
-		
-		/* Is this a netx100/500? */
-		ulResVec = *((volatile unsigned long*)0x00000000);
-		ulChipId = *((volatile unsigned long*)0x00200008);
-		if(  (ulResVec==0xea080001 && ulChipId==0x00001000 )  ||  (ulResVec==0xea080002 && ulChipId==0x00003002 ) )
-		{
-			/* Yes, it's a netx100/500. */
-
-			/* Reinit the romcode uart routines, they are deactivated right before the 'CALL' command enters the user's code.
-			   NOTE: the routine is thumb-code, bit #0 of the address must be set to switch the mode.
-			*/
-			((pfnSerialInit_t)(0x002015f4|1))();
-
-			// set the vectors to the romcode
-			// NOTE: all routines are thumb-code, bit #0 of the address must be set to switch the mode
-			tSerialVectors.fn.fnGet   = (PFN_SERIAL_GET_T)(0x00201664|1);
-			tSerialVectors.fn.fnPut   = (PFN_SERIAL_PUT_T)(0x00201646|1);
-			tSerialVectors.fn.fnPeek  = (PFN_SERIAL_PEEK_T)(0x002016b0|1);
-			tSerialVectors.fn.fnFlush = (PFN_SERIAL_FLUSH_T)(0x002016ba|1);
-		}
-	}
-
-	if( tSerialVectors.fn.fnPut!=NULL )
-	{
 		/* get the linefeed mode */
 		tLinefeedMode = CONSOLE_LINEFEED_CRLF;
 
@@ -299,7 +266,7 @@ void uprintf(const char *pcFmt, ...)
 						if( cChar=='%' )
 						{
 							/* it is just a '%' */
-							SERIAL_PUT(cChar);
+							uart_put(cChar);
 							break;
 						}
 						else if( cChar=='0' )
@@ -375,14 +342,14 @@ void uprintf(const char *pcFmt, ...)
 						{
 							/* show char */
 							iArgument = va_arg((ptArgument), int);
-							SERIAL_PUT((char)iArgument);
+							uart_put((char)iArgument);
 							break;
 						}
 						else
 						{
-							SERIAL_PUT('*');
-							SERIAL_PUT('*');
-							SERIAL_PUT('*');
+							uart_put('*');
+							uart_put('*');
+							uart_put('*');
 							break;
 						}
 					} while( cChar!=0 );
@@ -401,21 +368,20 @@ void uprintf(const char *pcFmt, ...)
 
 					default:
 					case CONSOLE_LINEFEED_CRLF:
-						SERIAL_PUT('\r');
+						uart_put('\r');
 						break;
 					}
-					SERIAL_PUT(cChar);
-					SERIAL_FLUSH();
+					uart_put(cChar);
+					uart_flush();
 				}
 				else
 				{
-					SERIAL_PUT(cChar);
+					uart_put(cChar);
 				}
 			}
 		} while( cChar!=0 );
 
 		va_end(ptArgument);
-	}
 }
 
 
@@ -467,9 +433,9 @@ int uprintf_get_break_request(void)
 
 
 	iBreak = 0;
-	if( SERIAL_PEEK()!=0 )
+	if( uart_peek()!=0 )
 	{
-		ucGet = SERIAL_GET();
+		ucGet = uart_get();
 		if( ucGet==0x2b )
 		{
 			iBreak = 1;

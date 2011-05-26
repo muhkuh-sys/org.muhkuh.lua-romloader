@@ -45,10 +45,12 @@ typedef enum
 
 typedef struct
 {
+#if ASIC_TYP==10 || ASIC_TYP==50
 	unsigned char uc_rx_mmio;
 	unsigned char uc_tx_mmio;
 	unsigned char uc_rts_mmio;
 	unsigned char uc_cts_mmio;
+#endif
 	unsigned short us_baud_div;
 } UART_CONFIGURATION_T;
 
