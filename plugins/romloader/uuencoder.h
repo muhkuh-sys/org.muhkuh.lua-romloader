@@ -26,6 +26,14 @@
 #define __UUENCODER_H__
 
 
+typedef struct
+{
+	size_t sizTotal;
+	size_t sizProcessed;
+	unsigned int uiPercent;
+} UUENCODER_PROGRESS_INFO_T;
+
+
 class uuencoder
 {
 public:
@@ -33,6 +41,7 @@ public:
 
 	void set_data(const unsigned char *pucData, size_t sizData);
 	size_t process(char *pcLine, size_t sizMaxLine);
+	void get_progress_info(UUENCODER_PROGRESS_INFO_T *ptProgressInfo);
 	bool isFinished(void) const;
 
 

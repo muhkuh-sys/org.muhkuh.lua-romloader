@@ -144,6 +144,44 @@ size_t uuencoder::process(char *pcLine, size_t sizMaxLine)
 }
 
 
+void uuencoder::get_progress_info(UUENCODER_PROGRESS_INFO_T *ptProgressInfo)
+{
+	size_t sizTotal;
+	size_t sizProcessed;
+	unsigned int uiPercent;
+
+
+	switch( m_tState )
+	{
+	case UUENCODE_STATE_Begin:
+	case UUENCODE_STATE_Data:
+	case UUENCODE_STATE_Last1:
+	case UUENCODE_STATE_Last2:
+		sizTotal = m_pucEnd - m_pucStart;
+		sizProcessed = m_pucCnt - m_pucStart;
+		if( sizTotal!=0 )
+		{
+			uiPercent = sizProcessed*100 / sizTotal;
+		}
+		else
+		{
+			uiPercent = 0;
+		}
+		break;
+
+	case UUENCODE_STATE_Finished:
+		sizTotal = 0;
+		sizProcessed = 0;
+		uiPercent = 0;
+		break;
+	}
+
+	ptProgressInfo->sizTotal = sizTotal;
+	ptProgressInfo->sizProcessed = sizProcessed;
+	ptProgressInfo->uiPercent = uiPercent;
+}
+
+
 bool uuencoder::isFinished(void) const
 {
 	int iResult;

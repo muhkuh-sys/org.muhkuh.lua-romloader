@@ -350,8 +350,6 @@ bool romloader_uart_device::GetLine(unsigned char **ppucLine, const char *pcEol,
 
 	/* Receive char by char until the EOL sequence was received. */
 
-	fprintf(stderr, "GetLine\n");
-
 	/* Expect success. */
 	fOk = true;
 
@@ -379,8 +377,6 @@ bool romloader_uart_device::GetLine(unsigned char **ppucLine, const char *pcEol,
 				fOk = false;
 				break;
 			}
-
-			fprintf(stderr, "Recv: 0x%02x\n", pucBuffer[sizBufferCnt]);
 
 			/* Check for EOL. */
 			sizBufferCnt++;
@@ -566,6 +562,16 @@ bool romloader_uart_device::netx50_load_code(const unsigned char *pucNetxCode, s
 	unsigned int uiTimeoutMs;
 	bool fOk;
 	uuencoder tUuencoder;
+	UUENCODER_PROGRESS_INFO_T tProgressInfo;
+/*
+ typedef struct
+{
+	size_t sizTotal;
+	size_t sizProcessed;
+	unsigned int uiPercent;
+} UUENCODER_PROGRESS_INFO_T;
+
+ */
 
 
 	/* Be optimistic. */
@@ -586,13 +592,13 @@ bool romloader_uart_device::netx50_load_code(const unsigned char *pucNetxCode, s
 		ulLoadAddress |= pucNetxCode[0x06]<<16U;
 		ulLoadAddress |= pucNetxCode[0x07]<<24U;
 		sizLine = snprintf(uBuffer.ac, sizeof(uBuffer), "luue %lx\n", ulLoadAddress);
-		fprintf(stderr, "send command: %s\n", uBuffer.ac);
+//		fprintf(stderr, "send command: %s\n", uBuffer.ac);
                	if( SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
 		{
 			fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
 			fOk = false;
 		}
-		else if( GetLine(&uResponse.puc, "\r\n", 2000)!=true )
+		else if( GetLine(&uResponse.puc, "\r\n", 500)!=true )
 		{
 			fprintf(stderr, "%s(%p): Failed to get command echo!\n", m_pcPortName, this);
 			fOk = false;
@@ -601,7 +607,8 @@ bool romloader_uart_device::netx50_load_code(const unsigned char *pucNetxCode, s
 		{
 			free(uResponse.puc);
 
-			fprintf(stderr, "start uue data\n");
+//			fprintf(stderr, "start uue data\n");
+			printf("Uploading firmware...\n");
 			tUuencoder.set_data(pucNetxCode, sizNetxCode);
 
 			/* Send the data line by line with a delay of 10ms. */
@@ -611,25 +618,35 @@ bool romloader_uart_device::netx50_load_code(const unsigned char *pucNetxCode, s
 				if( sizLine!=0 )
 				{
 					uiTimeoutMs = 100;
-					fprintf(stderr, "send uue line: %s\n", uBuffer.ac);
+//					fprintf(stderr, "send uue line: %s\n", uBuffer.ac);
+					tUuencoder.get_progress_info(&tProgressInfo);
+					printf("%05d/%05d (%d%%)\n", tProgressInfo.sizProcessed, tProgressInfo.sizTotal, tProgressInfo.uiPercent);
 					if( SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
 					{
 						fprintf(stderr, "%s(%p): Failed to send uue data!\n", m_pcPortName, this);
 						fOk = false;
 						break;
 					}
+					else if( GetLine(&uResponse.puc, "\r\n", 500)!=true )
+					{
+						fprintf(stderr, "%s(%p): Failed to get response line!\n", m_pcPortName, this);
+						fOk = false;
+						break;
+					}
+					free(uResponse.puc);
 
-					SLEEP_MS(10);
+					// FIXME: The delay is not necessary for a USB connection. Detect USB/UART and enable the delay for UART.
+					//SLEEP_MS(10);
 				}
 			} while( tUuencoder.isFinished()==false );
 
 			if( fOk==true )
 			{
-				fprintf(stderr, "uue data ok!\n");
+//				fprintf(stderr, "uue data ok!\n");
 				fOk = GetLine(&uResponse.puc, "\r\n>", 2000);
 				if( fOk==true )
 				{
-					fprintf(stderr, "Response: %s\n", uResponse.pc);
+//					fprintf(stderr, "Response: %s\n", uResponse.pc);
 					free(uResponse.puc);
 				}
 				else
@@ -639,7 +656,7 @@ bool romloader_uart_device::netx50_load_code(const unsigned char *pucNetxCode, s
 			}
 			else
 			{
-				fprintf(stderr, "Failed to send uue data!\n");
+				fprintf(stderr, "%s(%p): Failed to upload the firmware!\n", m_pcPortName, this);
 			}
 		}
 	}
@@ -765,6 +782,35 @@ bool romloader_uart_device::update_device(void)
 }
 
 
+bool romloader_uart_device::SendBlankLineAndDiscardResponse(void)
+{
+	const unsigned char aucBlankLine[1] = { '\n' };
+	size_t sizTransfered;
+	bool fOk;
+
+	
+	/* Send enter. */
+	sizTransfered = SendRaw(aucBlankLine, sizeof(aucBlankLine), 200);
+	if( sizTransfered!=1 )
+	{
+		fprintf(stderr, "Failed to send enter to device!\n");
+		fOk = false;
+	}
+	else
+	{
+		/* Receive the rest of the line until '>'. Discard the data. */
+		printf("receive the rest of the knock response\n");
+		fOk = wait_for_prompt(200);
+		if( fOk!=true )
+		{
+			fprintf(stderr, "received strange response after romloader message!\n");
+		}
+	}
+
+	return fOk;
+}
+
+
 bool romloader_uart_device::IdentifyLoader(void)
 {
 	bool fResult = false;
@@ -778,7 +824,6 @@ bool romloader_uart_device::IdentifyLoader(void)
 	unsigned long ulMiVersionMin;
 	bool fDeviceNeedsUpdate;
 	unsigned short usCrc;
-	const unsigned char aucBlankLine[1] = { '\n' };
 
 
 	/* No update by default. */
@@ -840,15 +885,16 @@ bool romloader_uart_device::IdentifyLoader(void)
 						fResult = true;
 					}
 				}
-				else if( aucData[0]!='#' )
+				else if( sizTransfered==2 && aucData[0]=='*' && aucData[1]=='#' )
 				{
-					printf("received strange response after the star: 0x%02x\n", aucData[0]);
+					printf("ok, received '*#'!\n");
+					fResult = SendBlankLineAndDiscardResponse();
+					fDeviceNeedsUpdate = fResult;
+					fResult = true;
 				}
 				else
 				{
-					printf("ok, received hash!\n");
-					fDeviceNeedsUpdate = true;
-					fResult = true;
+					printf("received strange response after the star: 0x%02x\n", aucData[0]);
 				}
 			}
 			else if( aucData[0]=='#' )
@@ -874,27 +920,8 @@ bool romloader_uart_device::IdentifyLoader(void)
 					}
 				} while( sizTransfered==1 );
 
-				/* Send enter. */
-				sizTransfered = SendRaw(aucBlankLine, sizeof(aucBlankLine), 200);
-				if( sizTransfered!=1 )
-				{
-					fprintf(stderr, "Failed to send enter to device!\n");
-				}
-				else
-				{
-					/* Receive the rest of the line until '>'. Discard the data. */
-					printf("receive the rest of the knock response\n");
-					fResult = wait_for_prompt(200);
-					if( fResult==true )
-					{
-						/* Found the prompt. */
-						fDeviceNeedsUpdate = true;
-					}
-					else
-					{
-						fprintf(stderr, "received strange response after romloader message!\n");
-					}
-				}
+				fResult = SendBlankLineAndDiscardResponse();
+				fDeviceNeedsUpdate = fResult;
 			}
 		}
 	}
@@ -903,14 +930,7 @@ bool romloader_uart_device::IdentifyLoader(void)
 	{
 		if( fDeviceNeedsUpdate==true )
 		{
-//				fResult = WaitForResponse(&pucResponse, 65536, 1024);
-/* TODO:
- 1) grab data until next newline + '>' Combo.
- 2) download new code
- 3) start
-*/
 			fResult = update_device();
-
 		}
 	}
 
