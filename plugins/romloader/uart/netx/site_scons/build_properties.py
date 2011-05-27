@@ -46,7 +46,7 @@ def Read():
 	# specified in the last argument, are used otherwise).
 	# See http://scons.org/doc/1.2.0.d20090919/HTML/scons-user/x2378.html for details.
 	_g_build_properties.Add(EnumVariable('CFG_BUILD', 'Build the project in release or debug mode.', 'release', ('debug', 'release'), ignorecase=1))
-	_g_build_properties.Add(BoolVariable('CFG_DEBUGMSG', 'Enable debug messages.', 'True'))
+	_g_build_properties.Add(BoolVariable('CFG_DEBUGMSG', 'Enable debug messages.', 'False'))
 	
 	_g_env_help = Environment(variables=_g_build_properties)
 
