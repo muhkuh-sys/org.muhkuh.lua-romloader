@@ -31,6 +31,8 @@
 #include <string.h>
 
 #ifdef _WINDOWS
+#       define snprintf _snprintf
+
 #       define CRITICAL_SECTION_ENTER(cs) EnterCriticalSection(&cs)
 #       define CRITICAL_SECTION_LEAVE(cs) LeaveCriticalSection(&cs)
 
@@ -679,8 +681,6 @@ bool romloader_uart_device::netx50_start_code(const unsigned char *pucNetxCode)
 	} uResponse;
 	size_t sizLine;
 	bool fOk;
-	int iProcessed;
-	unsigned int uiTimeoutMs;
 	unsigned long ulExecAddress;
 
 
@@ -817,7 +817,6 @@ bool romloader_uart_device::IdentifyLoader(void)
 	const unsigned char aucKnock[5] = { '*', 0x00, 0x00, '*', '#' };
 	const unsigned char aucKnockResponseMi[7] = { 0x09, 0x00, 0x00, 0x4d, 0x4f, 0x4f, 0x48 };
 	unsigned char aucData[13];
-	unsigned char *pucResponse;
 	size_t sizCnt;
 	size_t sizTransfered;
 	unsigned long ulMiVersionMaj;
@@ -869,7 +868,7 @@ bool romloader_uart_device::IdentifyLoader(void)
 				{
 					/* Build the crc for the packet. */
 					usCrc = 0;
-					for(sizCnt==0; sizCnt<13; ++sizCnt)
+					for(sizCnt=0; sizCnt<13; ++sizCnt)
 					{
 						usCrc = crc16(usCrc, aucData[sizCnt]);
 					}
