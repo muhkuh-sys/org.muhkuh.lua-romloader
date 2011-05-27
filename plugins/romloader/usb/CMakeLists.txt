@@ -44,7 +44,7 @@ ADD_CUSTOM_TARGET(netx_usb_firmware
 
 #----------------------------------------------------------------------------
 #
-# Set the libusb include paths.
+# Set the platform specific parts.
 #
 
 IF(UNIX)
