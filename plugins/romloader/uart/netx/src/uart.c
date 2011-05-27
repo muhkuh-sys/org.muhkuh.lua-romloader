@@ -22,6 +22,10 @@
 
 #include "netx_io_areas.h"
 
+
+#if CFG_DEBUGMSG!=0
+
+
 #define ARRAYSIZE(a) (sizeof(a)/sizeof(a[0]))
 
 
@@ -233,4 +237,7 @@ void uart_close(void)
 	ptUartArea->ulUartrts = 0;
 	ptUartArea->ulUartdrvout = 0;
 }
+
+
+#endif
 

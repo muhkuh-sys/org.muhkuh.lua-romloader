@@ -26,38 +26,38 @@
 #include "systime.h"
 #include "monitor_commands.h"
 #include "transport.h"
-
-/* DEBUG: this is only for the debug messages. */
-#include "uprintf.h"
 #include "serial_vectors.h"
-
-#include "uart.h"
 
 /*-----------------------------------*/
 
-#if ASIC_TYP==10
-static const UART_CONFIGURATION_T tUartCfg =
-{
-	.uc_rx_mmio = 20U,
-	.uc_tx_mmio = 21U,
-	.uc_rts_mmio = 0xffU,
-	.uc_cts_mmio = 0xffU,
-	.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
-};
-#elif ASIC_TYP==50
-static const UART_CONFIGURATION_T tUartCfg =
-{
-	.uc_rx_mmio = 34U,
-	.uc_tx_mmio = 35U,
-	.uc_rts_mmio = 0xffU,
-	.uc_cts_mmio = 0xffU,
-	.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
-};
-#elif ASIC_TYP==100 || ASIC_TYP==500
-static const UART_CONFIGURATION_T tUartCfg =
-{
-	.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
-};
+#if CFG_DEBUGMSG!=0
+#       include "uprintf.h"
+#       include "uart.h"
+
+#       if ASIC_TYP==10
+	static const UART_CONFIGURATION_T tUartCfg =
+	{
+		.uc_rx_mmio = 20U,
+		.uc_tx_mmio = 21U,
+		.uc_rts_mmio = 0xffU,
+		.uc_cts_mmio = 0xffU,
+		.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
+	};
+#       elif ASIC_TYP==50
+	static const UART_CONFIGURATION_T tUartCfg =
+	{
+		.uc_rx_mmio = 34U,
+		.uc_tx_mmio = 35U,
+		.uc_rts_mmio = 0xffU,
+		.uc_cts_mmio = 0xffU,
+		.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
+	};
+#       elif ASIC_TYP==100 || ASIC_TYP==500
+	static const UART_CONFIGURATION_T tUartCfg =
+	{
+		.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
+	};
+#       endif
 #endif
 
 
@@ -118,8 +118,10 @@ void uart_monitor(void)
 	}
 #endif
 
+#if CFG_DEBUGMSG!=0
 	uart_init(&tUartCfg);
 	uprintf("Hallo!\n");
+#endif
 
 	/* Copy the V1 vectors to an internal buffer. */
 	memcpy(&tSerialV1Vectors, &tSerialV2Vectors, sizeof(SERIAL_V2_COMM_FN_T));
@@ -128,12 +130,7 @@ void uart_monitor(void)
 	/* Compare vectors to netx50 USB. This one needs special treatment. */
 	if( memcmp(&tSerialV2Vectors, &tSerialNetx50UsbVectors, sizeof(SERIAL_V1_COMM_UI_FN_T))==0 )
 	{
-		uprintf("found netx50 USB\n");
 		tSerialV1Vectors.fn.fnPeek = netx50_usb_peek;
-	}
-	else
-	{
-		uprintf("not netX50 USB.\n");
 	}
 #endif
 

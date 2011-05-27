@@ -15,6 +15,7 @@
 
 #include "uart.h"
 
+#if CFG_DEBUGMSG!=0
 
 static void uprintf_hex(unsigned long ulValue, size_t sizMinimum, char cFillUpChar)
 {
@@ -445,3 +446,4 @@ int uprintf_get_break_request(void)
 	return iBreak;
 }
 
+#endif
