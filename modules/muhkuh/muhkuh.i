@@ -4,7 +4,6 @@
 
 %{
 	#include "muhkuh.h"
-	#include "muhkuh_capture_std.h"
 %}
 
 
@@ -40,6 +39,10 @@ end
 
 void load(lua_State *ptLuaState, char *pcUrl, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT);
 void include(lua_State *ptLuaState, char *pcUrl, char *pcChunkName);
+/*
+%{
+	#include "muhkuh_capture_std.h"
+%}
 
 class capture_std
 {
@@ -49,4 +52,4 @@ public:
 
 	int run(const char *pcCommand, lua_State *ptLuaStateForTableAccess);
 };
-
+*/

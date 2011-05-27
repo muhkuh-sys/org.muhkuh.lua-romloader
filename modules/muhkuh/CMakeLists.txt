@@ -27,7 +27,19 @@ INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 set_source_files_properties(muhkuh.i PROPERTIES CPLUSPLUS ON)
 set_source_files_properties(muhkuh.i PROPERTIES SWIG_FLAGS "-I${CMAKE_HOME_DIRECTORY}/modules/typemaps")
 
+if(WIN32)
+set(module_muhkuh_SOURCES
+	growbuffer.cpp
+	muhkuh.cpp
+	readFsFile.cpp
+)
 
+set(module_muhkuh_HEADERS
+	growbuffer.h
+	muhkuh.h
+	readFsFile.h
+)
+else(WIN32)
 set(module_muhkuh_SOURCES
 	growbuffer.cpp
 	muhkuh.cpp
@@ -41,6 +53,7 @@ set(module_muhkuh_HEADERS
 	muhkuh_capture_std.h
 	readFsFile.h
 )
+endif(WIN32)
 
 # Build the library.
 add_library(module_muhkuh_lib STATIC ${module_muhkuh_SOURCES})

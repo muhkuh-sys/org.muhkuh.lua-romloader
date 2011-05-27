@@ -62,6 +62,9 @@ Select NMake:
 
  cmake -G "NMake Makefiles" ..
 
+Select Visual Studio 9:
+
+ cmake -G "Visual Studio 9 2008"
 
 Set the install folder
 ----------------------
