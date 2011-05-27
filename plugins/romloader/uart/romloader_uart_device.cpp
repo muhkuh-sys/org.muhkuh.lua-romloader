@@ -21,19 +21,31 @@
 
 #include "romloader_uart_device.h"
 
+#include "../uuencoder.h"
+
+#include "netx/targets/uartmon_netx10_intram.h"
+#include "netx/targets/uartmon_netx50_intram.h"
+#include "netx/targets/uartmon_netx500_intram.h"
+
 #include <stdio.h>
 #include <string.h>
 
 #ifdef _WINDOWS
 #       define CRITICAL_SECTION_ENTER(cs) EnterCriticalSection(&cs)
 #       define CRITICAL_SECTION_LEAVE(cs) LeaveCriticalSection(&cs)
+
+#	define SLEEP_MS(ms) Sleep(ms)
 #else
 #       define CRITICAL_SECTION_ENTER(cs) pthread_mutex_lock(&cs)
 #       define CRITICAL_SECTION_LEAVE(cs) pthread_mutex_unlock(&cs)
 
 	static const pthread_mutex_t s_mutex_init = PTHREAD_MUTEX_INITIALIZER;
+
+#       include <unistd.h>
+#	define SLEEP_MS(ms) usleep(ms*1000)
 #endif
 
+	
 
 romloader_uart_device::romloader_uart_device(const char *pcPortName)
  : m_pcPortName(NULL)
@@ -537,6 +549,153 @@ bool romloader_uart_device::legacy_read(unsigned long ulAddress, unsigned long *
 }
 
 
+bool romloader_uart_device::netx50_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode)
+{
+	size_t sizLine;
+	unsigned long ulLoadAddress;
+	union
+	{
+		unsigned char auc[64];
+		char ac[64];
+	} uBuffer;
+	union
+	{
+		unsigned char *puc;
+		char *pc;
+	} uResponse;
+	unsigned int uiTimeoutMs;
+	bool fOk;
+	uuencoder tUuencoder;
+
+
+	/* Be optimistic. */
+	fOk = true;
+
+	uiTimeoutMs = 100;
+
+	if( pucNetxCode[0x00]!='m' || pucNetxCode[0x01]!='o' || pucNetxCode[0x02]!='o' || pucNetxCode[0x03]!='h' )
+	{
+		fprintf(stderr, "%s(%p): Invalid netx code, header missing.\n", m_pcPortName, this);
+		fOk = false;
+	}
+	else
+	{
+		/* Construct the command. */
+		ulLoadAddress  = pucNetxCode[0x04];
+		ulLoadAddress |= pucNetxCode[0x05]<<8U;
+		ulLoadAddress |= pucNetxCode[0x06]<<16U;
+		ulLoadAddress |= pucNetxCode[0x07]<<24U;
+		sizLine = snprintf(uBuffer.ac, sizeof(uBuffer), "luue %lx\n", ulLoadAddress);
+		fprintf(stderr, "send command: %s\n", uBuffer.ac);
+               	if( SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
+		{
+			fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
+			fOk = false;
+		}
+		else if( GetLine(&uResponse.puc, "\r\n", 2000)!=true )
+		{
+			fprintf(stderr, "%s(%p): Failed to get command echo!\n", m_pcPortName, this);
+			fOk = false;
+		}
+		else
+		{
+			free(uResponse.puc);
+
+			fprintf(stderr, "start uue data\n");
+			tUuencoder.set_data(pucNetxCode, sizNetxCode);
+
+			/* Send the data line by line with a delay of 10ms. */
+			do
+			{
+				sizLine = tUuencoder.process(uBuffer.ac, sizeof(uBuffer));
+				if( sizLine!=0 )
+				{
+					uiTimeoutMs = 100;
+					fprintf(stderr, "send uue line: %s\n", uBuffer.ac);
+					if( SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
+					{
+						fprintf(stderr, "%s(%p): Failed to send uue data!\n", m_pcPortName, this);
+						fOk = false;
+						break;
+					}
+
+					SLEEP_MS(10);
+				}
+			} while( tUuencoder.isFinished()==false );
+
+			if( fOk==true )
+			{
+				fprintf(stderr, "uue data ok!\n");
+				fOk = GetLine(&uResponse.puc, "\r\n>", 2000);
+				if( fOk==true )
+				{
+					fprintf(stderr, "Response: %s\n", uResponse.pc);
+					free(uResponse.puc);
+				}
+				else
+				{
+					fprintf(stderr, "Failed to get response.\n");
+				}
+			}
+			else
+			{
+				fprintf(stderr, "Failed to send uue data!\n");
+			}
+		}
+	}
+
+	return fOk;
+}
+
+
+bool romloader_uart_device::netx50_start_code(const unsigned char *pucNetxCode)
+{
+	union
+	{
+		unsigned char auc[64];
+		char ac[64];
+	} uBuffer;
+	union
+	{
+		unsigned char *puc;
+		char *pc;
+	} uResponse;
+	size_t sizLine;
+	bool fOk;
+	int iProcessed;
+	unsigned int uiTimeoutMs;
+	unsigned long ulExecAddress;
+
+
+	/* Construct the command. */
+	ulExecAddress  = pucNetxCode[0x08];
+	ulExecAddress |= pucNetxCode[0x09]<<8;
+	ulExecAddress |= pucNetxCode[0x0a]<<16;
+	ulExecAddress |= pucNetxCode[0x0b]<<24;
+
+	/* Construct the command. */
+	sizLine = sprintf(uBuffer.ac, "call %lx\n", ulExecAddress);
+
+	if( SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
+	{
+		fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
+		fOk = false;
+	}
+	else if( GetLine(&uResponse.puc, "\r\n", 2000)!=true )
+	{
+		fprintf(stderr, "%s(%p): Failed to get command echo!\n", m_pcPortName, this);
+		fOk = false;
+	}
+	else
+	{
+		free(uResponse.puc);
+		fOk = true;
+	}
+
+	return fOk;
+}
+
+
 bool romloader_uart_device::update_device(void)
 {
 	bool fOk;
@@ -587,8 +746,15 @@ bool romloader_uart_device::update_device(void)
 		else
 		{
 			fprintf(stderr, "Found %s on %s.\n", ptDev->pcRomcodeName, ptDev->pcChiptypName);
+			if( ptDev->tChiptyp==ROMLOADER_CHIPTYP_NETX50 )
+			{
+				fOk = netx50_load_code(auc_uartmon_netx50_intram, sizeof(auc_uartmon_netx50_intram));
+				if( fOk==true )
+				{
+					netx50_start_code(auc_uartmon_netx50_intram);
+				}
+			}
 		}
-			
 	}
 	else
 	{
