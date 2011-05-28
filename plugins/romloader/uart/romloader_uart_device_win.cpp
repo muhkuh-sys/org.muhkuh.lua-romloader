@@ -492,6 +492,7 @@ unsigned long romloader_uart_device_win::ScanForPorts(char ***pppcDeviceNames)
 	char *pcRef;
 	char **ppcRef;
 	char **ppcRefNew;
+	const char *pcPluginName = "romloader_uart_%s";
 
 
 	/* Be optimistic. */
@@ -586,14 +587,15 @@ unsigned long romloader_uart_device_win::ScanForPorts(char ***pppcDeviceNames)
 									}
 									ppcRef = ppcRefNew;
 								}
-								sizEntry = strlen(szPortName) + 1;
+								/* Get the size of the plugin name in bytes and add one byte for the trailing 0. */
+								sizEntry = _snprintf(NULL, 0, pcPluginName, szPortName) + 1;
 								pcRef = (char*)malloc(sizEntry);
 								if( pcRef==NULL )
 								{
 									fOk = false;
 									break;
 								}
-								memcpy(pcRef, szPortName, sizEntry);
+								_snprintf(pcRef, sizEntry, pcPluginName, szPortName);
 								ppcRef[sizRefCnt++] = pcRef;
 								printf("Found COM port %s\n", pcRef);
 							}
