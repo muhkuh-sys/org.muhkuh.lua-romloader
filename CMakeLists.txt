@@ -87,12 +87,12 @@ ADD_CUSTOM_TARGET(swigluarun DEPENDS ${SWIG_RUNTIME_OUTPUT_PATH}/swigluarun.h)
 # Set custom definitions for microsoft compiler.
 #
 
-if(CMAKE_BUILD_TOOL MATCHES "(msdev|devenv|nmake)")
+if(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv|nmake)")
 	# Do not show msvs security warnings about unsafe functions.
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 	# Set warning level to 2.
 	add_definitions(/W2)
-ENDIF(CMAKE_BUILD_TOOL MATCHES "(msdev|devenv|nmake)")
+ENDIF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv|nmake)")
 
 
 #----------------------------------------------------------------------------
