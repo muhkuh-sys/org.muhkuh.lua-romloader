@@ -622,7 +622,11 @@ unsigned long romloader_uart_device_win::ScanForPorts(char ***pppcDeviceNames)
 		}
 	}
 
-	if( fOk!=true )
+	if( fOk==true )
+	{
+		*pppcDeviceNames = ppcRef;
+	}
+	else
 	{
 		/* Delete the complete array. */
 		if( ppcRef!=NULL )
