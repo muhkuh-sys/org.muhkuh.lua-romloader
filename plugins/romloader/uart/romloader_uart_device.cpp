@@ -23,9 +23,23 @@
 
 #include "../uuencoder.h"
 
-#include "netx/targets/uartmon_netx10_intram.h"
-#include "netx/targets/uartmon_netx50_intram.h"
-#include "netx/targets/uartmon_netx500_intram.h"
+//#include "netx/targets/uartmon_netx10_bootstrap_run.h"
+#include "netx/targets/uartmon_netx50_bootstrap_run.h"
+//#include "netx/targets/uartmon_netx500_bootstrap_run.h"
+
+/* This is the array definition for the bootstrap firmware. */
+//#include "netx/targets/uartmon_netx10_bootstrap.h"
+#include "netx/targets/uartmon_netx50_bootstrap.h"
+//#include "netx/targets/uartmon_netx500_bootstrap.h"
+
+//#include "netx/targets/uartmon_netx10_monitor_run.h"
+#include "netx/targets/uartmon_netx50_monitor_run.h"
+//#include "netx/targets/uartmon_netx500_monitor_run.h"
+
+/* This is the array definition for the monitor firmware. */
+#include "netx/targets/uartmon_netx10_monitor.h"
+#include "netx/targets/uartmon_netx50_monitor.h"
+#include "netx/targets/uartmon_netx500_monitor.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -525,7 +539,7 @@ bool romloader_uart_device::legacy_read(unsigned long ulAddress, unsigned long *
 				iResult = sscanf(uResponse.pc, "%08lx: %08lx", &ulReadbackAddress, &ulValue);
 				if( iResult==2 && ulAddress==ulReadbackAddress )
 				{
-					fprintf(stderr, "Yay, got result 0x%08x\n", ulValue);
+					fprintf(stderr, "Yay, got result 0x%08lx\n", ulValue);
 					if( pulValue!=NULL )
 					{
 						*pulValue = ulValue;
@@ -565,15 +579,6 @@ bool romloader_uart_device::netx50_load_code(const unsigned char *pucNetxCode, s
 	bool fOk;
 	uuencoder tUuencoder;
 	UUENCODER_PROGRESS_INFO_T tProgressInfo;
-/*
- typedef struct
-{
-	size_t sizTotal;
-	size_t sizProcessed;
-	unsigned int uiPercent;
-} UUENCODER_PROGRESS_INFO_T;
-
- */
 
 
 	/* Be optimistic. */
@@ -581,85 +586,68 @@ bool romloader_uart_device::netx50_load_code(const unsigned char *pucNetxCode, s
 
 	uiTimeoutMs = 100;
 
-	if( pucNetxCode[0x00]!='m' || pucNetxCode[0x01]!='o' || pucNetxCode[0x02]!='o' || pucNetxCode[0x03]!='h' )
+	/* Construct the command. */
+	sizLine = snprintf(uBuffer.ac, sizeof(uBuffer), "luue %lx\n", BOOTSTRAP_DATA_START_NETX50);
+	if( SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
 	{
-		fprintf(stderr, "%s(%p): Invalid netx code, header missing.\n", m_pcPortName, this);
+		fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
+		fOk = false;
+	}
+	else if( GetLine(&uResponse.puc, "\r\n", 500)!=true )
+	{
+		fprintf(stderr, "%s(%p): Failed to get command echo!\n", m_pcPortName, this);
 		fOk = false;
 	}
 	else
 	{
-		/* Construct the command. */
-		ulLoadAddress  = pucNetxCode[0x04];
-		ulLoadAddress |= pucNetxCode[0x05]<<8U;
-		ulLoadAddress |= pucNetxCode[0x06]<<16U;
-		ulLoadAddress |= pucNetxCode[0x07]<<24U;
-		sizLine = snprintf(uBuffer.ac, sizeof(uBuffer), "luue %lx\n", ulLoadAddress);
-//		fprintf(stderr, "send command: %s\n", uBuffer.ac);
-               	if( SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
-		{
-			fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
-			fOk = false;
-		}
-		else if( GetLine(&uResponse.puc, "\r\n", 500)!=true )
-		{
-			fprintf(stderr, "%s(%p): Failed to get command echo!\n", m_pcPortName, this);
-			fOk = false;
-		}
-		else
-		{
-			free(uResponse.puc);
+		free(uResponse.puc);
 
-//			fprintf(stderr, "start uue data\n");
-			printf("Uploading firmware...\n");
-			tUuencoder.set_data(pucNetxCode, sizNetxCode);
+		printf("Uploading firmware...\n");
+		tUuencoder.set_data(pucNetxCode, sizNetxCode);
 
-			/* Send the data line by line with a delay of 10ms. */
-			do
+		/* Send the data line by line with a delay of 10ms. */
+		do
+		{
+			sizLine = tUuencoder.process(uBuffer.ac, sizeof(uBuffer));
+			if( sizLine!=0 )
 			{
-				sizLine = tUuencoder.process(uBuffer.ac, sizeof(uBuffer));
-				if( sizLine!=0 )
+				uiTimeoutMs = 100;
+				tUuencoder.get_progress_info(&tProgressInfo);
+				printf("%05d/%05d (%d%%)\n", tProgressInfo.sizProcessed, tProgressInfo.sizTotal, tProgressInfo.uiPercent);
+				if( SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
 				{
-					uiTimeoutMs = 100;
-//					fprintf(stderr, "send uue line: %s\n", uBuffer.ac);
-					tUuencoder.get_progress_info(&tProgressInfo);
-					printf("%05d/%05d (%d%%)\n", tProgressInfo.sizProcessed, tProgressInfo.sizTotal, tProgressInfo.uiPercent);
-					if( SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
-					{
-						fprintf(stderr, "%s(%p): Failed to send uue data!\n", m_pcPortName, this);
-						fOk = false;
-						break;
-					}
-					else if( GetLine(&uResponse.puc, "\r\n", 500)!=true )
-					{
-						fprintf(stderr, "%s(%p): Failed to get response line!\n", m_pcPortName, this);
-						fOk = false;
-						break;
-					}
-					free(uResponse.puc);
-
-					// FIXME: The delay is not necessary for a USB connection. Detect USB/UART and enable the delay for UART.
-					//SLEEP_MS(10);
+					fprintf(stderr, "%s(%p): Failed to send uue data!\n", m_pcPortName, this);
+					fOk = false;
+					break;
 				}
-			} while( tUuencoder.isFinished()==false );
+				else if( GetLine(&uResponse.puc, "\r\n", 500)!=true )
+				{
+					fprintf(stderr, "%s(%p): Failed to get response line!\n", m_pcPortName, this);
+					fOk = false;
+					break;
+				}
+				free(uResponse.puc);
 
+				// FIXME: The delay is not necessary for a USB connection. Detect USB/UART and enable the delay for UART.
+				//SLEEP_MS(10);
+			}
+		} while( tUuencoder.isFinished()==false );
+
+		if( fOk==true )
+		{
+			fOk = GetLine(&uResponse.puc, "\r\n>", 2000);
 			if( fOk==true )
 			{
-//				fprintf(stderr, "uue data ok!\n");
-				fOk = GetLine(&uResponse.puc, "\r\n>", 2000);
-				if( fOk==true )
-				{
-//					fprintf(stderr, "Response: %s\n", uResponse.pc);
-					free(uResponse.puc);
-				}
-				else
-				{
-					fprintf(stderr, "Failed to get response.\n");
-				}
+				free(uResponse.puc);
 			}
 			else
 			{
-				fprintf(stderr, "%s(%p): Failed to upload the firmware!\n", m_pcPortName, this);
+				fprintf(stderr, "Failed to get response.\n");
 			}
+		}
+		else
+		{
+			fprintf(stderr, "%s(%p): Failed to upload the firmware!\n", m_pcPortName, this);
 		}
 	}
 
@@ -667,7 +655,7 @@ bool romloader_uart_device::netx50_load_code(const unsigned char *pucNetxCode, s
 }
 
 
-bool romloader_uart_device::netx50_start_code(const unsigned char *pucNetxCode)
+bool romloader_uart_device::netx50_start_code(void)
 {
 	union
 	{
@@ -685,13 +673,7 @@ bool romloader_uart_device::netx50_start_code(const unsigned char *pucNetxCode)
 
 
 	/* Construct the command. */
-	ulExecAddress  = pucNetxCode[0x08];
-	ulExecAddress |= pucNetxCode[0x09]<<8;
-	ulExecAddress |= pucNetxCode[0x0a]<<16;
-	ulExecAddress |= pucNetxCode[0x0b]<<24;
-
-	/* Construct the command. */
-	sizLine = sprintf(uBuffer.ac, "call %lx\n", ulExecAddress);
+	sizLine = sprintf(uBuffer.ac, "call %lx\n", BOOTSTRAP_EXEC_NETX50);
 
 	if( SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
 	{
@@ -728,13 +710,13 @@ bool romloader_uart_device::update_device(void)
 	fOk = legacy_read(0U, &ulResetVector);
 	if( fOk==true )
 	{
-		fprintf(stderr, "Reset vector: 0x%08x\n", ulResetVector);
+		fprintf(stderr, "Reset vector: 0x%08lx\n", ulResetVector);
 		ptCnt = atResIds;
 		ptEnd = atResIds + (sizeof(atResIds)/sizeof(atResIds[0]));
 		ptDev = NULL;
 		while( ptCnt<ptEnd )
 		{
-			fprintf(stderr, "Hit 0x%08x...\n", ptCnt->ulResetVector);
+			fprintf(stderr, "Hit 0x%08lx...\n", ptCnt->ulResetVector);
 			if( ptCnt->ulResetVector==ulResetVector )
 			{
 				fOk = legacy_read(ptCnt->ulVersionAddress, &ulVersion);
@@ -748,7 +730,7 @@ bool romloader_uart_device::update_device(void)
 				}
 				else
 				{
-					fprintf(stderr, "Failed to read the version data at address 0x%08x!\n", ptCnt->ulVersionAddress);
+					fprintf(stderr, "Failed to read the version data at address 0x%08lx!\n", ptCnt->ulVersionAddress);
 					break;
 				}
 			}
@@ -765,10 +747,18 @@ bool romloader_uart_device::update_device(void)
 			fprintf(stderr, "Found %s on %s.\n", ptDev->pcRomcodeName, ptDev->pcChiptypName);
 			if( ptDev->tChiptyp==ROMLOADER_CHIPTYP_NETX50 )
 			{
-				fOk = netx50_load_code(auc_uartmon_netx50_intram, sizeof(auc_uartmon_netx50_intram));
+				fOk = netx50_load_code(auc_uartmon_netx50_bootstrap, sizeof(auc_uartmon_netx50_bootstrap));
 				if( fOk==true )
 				{
-					netx50_start_code(auc_uartmon_netx50_intram);
+					fOk = netx50_start_code();
+					if( fOk==true )
+					{
+						if( SendRaw(auc_uartmon_netx50_monitor, sizeof(auc_uartmon_netx50_monitor), 500)!=sizeof(auc_uartmon_netx50_monitor) )
+						{
+							fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
+							fOk = false;
+						}
+					}
 				}
 			}
 		}

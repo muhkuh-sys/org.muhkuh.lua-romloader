@@ -105,7 +105,7 @@ private:
 
 	bool legacy_read(unsigned long ulAddress, unsigned long *pulValue);
         bool netx50_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode);
-	bool netx50_start_code(const unsigned char *pucNetxCode);
+	bool netx50_start_code(void);
 	bool SendBlankLineAndDiscardResponse(void);
 	bool update_device(void);
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);

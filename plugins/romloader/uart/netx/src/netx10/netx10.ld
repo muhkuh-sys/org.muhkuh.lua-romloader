@@ -74,6 +74,7 @@ SECTIONS
 		__copy_dst_end__ = . ;
 	} >INTRAM0_MON
 	__copy_src_start__ = LOADADDR(.code);
+	end_address = LOADADDR(.code) + SIZEOF(.code);
 
 	.bss :
 	{

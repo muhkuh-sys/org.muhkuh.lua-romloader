@@ -26,24 +26,28 @@ INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 # Compile the netX UART firmware.
 #
 
-ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx10_intram.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx10_intram.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_intram.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_intram.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx500_intram.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx500_intram.h
+SET(UART_FIRMWARE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx10_monitor.c
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_monitor.c
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx500_monitor.c
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_bootstrap.c)
+
+SET(UART_FIRMWARE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx10_monitor.h
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx10_monitor_run.h
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_monitor.h
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_monitor_run.h
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx500_monitor.h
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx500_monitor_run.h
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_bootstrap.h
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_bootstrap_run.h)
+
+ADD_CUSTOM_COMMAND(OUTPUT ${UART_FIRMWARE_SOURCES} ${UART_FIRMWARE_HEADERS}
                    COMMAND ${PYTHON_EXECUTABLE} mbs/setup.py
                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/netx
                    COMMENT "Build the netx uart firmware"
                    VERBATIM)
 
-ADD_CUSTOM_TARGET(netx_uart_firmware
-                  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx10_intram.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx10_intram.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_intram.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_intram.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx500_intram.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx500_intram.h)
+ADD_CUSTOM_TARGET(netx_uart_firmware 
+                  DEPENDS ${UART_FIRMWARE_SOURCES} ${UART_FIRMWARE_HEADERS})
 
 
 #----------------------------------------------------------------------------
@@ -72,18 +76,14 @@ SET(romloader_uart_SOURCES
 	romloader_uart_device.cpp
 	romloader_uart_main.cpp
 	${romloader_uart_platform_SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx10_intram.c
-	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_intram.c
-	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx500_intram.c
+	${UART_FIRMWARE_SOURCES}
 )
 
 SET(romloader_uart_HEADERS
 	romloader_uart_device.h
 	romloader_uart_main.h
 	${romloader_uart_platform_HEADERS}
-	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx10_intram.h
-	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_intram.h
-	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx500_intram.h
+	${UART_FIRMWARE_HEADERS}
 )
 
 
@@ -94,12 +94,7 @@ IF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
 	SET_TARGET_PROPERTIES(romloader_uart_lib PROPERTIES COMPILE_FLAGS -fPIC)
 ENDIF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
 
-SET_SOURCE_FILES_PROPERTIES(${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx10_intram.c
-                            ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx10_intram.h
-                            ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_intram.c
-                            ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_intram.h
-                            ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx500_intram.c
-                            ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx500_intram.h
+SET_SOURCE_FILES_PROPERTIES(${UART_FIRMWARE_SOURCES} ${UART_FIRMWARE_HEADERS}
                             PROPERTIES GENERATED 1)
 
 ADD_DEPENDENCIES(romloader_uart_lib netx_uart_firmware)

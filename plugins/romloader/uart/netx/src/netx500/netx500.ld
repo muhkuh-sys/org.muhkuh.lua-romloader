@@ -53,6 +53,8 @@ SECTIONS
 		*(.init_code)
 		*(.text)
 		*(.rodata*)
+		
+		end_address = . ;
 	} >INTRAM0_MON
 
 

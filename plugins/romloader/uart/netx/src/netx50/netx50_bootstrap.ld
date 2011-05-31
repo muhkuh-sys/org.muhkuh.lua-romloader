@@ -36,6 +36,8 @@ SECTIONS
 	{
 		/* NOTE: include all sections here which should be empty. */
 		*(.data)
+		*(.bss)
+		*(COMMON)		
 		*(.glue*)
 		*(.vfp11_veneer)
 		*(.v4_bx)
@@ -44,14 +46,14 @@ SECTIONS
 
 	.serialvectors ORIGIN(DTCM)+LENGTH(DTCM)-0x10 :
 	{
-		PROVIDE ( tSerialV2Vectors = . );
+		PROVIDE ( tSerialVectors = . );
 		. = . + 0x10;
 	} >DTCM
 
 	/* set the top of the stack to the end of INTRAM1 */
 	stack_top = ORIGIN(DTCM) + LENGTH(DTCM) - 0x10;
 
-	.code ORIGIN(INTRAM)+0x100 :
+	.code ORIGIN(INTRAM)+0x4000 :
 	{
 		load_address = . ;
 
@@ -62,19 +64,6 @@ SECTIONS
 		
 		end_address = . ;
 	} >INTRAM
-
-	.bss :
-	{
-		/* zero-initialized data */
-
-		__bss_start__ = . ;
-
-		*(.bss)
-		*(COMMON)
-
-		__bss_end__ = . ;
-	} >INTRAM
-
 
 	/* Stabs debugging sections.  */
 	.stab          0 : { *(.stab) }
