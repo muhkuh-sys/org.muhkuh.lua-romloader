@@ -148,8 +148,6 @@ void romloader_uart_device::writeCards(const unsigned char *pucBuffer, size_t si
 		// no more space -> create a new card
 		if( sizChunk==0 )
 		{
-			fprintf(stderr, "New Card\n");
-
 			ptCard = new tBufferCard;
 			ptCard->pucEnd = ptCard->aucData + mc_sizCardSize;
 			ptCard->pucRead = ptCard->aucData;
@@ -331,7 +329,6 @@ bool romloader_uart_device::wait_for_prompt(unsigned long ulTimeout)
 	do
 	{
 		sizReceived = RecvRaw(&ucData, 1, ulTimeout);
-		printf("rec: 0x%02x, siz: %d\n", ucData, sizReceived);
 		if( sizReceived!=1 )
 		{
 			/* Failed to receive the next char. */
@@ -539,7 +536,6 @@ bool romloader_uart_device::legacy_read(unsigned long ulAddress, unsigned long *
 				iResult = sscanf(uResponse.pc, "%08lx: %08lx", &ulReadbackAddress, &ulValue);
 				if( iResult==2 && ulAddress==ulReadbackAddress )
 				{
-					fprintf(stderr, "Yay, got result 0x%08lx\n", ulValue);
 					if( pulValue!=NULL )
 					{
 						*pulValue = ulValue;
@@ -706,7 +702,6 @@ bool romloader_uart_device::update_device(void)
 
 
 	/* Read the reset vector. */
-	fprintf(stderr, "Get reset vector\n");
 	fOk = legacy_read(0U, &ulResetVector);
 	if( fOk==true )
 	{
@@ -716,7 +711,6 @@ bool romloader_uart_device::update_device(void)
 		ptDev = NULL;
 		while( ptCnt<ptEnd )
 		{
-			fprintf(stderr, "Hit 0x%08lx...\n", ptCnt->ulResetVector);
 			if( ptCnt->ulResetVector==ulResetVector )
 			{
 				fOk = legacy_read(ptCnt->ulVersionAddress, &ulVersion);
@@ -903,10 +897,6 @@ bool romloader_uart_device::IdentifyLoader(void)
 				do
 				{
 					sizTransfered = RecvRaw(aucData, 1, 200);
-					if( sizTransfered==1 )
-					{
-						fprintf(stderr, "Discarding 0x%02x\n", aucData[0]);
-					}
 				} while( sizTransfered==1 );
 
 				fResult = SendBlankLineAndDiscardResponse();
