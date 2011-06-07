@@ -28,9 +28,6 @@
 #include "serial_vectors.h"
 #include "systime.h"
 
-/* This is only for debug messages. */
-#include "uprintf.h"
-
 
 
 #define UART_BUFFER_NO_TIMEOUT 0
