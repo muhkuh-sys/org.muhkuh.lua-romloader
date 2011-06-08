@@ -23,6 +23,7 @@ module("muhkuh_system", package.seeall)
 
 m_textCtrl = nil
 
+
 -----------------------------------------------------------------------------
 -- @description Get the first child of a node with the name 'strName'.
 --
@@ -628,47 +629,8 @@ local function parse_xml()
 end
 
 
-function catch_prints(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
-	if a0 then
-		m_textCtrl:AppendText(tostring(a0))
-	end
-
-	if a1 then
-		m_textCtrl:AppendText(tostring(a1))
-	end
-
-	if a2 then
-		m_textCtrl:AppendText(tostring(a2))
-	end
-
-	if a3 then
-		m_textCtrl:AppendText(tostring(a3))
-	end
-
-	if a4 then
-		m_textCtrl:AppendText(tostring(a4))
-	end
-
-	if a5 then
-		m_textCtrl:AppendText(tostring(a5))
-	end
-
-	if a6 then
-		m_textCtrl:AppendText(tostring(a6))
-	end
-
-	if a7 then
-		m_textCtrl:AppendText(tostring(a7))
-	end
-
-	if a8 then
-		m_textCtrl:AppendText(tostring(a8))
-	end
-
-	if a9 then
-		m_textCtrl:AppendText(tostring(a9))
-	end
-
+function catch_prints(...)
+	m_textCtrl:AppendText(table.concat(arg,"\t"))
 	m_textCtrl:AppendText("\n")
 end
 
