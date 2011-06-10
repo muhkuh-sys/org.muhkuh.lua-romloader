@@ -26,6 +26,11 @@
 #include "muhkuh_lua.h"
 
 
+#ifdef WIN32
+#define snprintf _snprintf
+#endif
+
+
 typedef struct
 {
 	int iLuaError;
@@ -38,6 +43,10 @@ typedef struct
 	int iLuaError;
 	const char *pcMessage;
 } LUA_TYPE_TO_STR_T;
+
+
+/* This is the default state for the main frame. */
+lua_State *ptDefaultState;
 
 
 static const char *pcMuhkuhVersion =
@@ -87,6 +96,8 @@ static int lua_muhkuh_print(lua_State *ptLuaState)
 	wxString strElement;
 	wxString strMsg;
 
+
+	strMsg = wxT("[LUA]: ");
 
 	iArgMax = lua_gettop(ptLuaState);
 	for(iArgCnt=1; iArgCnt<=iArgMax; iArgCnt++)
@@ -139,7 +150,7 @@ lua_State *lua_muhkuh_create_state(void)
 		luaL_openlibs(ptLuaState);
 
 		/* Replace the print function with lua_muhkuh_print. */
-//		lua_register(ptLuaState, "print", lua_muhkuh_print);
+		lua_register(ptLuaState, "print", lua_muhkuh_print);
 
 		/* TODO: add the muhkuh binding. */
 
@@ -148,6 +159,80 @@ lua_State *lua_muhkuh_create_state(void)
 	}
 
 	return ptLuaState;
+}
+
+
+static char *lua_muhkuh_pop_errormessage(lua_State *ptLuaState)
+{
+	const char *pcLuaErrorMessage;
+	int iResult;
+	size_t sizResult;
+	char *pcResult;
+	const char *pcErrorFormat = "failed to load lua script, error %d: %s, %s";
+
+
+	/* Get the errormessage from the stack. */
+	pcLuaErrorMessage = lua_tostring(ptLuaState, -1);
+
+	/* Test how many bytes are needed for the message. */
+	sizResult = snprintf(NULL, 0, pcErrorFormat, iResult, lua_muhkuh_error_to_string(iResult), pcLuaErrorMessage);
+	/* Allocate space for the message and the terminating 0 byte. */
+	pcResult = (char*)malloc(sizResult+1);
+	if( pcResult!=NULL )
+	{
+		snprintf(pcResult, sizResult, pcErrorFormat, iResult, lua_muhkuh_error_to_string(iResult), pcLuaErrorMessage);
+	}
+	lua_pop(ptLuaState, 1);
+
+	return pcResult;
+}
+
+
+int lua_muhkuh_execute_html_tag(lua_State *ptLuaState, const char *pcLuaCode, char **ppcResult)
+{
+	int iResult;
+	char *pcResult;
+	const char *pcLuaResult;
+	size_t sizLuaResult;
+
+
+	if( ptLuaState==NULL )
+	{
+		ptLuaState = ptDefaultState;
+	}
+
+	if( ptLuaState==NULL )
+	{
+		iResult = -1;
+	}
+	else
+	{
+		iResult = luaL_loadstring(ptLuaState, pcLuaCode);
+		if( iResult!=0 )
+		{
+			pcResult = lua_muhkuh_pop_errormessage(ptLuaState);
+		}
+		else
+		{
+			iResult = lua_pcall(ptLuaState, 0, 1, 0);
+			if( iResult!=0 )
+			{
+				pcResult = lua_muhkuh_pop_errormessage(ptLuaState);
+			}
+			else
+			{
+				pcLuaResult = lua_tostring(ptLuaState, -1);
+				sizLuaResult = sizeof(pcLuaResult);
+				pcResult = (char*)malloc(sizLuaResult+1);
+				if( pcResult!=NULL )
+				{
+					memcpy(pcResult, pcLuaResult, sizLuaResult);
+				}
+			}
+		}
+	}
+
+	return iResult;
 }
 
 

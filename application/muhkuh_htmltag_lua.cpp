@@ -6,8 +6,7 @@
 
 #include <wx/html/htmlcell.h>
 
-#include "muhkuh_lua_interface.h"
-#include "muhkuh_mainFrame.h"
+#include "muhkuh_lua.h"
 
 
 FORCE_LINK_ME(muhkuh_htmltag_lua)
@@ -20,20 +19,23 @@ TAG_HANDLER_BEGIN(LUA, "LUA")
 	{
 		wxString strLuaCode;
 		wxString strHtmlCode;
+		char *pcResult;
 
 
+		/* Get the lua script. */
 		strLuaCode = m_WParser->GetInnerSource(tag);
-		strHtmlCode = muhkuh_mainFrame::htmlTag_lua(strLuaCode);
+
+		/* Run the lua script. */
+		lua_muhkuh_execute_html_tag(NULL, strLuaCode.c_str(), &pcResult);
+		strHtmlCode = wxString::FromAscii(pcResult);
+		free(pcResult);
 
 		ParseInnerSource(strHtmlCode);
 		return true;
 	}
-
 TAG_HANDLER_END(LUA)
 
 
 TAGS_MODULE_BEGIN(Lua)
-
     TAGS_MODULE_ADD(LUA)
-
 TAGS_MODULE_END(Lua)

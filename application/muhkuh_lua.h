@@ -30,7 +30,12 @@ extern "C" {
 #define __MUHKUH_LUA_H__
 
 
+/* This is the default state for the main frame. */
+extern lua_State *ptDefaultState;
+
 lua_State *lua_muhkuh_create_state(void);
+
+int lua_muhkuh_execute_html_tag(lua_State *ptLuaState, const char *pcLuaCode, char **ppcResult);
 
 const char *lua_muhkuh_error_to_string(int iLuaError);
 const char *lua_muhkuh_type_to_string(int iLuaType);
