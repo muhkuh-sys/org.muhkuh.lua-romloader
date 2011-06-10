@@ -287,6 +287,9 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 								}
 								else
 								{
+#if 0
+									/* FIXME: if this block is enabled, the class crashes at destroy. */
+
 									/* Create a new xml document from the config node and convert it to text. */
 									ptChildNode = find_child_node(ptMuhkuhNode->GetChildren(), wxT("Cfg"));
 									/* Found the node? */
@@ -301,7 +304,7 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 									cFileName.Assign(strXmlPath);
 									/* Save path to xml config to build a relative path to the dll later. */
 									m_strPluginCfgPath = cFileName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR, wxPATH_NATIVE);
-
+#endif
 									/* All data found. */
 									m_tPluginDescription.strPluginName = strCfgName;
 									m_tPluginDescription.strPluginId = strId;
