@@ -102,5 +102,7 @@ target_link_libraries(muhkuh ${wxWidgets_LIBRARIES} ${muhkuh_app_libs})
 set_target_properties(muhkuh PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/)
 
 
+# Copy the application.
+INSTALL(TARGETS muhkuh DESTINATION ${INSTALL_DIR_EXECUTABLES})
 # Copy the tips file.
-file(COPY ${CMAKE_HOME_DIRECTORY}/bin/muhkuh_tips.txt DESTINATION ${CMAKE_BINARY_DIR}/bin/)
+INSTALL(FILES ${CMAKE_HOME_DIRECTORY}/bin/muhkuh_tips.txt DESTINATION ${INSTALL_DIR_EXECUTABLES})
