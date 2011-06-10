@@ -215,7 +215,7 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	InitDialog();
 
 #if defined(USE_LUA)
-	/* open a new lua state */
+	/* Open a new lua state. */
 	m_ptLua_State = lua_muhkuh_create_state();
 #endif
 }
@@ -226,10 +226,11 @@ muhkuh_mainFrame::~muhkuh_mainFrame(void)
 	write_config();
 
 #if defined(USE_LUA)
-	// delete the lua state
+	/* Close any open lua state. */
 	if( m_ptLua_State!=NULL )
 	{
 		lua_close(m_ptLua_State);
+		m_ptLua_State = NULL;
 	}
 #endif
 
@@ -875,7 +876,7 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 	}
 
 #if defined(USE_LUA)
-	// get the Lua Memory in kilobytes
+	/* Get the lua memory consumption in kilobytes. */
 	if( m_ptLua_State!=NULL )
 	{
 		int iLuaMemKb;
