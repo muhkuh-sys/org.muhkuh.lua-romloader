@@ -96,9 +96,6 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
  , m_testDetailsHtml(NULL)
  , m_timerIdleWakeUp(this)
  , m_ptTextCtrl_TestOutput(NULL)
-#if defined(USE_LUA)
- , m_ptLua_State(NULL)
-#endif
 {
 	wxLog *pOldLogTarget;
 	wxFileName cfgName;
@@ -214,9 +211,9 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 
 	InitDialog();
 
-#if defined(USE_LUA)
+#if USE_LUA!=0
 	/* Open a new lua state. */
-	m_ptLua_State = lua_muhkuh_create_state();
+	lua_muhkuh_create_default_state();
 #endif
 }
 
@@ -225,13 +222,9 @@ muhkuh_mainFrame::~muhkuh_mainFrame(void)
 {
 	write_config();
 
-#if defined(USE_LUA)
+#if USE_LUA!=0
 	/* Close any open lua state. */
-	if( m_ptLua_State!=NULL )
-	{
-		lua_close(m_ptLua_State);
-		m_ptLua_State = NULL;
-	}
+	lua_muhkuh_close_default_state();
 #endif
 
 	// delete the help controller
@@ -875,17 +868,11 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 		break;
 	}
 
-#if defined(USE_LUA)
+#if USE_LUA!=0
 	/* Get the lua memory consumption in kilobytes. */
-	if( m_ptLua_State!=NULL )
-	{
-		int iLuaMemKb;
-
-
-		iLuaMemKb = lua_getgccount(m_ptLua_State);
-		strMemStatus.Printf(_("Lua uses %d kilobytes"), iLuaMemKb);
-		strStatus += strMemStatus;
-	}
+	iLuaMemKb = lua_muhkuh_get_memory_usage(NULL);
+	strMemStatus.Printf(_("Lua uses %d kilobytes"), iLuaMemKb);
+	strStatus += strMemStatus;
 #endif
 
 	// set the status text
@@ -2298,158 +2285,6 @@ void muhkuh_mainFrame::OnSize(wxSizeEvent &event)
 		m_frameSize = event.GetSize();
 	}
 }
-
-
-#if defined(USE_LUA)
-wxString muhkuh_mainFrame::htmlTag_lua(const wxString &strLuaCode)
-{
-	muhkuh_mainFrame *ptMainframe;
-	wxString strText;
-
-
-	ptMainframe = ::wxGetApp().ptMainframe;
-	if( ptMainframe!=NULL )
-	{
-		strText = ptMainframe->local_htmlTag_lua(strLuaCode);
-	}
-	else
-	{
-		strText = _("Lua Scripting not supported!");
-	}
-
-	return strText;
-}
-
-
-bool muhkuh_mainFrame::lua_get_errorinfo(lua_State *L, int iStatus, int iTop, wxString *pstrErrorMsg, int *piLineNum)
-{
-	int iNewTop;
-	wxString strErrorMsg;
-
-
-	if( iStatus!=0 )
-	{
-		iNewTop = lua_gettop(L);
-
-		strErrorMsg = wxString::FromAscii(lua_muhkuh_error_to_string(iStatus));
-
-		switch(iStatus)
-		{
-		case LUA_ERRMEM:
-		case LUA_ERRERR:
-			if( iNewTop>iTop )
-			{
-				strErrorMsg += wxT("\n");
-			}
-			break;
-
-		case LUA_ERRRUN:
-		case LUA_ERRFILE:
-		case LUA_ERRSYNTAX:
-		default:
-			if( iNewTop>iTop )
-			{
-				strErrorMsg += wxT("\n") + wxString::FromAscii(lua_tostring(L, -1));
-			}
-			break;
-		}
-	}
-
-	strErrorMsg += wxT("\n");
-
-	// Why can't I fill a lua_Debug here? Try to get the line number
-	// by parsing the error message that looks like this, 3 is linenumber
-	// [string "a = 1("]:3: unexpected symbol near `<eof>'
-	wxString strLine = strErrorMsg;
-	long lLineNum = -1;
-	while( strLine.IsEmpty()==false )
-	{
-		// search through the str to find ']:LONG:' pattern
-		strLine = strLine.AfterFirst(wxT(']'));
-		if ((strLine.Length() > 0) && (strLine.GetChar(0) == wxT(':')))
-		{
-			strLine = strLine.AfterFirst(wxT(':'));
-			if (strLine.IsEmpty() || strLine.BeforeFirst(wxT(':')).ToLong(&lLineNum))
-			{
-				break;
-			}
-		}
-	}
-
-	/* pops the message if any */
-	lua_settop(L, iTop);
-
-	if(pstrErrorMsg!=NULL)
-	{
-		*pstrErrorMsg = strErrorMsg;
-	}
-	if(piLineNum!=NULL)
-	{
-		*piLineNum = (int)lLineNum;
-	}
-
-	return true;
-}
-
-
-wxString muhkuh_mainFrame::local_htmlTag_lua(const wxString &strLuaCode)
-{
-	int iTopPre;
-	int iTopPost;
-	int iResult;
-	int iLineNr;
-	int iResultType;
-	wxString strHtmlCode;
-	wxString strMsg;
-	wxString strErrorMsg;
-
-
-	if( m_ptLua_State!=NULL )
-	{
-		iTopPre = lua_gettop(m_ptLua_State);
-		iResult = luaL_loadbuffer(m_ptLua_State, strLuaCode.To8BitData(), strLuaCode.Len(), "html lua tag");
-		if( iResult!=0 )
-		{
-			strHtmlCode.Printf(_("failed to load lua script, error %d: %s"), iResult, lua_muhkuh_error_to_string(iResult));
-		}
-		else
-		{
-			iResult = lua_pcall(m_ptLua_State, 0, 1, 0);
-			if( iResult!=0 )
-			{
-				lua_get_errorinfo(m_ptLua_State, iResult, iTopPre, &strErrorMsg, &iLineNr);
-				strMsg.Printf(_("html lua tag: error %d in line %d: ") + strErrorMsg, iResult, iLineNr);
-				wxLogError(strMsg);
-				strHtmlCode = strMsg;
-			}
-			else
-			{
-				iTopPost = lua_gettop(m_ptLua_State);
-				if( iTopPre<iTopPost )
-				{
-					// check return type
-					iResultType = lua_type(m_ptLua_State, 0);
-					if( iResultType==LUA_TSTRING )
-					{
-						strHtmlCode = wxString::FromAscii(lua_tostring(m_ptLua_State, 0));
-					}
-					else
-					{
-						strHtmlCode.Printf(_("html lua tag: invalid return type, must be string, is %s"), lua_muhkuh_type_to_string(iResultType));
-					}
-				}
-			}
-			lua_settop(m_ptLua_State, iTopPre);
-		}
-	}
-	else
-	{
-		strHtmlCode = _("Lua Scripting not supported!");
-	}
-
-	return strHtmlCode;
-}
-#endif
 
 
 bool muhkuh_mainFrame::repositoryScannerCallback(void *pvUser, wxString strMessage, int iProgressPos, int iProgressMax)

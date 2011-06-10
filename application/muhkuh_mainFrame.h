@@ -40,15 +40,17 @@
 #define __MUHKUH_MAINFRAME_H__
 
 #include "muhkuh_id.h"
-#include "muhkuh_lua.h"
 #include "muhkuh_plugin_manager.h"
 #include "muhkuh_repository_manager.h"
 #include "muhkuh_testTreeItemData.h"
 #include "muhkuh_wrap_xml.h"
 
+#if USE_LUA!=0
+#       include "muhkuh_lua.h"
+#endif
+
 
 //-------------------------------------
-// the wxLua entries
 
 class muhkuh_server_process : public wxProcess
 {
@@ -125,11 +127,6 @@ public:
 		MAINFRAME_INIT_STATE_CONFIGURED,
                 MAINFRAME_INIT_STATE_SCANNED
         } MAINFRAME_INIT_STATE_E;
-
-#if defined(USE_LUA)
-        static wxString htmlTag_lua(const wxString &strLuaCode);
-        wxString local_htmlTag_lua(const wxString &strLuaCode);
-#endif
 
 private:
 	void createMenu(void);
@@ -257,14 +254,6 @@ private:
 	// frame size and position
 	wxPoint m_framePosition;
 	wxSize m_frameSize;
-
-
-	// lua stuff
-#if defined(USE_LUA)
-	bool lua_get_errorinfo(lua_State *L, int iStatus, int iTop, wxString *pstrErrorMsg, int *piLineNum);
-	lua_State *m_ptLua_State;
-#endif
-
     DECLARE_EVENT_TABLE()
 };
 
@@ -272,5 +261,5 @@ private:
 extern muhkuh_mainFrame *g_ptMainFrame;
 
 
-#endif	// __MUHKUH_MAINFRAME_H__
+#endif  /* __MUHKUH_MAINFRAME_H__ */
 

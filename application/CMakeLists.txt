@@ -29,7 +29,7 @@ if(${LUA51_FOUND})
 	set(muhkuh_app_lua_definitions USE_LUA=1)
 	set(muhkuh_app_lua_sources
 		muhkuh_lua.cpp
-#		muhkuh_htmltag_lua.cpp
+		muhkuh_htmltag_lua.cpp
 #		${muhkuh_app_lua_wrapper}
 	)
 	set(muhkuh_app_libs ${LUA_LIBRARIES})

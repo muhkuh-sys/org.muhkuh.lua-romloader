@@ -34,6 +34,10 @@ extern "C" {
 extern lua_State *ptDefaultState;
 
 lua_State *lua_muhkuh_create_state(void);
+void lua_muhkuh_create_default_state(void);
+void lua_muhkuh_close_default_state(void);
+
+int lua_muhkuh_get_memory_usage(lua_State *ptLuaState);
 
 int lua_muhkuh_execute_html_tag(lua_State *ptLuaState, const char *pcLuaCode, char **ppcResult);
 

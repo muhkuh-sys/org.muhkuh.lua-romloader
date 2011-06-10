@@ -46,7 +46,7 @@ typedef struct
 
 
 /* This is the default state for the main frame. */
-lua_State *ptDefaultState;
+lua_State *ptDefaultState = NULL;
 
 
 static const char *pcMuhkuhVersion =
@@ -162,6 +162,49 @@ lua_State *lua_muhkuh_create_state(void)
 }
 
 
+void lua_muhkuh_create_default_state(void)
+{
+	/* Close any existing lua state. */
+	lua_muhkuh_close_default_state();
+
+	/* Create a new lua state. */
+	ptDefaultState = lua_muhkuh_create_state();
+}
+
+
+void lua_muhkuh_close_default_state(void)
+{
+	if( ptDefaultState!=NULL )
+	{
+		lua_close(ptDefaultState);
+	}
+}
+
+
+int lua_muhkuh_get_memory_usage(lua_State *ptLuaState)
+{
+	int iResult;
+
+
+	if( ptLuaState==NULL )
+	{
+		ptLuaState = ptDefaultState;
+	}
+
+	if( ptLuaState==NULL )
+	{
+		iResult = 0;
+	}
+	else
+	{
+		/* Get the lua memory consumption in kilobytes. */
+		iResult = lua_getgccount(ptLuaState);
+	}
+
+	return iResult;
+}
+
+
 static char *lua_muhkuh_pop_errormessage(lua_State *ptLuaState)
 {
 	const char *pcLuaErrorMessage;
@@ -196,6 +239,7 @@ int lua_muhkuh_execute_html_tag(lua_State *ptLuaState, const char *pcLuaCode, ch
 	size_t sizLuaResult;
 
 
+	pcResult = NULL;
 	if( ptLuaState==NULL )
 	{
 		ptLuaState = ptDefaultState;
@@ -231,6 +275,8 @@ int lua_muhkuh_execute_html_tag(lua_State *ptLuaState, const char *pcLuaCode, ch
 			}
 		}
 	}
+
+	*ppcResult = pcResult;
 
 	return iResult;
 }

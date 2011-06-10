@@ -26,9 +26,16 @@ TAG_HANDLER_BEGIN(LUA, "LUA")
 		strLuaCode = m_WParser->GetInnerSource(tag);
 
 		/* Run the lua script. */
-		lua_muhkuh_execute_html_tag(NULL, strLuaCode.c_str(), &pcResult);
-		strHtmlCode = wxString::FromAscii(pcResult);
-		free(pcResult);
+		lua_muhkuh_execute_html_tag(NULL, strLuaCode.fn_str(), &pcResult);
+		if( pcResult!=NULL )
+		{
+			strHtmlCode = wxString::FromAscii(pcResult);
+			free(pcResult);
+		}
+		else
+		{
+			strHtmlCode = wxEmptyString;
+		}
 
 		ParseInnerSource(strHtmlCode);
 		return true;
