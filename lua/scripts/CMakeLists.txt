@@ -5,8 +5,10 @@ project("lua_scripts")
 if(${LUA51_FOUND})
 	set(lua_scripts_install_files
 		muhkuh_system.lua
-		select_plugin.lua
-		system.lua
+		select_plugin_cli.lua
+		select_plugin_gui.lua
+		system_cli.lua
+		system_gui.lua
 		tester_cli.lua
 		tester_v2/tester.lua
 		tester_v2/tester_control.lua
