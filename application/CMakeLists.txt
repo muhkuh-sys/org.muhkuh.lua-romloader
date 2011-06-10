@@ -15,22 +15,22 @@ if(Subversion_FOUND)
 endif(Subversion_FOUND)
 
 
-#find_package(SWIG REQUIRED)
-#include(${SWIG_USE_FILE})
+find_package(SWIG REQUIRED)
+include(${SWIG_USE_FILE})
 
 include(${wxWidgets_USE_FILE})
 
 
 if(${LUA51_FOUND})
-#	set_source_files_properties(muhkuh_lua.i PROPERTIES CPLUSPLUS ON)
-#	set_source_files_properties(muhkuh_lua.i PROPERTIES SWIG_FLAGS "")
-#	swig_build_wrapper(muhkuh_app_lua_wrapper lua muhkuh_lua.i)
-#
+	set_source_files_properties(muhkuh_lua.i PROPERTIES CPLUSPLUS ON)
+	set_source_files_properties(muhkuh_lua.i PROPERTIES SWIG_FLAGS "")
+	SWIG_ADD_MODULE(muhkuh_app_lua_wrapper lua muhkuh_lua.i)
+
 	set(muhkuh_app_lua_definitions USE_LUA=1)
 	set(muhkuh_app_lua_sources
 		muhkuh_lua.cpp
 		muhkuh_htmltag_lua.cpp
-#		${muhkuh_app_lua_wrapper}
+		${swig_generated_file_fullname}
 	)
 	set(muhkuh_app_libs ${LUA_LIBRARIES})
 	include_directories(${LUA_INCLUDE_DIR})
