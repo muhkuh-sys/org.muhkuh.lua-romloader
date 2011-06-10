@@ -10,6 +10,7 @@ PROJECT("muhkuh")
 
 # This is the new dir structure, use it for packaging.
 IF(UNIX AND NOT WIN32 AND NOT APPLE)
+	SET(INSTALL_DIR_EXECUTABLES "bin")
 	SET(INSTALL_DIR_LUA_MODULES "lib/lua/5.1")
 	IF(CMAKE_SIZEOF_VOID_P MATCHES "8")
 		SET(INSTALL_DIR_SHARED_OBJECTS "lib64")
@@ -20,6 +21,7 @@ IF(UNIX AND NOT WIN32 AND NOT APPLE)
 ELSE(UNIX AND NOT WIN32 AND NOT APPLE)
 	# Install everything in one folder on Win.
 	SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
+	SET(INSTALL_DIR_EXECUTABLES "build")
 	SET(INSTALL_DIR_LUA_MODULES "build")
 	SET(INSTALL_DIR_SHARED_OBJECTS "build")
 	SET(INSTALL_DIR_LUA_SCRIPTS "build")
@@ -100,7 +102,7 @@ ENDIF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv|nmake)")
 # Include the projects in the subdirectories.
 #
 
-#add_subdirectory(application)
+add_subdirectory(application)
 add_subdirectory(lua)
 add_subdirectory(modules)
 add_subdirectory(plugins)
