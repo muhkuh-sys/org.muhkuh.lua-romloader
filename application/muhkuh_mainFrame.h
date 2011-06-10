@@ -36,18 +36,11 @@
 #include <wx/tipdlg.h>
 
 
-#if defined(USE_LUA)
-extern "C" {
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
-}
-#endif
-
 #ifndef __MUHKUH_MAINFRAME_H__
 #define __MUHKUH_MAINFRAME_H__
 
 #include "muhkuh_id.h"
+#include "muhkuh_lua.h"
 #include "muhkuh_plugin_manager.h"
 #include "muhkuh_repository_manager.h"
 #include "muhkuh_testTreeItemData.h"
@@ -136,35 +129,23 @@ public:
 #if defined(USE_LUA)
         static wxString htmlTag_lua(const wxString &strLuaCode);
         wxString local_htmlTag_lua(const wxString &strLuaCode);
-
-        typedef struct
-        {
-                int iLuaError;
-                const wxChar *pcMessage;
-        } LUA_ERROR_TO_STR_T;
-
-        typedef struct
-        {
-                int iLuaError;
-                const wxChar *pcMessage;
-        } LUA_TYPE_TO_STR_T;
 #endif
 
 private:
-        void createMenu(void);
-        void createControls(void);
-        void createTipProvider(void);
+	void createMenu(void);
+	void createControls(void);
+	void createTipProvider(void);
 	void createWelcomeWindow(void);
 	void createTestDetailsWindow(void);
 
-        void read_config(void);
-        void write_config(void);
+	void read_config(void);
+	void write_config(void);
 
-        void executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex);
-        bool process_server_output(void);
-        void finishTest(void);
+	void executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex);
+	bool process_server_output(void);
+	void finishTest(void);
 
-        void setState(muhkuh_mainFrame_state tNewState);
+	void setState(muhkuh_mainFrame_state tNewState);
 
 	void scanTests(int iActiveRepositoryIdx);
 	void addAllTests(int iActiveRepositoryIdx);
@@ -176,14 +157,14 @@ private:
 	bool addTestTree(testTreeItemData *ptTestTreeItem);
 
 	wxString loadHtmlString(wxString strFileUrl);
-        void reloadWelcomePage(void);
-        void reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml);
+	void reloadWelcomePage(void);
+	void reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml);
 
-        bool check_plugins(void);
+	bool check_plugins(void);
 
-        // main frame controls
-        wxAuiManager m_auiMgr;
-        // the default perspective
+	// main frame controls
+	wxAuiManager m_auiMgr;
+	// the default perspective
 	wxString strDefaultPerspective;
 
 	// gui elements
@@ -205,16 +186,18 @@ private:
 	// the application icons in different sizes
 	wxIconBundle m_frameIcons;
 
-        // state of the init process
-        MAINFRAME_INIT_STATE_E m_eInitState;
+	// state of the init process
+	MAINFRAME_INIT_STATE_E m_eInitState;
 
-        // the process id of the server task
-        long m_lServerPid;
-        // the server process notification
-        muhkuh_server_process *m_ptServerProcess;
+	// the process id of the server task
+	long m_lServerPid;
+	// the server process notification
+	muhkuh_server_process *m_ptServerProcess;
+	wxTimer m_timerIdleWakeUp;
+	wxTextCtrl *m_ptTextCtrl_TestOutput;
 
-        // main frame state
-        muhkuh_mainFrame_state m_state;
+	// main frame state
+	muhkuh_mainFrame_state m_state;
 	// TODO: replace the test name and idx with the xml wrapper object
 	// name of the running test
 	wxString m_strRunningTestName;
@@ -224,14 +207,14 @@ private:
 	// scanner progress dialog
 	wxProgressDialog *m_scannerProgress;
 
-        // number of loaded test descriptions
-        size_t m_sizTestCnt;
+	// number of loaded test descriptions
+	size_t m_sizTestCnt;
 
-        // the plugin manager
-        muhkuh_plugin_manager *m_ptPluginManager;
+	// the plugin manager
+	muhkuh_plugin_manager *m_ptPluginManager;
 
-        // the repository manager
-        muhkuh_repository_manager *m_ptRepositoryManager;
+	// the repository manager
+	muhkuh_repository_manager *m_ptRepositoryManager;
 
 	// help controller
 	wxHtmlHelpController *m_ptHelp;
@@ -245,47 +228,41 @@ private:
 
 	// the welcome page
 	wxString m_strWelcomePage;
-        // the test details page
-        wxString m_strTestDetails;
+	// the test details page
+	wxString m_strTestDetails;
 
-        /* NOTE: Keep the configuration dialog the same, even if lua or python
-                 is not compiled in. Just disable the controls, but show the
-                 user that it is there.
-        */
-        // the lua include path
-        wxString m_strLuaIncludePath;
-        // lua startup code
-        wxString m_strLuaStartupCode;
-        // the temp file with the settings and the startup code
-        wxString m_strRunningTestTempFileName;
+	/* NOTE: Keep the configuration dialog the same, even if lua or python
+		is not compiled in. Just disable the controls, but show the
+		user that it is there.
+	*/
+	// the lua include path
+	wxString m_strLuaIncludePath;
+	// lua startup code
+	wxString m_strLuaStartupCode;
+	// the temp file with the settings and the startup code
+	wxString m_strRunningTestTempFileName;
 
-        // the welcome page file
-        wxString m_strWelcomePageFile;
-        // the details page file
-        wxString m_strDetailsPageFile;
+	// the welcome page file
+	wxString m_strWelcomePageFile;
+	// the details page file
+	wxString m_strDetailsPageFile;
 
-        // the application title
-        wxString m_strApplicationTitle;
-        wxString m_strApplicationIcon;
+	// the application title
+	wxString m_strApplicationTitle;
+	wxString m_strApplicationIcon;
 
 	// the locale object
 	wxLocale m_locale;
 
 	// frame size and position
-        wxPoint m_framePosition;
-        wxSize m_frameSize;
+	wxPoint m_framePosition;
+	wxSize m_frameSize;
 
 
-        // lua stuff
+	// lua stuff
 #if defined(USE_LUA)
-        void init_lua(void);
-
-        static const LUA_ERROR_TO_STR_T atLuaErrorToString[];
-        wxString lua_error_to_string(int iLuaError);
-        static const LUA_TYPE_TO_STR_T atLuaTypeToString[];
-        wxString lua_type_to_string(int iLuaType);
-        bool lua_get_errorinfo(lua_State *L, int iStatus, int iTop, wxString *pstrErrorMsg, int *piLineNum);
-        lua_State *m_ptLua_State;
+	bool lua_get_errorinfo(lua_State *L, int iStatus, int iTop, wxString *pstrErrorMsg, int *piLineNum);
+	lua_State *m_ptLua_State;
 #endif
 
     DECLARE_EVENT_TABLE()

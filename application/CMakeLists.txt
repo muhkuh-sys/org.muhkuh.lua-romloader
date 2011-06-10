@@ -15,32 +15,26 @@ if(Subversion_FOUND)
 endif(Subversion_FOUND)
 
 
-find_package(SWIG REQUIRED)
-include(${SWIG_USE_FILE})
+#find_package(SWIG REQUIRED)
+#include(${SWIG_USE_FILE})
 
 include(${wxWidgets_USE_FILE})
 
 
 if(${LUA51_FOUND})
-	set_source_files_properties(muhkuh_lua.i PROPERTIES CPLUSPLUS ON)
-	set_source_files_properties(muhkuh_lua.i PROPERTIES SWIG_FLAGS "")
-	swig_build_wrapper(muhkuh_app_lua_wrapper lua muhkuh_lua.i)
-
+#	set_source_files_properties(muhkuh_lua.i PROPERTIES CPLUSPLUS ON)
+#	set_source_files_properties(muhkuh_lua.i PROPERTIES SWIG_FLAGS "")
+#	swig_build_wrapper(muhkuh_app_lua_wrapper lua muhkuh_lua.i)
+#
 	set(muhkuh_app_lua_definitions USE_LUA=1)
 	set(muhkuh_app_lua_sources
-		muhkuh_htmltag_lua.cpp
 		muhkuh_lua.cpp
-		${muhkuh_app_lua_wrapper}
+#		muhkuh_htmltag_lua.cpp
+#		${muhkuh_app_lua_wrapper}
 	)
-	set(muhkuh_app_libs lua)
-
+	set(muhkuh_app_libs ${LUA_LIBRARIES})
 	include_directories(${LUA_INCLUDE_DIR})
 endif(${LUA51_FOUND})
-
-
-if(${PYTHONLIBS_FOUND})
-	set(muhkuh_app_python_definitions USE_PYTHON=1)
-endif(${PYTHONLIBS_FOUND})
 
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

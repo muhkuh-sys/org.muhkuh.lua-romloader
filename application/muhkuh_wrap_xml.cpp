@@ -281,7 +281,7 @@ bool muhkuh_wrap_xml::readTestDescription(wxXmlDocument *xmldoc)
 	if( xml_testdesc->GetPropVal(wxT("version"), &ptTestDesc->strVersion)==false )
 	{
 		// show a warning
-		wxLogWarning(_("testdescription '%s' has no version information"), ptTestDesc->strName.fn_str());
+		wxLogWarning(_("testdescription '%s' has no version information"), ptTestDesc->strName.c_str());
 	}
 
 	// read in all tests
@@ -350,7 +350,7 @@ bool muhkuh_wrap_xml::readTest(wxXmlNode *xml_parent, tTesterXml_TestDescription
 				if( xml_test_cnt->GetPropVal(wxT("version"), &tc->strVersion)==false )
 				{
 					// show a warning
-					wxLogWarning(_("test '%s' has no version information"), tc->strName.fn_str());
+					wxLogWarning(_("test '%s' has no version information"), tc->strName.c_str());
 				}
 
 				// next slot in test array

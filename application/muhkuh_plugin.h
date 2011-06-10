@@ -81,7 +81,7 @@ private:
 	wxXmlNode *find_child_node(wxXmlNode *ptParentNode, wxString strNodeName);
 	bool openXml(wxString strXmlPath);
 	bool open(wxString strPluginPath);
-	void close(void);
+//	void close(void);
 
 	void setInitError(wxString strMessage, wxString strPath);
 

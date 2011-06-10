@@ -21,7 +21,10 @@
 
 #include "muhkuh_plugin.h"
 
+#include "muhkuh_lua.h"
+
 #include <wx/file.h>
+#include <wx/log.h>
 #include <wx/sstream.h>
 #include <wx/wfstream.h>
 
@@ -29,26 +32,22 @@
 muhkuh_plugin::muhkuh_plugin(void)
  : m_fPluginIsOk(false)
  , m_fPluginIsEnabled(false)
- , m_ptCfgNode(NULL)
+// , m_ptCfgNode(NULL)
  , m_strInitError(wxEmptyString)
 {
 	// set prefix for messages
 	setMe();
-
-	memset(&m_tPluginIf, 0, sizeof(muhkuh_plugin_interface));
 }
 
 
 muhkuh_plugin::muhkuh_plugin(wxString strPluginCfgPath)
  : m_fPluginIsOk(false)
  , m_fPluginIsEnabled(false)
- , m_ptCfgNode(NULL)
+// , m_ptCfgNode(NULL)
  , m_strInitError(wxEmptyString)
 {
 	// set prefix for messages
 	setMe();
-
-	memset(&m_tPluginIf, 0, sizeof(muhkuh_plugin_interface));
 
 	// try to open the plugin
 	Load(strPluginCfgPath);
@@ -58,7 +57,7 @@ muhkuh_plugin::muhkuh_plugin(wxString strPluginCfgPath)
 muhkuh_plugin::muhkuh_plugin(const muhkuh_plugin *ptCloneMe)
  : m_fPluginIsOk(false)
  , m_fPluginIsEnabled(false)
- , m_ptCfgNode(NULL)
+// , m_ptCfgNode(NULL)
  , m_strInitError(wxEmptyString)
 {
 	// set prefix for messages
@@ -75,7 +74,7 @@ muhkuh_plugin::muhkuh_plugin(const muhkuh_plugin *ptCloneMe)
 muhkuh_plugin::muhkuh_plugin(wxConfigBase *pConfig)
  : m_fPluginIsOk(false)
  , m_fPluginIsEnabled(false)
- , m_ptCfgNode(NULL)
+// , m_ptCfgNode(NULL)
  , m_strInitError(wxEmptyString)
 {
 	bool fReadOk;
@@ -105,13 +104,13 @@ muhkuh_plugin::muhkuh_plugin(wxConfigBase *pConfig)
 
 muhkuh_plugin::~muhkuh_plugin(void)
 {
-	close();
+//	close();
 }
 
 
 void muhkuh_plugin::setMe(void)
 {
-	m_strMe.Printf("muhkuh_plugin(%p) :", this);
+	m_strMe.Printf(wxT("muhkuh_plugin(%p) :"), this);
 }
 
 
@@ -121,7 +120,7 @@ void muhkuh_plugin::setInitError(wxString strMessage, wxString strPath)
 
 
 	// build errormessage
-	m_strInitError.Printf(_("The plugin '%s' failed to load: %s"), strPath.fn_str(), strMessage.fn_str());
+	m_strInitError.Printf(_("The plugin '%s' failed to load: %s"), strPath.c_str(), strMessage.c_str());
 	// show message in logfile
 	wxLogError(m_strMe + m_strInitError);
 
@@ -130,13 +129,22 @@ void muhkuh_plugin::setInitError(wxString strMessage, wxString strPath)
 }
 
 
-wxXmlNode *muhkuh_plugin::find_child_node(wxXmlNode *ptParentNode, wxString strNodeName)
+wxXmlNode *muhkuh_plugin::find_child_node(wxXmlNode *ptNode, wxString strNodeName)
 {
-	while( ptParentNode!=NULL && ptParentNode->GetType()!=wxXML_ELEMENT_NODE && ptParentNode->GetName()!=strNodeName )
+	wxXmlNode *ptFoundNode;
+
+
+	ptFoundNode = NULL;
+	while( ptNode!=NULL && ptNode->GetType()==wxXML_ELEMENT_NODE )
 	{
-		ptParentNode = ptParentNode->GetNext();
+		if( ptNode->GetName()==strNodeName )
+		{
+			ptFoundNode = ptNode;
+			break;
+		}
+		ptNode = ptNode->GetNext();
 	}
-	return ptParentNode;
+	return ptFoundNode;
 }
 
 
@@ -222,7 +230,6 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 				}
 				else
 				{
-
 
 #if defined(USE_LUA)
 					/* Get the lua node. */
@@ -323,17 +330,16 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 {
 	bool fResult;
 	int iResult;
-	wxString strMsg;
-	wxLog *ptLogTarget;
+	lua_State *ptLuaState;
 
 
-	wxLogMessage(m_strMe + _("loading plugin '%s'"), strPluginCfgPath.fn_str());
+	wxLogMessage(m_strMe + _("loading plugin '%s'"), strPluginCfgPath.c_str());
 
 	/* Set the config file. */
 	m_strPluginCfgPath = strPluginCfgPath;
 
 	/* Init the plugin description with defaults. */
-	m_strCfgName = strPluginCfgPath;
+//	m_strCfgName = strPluginCfgPath;
 
 	/* Open the plugin xml config. */
 	fResult = openXml(strPluginCfgPath);
@@ -346,15 +352,46 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 	}
 	else
 	{
+		/* Create a new lua state. */
+		ptLuaState = lua_muhkuh_create_state();
+		if( ptLuaState==NULL )
+		{
+			wxLogError(m_strMe + _("failed to create a new lua state."));
+			fResult = false;
+		}
+		else
+		{
+			iResult = luaL_dostring(ptLuaState, "print(\"hallo!\")\n");
+			wxLogMessage(wxT("luaL_dostring result = %d."), iResult);
 
+			lua_close(ptLuaState);
+		}
+
+/*
+		else if(lua_muhkuh_require(ptLuaState, 
+		{
+			lua_getglobal(L, "require");
+			lua_pushstring(L, name);
+return report(L, docall(L, 1, 1));
+			 if (status && !lua_isnil(L, -1)) {
+    const char *msg = lua_tostring(L, -1);
+    if (msg == NULL) msg = "(error object is not a string)";
+    l_message(progname, msg);
+    lua_pop(L, 1);
+  }
+
+		}
+*/
+/*
 				if( fResult!=true )
 				{
 					// close the plugin
-					wxLogMessage(m_strMe + _("closing plugin '%s'"), strPluginCfgPath.fn_str());
+					wxLogMessage(m_strMe + _("closing plugin '%s'"), strPluginCfgPath.c_str());
 					close();
 				}
 			}
 		}
+*/
 	}
 
 	return fResult;

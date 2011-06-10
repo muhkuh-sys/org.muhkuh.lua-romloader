@@ -21,27 +21,23 @@
 
 #include "muhkuh_plugin_manager.h"
 
+#include <wx/log.h>
 #include <wx/regex.h>
 
 
 muhkuh_plugin_manager::muhkuh_plugin_manager(void)
  : m_ptOpenPlugins(NULL)
- , m_ptMatchingPlugins(NULL)
 {
 	// set prefix for messages
 	setMe();
 
 	// create the repository list
 	m_ptOpenPlugins = new std::vector<muhkuh_plugin*>;
-
-	// create the match list
-	m_ptMatchingPlugins = new std::vector<muhkuh_plugin_instance*>;
 }
 
 
 muhkuh_plugin_manager::muhkuh_plugin_manager(const muhkuh_plugin_manager *ptClone)
  : m_ptOpenPlugins(NULL)
- , m_ptMatchingPlugins(NULL)
 {
 	std::vector<muhkuh_plugin*>::const_iterator iter;
 	muhkuh_plugin *ptPluginOrg;
@@ -53,9 +49,6 @@ muhkuh_plugin_manager::muhkuh_plugin_manager(const muhkuh_plugin_manager *ptClon
 
 	// create the repository list
 	m_ptOpenPlugins = new std::vector<muhkuh_plugin*>;
-
-	// create the match list
-	m_ptMatchingPlugins = new std::vector<muhkuh_plugin_instance*>;
 
 	// loop over all plugins
 	iter = ptClone->m_ptOpenPlugins->begin();
@@ -84,19 +77,12 @@ muhkuh_plugin_manager::~muhkuh_plugin_manager(void)
 		closeAllPlugins();
 		delete m_ptOpenPlugins;
 	}
-
-	// delete match list
-	if( m_ptMatchingPlugins!=NULL )
-	{
-		ClearAllMatches();
-		delete m_ptMatchingPlugins;
-	}
 }
 
 
 void muhkuh_plugin_manager::setMe(void)
 {
-	m_strMe.Printf("muhkuh_plugin_manager(%p) :", this);
+	m_strMe.Printf(wxT("muhkuh_plugin_manager(%p) :"), this);
 }
 
 
@@ -114,7 +100,7 @@ long muhkuh_plugin_manager::addPlugin(wxString strPluginCfgName)
 	// check if the plugin was loaded
 	if( ptPlugin==NULL )
 	{
-		wxLogError(m_strMe + _("failed to create plugin '%s'"), strPluginCfgName.fn_str());
+		wxLogError(m_strMe + _("failed to create plugin '%s'"), strPluginCfgName.c_str());
 	}
 	else
 	{
@@ -158,11 +144,11 @@ size_t muhkuh_plugin_manager::getPluginCount(void) const
 }
 
 
-const muhkuh_plugin_desc *muhkuh_plugin_manager::getPluginDescription(unsigned long ulIdx) const
+const MUHKUH_PLUGIN_DESCRIPTION_T *muhkuh_plugin_manager::getPluginDescription(unsigned long ulIdx) const
 {
 	std::vector<muhkuh_plugin*>::const_iterator iter;
 	muhkuh_plugin *ptPluginIf;
-	const muhkuh_plugin_desc *ptDesc;
+	const MUHKUH_PLUGIN_DESCRIPTION_T *ptDesc;
 
 
 	// check input parameter
@@ -177,7 +163,10 @@ const muhkuh_plugin_desc *muhkuh_plugin_manager::getPluginDescription(unsigned l
 		iter = m_ptOpenPlugins->begin();
 		iter += ulIdx;
 		ptPluginIf = *iter;
-		ptDesc = ptPluginIf->fn_get_desc();
+
+//		ptDesc = ptPluginIf->fn_get_desc();
+		wxLogError(m_strMe + wxT("getPluginDescription not yet"));
+		ptDesc = NULL;
 	}
 
 	return ptDesc;
@@ -201,7 +190,10 @@ wxString muhkuh_plugin_manager::GetConfigName(unsigned long ulIdx) const
 		iter = m_ptOpenPlugins->begin();
 		iter += ulIdx;
 		ptPluginIf = *iter;
-		strResult = ptPluginIf->GetConfigName();
+
+//		strResult = ptPluginIf->GetConfigName();
+		strResult = wxEmptyString;
+		wxLogError(m_strMe + wxT("GetConfigName not yet"));
 	}
 
 	return strResult;
@@ -377,194 +369,6 @@ void muhkuh_plugin_manager::write_config(wxConfigBase *pConfig)
 			++iter;
 		}
 		pConfig->SetPath(wxT("/"));
-	}
-}
-
-
-bool muhkuh_plugin_manager::initLuaBindings(wxLuaState *ptLuaState)
-{
-	std::vector<muhkuh_plugin*>::iterator iter;
-	muhkuh_plugin *ptPlugin;
-	bool fResult;
-	int iResult;
-	const muhkuh_plugin_desc *ptDesc;
-	wxString strPluginName;
-
-
-	// expect success
-	fResult = true;
-
-	// loop over all plugins
-	iter = m_ptOpenPlugins->begin();
-	while( iter!=m_ptOpenPlugins->end() )
-	{
-		// get the plugin
-		ptPlugin = *iter;
-		if( ptPlugin!=NULL )
-		{
-			// get the plugin name for messages
-			ptDesc = ptPlugin->fn_get_desc();
-			strPluginName = ptDesc->strPluginName;
-
-			if( ptPlugin->GetEnable()==true )
-			{
-				if( ptPlugin->IsOk()!=true )
-				{
-					// plugin is not ok, but still enabled!
-					wxLogError(m_strMe + _("State of plugin '%s' is not ok, init error is '%s'"), strPluginName.fn_str(), ptPlugin->GetInitError().fn_str());
-					// NOTE: errors in plugins are not fatal
-				}
-				else
-				{
-					// init lua bindings
-					iResult = ptPlugin->fn_init_lua(ptLuaState);
-					if( iResult!=0 )
-					{
-						wxLogError(m_strMe + _("Failed to init lua bindings of plugin '%s': %d"), strPluginName.fn_str(), iResult);
-						// NOTE: errors in plugins are not fatal
-					}
-				}
-			}
-		}
-
-		// next entry
-		++iter;
-	}
-
-	return fResult;
-}
-
-
-void muhkuh_plugin_manager::ScanPlugins(wxString strPattern, wxLuaState *ptLuaState)
-{
-	wxRegEx re;
-	std::vector<muhkuh_plugin*>::iterator iter;
-	muhkuh_plugin *ptPlugin;
-	bool fResult;
-	int iResult;
-	const muhkuh_plugin_desc *ptDesc;
-	wxString strPluginName;
-	wxString strPluginId;
-	wxString strMsg;
-
-
-	// no list -> no matches
-	if( m_ptMatchingPlugins==NULL )
-	{
-		strMsg = _("Plugin manager was not initialized!");
-		fResult = false;
-	}
-	else
-	{
-		// clear all old matches
-		ClearAllMatches();
-
-		// setup a regexp for the search pattern
-		fResult = re.Compile(strPattern, wxRE_NEWLINE);
-		if( fResult!=true )
-		{
-			// failed to compile regex
-			strMsg.Printf(_("Failed to compile regular expression: '%s'"), strPattern.fn_str());
-		}
-		else
-		{
-			// loop over all plugins
-			iter = m_ptOpenPlugins->begin();
-			while( iter!=m_ptOpenPlugins->end() )
-			{
-				// get the plugin
-				ptPlugin = *iter;
-				if( ptPlugin!=NULL )
-				{
-					// get the plugin name for messages
-					ptDesc = ptPlugin->fn_get_desc();
-					strPluginName = ptDesc->strPluginName;
-					// get the plugin id for the match
-					strPluginId = ptDesc->strPluginId;
-
-					if( ptPlugin->GetEnable()==true )
-					{
-						if( ptPlugin->IsOk()!=true )
-						{
-							strMsg.Printf(_("The state of plugin '%s' is not ok!"), strPluginName.fn_str());
-							wxLogError(m_strMe + strMsg);
-						}
-						else
-						{
-							// does the plugin name match the pattern?
-							fResult = re.Matches(strPluginId);
-							if( fResult==true )
-							{
-								// pattern matches -> scan for available plugin instances
-								iResult = ptPlugin->fn_detect_interfaces(m_ptMatchingPlugins);
-								if( iResult<0 )
-								{
-									strMsg.Printf(_("Failed to detect interfaces of plugin '%s': %d!"), strPluginName.fn_str(), iResult);
-
-									fResult = false;
-									break;
-								}
-							}
-						}
-					}
-				}
-				// next entry
-				++iter;
-			}
-		}
-	}
-
-	if( fResult==true )
-	{
-		// init iterator
-		m_cMatchingPluginsIter = m_ptMatchingPlugins->begin();
-	}
-	else
-	{
-		// invalidate iterator
-		m_cMatchingPluginsIter = m_ptMatchingPlugins->end();
-
-		wxLogError(strMsg);
-		ptLuaState->wxlua_Error(strMsg);
-	}
-}
-
-
-muhkuh_plugin_instance *muhkuh_plugin_manager::GetNextPlugin(void)
-{
-	muhkuh_plugin_instance *ptInstance = NULL;
-
-
-	// no list -> no matches
-	if( m_ptMatchingPlugins!=NULL && m_cMatchingPluginsIter!=m_ptMatchingPlugins->end() )
-	{
-		ptInstance = *m_cMatchingPluginsIter;
-		++m_cMatchingPluginsIter;
-	}
-
-	return ptInstance;
-}
-
-
-void muhkuh_plugin_manager::ClearAllMatches(void)
-{
-	std::vector<muhkuh_plugin_instance*>::const_iterator iter;
-	muhkuh_plugin_instance *ptPluginInst;
-
-
-	if( m_ptMatchingPlugins!=NULL )
-	{
-		// loop over all plugins
-		iter = m_ptMatchingPlugins->begin();
-		while( iter!=m_ptMatchingPlugins->end() )
-		{
-			ptPluginInst = *iter;
-			delete ptPluginInst;
-			// next entry
-			++iter;
-		}
-		// clear the complete list
-		m_ptMatchingPlugins->clear();
 	}
 }
 

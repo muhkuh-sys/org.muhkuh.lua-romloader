@@ -70,7 +70,7 @@ muhkuh_repository::~muhkuh_repository(void)
 
 void muhkuh_repository::setMe(void)
 {
-	m_strMe.Printf("muhkuh_repository(%p) :", this);
+	m_strMe.Printf(wxT("muhkuh_repository(%p) :"), this);
 }
 
 
@@ -225,16 +225,16 @@ wxString muhkuh_repository::GetStringRepresentation(void) const
 	switch( m_eTyp )
 	{
 	case REPOSITORY_TYP_DIRSCAN:
-		strDetails.Printf(_("directory scan in '%s' for '%s'"), m_strLocation.fn_str(), m_strExtension.fn_str());
+		strDetails.Printf(_("directory scan in '%s' for '%s'"), m_strLocation.c_str(), m_strExtension.c_str());
 		break;
 	case REPOSITORY_TYP_FILELIST:
-		strDetails.Printf(_("filelist from '%s'"), m_strLocation.fn_str());
+		strDetails.Printf(_("filelist from '%s'"), m_strLocation.c_str());
 		break;
 	case REPOSITORY_TYP_SINGLEXML:
-		strDetails.Printf(_("single xml file from '%s'"), m_strLocation.fn_str());
+		strDetails.Printf(_("single xml file from '%s'"), m_strLocation.c_str());
 		break;
 	case REPOSITORY_TYP_ALLLOCAL:
-		strDetails.Printf(_("all local files from '%s'"), m_strLocation.fn_str());
+		strDetails.Printf(_("all local files from '%s'"), m_strLocation.c_str());
 		break;
 	default:
 		strDetails = _("unknown typ");
@@ -517,7 +517,7 @@ bool muhkuh_repository::createTestlist_dirscan(pfnTestlistProgress pfnCallback, 
 	removeAllTests();
 
 	// no idea how long the scanning will take -> set to pulse (that's 'unknown time remaining)
-	strProgressMessage.Printf(_("scanning local folder '%s' for tests..."), m_strLocation.fn_str());
+	strProgressMessage.Printf(_("scanning local folder '%s' for tests..."), m_strLocation.c_str());
 	fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
 	if( fScannerIsRunning==true )
 	{
@@ -553,7 +553,7 @@ bool muhkuh_repository::createTestlist_dirscan(pfnTestlistProgress pfnCallback, 
 		strCompletePath = fileName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR);
 		// convert path to url
 		strUrl = wxFileSystem::FileNameToURL(strCompletePath);
-		wxLogDebug(m_strMe + _("scanning testdescriptions at '%s'"), strUrl.fn_str());
+		wxLogDebug(m_strMe + _("scanning testdescriptions at '%s'"), strUrl.c_str());
 
 		// set path
 		fileSystem.ChangePathTo(strUrl, true);
@@ -566,7 +566,7 @@ bool muhkuh_repository::createTestlist_dirscan(pfnTestlistProgress pfnCallback, 
 
 			// convert to url
 			strUrl = wxFileSystem::FileNameToURL(strFilename);
-			wxLogDebug(m_strMe + _("found '%s'"), strUrl.fn_str());
+			wxLogDebug(m_strMe + _("found '%s'"), strUrl.c_str());
 
 			ptTestData = new tTestData;
 			ptTestData->strPrintUrl = strUrl;
@@ -611,7 +611,7 @@ bool muhkuh_repository::createTestlist_filelist(pfnTestlistProgress pfnCallback,
 	strLocation = m_strLocation;
 
 	// no idea how long the scanning will take -> set to pulse (that's 'unknown time remaining)
-	strProgressMessage.Printf(_("scanning repository '%s' for tests..."), m_strLocation.fn_str());
+	strProgressMessage.Printf(_("scanning repository '%s' for tests..."), m_strLocation.c_str());
 	fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
 
 	if( fScannerIsRunning==true )
@@ -621,7 +621,7 @@ bool muhkuh_repository::createTestlist_filelist(pfnTestlistProgress pfnCallback,
 		if( urlError!=wxURL_NOERR )
 		{
 			// this was no valid url
-			strMessage.Printf(_("Invalid URL : '%s': "), strLocation.fn_str());
+			strMessage.Printf(_("Invalid URL : '%s': "), strLocation.c_str());
 			// try to show some details
 			switch( urlError )
 			{
@@ -654,14 +654,14 @@ bool muhkuh_repository::createTestlist_filelist(pfnTestlistProgress pfnCallback,
 		}
 		else
 		{
-			strMessage.Printf(_("Get list of testdescriptions from '%s'"), strLocation.fn_str());
+			strMessage.Printf(_("Get list of testdescriptions from '%s'"), strLocation.c_str());
 			wxLogMessage(strMessage);
 
 			// test if file exists
 			ptFsFile = fileSystem.OpenFile(strLocation);
 			if( ptFsFile==NULL )
 			{
-				wxLogError(m_strMe + _("Failed to open filelist at '%s'"), strLocation.fn_str());
+				wxLogError(m_strMe + _("Failed to open filelist at '%s'"), strLocation.c_str());
 				fScannerIsRunning = false;
 			}
 			else
@@ -682,7 +682,7 @@ bool muhkuh_repository::createTestlist_filelist(pfnTestlistProgress pfnCallback,
 					}
 
 					// check for cancel button
-					strProgressMessage.Printf(_("receiving '%s'"), strFilename.fn_str());
+					strProgressMessage.Printf(_("receiving '%s'"), strFilename.c_str());
 					fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
 				}
 				delete ptTextInputStream;
@@ -696,7 +696,7 @@ bool muhkuh_repository::createTestlist_filelist(pfnTestlistProgress pfnCallback,
 					strFilename = astrTmpPathNames.Item(sizCnt++);
 
 					// check for cancel button
-					strProgressMessage.Printf(_("checking '%s'"), strFilename.fn_str());
+					strProgressMessage.Printf(_("checking '%s'"), strFilename.c_str());
 					fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, sizCnt, sizMax);
 
 					// set initial path, that's important for relative paths (almost all filelists)
@@ -704,12 +704,12 @@ bool muhkuh_repository::createTestlist_filelist(pfnTestlistProgress pfnCallback,
 					ptFsFile = fileSystem.OpenFile(strFilename);
 					if( ptFsFile==NULL )
 					{
-						wxLogError(m_strMe + _("failed to open '%s' from filelist."), strFilename.fn_str());
+						wxLogError(m_strMe + _("failed to open '%s' from filelist."), strFilename.c_str());
 					}
 					else
 					{
 						strUrl = ptFsFile->GetLocation();
-						wxLogMessage(m_strMe + _("found '%s'"), strUrl.fn_str());
+						wxLogMessage(m_strMe + _("found '%s'"), strUrl.c_str());
 
 						ptTestData = new tTestData;
 						ptTestData->strPrintUrl = strUrl;
@@ -747,7 +747,7 @@ bool muhkuh_repository::createTestlist_singlexml(pfnTestlistProgress pfnCallback
 	removeAllTests();
 
 	// no idea how long the scanning will take -> set to pulse (that's "unknown time remaining")
-	strProgressMessage.Printf(_("scanning single xml file '%s'..."), m_strLocation.fn_str());
+	strProgressMessage.Printf(_("scanning single xml file '%s'..."), m_strLocation.c_str());
 	fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
 
 	if( fScannerIsRunning==true )
@@ -784,7 +784,7 @@ bool muhkuh_repository::createTestlist_singlexml(pfnTestlistProgress pfnCallback
 		// convert path to url
 		strUrl = wxFileSystem::FileNameToURL( fileName.GetFullPath(wxPATH_NATIVE) );
 		strBaseUrl = wxFileSystem::FileNameToURL( fileName.GetPath(wxPATH_GET_VOLUME, wxPATH_NATIVE) );
-		wxLogDebug(m_strMe + _("found '%s'"), strUrl.fn_str());
+		wxLogDebug(m_strMe + _("found '%s'"), strUrl.c_str());
 
 		ptTestData = new tTestData;
 		ptTestData->strPrintUrl = strUrl;
@@ -814,7 +814,7 @@ bool muhkuh_repository::createTestlist_alllocal(pfnTestlistProgress pfnCallback,
 	removeAllTests();
 
 	// no idea how long the scanning will take -> set to pulse (that's 'unknown time remaining)
-	strProgressMessage.Printf(_("scanning local folder '%s' for tests..."), m_strLocation.fn_str());
+	strProgressMessage.Printf(_("scanning local folder '%s' for tests..."), m_strLocation.c_str());
 	fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
 	if( fScannerIsRunning==true )
 	{
@@ -847,7 +847,7 @@ bool muhkuh_repository::createTestlist_alllocal_scanDir(wxString strFolder, pfnT
 	fOk = false;
 
 	// set progress message for this folder
-	strProgressMessage.Printf(_("scanning local folder '%s' for tests..."), strFolder.fn_str());
+	strProgressMessage.Printf(_("scanning local folder '%s' for tests..."), strFolder.c_str());
 
 	// move to the folder where muhkuh is stored
 	// NOTE: this is important for relative paths
@@ -881,7 +881,7 @@ bool muhkuh_repository::createTestlist_alllocal_scanDir(wxString strFolder, pfnT
 		strCompletePath = fileName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR);
 		// convert path to url
 		strUrl = wxFileSystem::FileNameToURL(strCompletePath);
-		wxLogDebug(m_strMe + _("scanning testdescriptions at '%s'"), strUrl.fn_str());
+		wxLogDebug(m_strMe + _("scanning testdescriptions at '%s'"), strUrl.c_str());
 
 		// set path
 		fileSystem.ChangePathTo(strUrl, true);
@@ -895,7 +895,7 @@ bool muhkuh_repository::createTestlist_alllocal_scanDir(wxString strFolder, pfnT
 		{
 			// convert to url
 			strUrl = wxFileSystem::FileNameToURL(strFilename);
-			wxLogDebug(m_strMe + _("found '%s'"), strUrl.fn_str());
+			wxLogDebug(m_strMe + _("found '%s'"), strUrl.c_str());
 
 			ptTestData = new tTestData;
 			ptTestData->strPrintUrl = strUrl;
@@ -917,7 +917,7 @@ bool muhkuh_repository::createTestlist_alllocal_scanDir(wxString strFolder, pfnT
 			{
 				// convert to url
 				strUrl = wxFileSystem::FileNameToURL(strFilename);
-				wxLogDebug(m_strMe + _("found '%s'"), strUrl.fn_str());
+				wxLogDebug(m_strMe + _("found '%s'"), strUrl.c_str());
 
 				ptTestData = new tTestData;
 				ptTestData->strPrintUrl = strUrl;

@@ -27,7 +27,7 @@
 
 enum
 {
-	muhkuh_mainFrame_TestTree_Ctrl		= wxID_HIGHEST,
+	muhkuh_mainFrame_TestTree_Ctrl = wxID_HIGHEST,
 	muhkuh_mainFrame_TestTree_Execute,
 	muhkuh_mainFrame_TestTree_ShowHelp,
 	muhkuh_mainFrame_TestTree_Rescan,
@@ -111,4 +111,4 @@ enum
 	muhkuh_serverProcess_terminate,
 };
 
-#endif	// __MUHKUH_ID_H__
+#endif  /* __MUHKUH_ID_H__ */

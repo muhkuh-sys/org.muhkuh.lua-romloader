@@ -19,11 +19,23 @@
  ***************************************************************************/
 
 
+extern "C" {
+#       include "lua.h"
+#       include "lauxlib.h"
+#       include "lualib.h"
+}
+
+
 #ifndef __MUHKUH_LUA_H__
 #define __MUHKUH_LUA_H__
 
 
+lua_State *lua_muhkuh_create_state(void);
+
+const char *lua_muhkuh_error_to_string(int iLuaError);
+const char *lua_muhkuh_type_to_string(int iLuaType);
+
 const char *get_version(void);
 
 
-#endif	/* __MUHKUH_LUA_H__ */
+#endif  /* __MUHKUH_LUA_H__ */

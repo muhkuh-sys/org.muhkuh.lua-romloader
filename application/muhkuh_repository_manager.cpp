@@ -87,7 +87,7 @@ muhkuh_repository_manager::~muhkuh_repository_manager(void)
 
 void muhkuh_repository_manager::setMe(void)
 {
-	m_strMe.Printf("muhkuh_repository_manager(%p) :", this);
+	m_strMe.Printf(wxT("muhkuh_repository_manager(%p) :"), this);
 }
 
 

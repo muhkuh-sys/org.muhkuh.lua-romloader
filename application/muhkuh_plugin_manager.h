@@ -45,7 +45,7 @@ public:
 	void removePlugin(unsigned long ulIdx);
 
 	size_t getPluginCount(void) const;
-	const muhkuh_plugin_desc *getPluginDescription(unsigned long ulIdx) const;
+	const MUHKUH_PLUGIN_DESCRIPTION_T *getPluginDescription(unsigned long ulIdx) const;
 
 	wxString GetConfigName(unsigned long ulIdx) const;
 
@@ -57,40 +57,21 @@ public:
 	void read_config(wxConfigBase *pConfig);
 	void write_config(wxConfigBase *pConfig);
 
-	bool initLuaBindings(wxLuaState *ptLuaState);
-
-	void ScanPlugins(wxString strPattern, wxLuaState *ptLuaState);
-	muhkuh_plugin_instance *GetNextPlugin(void);
-	void ClearAllMatches(void);
-
-	typedef struct
-	{
-		const wxChar *pcSymbolName;
-		size_t sizOffset;
-	} muhkuh_plugin_symbol_offset_t;
-
 private:
 	// set prefix for messages
 	void setMe(void);
 
-	bool open_plugin(wxString strPluginName, muhkuh_plugin_interface *ptPluginIf);
+//	bool open_plugin(wxString strPluginName, muhkuh_plugin_interface *ptPluginIf);
 	void closeAllPlugins(void);
-	void close_plugin(muhkuh_plugin_interface *ptPluginIf);
-
-	static const muhkuh_plugin_symbol_offset_t atPluginSymbolOffsets[6];
+//	void close_plugin(muhkuh_plugin_interface *ptPluginIf);
 
 	// all open plugins
 	std::vector<muhkuh_plugin*> *m_ptOpenPlugins;
-
-	// all matches for one instance scan
-	std::vector<muhkuh_plugin_instance*> *m_ptMatchingPlugins;
-	// iterator for instance scan
-	std::vector<muhkuh_plugin_instance*>::const_iterator m_cMatchingPluginsIter;
 
 	// prefix for messages
 	wxString m_strMe;
 };
 
 
-#endif	/* __MUHKUH_PLUGIN_MANAGER_H__ */
+#endif  /* __MUHKUH_PLUGIN_MANAGER_H__ */
 

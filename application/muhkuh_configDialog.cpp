@@ -32,7 +32,6 @@ BEGIN_EVENT_TABLE(muhkuh_configDialog, wxDialog)
 	EVT_RADIOBUTTON(muhkuh_configDialog_RadioDetailsFile,		muhkuh_configDialog::OnRadioDetailsFile)
 	EVT_BUTTON(muhkuh_configDialog_StartPageBrowse,			muhkuh_configDialog::OnBrowseStartPageButton)
 	EVT_BUTTON(muhkuh_configDialog_DetailsPageBrowse,		muhkuh_configDialog::OnBrowseDetailPageButton)
-	EVT_CHECKBOX(muhkuh_configAutostart_CheckboxAutostart,		muhkuh_configDialog::OnCheckAutostart)
 
 	EVT_TOOL(muhkuh_configDialog_AddRepository,			muhkuh_configDialog::OnNewRepositoryButton)
 	EVT_TOOL(muhkuh_configDialog_EditRepository,			muhkuh_configDialog::OnEditRepositoryButton)
@@ -58,7 +57,7 @@ BEGIN_EVENT_TABLE(muhkuh_configDialog, wxDialog)
 END_EVENT_TABLE()
 
 
-muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, wxString strWelcomeFile, wxString strDetailsFile, muhkuh_plugin_manager *ptPluginManager, muhkuh_repository_manager *ptRepositoryManager, wxString strLuaIncludePath, wxString strLuaStartupCode, bool fAutostartEnabled, bool fAutoexitEnabled, wxString strAutostartTest)
+muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, wxString strWelcomeFile, wxString strDetailsFile, muhkuh_plugin_manager *ptPluginManager, muhkuh_repository_manager *ptRepositoryManager, wxString strLuaIncludePath, wxString strLuaStartupCode)
  : wxDialog(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER)
  , m_ptRepositoryManager(ptRepositoryManager)
  , m_ptPluginManager(ptPluginManager)
@@ -134,12 +133,6 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 	m_ptTextDetailsPage->SetValue(strDetailsFile);
 	m_ptTextDetailsPage->Enable(!fUseBuiltin);
 	m_ptButtonDetailsPage->Enable(!fUseBuiltin);
-
-	// set autostart values
-	switchAutostartElements(fAutostartEnabled);
-	m_ptCheckAutostart->SetValue(fAutostartEnabled);
-	m_ptCheckAutoexit->SetValue(fAutoexitEnabled);
-	m_ptTextAutostartTest->SetValue(strAutostartTest);
 
 	// loop over all repositories and add them to the list
 	sizIdx = 0;
@@ -301,39 +294,6 @@ wxPanel *muhkuh_configDialog::createControls_application(wxWindow *ptParent)
 	m_ptButtonDetailsPage = new wxBitmapButton(ptApplicationPanel, muhkuh_configDialog_DetailsPageBrowse, icon_famfamfam_silk_folder);
 	ptDetailsFileSizer->Add(m_ptTextDetailsPage, 1, wxEXPAND);
 	ptDetailsFileSizer->Add(m_ptButtonDetailsPage);
-
-
-	// create the autostart sizer
-	ptAutostartSizer = new wxStaticBoxSizer(wxVERTICAL, ptApplicationPanel, _("Autostart Test"));
-	ptMainSizer->Add(ptAutostartSizer, 1, wxEXPAND);
-
-	// create the autostart checkbox
-	ptAutostartGrid = new wxFlexGridSizer(1, 4, 0, 0);
-	ptAutostartGrid->AddGrowableCol(2, 1);
-	ptAutostartSizer->Add(ptAutostartGrid, 0, wxEXPAND);
-
-	ptLabelAutostart = new wxStaticText(ptApplicationPanel, wxID_ANY, _("Enable Autostart :"));
-	m_ptCheckAutostart = new wxCheckBox(ptApplicationPanel, muhkuh_configAutostart_CheckboxAutostart, wxT(""), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
-	ptAutostartGrid->Add(ptLabelAutostart);
-	ptAutostartGrid->AddSpacer(4);
-	ptAutostartGrid->Add(m_ptCheckAutostart, 0, wxEXPAND);
-	ptAutostartGrid->AddSpacer(4);
-
-	ptLabelAutostartTest = new wxStaticText(ptApplicationPanel, wxID_ANY, _("Autostart Test :"));
-	m_ptTextAutostartTest = new wxTextCtrl(ptApplicationPanel, wxID_ANY);
-	m_ptButtonBrowseAutostartTest = new wxBitmapButton(ptApplicationPanel, muhkuh_configAutostart_BrowseTests, icon_famfamfam_silk_folder);
-	ptAutostartGrid->Add(ptLabelAutostartTest, 0, wxALIGN_CENTER_VERTICAL);
-	ptAutostartGrid->AddSpacer(4);
-	ptAutostartGrid->Add(m_ptTextAutostartTest, 0, wxEXPAND);
-	ptAutostartGrid->Add(m_ptButtonBrowseAutostartTest);
-
-	ptLabelAutoexit = new wxStaticText(ptApplicationPanel, wxID_ANY, _("Enable Autoexit :"));
-	m_ptCheckAutoexit = new wxCheckBox(ptApplicationPanel, wxID_ANY, wxT(""), wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
-	ptAutostartGrid->Add(ptLabelAutoexit);
-	ptAutostartGrid->AddSpacer(4);
-	ptAutostartGrid->Add(m_ptCheckAutoexit, 0, wxEXPAND);
-	ptAutostartGrid->AddSpacer(4);
-
 
 	return ptApplicationPanel;
 }
@@ -541,12 +501,6 @@ void muhkuh_configDialog::OnBrowseDetailPageButton(wxCommandEvent &event)
 		m_ptTextDetailsPage->SetValue(pageDialog->GetPath());
 	}
 	pageDialog->Destroy();
-}
-
-
-void muhkuh_configDialog::OnCheckAutostart(wxCommandEvent &event)
-{
-	switchAutostartElements(event.IsChecked());
 }
 
 
@@ -822,7 +776,7 @@ void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 	bool fPluginIsOk;
 	wxTreeItemId tRootItem;
 	wxTreeItemId tPluginItem;
-	const muhkuh_plugin_desc *ptPluginDesc;
+	const MUHKUH_PLUGIN_DESCRIPTION_T *ptPluginDesc;
 	wxString strName;
 	wxString strId;
 	wxString strVersion;
@@ -849,7 +803,7 @@ void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 		if( fPluginIsOk==true )
 		{
 			strId = ptPluginDesc->strPluginId;
-			strVersion.Printf(wxT("V%d.%d.%d"), ptPluginDesc->tVersion.uiVersionMajor, ptPluginDesc->tVersion.uiVersionMinor, ptPluginDesc->tVersion.uiVersionSub);
+			strVersion.Printf(wxT("V%d.%d.%d"), ptPluginDesc->uiVersionMajor, ptPluginDesc->uiVersionMinor, ptPluginDesc->uiVersionSub);
 
 			// set the plugin item
 			tPluginItem = m_pluginTree->AppendItem(tRootItem, strName, -1, -1, ptData);
@@ -997,7 +951,7 @@ void muhkuh_configDialog::plugin_add(void)
 	if( pluginDialog->ShowModal()==wxID_OK )
 	{
 		strPluginName = pluginDialog->GetPath();
-		wxLogMessage(_("open plugin '%s'"), strPluginName.fn_str());
+		wxLogMessage(_("open plugin '%s'"), strPluginName.c_str());
 		lIdx = m_ptPluginManager->addPlugin(strPluginName);
 		if( lIdx>=0 )
 		{
@@ -1287,32 +1241,6 @@ wxString muhkuh_configDialog::GetLuaIncludePath(void) const
 wxString muhkuh_configDialog::GetLuaStartupCode(void) const
 {
 	return m_ptStartupCodeText->GetValue();
-}
-
-
-bool muhkuh_configDialog::GetAutostartEnable(void) const
-{
-	return m_ptCheckAutostart->GetValue();
-}
-
-
-bool muhkuh_configDialog::GetAutoexitEnable(void) const
-{
-	return m_ptCheckAutoexit->GetValue();
-}
-
-
-wxString muhkuh_configDialog::GetAutostartTest(void) const
-{
-	return m_ptTextAutostartTest->GetValue();
-}
-
-
-void muhkuh_configDialog::switchAutostartElements(bool fEnabled)
-{
-	m_ptCheckAutoexit->Enable(fEnabled);
-	m_ptTextAutostartTest->Enable(fEnabled);
-	m_ptButtonBrowseAutostartTest->Enable(fEnabled);
 }
 
 
