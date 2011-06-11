@@ -24,8 +24,9 @@
 #include <wx/log.h>
 
 #include "muhkuh_lua.h"
-extern int luaopen_muhkuh(lua_State* L);
-
+extern "C" {
+int luaopen_muhkuh_app(lua_State* L);
+}
 
 #ifdef WIN32
 #define snprintf _snprintf
@@ -154,7 +155,7 @@ lua_State *lua_muhkuh_create_state(void)
 		lua_register(ptLuaState, "print", lua_muhkuh_print);
 
 		/* Add the muhkuh binding. */
-		luaopen_muhkuh(ptLuaState);
+		luaopen_muhkuh_app(ptLuaState);
 
 		/* Init done, restart GC. */
 		lua_gc(ptLuaState, LUA_GCRESTART, 0);

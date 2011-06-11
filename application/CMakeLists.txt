@@ -25,12 +25,13 @@ if(${LUA51_FOUND})
 	set_source_files_properties(muhkuh_lua.i PROPERTIES CPLUSPLUS ON)
 	set_source_files_properties(muhkuh_lua.i PROPERTIES SWIG_FLAGS "")
 	SWIG_ADD_MODULE(muhkuh_app_lua_wrapper lua muhkuh_lua.i)
+	SET(muhkuh_app_lua_wrapper ${swig_generated_file_fullname})
 
 	set(muhkuh_app_lua_definitions USE_LUA=1)
 	set(muhkuh_app_lua_sources
 		muhkuh_lua.cpp
 		muhkuh_htmltag_lua.cpp
-		${swig_generated_file_fullname}
+		${muhkuh_app_lua_wrapper}
 	)
 	set(muhkuh_app_libs ${LUA_LIBRARIES})
 	include_directories(${LUA_INCLUDE_DIR})
