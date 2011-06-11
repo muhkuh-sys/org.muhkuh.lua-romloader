@@ -28,7 +28,6 @@
 #include "muhkuh_aboutDialog.h"
 #include "muhkuh_app.h"
 #include "muhkuh_brokenPluginDialog.h"
-#include "muhkuh_configDialog.h"
 #include "muhkuh_icons.h"
 #include "muhkuh_id.h"
 #include "muhkuh_mainFrame.h"
@@ -70,12 +69,12 @@ BEGIN_EVENT_TABLE(muhkuh_mainFrame, wxFrame)
 
 	EVT_BUTTON(muhkuh_mainFrame_cancelTestButton_id,                muhkuh_mainFrame::OnTestCancel)
 	EVT_AUINOTEBOOK_PAGE_CLOSE(muhkuh_mainFrame_Notebook_id,        muhkuh_mainFrame::OnNotebookPageClose)
-        EVT_AUI_PANE_CLOSE(muhkuh_mainFrame::OnPaneClose)
+	EVT_AUI_PANE_CLOSE(muhkuh_mainFrame::OnPaneClose)
 
-        EVT_END_PROCESS(muhkuh_serverProcess_terminate,                 muhkuh_mainFrame::OnServerProcessTerminate)
+	EVT_END_PROCESS(muhkuh_serverProcess_terminate,                 muhkuh_mainFrame::OnServerProcessTerminate)
 
-        EVT_MOVE(muhkuh_mainFrame::OnMove)
-        EVT_SIZE(muhkuh_mainFrame::OnSize)
+	EVT_MOVE(muhkuh_mainFrame::OnMove)
+	EVT_SIZE(muhkuh_mainFrame::OnSize)
 END_EVENT_TABLE()
 
 
@@ -86,8 +85,6 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
  , m_eInitState(MAINFRAME_INIT_STATE_UNCONFIGURED)
  , m_state(muhkuh_mainFrame_state_idle)
  , m_sizTestCnt(0)
- , m_ptPluginManager(NULL)
- , m_ptRepositoryManager(NULL)
  , m_ptHelp(NULL)
  , m_lServerPid(0)
  , m_ptServerProcess(NULL)
@@ -96,12 +93,16 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
  , m_testDetailsHtml(NULL)
  , m_timerIdleWakeUp(this)
  , m_ptTextCtrl_TestOutput(NULL)
+ , m_ptConfigData(NULL)
 {
 	wxLog *pOldLogTarget;
 	wxFileName cfgName;
 	wxFileConfig *ptConfig;
 	int iLanguage;
 
+
+	/* Create a new config data object. */
+	m_ptConfigData = new muhkuh_config_data();
 
 	// get the application path
 	cfgName.Assign(wxStandardPaths::Get().GetExecutablePath());
@@ -128,14 +129,8 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 		// search locales in the 'locale' directory
 		// TODO: use some systempath for this
 		wxLocale::AddCatalogLookupPathPrefix(wxT("locale"));
-                m_locale.AddCatalog(wxTheApp->GetAppName());
-        }
-
-        // create the plugin manager
-        m_ptPluginManager = new muhkuh_plugin_manager();
-
-        // create the repository manager
-        m_ptRepositoryManager = new muhkuh_repository_manager();
+		m_locale.AddCatalog(wxTheApp->GetAppName());
+	}
 
 	// create the server process notifier
 	m_ptServerProcess = new muhkuh_server_process(this, muhkuh_serverProcess_terminate);
@@ -176,7 +171,7 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	read_config();
 
 	// set the window title
-	if( m_strApplicationTitle.IsEmpty()==true )
+	if( m_ptConfigData->m_strApplicationTitle.IsEmpty()==true )
 	{
 		// no custom title -> use the version string
 		SetTitle(m_strVersion);
@@ -184,11 +179,11 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	else
 	{
 		// show the custom title
-		SetTitle(m_strApplicationTitle);
+		SetTitle(m_ptConfigData->m_strApplicationTitle);
 	}
 
 	// set the application icon
-	if( m_strApplicationIcon.IsEmpty()==true )
+	if( m_ptConfigData->m_strApplicationIcon.IsEmpty()==true )
 	{
 		// set the muhkuh icon
 		m_frameIcons.AddIcon(muhkuh_016_xpm);
@@ -199,7 +194,7 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	else
 	{
 		// load a custom icon
-		m_frameIcons.AddIcon(m_strApplicationIcon, wxBITMAP_TYPE_ICO);
+		m_frameIcons.AddIcon(m_ptConfigData->m_strApplicationIcon, wxBITMAP_TYPE_ICO);
 	}
 	SetIcons(m_frameIcons);
 
@@ -248,19 +243,12 @@ muhkuh_mainFrame::~muhkuh_mainFrame(void)
 	// delete the server notifier
 	if( m_ptServerProcess!=NULL )
 	{
-                delete m_ptServerProcess;
-        }
+		delete m_ptServerProcess;
+	}
 
-        // delete the plugin manager
-        if( m_ptPluginManager!=NULL )
-        {
-                delete m_ptPluginManager;
-        }
-
-        // delete the repository manager
-        if( m_ptRepositoryManager!=NULL )
-        {
-		delete m_ptRepositoryManager;
+	if( m_ptConfigData!=NULL )
+	{
+		delete m_ptConfigData;
 	}
 
 	m_auiMgr.UnInit();
@@ -436,7 +424,7 @@ void muhkuh_mainFrame::reloadWelcomePage(void)
 	wxString strPage;
 
 
-	if( m_strWelcomePageFile.IsEmpty()==true )
+	if( m_ptConfigData->m_strWelcomeFile.IsEmpty()==true )
 	{
 		// use the default welcome message
 		strPage = _("<html><head><title>Welcome</title></head><body><h1>Welcome to <lua>return muhkuh_app.get_version()</lua></h1></body></html>");
@@ -444,7 +432,7 @@ void muhkuh_mainFrame::reloadWelcomePage(void)
 	else
 	{
 		// load from file
-		strPage = loadHtmlString(m_strWelcomePageFile);
+		strPage = loadHtmlString(m_ptConfigData->m_strWelcomeFile);
 	}
 
 	m_strWelcomePage = strPage;
@@ -463,7 +451,7 @@ void muhkuh_mainFrame::reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml)
 	wxString strPage;
 
 
-	if( m_strDetailsPageFile.IsEmpty()==true )
+	if( m_ptConfigData->m_strDetailsFile.IsEmpty()==true )
 	{
 		strPage = wxT("<html><lua>\n")
 			  wxT("	local strPage\n")
@@ -527,7 +515,7 @@ void muhkuh_mainFrame::reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml)
 	else
 	{
 		// load from file
-		strPage = loadHtmlString(m_strDetailsPageFile);
+		strPage = loadHtmlString(m_ptConfigData->m_strDetailsFile);
 	}
 
 	m_strTestDetails = strPage;
@@ -568,26 +556,26 @@ void muhkuh_mainFrame::read_config(void)
 	pConfig->Read(wxT("showwelcome"), &fWelcomePageIsVisible, true);
 	pConfig->Read(wxT("showtestdetails"), &fTestDetailsPageIsVisible, true);
 	pConfig->Read(wxT("showtips"), &m_fShowStartupTips, true);
-        m_sizStartupTipsIdx = pConfig->Read(wxT("tipidx"), (long)0);
-        m_strWelcomePageFile = pConfig->Read(wxT("welcomepage"), wxEmptyString);
-        m_strDetailsPageFile = pConfig->Read(wxT("detailspage"), wxEmptyString);
-        m_strApplicationTitle = pConfig->Read(wxT("customtitle"), wxEmptyString);
-        m_strApplicationIcon = pConfig->Read(wxT("customicon"), wxEmptyString);
+	m_sizStartupTipsIdx = pConfig->Read(wxT("tipidx"), (long)0);
+	m_ptConfigData->m_strWelcomeFile = pConfig->Read(wxT("welcomepage"), wxEmptyString);
+	m_ptConfigData->m_strDetailsFile = pConfig->Read(wxT("detailspage"), wxEmptyString);
+	m_ptConfigData->m_strApplicationTitle = pConfig->Read(wxT("customtitle"), wxEmptyString);
+	m_ptConfigData->m_strApplicationIcon = pConfig->Read(wxT("customicon"), wxEmptyString);
 
-        // get lua settings
-        pConfig->SetPath(wxT("/Lua"));
-        m_strLuaIncludePath = pConfig->Read(wxT("includepaths"), wxT("lua/?.lua"));
-        m_strLuaStartupCode = pConfig->Read(wxT("startupcode"), wxT("require(\"muhkuh_system\")\nmuhkuh_system.boot_xml()\n"));
+	// get lua settings
+	pConfig->SetPath(wxT("/Lua"));
+	m_ptConfigData->m_strLuaIncludePath = pConfig->Read(wxT("includepaths"), wxT("lua/?.lua"));
+	m_ptConfigData->m_strLuaStartupCode = pConfig->Read(wxT("startupcode"), wxT("require(\"muhkuh_system\")\nmuhkuh_system.boot_xml()\n"));
 
-        // get all plugins
-        m_ptPluginManager->read_config(pConfig);
+	// get all plugins
+	m_ptConfigData->m_ptPluginManager->read_config(pConfig);
 
-        // get all repositories
-        m_ptRepositoryManager->read_config(pConfig);
+	// get all repositories
+	m_ptConfigData->m_ptRepositoryManager->read_config(pConfig);
 	// show all repositories in the combo box
 	updateRepositoryCombo();
 	// set the active repository
-	m_repositoryCombo->Select(m_ptRepositoryManager->GetActiveRepository());
+	m_repositoryCombo->Select(m_ptConfigData->m_ptRepositoryManager->GetActiveRepository());
 
 	// set window properties
 	SetSize(m_framePosition.x, m_framePosition.y, m_frameSize.GetWidth(), m_frameSize.GetHeight());
@@ -684,34 +672,34 @@ void muhkuh_mainFrame::write_config(void)
 	}
 
 	pConfig->SetPath(wxT("/MainFrame"));
-	pConfig->Write(wxT("x"),		(long)m_framePosition.x);
-	pConfig->Write(wxT("y"),		(long)m_framePosition.y);
-	pConfig->Write(wxT("w"),		(long)m_frameSize.GetWidth());
-	pConfig->Write(wxT("h"),		(long)m_frameSize.GetHeight());
-	pConfig->Write(wxT("maximized"),	fWinMaximized);
-	pConfig->Write(wxT("perspective"),	strPerspective);
-	pConfig->Write(wxT("showwelcome"),	fWelcomePageIsVisible);
-	pConfig->Write(wxT("showtestdetails"),	fTestDetailsPageIsVisible);
-	pConfig->Write(wxT("showtips"),		m_fShowStartupTips);
-        pConfig->Write(wxT("tipidx"),           (long)m_sizStartupTipsIdx);
-        pConfig->Write(wxT("welcomepage"),      m_strWelcomePageFile);
-        pConfig->Write(wxT("detailspage"),      m_strDetailsPageFile);
-        pConfig->Write(wxT("customtitle"),      m_strApplicationTitle);
-        pConfig->Write(wxT("customicon"),       m_strApplicationIcon);
+	pConfig->Write(wxT("x"),                (long)m_framePosition.x);
+	pConfig->Write(wxT("y"),                (long)m_framePosition.y);
+	pConfig->Write(wxT("w"),                (long)m_frameSize.GetWidth());
+	pConfig->Write(wxT("h"),                (long)m_frameSize.GetHeight());
+	pConfig->Write(wxT("maximized"),        fWinMaximized);
+	pConfig->Write(wxT("perspective"),      strPerspective);
+	pConfig->Write(wxT("showwelcome"),      fWelcomePageIsVisible);
+	pConfig->Write(wxT("showtestdetails"),  fTestDetailsPageIsVisible);
+	pConfig->Write(wxT("showtips"),         m_fShowStartupTips);
+	pConfig->Write(wxT("tipidx"),           (long)m_sizStartupTipsIdx);
+	pConfig->Write(wxT("welcomepage"),      m_ptConfigData->m_strWelcomeFile);
+	pConfig->Write(wxT("detailspage"),      m_ptConfigData->m_strDetailsFile);
+	pConfig->Write(wxT("customtitle"),      m_ptConfigData->m_strApplicationTitle);
+	pConfig->Write(wxT("customicon"),       m_ptConfigData->m_strApplicationIcon);
 
 	pConfig->SetPath(wxT("/"));
 
 	// get lua settings
 	pConfig->SetPath(wxT("/Lua"));
-	pConfig->Write(wxT("includepaths"), m_strLuaIncludePath);
-        pConfig->Write(wxT("startupcode"), m_strLuaStartupCode);
-        pConfig->SetPath(wxT("/"));
+	pConfig->Write(wxT("includepaths"), m_ptConfigData->m_strLuaIncludePath);
+	pConfig->Write(wxT("startupcode"), m_ptConfigData->m_strLuaStartupCode);
+	pConfig->SetPath(wxT("/"));
 
-        // save all plugins
-        m_ptPluginManager->write_config(pConfig);
+	/* Save all plugins. */
+	m_ptConfigData->m_ptPluginManager->write_config(pConfig);
 
-        // save repositories
-        m_ptRepositoryManager->write_config(pConfig);
+	/* Save repositories. */
+	m_ptConfigData->m_ptRepositoryManager->write_config(pConfig);
 }
 
 
@@ -815,7 +803,7 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 	bool fHasMoreInput;
 
 
-        switch(m_state)
+	switch(m_state)
 	{
 	case muhkuh_mainFrame_state_scanning:
 		strStatus = _("Scanning test descriptions...");
@@ -839,7 +827,7 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 				m_fShowStartupTips = wxShowTip(this, m_tipProvider);
 			}
 
-			iRepositoryIndex = m_ptRepositoryManager->GetActiveRepository();
+			iRepositoryIndex = m_ptConfigData->m_ptRepositoryManager->GetActiveRepository();
 			scanTests(iRepositoryIndex);
 
 			check_plugins();
@@ -940,67 +928,48 @@ void muhkuh_mainFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
 
 void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 {
+	muhkuh_config_data *ptConfigData;
 	muhkuh_configDialog *cfgDlg;
-	muhkuh_plugin_manager *ptTmpPluginManager;
-	muhkuh_repository_manager *ptTmpRepositoryManager;
 	int iNewSelection;
 	wxString strMessage;
 	wxBitmap tRepoBitmap;
 	wxSize tRepoBitmapSize;
 
 
-	// clone the plugin list
-	ptTmpPluginManager = new muhkuh_plugin_manager(m_ptPluginManager);
+	/* Clone the config data. */
+	ptConfigData = new muhkuh_config_data(m_ptConfigData);
 
-	// clone the repository manager
-	ptTmpRepositoryManager = new muhkuh_repository_manager(m_ptRepositoryManager);
-
-	// show config dialog
-	cfgDlg = new muhkuh_configDialog(this, m_strApplicationPath, m_strWelcomePageFile, m_strDetailsPageFile, ptTmpPluginManager, ptTmpRepositoryManager, m_strLuaIncludePath, m_strLuaStartupCode);
+	/* Show the config dialog. */
+	cfgDlg = new muhkuh_configDialog(this, m_strApplicationPath, ptConfigData);
 	if( cfgDlg->ShowModal()==wxID_OK )
 	{
-		m_strLuaIncludePath = cfgDlg->GetLuaIncludePath();
-		wxLogDebug(wxT("New Lua include path: ") + m_strLuaIncludePath);
-		m_strLuaStartupCode = cfgDlg->GetLuaStartupCode();
-		wxLogDebug(wxT("New Lua startup code: ") + m_strLuaStartupCode);
-
-		m_strWelcomePageFile = cfgDlg->GetWelcomePageFile();
-		wxLogDebug(wxT("New Welcome Page File: ") + m_strWelcomePageFile);
-		m_strDetailsPageFile = cfgDlg->GetDetailsPageFile();
-		wxLogDebug(wxT("New Details Page File: ") + m_strDetailsPageFile);
-
 		write_config();
 
-//		clearLuaState();
+		/* Replace the default lua state. */
+		lua_muhkuh_create_default_state();
 
-		// copy tmp plugin manager over current one
-		delete m_ptPluginManager;
-		m_ptPluginManager = ptTmpPluginManager;
-
-		// copy tmp repository manager over current one
-		delete m_ptRepositoryManager;
-		m_ptRepositoryManager = ptTmpRepositoryManager;
-
-//		initLuaState();
+		/* Copy the temp configuration data over the current one. */
+		delete m_ptConfigData;
+		m_ptConfigData = ptConfigData;
 
 		reloadWelcomePage();
 		reloadDetailsPage(NULL);
 
-		// show all repositories in the combo box
+		/* Show all repositories in the combo box. */
 		updateRepositoryCombo();
 
-		// get new test list
-		iNewSelection = m_ptRepositoryManager->GetActiveRepository();
+		/* Get new test list. */
+		iNewSelection = m_ptConfigData->m_ptRepositoryManager->GetActiveRepository();
 		m_repositoryCombo->Select(iNewSelection);
 		scanTests(iNewSelection);
 	}
 	else
 	{
-		// changes canceled -> delete the temp managers
-		delete ptTmpRepositoryManager;
-		delete ptTmpPluginManager;
+		/* The changes were canceled -> delete the temp configuration data. */
+		delete m_ptConfigData;
 	}
-	// delete config dialog
+
+	/* Delete the config dialog. */
 	cfgDlg->Destroy();
 }
 
@@ -1053,17 +1022,17 @@ bool muhkuh_mainFrame::check_plugins(void)
         // default is to continue a pending operation
         fContinueOperation = true;
 
-        if( m_ptPluginManager!=NULL )
+        if( m_ptConfigData->m_ptPluginManager!=NULL )
         {
                 // loop over all plugins
                 ulCnt = 0;
-                ulMax = m_ptPluginManager->getPluginCount();
+                ulMax = m_ptConfigData->m_ptPluginManager->getPluginCount();
                 while( ulCnt<ulMax )
         {
-                        if( m_ptPluginManager->GetEnable(ulCnt) )
+                        if( m_ptConfigData->m_ptPluginManager->GetEnable(ulCnt) )
                 {
                                 // get the plugin status
-                                fPluginOk = m_ptPluginManager->IsOk(ulCnt);
+                                fPluginOk = m_ptConfigData->m_ptPluginManager->IsOk(ulCnt);
                                 if( fPluginOk!=true )
                                 {
                                         v_plugins.push_back(ulCnt);
@@ -1079,7 +1048,7 @@ bool muhkuh_mainFrame::check_plugins(void)
         if( v_plugins.size()!=0 )
                 {
                 // yes -> prompt the user what to do
-                ptBrokenPluginDlg = new muhkuh_brokenPluginDialog(this, &v_plugins, m_ptPluginManager);
+                ptBrokenPluginDlg = new muhkuh_brokenPluginDialog(this, &v_plugins, m_ptConfigData->m_ptPluginManager);
                 iResult = ptBrokenPluginDlg->ShowModal();
                 if( iResult==muhkuh_brokenPluginDialog_ButtonConfig )
                 {
@@ -1116,15 +1085,15 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	// create the startup code
 	strStartupCode.Append(wxT("-- execute this test\n"));
 	strStartupCode.Append(wxT("_G.__MUHKUH_TEST_XML = '"));
-	strStartupCode.Append(m_ptRepositoryManager->getTestlistXmlUrl(m_sizRunningTest_RepositoryIdx, m_sizRunningTest_TestIdx));
+	strStartupCode.Append(m_ptConfigData->m_ptRepositoryManager->getTestlistXmlUrl(m_sizRunningTest_RepositoryIdx, m_sizRunningTest_TestIdx));
 	strStartupCode.Append(wxT("'\n\n"));
 
 	strStartupCode.Append(wxT("-- include path\n"));
 	strStartupCode.Append(wxT("package['path'] = '"));
-	strStartupCode.Append(m_strLuaIncludePath);
+	strStartupCode.Append(m_ptConfigData->m_strLuaIncludePath);
 	strStartupCode.Append(wxT("'\n\n"));
 
-	strStartupCode.Append(m_strLuaStartupCode);
+	strStartupCode.Append(m_ptConfigData->m_strLuaStartupCode);
 
 
 	// create the temp file with the lua init commands
@@ -1354,13 +1323,13 @@ void muhkuh_mainFrame::updateRepositoryCombo(void)
 
 
 	m_repositoryCombo->Clear();
-	sizMax = m_ptRepositoryManager->GetRepositoryCount();
+	sizMax = m_ptConfigData->m_ptRepositoryManager->GetRepositoryCount();
 	for(sizCnt=0; sizCnt<sizMax; ++sizCnt)
 	{
 		// get string representation of the new entry
-		strReposEntry = m_ptRepositoryManager->GetStringRepresentation(sizCnt);
+		strReposEntry = m_ptConfigData->m_ptRepositoryManager->GetStringRepresentation(sizCnt);
 		// get bitmap for the entry
-		eTyp = m_ptRepositoryManager->GetTyp(sizCnt);
+		eTyp = m_ptConfigData->m_ptRepositoryManager->GetTyp(sizCnt);
 		switch( eTyp )
 		{
 		case muhkuh_repository::REPOSITORY_TYP_DIRSCAN:
@@ -1397,9 +1366,9 @@ void muhkuh_mainFrame::OnTestRescan(wxCommandEvent& WXUNUSED(event))
 	int iRepositoryIdx;
 
 
-	if( m_ptRepositoryManager!=NULL )
+	if( m_ptConfigData->m_ptRepositoryManager!=NULL )
 	{
-		iRepositoryIdx = m_ptRepositoryManager->GetActiveRepository();
+		iRepositoryIdx = m_ptConfigData->m_ptRepositoryManager->GetActiveRepository();
 		scanTests(iRepositoryIdx);
 	}
 }
@@ -1667,7 +1636,7 @@ void muhkuh_mainFrame::scanTests(int iActiveRepositoryIdx)
 		);
 
 		// create the testlist
-		bRes = m_ptRepositoryManager->createTestlist(iActiveRepositoryIdx, muhkuh_mainFrame::repositoryScannerCallback, m_scannerProgress);
+		bRes = m_ptConfigData->m_ptRepositoryManager->createTestlist(iActiveRepositoryIdx, muhkuh_mainFrame::repositoryScannerCallback, m_scannerProgress);
 
 		// destroy the progress dialog, it's not possible to update the max count
 		m_scannerProgress->Destroy();
@@ -1675,10 +1644,10 @@ void muhkuh_mainFrame::scanTests(int iActiveRepositoryIdx)
 		if( bRes==true )
 		{
 			// vaild directory or repository -> accept the index
-			m_ptRepositoryManager->SetActiveRepository(iActiveRepositoryIdx);
+			m_ptConfigData->m_ptRepositoryManager->SetActiveRepository(iActiveRepositoryIdx);
 
 			// create a new progress dialog with the correct max count
-			sizTestCnt = m_ptRepositoryManager->getTestlistCount(iActiveRepositoryIdx);
+			sizTestCnt = m_ptConfigData->m_ptRepositoryManager->getTestlistCount(iActiveRepositoryIdx);
 			if( sizTestCnt>0 )
 			{
 				// show process dialog
@@ -1700,7 +1669,7 @@ void muhkuh_mainFrame::scanTests(int iActiveRepositoryIdx)
 		{
 			// failed to create test list -> this repository is not valid
 			m_repositoryCombo->Select(wxNOT_FOUND);
-			m_ptRepositoryManager->SetActiveRepository(wxNOT_FOUND);
+			m_ptConfigData->m_ptRepositoryManager->SetActiveRepository(wxNOT_FOUND);
 		}
 	}
 
@@ -1720,15 +1689,15 @@ void muhkuh_mainFrame::addAllTests(int iActiveRepositoryIdx)
 	fScannerIsRunning = true;
 
 	// loop over all tests
-	sizMax = m_ptRepositoryManager->getTestlistCount(iActiveRepositoryIdx);
+	sizMax = m_ptConfigData->m_ptRepositoryManager->getTestlistCount(iActiveRepositoryIdx);
 	sizCnt = 0;
-        while( sizCnt<sizMax && fScannerIsRunning==true )
-        {
-                // check for cancel button
-                strMessage.Printf(_("scanning '%s'..."), m_ptRepositoryManager->getTestlistPrintUrl(iActiveRepositoryIdx, sizCnt).c_str());
-                fScannerIsRunning = m_scannerProgress->Update(sizCnt, strMessage, NULL);
+	while( sizCnt<sizMax && fScannerIsRunning==true )
+	{
+		// check for cancel button
+		strMessage.Printf(_("scanning '%s'..."), m_ptConfigData->m_ptRepositoryManager->getTestlistPrintUrl(iActiveRepositoryIdx, sizCnt).c_str());
+		fScannerIsRunning = m_scannerProgress->Update(sizCnt, strMessage, NULL);
 
-                fResult = scanFileXml(iActiveRepositoryIdx, sizCnt);
+		fResult = scanFileXml(iActiveRepositoryIdx, sizCnt);
 
 		// next item
 		++sizCnt;
@@ -1978,29 +1947,29 @@ bool muhkuh_mainFrame::scanFileXml(size_t sizRepositoryIdx, size_t sizTestIdx)
 	fResult = false;
 
 	// get the url for the xml file
-        strXmlUrl = m_ptRepositoryManager->getTestlistXmlUrl(sizRepositoryIdx, sizTestIdx);
+	strXmlUrl = m_ptConfigData->m_ptRepositoryManager->getTestlistXmlUrl(sizRepositoryIdx, sizTestIdx);
 
-        // test if file exists
-        wxLogVerbose(_("Reading testdescription '%s'"), strXmlUrl.c_str());
-        ptFsFile = fileSystem.OpenFile(strXmlUrl);
-        if( ptFsFile==NULL )
-        {
-                wxLogError(_("could not read xml file '%s'"), strXmlUrl.c_str());
-        }
-        else
-        {
+	// test if file exists
+	wxLogVerbose(_("Reading testdescription '%s'"), strXmlUrl.c_str());
+	ptFsFile = fileSystem.OpenFile(strXmlUrl);
+	if( ptFsFile==NULL )
+	{
+		wxLogError(_("could not read xml file '%s'"), strXmlUrl.c_str());
+	}
+	else
+	{
 		// ok, file exists. read all data into a string
 		ptInputStream = ptFsFile->GetStream();
 		// stream read, construct xml tree
 		ptWrapXml = new muhkuh_wrap_xml();
 		if( ptWrapXml!=NULL )
-                {
-                        if( ptWrapXml->initialize(ptInputStream, sizRepositoryIdx, sizTestIdx)==false )
-                        {
-                                wxLogError(_("Failed to read the xml file for testdescription '%s'"), strXmlUrl.c_str());
-                        }
-                        else
-                        {
+		{
+			if( ptWrapXml->initialize(ptInputStream, sizRepositoryIdx, sizTestIdx)==false )
+			{
+				wxLogError(_("Failed to read the xml file for testdescription '%s'"), strXmlUrl.c_str());
+			}
+			else
+			{
 				// get the main test name
 				strTestName = ptWrapXml->testDescription_getName();
 				// TODO: get the help file name
@@ -2026,19 +1995,19 @@ bool muhkuh_mainFrame::scanFileXml(size_t sizRepositoryIdx, size_t sizTestIdx)
 
 void muhkuh_mainFrame::OnNotebookPageClose(wxAuiNotebookEvent &event)
 {
-        int iSelection;
-        wxWindow *ptWin;
+	int iSelection;
+	wxWindow *ptWin;
 
 
-        // get the selected Page
-        iSelection = event.GetSelection();
-        ptWin = m_notebook->GetPage(iSelection);
+	// get the selected Page
+	iSelection = event.GetSelection();
+	ptWin = m_notebook->GetPage(iSelection);
 
-        // close the welcome page?
-        if( ptWin==m_welcomeHtml )
-        {
-                m_menuBar->Check(muhkuh_mainFrame_menuViewWelcomePage, false);
-                // forget the pointer
+	// close the welcome page?
+	if( ptWin==m_welcomeHtml )
+	{
+		m_menuBar->Check(muhkuh_mainFrame_menuViewWelcomePage, false);
+		// forget the pointer
 		m_welcomeHtml = NULL;
 	}
 	// close the test details page?
@@ -2098,7 +2067,7 @@ void muhkuh_mainFrame::OnServerProcessTerminate(wxProcessEvent &event)
 
 void muhkuh_mainFrame::OnMtdLinkClicked(wxHtmlLinkEvent &event)
 {
-        wxString strHref;
+	wxString strHref;
 	wxURI tUri;
 	wxString strElem;
 	wxString strPath;
@@ -2120,13 +2089,13 @@ void muhkuh_mainFrame::OnMtdLinkClicked(wxHtmlLinkEvent &event)
 	if( tUri.HasScheme()==true && tUri.GetScheme().Cmp(wxT("mtd"))==0 )
 	{
 		// a mtd link must at least have a server or a path
-                if( tUri.HasServer()==false && tUri.HasPath()==false )
-                {
-                        // no server and no path -> no good mtd link
-                        wxLogError(_("mtd link has no valid path: '%s'"), tUri.Unescape(strHref).c_str());
-                }
-                else
-                {
+		if( tUri.HasServer()==false && tUri.HasPath()==false )
+		{
+			// no server and no path -> no good mtd link
+			wxLogError(_("mtd link has no valid path: '%s'"), tUri.Unescape(strHref).c_str());
+		}
+		else
+		{
 			if( tUri.HasServer()==true )
 			{
 				strPath = tUri.GetServer();
@@ -2147,13 +2116,13 @@ void muhkuh_mainFrame::OnMtdLinkClicked(wxHtmlLinkEvent &event)
 
 			// cut the path into elements
 			fResult = cutPath(strPath, &aPathElems);
-                        if( fResult==false )
-                        {
-                                // path not ok
-                                wxLogError(wxT("The testname '%s' is no valid path to a test."), tUri.Unescape(strPath).c_str());
-                        }
-                        else
-                        {
+			if( fResult==false )
+			{
+				// path not ok
+				wxLogError(wxT("The testname '%s' is no valid path to a test."), tUri.Unescape(strPath).c_str());
+			}
+			else
+			{
 				// path is ok, now search the tree for the test
 				sizCnt = 0;
 				sizLen = aPathElems.Count();
@@ -2196,13 +2165,13 @@ void muhkuh_mainFrame::OnMtdLinkClicked(wxHtmlLinkEvent &event)
 				}
 
 				// found all elements?
-                                if( iCmp!=0 || searchId.IsOk()!=true )
-                                {
-                                        // no
-                                        wxLogError(wxT("The test '%s' could not be found."), tUri.Unescape(strPath).c_str());
-                                }
-                                else
-                                {
+				if( iCmp!=0 || searchId.IsOk()!=true )
+				{
+					// no
+					wxLogError(wxT("The test '%s' could not be found."), tUri.Unescape(strPath).c_str());
+				}
+				else
+				{
 					// yes, found all elements -> searchId is the test node!
 					ptItemData = (const testTreeItemData*)m_treeCtrl->GetItemData(searchId);
 					if( ptItemData!=NULL )
@@ -2218,13 +2187,13 @@ void muhkuh_mainFrame::OnMtdLinkClicked(wxHtmlLinkEvent &event)
 								iCmp = 1;
 								while( uiCnt<uiMax )
 								{
-                                                                        fResult = ptWrapXml->testDescription_setTest(uiCnt);
-                                                                        if( fResult!=true )
-                                                                        {
-                                                                                wxLogError(_("failed to query subtest '%s' in test '%s'"), strFragment.c_str(), strPath.c_str());
-                                                                                break;
-                                                                        }
-                                                                        else
+									fResult = ptWrapXml->testDescription_setTest(uiCnt);
+									if( fResult!=true )
+									{
+										wxLogError(_("failed to query subtest '%s' in test '%s'"), strFragment.c_str(), strPath.c_str());
+										break;
+									}
+									else
 									{
 										++uiCnt;
 										iCmp = strFragment.Cmp(ptWrapXml->test_getName());
@@ -2235,13 +2204,13 @@ void muhkuh_mainFrame::OnMtdLinkClicked(wxHtmlLinkEvent &event)
 										}
 									}
 								}
-                                                                // found test
-                                                                if( iCmp!=0 )
-                                                                {
-                                                                        wxLogError(_("test '%s' has no subtest '%s'"), strPath.c_str(), strFragment.c_str());
-                                                                }
-                                                        }
-                                                        else
+								// found test
+								if( iCmp!=0 )
+								{
+									wxLogError(_("test '%s' has no subtest '%s'"), strPath.c_str(), strFragment.c_str());
+								}
+							}
+							else
 							{
 								iCmp = 0;
 							}

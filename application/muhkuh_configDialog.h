@@ -46,10 +46,30 @@ public:
 };
 
 
+class muhkuh_config_data
+{
+public:
+	muhkuh_config_data(void);
+	muhkuh_config_data(const muhkuh_config_data *ptClone);
+	~muhkuh_config_data(void);
+
+	wxString m_strWelcomeFile;
+	wxString m_strDetailsFile;
+
+	muhkuh_plugin_manager *m_ptPluginManager;
+	muhkuh_repository_manager *m_ptRepositoryManager;
+
+	wxString m_strLuaIncludePath;
+	wxString m_strLuaStartupCode;
+
+	wxString m_strApplicationTitle;
+	wxString m_strApplicationIcon;
+};
+
 class muhkuh_configDialog : public wxDialog
 {
 public:
-	muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, wxString strWelcomeFile, wxString strDetailsFile, muhkuh_plugin_manager *ptPluginManager, muhkuh_repository_manager *ptRepositoryManager, wxString strLuaIncludePath, wxString strLuaStartupCode);
+	muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, muhkuh_config_data *ptConfigData);
 	~muhkuh_configDialog(void);
 
 	void OnRadioWelcomeBuiltIn(wxCommandEvent &event);
@@ -81,12 +101,6 @@ public:
 	void OnMoveDownLuaIncludePathButton(wxCommandEvent &event);
 	void OnLuaIncludePathSelectionChanged(wxCommandEvent &event);
 
-	wxString GetWelcomePageFile(void) const;
-	wxString GetDetailsPageFile(void) const;
-
-	wxString GetLuaIncludePath(void) const;
-	wxString GetLuaStartupCode(void) const;
-
 private:
 	void createControls(void);
 	wxPanel *createControls_application(wxWindow *ptParent);
@@ -113,9 +127,7 @@ private:
 	int get_imagelist_index(muhkuh_repository::REPOSITORY_TYP_E eTyp);
 
 
-	muhkuh_repository_manager *m_ptRepositoryManager;
-	muhkuh_plugin_manager *m_ptPluginManager;
-
+	muhkuh_config_data *m_ptConfigData;
 	wxString m_strApplicationPath;
 
 	wxArrayString m_astrLuaPaths;

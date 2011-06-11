@@ -39,6 +39,7 @@
 #ifndef __MUHKUH_MAINFRAME_H__
 #define __MUHKUH_MAINFRAME_H__
 
+#include "muhkuh_configDialog.h"
 #include "muhkuh_id.h"
 #include "muhkuh_plugin_manager.h"
 #include "muhkuh_repository_manager.h"
@@ -207,12 +208,6 @@ private:
 	// number of loaded test descriptions
 	size_t m_sizTestCnt;
 
-	// the plugin manager
-	muhkuh_plugin_manager *m_ptPluginManager;
-
-	// the repository manager
-	muhkuh_repository_manager *m_ptRepositoryManager;
-
 	// help controller
 	wxHtmlHelpController *m_ptHelp;
 	// tip provider
@@ -232,21 +227,9 @@ private:
 		is not compiled in. Just disable the controls, but show the
 		user that it is there.
 	*/
-	// the lua include path
-	wxString m_strLuaIncludePath;
-	// lua startup code
-	wxString m_strLuaStartupCode;
+	muhkuh_config_data *m_ptConfigData;
 	// the temp file with the settings and the startup code
 	wxString m_strRunningTestTempFileName;
-
-	// the welcome page file
-	wxString m_strWelcomePageFile;
-	// the details page file
-	wxString m_strDetailsPageFile;
-
-	// the application title
-	wxString m_strApplicationTitle;
-	wxString m_strApplicationIcon;
 
 	// the locale object
 	wxLocale m_locale;

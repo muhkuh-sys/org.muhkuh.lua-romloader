@@ -57,11 +57,53 @@ BEGIN_EVENT_TABLE(muhkuh_configDialog, wxDialog)
 END_EVENT_TABLE()
 
 
-muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, wxString strWelcomeFile, wxString strDetailsFile, muhkuh_plugin_manager *ptPluginManager, muhkuh_repository_manager *ptRepositoryManager, wxString strLuaIncludePath, wxString strLuaStartupCode)
- : wxDialog(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER)
- , m_ptRepositoryManager(ptRepositoryManager)
- , m_ptPluginManager(ptPluginManager)
+
+muhkuh_config_data::muhkuh_config_data(void)
+ : m_ptPluginManager(NULL)
+ , m_ptRepositoryManager(NULL)
 {
+	m_ptPluginManager = new muhkuh_plugin_manager();
+	m_ptRepositoryManager = new muhkuh_repository_manager();
+}
+
+
+muhkuh_config_data::muhkuh_config_data(const muhkuh_config_data *ptClone)
+ : m_ptPluginManager(NULL)
+ , m_ptRepositoryManager(NULL)
+{
+	m_strWelcomeFile = ptClone->m_strWelcomeFile;
+	m_strDetailsFile = ptClone->m_strDetailsFile;
+
+	m_ptPluginManager = new muhkuh_plugin_manager(ptClone->m_ptPluginManager);
+	m_ptRepositoryManager = new muhkuh_repository_manager(ptClone->m_ptRepositoryManager);
+
+	m_strLuaIncludePath = ptClone->m_strLuaIncludePath;
+	m_strLuaStartupCode = ptClone->m_strLuaStartupCode;
+
+	m_strApplicationTitle = ptClone->m_strApplicationTitle;
+	m_strApplicationIcon = ptClone->m_strApplicationIcon;
+}
+
+
+muhkuh_config_data::~muhkuh_config_data(void)
+{
+	if( m_ptPluginManager!=NULL )
+	{
+		delete m_ptPluginManager;
+	}
+
+	if( m_ptRepositoryManager!=NULL )
+	{
+		delete m_ptRepositoryManager;
+	}
+}
+
+
+muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApplicationPath, muhkuh_config_data *ptConfigData)
+ : wxDialog(parent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER)
+ , m_ptConfigData(ptConfigData)
+{
+	wxString strLuaIncludePath;
 	size_t sizCnt, sizIdx;
 	wxConfigBase *pConfig;
 	int iPosX;
@@ -78,6 +120,7 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 	SetTitle(_("Muhkuh Settings"));
 
 	// split up the include paths
+	strLuaIncludePath = m_ptConfigData->m_strLuaIncludePath;
 	while( strLuaIncludePath.IsEmpty()==false )
 	{
 		iColonPos = strLuaIncludePath.Find(wxT(';'));
@@ -119,24 +162,24 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 	SetSize(iPosX, iPosY, iSizW, iSizH);
 
 	// set the welcome file
-	fUseBuiltin = strWelcomeFile.IsEmpty();
+	fUseBuiltin = m_ptConfigData->m_strWelcomeFile.IsEmpty();
 	m_ptRadioBuiltinWelcome->SetValue(fUseBuiltin);
 	m_ptRadioFileWelcome->SetValue(!fUseBuiltin);
-	m_ptTextStartPage->SetValue(strWelcomeFile);
+	m_ptTextStartPage->SetValue(m_ptConfigData->m_strWelcomeFile);
 	m_ptTextStartPage->Enable(!fUseBuiltin);
 	m_ptButtonStartPage->Enable(!fUseBuiltin);
 
 	// set the details file
-	fUseBuiltin = strDetailsFile.IsEmpty();
+	fUseBuiltin = m_ptConfigData->m_strDetailsFile.IsEmpty();
 	m_ptRadioBuiltinDetails->SetValue(fUseBuiltin);
 	m_ptRadioFileDetails->SetValue(!fUseBuiltin);
-	m_ptTextDetailsPage->SetValue(strDetailsFile);
+	m_ptTextDetailsPage->SetValue(m_ptConfigData->m_strDetailsFile);
 	m_ptTextDetailsPage->Enable(!fUseBuiltin);
 	m_ptButtonDetailsPage->Enable(!fUseBuiltin);
 
 	// loop over all repositories and add them to the list
 	sizIdx = 0;
-	sizCnt = m_ptRepositoryManager->GetRepositoryCount();
+	sizCnt = m_ptConfigData->m_ptRepositoryManager->GetRepositoryCount();
 	while(sizIdx<sizCnt)
 	{
 		ShowNewRepository(sizIdx);
@@ -146,7 +189,7 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 
 	// loop over all plugins and add them to the list
 	sizIdx = 0;
-	sizCnt = m_ptPluginManager->getPluginCount();
+	sizCnt = m_ptConfigData->m_ptPluginManager->getPluginCount();
 	while(sizIdx<sizCnt)
 	{
 		ShowNewPlugin(sizIdx);
@@ -154,7 +197,7 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 	}
 
 	// set the lua startup code
-	m_ptStartupCodeText->SetValue(strLuaStartupCode);
+	m_ptStartupCodeText->SetValue(m_ptConfigData->m_strLuaStartupCode);
 
 	// set focus to the tree book
 	m_treeBook->SetFocus();
@@ -532,7 +575,7 @@ void muhkuh_configDialog::OnEditRepositoryButton(wxCommandEvent &WXUNUSED(event)
 		{
 			lRepositoryIdx = ptData->m_lId;
 
-			ptRepos = m_ptRepositoryManager->GetRepository(lRepositoryIdx);
+			ptRepos = m_ptConfigData->m_ptRepositoryManager->GetRepository(lRepositoryIdx);
 
 			// clone the entry
 			ptEntryDialog = new muhkuh_config_reposEntryDialog(this, m_strApplicationPath, ptRepos);
@@ -693,7 +736,7 @@ void muhkuh_configDialog::OnPluginKey(wxTreeEvent &event)
 			{
 				lPluginIdx = ptData->m_lId;
 				// get the current state
-				fEnabled = m_ptPluginManager->GetEnable(lPluginIdx);
+				fEnabled = m_ptConfigData->m_ptPluginManager->GetEnable(lPluginIdx);
 				// invert the state
 				plugin_enable(!fEnabled);
 			}
@@ -736,8 +779,8 @@ void muhkuh_configDialog::SetPluginButtons(wxTreeItemId tItem)
 		if( ptData!=NULL )
 		{
 			lPluginIdx = ptData->m_lId;
-			fPluginIsOk = m_ptPluginManager->IsOk(lPluginIdx);
-			fPluginIsEnabled = m_ptPluginManager->GetEnable(lPluginIdx);
+			fPluginIsOk = m_ptConfigData->m_ptPluginManager->IsOk(lPluginIdx);
+			fPluginIsEnabled = m_ptConfigData->m_ptPluginManager->GetEnable(lPluginIdx);
 
 			fPluginCanBeEnabled = fPluginSelected && fPluginIsOk && !fPluginIsEnabled;
 			fPluginCanBeDisabled = fPluginSelected && fPluginIsEnabled;
@@ -762,8 +805,8 @@ void muhkuh_configDialog::ShowNewRepository(long lIdx)
 	// append all plugins to the root item
 	tRootItem = m_repositoryTree->GetRootItem();
 
-	strName = m_ptRepositoryManager->GetStringRepresentation(lIdx);
-	eTyp = m_ptRepositoryManager->GetTyp(lIdx);
+	strName = m_ptConfigData->m_ptRepositoryManager->GetStringRepresentation(lIdx);
+	eTyp = m_ptConfigData->m_ptRepositoryManager->GetTyp(lIdx);
 	iImageIdx = get_imagelist_index(eTyp);
 	ptData = new treeItemIdData(lIdx);
 
@@ -787,15 +830,15 @@ void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 	tRootItem = m_pluginTree->GetRootItem();
 
 	/* get the plugin description */
-	fPluginIsOk = m_ptPluginManager->IsOk(lIdx);
-	ptPluginDesc = m_ptPluginManager->getPluginDescription(lIdx);
+	fPluginIsOk = m_ptConfigData->m_ptPluginManager->IsOk(lIdx);
+	ptPluginDesc = m_ptConfigData->m_ptPluginManager->getPluginDescription(lIdx);
 	if( ptPluginDesc==NULL )
 	{
 		wxLogError(_("failed to get plugin description!"));
 	}
 	else
 	{
-		strName = m_ptPluginManager->GetConfigName(lIdx);
+		strName = m_ptConfigData->m_ptPluginManager->GetConfigName(lIdx);
 
 		// create the new data item
 		ptData = new treeItemIdData(lIdx);
@@ -815,7 +858,7 @@ void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 		{
 			tPluginItem = m_pluginTree->AppendItem(tRootItem, strName, 2, -1, ptData);
 			// append the errormessage
-			m_pluginTree->AppendItem(tPluginItem, m_ptPluginManager->GetInitError(lIdx), 2, -1, NULL);
+			m_pluginTree->AppendItem(tPluginItem, m_ptConfigData->m_ptPluginManager->GetInitError(lIdx), 2, -1, NULL);
 		}
 	}
 }
@@ -836,11 +879,11 @@ void muhkuh_configDialog::ShowPluginImage(wxTreeItemId tPluginItem)
 		{
 			lIdx = ptData->m_lId;
 
-			if( m_ptPluginManager->IsOk(lIdx)==false )
+			if( m_ptConfigData->m_ptPluginManager->IsOk(lIdx)==false )
 			{
 				iImageIdx = 2;
 			}
-			else if( m_ptPluginManager->GetEnable(lIdx)==false )
+			else if( m_ptConfigData->m_ptPluginManager->GetEnable(lIdx)==false )
 			{
 				iImageIdx = 0;
 			}
@@ -866,7 +909,7 @@ void muhkuh_configDialog::repository_add(void)
 	if( ptEntryDialog->ShowModal()==wxID_OK )
 	{
 		// add to list
-		lIdx = m_ptRepositoryManager->addRepository(ptRepos);
+		lIdx = m_ptConfigData->m_ptRepositoryManager->addRepository(ptRepos);
 		// show
 		ShowNewRepository(lIdx);
 	}
@@ -901,7 +944,7 @@ void muhkuh_configDialog::repository_delete(void)
 			// erase from the listctrl
 			m_repositoryTree->Delete(tItem);
 			// erase from the vector
-			m_ptRepositoryManager->removeRepository(lRepositoryIdx);
+			m_ptConfigData->m_ptRepositoryManager->removeRepository(lRepositoryIdx);
 
 			// rebuild idlist
 			tRootItem = m_repositoryTree->GetRootItem();
@@ -952,18 +995,18 @@ void muhkuh_configDialog::plugin_add(void)
 	{
 		strPluginName = pluginDialog->GetPath();
 		wxLogMessage(_("open plugin '%s'"), strPluginName.c_str());
-		lIdx = m_ptPluginManager->addPlugin(strPluginName);
+		lIdx = m_ptConfigData->m_ptPluginManager->addPlugin(strPluginName);
 		if( lIdx>=0 )
 		{
 			// do not accept broken plugins
-			fPluginIsOk = m_ptPluginManager->IsOk(lIdx);
+			fPluginIsOk = m_ptConfigData->m_ptPluginManager->IsOk(lIdx);
 			if( fPluginIsOk==true )
 			{
 				ShowNewPlugin(lIdx);
 			}
 			else
 			{
-				m_ptPluginManager->removePlugin(lIdx);
+				m_ptConfigData->m_ptPluginManager->removePlugin(lIdx);
 			}
 		}
 	}
@@ -998,7 +1041,7 @@ void muhkuh_configDialog::plugin_delete(void)
 			m_pluginTree->Delete(tItem);
 
 			// erase from the manager
-			m_ptPluginManager->removePlugin(lPluginIdx);
+			m_ptConfigData->m_ptPluginManager->removePlugin(lPluginIdx);
 
 			// rebuild idlist
 			tRootItem = m_pluginTree->GetRootItem();
@@ -1040,7 +1083,7 @@ void muhkuh_configDialog::plugin_enable(bool fEnablePlugin)
 		{
 			lPluginIdx = ptData->m_lId;
 
-			m_ptPluginManager->SetEnable(lPluginIdx, fEnablePlugin);
+			m_ptConfigData->m_ptPluginManager->SetEnable(lPluginIdx, fEnablePlugin);
 			ShowPluginImage(tItem);
 			SetPluginButtons(tItem);
 		}
@@ -1201,46 +1244,6 @@ void muhkuh_configDialog::luaIncludePathUpdateButtons(int iSelection)
 	m_luaPathToolBar->EnableTool(muhkuh_configDialog_LuaEditPath, fPathSelected);
 	m_luaPathToolBar->EnableTool(muhkuh_configDialog_LuaMovePathUp, fCanMoveUp);
 	m_luaPathToolBar->EnableTool(muhkuh_configDialog_LuaMovePathDown, fCanMoveDown);
-}
-
-
-wxString muhkuh_configDialog::GetWelcomePageFile(void) const
-{
-	wxString strFile;
-
-
-	if( m_ptRadioFileWelcome->GetValue()==true )
-	{
-		strFile = m_ptTextStartPage->GetValue();
-	}
-
-	return strFile;
-}
-
-
-wxString muhkuh_configDialog::GetDetailsPageFile(void) const
-{
-	wxString strFile;
-
-
-	if( m_ptRadioFileDetails->GetValue()==true )
-	{
-		strFile = m_ptTextDetailsPage->GetValue();
-	}
-
-	return strFile;
-}
-
-
-wxString muhkuh_configDialog::GetLuaIncludePath(void) const
-{
-	return m_ptPathListBox->GetPaths(wxT(';'));
-}
-
-
-wxString muhkuh_configDialog::GetLuaStartupCode(void) const
-{
-	return m_ptStartupCodeText->GetValue();
 }
 
 
