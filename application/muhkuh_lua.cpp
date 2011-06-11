@@ -268,13 +268,19 @@ int lua_muhkuh_execute_html_tag(lua_State *ptLuaState, const char *pcLuaCode, ch
 			}
 			else
 			{
-				pcLuaResult = lua_tostring(ptLuaState, -1);
-				sizLuaResult = sizeof(pcLuaResult);
-				pcResult = (char*)malloc(sizLuaResult+1);
+				/* Get the string and its size. */
+				pcLuaResult = lua_tolstring(ptLuaState, -1, &sizLuaResult);
+				/* The size does not include the trailing 0. Allocate and copy it too. */
+				++sizLuaResult;
+				/* Allocate new memory for the string. */
+				pcResult = (char*)malloc(sizLuaResult);
 				if( pcResult!=NULL )
 				{
+					/* Copy the string. */
 					memcpy(pcResult, pcLuaResult, sizLuaResult);
 				}
+				/* Remove the string from the stack. */
+				lua_pop(ptLuaState, 1);
 			}
 		}
 	}
