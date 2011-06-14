@@ -39,7 +39,7 @@ void lua_muhkuh_close_default_state(void);
 
 int lua_muhkuh_get_memory_usage(lua_State *ptLuaState);
 
-int lua_muhkuh_execute_html_tag(lua_State *ptLuaState, const char *pcLuaCode, char **ppcResult);
+int lua_muhkuh_generate_text(lua_State *ptLuaState, const char *pcLuaCode, char **ppcResult);
 
 const char *lua_muhkuh_error_to_string(int iLuaError);
 const char *lua_muhkuh_type_to_string(int iLuaType);

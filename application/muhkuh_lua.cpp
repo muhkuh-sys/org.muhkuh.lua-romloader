@@ -234,7 +234,7 @@ static char *lua_muhkuh_pop_errormessage(lua_State *ptLuaState)
 }
 
 
-int lua_muhkuh_execute_html_tag(lua_State *ptLuaState, const char *pcLuaCode, char **ppcResult)
+int lua_muhkuh_generate_text(lua_State *ptLuaState, const char *pcLuaCode, char **ppcResult)
 {
 	int iResult;
 	char *pcResult;

@@ -453,6 +453,7 @@ void muhkuh_mainFrame::reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml)
 
 	if( m_ptConfigData->m_strDetailsFile.IsEmpty()==true )
 	{
+		/* FIXME: take this from a config option. */
 		strPage = wxT("<html><lua>\n")
 			  wxT("	local strPage\n")
 			  wxT("	local testDesc\n")
@@ -1067,8 +1068,10 @@ bool muhkuh_mainFrame::check_plugins(void)
 
 void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex)
 {
-        bool fResult;
+	bool fResult;
 	wxString strMsg;
+	int iResult;
+	char *pcStartupCode;
 	wxString strStartupCode;
 	wxString strServerCmd;
 	wxString strNow;
@@ -1080,6 +1083,21 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	m_sizRunningTest_TestIdx = ptTestData->getTestIndex();
 
 	wxLogMessage(_("execute test '%s', index %d"), m_strRunningTestName.c_str(), uiIndex);
+
+	/* Run the startup code generator. */
+	iResult = lua_muhkuh_generate_text(NULL, m_ptConfigData->m_strLuaStartupCode.fn_str(), &pcStartupCode);
+	if( iResult!=0 )
+	{
+		strMsg.Printf(_("Failed to execute the startup code generator: %d: %s : %s"), iResult, lua_muhkuh_error_to_string(iResult), pcStartupCode);
+		strMsg.Append(_("The startup code generator can be defined in the lua section of the configuration dialog."));
+		wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
+	}
+	else
+	{
+		strMsg = wxString::FromAscii(pcStartupCode);
+		wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
+	}
+#if 0
 
 
 	// create the startup code
@@ -1106,6 +1124,8 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	}
 	else
 	{
+		
+	}
 		// write the startup string to the temp file
 		tFile.Write(strStartupCode);
 		tFile.Close();
@@ -1142,6 +1162,7 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 			m_timerIdleWakeUp.Start(100);
 		}
 	}
+#endif
 }
 
 
