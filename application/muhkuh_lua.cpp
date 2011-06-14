@@ -24,13 +24,21 @@
 #include <wx/log.h>
 
 #include "muhkuh_lua.h"
+#include "muhkuh_mainFrame.h"
+
 extern "C" {
 int luaopen_muhkuh_app(lua_State* L);
 }
 
 #ifdef WIN32
-#define snprintf _snprintf
+#       define snprintf _snprintf
 #endif
+
+
+
+#define SCRIPT_PUSH_ERROR(L,...) { lua_pushfstring(L,__VA_ARGS__); }
+#define SCRIPT_EXIT_ERROR(L) { lua_error(L); }
+#define SCRIPT_ERROR(L,...) { lua_pushfstring(L,__VA_ARGS__); lua_error(L); }
 
 
 typedef struct
@@ -48,8 +56,8 @@ typedef struct
 
 
 /* This is the default state for the main frame. */
-lua_State *ptDefaultState = NULL;
-
+static lua_State *ptDefaultState = NULL;
+static muhkuh_mainFrame *ptMainFrame = NULL;
 
 static const char *pcMuhkuhVersion =
 {
@@ -60,7 +68,7 @@ static const char *pcMuhkuhVersion =
 
 static const LUA_ERROR_TO_STR_T atLuaErrorToString[] =
 {
-	{ 0,                    "" },
+	{ 0,                    "Ok" },
 	{ LUA_YIELD,            "Thread is suspended" },
 	{ LUA_ERRRUN,           "Error while running chunk" },
 	{ LUA_ERRSYNTAX,        "Syntax error during pre-compilation" },
@@ -133,6 +141,12 @@ static int lua_muhkuh_print(lua_State *ptLuaState)
 	wxLogMessage(strMsg);
 
 	return 0;
+}
+
+
+void lua_muhkuh_register_mainframe(muhkuh_mainFrame *ptFrame)
+{
+	ptMainFrame = ptFrame;
 }
 
 
@@ -226,7 +240,7 @@ static char *lua_muhkuh_pop_errormessage(lua_State *ptLuaState)
 	pcResult = (char*)malloc(sizResult+1);
 	if( pcResult!=NULL )
 	{
-		snprintf(pcResult, sizResult, pcErrorFormat, iResult, lua_muhkuh_error_to_string(iResult), pcLuaErrorMessage);
+		snprintf(pcResult, sizResult+1, pcErrorFormat, iResult, lua_muhkuh_error_to_string(iResult), pcLuaErrorMessage);
 	}
 	lua_pop(ptLuaState, 1);
 
@@ -240,6 +254,7 @@ int lua_muhkuh_generate_text(lua_State *ptLuaState, const char *pcLuaCode, char 
 	char *pcResult;
 	const char *pcLuaResult;
 	size_t sizLuaResult;
+	int iLuaResult;
 
 
 	pcResult = NULL;
@@ -266,7 +281,8 @@ int lua_muhkuh_generate_text(lua_State *ptLuaState, const char *pcLuaCode, char 
 			{
 				pcResult = lua_muhkuh_pop_errormessage(ptLuaState);
 			}
-			else
+			/* NOTE: lua_isstring returns 1 for strnigs and numbers. */
+			else if( lua_isstring(ptLuaState, -1)==1 )
 			{
 				/* Get the string and its size. */
 				pcLuaResult = lua_tolstring(ptLuaState, -1, &sizLuaResult);
@@ -282,6 +298,69 @@ int lua_muhkuh_generate_text(lua_State *ptLuaState, const char *pcLuaCode, char 
 				/* Remove the string from the stack. */
 				lua_pop(ptLuaState, 1);
 			}
+			else if( lua_isnil(ptLuaState, -1)==1 )
+			{
+				pcResult = strdup("nil");
+			}
+			else if( lua_isboolean(ptLuaState, -1)==1 )
+			{
+				iLuaResult = lua_toboolean(ptLuaState, -1);
+				if( iLuaResult==0 )
+				{
+					pcResult = strdup("false");
+				}
+				else
+				{
+					pcResult = strdup("true");
+				}
+				lua_pop(ptLuaState, 1);
+			}
+			else
+			{
+				pcResult = strdup("the function returned an invalid type!");
+			}
+		}
+	}
+
+	*ppcResult = pcResult;
+
+	return iResult;
+}
+
+
+int lua_muhkuh_run_code(lua_State *ptLuaState, const char *pcLuaCode, char **ppcResult)
+{
+	int iResult;
+	char *pcResult;
+	const char *pcLuaResult;
+	size_t sizLuaResult;
+	int iLuaResult;
+
+
+	pcResult = NULL;
+	if( ptLuaState==NULL )
+	{
+		ptLuaState = ptDefaultState;
+	}
+
+	if( ptLuaState==NULL )
+	{
+		iResult = -1;
+	}
+	else
+	{
+		iResult = luaL_loadstring(ptLuaState, pcLuaCode);
+		if( iResult!=0 )
+		{
+			pcResult = lua_muhkuh_pop_errormessage(ptLuaState);
+		}
+		else
+		{
+			iResult = lua_pcall(ptLuaState, 0, 0, 0);
+			if( iResult!=0 )
+			{
+				pcResult = lua_muhkuh_pop_errormessage(ptLuaState);
+			}
 		}
 	}
 
@@ -293,18 +372,25 @@ int lua_muhkuh_generate_text(lua_State *ptLuaState, const char *pcLuaCode, char 
 
 const char *lua_muhkuh_error_to_string(int iLuaError)
 {
+	const LUA_ERROR_TO_STR_T *ptCnt;
+	const LUA_ERROR_TO_STR_T *ptEnd;
 	const char *pcMessage;
 
 
-	if( iLuaError<(sizeof(atLuaErrorToString)/sizeof(atLuaErrorToString[0])) )
+	pcMessage = "Unknown lua error code";
+
+	ptCnt = atLuaErrorToString;
+	ptEnd = atLuaErrorToString + (sizeof(atLuaErrorToString)/sizeof(atLuaErrorToString[0]));
+	while( ptCnt<ptEnd )
 	{
-		pcMessage = atLuaErrorToString[iLuaError].pcMessage;
-	}
-	else
-	{
-		pcMessage = "Unknown lua error code";
+		if( iLuaError==ptCnt->iLuaError )
+		{
+			pcMessage = ptCnt->pcMessage;
+		}
+		++ptCnt;
 	}
 
+	fprintf(stderr, "LUA Error %d: %s\n", iLuaError, pcMessage);
 	return pcMessage;
 }
 
@@ -332,3 +418,113 @@ const char *get_version(void)
 	return pcMuhkuhVersion;
 }
 
+
+
+static muhkuh_plugin_manager *get_plugin_manager(lua_State *ptLuaState)
+{
+	muhkuh_config_data *ptConfigData;
+	muhkuh_plugin_manager *ptPluginManager;
+
+
+	ptPluginManager = NULL;
+
+	if( ptMainFrame==NULL )
+	{
+		SCRIPT_PUSH_ERROR(ptLuaState, "init error: no mainframe registered!");
+	}
+	else
+	{
+		ptConfigData = ptMainFrame->script_get_config_data();
+		if( ptConfigData==NULL )
+		{
+			SCRIPT_PUSH_ERROR(ptLuaState, "init error: mainframe has no config data!");
+		}
+		else
+		{
+			ptPluginManager = ptConfigData->m_ptPluginManager;
+			if( ptPluginManager==NULL )
+			{
+				SCRIPT_PUSH_ERROR(ptLuaState, "init error: config data has no plugin manager!");
+			}
+		}
+	}
+
+	return ptPluginManager;
+}
+
+
+int plugin_count(lua_State *ptLuaState)
+{
+	size_t sizResult;
+	muhkuh_plugin_manager *ptPluginManager;
+
+
+	ptPluginManager = get_plugin_manager(ptLuaState);
+	if( ptPluginManager!=NULL )
+	{
+		sizResult = ptPluginManager->getPluginCount();
+	}
+	else
+	{
+		SCRIPT_EXIT_ERROR(ptLuaState);
+	}
+
+	return sizResult;
+}
+
+
+bool plugin_is_ok(lua_State *ptLuaState, unsigned long ulIdx)
+{
+	bool fResult;
+	muhkuh_plugin_manager *ptPluginManager;
+
+
+	ptPluginManager = get_plugin_manager(ptLuaState);
+	if( ptPluginManager!=NULL )
+	{
+		fResult = ptPluginManager->IsOk(ulIdx);
+	}
+	else
+	{
+		SCRIPT_EXIT_ERROR(ptLuaState);
+	}
+
+	return fResult;
+}
+
+
+void plugin_set_enable(lua_State *ptLuaState, unsigned long ulIdx, bool fPluginIsEnabled)
+{
+	muhkuh_plugin_manager *ptPluginManager;
+
+
+	ptPluginManager = get_plugin_manager(ptLuaState);
+	if( ptPluginManager!=NULL )
+	{
+		ptPluginManager->SetEnable(ulIdx, fPluginIsEnabled);
+	}
+	else
+	{
+		SCRIPT_EXIT_ERROR(ptLuaState);
+	}
+}
+
+
+bool plugin_get_enable(lua_State *ptLuaState, unsigned long ulIdx)
+{
+	bool fResult;
+	muhkuh_plugin_manager *ptPluginManager;
+
+
+	ptPluginManager = get_plugin_manager(ptLuaState);
+	if( ptPluginManager!=NULL )
+	{
+		fResult = ptPluginManager->GetEnable(ulIdx);
+	}
+	else
+	{
+		SCRIPT_EXIT_ERROR(ptLuaState);
+	}
+
+	return fResult;
+}

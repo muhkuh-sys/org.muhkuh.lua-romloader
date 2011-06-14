@@ -209,6 +209,7 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 #if USE_LUA!=0
 	/* Open a new lua state. */
 	lua_muhkuh_create_default_state();
+	lua_muhkuh_register_mainframe(this);
 #endif
 }
 
@@ -944,14 +945,15 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 	cfgDlg = new muhkuh_configDialog(this, m_strApplicationPath, ptConfigData);
 	if( cfgDlg->ShowModal()==wxID_OK )
 	{
+		/* Copy the temp configuration data over the current one. */
+		delete m_ptConfigData;
+		m_ptConfigData = ptConfigData;
+
+		/* Write the new config to disc. */
 		write_config();
 
 		/* Replace the default lua state. */
 		lua_muhkuh_create_default_state();
-
-		/* Copy the temp configuration data over the current one. */
-		delete m_ptConfigData;
-		m_ptConfigData = ptConfigData;
 
 		reloadWelcomePage();
 		reloadDetailsPage(NULL);
@@ -967,7 +969,7 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 	else
 	{
 		/* The changes were canceled -> delete the temp configuration data. */
-		delete m_ptConfigData;
+		delete ptConfigData;
 	}
 
 	/* Delete the config dialog. */
@@ -1070,11 +1072,12 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 {
 	bool fResult;
 	wxString strMsg;
+	wxString strErrorMsg;
 	int iResult;
 	char *pcStartupCode;
 	wxString strStartupCode;
-	wxString strServerCmd;
-	wxString strNow;
+//	wxString strServerCmd;
+//	wxString strNow;
 	wxFile tFile;
 
 
@@ -1088,7 +1091,9 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	iResult = lua_muhkuh_generate_text(NULL, m_ptConfigData->m_strLuaStartupCode.fn_str(), &pcStartupCode);
 	if( iResult!=0 )
 	{
-		strMsg.Printf(_("Failed to execute the startup code generator: %d: %s : %s"), iResult, lua_muhkuh_error_to_string(iResult), pcStartupCode);
+		strErrorMsg = wxString::FromAscii(lua_muhkuh_error_to_string(iResult));
+		strStartupCode = wxString::FromAscii(pcStartupCode);
+		strMsg.Printf(_("Failed to execute the startup code generator: %d: %s : %s"), iResult, strErrorMsg.c_str(), strStartupCode.c_str());
 		strMsg.Append(_("The startup code generator can be defined in the lua section of the configuration dialog."));
 		wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
 	}
@@ -2310,5 +2315,11 @@ bool muhkuh_mainFrame::repositoryScannerCallback(void *pvUser, wxString strMessa
 	wxTheApp->Yield();
 
 	return fScannerIsRunning;
+}
+
+
+muhkuh_config_data *muhkuh_mainFrame::script_get_config_data(void)
+{
+	return m_ptConfigData;
 }
 

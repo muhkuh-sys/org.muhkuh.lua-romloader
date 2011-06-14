@@ -79,12 +79,12 @@ public:
 	void OnAbout(wxCommandEvent &event);
 	void OnConfigDialog(wxCommandEvent &event);
 	void OnHelp(wxCommandEvent &event);
-        void OnShowTip(wxCommandEvent &event);
-        void OnRestoreDefaultPerspective(wxCommandEvent &event);
+	void OnShowTip(wxCommandEvent &event);
+	void OnRestoreDefaultPerspective(wxCommandEvent &event);
 
-        void OnIdle(wxIdleEvent &event);
+	void OnIdle(wxIdleEvent &event);
 
-        void OnTestExecute(wxCommandEvent &event);
+	void OnTestExecute(wxCommandEvent &event);
 	void OnTestHelp(wxCommandEvent &event);
 	void OnTestRescan(wxCommandEvent &event);
 	void OnTestCancel(wxCommandEvent &event);
@@ -101,33 +101,36 @@ public:
 	void OnTestTreeItemActivated(wxTreeEvent &event);
 	void OnTestTreeItemSelected(wxTreeEvent &event);
 
-        void OnMtdLinkClicked(wxHtmlLinkEvent &event);
+	void OnMtdLinkClicked(wxHtmlLinkEvent &event);
 
-        void OnNotebookPageClose(wxAuiNotebookEvent &event);
-        void OnPaneClose(wxAuiManagerEvent &event);
+	void OnNotebookPageClose(wxAuiNotebookEvent &event);
+	void OnPaneClose(wxAuiManagerEvent &event);
 
 	void OnServerProcessTerminate(wxProcessEvent &event);
 
-        void OnMove(wxMoveEvent &event);
-        void OnSize(wxSizeEvent &event);
+	void OnMove(wxMoveEvent &event);
+	void OnSize(wxSizeEvent &event);
 
-        static bool repositoryScannerCallback(void *pvUser, wxString strMessage, int iProgressPos, int iProgressMax);
-        static const int m_iRepositoryProgressMax = 10000;
+	static bool repositoryScannerCallback(void *pvUser, wxString strMessage, int iProgressPos, int iProgressMax);
+	static const int m_iRepositoryProgressMax = 10000;
 
-	// main frame status
-	typedef enum {
+	muhkuh_config_data *script_get_config_data(void);
+
+	/* Main frame status. */
+	typedef enum
+	{
 		muhkuh_mainFrame_state_scanning = 0,
 		muhkuh_mainFrame_state_idle,
 		muhkuh_mainFrame_state_testing
 	} muhkuh_mainFrame_state;
 
-	// main frame init state
+	/* Main frame init state. */
 	typedef enum
 	{
 		MAINFRAME_INIT_STATE_UNCONFIGURED,
 		MAINFRAME_INIT_STATE_CONFIGURED,
-                MAINFRAME_INIT_STATE_SCANNED
-        } MAINFRAME_INIT_STATE_E;
+		MAINFRAME_INIT_STATE_SCANNED
+	} MAINFRAME_INIT_STATE_E;
 
 private:
 	void createMenu(void);
@@ -239,9 +242,6 @@ private:
 	wxSize m_frameSize;
     DECLARE_EVENT_TABLE()
 };
-
-
-extern muhkuh_mainFrame *g_ptMainFrame;
 
 
 #endif  /* __MUHKUH_MAINFRAME_H__ */

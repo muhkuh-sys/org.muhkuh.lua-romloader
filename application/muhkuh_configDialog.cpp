@@ -26,34 +26,36 @@
 
 
 BEGIN_EVENT_TABLE(muhkuh_configDialog, wxDialog)
-	EVT_RADIOBUTTON(muhkuh_configDialog_RadioWelcomeBuiltIn,	muhkuh_configDialog::OnRadioWelcomeBuiltIn)
-	EVT_RADIOBUTTON(muhkuh_configDialog_RadioWelcomeFile,		muhkuh_configDialog::OnRadioWelcomeFile)
-	EVT_RADIOBUTTON(muhkuh_configDialog_RadioDetailsBuiltIn,	muhkuh_configDialog::OnRadioDetailsBuiltIn)
-	EVT_RADIOBUTTON(muhkuh_configDialog_RadioDetailsFile,		muhkuh_configDialog::OnRadioDetailsFile)
-	EVT_BUTTON(muhkuh_configDialog_StartPageBrowse,			muhkuh_configDialog::OnBrowseStartPageButton)
-	EVT_BUTTON(muhkuh_configDialog_DetailsPageBrowse,		muhkuh_configDialog::OnBrowseDetailPageButton)
+	EVT_RADIOBUTTON(muhkuh_configDialog_RadioWelcomeBuiltIn,        muhkuh_configDialog::OnRadioWelcomeBuiltIn)
+	EVT_RADIOBUTTON(muhkuh_configDialog_RadioWelcomeFile,           muhkuh_configDialog::OnRadioWelcomeFile)
+	EVT_RADIOBUTTON(muhkuh_configDialog_RadioDetailsBuiltIn,        muhkuh_configDialog::OnRadioDetailsBuiltIn)
+	EVT_RADIOBUTTON(muhkuh_configDialog_RadioDetailsFile,           muhkuh_configDialog::OnRadioDetailsFile)
+	EVT_BUTTON(muhkuh_configDialog_StartPageBrowse,                 muhkuh_configDialog::OnBrowseStartPageButton)
+	EVT_BUTTON(muhkuh_configDialog_DetailsPageBrowse,               muhkuh_configDialog::OnBrowseDetailPageButton)
 
-	EVT_TOOL(muhkuh_configDialog_AddRepository,			muhkuh_configDialog::OnNewRepositoryButton)
-	EVT_TOOL(muhkuh_configDialog_EditRepository,			muhkuh_configDialog::OnEditRepositoryButton)
-	EVT_TOOL(muhkuh_configDialog_RemoveRepository,			muhkuh_configDialog::OnDeleteRepositoryButton)
-	EVT_TREE_SEL_CHANGED(muhkuh_configDialog_RepositoryList,	muhkuh_configDialog::OnRepositorySelect)
-	EVT_TREE_KEY_DOWN(muhkuh_configDialog_RepositoryList,		muhkuh_configDialog::OnRepositoryKey)
+	EVT_TOOL(muhkuh_configDialog_AddRepository,                     muhkuh_configDialog::OnNewRepositoryButton)
+	EVT_TOOL(muhkuh_configDialog_EditRepository,                    muhkuh_configDialog::OnEditRepositoryButton)
+	EVT_TOOL(muhkuh_configDialog_RemoveRepository,                  muhkuh_configDialog::OnDeleteRepositoryButton)
+	EVT_TREE_SEL_CHANGED(muhkuh_configDialog_RepositoryList,        muhkuh_configDialog::OnRepositorySelect)
+	EVT_TREE_KEY_DOWN(muhkuh_configDialog_RepositoryList,           muhkuh_configDialog::OnRepositoryKey)
 
-	EVT_TOOL(muhkuh_configDialog_AddPlugin,				muhkuh_configDialog::OnAddPluginButton)
-	EVT_TOOL(muhkuh_configDialog_RemovePlugin,			muhkuh_configDialog::OnRemovePluginButton)
-	EVT_TOOL(muhkuh_configDialog_EnablePlugin,			muhkuh_configDialog::OnEnablePluginButton)
-	EVT_TOOL(muhkuh_configDialog_DisablePlugin,			muhkuh_configDialog::OnDisablePluginButton)
-	EVT_TREE_SEL_CHANGED(muhkuh_configDialog_PluginList,		muhkuh_configDialog::OnPluginSelectionChanged)
-	EVT_TREE_SEL_CHANGING(muhkuh_configDialog_PluginList,		muhkuh_configDialog::OnPluginSelectionChanging)
-	EVT_TREE_KEY_DOWN(muhkuh_configDialog_PluginList,		muhkuh_configDialog::OnPluginKey)
+	EVT_TOOL(muhkuh_configDialog_AddPlugin,                         muhkuh_configDialog::OnAddPluginButton)
+	EVT_TOOL(muhkuh_configDialog_RemovePlugin,                      muhkuh_configDialog::OnRemovePluginButton)
+	EVT_TOOL(muhkuh_configDialog_EnablePlugin,                      muhkuh_configDialog::OnEnablePluginButton)
+	EVT_TOOL(muhkuh_configDialog_DisablePlugin,                     muhkuh_configDialog::OnDisablePluginButton)
+	EVT_TREE_SEL_CHANGED(muhkuh_configDialog_PluginList,            muhkuh_configDialog::OnPluginSelectionChanged)
+	EVT_TREE_SEL_CHANGING(muhkuh_configDialog_PluginList,           muhkuh_configDialog::OnPluginSelectionChanging)
+	EVT_TREE_KEY_DOWN(muhkuh_configDialog_PluginList,               muhkuh_configDialog::OnPluginKey)
 
-	EVT_TOOL(muhkuh_configDialog_LuaAddPath,			muhkuh_configDialog::OnAddLuaIncludePathButton)
-	EVT_TOOL(muhkuh_configDialog_LuaDeletePath,			muhkuh_configDialog::OnRemoveLuaIncludePathButton)
-	EVT_TOOL(muhkuh_configDialog_LuaEditPath,			muhkuh_configDialog::OnEditLuaIncludePathButton)
-	EVT_TOOL(muhkuh_configDialog_LuaMovePathUp,			muhkuh_configDialog::OnMoveUpLuaIncludePathButton)
-	EVT_TOOL(muhkuh_configDialog_LuaMovePathDown,			muhkuh_configDialog::OnMoveDownLuaIncludePathButton)
-	EVT_LISTBOX(muhkuh_configDialog_LuaPathList,			muhkuh_configDialog::OnLuaIncludePathSelectionChanged)
-	EVT_LISTBOX_DCLICK(muhkuh_configDialog_LuaPathList,		muhkuh_configDialog::OnEditLuaIncludePathButton)
+	EVT_TOOL(muhkuh_configDialog_LuaAddPath,                        muhkuh_configDialog::OnAddLuaIncludePathButton)
+	EVT_TOOL(muhkuh_configDialog_LuaDeletePath,                     muhkuh_configDialog::OnRemoveLuaIncludePathButton)
+	EVT_TOOL(muhkuh_configDialog_LuaEditPath,                       muhkuh_configDialog::OnEditLuaIncludePathButton)
+	EVT_TOOL(muhkuh_configDialog_LuaMovePathUp,                     muhkuh_configDialog::OnMoveUpLuaIncludePathButton)
+	EVT_TOOL(muhkuh_configDialog_LuaMovePathDown,                   muhkuh_configDialog::OnMoveDownLuaIncludePathButton)
+	EVT_LISTBOX(muhkuh_configDialog_LuaPathList,                    muhkuh_configDialog::OnLuaIncludePathSelectionChanged)
+	EVT_LISTBOX_DCLICK(muhkuh_configDialog_LuaPathList,             muhkuh_configDialog::OnEditLuaIncludePathButton)
+	
+	EVT_BUTTON(wxID_OK,                                             muhkuh_configDialog::OnButtonOk)
 END_EVENT_TABLE()
 
 
@@ -718,7 +720,7 @@ void muhkuh_configDialog::OnPluginKey(wxTreeEvent &event)
 		break;
 
 	case WXK_INSERT:
-		// add a new repository
+		// add a new plugin
 		plugin_add();
 		break;
 
@@ -754,6 +756,37 @@ void muhkuh_configDialog::OnPluginKey(wxTreeEvent &event)
 void muhkuh_configDialog::OnPluginSelectionChanged(wxTreeEvent &event)
 {
 	SetPluginButtons(event.GetItem());
+}
+
+
+void muhkuh_configDialog::OnButtonOk(wxCommandEvent &tEvent)
+{
+	wxString strValue;
+	/* The dialog was closed with the OK button. Copy all values back to the class. */
+
+	if( m_ptRadioFileWelcome->GetValue()==true )
+	{
+		m_ptConfigData->m_strWelcomeFile = m_ptTextStartPage->GetValue();
+	}
+	else
+	{
+		m_ptConfigData->m_strWelcomeFile = wxEmptyString;
+	}
+
+	if( m_ptRadioFileDetails->GetValue()==true )
+	{
+		m_ptConfigData->m_strDetailsFile = m_ptTextDetailsPage->GetValue();
+	}
+	else
+	{
+		m_ptConfigData->m_strDetailsFile = wxEmptyString;
+	}
+
+	m_ptConfigData->m_strLuaIncludePath = m_ptPathListBox->GetPaths(wxT(';'));
+	m_ptConfigData->m_strLuaStartupCode = m_ptStartupCodeText->GetValue();
+
+	/* Continue to process this event. Without this, the window is not closed. */
+	tEvent.Skip(true);
 }
 
 

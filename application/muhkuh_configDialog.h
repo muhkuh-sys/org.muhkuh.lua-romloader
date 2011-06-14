@@ -66,6 +66,7 @@ public:
 	wxString m_strApplicationIcon;
 };
 
+
 class muhkuh_configDialog : public wxDialog
 {
 public:
@@ -101,6 +102,7 @@ public:
 	void OnMoveDownLuaIncludePathButton(wxCommandEvent &event);
 	void OnLuaIncludePathSelectionChanged(wxCommandEvent &event);
 
+	void OnButtonOk(wxCommandEvent &event);
 private:
 	void createControls(void);
 	wxPanel *createControls_application(wxWindow *ptParent);
@@ -154,6 +156,4 @@ private:
 };
 
 
-
-
-#endif	// __MUHKUH_CONFIGDIALOG_H__
+#endif  /* __MUHKUH_CONFIGDIALOG_H__ */

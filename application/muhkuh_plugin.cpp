@@ -334,6 +334,9 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 	bool fResult;
 	int iResult;
 	lua_State *ptLuaState;
+	wxString strLuaCode;
+	char *pcLuaMessage;
+	wxString strLuaMessage;
 
 
 	wxLogMessage(m_strMe + _("loading plugin '%s'"), strPluginCfgPath.c_str());
@@ -355,6 +358,8 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 	}
 	else
 	{
+		/* TODO: cwd to the config file. */
+		
 		/* Create a new lua state. */
 		ptLuaState = lua_muhkuh_create_state();
 		if( ptLuaState==NULL )
@@ -364,37 +369,27 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 		}
 		else
 		{
-			iResult = luaL_dostring(ptLuaState, "print(\"hallo!\")\n");
-			wxLogMessage(wxT("luaL_dostring result = %d."), iResult);
-
+			strLuaCode.Printf(wxT("package.cpath = package.cpath..\";/home/cthelen/Compile/muhkuh_experimental/build/build/?.so\"\n_G.__MUHKUH_PLUGIN_CONFIGURATION = { [\"%s\"]=\"%s\" }\nrequire(\"%s\")\n"), wxT("romloader_usb"), m_strPluginCfgPath.c_str(), wxT("romloader_usb"));
+			iResult = lua_muhkuh_run_code(ptLuaState, strLuaCode.fn_str(), &pcLuaMessage);
+			if( iResult!=0 )
+			{
+				strLuaMessage = wxString::FromAscii(pcLuaMessage);
+				setInitError(strLuaMessage, strPluginCfgPath);
+				wxLogError(strLuaMessage);
+				fResult = false;
+			}
+			else
+			{
+/*
+				tPluginDesc.strPluginName = ptDesc->strPluginName;
+				tPluginDesc.strPluginId = ptDesc->strPluginId;
+				tPluginDesc.tVersion = ptDesc->tVersion;
+*/
+				// plugin is ready to use now
+				m_fPluginIsOk = true;
+			}
 			lua_close(ptLuaState);
 		}
-
-/*
-		else if(lua_muhkuh_require(ptLuaState, 
-		{
-			lua_getglobal(L, "require");
-			lua_pushstring(L, name);
-return report(L, docall(L, 1, 1));
-			 if (status && !lua_isnil(L, -1)) {
-    const char *msg = lua_tostring(L, -1);
-    if (msg == NULL) msg = "(error object is not a string)";
-    l_message(progname, msg);
-    lua_pop(L, 1);
-  }
-
-		}
-*/
-/*
-				if( fResult!=true )
-				{
-					// close the plugin
-					wxLogMessage(m_strMe + _("closing plugin '%s'"), strPluginCfgPath.c_str());
-					close();
-				}
-			}
-		}
-*/
 	}
 
 	return fResult;

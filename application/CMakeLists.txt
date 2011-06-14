@@ -22,8 +22,8 @@ include(${wxWidgets_USE_FILE})
 
 
 if(${LUA51_FOUND})
-	set_source_files_properties(muhkuh_lua.i PROPERTIES CPLUSPLUS ON)
-	set_source_files_properties(muhkuh_lua.i PROPERTIES SWIG_FLAGS "")
+	set_property(SOURCE muhkuh_lua.i PROPERTY CPLUSPLUS ON)
+	set_property(SOURCE muhkuh_lua.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/modules/typemaps)
 	SWIG_ADD_MODULE(muhkuh_app_lua_wrapper lua muhkuh_lua.i)
 	SET(muhkuh_app_lua_wrapper ${swig_generated_file_fullname})
 
