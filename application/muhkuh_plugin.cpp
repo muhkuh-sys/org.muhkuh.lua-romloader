@@ -325,6 +325,8 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 	/* Init the plugin description with defaults. */
 //	m_strCfgName = strPluginCfgPath;
 
+	/* TODO: check if the config file path is one of the module search paths. */
+
 	/* Open the plugin xml config. */
 	fResult = openXml(strPluginCfgPath);
 	if( fResult!=true )
@@ -336,9 +338,6 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 	}
 	else
 	{
-		/* TODO: check if the config file path is one of the module search paths. */
-		/* TODO: cwd to the config file. */
-		
 		/* Create a new lua state. */
 		ptLuaState = lua_muhkuh_create_state();
 		if( ptLuaState==NULL )
