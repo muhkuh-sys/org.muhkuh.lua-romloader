@@ -209,7 +209,7 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 #if USE_LUA!=0
 	/* Open a new lua state. */
 	lua_muhkuh_create_default_state();
-	lua_muhkuh_register_mainframe(this);
+	lua_muhkuh_register_config_data(m_ptConfigData);
 #endif
 }
 
@@ -250,6 +250,7 @@ muhkuh_mainFrame::~muhkuh_mainFrame(void)
 	if( m_ptConfigData!=NULL )
 	{
 		delete m_ptConfigData;
+		lua_muhkuh_register_config_data(NULL);
 	}
 
 	m_auiMgr.UnInit();
@@ -954,6 +955,7 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 
 		/* Replace the default lua state. */
 		lua_muhkuh_create_default_state();
+		lua_muhkuh_register_config_data(m_ptConfigData);
 
 		reloadWelcomePage();
 		reloadDetailsPage(NULL);
@@ -2316,10 +2318,3 @@ bool muhkuh_mainFrame::repositoryScannerCallback(void *pvUser, wxString strMessa
 
 	return fScannerIsRunning;
 }
-
-
-muhkuh_config_data *muhkuh_mainFrame::script_get_config_data(void)
-{
-	return m_ptConfigData;
-}
-

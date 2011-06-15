@@ -24,7 +24,7 @@
 #include <wx/log.h>
 
 #include "muhkuh_lua.h"
-#include "muhkuh_mainFrame.h"
+#include "muhkuh_configDialog.h"
 
 extern "C" {
 int luaopen_muhkuh_app(lua_State* L);
@@ -56,8 +56,8 @@ typedef struct
 
 
 /* This is the default state for the main frame. */
-static lua_State *ptDefaultState = NULL;
-static muhkuh_mainFrame *ptMainFrame = NULL;
+static lua_State *g_ptDefaultState = NULL;
+static muhkuh_config_data *g_ptConfigData = NULL;
 
 static const char *pcMuhkuhVersion =
 {
@@ -144,9 +144,9 @@ static int lua_muhkuh_print(lua_State *ptLuaState)
 }
 
 
-void lua_muhkuh_register_mainframe(muhkuh_mainFrame *ptFrame)
+void lua_muhkuh_register_config_data(muhkuh_config_data *ptConfigData)
 {
-	ptMainFrame = ptFrame;
+	g_ptConfigData = ptConfigData;
 }
 
 
@@ -185,15 +185,15 @@ void lua_muhkuh_create_default_state(void)
 	lua_muhkuh_close_default_state();
 
 	/* Create a new lua state. */
-	ptDefaultState = lua_muhkuh_create_state();
+	g_ptDefaultState = lua_muhkuh_create_state();
 }
 
 
 void lua_muhkuh_close_default_state(void)
 {
-	if( ptDefaultState!=NULL )
+	if( g_ptDefaultState!=NULL )
 	{
-		lua_close(ptDefaultState);
+		lua_close(g_ptDefaultState);
 	}
 }
 
@@ -205,7 +205,7 @@ int lua_muhkuh_get_memory_usage(lua_State *ptLuaState)
 
 	if( ptLuaState==NULL )
 	{
-		ptLuaState = ptDefaultState;
+		ptLuaState = g_ptDefaultState;
 	}
 
 	if( ptLuaState==NULL )
@@ -222,10 +222,9 @@ int lua_muhkuh_get_memory_usage(lua_State *ptLuaState)
 }
 
 
-static char *lua_muhkuh_pop_errormessage(lua_State *ptLuaState)
+static char *lua_muhkuh_pop_errormessage(lua_State *ptLuaState, int iResult)
 {
 	const char *pcLuaErrorMessage;
-	int iResult;
 	size_t sizResult;
 	char *pcResult;
 	const char *pcErrorFormat = "failed to load lua script, error %d: %s, %s";
@@ -260,7 +259,7 @@ int lua_muhkuh_generate_text(lua_State *ptLuaState, const char *pcLuaCode, char 
 	pcResult = NULL;
 	if( ptLuaState==NULL )
 	{
-		ptLuaState = ptDefaultState;
+		ptLuaState = g_ptDefaultState;
 	}
 
 	if( ptLuaState==NULL )
@@ -272,14 +271,14 @@ int lua_muhkuh_generate_text(lua_State *ptLuaState, const char *pcLuaCode, char 
 		iResult = luaL_loadstring(ptLuaState, pcLuaCode);
 		if( iResult!=0 )
 		{
-			pcResult = lua_muhkuh_pop_errormessage(ptLuaState);
+			pcResult = lua_muhkuh_pop_errormessage(ptLuaState, iResult);
 		}
 		else
 		{
 			iResult = lua_pcall(ptLuaState, 0, 1, 0);
 			if( iResult!=0 )
 			{
-				pcResult = lua_muhkuh_pop_errormessage(ptLuaState);
+				pcResult = lua_muhkuh_pop_errormessage(ptLuaState, iResult);
 			}
 			/* NOTE: lua_isstring returns 1 for strnigs and numbers. */
 			else if( lua_isstring(ptLuaState, -1)==1 )
@@ -340,7 +339,7 @@ int lua_muhkuh_run_code(lua_State *ptLuaState, const char *pcLuaCode, char **ppc
 	pcResult = NULL;
 	if( ptLuaState==NULL )
 	{
-		ptLuaState = ptDefaultState;
+		ptLuaState = g_ptDefaultState;
 	}
 
 	if( ptLuaState==NULL )
@@ -352,14 +351,14 @@ int lua_muhkuh_run_code(lua_State *ptLuaState, const char *pcLuaCode, char **ppc
 		iResult = luaL_loadstring(ptLuaState, pcLuaCode);
 		if( iResult!=0 )
 		{
-			pcResult = lua_muhkuh_pop_errormessage(ptLuaState);
+			pcResult = lua_muhkuh_pop_errormessage(ptLuaState, iResult);
 		}
 		else
 		{
 			iResult = lua_pcall(ptLuaState, 0, 0, 0);
 			if( iResult!=0 )
 			{
-				pcResult = lua_muhkuh_pop_errormessage(ptLuaState);
+				pcResult = lua_muhkuh_pop_errormessage(ptLuaState, iResult);
 			}
 		}
 	}
@@ -422,30 +421,21 @@ const char *get_version(void)
 
 static muhkuh_plugin_manager *get_plugin_manager(lua_State *ptLuaState)
 {
-	muhkuh_config_data *ptConfigData;
 	muhkuh_plugin_manager *ptPluginManager;
 
 
 	ptPluginManager = NULL;
 
-	if( ptMainFrame==NULL )
+	if( g_ptConfigData==NULL )
 	{
-		SCRIPT_PUSH_ERROR(ptLuaState, "init error: no mainframe registered!");
+		SCRIPT_PUSH_ERROR(ptLuaState, "init error: no config data registered!");
 	}
 	else
 	{
-		ptConfigData = ptMainFrame->script_get_config_data();
-		if( ptConfigData==NULL )
+		ptPluginManager = g_ptConfigData->m_ptPluginManager;
+		if( ptPluginManager==NULL )
 		{
-			SCRIPT_PUSH_ERROR(ptLuaState, "init error: mainframe has no config data!");
-		}
-		else
-		{
-			ptPluginManager = ptConfigData->m_ptPluginManager;
-			if( ptPluginManager==NULL )
-			{
-				SCRIPT_PUSH_ERROR(ptLuaState, "init error: config data has no plugin manager!");
-			}
+			SCRIPT_PUSH_ERROR(ptLuaState, "init error: config data has no plugin manager!");
 		}
 	}
 

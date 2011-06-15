@@ -114,8 +114,6 @@ public:
 	static bool repositoryScannerCallback(void *pvUser, wxString strMessage, int iProgressPos, int iProgressMax);
 	static const int m_iRepositoryProgressMax = 10000;
 
-	muhkuh_config_data *script_get_config_data(void);
-
 	/* Main frame status. */
 	typedef enum
 	{

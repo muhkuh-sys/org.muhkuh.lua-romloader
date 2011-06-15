@@ -164,9 +164,7 @@ const MUHKUH_PLUGIN_DESCRIPTION_T *muhkuh_plugin_manager::getPluginDescription(u
 		iter += ulIdx;
 		ptPluginIf = *iter;
 
-//		ptDesc = ptPluginIf->fn_get_desc();
-		wxLogError(m_strMe + wxT("getPluginDescription not yet"));
-		ptDesc = NULL;
+		ptDesc = ptPluginIf->GetPluginDescription();
 	}
 
 	return ptDesc;

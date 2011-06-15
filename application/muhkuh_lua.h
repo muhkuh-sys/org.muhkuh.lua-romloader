@@ -30,11 +30,8 @@ extern "C" {
 #define __MUHKUH_LUA_H__
 
 
-/* This is the default state for the main frame. */
-//extern lua_State *ptDefaultState;
-
-class muhkuh_mainFrame;
-void lua_muhkuh_register_mainframe(muhkuh_mainFrame *ptFrame);
+class muhkuh_config_data;
+void lua_muhkuh_register_config_data(muhkuh_config_data *ptConfigData);
 
 lua_State *lua_muhkuh_create_state(void);
 void lua_muhkuh_create_default_state(void);

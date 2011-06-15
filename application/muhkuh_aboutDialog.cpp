@@ -24,7 +24,7 @@
 #include "muhkuh_version.h"
 #include "muhkuh_aboutDialog.h"
 
-#if defined(USE_LUA)
+#if USE_LUA!=0
 #include "lua.h"
 #endif
 
@@ -121,7 +121,7 @@ void muhkuh_aboutDialog::setAbout(wxHtmlWindow *ptHtmlWin)
 #endif
 	strMsg += wxT(")<br><a href=\"http://www.wxwidgets.org\">http://www.wxwidgets.org</a></li>");
 
-#if defined(USE_LUA)
+#if USE_LUA!=0
 	strMsg += wxT("<li>") wxT(LUA_RELEASE) wxT(", ") wxT(LUA_COPYRIGHT) wxT(" by ") wxT(LUA_AUTHORS);
 	strMsg += wxT(")<br><a href=\"http://www.lua.org\">http://www.lua.org</a></li>");
 #endif

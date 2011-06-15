@@ -231,17 +231,13 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 				else
 				{
 
-#if defined(USE_LUA)
+#if USE_LUA!=0
 					/* Get the lua node. */
 					ptChildNode = find_child_node(ptMuhkuhNode->GetChildren(), wxT("Lua"));
 					if( ptChildNode!=NULL )
 					{
 						/* Get the lua module name. */
-						strLuaModuleName = ptChildNode->GetNodeContent();
-						cFileName.Assign(strLuaModuleName);
-						/* Remove any extensions. */
-						cFileName.ClearExt();
-						m_strLuaModuleName = cFileName.GetFullPath(wxPATH_NATIVE);
+						m_strLuaModuleName = ptChildNode->GetNodeContent();
 					}
 #endif
 
@@ -287,24 +283,6 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 								}
 								else
 								{
-#if 0
-									/* FIXME: if this block is enabled, the class crashes at destroy. */
-
-									/* Create a new xml document from the config node and convert it to text. */
-									ptChildNode = find_child_node(ptMuhkuhNode->GetChildren(), wxT("Cfg"));
-									/* Found the node? */
-									if( ptChildNode!=NULL )
-									{
-										tXmlConfig.SetRoot(ptChildNode);
-										tXmlConfig.Save(tStringOutStream, wxXML_NO_INDENTATION);
-										m_strConfigNodeContents = tStringOutStream.GetString();
-									}
-
-									/* Get the directory of the xml file. */
-									cFileName.Assign(strXmlPath);
-									/* Save path to xml config to build a relative path to the dll later. */
-									m_strPluginCfgPath = cFileName.GetPath(wxPATH_GET_VOLUME|wxPATH_GET_SEPARATOR, wxPATH_NATIVE);
-#endif
 									/* All data found. */
 									m_tPluginDescription.strPluginName = strCfgName;
 									m_tPluginDescription.strPluginId = strId;
@@ -358,6 +336,7 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 	}
 	else
 	{
+		/* TODO: check if the config file path is one of the module search paths. */
 		/* TODO: cwd to the config file. */
 		
 		/* Create a new lua state. */
@@ -380,12 +359,7 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 			}
 			else
 			{
-/*
-				tPluginDesc.strPluginName = ptDesc->strPluginName;
-				tPluginDesc.strPluginId = ptDesc->strPluginId;
-				tPluginDesc.tVersion = ptDesc->tVersion;
-*/
-				// plugin is ready to use now
+				/* The plugin is ready to use now. */
 				m_fPluginIsOk = true;
 			}
 			lua_close(ptLuaState);
@@ -426,3 +400,16 @@ void muhkuh_plugin::write_config(wxConfigBase *pConfig)
 	pConfig->Write(wxT("enable"), m_fPluginIsEnabled);
 }
 
+
+#if USE_LUA!=0
+wxString muhkuh_plugin::GetLuaModuleName(void) const
+{
+	return m_strLuaModuleName;
+}
+#endif
+
+
+const MUHKUH_PLUGIN_DESCRIPTION_T *muhkuh_plugin::GetPluginDescription(void) const
+{
+	return &m_tPluginDescription;
+}

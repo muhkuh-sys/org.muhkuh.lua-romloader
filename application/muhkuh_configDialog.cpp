@@ -853,7 +853,6 @@ void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 	wxTreeItemId tRootItem;
 	wxTreeItemId tPluginItem;
 	const MUHKUH_PLUGIN_DESCRIPTION_T *ptPluginDesc;
-	wxString strName;
 	wxString strId;
 	wxString strVersion;
 	treeItemIdData *ptData;
@@ -871,8 +870,6 @@ void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 	}
 	else
 	{
-		strName = m_ptConfigData->m_ptPluginManager->GetConfigName(lIdx);
-
 		// create the new data item
 		ptData = new treeItemIdData(lIdx);
 
@@ -882,14 +879,14 @@ void muhkuh_configDialog::ShowNewPlugin(long lIdx)
 			strVersion.Printf(wxT("V%d.%d.%d"), ptPluginDesc->uiVersionMajor, ptPluginDesc->uiVersionMinor, ptPluginDesc->uiVersionSub);
 
 			// set the plugin item
-			tPluginItem = m_pluginTree->AppendItem(tRootItem, strName, -1, -1, ptData);
+			tPluginItem = m_pluginTree->AppendItem(tRootItem, ptPluginDesc->strPluginName, -1, -1, ptData);
 			m_pluginTree->AppendItem(tPluginItem, strId, 3);
 			m_pluginTree->AppendItem(tPluginItem, strVersion, 4);
 			ShowPluginImage(tPluginItem);
 		}
 		else
 		{
-			tPluginItem = m_pluginTree->AppendItem(tRootItem, strName, 2, -1, ptData);
+			tPluginItem = m_pluginTree->AppendItem(tRootItem, ptPluginDesc->strPluginName, 2, -1, ptData);
 			// append the errormessage
 			m_pluginTree->AppendItem(tPluginItem, m_ptConfigData->m_ptPluginManager->GetInitError(lIdx), 2, -1, NULL);
 		}
@@ -1039,6 +1036,7 @@ void muhkuh_configDialog::plugin_add(void)
 			}
 			else
 			{
+				wxMessageBox(m_ptConfigData->m_ptPluginManager->GetInitError(lIdx), _("The plugin could not be loaded."), wxICON_ERROR, this);
 				m_ptConfigData->m_ptPluginManager->removePlugin(lIdx);
 			}
 		}

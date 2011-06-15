@@ -27,7 +27,7 @@
 #include <wx/xml/xml.h>
 
 
-#if defined(USE_LUA)
+#if USE_LUA!=0
 extern "C" {
 #include "lua.h"
 #include "lauxlib.h"
@@ -59,7 +59,7 @@ public:
 	muhkuh_plugin(wxConfigBase *pConfig);
 	~muhkuh_plugin(void);
 
-	wxString GetConfigName(void) const;
+	const MUHKUH_PLUGIN_DESCRIPTION_T *GetPluginDescription(void) const;
 
 	bool IsOk(void) const;
 	wxString GetInitError(void) const;
@@ -70,8 +70,8 @@ public:
 	void write_config(wxConfigBase *pConfig);
 
 	bool Load(wxString strPluginCfgPath);
-#if defined(USE_LUA)
-	bool LoadLua(lua_State *ptLuaState);
+#if USE_LUA!=0
+	wxString GetLuaModuleName(void) const;
 #endif
 
 private:
@@ -100,11 +100,8 @@ private:
 	/* The plugin description from the xml file. */
 	MUHKUH_PLUGIN_DESCRIPTION_T m_tPluginDescription;
 
-	/* The contents of the context node as xml text. */
-	wxString m_strConfigNodeContents;
-
-#if defined(USE_LUA)
-	/* Complete path to the lua module. */
+#if USE_LUA!=0
+	/* Lua specific name of the module. */
 	wxString m_strLuaModuleName;
 #endif
 
