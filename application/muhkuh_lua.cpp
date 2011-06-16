@@ -169,7 +169,12 @@ lua_State *lua_muhkuh_create_state(void)
 		lua_register(ptLuaState, "print", lua_muhkuh_print);
 
 		/* Add the muhkuh binding. */
-		luaopen_muhkuh_app(ptLuaState);
+		/* FIXME: This causes a crash in lua dll modules. Reproduce with therse steps:
+		 * 1) Open the config dialog and add a new plugin.
+		 * 2) Close the config dialog with the "OK" button.
+		 * 3) Open the config dialog again. -> Crash!
+		 */
+		//luaopen_muhkuh_app(ptLuaState);
 
 		/* Init done, restart GC. */
 		lua_gc(ptLuaState, LUA_GCRESTART, 0);
