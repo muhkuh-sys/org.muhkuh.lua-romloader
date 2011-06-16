@@ -140,6 +140,7 @@ private:
 	void read_config(void);
 	void write_config(void);
 
+	bool executeTest_generate_start_code(wxString strStartLuaFile);
 	void executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex);
 	bool process_server_output(void);
 	void finishTest(void);

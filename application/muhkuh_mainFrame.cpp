@@ -1070,24 +1070,19 @@ bool muhkuh_mainFrame::check_plugins(void)
 }
 
 
-void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex)
+bool muhkuh_mainFrame::executeTest_generate_start_code(wxString strStartLuaFile)
 {
 	bool fResult;
-	wxString strMsg;
-	wxString strErrorMsg;
 	int iResult;
 	char *pcStartupCode;
 	wxString strStartupCode;
-//	wxString strServerCmd;
-//	wxString strNow;
 	wxFile tFile;
+	wxString strMsg;
+	wxString strErrorMsg;
 
 
-	m_strRunningTestName = ptTestData->testDescription_getName();
-	m_sizRunningTest_RepositoryIdx = ptTestData->getRepositoryIndex();
-	m_sizRunningTest_TestIdx = ptTestData->getTestIndex();
-
-	wxLogMessage(_("execute test '%s', index %d"), m_strRunningTestName.c_str(), uiIndex);
+	/* Expect error. */
+	fResult = false;
 
 	/* Run the startup code generator. */
 	iResult = lua_muhkuh_generate_text(NULL, m_ptConfigData->m_strLuaStartupCode.fn_str(), &pcStartupCode);
@@ -1101,47 +1096,69 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	}
 	else
 	{
-		strMsg = wxString::FromAscii(pcStartupCode);
-		wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
+		/* Create the 'start_gui.lua' file. */
+		fResult = tFile.Create(strStartLuaFile.c_str(), true);
+		if( fResult!=true )
+		{
+			strMsg.Printf(_("Failed to create temporary file '%s'!"), strStartLuaFile.c_str());
+			wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
+		}
+		else
+		{
+			fResult = tFile.Write(wxString::FromAscii(pcStartupCode));
+			if( fResult!=true )
+			{
+				strMsg.Printf(_("Failed to write to temporary file '%s'!"), strStartLuaFile.c_str());
+				wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
+			}
+			else
+			{
+				wxLogMessage(wxT("Startup code written to %s."), strStartLuaFile.c_str());
+			}
+
+			tFile.Close();
+		}
 	}
-#if 0
+
+	return fResult;
+}
 
 
-	// create the startup code
-	strStartupCode.Append(wxT("-- execute this test\n"));
-	strStartupCode.Append(wxT("_G.__MUHKUH_TEST_XML = '"));
-	strStartupCode.Append(m_ptConfigData->m_ptRepositoryManager->getTestlistXmlUrl(m_sizRunningTest_RepositoryIdx, m_sizRunningTest_TestIdx));
-	strStartupCode.Append(wxT("'\n\n"));
-
-	strStartupCode.Append(wxT("-- include path\n"));
-	strStartupCode.Append(wxT("package['path'] = '"));
-	strStartupCode.Append(m_ptConfigData->m_strLuaIncludePath);
-	strStartupCode.Append(wxT("'\n\n"));
-
-	strStartupCode.Append(m_ptConfigData->m_strLuaStartupCode);
+void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex)
+{
+	bool fResult;
+	wxFileName tFileName;
+	wxString strServerCmd;
+	wxString strMsg;
+	wxString strNow;
+	
+	wxString strTempWorkingFolder;	/* This is the folder where the mtd is depacked and the startup file is generated. */
+	wxString strStartLuaFile;	/* This is the complete path to the generated startup file. */
 
 
-	// create the temp file with the lua init commands
-	m_strRunningTestTempFileName = wxFileName::CreateTempFileName(wxT("muhkuh_lua"));
-	fResult = tFile.Create(m_strRunningTestTempFileName.c_str(), true);
-	if( fResult!=true )
+	/* Get the working temp folder. */
+	strTempWorkingFolder = wxT("/home/cthelen/Compile/muhkuh_experimental/build/build/demo_layout/");
+
+	/* TODO: Clear the working folder. */
+
+	/* Create the startup code. */
+	tFileName.Assign(strTempWorkingFolder, wxT("start_gui"), wxT("lua"));
+	strStartLuaFile = tFileName.GetFullPath(wxPATH_NATIVE);
+	fResult = executeTest_generate_start_code(strStartLuaFile);
+	if( fResult==true )
 	{
-		strMsg.Printf(_("Failed to create temporary file '%s'!"), m_strRunningTestTempFileName.c_str());
-		wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
-	}
-	else
-	{
-		
-	}
-		// write the startup string to the temp file
-		tFile.Write(strStartupCode);
-		tFile.Close();
+		m_strRunningTestName = ptTestData->testDescription_getName();
+		m_sizRunningTest_RepositoryIdx = ptTestData->getRepositoryIndex();
+		m_sizRunningTest_TestIdx = ptTestData->getTestIndex();
+
+		wxLogMessage(_("execute test '%s', index %d"), m_strRunningTestName.c_str(), uiIndex);
+
 
 		// set state to 'testing'
 		// NOTE: this must be done before the call to 'RunString', or the state will not change before the first idle event
 		setState(muhkuh_mainFrame_state_testing);
 
-		strServerCmd.Printf(wxT("lua %s"), m_strRunningTestTempFileName.c_str());
+		strServerCmd.Printf(wxT("lua %s"), strStartLuaFile.c_str());
 		wxLogMessage(wxT("starting server: ") + strServerCmd);
 
 		m_lServerPid = wxExecute(strServerCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, m_ptServerProcess);
@@ -1160,16 +1177,12 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 			strMsg = m_strRunningTestName + wxT(" - ") + strNow;
 			m_notebook->AddPage(m_ptTextCtrl_TestOutput, strMsg, true, m_frameIcons.GetIcon(16));
 
-			m_ptTextCtrl_TestOutput->AppendText(wxT("startup code:\n"));
-			m_ptTextCtrl_TestOutput->AppendText(wxT("-----------------------------------------------------------------------------\n"));
-			m_ptTextCtrl_TestOutput->AppendText(strStartupCode);
-			m_ptTextCtrl_TestOutput->AppendText(wxT("-----------------------------------------------------------------------------\n"));
+			m_ptTextCtrl_TestOutput->AppendText(wxT("lalala\n"));
 
 			// start the timer to poll the server for input
 			m_timerIdleWakeUp.Start(100);
 		}
 	}
-#endif
 }
 
 
