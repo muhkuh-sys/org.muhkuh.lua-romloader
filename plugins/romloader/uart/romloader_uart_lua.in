@@ -1,7 +1,0 @@
-
-%include "../romloader_uart_main.h"
-%include "../../romloader.h"
-
-#include "../romloader_lua.i"
-
-%function %gc romloader *romloader_uart_create(voidptr_long pvHandle)
