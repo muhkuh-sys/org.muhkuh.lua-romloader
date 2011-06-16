@@ -237,7 +237,7 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 					if( ptChildNode!=NULL )
 					{
 						/* Get the lua module name. */
-						m_strLuaModuleName = ptChildNode->GetNodeContent();
+						strLuaModuleName = ptChildNode->GetNodeContent();
 					}
 #endif
 
@@ -289,6 +289,7 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 									m_tPluginDescription.uiVersionMajor = lVersionMaj;
 									m_tPluginDescription.uiVersionMinor = lVersionMin;
 									m_tPluginDescription.uiVersionSub = lVersionSub;
+									m_tPluginDescription.strLuaModuleName = strLuaModuleName;
 
 									fResult = true;
 								}
@@ -336,6 +337,10 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 		*/
 		wxLogError(m_strMe + _("failed to read plugin xml config"));
 	}
+	else if( m_tPluginDescription.strLuaModuleName.IsEmpty()==true )
+	{
+		setInitError(_("The plugin does not support lua! Unfortunately lua is the only scripting language this muhkuh version supports. This means the plugin can not be used with this muhkuh version."), m_strPluginCfgPath);
+	}
 	else
 	{
 		/* Create a new lua state. */
@@ -347,7 +352,13 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 		}
 		else
 		{
-			strLuaCode.Printf(wxT("package.cpath = package.cpath..\";/home/cthelen/Compile/muhkuh_experimental/build/build/?.so\"\n_G.__MUHKUH_PLUGIN_CONFIGURATION = { [\"%s\"]=\"%s\" }\nrequire(\"%s\")\n"), wxT("romloader_usb"), m_strPluginCfgPath.c_str(), wxT("romloader_usb"));
+			strLuaCode.Printf(
+				wxT("package.cpath = package.cpath..\";/home/cthelen/Compile/muhkuh_experimental/build/build/?.so\"\n")
+				wxT("_G.__MUHKUH_PLUGIN_CONFIGURATION = { [\"%s\"]=\"%s\" }\n")
+				wxT("require(\"%s\")\n")
+				wxT("_G.__MUHKUH_PLUGINS = nil\n")
+				wxT("collectgarbage()\n")
+			, m_tPluginDescription.strLuaModuleName.c_str(), m_strPluginCfgPath.c_str(), m_tPluginDescription.strLuaModuleName.c_str());
 			iResult = lua_muhkuh_run_code(ptLuaState, strLuaCode.fn_str(), &pcLuaMessage);
 			if( iResult!=0 )
 			{
@@ -398,14 +409,6 @@ void muhkuh_plugin::write_config(wxConfigBase *pConfig)
 	pConfig->Write(wxT("path"), m_strPluginCfgPath);
 	pConfig->Write(wxT("enable"), m_fPluginIsEnabled);
 }
-
-
-#if USE_LUA!=0
-wxString muhkuh_plugin::GetLuaModuleName(void) const
-{
-	return m_strLuaModuleName;
-}
-#endif
 
 
 const MUHKUH_PLUGIN_DESCRIPTION_T *muhkuh_plugin::GetPluginDescription(void) const

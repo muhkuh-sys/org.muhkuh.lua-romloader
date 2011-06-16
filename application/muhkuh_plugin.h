@@ -47,6 +47,7 @@ typedef struct
 	unsigned int uiVersionMajor;                                                                                                                                                                                                     
 	unsigned int uiVersionMinor;                                                                                                                                                                                                     
 	unsigned int uiVersionSub;
+	wxString strLuaModuleName;
 } MUHKUH_PLUGIN_DESCRIPTION_T;
 
 
@@ -70,9 +71,6 @@ public:
 	void write_config(wxConfigBase *pConfig);
 
 	bool Load(wxString strPluginCfgPath);
-#if USE_LUA!=0
-	wxString GetLuaModuleName(void) const;
-#endif
 
 private:
 	// set prefix for messages
@@ -81,7 +79,6 @@ private:
 	wxXmlNode *find_child_node(wxXmlNode *ptParentNode, wxString strNodeName);
 	bool openXml(wxString strXmlPath);
 	bool open(wxString strPluginPath);
-//	void close(void);
 
 	void setInitError(wxString strMessage, wxString strPath);
 
@@ -99,11 +96,6 @@ private:
 
 	/* The plugin description from the xml file. */
 	MUHKUH_PLUGIN_DESCRIPTION_T m_tPluginDescription;
-
-#if USE_LUA!=0
-	/* Lua specific name of the module. */
-	wxString m_strLuaModuleName;
-#endif
 
 	/* Plugin state. */
 	bool m_fPluginIsOk;
