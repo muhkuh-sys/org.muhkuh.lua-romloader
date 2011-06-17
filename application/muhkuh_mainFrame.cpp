@@ -1127,23 +1127,30 @@ bool muhkuh_mainFrame::executeTest_generate_start_code(wxString strStartLuaFile)
 void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex)
 {
 	bool fResult;
-	wxFileName tFileName;
-	wxString strServerCmd;
 	wxString strMsg;
 	wxString strNow;
-	
+
+	wxString strOldWorkingDirectory;
 	wxString strTempWorkingFolder;	/* This is the folder where the mtd is depacked and the startup file is generated. */
 	wxString strStartLuaFile;	/* This is the complete path to the generated startup file. */
+	wxString strStartCmd;
 
 
 	/* Get the working temp folder. */
 	strTempWorkingFolder = wxT("/home/cthelen/Compile/muhkuh_experimental/build/build/demo_layout/");
 
-	/* TODO: Clear the working folder. */
+	/* Save the old working directory. It will be restored at the end of this function. */
+	strOldWorkingDirectory = wxFileName::GetCwd();
+
+	/* Change the working directory to the temp folder. */
+	wxFileName::SetCwd(strTempWorkingFolder);
+
+	/* TODO: Clear the working folder.
+	 * FIXME: But do not clear it now, there is still some hand-generated stuff.
+	 */
 
 	/* Create the startup code. */
-	tFileName.Assign(strTempWorkingFolder, wxT("start_gui"), wxT("lua"));
-	strStartLuaFile = tFileName.GetFullPath(wxPATH_NATIVE);
+	strStartLuaFile = wxT("start_gui.lua");
 	fResult = executeTest_generate_start_code(strStartLuaFile);
 	if( fResult==true )
 	{
@@ -1154,17 +1161,20 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 		wxLogMessage(_("execute test '%s', index %d"), m_strRunningTestName.c_str(), uiIndex);
 
 
-		// set state to 'testing'
-		// NOTE: this must be done before the call to 'RunString', or the state will not change before the first idle event
+		/* Set state to 'testing'.
+		 * NOTE: this must be done before the call to 'RunString', or
+		 * the state will not change before the first idle event.
+		 */
 		setState(muhkuh_mainFrame_state_testing);
 
-		strServerCmd.Printf(wxT("lua %s"), strStartLuaFile.c_str());
-		wxLogMessage(wxT("starting server: ") + strServerCmd);
+		/* Construct the start command. */
+		strStartCmd.Printf(wxT("lua %s"), strStartLuaFile.c_str());
+		wxLogMessage(wxT("start command: ") + strStartCmd);
 
-		m_lServerPid = wxExecute(strServerCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, m_ptServerProcess);
+		m_lServerPid = wxExecute(strStartCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, m_ptServerProcess);
 		if( m_lServerPid==0 )
 		{
-			strMsg.Printf(_("Failed to start the server with command: %s"), strServerCmd.c_str());
+			strMsg.Printf(_("Failed to start the server with command: %s"), strStartCmd.c_str());
 			wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
 		}
 		else
@@ -1183,6 +1193,9 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 			m_timerIdleWakeUp.Start(100);
 		}
 	}
+
+	/* Restore old working directory. */
+	wxFileName::SetCwd(strOldWorkingDirectory);
 }
 
 
