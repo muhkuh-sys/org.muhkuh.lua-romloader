@@ -28,18 +28,31 @@
 typedef struct
 {
 	wxString strName;
-	wxString strVersion;			// version string
-	wxString strCode;
+	wxString strVersion;                    // version string
 } tTesterXml_Test;
 
 typedef struct
 {
-	wxString strName;			// name of the testdescription
-	wxString strVersion;			// version string
-	wxString strCode;
-	unsigned int uiTests;			// number of tests
+	wxString strName;                       // name of the testdescription
+	wxString strVersion;                    // version string
+	unsigned int uiTests;                   // number of tests
 	tTesterXml_Test *ptTests;
 } tTesterXml_TestDescription;
+
+
+typedef struct
+{
+	char *pcName;
+	char *pcValue;
+} MTD_SUBTEST_PARAMETER_T;
+
+typedef struct
+{
+	char *pcCode;
+	size_t sizParameter;
+	MTD_SUBTEST_PARAMETER_T *ptParameter;
+} MTD_SUBTEST_T;
+
 
 
 class muhkuh_wrap_xml
@@ -52,22 +65,30 @@ public:
 
 	size_t getRepositoryIndex(void) const;
 	size_t getTestIndex(void) const;
-	wxXmlDocument *getXmlDocument(void);
+//	wxXmlDocument *getXmlDocument(void);
 
 	wxString testDescription_getName(void) const;
 	wxString testDescription_getVersion(void) const;
-	wxString testDescription_getCode(void) const;
+//	wxString testDescription_getCode(void) const;
 	unsigned int testDescription_getTestCnt(void) const;
 	bool testDescription_setTest(unsigned int uiTestIdx);
 
 	wxString test_getName(void) const;
 	wxString test_getVersion(void) const;
-	wxString test_getCode(void) const;
+//	wxString test_getCode(void) const;
+
+	bool subtests_parse(void);
+	const MTD_SUBTEST_T *subtests_get(unsigned int uiIdx) const;
+	void subtests_free(void);
 
 private:
+	bool subtests_read_test(wxXmlNode *ptParent, MTD_SUBTEST_T *ptSubtest);
+
 	bool readTestDescription(wxXmlDocument *xmldoc);
 	bool readTest(wxXmlNode *xml_parent, tTesterXml_TestDescription *ptTestDesc);
-	bool readCodeNode(wxXmlNode *xml_parent, wxString &strCode);
+//	bool readCodeNode(wxXmlNode *xml_parent, wxString &strCode);
+
+	wxXmlNode *search_node(wxXmlNode *ptNode, wxString strName);
 
 	wxXmlDocument *m_xml_doc;
 
@@ -76,6 +97,9 @@ private:
 
 	size_t m_sizRepositoryIdx;
 	size_t m_sizTestIdx;
+
+	size_t m_sizSubtests;
+	MTD_SUBTEST_T *m_ptSubtests;
 };
 
 

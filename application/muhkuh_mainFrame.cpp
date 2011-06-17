@@ -1124,6 +1124,20 @@ bool muhkuh_mainFrame::executeTest_generate_start_code(wxString strStartLuaFile)
 }
 
 
+bool muhkuh_mainFrame::executeTest_generate_code_chunks(wxString strTempWorkingFolder, muhkuh_wrap_xml *ptTestData)
+{
+	wxString strCode;
+	
+
+	ptTestData->subtests_parse();
+
+//	strCode = ptTestData->testDescription_getCode();
+//	wxMessageBox(strCode, _("Server startup error"), wxICON_ERROR, this);
+
+	return false;
+}
+
+
 void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex)
 {
 	bool fResult;
@@ -1149,48 +1163,52 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	 * FIXME: But do not clear it now, there is still some hand-generated stuff.
 	 */
 
-	/* Create the startup code. */
-	strStartLuaFile = wxT("start_gui.lua");
-	fResult = executeTest_generate_start_code(strStartLuaFile);
+	fResult = executeTest_generate_code_chunks(strTempWorkingFolder, ptTestData);
 	if( fResult==true )
 	{
-		m_strRunningTestName = ptTestData->testDescription_getName();
-		m_sizRunningTest_RepositoryIdx = ptTestData->getRepositoryIndex();
-		m_sizRunningTest_TestIdx = ptTestData->getTestIndex();
-
-		wxLogMessage(_("execute test '%s', index %d"), m_strRunningTestName.c_str(), uiIndex);
-
-
-		/* Set state to 'testing'.
-		 * NOTE: this must be done before the call to 'RunString', or
-		 * the state will not change before the first idle event.
-		 */
-		setState(muhkuh_mainFrame_state_testing);
-
-		/* Construct the start command. */
-		strStartCmd.Printf(wxT("lua %s"), strStartLuaFile.c_str());
-		wxLogMessage(wxT("start command: ") + strStartCmd);
-
-		m_lServerPid = wxExecute(strStartCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, m_ptServerProcess);
-		if( m_lServerPid==0 )
+		/* Create the startup code. */
+		strStartLuaFile = wxT("start_gui.lua");
+		fResult = executeTest_generate_start_code(strStartLuaFile);
+		if( fResult==true )
 		{
-			strMsg.Printf(_("Failed to start the server with command: %s"), strStartCmd.c_str());
-			wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
-		}
-		else
-		{
-			strNow = wxDateTime::Now().Format(wxT("%F %T"));
-			// create start message for the report tab
-			strMsg.Printf(_("%s: started test '%s'.\n"), strNow.c_str(), m_strRunningTestName.c_str());
-			// create a new notebook tab
-			m_ptTextCtrl_TestOutput = new wxTextCtrl(this, wxID_ANY, strMsg, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxSUNKEN_BORDER | wxTE_READONLY);
-			strMsg = m_strRunningTestName + wxT(" - ") + strNow;
-			m_notebook->AddPage(m_ptTextCtrl_TestOutput, strMsg, true, m_frameIcons.GetIcon(16));
+			m_strRunningTestName = ptTestData->testDescription_getName();
+			m_sizRunningTest_RepositoryIdx = ptTestData->getRepositoryIndex();
+			m_sizRunningTest_TestIdx = ptTestData->getTestIndex();
 
-			m_ptTextCtrl_TestOutput->AppendText(wxT("lalala\n"));
+			wxLogMessage(_("execute test '%s', index %d"), m_strRunningTestName.c_str(), uiIndex);
 
-			// start the timer to poll the server for input
-			m_timerIdleWakeUp.Start(100);
+
+			/* Set state to 'testing'.
+			 * NOTE: this must be done before the call to 'RunString', or
+			 * the state will not change before the first idle event.
+			 */
+			setState(muhkuh_mainFrame_state_testing);
+
+			/* Construct the start command. */
+			strStartCmd.Printf(wxT("lua %s"), strStartLuaFile.c_str());
+			wxLogMessage(wxT("start command: ") + strStartCmd);
+
+			m_lServerPid = wxExecute(strStartCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, m_ptServerProcess);
+			if( m_lServerPid==0 )
+			{
+				strMsg.Printf(_("Failed to start the server with command: %s"), strStartCmd.c_str());
+				wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
+			}
+			else
+			{
+				strNow = wxDateTime::Now().Format(wxT("%F %T"));
+				// create start message for the report tab
+				strMsg.Printf(_("%s: started test '%s'.\n"), strNow.c_str(), m_strRunningTestName.c_str());
+				// create a new notebook tab
+				m_ptTextCtrl_TestOutput = new wxTextCtrl(this, wxID_ANY, strMsg, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxSUNKEN_BORDER | wxTE_READONLY);
+				strMsg = m_strRunningTestName + wxT(" - ") + strNow;
+				m_notebook->AddPage(m_ptTextCtrl_TestOutput, strMsg, true, m_frameIcons.GetIcon(16));
+
+				m_ptTextCtrl_TestOutput->AppendText(wxT("lalala\n"));
+
+				// start the timer to poll the server for input
+				m_timerIdleWakeUp.Start(100);
+			}
 		}
 	}
 

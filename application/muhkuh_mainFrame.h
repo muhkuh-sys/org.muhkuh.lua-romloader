@@ -141,6 +141,7 @@ private:
 	void write_config(void);
 
 	bool executeTest_generate_start_code(wxString strStartLuaFile);
+	bool executeTest_generate_code_chunks(wxString strTempWorkingFolder, muhkuh_wrap_xml *ptTestData);
 	void executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex);
 	bool process_server_output(void);
 	void finishTest(void);

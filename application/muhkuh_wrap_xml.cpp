@@ -22,6 +22,9 @@
 #include <wx/wx.h>
 #include <wx/log.h>
 
+#include <stdlib.h>
+
+
 #include "muhkuh_wrap_xml.h"
 
 
@@ -29,6 +32,8 @@ muhkuh_wrap_xml::muhkuh_wrap_xml(void)
  : m_xml_doc(NULL)
  , m_ptTestDescription(NULL)
  , m_ptTest(NULL)
+ , m_sizSubtests(0)
+ , m_ptSubtests(NULL)
 {
 }
 
@@ -52,6 +57,12 @@ muhkuh_wrap_xml::~muhkuh_wrap_xml(void)
 			delete[] ts;
 		}
 		delete m_ptTestDescription;
+	}
+
+	/* Free all subtests. */
+	if( m_ptSubtests!=NULL )
+	{
+		subtests_free();
 	}
 }
 
@@ -118,12 +129,12 @@ size_t muhkuh_wrap_xml::getTestIndex(void) const
 	return m_sizTestIdx;
 }
 
-
+/*
 wxXmlDocument *muhkuh_wrap_xml::getXmlDocument(void)
 {
 	return m_xml_doc;
 }
-
+*/
 
 wxString muhkuh_wrap_xml::testDescription_getName(void) const
 {
@@ -150,7 +161,7 @@ wxString muhkuh_wrap_xml::testDescription_getVersion(void) const
 	return m_ptTestDescription->strVersion;
 }
 
-
+/*
 wxString muhkuh_wrap_xml::testDescription_getCode(void) const
 {
 	// does a testdescription exist?
@@ -162,7 +173,7 @@ wxString muhkuh_wrap_xml::testDescription_getCode(void) const
 	// yes -> get the name
 	return m_ptTestDescription->strCode;
 }
-
+*/
 
 unsigned int muhkuh_wrap_xml::testDescription_getTestCnt(void) const
 {
@@ -223,7 +234,7 @@ wxString muhkuh_wrap_xml::test_getVersion(void) const
 	return m_ptTest->strVersion;
 }
 
-
+/*
 wxString muhkuh_wrap_xml::test_getCode(void) const
 {
 	// does a testdescription exist?
@@ -234,6 +245,271 @@ wxString muhkuh_wrap_xml::test_getCode(void) const
 
 	// yes -> get the name
 	return m_ptTest->strCode;
+}
+*/
+
+
+bool muhkuh_wrap_xml::subtests_read_test(wxXmlNode *ptParent, MTD_SUBTEST_T *ptSubtest)
+{
+	bool fOk;
+	wxXmlNode *ptNode;
+	size_t sizData;
+	wxString strData;
+	size_t sizParameter;
+	MTD_SUBTEST_PARAMETER_T *ptParameter;
+
+
+	/* Expect success. */
+	fOk = true;
+
+	/* Search the code node. */
+	ptNode = search_node(ptParent->GetChildren(), wxT("Code"));
+	if( ptNode!=NULL )
+	{
+		/* Get the node contents. */
+		strData = ptNode->GetNodeContent();
+		/* Allocate the buffer for the code string and the trailing 0. */
+		sizData = strData.Len() + 1;
+		ptSubtest->pcCode = (char*)malloc(sizData);
+		if( ptSubtest->pcCode==NULL )
+		{
+			wxLogError(_("Out of memory!"));
+			fOk = false;
+		}
+		else
+		{
+			memcpy(ptSubtest->pcCode, strData.c_str(), sizData);
+
+			/* Count the parameters. */
+			sizParameter = 0;
+			ptNode = ptParent->GetChildren();
+			while( ptNode!=NULL )
+			{
+				if( ptNode->GetType()==wxXML_ELEMENT_NODE && ptNode->GetName()==wxT("Parameter") )
+				{
+					++sizParameter;
+				}
+				ptNode = ptNode->GetNext();
+			}
+
+			ptSubtest->sizParameter = sizParameter;
+			if( sizParameter==0 )
+			{
+				ptSubtest->ptParameter = NULL;
+			}
+			else
+			{
+				ptSubtest->ptParameter = (MTD_SUBTEST_PARAMETER_T*)calloc(sizParameter, sizeof(MTD_SUBTEST_PARAMETER_T));
+				if( ptSubtest->ptParameter==NULL )
+				{
+					wxLogError(_("Out of memory!"));
+					fOk = false;
+				}
+				else
+				{
+					ptParameter = ptSubtest->ptParameter;
+					ptNode = ptParent->GetChildren();
+					while( ptNode!=NULL )
+					{
+						if( ptNode->GetType()==wxXML_ELEMENT_NODE && ptNode->GetName()==wxT("Parameter") )
+						{
+							/* Get the name parameter. */
+							if( ptNode->GetPropVal(wxT("name"), &strData)==false )
+							{
+								wxLogError(_("The parameter has no name attribute."));
+								fOk = false;
+								break;
+							}
+							/* Allocate the buffer for the code string and the trailing 0. */
+							sizData = strData.Len() + 1;
+							ptParameter->pcName = (char*)malloc(sizData);
+							if( ptParameter->pcName==NULL )
+							{
+								wxLogError(_("Out of memory!"));
+								fOk = false;
+								break;
+							}
+							memcpy(ptParameter->pcName, strData.c_str(), sizData);
+
+							/* Get the value parameter. */
+							strData = ptNode->GetNodeContent();
+							/* Allocate the buffer for the code string and the trailing 0. */
+							sizData = strData.Len() + 1;
+							ptParameter->pcValue = (char*)malloc(sizData);
+							if( ptParameter->pcValue==NULL )
+							{
+								wxLogError(_("Out of memory!"));
+								fOk = false;
+								break;
+							}
+							memcpy(ptParameter->pcValue, strData.c_str(), sizData);
+
+							++ptParameter;
+						}
+						ptNode = ptNode->GetNext();
+					}
+				}
+			}
+		}
+	}
+
+	return fOk;
+}
+
+
+bool muhkuh_wrap_xml::subtests_parse(void)
+{
+	bool fResult;
+	size_t sizTests;
+	wxXmlNode *ptNodeTestDescription;
+	MTD_SUBTEST_T *ptSubtestCnt;
+	MTD_SUBTEST_T *ptSubtestEnd;
+	wxXmlNode *ptNode;
+
+
+	/* Expect success. */
+	fResult = true;
+
+	/* Does a testdescription exist? */
+	if( m_ptTestDescription==NULL )
+	{
+		wxLogError(_("The xml file was not parsed yet."));
+		fResult = false;
+	}
+	else
+	{
+		/* Allocate a new array with one global entry and one for each test. */
+		sizTests = m_ptTestDescription->uiTests + 1;
+		m_ptSubtests = (MTD_SUBTEST_T*)calloc(sizTests, sizeof(MTD_SUBTEST_T));
+		if( m_ptSubtests==NULL )
+		{
+			wxLogError(_("Out of memory error!"));
+			fResult = false;
+		}
+		else
+		{
+			/* Search the TestDescription node. */
+			ptNodeTestDescription = search_node(m_xml_doc->GetRoot(), wxT("TestDescription"));
+			if( ptNodeTestDescription==NULL )
+			{
+				wxLogError(_("Can not find the TestDescription node!"));
+				fResult = false;
+			}
+			else
+			{
+				ptSubtestCnt = m_ptSubtests;
+				ptSubtestEnd = m_ptSubtests + sizTests;
+
+				/* Add the init code block. */
+				fResult = subtests_read_test(ptNodeTestDescription, ptSubtestCnt);
+				if( fResult==true )
+				{
+					++ptSubtestCnt;
+
+					/* Search all subtests. */
+					ptNode = ptNodeTestDescription->GetChildren();
+					while( ptNode!=NULL )
+					{
+						if( ptNode->GetType()==wxXML_ELEMENT_NODE && ptNode->GetName()==wxT("Test") )
+						{
+							fResult = subtests_read_test(ptNode, ptSubtestCnt);
+							if( fResult!=true )
+							{
+								break;
+							}
+							++ptSubtestCnt;
+						}
+						ptNode = ptNode->GetNext();
+					}
+				}
+			}
+		}
+	}
+
+	if( fResult!=true )
+	{
+		subtests_free();
+	}
+
+	return fResult;
+}
+
+
+const MTD_SUBTEST_T *muhkuh_wrap_xml::subtests_get(unsigned int uiIdx) const
+{
+	const MTD_SUBTEST_T *ptSubtest;
+
+
+	/* Is the index valid? */
+	if( uiIdx<m_sizSubtests )
+	{
+		ptSubtest = m_ptSubtests + uiIdx;
+	}
+	return ptSubtest;
+}
+
+
+void muhkuh_wrap_xml::subtests_free(void)
+{
+	MTD_SUBTEST_T *ptTestCnt;
+	MTD_SUBTEST_T *ptTestEnd;
+	MTD_SUBTEST_PARAMETER_T *ptParamCnt;
+	MTD_SUBTEST_PARAMETER_T *ptParamEnd;
+
+
+	if( m_ptSubtests!=NULL )
+	{
+		ptTestCnt = m_ptSubtests;
+		ptTestEnd = m_ptSubtests + m_sizSubtests;
+		while( ptTestCnt<ptTestEnd )
+		{
+			/* Free the code. */
+			if( ptTestCnt->pcCode!=NULL )
+			{
+				free(ptTestCnt->pcCode);
+			}
+			/* Free all parameters. */
+			if( ptTestCnt->ptParameter!=NULL )
+			{
+				ptParamCnt = ptTestCnt->ptParameter;
+				ptParamEnd = ptTestCnt->ptParameter + ptTestCnt->sizParameter;
+				while( ptParamCnt<ptParamEnd )
+				{
+					/* Free the name. */
+					if( ptParamCnt->pcName!=NULL )
+					{
+						free(ptParamCnt->pcName);
+					}
+					/* Free the value. */
+					if( ptParamCnt->pcValue!=NULL )
+					{
+						free(ptParamCnt->pcValue);
+					}
+					++ptParamCnt;
+				}
+				free(ptTestCnt->ptParameter);
+			}
+			++ptTestCnt;
+		}
+		free(m_ptSubtests);
+		m_ptSubtests = NULL;
+	}
+}
+
+
+
+wxXmlNode *muhkuh_wrap_xml::search_node(wxXmlNode *ptNode, wxString strName)
+{
+	while( ptNode!=NULL )
+	{
+		if( ptNode->GetType()==wxXML_ELEMENT_NODE && ptNode->GetName()==strName )
+		{
+			break;
+		}
+		ptNode = ptNode->GetNext();
+	}
+
+	return ptNode;
 }
 
 
@@ -268,14 +544,14 @@ bool muhkuh_wrap_xml::readTestDescription(wxXmlDocument *xmldoc)
 		delete ptTestDesc;
 		return false;
 	}
-
+/*
 	// read the code node
 	if( readCodeNode(xml_testdesc, ptTestDesc->strCode)==false )
 	{
 		delete ptTestDesc;
 		return false;
 	}
-
+*/
 	// get the testdescription version
 	// NOTE: this is optional to support older tests
 	if( xml_testdesc->GetPropVal(wxT("version"), &ptTestDesc->strVersion)==false )
@@ -337,14 +613,14 @@ bool muhkuh_wrap_xml::readTest(wxXmlNode *xml_parent, tTesterXml_TestDescription
 					delete[] ptTests;
 					return false;
 				}
-
+/*
 				// read the code node
 				if( readCodeNode(xml_test_cnt, tc->strCode)==false )
 				{
 					delete[] ptTests;
 					return false;
 				}
-
+*/
 				// get the test version
 				// NOTE: this is optional to support older tests
 				if( xml_test_cnt->GetPropVal(wxT("version"), &tc->strVersion)==false )
@@ -368,7 +644,7 @@ bool muhkuh_wrap_xml::readTest(wxXmlNode *xml_parent, tTesterXml_TestDescription
 	return true;
 }
 
-
+/*
 bool muhkuh_wrap_xml::readCodeNode(wxXmlNode *xml_parent, wxString &strCode)
 {
 	wxXmlNode *ptNode;
@@ -398,4 +674,4 @@ bool muhkuh_wrap_xml::readCodeNode(wxXmlNode *xml_parent, wxString &strCode)
 
 	return fResult;
 }
-
+*/
