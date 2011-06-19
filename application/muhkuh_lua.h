@@ -19,39 +19,30 @@
  ***************************************************************************/
 
 
-extern "C" {
-#       include "lua.h"
-#       include "lauxlib.h"
-#       include "lualib.h"
-}
+#include "lua.hpp"
 
 
 #ifndef __MUHKUH_LUA_H__
 #define __MUHKUH_LUA_H__
 
+#include "muhkuh_config_data.h"
+#include "muhkuh_so_api.h"
 
-class muhkuh_config_data;
-void lua_muhkuh_register_config_data(muhkuh_config_data *ptConfigData);
 
-lua_State *lua_muhkuh_create_state(void);
-void lua_muhkuh_create_default_state(void);
-void lua_muhkuh_close_default_state(void);
+void MUHKUH_SO_API lua_muhkuh_register_config_data(muhkuh_config_data *ptConfigData);
+muhkuh_plugin_manager MUHKUH_SO_API *lua_muhkuh_get_plugin_manager(lua_State *ptLuaState);
 
-int lua_muhkuh_get_memory_usage(lua_State *ptLuaState);
+lua_State MUHKUH_SO_API *lua_muhkuh_create_state(void);
+void MUHKUH_SO_API lua_muhkuh_create_default_state(void);
+void MUHKUH_SO_API lua_muhkuh_close_default_state(void);
 
-int lua_muhkuh_generate_text(lua_State *ptLuaState, const char *pcLuaCode, char **ppcResult);
-int lua_muhkuh_run_code(lua_State *ptLuaState, const char *pcLuaCode, char **ppcResult);
+int MUHKUH_SO_API lua_muhkuh_get_memory_usage(lua_State *ptLuaState);
 
-const char *lua_muhkuh_error_to_string(int iLuaError);
-const char *lua_muhkuh_type_to_string(int iLuaType);
+int MUHKUH_SO_API lua_muhkuh_generate_text(lua_State *ptLuaState, const char *pcLuaCode, char **ppcResult);
+int MUHKUH_SO_API lua_muhkuh_run_code(lua_State *ptLuaState, const char *pcLuaCode, char **ppcResult);
 
-const char *get_version(void);
+const char MUHKUH_SO_API *lua_muhkuh_error_to_string(int iLuaError);
+const char MUHKUH_SO_API *lua_muhkuh_type_to_string(int iLuaType);
 
-int plugin_count(lua_State *ptLuaState);
-const char *plugin_get_config_name(lua_State *ptLuaState, unsigned long ulIdx);
-bool plugin_is_ok(lua_State *ptLuaState, unsigned long ulIdx);
-const char *plugin_get_init_error(lua_State *ptLuaState, unsigned long ulIdx);
-void plugin_set_enable(lua_State *ptLuaState, unsigned long ulIdx, bool fPluginIsEnabled);
-bool plugin_get_enable(lua_State *ptLuaState, unsigned long ulIdx);
 
 #endif  /* __MUHKUH_LUA_H__ */

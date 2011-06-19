@@ -19,26 +19,14 @@
  ***************************************************************************/
 
 
-#include "muhkuh_version.h"
-
 #include <wx/log.h>
-
+ 
 #include "muhkuh_lua.h"
-#include "muhkuh_configDialog.h"
 
-extern "C" {
-int luaopen_muhkuh_app(lua_State* L);
-}
 
 #ifdef WIN32
 #       define snprintf _snprintf
 #endif
-
-
-
-#define SCRIPT_PUSH_ERROR(L,...) { lua_pushfstring(L,__VA_ARGS__); }
-#define SCRIPT_EXIT_ERROR(L) { lua_error(L); }
-#define SCRIPT_ERROR(L,...) { lua_pushfstring(L,__VA_ARGS__); lua_error(L); }
 
 
 typedef struct
@@ -57,13 +45,6 @@ typedef struct
 
 /* This is the default state for the main frame. */
 static lua_State *g_ptDefaultState = NULL;
-static muhkuh_config_data *g_ptConfigData = NULL;
-
-static const char *pcMuhkuhVersion =
-{
-	MUHKUH_APPLICATION_NAME " " MUHKUH_VERSION_STRING
-};
-
 
 
 static const LUA_ERROR_TO_STR_T atLuaErrorToString[] =
@@ -90,6 +71,9 @@ static const LUA_TYPE_TO_STR_T atLuaTypeToString[] =
 	{ LUA_TUSERDATA,        "userdata" },
 	{ LUA_TTHREAD,          "thread" }
 };
+
+
+static muhkuh_config_data *g_ptConfigData = NULL;
 
 
 static int lua_muhkuh_panic(lua_State *ptLuaState)
@@ -147,6 +131,22 @@ static int lua_muhkuh_print(lua_State *ptLuaState)
 void lua_muhkuh_register_config_data(muhkuh_config_data *ptConfigData)
 {
 	g_ptConfigData = ptConfigData;
+}
+
+
+muhkuh_plugin_manager *lua_muhkuh_get_plugin_manager(lua_State *ptLuaState)
+{
+	muhkuh_plugin_manager *ptPluginManager;
+
+
+	ptPluginManager = NULL;
+
+	if( g_ptConfigData!=NULL )
+	{
+		ptPluginManager = g_ptConfigData->m_ptPluginManager;
+	}
+
+	return ptPluginManager;
 }
 
 
@@ -416,110 +416,3 @@ const char *lua_muhkuh_type_to_string(int iLuaType)
 	return pcType;
 }
 
-
-const char *get_version(void)
-{
-	return pcMuhkuhVersion;
-}
-
-
-
-static muhkuh_plugin_manager *get_plugin_manager(lua_State *ptLuaState)
-{
-	muhkuh_plugin_manager *ptPluginManager;
-
-
-	ptPluginManager = NULL;
-
-	if( g_ptConfigData==NULL )
-	{
-		SCRIPT_PUSH_ERROR(ptLuaState, "init error: no config data registered!");
-	}
-	else
-	{
-		ptPluginManager = g_ptConfigData->m_ptPluginManager;
-		if( ptPluginManager==NULL )
-		{
-			SCRIPT_PUSH_ERROR(ptLuaState, "init error: config data has no plugin manager!");
-		}
-	}
-
-	return ptPluginManager;
-}
-
-
-int plugin_count(lua_State *ptLuaState)
-{
-	size_t sizResult;
-	muhkuh_plugin_manager *ptPluginManager;
-
-
-	ptPluginManager = get_plugin_manager(ptLuaState);
-	if( ptPluginManager!=NULL )
-	{
-		sizResult = ptPluginManager->getPluginCount();
-	}
-	else
-	{
-		SCRIPT_EXIT_ERROR(ptLuaState);
-	}
-
-	return sizResult;
-}
-
-
-bool plugin_is_ok(lua_State *ptLuaState, unsigned long ulIdx)
-{
-	bool fResult;
-	muhkuh_plugin_manager *ptPluginManager;
-
-
-	ptPluginManager = get_plugin_manager(ptLuaState);
-	if( ptPluginManager!=NULL )
-	{
-		fResult = ptPluginManager->IsOk(ulIdx);
-	}
-	else
-	{
-		SCRIPT_EXIT_ERROR(ptLuaState);
-	}
-
-	return fResult;
-}
-
-
-void plugin_set_enable(lua_State *ptLuaState, unsigned long ulIdx, bool fPluginIsEnabled)
-{
-	muhkuh_plugin_manager *ptPluginManager;
-
-
-	ptPluginManager = get_plugin_manager(ptLuaState);
-	if( ptPluginManager!=NULL )
-	{
-		ptPluginManager->SetEnable(ulIdx, fPluginIsEnabled);
-	}
-	else
-	{
-		SCRIPT_EXIT_ERROR(ptLuaState);
-	}
-}
-
-
-bool plugin_get_enable(lua_State *ptLuaState, unsigned long ulIdx)
-{
-	bool fResult;
-	muhkuh_plugin_manager *ptPluginManager;
-
-
-	ptPluginManager = get_plugin_manager(ptLuaState);
-	if( ptPluginManager!=NULL )
-	{
-		fResult = ptPluginManager->GetEnable(ulIdx);
-	}
-	else
-	{
-		SCRIPT_EXIT_ERROR(ptLuaState);
-	}
-
-	return fResult;
-}
