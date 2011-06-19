@@ -30,9 +30,8 @@
 #ifndef __MUHKUH_CONFIGDIALOG_H__
 #define __MUHKUH_CONFIGDIALOG_H__
 
+#include "muhkuh_config_data.h"
 #include "muhkuh_dirlistbox.h"
-#include "muhkuh_plugin_manager.h"
-#include "muhkuh_repository_manager.h"
 
 
 class treeItemIdData : public wxTreeItemData
@@ -43,27 +42,6 @@ public:
 	 { };
 
 	long m_lId;
-};
-
-
-class muhkuh_config_data
-{
-public:
-	muhkuh_config_data(void);
-	muhkuh_config_data(const muhkuh_config_data *ptClone);
-	~muhkuh_config_data(void);
-
-	wxString m_strWelcomeFile;
-	wxString m_strDetailsFile;
-
-	muhkuh_plugin_manager *m_ptPluginManager;
-	muhkuh_repository_manager *m_ptRepositoryManager;
-
-	wxString m_strLuaIncludePath;
-	wxString m_strLuaStartupCode;
-
-	wxString m_strApplicationTitle;
-	wxString m_strApplicationIcon;
 };
 
 
