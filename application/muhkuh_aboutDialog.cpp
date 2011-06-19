@@ -25,7 +25,7 @@
 #include "muhkuh_aboutDialog.h"
 
 #if USE_LUA!=0
-#include "lua.h"
+#include "lua.hpp"
 #endif
 
 muhkuh_aboutDialog::muhkuh_aboutDialog(wxWindow* parent, const wxString &strVersion, wxIconBundle &frameIcons)

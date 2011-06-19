@@ -26,13 +26,11 @@
 #include <wx/filename.h>
 #include <wx/xml/xml.h>
 
+#include "muhkuh_so_api.h"
+
 
 #if USE_LUA!=0
-extern "C" {
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
-}
+#       include "lua.hpp"
 #endif
 
 
@@ -51,7 +49,7 @@ typedef struct
 } MUHKUH_PLUGIN_DESCRIPTION_T;
 
 
-class muhkuh_plugin
+class MUHKUH_SO_API muhkuh_plugin
 {
 public:
 	muhkuh_plugin(void);

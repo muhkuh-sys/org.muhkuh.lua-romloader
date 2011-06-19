@@ -19,10 +19,10 @@
  ***************************************************************************/
 
 
-%module muhkuh_app
+%module muhkuh_components
 
 %{
-	#include "muhkuh_lua.h"
+	#include "muhkuh_components.h"
 %}
 
 %include muhkuh_typemaps.i

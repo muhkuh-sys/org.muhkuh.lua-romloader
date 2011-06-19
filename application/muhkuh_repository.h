@@ -24,6 +24,8 @@
 #include <wx/defs.h>
 #include <wx/fileconf.h>
 
+#include "muhkuh_so_api.h"
+
 
 #ifndef __MUHKUH_REPOSITORY_H__
 #define __MUHKUH_REPOSITORY_H__
@@ -33,7 +35,7 @@
 typedef bool (*pfnTestlistProgress)(void *pvUser, wxString strMessage, int iProgressPos, int iProgressMax);
 
 
-class muhkuh_repository
+class MUHKUH_SO_API muhkuh_repository
 {
 public:
 	// NOTE: these values are written to the config file. do not change existing entries or old configs will be messed up!

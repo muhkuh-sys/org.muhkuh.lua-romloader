@@ -22,44 +22,130 @@ INCLUDE(${wxWidgets_USE_FILE})
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${wxWidgets_INCLUDE_DIRS})
-
-
 IF(${LUA51_FOUND})
-	# This part builds a dummy wrapper for the muhkuh application.
-	# It seems to be to only way to get the wrapper sources generated without too much hacking. :(
-    SET(muhkuh_app_dummy_wrapper_sources
-        muhkuh_lua.cpp
-        muhkuh_plugin_manager.cpp
-        muhkuh_plugin.cpp
-    )
-	SET_PROPERTY(SOURCE muhkuh_lua.i PROPERTY CPLUSPLUS ON)
-	SET_PROPERTY(SOURCE muhkuh_lua.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/modules/typemaps)
-	SWIG_ADD_MODULE(muhkuh_app_dummy_wrapper lua muhkuh_lua.i ${muhkuh_app_dummy_wrapper_sources})
-	SWIG_LINK_LIBRARIES(muhkuh_app_dummy_wrapper ${LUA_LIBRARIES} ${wxWidgets_LIBRARIES})
-
-	# Lua found -> use lua.
-	SET(muhkuh_app_lua_definitions USE_LUA=1)
-	# Remember the filename of the gernerated lua wrapper.
-	SET(muhkuh_app_lua_wrapper ${swig_generated_file_fullname})
-	# Set the additional sources needed besides the generated wrapper.
-	SET(muhkuh_app_lua_sources
-		muhkuh_lua.cpp
-		muhkuh_htmltag_lua.cpp
-		${muhkuh_app_lua_wrapper}
-	)
-	SET(muhkuh_app_lua_libs ${LUA_LIBRARIES})
 	INCLUDE_DIRECTORIES(${LUA_INCLUDE_DIR})
 ENDIF(${LUA51_FOUND})
 
+#----------------------------------------------------------------------------
+#
+# Build the muhkuh_components dll.
+#
+# The muhkuh components dll contains classes and functions shared by the main
+# application and the script bindings.
+#
+
+# Add lua support (if found).
+IF(${LUA51_FOUND})
+	# Lua found -> use lua.
+	SET(muhkuh_components_DEFINITIONS_lua USE_LUA=1)
+	# Set the additional sources needed besides the generated wrapper.
+	SET(muhkuh_components_SOURCES_lua
+		muhkuh_lua.cpp
+	)
+	SET(muhkuh_components_HEADERS_lua
+		muhkuh_lua.h
+	)
+	SET(muhkuh_components_LIBS_lua ${LUA_LIBRARIES})
+ENDIF(${LUA51_FOUND})
+
+
+SET(muhkuh_components_SOURCES
+	muhkuh_config_data.cpp
+	muhkuh_plugin.cpp
+	muhkuh_plugin_manager.cpp
+	muhkuh_repository.cpp
+	muhkuh_repository_manager.cpp
+)
+
+SET(muhkuh_components_HEADERS
+	muhkuh_config_data.h
+	muhkuh_plugin.h
+	muhkuh_plugin_manager.h
+	muhkuh_repository.h
+	muhkuh_repository_manager.h
+	muhkuh_so_api.h
+)
+
+ADD_LIBRARY(muhkuh_components SHARED
+	${muhkuh_components_SOURCES}
+	${muhkuh_components_SOURCES_lua}
+	${muhkuh_components_HEADERS}
+	${muhkuh_components_HEADERS_lua})
+SET_PROPERTY(TARGET muhkuh_components APPEND PROPERTY COMPILE_DEFINITIONS
+	__BUILD_SHARED_OBJECT__
+	${muhkuh_components_DEFINITIONS_lua})
+TARGET_LINK_LIBRARIES(muhkuh_components
+	${wxWidgets_LIBRARIES}
+	${muhkuh_components_LIBS_lua})
+
+# Install the targets.
+INSTALL(TARGETS muhkuh_components DESTINATION ${INSTALL_DIR_SHARED_OBJECTS})
+
+#----------------------------------------------------------------------------
+#
+# Build a lua wrapper for the muhkuh components.
+#
+# This part builds a lua plugin for the muhkuh application. Initially I wanted to link
+# this plugin statically to the main application, but this resulted in a strange crash.
+# Mixing static and dynamic modules seems to be a problem. A new lua state in the muhkuh
+# application got the static binding first. Then on demand the dynamic modules were loaded.
+# This worked fine for the first state. Loading the dynamic modules in another state crashed.
+# The reason for the crash was some trashed cyclic list.
+# I have to admit that I have absolutely no idea why this happens. So I changed the static
+# module to a dynamic. :(
+#
+
+IF(${LUA51_FOUND})
+	SET(muhkuh_components_lua_SOURCES
+		muhkuh_components.cpp
+	)
+	SET(muhkuh_components_lua_HEADERS
+		muhkuh_components.h
+	)
+	SET_PROPERTY(SOURCE muhkuh_components.i PROPERTY CPLUSPLUS ON)
+	SET_PROPERTY(SOURCE muhkuh_components.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/modules/typemaps)
+	SWIG_ADD_MODULE(muhkuh_components_lua lua muhkuh_components.i
+		${muhkuh_components_lua_SOURCES}
+		${muhkuh_components_lua_HEADERS})
+	SWIG_LINK_LIBRARIES(muhkuh_components_lua
+		muhkuh_components
+		${LUA_LIBRARIES}
+		${wxWidgets_LIBRARIES})
+	SET_PROPERTY(TARGET muhkuh_components_lua PROPERTY PREFIX "")
+ENDIF(${LUA51_FOUND})
+
+
+#----------------------------------------------------------------------------
+#
+# Build the muhkuh application.
+#
 
 # Set the windows specific sources. This will be empty on other platforms.
 IF(WIN32)
-	set(muhkuh_app_win_sources
-		muhkuh.rc
-	)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/templates/muhkuh.rc ${CMAKE_CURRENT_SOURCE_DIR}/muhkuh.rc)
+
+SET(muhkuh_app_win_SOURCES
+	muhkuh.rc
+)
 ENDIF(WIN32)
 
-SET(muhkuh_SOURCES
+
+IF(${LUA51_FOUND})
+	# Lua found -> use lua.
+	SET(muhkuh_app_DEFINITIONS_lua USE_LUA=1)
+
+	# Set the additional sources needed besides the generated wrapper.
+	SET(muhkuh_app_SOURCES_lua
+		muhkuh_htmltag_lua.cpp
+	)
+	SET(muhkuh_app_HEADERS_lua
+		muhkuh_lua.h
+	)
+	SET(muhkuh_app_LIBS_lua ${LUA_LIBRARIES})
+ENDIF(${LUA51_FOUND})
+
+
+SET(muhkuh_app_SOURCES
 	growbuffer.cpp
 	license.cpp
 	muhkuh_aboutDialog.cpp
@@ -70,18 +156,11 @@ SET(muhkuh_SOURCES
 	muhkuh_dirlistbox.cpp
 	muhkuh_icons.cpp
 	muhkuh_mainFrame.cpp
-	muhkuh_plugin.cpp
-	muhkuh_plugin_manager.cpp
-	muhkuh_repository.cpp
-	muhkuh_repository_manager.cpp
 	muhkuh_wrap_xml.cpp
 	readFsFile.cpp
-	${muhkuh_app_lua_sources}
-	${muhkuh_app_python_sources}
-	${muhkuh_app_win_sources}
 )
 
-SET(muhkuh_HEADERS
+SET(muhkuh_app_HEADERS
 	growbuffer.h
 	license.h
 	muhkuh_aboutDialog.h
@@ -89,12 +168,9 @@ SET(muhkuh_HEADERS
 	muhkuh_configDialog.h
 	muhkuh_config_reposEntryDialog.h
 	muhkuh_dirlistbox.h
-	muhkuh_flags.h
 	muhkuh_icons.h
 	muhkuh_id.h
 	muhkuh_mainFrame.h
-	muhkuh_repository.h
-	muhkuh_repository_manager.h
 	muhkuh_testTreeItemData.h
 	muhkuh_version.h
 	muhkuh_wrap_xml.h
@@ -102,14 +178,23 @@ SET(muhkuh_HEADERS
 )
 
 
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/templates/muhkuh.rc ${CMAKE_CURRENT_SOURCE_DIR}/muhkuh.rc)
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/templates/muhkuh_version.h ${CMAKE_CURRENT_SOURCE_DIR}/muhkuh_version.h)
 
 
 # Build the executable.
-ADD_EXECUTABLE(muhkuh WIN32 ${muhkuh_SOURCES})
-SET_PROPERTY(TARGET muhkuh PROPERTY COMPILE_DEFINITIONS ${wxWidgets_DEFINITIONS} ${muhkuh_app_lua_definitions} ${muhkuh_app_python_definitions})
-TARGET_LINK_LIBRARIES(muhkuh ${wxWidgets_LIBRARIES} ${muhkuh_app_lua_libs})
+ADD_EXECUTABLE(muhkuh WIN32
+	${muhkuh_app_SOURCES}
+	${muhkuh_app_SOURCES_lua}
+	${muhkuh_app_SOURCES_win}
+	${muhkuh_app_HEADERS}
+	${muhkuh_app_HEADERS_lua})
+SET_PROPERTY(TARGET muhkuh PROPERTY COMPILE_DEFINITIONS
+	${wxWidgets_DEFINITIONS}
+	${muhkuh_app_DEFINITIONS_lua})
+TARGET_LINK_LIBRARIES(muhkuh
+	${wxWidgets_LIBRARIES}
+	muhkuh_components
+	${muhkuh_app_LIBS_lua})
 SET_TARGET_PROPERTIES(muhkuh PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/)
 
 

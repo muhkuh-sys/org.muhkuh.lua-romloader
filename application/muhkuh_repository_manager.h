@@ -27,13 +27,14 @@
 
 
 #include "muhkuh_repository.h"
+#include "muhkuh_so_api.h"
 
 
 #ifndef __MUHKUH_REPOSITORY_MANAGER_H__
 #define __MUHKUH_REPOSITORY_MANAGER_H__
 
 
-class muhkuh_repository_manager
+class MUHKUH_SO_API muhkuh_repository_manager
 {
 public:
 	muhkuh_repository_manager(void);
