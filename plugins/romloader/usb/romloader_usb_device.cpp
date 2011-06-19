@@ -25,7 +25,7 @@
 
 
 #if defined(WIN32)
-#	define strncasecmp _strnicmp
+#       define strncasecmp _strnicmp
 #endif
 
 const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[4] =
