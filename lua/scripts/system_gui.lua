@@ -6,13 +6,6 @@ aLuaModules = {
 	"wx"
 }
 
-aLuaPlugins = {
-	"romloader_uart"
-	"romloader_usb"
-}
-
-print(muhkuh_app.plugin_count())
-
 aCode = {}
 
 table.insert(aCode, "-- Add all include paths.")
@@ -45,8 +38,11 @@ end
 table.insert(aCode, "")
 
 table.insert(aCode, "-- Load all enabled plugins.")
-for tKey,strName in pairs(aLuaPlugins) do
-	table.insert(aCode, string.format("require(\"%s\")", strName))
+aLuaPlugins = muhkuh_components_lua.get_plugins()
+for iCnt,aAttr in ipairs(aLuaPlugins) do
+	if aAttr.is_ok==true and aAttr.enabled==true then
+		table.insert(aCode, string.format("require(\"%s\")", aAttr.module))
+	end
 end
 table.insert(aCode, "")
 table.insert(aCode, "")
