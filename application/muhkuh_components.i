@@ -27,16 +27,6 @@
 
 %include muhkuh_typemaps.i
 
-/*
-typedef struct
-{
-	const char *pcPluginName;                                                                                                                                                                                      
-	const char *pcPluginId;
-	unsigned int uiVersionMajor;                                                                                                                                                                                                     
-	unsigned int uiVersionMinor;                                                                                                                                                                                                     
-	unsigned int uiVersionSub;
-} MUHKUH_PLUGIN_DESCRIPTION_T;
-*/
 
 const char *get_version();
 
