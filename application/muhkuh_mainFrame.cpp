@@ -1070,6 +1070,114 @@ bool muhkuh_mainFrame::check_plugins(void)
 }
 
 
+bool muhkuh_mainFrame::executeTest_prepare_working_folder(wxString &strFolder)
+{
+	bool fResult;
+	wxString strTempFolder;         /* This is the folder where the application can create a new subfolder. */
+	wxString strMsgFormat;
+	wxString strMsg;
+	wxString strSubFolder;
+	wxFileName tWorkingDir;
+	wxString strTempWorkingFolder;  /* This is the folder where the mtd is depacked and the startup file is generated. */
+	int iResult;
+
+
+	/* Expect success. */
+	fResult = true;
+
+	/* Get the working temp folder. */
+	//strTempWorkingFolder = wxT("/home/cthelen/Compile/muhkuh_experimental/build/build/demo_layout/");
+	strTempFolder = wxFileName::GetTempDir();
+
+	/* Check if the temp working folder exists. */
+	if( wxFileName::DirExists(strTempFolder)==false )
+	{
+		strMsg.Printf(_("The temporary working folder %s does not exist! Please create it or choose another folder."), strTempFolder.c_str());
+		wxMessageBox(strMsg, _("Invalid working folder"), wxICON_ERROR, this);
+		fResult = false;
+	}
+	else if( wxFileName::IsDirReadable(strTempFolder)==false )
+	{
+		strMsg.Printf(_("The application has no read access to the temporary working folder %s!"), strTempFolder.c_str());
+		wxMessageBox(strMsg, _("Invalid working folder"), wxICON_ERROR, this);
+		fResult = false;
+	}
+	else if( wxFileName::IsDirWritable(strTempFolder)==false )
+	{
+		strMsg.Printf(_("The application has no write access to the temporary working folder %s!"), strTempFolder.c_str());
+		wxMessageBox(strMsg, _("Invalid working folder"), wxICON_ERROR, this);
+		fResult = false;
+	}
+	else
+	{
+		/* Create a new subfolder with the process id. */
+		strSubFolder.Printf(wxT("%s_%08x"), wxGetApp().GetAppName().c_str(), wxGetProcessId());
+		tWorkingDir.AssignDir(strTempFolder);
+		tWorkingDir.AppendDir(strSubFolder);
+		strTempWorkingFolder = tWorkingDir.GetFullPath();
+		wxLogMessage(_("Temp working folder: %s"), strTempWorkingFolder.c_str());
+
+		/* Check the working path for spaces. */
+		if( strTempWorkingFolder.Find(wxT(' '))!=wxNOT_FOUND )
+		{
+			strMsgFormat =      _("The path to the working folder is\n\n%s\n\nThis path contains spaces, which can cause a lot of problems. It is not recommended to continue!\n\n");
+			strMsgFormat.Append(_("Press 'Ok' to ignore this warning and continue anyway.\n"));
+			strMsgFormat.Append(_("Press 'Cancel' to stop the test execution."));
+			strMsg.Printf(strMsgFormat, strTempWorkingFolder.c_str());
+			iResult = wxMessageBox(strMsg, _("Problematic working folder"), wxCANCEL|wxOK|wxICON_EXCLAMATION, this);
+			if( iResult==wxCANCEL )
+			{
+				fResult = false;
+			}
+		}
+
+		if( fResult==true )
+		{
+			/* Does the temp folder already exist? */
+			if( tWorkingDir.DirExists()==true )
+			{
+				strMsgFormat =      _("The working folder %s already exists. If you continue, all files in this folder will be erased!\n\n");
+				strMsgFormat.Append(_("Press 'Ok' to continue and erase all files in the working folder.\n"));
+				strMsgFormat.Append(_("Press 'Cancel' to stop the test execution."));
+				strMsg.Printf(strMsgFormat, strTempWorkingFolder.c_str());
+				iResult = wxMessageBox(strMsg, _("The working folder already exists"), wxCANCEL|wxOK|wxICON_EXCLAMATION, this);
+				if( iResult==wxOK )
+				{
+					/* Ok, remove the complete folder! */
+					fResult = tWorkingDir.Rmdir();
+					if( fResult!=true )
+					{
+						strMsg.Printf(_("Failed to remove the existing working folder %s!"), strTempWorkingFolder.c_str());
+						wxMessageBox(strMsg, _("The working folder already exists"), wxICON_ERROR, this);
+					}
+				}
+				else if( iResult==wxCANCEL )
+				{
+					fResult = false;
+				}
+			}
+
+			if( fResult==true )
+			{
+				fResult = tWorkingDir.Mkdir();
+				if( fResult!=true )
+				{
+					strMsg.Printf(_("Failed to create the working folder %s!"), strTempWorkingFolder.c_str());
+					wxMessageBox(strMsg, _("Invalid working folder"), wxICON_ERROR, this);
+				}
+				else
+				{
+					/* Ok, now we have a fresh working folder. */
+					strFolder = strTempWorkingFolder;
+				}
+			}
+		}
+	}
+
+	return fResult;
+}
+
+
 bool muhkuh_mainFrame::executeTest_generate_start_code(wxString strStartLuaFile)
 {
 	bool fResult;
@@ -1126,10 +1234,47 @@ bool muhkuh_mainFrame::executeTest_generate_start_code(wxString strStartLuaFile)
 
 bool muhkuh_mainFrame::executeTest_generate_code_chunks(wxString strTempWorkingFolder, muhkuh_wrap_xml *ptTestData)
 {
+	bool fResult;
+	unsigned int uiSubTestCnt;
+	unsigned int uiSubTestEnd;
+	const MTD_SUBTEST_T *ptSubTest;
+	const MTD_SUBTEST_PARAMETER_T *ptParameterCnt;
+	const MTD_SUBTEST_PARAMETER_T *ptParameterEnd;
 	wxString strCode;
 	
 
-	ptTestData->subtests_parse();
+	wxLogMessage(wxT("lalala 1"));
+	fResult = ptTestData->subtests_parse();
+	if( fResult==false )
+	{
+		wxLogError(_("Failed to parse the subtests!"));
+	}
+	else
+	{
+		/* Loop over all subtests and the global code block. */
+		uiSubTestCnt = 0;
+		uiSubTestEnd = ptTestData->testDescription_getTestCnt() + 1;
+		while( uiSubTestCnt<uiSubTestEnd )
+		{
+			ptSubTest = ptTestData->subtests_get(uiSubTestCnt);
+			if( ptSubTest!=NULL )
+			{
+				wxLogMessage(wxT("Subtest %d"), uiSubTestCnt);
+				wxLogMessage(wxT("Code: %s"), wxString::FromAscii(ptSubTest->pcCode).c_str());
+				wxLogMessage(wxT("%d Parameter"), ptSubTest->sizParameter);
+				ptParameterCnt = ptSubTest->ptParameter;
+				ptParameterEnd = ptSubTest->ptParameter + ptSubTest->sizParameter;
+				while( ptParameterCnt<ptParameterEnd )
+				{
+					wxLogMessage(wxT("p[\"%s\"] = \"%s\""), wxString::FromAscii(ptParameterCnt->pcName).c_str(), wxString::FromAscii(ptParameterCnt->pcValue).c_str());
+					++ptParameterCnt;
+				}
+			}
+			++uiSubTestCnt;
+		}
+	
+	}
+	wxLogMessage(wxT("lalala 2"));
 
 //	strCode = ptTestData->testDescription_getCode();
 //	wxMessageBox(strCode, _("Server startup error"), wxICON_ERROR, this);
@@ -1143,43 +1288,23 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	bool fResult;
 	wxString strMsg;
 	wxString strNow;
+	int iResult;
 
-	wxString strOldWorkingDirectory;
-	wxString strTempWorkingFolder;	/* This is the folder where the mtd is depacked and the startup file is generated. */
-	wxString strStartLuaFile;	/* This is the complete path to the generated startup file. */
+	wxString strOldWorkingDirectory;  /* This is the current working folder before this function changes it. */
+	wxString strTempWorkingFolder;    /* This is the folder where the mtd is depacked and the startup file is generated. */
+	wxString strStartLuaFile;	  /* This is the complete path to the generated startup file. */
 	wxString strStartCmd;
 
 
-	/* Get the working temp folder. */
-	strTempWorkingFolder = wxT("/home/cthelen/Compile/muhkuh_experimental/build/build/demo_layout/");
-
-	/* Check if the temp working folder exists. */
-	if( wxFileName::DirExists(strTempWorkingFolder)==false )
-	{
-		strMsg.Printf(_("The temporary working folder %s does not exist! Please create it or choose another folder."), strTempWorkingFolder.c_str());
-		wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
-	}
-	else if( wxFileName::IsDirReadable(strTempWorkingFolder)==false )
-	{
-		strMsg.Printf(_("The application has no read access to the temporary working folder %s!"), strTempWorkingFolder.c_str());
-		wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
-	}
-	else if( wxFileName::IsDirWritable(strTempWorkingFolder)==false )
-	{
-		strMsg.Printf(_("The application has no write access to the temporary working folder %s!"), strTempWorkingFolder.c_str());
-		wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
-	}
-	else
+	fResult = executeTest_prepare_working_folder(strTempWorkingFolder);
+	if( fResult==true )
 	{
 		/* Save the old working directory. It will be restored at the end of this function. */
 		strOldWorkingDirectory = wxFileName::GetCwd();
 
 		/* Change the working directory to the temp folder. */
+		wxLogMessage(wxT("Changing to folder %s"), strTempWorkingFolder.c_str());
 		wxFileName::SetCwd(strTempWorkingFolder);
-
-		/* TODO: Clear the working folder.
-		 * FIXME: But do not clear it now, there is still some hand-generated stuff.
-		 */
 
 		fResult = executeTest_generate_code_chunks(strTempWorkingFolder, ptTestData);
 		if( fResult==true )
@@ -1229,10 +1354,10 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 				}
 			}
 		}
-	}
 
-	/* Restore old working directory. */
-	wxFileName::SetCwd(strOldWorkingDirectory);
+		/* Restore old working directory. */
+		wxFileName::SetCwd(strOldWorkingDirectory);
+	}
 }
 
 

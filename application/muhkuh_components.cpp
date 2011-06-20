@@ -140,4 +140,3 @@ void get_plugins(lua_State *MUHKUH_SWIG_OUTPUT_CUSTOM_OBJECT)
 	}
 }
 
-
