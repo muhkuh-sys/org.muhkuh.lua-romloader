@@ -429,7 +429,7 @@ void muhkuh_mainFrame::reloadWelcomePage(void)
 	if( m_ptConfigData->m_strWelcomeFile.IsEmpty()==true )
 	{
 		// use the default welcome message
-		strPage = _("<html><head><title>Welcome</title></head><body><h1>Welcome to <lua>return muhkuh_app.get_version()</lua></h1></body></html>");
+		strPage = _("<html><head><title>Welcome</title></head><body><h1>Welcome to <lua>return muhkuh_components_lua.get_version()</lua></h1></body></html>");
 	}
 	else
 	{

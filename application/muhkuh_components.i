@@ -19,7 +19,7 @@
  ***************************************************************************/
 
 
-%module muhkuh_components
+%module muhkuh_components_lua
 
 %{
 	#include "muhkuh_components.h"

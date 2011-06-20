@@ -178,6 +178,7 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 	m_tPluginDescription.uiVersionMajor = 0;
 	m_tPluginDescription.uiVersionMinor = 0;
 	m_tPluginDescription.uiVersionSub = 0;
+	m_tPluginDescription.strLuaModuleName = wxEmptyString;
 
 	/* Open the xml document. */
 	fResult = cFile.Open(strXmlPath, wxFile::read);
@@ -415,3 +416,4 @@ const MUHKUH_PLUGIN_DESCRIPTION_T *muhkuh_plugin::GetPluginDescription(void) con
 {
 	return &m_tPluginDescription;
 }
+

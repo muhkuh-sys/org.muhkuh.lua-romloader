@@ -153,6 +153,8 @@ muhkuh_plugin_manager *lua_muhkuh_get_plugin_manager(lua_State *ptLuaState)
 lua_State *lua_muhkuh_create_state(void)
 {
 	lua_State *ptLuaState;
+	int iResult;
+	char *pcResult;
 
 
 	/* Create the new state with a standard memory allocator. */
@@ -169,12 +171,16 @@ lua_State *lua_muhkuh_create_state(void)
 		lua_register(ptLuaState, "print", lua_muhkuh_print);
 
 		/* Add the muhkuh binding. */
-		/* FIXME: This causes a crash in lua dll modules. Reproduce with therse steps:
-		 * 1) Open the config dialog and add a new plugin.
-		 * 2) Close the config dialog with the "OK" button.
-		 * 3) Open the config dialog again. -> Crash!
-		 */
-		//luaopen_muhkuh_app(ptLuaState);
+		iResult = lua_muhkuh_run_code(ptLuaState, "require(\"muhkuh_components_lua\")\n", &pcResult);
+		if( iResult!=0 )
+		{
+			wxLogError(_("Failed to init muhkuh components LUA binding!"));
+			if( pcResult!=NULL )
+			{
+				wxLogError(wxString::FromAscii(pcResult));
+				free(pcResult);
+			}
+		}
 
 		/* Init done, restart GC. */
 		lua_gc(ptLuaState, LUA_GCRESTART, 0);
