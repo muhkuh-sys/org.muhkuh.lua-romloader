@@ -112,6 +112,9 @@ IF(${LUA51_FOUND})
 		${LUA_LIBRARIES}
 		${wxWidgets_LIBRARIES})
 	SET_PROPERTY(TARGET muhkuh_components_lua PROPERTY PREFIX "")
+
+	# Install the targets.
+	INSTALL(TARGETS muhkuh_components_lua DESTINATION ${INSTALL_DIR_LUA_MODULES})
 ENDIF(${LUA51_FOUND})
 
 
