@@ -61,6 +61,21 @@
 #endif
 
 
+/* This typemap passes Lua state to the function. The function must create one
+ * lua object on the stack. This is passes as the return value to lua.
+ * No further checks are done!
+ */
+#ifdef SWIGLUA
+%typemap(in, numinputs=0) lua_State *MUHKUH_SWIG_OUTPUT_CUSTOM_OBJECT
+%{
+	/* Hooray, this is my typemap. */
+	$1 = L;
+	++SWIG_arg;
+%}
+#elseif SWIGPYTHON
+#endif
+
+
 /* This typemap passes the Lua state to the function. This allows the function
  * to call functions of the Swig Runtime API and the Lua C API.
  */
