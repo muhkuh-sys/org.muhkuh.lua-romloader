@@ -278,7 +278,7 @@ bool muhkuh_wrap_xml::subtests_read_test(wxXmlNode *ptParent, MTD_SUBTEST_T *ptS
 		}
 		else
 		{
-			memcpy(ptSubtest->pcCode, strData.c_str(), sizData);
+			memcpy(ptSubtest->pcCode, strData.fn_str(), sizData);
 
 			/* Count the parameters. */
 			sizParameter = 0;
@@ -329,7 +329,7 @@ bool muhkuh_wrap_xml::subtests_read_test(wxXmlNode *ptParent, MTD_SUBTEST_T *ptS
 								fOk = false;
 								break;
 							}
-							memcpy(ptParameter->pcName, strData.c_str(), sizData);
+							memcpy(ptParameter->pcName, strData.fn_str(), sizData);
 
 							/* Get the value parameter. */
 							strData = ptNode->GetNodeContent();
@@ -342,7 +342,7 @@ bool muhkuh_wrap_xml::subtests_read_test(wxXmlNode *ptParent, MTD_SUBTEST_T *ptS
 								fOk = false;
 								break;
 							}
-							memcpy(ptParameter->pcValue, strData.c_str(), sizData);
+							memcpy(ptParameter->pcValue, strData.fn_str(), sizData);
 
 							++ptParameter;
 						}
@@ -360,7 +360,6 @@ bool muhkuh_wrap_xml::subtests_read_test(wxXmlNode *ptParent, MTD_SUBTEST_T *ptS
 bool muhkuh_wrap_xml::subtests_parse(void)
 {
 	bool fResult;
-	size_t sizTests;
 	wxXmlNode *ptNodeTestDescription;
 	MTD_SUBTEST_T *ptSubtestCnt;
 	MTD_SUBTEST_T *ptSubtestEnd;
@@ -379,8 +378,8 @@ bool muhkuh_wrap_xml::subtests_parse(void)
 	else
 	{
 		/* Allocate a new array with one global entry and one for each test. */
-		sizTests = m_ptTestDescription->uiTests + 1;
-		m_ptSubtests = (MTD_SUBTEST_T*)calloc(sizTests, sizeof(MTD_SUBTEST_T));
+		m_sizSubtests = m_ptTestDescription->uiTests + 1;
+		m_ptSubtests = (MTD_SUBTEST_T*)calloc(m_sizSubtests, sizeof(MTD_SUBTEST_T));
 		if( m_ptSubtests==NULL )
 		{
 			wxLogError(_("Out of memory error!"));
@@ -398,7 +397,7 @@ bool muhkuh_wrap_xml::subtests_parse(void)
 			else
 			{
 				ptSubtestCnt = m_ptSubtests;
-				ptSubtestEnd = m_ptSubtests + sizTests;
+				ptSubtestEnd = m_ptSubtests + m_sizSubtests;
 
 				/* Add the init code block. */
 				fResult = subtests_read_test(ptNodeTestDescription, ptSubtestCnt);
@@ -441,6 +440,7 @@ const MTD_SUBTEST_T *muhkuh_wrap_xml::subtests_get(unsigned int uiIdx) const
 
 
 	/* Is the index valid? */
+	ptSubtest = NULL;
 	if( uiIdx<m_sizSubtests )
 	{
 		ptSubtest = m_ptSubtests + uiIdx;
