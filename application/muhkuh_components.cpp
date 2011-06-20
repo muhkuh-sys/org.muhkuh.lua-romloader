@@ -43,80 +43,101 @@ const char *get_version(void)
 	return pcMuhkuhVersion;
 }
 
-
-int plugin_count(lua_State *ptLuaState)
+/* Get all plugins as a table with the plugin name as the key and a table with
+ * the plugin attributes as the value.
+ */
+void get_plugins(lua_State *MUHKUH_SWIG_OUTPUT_CUSTOM_OBJECT)
 {
-	size_t sizResult;
+	lua_State *ptLuaState = MUHKUH_SWIG_OUTPUT_CUSTOM_OBJECT;
 	muhkuh_plugin_manager *ptPluginManager;
+	size_t sizPlugins;
+	size_t sizPluginCnt;
+	const MUHKUH_PLUGIN_DESCRIPTION_T *ptPluginDescription;
 
 
 	ptPluginManager = lua_muhkuh_get_plugin_manager(ptLuaState);
-	if( ptPluginManager!=NULL )
-	{
-		sizResult = ptPluginManager->getPluginCount();
-	}
-	else
+	if( ptPluginManager==NULL )
 	{
 		SCRIPT_ERROR(ptLuaState, "Failed to get plugin manager!");
 	}
-
-	return sizResult;
-}
-
-
-bool plugin_is_ok(lua_State *ptLuaState, unsigned long ulIdx)
-{
-	bool fResult;
-	muhkuh_plugin_manager *ptPluginManager;
-
-
-	ptPluginManager = lua_muhkuh_get_plugin_manager(ptLuaState);
-	if( ptPluginManager!=NULL )
-	{
-		fResult = ptPluginManager->IsOk(ulIdx);
-	}
 	else
 	{
-		SCRIPT_ERROR(ptLuaState, "Failed to get plugin manager!");
-	}
+		/* Get the number of plugins. */
+		sizPlugins = ptPluginManager->getPluginCount();
+		fprintf(stderr, "%d plugins\n", sizPlugins);
 
-	return fResult;
+		/* Crate a new table. */
+		lua_createtable(ptLuaState, sizPlugins, 0);
+
+		/* Loop over all plugins. */
+		sizPluginCnt = 0;
+		while( sizPluginCnt<sizPlugins )
+		{
+			ptPluginDescription = ptPluginManager->getPluginDescription(sizPluginCnt);
+
+			/* Push the index for the entry.
+			 * NOTE: this starts at 1 and not at 0.
+			 */
+			lua_pushnumber(ptLuaState, sizPluginCnt+1);
+			/* Create the attribute table for the plugin. */
+			if( ptPluginDescription==NULL )
+			{
+				lua_pushnil(ptLuaState);
+			}
+			else
+			{
+				lua_createtable(ptLuaState, 0, 0);
+
+				/* Push the plugin name. */
+				lua_pushstring(ptLuaState, "name");
+				lua_pushstring(ptLuaState, ptPluginDescription->strPluginName.fn_str());
+				lua_rawset(ptLuaState, -3);
+
+				/* Push the "is_ok" flag. */
+				lua_pushstring(ptLuaState, "is_ok");
+				lua_pushboolean(ptLuaState, ptPluginManager->IsOk(sizPluginCnt) ? 1 : 0 );
+				lua_rawset(ptLuaState, -3);
+
+				/* Push the "enabled" flag. */
+				lua_pushstring(ptLuaState, "enabled");
+				lua_pushboolean(ptLuaState, ptPluginManager->GetEnable(sizPluginCnt) ? 1 : 0 );
+				lua_rawset(ptLuaState, -3);
+
+				/* Push the plugin id. */
+				lua_pushstring(ptLuaState, "id");
+				lua_pushstring(ptLuaState, ptPluginDescription->strPluginId.fn_str());
+				lua_rawset(ptLuaState, -3);
+
+				/* Push the plugin version major. */
+				lua_pushstring(ptLuaState, "ver_maj");
+				lua_pushnumber(ptLuaState, ptPluginDescription->uiVersionMajor);
+				lua_rawset(ptLuaState, -3);
+
+				/* Push the plugin version minor. */
+				lua_pushstring(ptLuaState, "ver_min");
+				lua_pushnumber(ptLuaState, ptPluginDescription->uiVersionMinor);
+				lua_rawset(ptLuaState, -3);
+
+				/* Push the plugin version sub. */
+				lua_pushstring(ptLuaState, "ver_sub");
+				lua_pushnumber(ptLuaState, ptPluginDescription->uiVersionSub);
+				lua_rawset(ptLuaState, -3);
+
+				/* Push the plugin lua module name. */
+				lua_pushstring(ptLuaState, "module");
+				lua_pushstring(ptLuaState, ptPluginDescription->strLuaModuleName.fn_str());
+				lua_rawset(ptLuaState, -3);
+
+				/* Push the plugin init error. */
+				lua_pushstring(ptLuaState, "init_error");
+				lua_pushstring(ptLuaState, ptPluginManager->GetInitError(sizPluginCnt).fn_str());
+				lua_rawset(ptLuaState, -3);
+			}
+			lua_rawset(ptLuaState, -3);
+
+			++sizPluginCnt;
+		}
+	}
 }
 
-
-void plugin_set_enable(lua_State *ptLuaState, unsigned long ulIdx, bool fPluginIsEnabled)
-{
-	muhkuh_plugin_manager *ptPluginManager;
-
-
-	ptPluginManager = lua_muhkuh_get_plugin_manager(ptLuaState);
-	if( ptPluginManager!=NULL )
-	{
-		ptPluginManager->SetEnable(ulIdx, fPluginIsEnabled);
-	}
-	else
-	{
-		SCRIPT_ERROR(ptLuaState, "Failed to get plugin manager!");
-	}
-}
-
-
-bool plugin_get_enable(lua_State *ptLuaState, unsigned long ulIdx)
-{
-	bool fResult;
-	muhkuh_plugin_manager *ptPluginManager;
-
-
-	ptPluginManager = lua_muhkuh_get_plugin_manager(ptLuaState);
-	if( ptPluginManager!=NULL )
-	{
-		fResult = ptPluginManager->GetEnable(ulIdx);
-	}
-	else
-	{
-		SCRIPT_ERROR(ptLuaState, "Failed to get plugin manager!");
-	}
-
-	return fResult;
-}
 
