@@ -446,7 +446,7 @@ void muhkuh_mainFrame::reloadWelcomePage(void)
 }
 
 
-void muhkuh_mainFrame::reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml)
+void muhkuh_mainFrame::reloadDetailsPage(void)
 {
 	wxString strTestName;
 	wxString strSubTestName;
@@ -820,7 +820,7 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 
 			// show welcome and details page
 			reloadWelcomePage();
-			reloadDetailsPage(NULL);
+			reloadDetailsPage();
 
 			// add all help books
 			m_ptHelp->AddBook(wxFileName(wxT("muhkuh.htb")), true);
@@ -958,7 +958,7 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 		lua_muhkuh_register_config_data(m_ptConfigData);
 
 		reloadWelcomePage();
-		reloadDetailsPage(NULL);
+		reloadDetailsPage();
 
 		/* Show all repositories in the combo box. */
 		updateRepositoryCombo();
@@ -1144,6 +1144,7 @@ bool muhkuh_mainFrame::executeTest_prepare_working_folder(wxString &strFolder)
 				if( iResult==wxOK )
 				{
 					/* Ok, remove the complete folder! */
+					/* FIXME: Rmdir only removes an empty folder in wx2.8 . Either move to 2.9 or write something recursive. */
 					fResult = tWorkingDir.Rmdir();
 					if( fResult!=true )
 					{
@@ -1175,6 +1176,75 @@ bool muhkuh_mainFrame::executeTest_prepare_working_folder(wxString &strFolder)
 	}
 
 	return fResult;
+}
+
+
+bool muhkuh_mainFrame::executeTest_extract_mtd(wxString strWorkingFolder, wxString strMtdUri)
+{
+	/*
+ auto_ptr<wxZipEntry> entry;
+
+    wxFFileInputStream in(_T("test.zip"));
+    wxZipInputStream zip(in);
+
+    while (entry.reset(zip.GetNextEntry()), entry.get() != NULL)
+    {
+        // access meta-data
+        wxString name = entry->GetName();
+        // read 'zip' to access the entry's data
+    }
+    */
+}
+
+
+bool muhkuh_mainFrame::executeTest_generate_code_chunks(wxString strTempWorkingFolder, muhkuh_wrap_xml *ptTestData)
+{
+	bool fResult;
+	unsigned int uiSubTestCnt;
+	unsigned int uiSubTestEnd;
+	const MTD_SUBTEST_T *ptSubTest;
+	const MTD_SUBTEST_PARAMETER_T *ptParameterCnt;
+	const MTD_SUBTEST_PARAMETER_T *ptParameterEnd;
+	wxString strCode;
+	
+
+	wxLogMessage(wxT("lalala 1"));
+	fResult = ptTestData->subtests_parse();
+	if( fResult==false )
+	{
+		wxLogError(_("Failed to parse the subtests!"));
+	}
+	else
+	{
+		/* Loop over all subtests and the global code block. */
+		uiSubTestCnt = 0;
+		uiSubTestEnd = ptTestData->testDescription_getTestCnt() + 1;
+		while( uiSubTestCnt<uiSubTestEnd )
+		{
+			ptSubTest = ptTestData->subtests_get(uiSubTestCnt);
+			if( ptSubTest!=NULL )
+			{
+				wxLogMessage(wxT("Subtest %d"), uiSubTestCnt);
+				wxLogMessage(wxT("Code: %s"), wxString::FromAscii(ptSubTest->pcCode).c_str());
+				wxLogMessage(wxT("%d Parameter"), ptSubTest->sizParameter);
+				ptParameterCnt = ptSubTest->ptParameter;
+				ptParameterEnd = ptSubTest->ptParameter + ptSubTest->sizParameter;
+				while( ptParameterCnt<ptParameterEnd )
+				{
+					wxLogMessage(wxT("p[\"%s\"] = \"%s\""), wxString::FromAscii(ptParameterCnt->pcName).c_str(), wxString::FromAscii(ptParameterCnt->pcValue).c_str());
+					++ptParameterCnt;
+				}
+			}
+			++uiSubTestCnt;
+		}
+	
+	}
+	wxLogMessage(wxT("lalala 2"));
+
+//	strCode = ptTestData->testDescription_getCode();
+//	wxMessageBox(strCode, _("Server startup error"), wxICON_ERROR, this);
+
+	return false;
 }
 
 
@@ -1229,57 +1299,6 @@ bool muhkuh_mainFrame::executeTest_generate_start_code(wxString strStartLuaFile)
 	}
 
 	return fResult;
-}
-
-
-bool muhkuh_mainFrame::executeTest_generate_code_chunks(wxString strTempWorkingFolder, muhkuh_wrap_xml *ptTestData)
-{
-	bool fResult;
-	unsigned int uiSubTestCnt;
-	unsigned int uiSubTestEnd;
-	const MTD_SUBTEST_T *ptSubTest;
-	const MTD_SUBTEST_PARAMETER_T *ptParameterCnt;
-	const MTD_SUBTEST_PARAMETER_T *ptParameterEnd;
-	wxString strCode;
-	
-
-	wxLogMessage(wxT("lalala 1"));
-	fResult = ptTestData->subtests_parse();
-	if( fResult==false )
-	{
-		wxLogError(_("Failed to parse the subtests!"));
-	}
-	else
-	{
-		/* Loop over all subtests and the global code block. */
-		uiSubTestCnt = 0;
-		uiSubTestEnd = ptTestData->testDescription_getTestCnt() + 1;
-		while( uiSubTestCnt<uiSubTestEnd )
-		{
-			ptSubTest = ptTestData->subtests_get(uiSubTestCnt);
-			if( ptSubTest!=NULL )
-			{
-				wxLogMessage(wxT("Subtest %d"), uiSubTestCnt);
-				wxLogMessage(wxT("Code: %s"), wxString::FromAscii(ptSubTest->pcCode).c_str());
-				wxLogMessage(wxT("%d Parameter"), ptSubTest->sizParameter);
-				ptParameterCnt = ptSubTest->ptParameter;
-				ptParameterEnd = ptSubTest->ptParameter + ptSubTest->sizParameter;
-				while( ptParameterCnt<ptParameterEnd )
-				{
-					wxLogMessage(wxT("p[\"%s\"] = \"%s\""), wxString::FromAscii(ptParameterCnt->pcName).c_str(), wxString::FromAscii(ptParameterCnt->pcValue).c_str());
-					++ptParameterCnt;
-				}
-			}
-			++uiSubTestCnt;
-		}
-	
-	}
-	wxLogMessage(wxT("lalala 2"));
-
-//	strCode = ptTestData->testDescription_getCode();
-//	wxMessageBox(strCode, _("Server startup error"), wxICON_ERROR, this);
-
-	return false;
 }
 
 
@@ -1818,7 +1837,7 @@ void muhkuh_mainFrame::OnTestTreeItemSelected(wxTreeEvent &event)
 		}
 	}
 
-	reloadDetailsPage(ptWrapXml);
+	reloadDetailsPage();
 }
 
 
@@ -1831,7 +1850,7 @@ void muhkuh_mainFrame::scanTests(int iActiveRepositoryIdx)
 	// clear all old tests
 	m_sizTestCnt = 0;
 	// clear the test details
-	reloadDetailsPage(NULL);
+	reloadDetailsPage();
 	// clear the complete tree
 	m_treeCtrl->DeleteAllItems();
 	// add a root item

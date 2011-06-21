@@ -141,8 +141,9 @@ private:
 	void write_config(void);
 
 	bool executeTest_prepare_working_folder(wxString &strFolder);
-	bool executeTest_generate_start_code(wxString strStartLuaFile);
+	bool executeTest_extract_mtd(wxString strWorkingFolder, wxString strMtdUri);
 	bool executeTest_generate_code_chunks(wxString strTempWorkingFolder, muhkuh_wrap_xml *ptTestData);
+	bool executeTest_generate_start_code(wxString strStartLuaFile);
 	void executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex);
 	bool process_server_output(void);
 	void finishTest(void);
@@ -160,7 +161,7 @@ private:
 
 	wxString loadHtmlString(wxString strFileUrl);
 	void reloadWelcomePage(void);
-	void reloadDetailsPage(muhkuh_wrap_xml *ptWrapXml);
+	void reloadDetailsPage(void);
 
 	bool check_plugins(void);
 
