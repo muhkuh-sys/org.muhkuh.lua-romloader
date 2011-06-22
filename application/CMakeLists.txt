@@ -156,6 +156,7 @@ SET(muhkuh_app_SOURCES
 	muhkuh_brokenPluginDialog.cpp
 	muhkuh_configDialog.cpp
 	muhkuh_config_reposEntryDialog.cpp
+	muhkuh_copy_process.cpp
 	muhkuh_dirlistbox.cpp
 	muhkuh_icons.cpp
 	muhkuh_mainFrame.cpp
@@ -170,6 +171,7 @@ SET(muhkuh_app_HEADERS
 	muhkuh_app.h
 	muhkuh_configDialog.h
 	muhkuh_config_reposEntryDialog.h
+	muhkuh_copy_process.h
 	muhkuh_dirlistbox.h
 	muhkuh_icons.h
 	muhkuh_id.h
