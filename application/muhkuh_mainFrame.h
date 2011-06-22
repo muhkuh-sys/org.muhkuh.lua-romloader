@@ -40,6 +40,7 @@
 #define __MUHKUH_MAINFRAME_H__
 
 #include "muhkuh_configDialog.h"
+#include "muhkuh_copy_process.h"
 #include "muhkuh_id.h"
 #include "muhkuh_plugin_manager.h"
 #include "muhkuh_repository_manager.h"
@@ -108,6 +109,8 @@ public:
 
 	void OnServerProcessTerminate(wxProcessEvent &event);
 
+	void OnCopyProgress(wxMuhkuhCopyProgressEvent &tEvent);
+
 	void OnMove(wxMoveEvent &event);
 	void OnSize(wxSizeEvent &event);
 
@@ -141,7 +144,7 @@ private:
 	void write_config(void);
 
 	bool executeTest_prepare_working_folder(wxString &strFolder);
-	bool executeTest_extract_mtd(wxString strWorkingFolder, wxString strMtdUri);
+	bool executeTest_extract_mtd(muhkuh_wrap_xml *ptTestData, wxString strWorkingFolder);
 	bool executeTest_generate_code_chunks(wxString strTempWorkingFolder, muhkuh_wrap_xml *ptTestData);
 	bool executeTest_generate_start_code(wxString strStartLuaFile);
 	void executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex);
@@ -209,6 +212,10 @@ private:
 
 	// scanner progress dialog
 	wxProgressDialog *m_scannerProgress;
+
+	/* The copy progress dialog. */
+	muhkuh_copy_process *m_ptCopyProcess;
+	wxProgressDialog *m_ptCopyProgress;
 
 	// number of loaded test descriptions
 	size_t m_sizTestCnt;
