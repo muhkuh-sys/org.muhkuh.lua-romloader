@@ -26,20 +26,20 @@
 
 
 BEGIN_EVENT_TABLE(muhkuh_config_reposEntryDialog, wxDialog)
-	EVT_BUTTON(wxID_OK,							muhkuh_config_reposEntryDialog::OnOkButton)
+	EVT_BUTTON(wxID_OK,                                                     muhkuh_config_reposEntryDialog::OnOkButton)
 
-	EVT_BUTTON(muhkuh_configReposEntryDialog_ButtonDirscanLocationBrowse,	muhkuh_config_reposEntryDialog::OnBrowseDirscanLocationButton)
-	EVT_BUTTON(muhkuh_configReposEntryDialog_ButtonSingleXmlLocationBrowse,	muhkuh_config_reposEntryDialog::OnBrowseSingleXmlLocationButton)
-	EVT_BUTTON(muhkuh_configReposEntryDialog_ButtonAllLocalLocationBrowse,	muhkuh_config_reposEntryDialog::OnBrowseAllLocalLocationButton)
+	EVT_BUTTON(muhkuh_configReposEntryDialog_ButtonDirscanLocationBrowse,   muhkuh_config_reposEntryDialog::OnBrowseDirscanLocationButton)
+	EVT_BUTTON(muhkuh_configReposEntryDialog_ButtonSingleXmlLocationBrowse, muhkuh_config_reposEntryDialog::OnBrowseSingleXmlLocationButton)
+	EVT_BUTTON(muhkuh_configReposEntryDialog_ButtonAllLocalLocationBrowse,  muhkuh_config_reposEntryDialog::OnBrowseAllLocalLocationButton)
 
-	EVT_CHECKBOX(muhkuh_configReposEntryDialog_CheckboxDirscanRelPaths,	muhkuh_config_reposEntryDialog::OnDirscanUseRelPaths)
-	EVT_CHECKBOX(muhkuh_configReposEntryDialog_CheckboxSingleXmlRelPaths,	muhkuh_config_reposEntryDialog::OnSingleXmlUseRelPaths)
-	EVT_CHECKBOX(muhkuh_configReposEntryDialog_CheckboxAllLocalRelPaths,	muhkuh_config_reposEntryDialog::OnAllLocalUseRelPaths)
+	EVT_CHECKBOX(muhkuh_configReposEntryDialog_CheckboxDirscanRelPaths,     muhkuh_config_reposEntryDialog::OnDirscanUseRelPaths)
+	EVT_CHECKBOX(muhkuh_configReposEntryDialog_CheckboxSingleXmlRelPaths,   muhkuh_config_reposEntryDialog::OnSingleXmlUseRelPaths)
+	EVT_CHECKBOX(muhkuh_configReposEntryDialog_CheckboxAllLocalRelPaths,    muhkuh_config_reposEntryDialog::OnAllLocalUseRelPaths)
 
-	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioDirscan,		muhkuh_config_reposEntryDialog::OnRadioDirscan)
-	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioFilelist,		muhkuh_config_reposEntryDialog::OnRadioFilelist)
-	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioSingleXml,		muhkuh_config_reposEntryDialog::OnRadioSingleXml)
-	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioAllLocal,		muhkuh_config_reposEntryDialog::OnRadioAllLocal)
+	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioDirscan,             muhkuh_config_reposEntryDialog::OnRadioDirscan)
+	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioFilelist,            muhkuh_config_reposEntryDialog::OnRadioFilelist)
+	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioSingleXml,           muhkuh_config_reposEntryDialog::OnRadioSingleXml)
+	EVT_RADIOBUTTON(muhkuh_configReposEntryDialog_radioAllLocal,            muhkuh_config_reposEntryDialog::OnRadioAllLocal)
 END_EVENT_TABLE()
 
 
@@ -214,7 +214,7 @@ void muhkuh_config_reposEntryDialog::createControls(void)
 	m_radioSingleXml = new wxRadioButton(this, muhkuh_configReposEntryDialog_radioSingleXml, _("Single Xml"), wxDefaultPosition, wxDefaultSize, 0);
 	m_mainSizer->Add(m_radioSingleXml, 0, 0);
 
-	m_singleXmlGrid = new wxFlexGridSizer(1, 4, 0, 0);
+	m_singleXmlGrid = new wxFlexGridSizer(3, 4, 0, 0);
 	m_singleXmlGrid->AddGrowableCol(2, 1);
 	m_mainSizer->Add(m_singleXmlGrid, 0, wxEXPAND|wxLEFT, 32);
 	m_buttonSingleXmlLocation = new wxBitmapButton(this, muhkuh_configReposEntryDialog_ButtonSingleXmlLocationBrowse, icon_famfamfam_silk_folder);
@@ -246,7 +246,7 @@ void muhkuh_config_reposEntryDialog::createControls(void)
 	m_radioAllLocal = new wxRadioButton(this, muhkuh_configReposEntryDialog_radioAllLocal, _("All Local Files"), wxDefaultPosition, wxDefaultSize, 0);
 	m_mainSizer->Add(m_radioAllLocal, 0, 0);
 
-	m_allLocalGrid = new wxFlexGridSizer(1, 4, 0, 0);
+	m_allLocalGrid = new wxFlexGridSizer(5, 4, 0, 0);
 	m_allLocalGrid->AddGrowableCol(2, 1);
 	m_mainSizer->Add(m_allLocalGrid, 0, wxEXPAND|wxLEFT, 32);
 
