@@ -564,14 +564,10 @@ bool muhkuh_repository::createTestlist_dirscan(pfnTestlistProgress pfnCallback, 
 		{
 			fScannerIsRunning = pfnCallback(pvCallbackUser, strProgressMessage, -1, -1);
 
-			// convert to url
-			strUrl = wxFileSystem::FileNameToURL(strFilename);
-			wxLogDebug(m_strMe + _("found '%s'"), strUrl.c_str());
-
 			ptTestData = new tTestData;
-			ptTestData->strPrintUrl = strUrl;
-			ptTestData->strBaseUrl = strUrl + wxT("#zip:");
-			ptTestData->strTestDescriptionUrl = strUrl + wxT("#zip:test_description.xml");
+			ptTestData->strPrintUrl = strFilename;
+			ptTestData->strBaseUrl = strFilename + wxT("#zip:");
+			ptTestData->strTestDescriptionUrl = strFilename + wxT("#zip:test_description.xml");
 			ptTestData->strPrePath.Clear();
 			m_ptTestData->push_back(ptTestData);
 
