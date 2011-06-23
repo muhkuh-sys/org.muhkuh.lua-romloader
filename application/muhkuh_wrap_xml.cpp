@@ -314,7 +314,7 @@ bool muhkuh_wrap_xml::subtests_read_test(wxXmlNode *ptParent, MTD_SUBTEST_T *ptS
 						if( ptNode->GetType()==wxXML_ELEMENT_NODE && ptNode->GetName()==wxT("Parameter") )
 						{
 							/* Get the name parameter. */
-							if( ptNode->GetPropVal(wxT("name"), &strData)==false )
+							if( ptNode->GetAttribute(wxT("name"), &strData)==false )
 							{
 								wxLogError(_("The parameter has no name attribute."));
 								fOk = false;
@@ -539,7 +539,7 @@ bool muhkuh_wrap_xml::readTestDescription(wxXmlDocument *xmldoc)
 	ptTestDesc = new tTesterXml_TestDescription;
 
 	// get the testdescription name
-	if( xml_testdesc->GetPropVal(wxT("name"), &ptTestDesc->strName)==false )
+	if( xml_testdesc->GetAttribute(wxT("name"), &ptTestDesc->strName)==false )
 	{
 		delete ptTestDesc;
 		return false;
@@ -554,7 +554,7 @@ bool muhkuh_wrap_xml::readTestDescription(wxXmlDocument *xmldoc)
 */
 	// get the testdescription version
 	// NOTE: this is optional to support older tests
-	if( xml_testdesc->GetPropVal(wxT("version"), &ptTestDesc->strVersion)==false )
+	if( xml_testdesc->GetAttribute(wxT("version"), &ptTestDesc->strVersion)==false )
 	{
 		// show a warning
 		wxLogWarning(_("testdescription '%s' has no version information"), ptTestDesc->strName.c_str());
@@ -608,7 +608,7 @@ bool muhkuh_wrap_xml::readTest(wxXmlNode *xml_parent, tTesterXml_TestDescription
 			if( xml_test_cnt->GetType()==wxXML_ELEMENT_NODE && xml_test_cnt->GetName()==wxT("Test") )
 			{
 				// get test name
-				if( xml_test_cnt->GetPropVal(wxT("name"), &tc->strName)==false )
+				if( xml_test_cnt->GetAttribute(wxT("name"), &tc->strName)==false )
 				{
 					delete[] ptTests;
 					return false;
@@ -623,7 +623,7 @@ bool muhkuh_wrap_xml::readTest(wxXmlNode *xml_parent, tTesterXml_TestDescription
 */
 				// get the test version
 				// NOTE: this is optional to support older tests
-				if( xml_test_cnt->GetPropVal(wxT("version"), &tc->strVersion)==false )
+				if( xml_test_cnt->GetAttribute(wxT("version"), &tc->strVersion)==false )
 				{
 					// show a warning
 					wxLogWarning(_("test '%s' has no version information"), tc->strName.c_str());
