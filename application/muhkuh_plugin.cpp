@@ -209,7 +209,7 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 				/* Expect failure. */
 				fResult = false;
 				/* Get name attribute. */
-				if( ptMuhkuhNode->GetPropVal(wxT("name"), &strCfgName)!=true )
+				if( ptMuhkuhNode->GetAttribute(wxT("name"), &strCfgName)!=true )
 				{
 					strError.Printf(_("The node '%s' has no property '%s'!"), wxT("MuhkuhPluginConfig"), wxT("name"));
 					setInitError(strError, strXmlPath);
@@ -219,7 +219,7 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 					strError.Printf(_("Property '%s' of node '%s' is empty!"), wxT("name"), wxT("MuhkuhPluginConfig"));
 					setInitError(strError, strXmlPath);
 				}
-				else if( ptMuhkuhNode->GetPropVal(wxT("id"), &strId)!=true )
+				else if( ptMuhkuhNode->GetAttribute(wxT("id"), &strId)!=true )
 				{
 					strError.Printf(_("The node '%s' has no attribute '%s'!"), wxT("MuhkuhPluginConfig"), wxT("id"));
 					setInitError(strError, strXmlPath);
