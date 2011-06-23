@@ -226,7 +226,7 @@ int lua_muhkuh_get_memory_usage(lua_State *ptLuaState)
 	else
 	{
 		/* Get the lua memory consumption in kilobytes. */
-		iResult = lua_getgccount(ptLuaState);
+		iResult = lua_gc(ptLuaState, LUA_GCCOUNT, 0);
 	}
 
 	return iResult;
