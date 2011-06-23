@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 
+#include <wx/longlong.h>
 #include <wx/stdpaths.h>
 #include <wx/txtstrm.h>
 #include <wx/url.h>
@@ -807,6 +808,7 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 	wxString strMemStatus;
 	int iRepositoryIndex;
 	int iLuaMemKb;
+	wxULongLong tLuaMemBytes;
 	bool fHasMoreInput;
 
 
@@ -866,7 +868,8 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 #if USE_LUA!=0
 	/* Get the lua memory consumption in kilobytes. */
 	iLuaMemKb = lua_muhkuh_get_memory_usage(NULL);
-	strMemStatus.Printf(_("Lua uses %d kilobytes"), iLuaMemKb);
+	tLuaMemBytes = (unsigned long)(iLuaMemKb*1024);
+	strMemStatus.Printf(_("Lua uses %s ."), wxFileName::GetHumanReadableSize(tLuaMemBytes, _("an unknown amount of bytes"), 1, wxSIZE_CONV_TRADITIONAL));
 	strStatus += strMemStatus;
 #endif
 
