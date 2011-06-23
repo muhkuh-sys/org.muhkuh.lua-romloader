@@ -22,6 +22,7 @@
 #include <wx/arrstr.h>
 #include <wx/event.h>
 #include <wx/filename.h>
+#include <wx/stream.h>
 #include <wx/string.h>
 #include <wx/thread.h>
 
@@ -38,6 +39,7 @@ typedef enum
 } MUHKUH_COPY_PROCESS_STATE_T;
 
 
+/* FIXME: Replace this with wxThreadEvent. */
 class wxMuhkuhCopyProgressEvent: public wxEvent
 {
 public:
@@ -58,7 +60,7 @@ public:
 		m_sizCurrentFileIdx            = tSrc.m_sizCurrentFileIdx;
 		m_sizCurrentFileInBytes        = tSrc.m_sizCurrentFileInBytes;
 		m_sizCurrentFileBytesProcessed = tSrc.m_sizCurrentFileBytesProcessed;
-		m_strCurrentFileURI            = tSrc.m_strCurrentFileURI;
+		m_strCurrentFileName           = tSrc.m_strCurrentFileName;
 	}
 
 	MUHKUH_COPY_PROCESS_STATE_T GetState(void) const
@@ -81,9 +83,9 @@ public:
 	{
 		return m_sizCurrentFileBytesProcessed;
 	}
-	wxString GetCurrentFileURI(void) const
+	wxString GetCurrentFileName(void) const
 	{
-		return m_strCurrentFileURI;
+		return m_strCurrentFileName;
 	}
 
 	void SetState(MUHKUH_COPY_PROCESS_STATE_T tState)
@@ -106,9 +108,9 @@ public:
 	{
 		m_sizCurrentFileBytesProcessed = sizCurrentFileBytesProcessed;
 	}
-	void SetCurrentFileURI(wxString strCurrentFileURI)
+	void SetCurrentFileName(wxString strCurrentFileName)
 	{
-		m_strCurrentFileURI = strCurrentFileURI;
+		m_strCurrentFileName = strCurrentFileName;
 	}
 
 	wxEvent *Clone(void) const
@@ -122,7 +124,7 @@ protected:
 	size_t m_sizCurrentFileIdx;
 	size_t m_sizCurrentFileInBytes;
 	size_t m_sizCurrentFileBytesProcessed;
-	wxString m_strCurrentFileURI;
+	wxString m_strCurrentFileName;
 };
 
 
@@ -149,7 +151,11 @@ public:
 private:
 	bool get_local_folder(wxString strRemoteUrl, wxFileName *ptFileName);
 	bool create_local_folder(wxString strRemoteUrl);
-	void send_progress_information(void);
+	bool copy_file(wxString strRemoteUrl);
+	bool copy_file_data(wxInputStream *ptInputStream, wxOutputStream *ptOutputStream, size_t sizFile);
+	void send_progress_information(size_t sizProcessedBytes=0, size_t sizTotalBytes=0);
+
+	static const size_t m_sizCopyChunkSize = 8192;
 
 	wxString m_strRemoteBase;
 	wxString m_strLocalBase;
@@ -160,6 +166,10 @@ private:
 	wxArrayString m_astrTodoProcessFolders;
 	wxArrayString m_astrVisitedFolders;
 	wxArrayString m_astrTodoCopyFiles;
+
+	/* This is just for the progress information. */
+	size_t m_sizCurrentFileIdx;
+	wxString m_strCurrentFileName;
 };
 
 
