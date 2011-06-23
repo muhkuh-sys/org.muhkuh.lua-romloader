@@ -2338,9 +2338,6 @@ void muhkuh_mainFrame::OnCopyProgress(wxMuhkuhCopyProgressEvent &tEvent)
 	wxThread::ExitCode tExitCode;
 
 
-	wxLogMessage(wxT("*** Copy Progress Event ***"));
-	fprintf(stderr, "*** Copy Progress Event ***\n");
-
 	if( m_ptCopyProgress!=NULL )
 	{
 		fProcessFinished = false;
@@ -2369,7 +2366,7 @@ void muhkuh_mainFrame::OnCopyProgress(wxMuhkuhCopyProgressEvent &tEvent)
 			else
 			{
 				iProgress = 100000 * sizFilesCnt / sizFilesEnd;
-				strMessage.Printf(_("Copying file %s: %d bytes processed."), tEvent.GetCurrentFileURI().c_str(), tEvent.GetCurrentFileBytesProcessed());
+				strMessage.Printf(_("Copying file %s: %d bytes processed."), tEvent.GetCurrentFileName().c_str(), tEvent.GetCurrentFileBytesProcessed());
 			}
 			fKeepRunning = m_ptCopyProgress->Update(iProgress, strMessage);
 			break;
@@ -2400,8 +2397,6 @@ void muhkuh_mainFrame::OnCopyProgress(wxMuhkuhCopyProgressEvent &tEvent)
 //			wxLogMessage(_("Thread returned with %d"), tExitCode);
 		}
 	}
-	fprintf(stderr, "*** Copy Progress Event Done ***\n");
-
 }
 
 
