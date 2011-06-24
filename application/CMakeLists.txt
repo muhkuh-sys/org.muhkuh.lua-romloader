@@ -160,6 +160,7 @@ SET(muhkuh_app_SOURCES
 	muhkuh_dirlistbox.cpp
 	muhkuh_icons.cpp
 	muhkuh_mainFrame.cpp
+	muhkuh_split_testdescription.cpp
 	muhkuh_wrap_xml.cpp
 	readFsFile.cpp
 )
@@ -176,6 +177,7 @@ SET(muhkuh_app_HEADERS
 	muhkuh_icons.h
 	muhkuh_id.h
 	muhkuh_mainFrame.h
+	muhkuh_split_testdescription.h
 	muhkuh_testTreeItemData.h
 	muhkuh_version.h
 	muhkuh_wrap_xml.h
