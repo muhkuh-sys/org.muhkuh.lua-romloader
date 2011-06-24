@@ -26,6 +26,7 @@
 #include <wx/aui/aui.h>
 #include <wx/bmpcbox.h>
 #include <wx/dir.h>
+#include <wx/frame.h>
 #include <wx/html/helpctrl.h>
 #include <wx/image.h>
 #include <wx/intl.h>
@@ -143,11 +144,11 @@ private:
 	void read_config(void);
 	void write_config(void);
 
-	bool executeTest_prepare_working_folder(wxString &strFolder);
-	bool executeTest_extract_mtd(muhkuh_wrap_xml *ptTestData, wxString strWorkingFolder);
-	bool executeTest_generate_code_chunks(wxString strTempWorkingFolder, muhkuh_wrap_xml *ptTestData);
+	bool executeTest_prepare_working_folder(void);
+	void executeTest_extract_mtd(muhkuh_wrap_xml *ptTestData);
 	bool executeTest_generate_start_code(wxString strStartLuaFile);
 	void executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex);
+	void executeTestPart2(void);
 	bool process_server_output(void);
 	void finishTest(void);
 
@@ -204,18 +205,26 @@ private:
 
 	// main frame state
 	muhkuh_mainFrame_state m_state;
+
+
+    /* This is the execute test section. */
 	// TODO: replace the test name and idx with the xml wrapper object
 	// name of the running test
 	wxString m_strRunningTestName;
 	size_t m_sizRunningTest_RepositoryIdx;
 	size_t m_sizRunningTest_TestIdx;
-
-	// scanner progress dialog
-	wxProgressDialog *m_scannerProgress;
+	size_t m_sizRunningTest_SubTestIdx;
 
 	/* The copy progress dialog. */
 	muhkuh_copy_process *m_ptCopyProcess;
 	wxProgressDialog *m_ptCopyProgress;
+
+	wxString m_strWorkingFolder;
+    /* This is the execute test section. */
+
+
+	// scanner progress dialog
+	wxProgressDialog *m_scannerProgress;
 
 	// number of loaded test descriptions
 	size_t m_sizTestCnt;

@@ -32,6 +32,7 @@
 #include "muhkuh_icons.h"
 #include "muhkuh_id.h"
 #include "muhkuh_mainFrame.h"
+#include "muhkuh_split_testdescription.h"
 #include "muhkuh_version.h"
 #include "readFsFile.h"
 
@@ -1077,7 +1078,7 @@ bool muhkuh_mainFrame::check_plugins(void)
 }
 
 
-bool muhkuh_mainFrame::executeTest_prepare_working_folder(wxString &strFolder)
+bool muhkuh_mainFrame::executeTest_prepare_working_folder(void)
 {
 	bool fResult;
 	wxString strTempFolder;         /* This is the folder where the application can create a new subfolder. */
@@ -1176,7 +1177,7 @@ bool muhkuh_mainFrame::executeTest_prepare_working_folder(wxString &strFolder)
 				else
 				{
 					/* Ok, now we have a fresh working folder. */
-					strFolder = strTempWorkingFolder;
+					m_strWorkingFolder = strTempWorkingFolder;
 				}
 			}
 		}
@@ -1186,14 +1187,11 @@ bool muhkuh_mainFrame::executeTest_prepare_working_folder(wxString &strFolder)
 }
 
 
-bool muhkuh_mainFrame::executeTest_extract_mtd(muhkuh_wrap_xml *ptTestData, wxString strWorkingFolder)
+void muhkuh_mainFrame::executeTest_extract_mtd(muhkuh_wrap_xml *ptTestData)
 {
 	size_t sizRepositoryIdx;
 	size_t sizTestIdx;
 	wxString strBaseUrl;
-	wxThread::ExitCode tExitCode;
-	bool fResult;
-
 
 
 	/* Get the base url of the test. */
@@ -1205,62 +1203,9 @@ bool muhkuh_mainFrame::executeTest_extract_mtd(muhkuh_wrap_xml *ptTestData, wxSt
 	m_ptCopyProgress = new wxProgressDialog(_("Copy files to a local working folder..."), wxT(" "), 100000, this, wxPD_AUTO_HIDE|wxPD_SMOOTH|wxPD_CAN_ABORT);
 
 	/* Start the copy thread. */
-	m_ptCopyProcess = new muhkuh_copy_process(strBaseUrl, strWorkingFolder, GetEventHandler());
+	m_ptCopyProcess = new muhkuh_copy_process(strBaseUrl, m_strWorkingFolder, GetEventHandler());
 	m_ptCopyProcess->Create();
 	m_ptCopyProcess->GetThread()->Run();
-
-	return false;
-}
-
-
-bool muhkuh_mainFrame::executeTest_generate_code_chunks(wxString strTempWorkingFolder, muhkuh_wrap_xml *ptTestData)
-{
-	bool fResult;
-	unsigned int uiSubTestCnt;
-	unsigned int uiSubTestEnd;
-	const MTD_SUBTEST_T *ptSubTest;
-	const MTD_SUBTEST_PARAMETER_T *ptParameterCnt;
-	const MTD_SUBTEST_PARAMETER_T *ptParameterEnd;
-	wxString strCode;
-	
-
-	wxLogMessage(wxT("lalala 1"));
-	fResult = ptTestData->subtests_parse();
-	if( fResult==false )
-	{
-		wxLogError(_("Failed to parse the subtests!"));
-	}
-	else
-	{
-		/* Loop over all subtests and the global code block. */
-		uiSubTestCnt = 0;
-		uiSubTestEnd = ptTestData->testDescription_getTestCnt() + 1;
-		while( uiSubTestCnt<uiSubTestEnd )
-		{
-			ptSubTest = ptTestData->subtests_get(uiSubTestCnt);
-			if( ptSubTest!=NULL )
-			{
-				wxLogMessage(wxT("Subtest %d"), uiSubTestCnt);
-				wxLogMessage(wxT("Code: %s"), wxString::FromAscii(ptSubTest->pcCode).c_str());
-				wxLogMessage(wxT("%d Parameter"), ptSubTest->sizParameter);
-				ptParameterCnt = ptSubTest->ptParameter;
-				ptParameterEnd = ptSubTest->ptParameter + ptSubTest->sizParameter;
-				while( ptParameterCnt<ptParameterEnd )
-				{
-					wxLogMessage(wxT("p[\"%s\"] = \"%s\""), wxString::FromAscii(ptParameterCnt->pcName).c_str(), wxString::FromAscii(ptParameterCnt->pcValue).c_str());
-					++ptParameterCnt;
-				}
-			}
-			++uiSubTestCnt;
-		}
-	
-	}
-	wxLogMessage(wxT("lalala 2"));
-
-//	strCode = ptTestData->testDescription_getCode();
-//	wxMessageBox(strCode, _("Server startup error"), wxICON_ERROR, this);
-
-	return false;
 }
 
 
@@ -1321,26 +1266,54 @@ bool muhkuh_mainFrame::executeTest_generate_start_code(wxString strStartLuaFile)
 void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex)
 {
 	bool fResult;
-	wxString strMsg;
-	wxString strNow;
-	int iResult;
-
-	wxString strOldWorkingDirectory;  /* This is the current working folder before this function changes it. */
 	wxString strTempWorkingFolder;    /* This is the folder where the mtd is depacked and the startup file is generated. */
+	muhkuh_split_testdescription *ptSlitter;
+	wxString strOldWorkingDirectory;  /* This is the current working folder before this function changes it. */
 	wxString strStartLuaFile;	  /* This is the complete path to the generated startup file. */
 	wxString strStartCmd;
 
 
-	wxLogMessage(wxT("m_strRunningTestName = %s"), ptTestData->testDescription_getName().c_str());
-	wxLogMessage(wxT("m_sizRunningTest_RepositoryIdx = %d"), ptTestData->getRepositoryIndex());
-	wxLogMessage(wxT("m_sizRunningTest_TestIdx = %d"), ptTestData->getTestIndex());
+	m_strRunningTestName = ptTestData->testDescription_getName();
+	m_sizRunningTest_RepositoryIdx = ptTestData->getRepositoryIndex();
+	m_sizRunningTest_TestIdx = ptTestData->getTestIndex();
+	m_sizRunningTest_SubTestIdx = uiIndex;
+	wxLogDebug("m_strRunningTestName = %s", m_strRunningTestName);
+	wxLogDebug("m_sizRunningTest_RepositoryIdx = %d", m_sizRunningTest_RepositoryIdx);
+	wxLogDebug("m_sizRunningTest_TestIdx = %d", m_sizRunningTest_TestIdx);
+	wxLogDebug("m_sizRunningTest_SubTestIdx = %d", m_sizRunningTest_SubTestIdx);
 
-
-
-	fResult = executeTest_prepare_working_folder(strTempWorkingFolder);
+	/* Create the temp working folder and return the complete path to it. */
+	fResult = executeTest_prepare_working_folder();
 	if( fResult==true )
 	{
-		fResult = executeTest_extract_mtd(ptTestData, strTempWorkingFolder);
+		/* Extract the complete Test description. */
+		executeTest_extract_mtd(ptTestData);
+	}
+}
+
+
+void muhkuh_mainFrame::executeTestPart2(void)
+{
+	bool fResult;
+	wxString strMsg;
+	wxString strNow;
+//	int iResult;
+
+	wxString strTempWorkingFolder;    /* This is the folder where the mtd is depacked and the startup file is generated. */
+	muhkuh_split_testdescription *ptSplitter;
+	wxString strOldWorkingDirectory;  /* This is the current working folder before this function changes it. */
+	wxString strStartLuaFile;	  /* This is the complete path to the generated startup file. */
+	wxString strStartCmd;
+
+
+	/* Generate the code chunks. */
+	ptSplitter = new muhkuh_split_testdescription();
+	fResult = ptSplitter->split(m_strWorkingFolder);
+	if( fResult==true )
+	{
+		/* Create the startup code. */
+		strStartLuaFile = wxT("start_gui.lua");
+		fResult = executeTest_generate_start_code(strStartLuaFile);
 		if( fResult==true )
 		{
 			/* Save the old working directory. It will be restored at the end of this function. */
@@ -1350,53 +1323,39 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 			wxLogMessage(wxT("Changing to folder %s"), strTempWorkingFolder.c_str());
 			wxFileName::SetCwd(strTempWorkingFolder);
 
-			fResult = executeTest_generate_code_chunks(strTempWorkingFolder, ptTestData);
-			if( fResult==true )
+			wxLogMessage(_("execute test '%s', index %d"), m_strRunningTestName, m_sizRunningTest_SubTestIdx);
+
+
+			/* Set state to 'testing'.
+			 * NOTE: this must be done before the call to 'RunString', or
+			 * the state will not change before the first idle event.
+			 */
+			setState(muhkuh_mainFrame_state_testing);
+
+			/* Construct the start command. */
+			strStartCmd.Printf(wxT("lua %s"), strStartLuaFile.c_str());
+			wxLogMessage(wxT("start command: ") + strStartCmd);
+
+			m_lServerPid = wxExecute(strStartCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, m_ptServerProcess);
+			if( m_lServerPid==0 )
 			{
-				/* Create the startup code. */
-				strStartLuaFile = wxT("start_gui.lua");
-				fResult = executeTest_generate_start_code(strStartLuaFile);
-				if( fResult==true )
-				{
-					m_strRunningTestName = ptTestData->testDescription_getName();
-					m_sizRunningTest_RepositoryIdx = ptTestData->getRepositoryIndex();
-					m_sizRunningTest_TestIdx = ptTestData->getTestIndex();
+				strMsg.Printf(_("Failed to start the server with command: %s"), strStartCmd.c_str());
+				wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
+			}
+			else
+			{
+				strNow = wxDateTime::Now().Format(wxT("%F %T"));
+				// create start message for the report tab
+				strMsg.Printf(_("%s: started test '%s'.\n"), strNow.c_str(), m_strRunningTestName.c_str());
+				// create a new notebook tab
+				m_ptTextCtrl_TestOutput = new wxTextCtrl(this, wxID_ANY, strMsg, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxSUNKEN_BORDER | wxTE_READONLY);
+				strMsg = m_strRunningTestName + wxT(" - ") + strNow;
+				m_notebook->AddPage(m_ptTextCtrl_TestOutput, strMsg, true, m_frameIcons.GetIcon(16));
 
-					wxLogMessage(_("execute test '%s', index %d"), m_strRunningTestName.c_str(), uiIndex);
+				m_ptTextCtrl_TestOutput->AppendText(wxT("lalala\n"));
 
-
-					/* Set state to 'testing'.
-					* NOTE: this must be done before the call to 'RunString', or
-					* the state will not change before the first idle event.
-					*/
-					setState(muhkuh_mainFrame_state_testing);
-
-					/* Construct the start command. */
-					strStartCmd.Printf(wxT("lua %s"), strStartLuaFile.c_str());
-					wxLogMessage(wxT("start command: ") + strStartCmd);
-
-					m_lServerPid = wxExecute(strStartCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, m_ptServerProcess);
-					if( m_lServerPid==0 )
-					{
-						strMsg.Printf(_("Failed to start the server with command: %s"), strStartCmd.c_str());
-						wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
-					}
-					else
-					{
-						strNow = wxDateTime::Now().Format(wxT("%F %T"));
-						// create start message for the report tab
-						strMsg.Printf(_("%s: started test '%s'.\n"), strNow.c_str(), m_strRunningTestName.c_str());
-						// create a new notebook tab
-						m_ptTextCtrl_TestOutput = new wxTextCtrl(this, wxID_ANY, strMsg, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxSUNKEN_BORDER | wxTE_READONLY);
-						strMsg = m_strRunningTestName + wxT(" - ") + strNow;
-						m_notebook->AddPage(m_ptTextCtrl_TestOutput, strMsg, true, m_frameIcons.GetIcon(16));
-
-						m_ptTextCtrl_TestOutput->AppendText(wxT("lalala\n"));
-
-						// start the timer to poll the server for input
-						m_timerIdleWakeUp.Start(100);
-					}
-				}
+				// start the timer to poll the server for input
+				m_timerIdleWakeUp.Start(100);
 			}
 
 			/* Restore old working directory. */
@@ -2394,7 +2353,10 @@ void muhkuh_mainFrame::OnCopyProgress(wxMuhkuhCopyProgressEvent &tEvent)
 			}
 			tExitCode = m_ptCopyProcess->GetThread()->Wait();
 			fprintf(stderr, "Thread returned %p\n", tExitCode);
-//			wxLogMessage(_("Thread returned with %d"), tExitCode);
+			if( tExitCode==(wxThread::ExitCode)0 )
+			{
+				executeTestPart2();
+			}
 		}
 	}
 }
