@@ -209,7 +209,7 @@ wxString muhkuh_split_testdescription::get_lua_filename(MUHKUH_TESTDESCRIPTION_T
 			strTyp = "par";
 			break;
 	}
-	strFileName.Printf("test_description_%d_%s.lua", strTyp, sizSubTextIndex);
+	strFileName.Printf("test_description_%d_%s.lua", sizSubTextIndex, strTyp);
 
 	/* Construct the complete path. */
 	tFileName.AssignDir(m_strWorkingFolder);
