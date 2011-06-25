@@ -1192,6 +1192,7 @@ void muhkuh_mainFrame::executeTest_extract_mtd(muhkuh_wrap_xml *ptTestData)
 	size_t sizRepositoryIdx;
 	size_t sizTestIdx;
 	wxString strBaseUrl;
+	wxThreadError tThreadError;
 
 
 	/* Get the base url of the test. */
@@ -1204,8 +1205,20 @@ void muhkuh_mainFrame::executeTest_extract_mtd(muhkuh_wrap_xml *ptTestData)
 
 	/* Start the copy thread. */
 	m_ptCopyProcess = new muhkuh_copy_process(strBaseUrl, m_strWorkingFolder, GetEventHandler());
-	m_ptCopyProcess->Create();
-	m_ptCopyProcess->GetThread()->Run();
+	tThreadError = m_ptCopyProcess->CreateThread(wxTHREAD_JOINABLE);
+	if( tThreadError==wxTHREAD_NO_ERROR )
+	{
+		tThreadError = m_ptCopyProcess->GetThread()->Run();
+	}
+
+	if( tThreadError!=wxTHREAD_NO_ERROR )
+	{
+		wxLogError("Failed to create the copy thread!");
+		delete m_ptCopyProcess;
+		m_ptCopyProcess = NULL;
+		m_ptCopyProgress->Destroy();
+		m_ptCopyProgress = NULL;
+	}
 }
 
 
@@ -1215,6 +1228,7 @@ bool muhkuh_mainFrame::executeTest_generate_start_code(wxString strStartLuaFile)
 	int iResult;
 	char *pcStartupCode;
 	wxString strStartupCode;
+	wxFileName tFileName;
 	wxFile tFile;
 	wxString strMsg;
 	wxString strErrorMsg;
@@ -1229,17 +1243,23 @@ bool muhkuh_mainFrame::executeTest_generate_start_code(wxString strStartLuaFile)
 	{
 		strErrorMsg = wxString::FromAscii(lua_muhkuh_error_to_string(iResult));
 		strStartupCode = wxString::FromAscii(pcStartupCode);
-		strMsg.Printf(_("Failed to execute the startup code generator: %d: %s : %s"), iResult, strErrorMsg.c_str(), strStartupCode.c_str());
+		strMsg.Printf(_("Failed to execute the startup code generator: %d: %s : %s"), iResult, strErrorMsg, strStartupCode);
 		strMsg.Append(_("The startup code generator can be defined in the lua section of the configuration dialog."));
-		wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
+		wxMessageBox(strMsg, _("Server startup error"), wxOK|wxICON_ERROR, this);
 	}
 	else
 	{
-		/* Create the 'start_gui.lua' file. */
-		fResult = tFile.Create(strStartLuaFile.c_str(), true);
+		wxLogDebug("Lua startup code: %s", pcStartupCode);
+		
+		/* Create the filename. */
+		tFileName.AssignDir(m_strWorkingFolder);
+		tFileName.SetFullName(strStartLuaFile);
+		
+		/* Create the lua file. */
+		fResult = tFile.Create(tFileName.GetFullPath(), true);
 		if( fResult!=true )
 		{
-			strMsg.Printf(_("Failed to create temporary file '%s'!"), strStartLuaFile.c_str());
+			strMsg.Printf(_("Failed to create temporary file '%s'!"), strStartLuaFile);
 			wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
 		}
 		else
@@ -1247,12 +1267,12 @@ bool muhkuh_mainFrame::executeTest_generate_start_code(wxString strStartLuaFile)
 			fResult = tFile.Write(wxString::FromAscii(pcStartupCode));
 			if( fResult!=true )
 			{
-				strMsg.Printf(_("Failed to write to temporary file '%s'!"), strStartLuaFile.c_str());
+				strMsg.Printf(_("Failed to write to temporary file '%s'!"), strStartLuaFile);
 				wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
 			}
 			else
 			{
-				wxLogMessage(wxT("Startup code written to %s."), strStartLuaFile.c_str());
+				wxLogMessage(wxT("Startup code written to %s."), strStartLuaFile);
 			}
 
 			tFile.Close();
@@ -1297,9 +1317,8 @@ void muhkuh_mainFrame::executeTestPart2(void)
 	bool fResult;
 	wxString strMsg;
 	wxString strNow;
-//	int iResult;
 
-	wxString strTempWorkingFolder;    /* This is the folder where the mtd is depacked and the startup file is generated. */
+
 	muhkuh_split_testdescription *ptSplitter;
 	wxString strOldWorkingDirectory;  /* This is the current working folder before this function changes it. */
 	wxString strStartLuaFile;	  /* This is the complete path to the generated startup file. */
@@ -1312,7 +1331,7 @@ void muhkuh_mainFrame::executeTestPart2(void)
 	if( fResult==true )
 	{
 		/* Create the startup code. */
-		strStartLuaFile = wxT("start_gui.lua");
+		strStartLuaFile = "start_gui.lua";
 		fResult = executeTest_generate_start_code(strStartLuaFile);
 		if( fResult==true )
 		{
@@ -1320,8 +1339,8 @@ void muhkuh_mainFrame::executeTestPart2(void)
 			strOldWorkingDirectory = wxFileName::GetCwd();
 
 			/* Change the working directory to the temp folder. */
-			wxLogMessage(wxT("Changing to folder %s"), strTempWorkingFolder.c_str());
-			wxFileName::SetCwd(strTempWorkingFolder);
+			wxLogMessage("Changing to folder %s", m_strWorkingFolder);
+			wxFileName::SetCwd(m_strWorkingFolder);
 
 			wxLogMessage(_("execute test '%s', index %d"), m_strRunningTestName, m_sizRunningTest_SubTestIdx);
 
@@ -1333,26 +1352,26 @@ void muhkuh_mainFrame::executeTestPart2(void)
 			setState(muhkuh_mainFrame_state_testing);
 
 			/* Construct the start command. */
-			strStartCmd.Printf(wxT("lua %s"), strStartLuaFile.c_str());
-			wxLogMessage(wxT("start command: ") + strStartCmd);
+			strStartCmd.Printf("lua %s", strStartLuaFile);
+			wxLogMessage("start command: %s", strStartCmd);
 
 			m_lServerPid = wxExecute(strStartCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, m_ptServerProcess);
 			if( m_lServerPid==0 )
 			{
-				strMsg.Printf(_("Failed to start the server with command: %s"), strStartCmd.c_str());
+				strMsg.Printf(_("Failed to start the server with command: %s"), strStartCmd);
 				wxMessageBox(strMsg, _("Server startup error"), wxICON_ERROR, this);
 			}
 			else
 			{
-				strNow = wxDateTime::Now().Format(wxT("%F %T"));
+				strNow = wxDateTime::Now().Format("%F %T");
 				// create start message for the report tab
-				strMsg.Printf(_("%s: started test '%s'.\n"), strNow.c_str(), m_strRunningTestName.c_str());
+				strMsg.Printf(_("%s: started test '%s'.\n"), strNow, m_strRunningTestName);
 				// create a new notebook tab
 				m_ptTextCtrl_TestOutput = new wxTextCtrl(this, wxID_ANY, strMsg, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxSUNKEN_BORDER | wxTE_READONLY);
-				strMsg = m_strRunningTestName + wxT(" - ") + strNow;
+				strMsg = m_strRunningTestName + " - " + strNow;
 				m_notebook->AddPage(m_ptTextCtrl_TestOutput, strMsg, true, m_frameIcons.GetIcon(16));
 
-				m_ptTextCtrl_TestOutput->AppendText(wxT("lalala\n"));
+				m_ptTextCtrl_TestOutput->AppendText("lalala\n");
 
 				// start the timer to poll the server for input
 				m_timerIdleWakeUp.Start(100);
