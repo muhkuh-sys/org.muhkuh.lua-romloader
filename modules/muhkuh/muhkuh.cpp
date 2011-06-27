@@ -11,51 +11,51 @@
 typedef struct
 {
 	wxURLError tUrlError;
-	const wxChar *pcMessage;
+	const char *pcMessage;
 } WXURL_ERROR_TO_MESSAGE_T;
 
 typedef struct
 {
 	int iCode;
-	const wxChar *pcMessage;
+	const char *pcMessage;
 } INT_CODE_TO_MESSAGE_T;
 
 
 
 static const WXURL_ERROR_TO_MESSAGE_T atUrlErrorCodes[] =
 {
-	{ wxURL_SNTXERR,	_("Syntax error in the URL string.") },
-	{ wxURL_NOPROTO,	_("Found no protocol which can get this URL.") },
-	{ wxURL_NOHOST,		_("A host name is required for this protocol.") },
-	{ wxURL_NOPATH,		_("A path is required for this protocol.") },
-	{ wxURL_CONNERR,	_("Connection error.") },
-	{ wxURL_PROTOERR,	_("An error occurred during negotiation. (should never happen!)") }
+	{ wxURL_SNTXERR,        "Syntax error in the URL string." },
+	{ wxURL_NOPROTO,        "Found no protocol which can get this URL." },
+	{ wxURL_NOHOST,         "A host name is required for this protocol." },
+	{ wxURL_NOPATH,         "A path is required for this protocol." },
+	{ wxURL_CONNERR,        "Connection error." },
+	{ wxURL_PROTOERR,       "An error occurred during negotiation. (should never happen!)" }
 };
 
 
 const INT_CODE_TO_MESSAGE_T atLuaErrorToString[] =
 {
-	{ 0,			wxT("") },
-	{ LUA_YIELD,		wxT("Thread is suspended") },
-	{ LUA_ERRRUN,		wxT("Error while running chunk") },
-	{ LUA_ERRSYNTAX,	wxT("Syntax error during pre-compilation") },
-	{ LUA_ERRMEM,		wxT("Memory allocation error") },
-	{ LUA_ERRERR,		wxT("Generic error or an error occurred while running the error handler") },
-	{ LUA_ERRFILE,		wxT("Error occurred while opening file") }
+	{ 0,                    "" },
+	{ LUA_YIELD,            "Thread is suspended" },
+	{ LUA_ERRRUN,           "Error while running chunk" },
+	{ LUA_ERRSYNTAX,        "Syntax error during pre-compilation" },
+	{ LUA_ERRMEM,           "Memory allocation error" },
+	{ LUA_ERRERR,           "Generic error or an error occurred while running the error handler" },
+	{ LUA_ERRFILE,          "Error occurred while opening file" }
 };
 
 
 const INT_CODE_TO_MESSAGE_T atLuaTypeToString[] =
 {
-	{ LUA_TNIL,		wxT("nil") },
-	{ LUA_TBOOLEAN,		wxT("boolean") },
-	{ LUA_TLIGHTUSERDATA,	wxT("light userdata") },
-	{ LUA_TNUMBER,		wxT("number") },
-	{ LUA_TSTRING,		wxT("string") },
-	{ LUA_TTABLE,		wxT("table") },
-	{ LUA_TFUNCTION,	wxT("function") },
-	{ LUA_TUSERDATA,	wxT("userdata") },
-	{ LUA_TTHREAD,		wxT("thread") }
+	{ LUA_TNIL,             "nil" },
+	{ LUA_TBOOLEAN,         "boolean" },
+	{ LUA_TLIGHTUSERDATA,   "light userdata" },
+	{ LUA_TNUMBER,          "number" },
+	{ LUA_TSTRING,          "string" },
+	{ LUA_TTABLE,           "table" },
+	{ LUA_TFUNCTION,        "function" },
+	{ LUA_TUSERDATA,        "userdata" },
+	{ LUA_TTHREAD,          "thread" }
 };
 
 
@@ -123,9 +123,9 @@ wxString get_base_url(wxString strXmlUrl)
 }
 
 
-const wxChar *muhkuh_lua_GetUrlErrorString(wxURLError tUrlError)
+const char *muhkuh_lua_GetUrlErrorString(wxURLError tUrlError)
 {
-	const wxChar *pcMessage;
+	const char *pcMessage;
 	const WXURL_ERROR_TO_MESSAGE_T *ptCnt;
 	const WXURL_ERROR_TO_MESSAGE_T *ptEnd;
 
@@ -149,9 +149,9 @@ const wxChar *muhkuh_lua_GetUrlErrorString(wxURLError tUrlError)
 }
 
 
-const wxChar *muhkuh_lua_GetLuaErrorString(int iLuaError)
+const char *muhkuh_lua_GetLuaErrorString(int iLuaError)
 {
-	const wxChar *pcMessage;
+	const char *pcMessage;
 	const INT_CODE_TO_MESSAGE_T *ptCnt;
 	const INT_CODE_TO_MESSAGE_T *ptEnd;
 
@@ -175,9 +175,9 @@ const wxChar *muhkuh_lua_GetLuaErrorString(int iLuaError)
 }
 
 
-const wxChar *muhkuh_lua_GetLuaTypeString(int iLuaType)
+const char *muhkuh_lua_GetLuaTypeString(int iLuaType)
 {
-	const wxChar *pcMessage;
+	const char *pcMessage;
 	const INT_CODE_TO_MESSAGE_T *ptCnt;
 	const INT_CODE_TO_MESSAGE_T *ptEnd;
 
@@ -280,6 +280,7 @@ void load(lua_State *ptLuaState, char *pcUrl, char **ppcBUFFER_OUT, size_t *psiz
 	wxURL filelistUrl;
 	wxURLError tUrlError;
 	growbuffer *ptGrowBuffer;
+	wxString strMessage;
 
 
 	strXmlUrl = get_xml_url(ptLuaState);
@@ -310,8 +311,9 @@ void load(lua_State *ptLuaState, char *pcUrl, char **ppcBUFFER_OUT, size_t *psiz
 			if( tUrlError!=wxURL_NOERR )
 			{
 				// show the error message
-				wxLogMessage(wxT("lua load: invalid URL '%s': %s"), strFileUrl.c_str(), muhkuh_lua_GetUrlErrorString(tUrlError));
-				lua_pushfstring(ptLuaState, "lua load: invalid URL '%s': %s", strFileUrl.c_str(), muhkuh_lua_GetUrlErrorString(tUrlError));
+				strMessage.Printf(wxT("lua load: invalid URL '%s': %s"), strFileUrl.c_str(), muhkuh_lua_GetUrlErrorString(tUrlError));
+				wxLogMessage(strMessage);
+				lua_pushfstring(ptLuaState, strMessage.fn_str());
 				fResult = false;
 			}
 			else
@@ -351,6 +353,7 @@ void include(lua_State *ptLuaState, char *pcUrl, char *pcChunkName)
 	wxString strChunkName;
 	wxString strErrorMsg;
 	wxString strFileUrl;
+	wxString strMessage;
 	wxURL filelistUrl;
 	wxURLError tUrlError;
 	wxString strFileContents;
@@ -390,7 +393,8 @@ void include(lua_State *ptLuaState, char *pcUrl, char *pcChunkName)
 			tUrlError = filelistUrl.SetURL(strFileUrl);
 			if( tUrlError!=wxURL_NOERR )
 			{
-				lua_pushfstring(ptLuaState, "lua include: invalid URL '%s': %s", strFileUrl.c_str(), muhkuh_lua_GetUrlErrorString(tUrlError));
+				strMessage.Printf(wxT("lua include: invalid URL '%s': %s"), strFileUrl.fn_str(), muhkuh_lua_GetUrlErrorString(tUrlError));
+				lua_pushfstring(ptLuaState, strMessage.fn_str());
 			}
 			else
 			{
@@ -418,7 +422,8 @@ void include(lua_State *ptLuaState, char *pcUrl, char *pcChunkName)
 
 					case LUA_ERRSYNTAX:
 						muhkuh_lua_GetErrorInfo(ptLuaState, iResult, iGetTop, &strErrorMsg, &iLineNr);
-						lua_pushfstring(ptLuaState, "error %d in line %d: %s", strErrorMsg.c_str(), iResult, iLineNr);
+						strMessage.Printf(wxT("error %d in line %d: %s"), iResult, iLineNr, strErrorMsg.fn_str());
+						lua_pushfstring(ptLuaState, strMessage.c_str());
 						break;
 
 					case LUA_ERRMEM:

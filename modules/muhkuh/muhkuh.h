@@ -12,9 +12,9 @@ extern "C"
 
 void muhkuh_internal_init(void);
 
-const wxChar *muhkuh_lua_GetUrlErrorString(wxURLError tUrlError);
-const wxChar *muhkuh_lua_GetLuaErrorString(int iLuaError);
-const wxChar *muhkuh_lua_GetLuaTypeString(int iLuaType);
+const char *muhkuh_lua_GetUrlErrorString(wxURLError tUrlError);
+const char *muhkuh_lua_GetLuaErrorString(int iLuaError);
+const char *muhkuh_lua_GetLuaTypeString(int iLuaType);
 void muhkuh_lua_GetErrorInfo(lua_State *L, int iStatus, int iTop, wxString *pstrErrorMsg, int *piLineNum);
 
 void load(lua_State *ptLuaState, char *pcUrl, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT);
