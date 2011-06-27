@@ -20,7 +20,16 @@ Run cmake with swig not in the path. Here the swig.exe is in c:\tools\swigwin-2.
 Set the wxWidgets directory
 ---------------------------
 
+This is different on windows and linux.
+
+Windows:
+
  cmake -D wxWidgets_ROOT_DIR=%WXWIN% ..
+
+Linux:
+
+ cmake -D wxWidgets_CONFIG_EXECUTABLE=/var/local/Benten/Compile/wxWidgets-2.9.1/build_debug/wx-config ..
+
 
 
 
