@@ -1126,7 +1126,7 @@ bool muhkuh_mainFrame::executeTest_prepare_working_folder(void)
 				{
 					/* Ok, remove the complete folder! */
 					/* FIXME: Rmdir only removes an empty folder in wx2.8 . Either move to 2.9 or write something recursive. */
-					fResult = tWorkingDir.Rmdir();
+					fResult = tWorkingDir.Rmdir(wxPATH_RMDIR_RECURSIVE);
 					if( fResult!=true )
 					{
 						strMsg.Printf(_("Failed to remove the existing working folder %s!"), strTempWorkingFolder.c_str());
