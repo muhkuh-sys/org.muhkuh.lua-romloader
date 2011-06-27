@@ -1078,8 +1078,9 @@ local function runTest(iBoardIdx, iTestIdx)
 	local testresult
 	local result
 	local results
+	local strTestName
 	local strLogCapture
-	local parameter
+	local strFileName
 
 
 	-- get the results
@@ -1089,59 +1090,59 @@ local function runTest(iBoardIdx, iTestIdx)
 		-- show the test
 		moveToTest(iBoardIdx, iTestIdx)
 
-		-- get the test
-		test = __MUHKUH_ALL_TESTS[iTestIdx+1]
+		-- Get the test name.
+		strTestName = __MUHKUH_ALL_TESTS[iTestIdx].name
 
-		-- merge the parameter
-		parameter = {}
-		for i,v in pairs(__MUHKUH_ALL_TESTS[1].parameter) do
-			parameter[i] = v
-		end
-		for i,v in pairs(test.parameter) do
-			parameter[i] = v
-		end
+		-- Clear any old parameters.
+		_G.__MUHKUH_TEST_PARAMETER = {}
 
-		-- capture the log
-		m_fnOldPrintRoutine = _G.print
-		m_aPrintCapture = {}
-		_G.print = capture_prints
-
-		-- show the test parameter
-		print("Merged parameter:")
-		for i,v in pairs(parameter) do
-			print("\tname: '"..i.."', value: '"..v.."'")
-		end
-
-		-- set the merged parameters global
-		_G.__MUHKUH_TEST_PARAMETER = parameter
-
-		-- execute the testcode
-		m_runningBoard = iBoardIdx
-		m_runningTest = iTestIdx
-		print("running test '"..test.name.."'")
-		testfn,luaresult = loadstring(test.code, "@@"..tostring(iTestIdx))
-		if not testfn then
-			print("failed to compile test code:", luaresult)
+		-- Merge the parameters.
+		local fResult, strErrorMsg
+		fResult, strErrorMsg = pcall(dofile, "test_description_0_par.lua")
+		if fResult~=true then
+			wx.wxMessageBox(strErrorMsg, "Failed to start the test!", wx.wxOK + wx.wxICON_ERROR, __MUHKUH_PANEL)
 			testresult = __MUHKUH_TEST_RESULT_FATALERROR
 		else
-			luaresult,testresult = pcall(testfn)
-			if luaresult~=true then
-				print("failed to execute code:", testresult)
+			strFileName = string.format("test_description_%d_par.lua", iTestIdx)
+			fResult, strErrorMsg = pcall(dofile, "test_description_0_par.lua")
+			if fResult~=true then
+				wx.wxMessageBox(strErrorMsg, "Failed to start the test!", wx.wxOK + wx.wxICON_ERROR, __MUHKUH_PANEL)
 				testresult = __MUHKUH_TEST_RESULT_FATALERROR
+			else
+				-- Capture the log.
+				m_fnOldPrintRoutine = _G.print
+				m_aPrintCapture = {}
+				_G.print = capture_prints
+
+				-- Show the test parameter.
+				print("Merged parameter:")
+				for i,v in pairs(_G.__MUHKUH_TEST_PARAMETER) do
+					print("\tname: '"..i.."', value: '"..v.."'")
+				end
+
+				-- Execute the testcode.
+				m_runningBoard = iBoardIdx
+				m_runningTest = iTestIdx
+				print("running test '"..strTestName.."'")
+				strFileName = string.format("test_description_%d_code.lua", iTestIdx)
+				fResult, testresult = pcall(dofile, strFileName)
+				if fResult~=true then
+					print("failed to execute code:", testresult)
+					testresult = __MUHKUH_TEST_RESULT_FATALERROR
+				end
+				print("finished test '"..strTestName.."'")
+				m_runningBoard = nil
+				m_runningTest = nil
+
+				-- close any stray progress dialogs
+				stdWriteCloseProgress()
+				stdReadCloseProgress()
+				stdCallCloseProgress()
+
+				-- clear the parameters
+				_G.__MUHKUH_TEST_PARAMETER = nil
 			end
 		end
-		print("finished test '"..test.name.."'")
-		m_runningBoard = nil
-		m_runningTest = nil
-
-		-- close any stray progress dialogs
-		stdWriteCloseProgress()
-		stdReadCloseProgress()
-		stdCallCloseProgress()
-
-		-- clear the parameters
-		parameter = nil
-		_G.__MUHKUH_TEST_PARAMETER = nil
 
 		-- set the test result
 		if testresult==__MUHKUH_TEST_RESULT_OK then
@@ -1341,14 +1342,23 @@ function run()
 	m_strTestStartDatetime = dToday:Format("%c")
 	m_strTestEndDatetime = ""
 
-	-- get the test name
-	m_strTestName = __MUHKUH_ALL_TESTS[1].name
-	-- get the number of tests
-	m_testCnt = #__MUHKUH_ALL_TESTS - 1
+	-- Load the test description.
+	local fResult, strErrorMsg
+	fResult, strErrorMsg = pcall(dofile, "test_description.lua")
+	if fResult~=true then
+		wx.wxMessageBox(strErrorMsg, "Failed to start the test!", wx.wxOK + wx.wxICON_ERROR, __MUHKUH_PANEL)
+		muhkuh.TestHasFinished()
+	end
 
-	-- get the device number
+	-- Get the test name.
+	m_strTestName = __MUHKUH_ALL_TESTS[0].name
+	-- Get the number of tests.
+	-- NOTE: This counts the entries with a positive, non-zero integer index. This means it ignores the test description at index [0].
+	m_testCnt = #__MUHKUH_ALL_TESTS
+
+	-- Get the device number.
 	m_deviceNr = __MUHKUH_PARAMETERS.DeviceNumber
-	-- get the number of boards to test
+	-- Get the number of boards to test.
 	if __MUHKUH_PARAMETERS.BoardCount==nil then
 		m_boardCnt = 1
 	else
@@ -1359,7 +1369,7 @@ function run()
 	m_testNames = wx.wxArrayString()
 	for i,t in ipairs(__MUHKUH_ALL_TESTS) do
 		-- skip the first entry, that's the test description
-		if i>1 then
+		if i>0 then
 			m_testNames:Add(t.name)
 		end
 	end
