@@ -87,28 +87,32 @@ bool muhkuh_split_testdescription::split(wxString strWorkingFolder)
 			}
 			else
 			{
-				sizSubTestIndex = 0;
-
-				/* Add the init code block. */
-				fResult = subtests_read_test(ptNodeTestDescription, sizSubTestIndex);
+				fResult = generate_description(ptNodeTestDescription);
 				if( fResult==true )
 				{
-					++sizSubTestIndex;
+					sizSubTestIndex = 0;
 
-					/* Search all subtests. */
-					ptNode = ptNodeTestDescription->GetChildren();
-					while( ptNode!=NULL )
+					/* Add the init code block. */
+					fResult = subtests_read_test(ptNodeTestDescription, sizSubTestIndex);
+					if( fResult==true )
 					{
-						if( ptNode->GetType()==wxXML_ELEMENT_NODE && ptNode->GetName()=="Test" )
+						++sizSubTestIndex;
+
+						/* Search all subtests. */
+						ptNode = ptNodeTestDescription->GetChildren();
+						while( ptNode!=NULL )
 						{
-							fResult = subtests_read_test(ptNode, sizSubTestIndex);
-							if( fResult!=true )
+							if( ptNode->GetType()==wxXML_ELEMENT_NODE && ptNode->GetName()=="Test" )
 							{
-								break;
+								fResult = subtests_read_test(ptNode, sizSubTestIndex);
+								if( fResult!=true )
+								{
+									break;
+								}
+								++sizSubTestIndex;
 							}
-							++sizSubTestIndex;
+							ptNode = ptNode->GetNext();
 						}
-						ptNode = ptNode->GetNext();
 					}
 				}
 			}
@@ -119,7 +123,49 @@ bool muhkuh_split_testdescription::split(wxString strWorkingFolder)
 }
 
 
-bool muhkuh_split_testdescription::subtests_read_test(wxXmlNode *ptParent, size_t sizSubTextIndex)
+bool muhkuh_split_testdescription::generate_description(wxXmlNode *ptNodeTestDescription)
+{
+	wxArrayString astrTestNames;
+	wxArrayString astrTestVersions;
+	wxArrayString astrTestDescription;
+	wxXmlNode *ptNode;
+	size_t sizSubTestIndex;
+	wxString strArg;
+	bool fResult;
+
+
+	/* Get the name and version attribute. */
+	astrTestNames.Add(ptNodeTestDescription->GetAttribute("name", wxEmptyString));
+	astrTestVersions.Add(ptNodeTestDescription->GetAttribute("version", wxEmptyString));
+	/* Search all subtests. */
+	ptNode = ptNodeTestDescription->GetChildren();
+	while( ptNode!=NULL )
+	{
+		if( ptNode->GetType()==wxXML_ELEMENT_NODE && ptNode->GetName()=="Test" )
+		{
+			astrTestNames.Add(ptNode->GetAttribute("name", wxEmptyString));
+			astrTestVersions.Add(ptNode->GetAttribute("version", wxEmptyString));
+		}
+		ptNode = ptNode->GetNext();
+	}
+	/* Write all test names and versions to the file "test_description.lua". */
+	astrTestDescription.Add("_G.__MUHKUH_ALL_TESTS = {\n");
+	for(sizSubTestIndex=0; sizSubTestIndex<astrTestNames.GetCount(); ++sizSubTestIndex)
+	{
+		strArg.Printf("\t[%d] = { [\"name\"]=\"%s\", [\"version\"]=\"%s\" },\n", sizSubTestIndex, astrTestNames.Item(sizSubTestIndex), astrTestVersions.Item(sizSubTestIndex));
+		astrTestDescription.Add(strArg);
+		
+	}
+	astrTestDescription.Add("}\n");
+
+	/* Write this to a file. */
+	fResult = write_textfile(MUHKUH_TESTDESCRIPTION_TYP_DESCRIPTION, 0, astrTestDescription);
+
+	return fResult;
+}
+
+
+bool muhkuh_split_testdescription::subtests_read_test(wxXmlNode *ptParent, size_t sizSubTestIndex)
 {
 	bool fResult;
 	wxXmlNode *ptNode;
@@ -129,8 +175,8 @@ bool muhkuh_split_testdescription::subtests_read_test(wxXmlNode *ptParent, size_
 	wxString strParameterValue;
 
 
-	/* Expect success. */
-	fResult = true;
+	/* Expect failure. */
+	fResult = false;
 
 	/* Search the code node. */
 	ptNode = search_node(ptParent->GetChildren(), "Code");
@@ -138,9 +184,7 @@ bool muhkuh_split_testdescription::subtests_read_test(wxXmlNode *ptParent, size_
 	{
 		/* Get the node contents. */
 		strData = ptNode->GetNodeContent();
-
-		/* Write the code node to a file. */
-		fResult = write_textfile(MUHKUH_TESTDESCRIPTION_TYP_CODE, sizSubTextIndex, strData);
+		fResult = write_textfile(MUHKUH_TESTDESCRIPTION_TYP_CODE, sizSubTestIndex, strData);
 		if( fResult==true )
 		{
 			/* Collect all parameters. */
@@ -168,7 +212,7 @@ bool muhkuh_split_testdescription::subtests_read_test(wxXmlNode *ptParent, size_
 			}
 
 			/* Write all parameters to a file. */
-			fResult = write_textfile(MUHKUH_TESTDESCRIPTION_TYP_PARAMETER, sizSubTextIndex, astrParameter);
+			fResult = write_textfile(MUHKUH_TESTDESCRIPTION_TYP_PARAMETER, sizSubTestIndex, astrParameter);
 		}
 	}
 
@@ -193,7 +237,6 @@ wxXmlNode *muhkuh_split_testdescription::search_node(wxXmlNode *ptNode, wxString
 
 wxString muhkuh_split_testdescription::get_lua_filename(MUHKUH_TESTDESCRIPTION_TYP_T tTyp, size_t sizSubTextIndex)
 {
-	wxString strTyp;
 	wxFileName tFileName;
 	wxString strFileName;
 
@@ -201,15 +244,18 @@ wxString muhkuh_split_testdescription::get_lua_filename(MUHKUH_TESTDESCRIPTION_T
 	/* Construct the name and extension part of the filename. */
 	switch( tTyp )
 	{
+		case MUHKUH_TESTDESCRIPTION_TYP_DESCRIPTION:
+			strFileName = "test_description.lua";
+			break;
+
 		case MUHKUH_TESTDESCRIPTION_TYP_CODE:
-			strTyp = "code";
+			strFileName.Printf("test_description_%d_code.lua", sizSubTextIndex);
 			break;
 
 		case MUHKUH_TESTDESCRIPTION_TYP_PARAMETER:
-			strTyp = "par";
+			strFileName.Printf("test_description_%d_par.lua", sizSubTextIndex);
 			break;
 	}
-	strFileName.Printf("test_description_%d_%s.lua", sizSubTextIndex, strTyp);
 
 	/* Construct the complete path. */
 	tFileName.AssignDir(m_strWorkingFolder);

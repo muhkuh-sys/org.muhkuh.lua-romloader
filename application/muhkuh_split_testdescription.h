@@ -38,11 +38,13 @@ public:
 private:
 	typedef enum
 	{
-		MUHKUH_TESTDESCRIPTION_TYP_CODE      = 0,
-		MUHKUH_TESTDESCRIPTION_TYP_PARAMETER = 1
+		MUHKUH_TESTDESCRIPTION_TYP_DESCRIPTION  = 0,
+		MUHKUH_TESTDESCRIPTION_TYP_CODE         = 1,
+		MUHKUH_TESTDESCRIPTION_TYP_PARAMETER    = 2
 	} MUHKUH_TESTDESCRIPTION_TYP_T;
 
-	bool subtests_read_test(wxXmlNode *ptParent, size_t sizSubTextIndex);
+	bool generate_description(wxXmlNode *ptNodeTestDescription);
+	bool subtests_read_test(wxXmlNode *ptParent, size_t sizSubTestIndex);
 	wxXmlNode *search_node(wxXmlNode *ptNode, wxString strName);
 	wxString get_lua_filename(MUHKUH_TESTDESCRIPTION_TYP_T tTyp, size_t sizSubTextIndex);
 	bool write_textfile(MUHKUH_TESTDESCRIPTION_TYP_T tTyp, size_t sizSubTextIndex, wxString strContents);
