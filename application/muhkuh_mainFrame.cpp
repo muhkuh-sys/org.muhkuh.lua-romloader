@@ -213,9 +213,10 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	InitDialog();
 
 #if USE_LUA!=0
+	/* Register the config data. */
+	lua_muhkuh_register_config_data(m_ptConfigData);
 	/* Open a new lua state. */
 	lua_muhkuh_create_default_state();
-	lua_muhkuh_register_config_data(m_ptConfigData);
 #endif
 }
 
@@ -566,21 +567,9 @@ void muhkuh_mainFrame::read_config(void)
 	pConfig->Read(wxT("showtestdetails"), &fTestDetailsPageIsVisible, true);
 	pConfig->Read(wxT("showtips"), &m_fShowStartupTips, true);
 	m_sizStartupTipsIdx = pConfig->Read(wxT("tipidx"), (long)0);
-	m_ptConfigData->m_strWelcomeFile = pConfig->Read(wxT("welcomepage"), wxEmptyString);
-	m_ptConfigData->m_strDetailsFile = pConfig->Read(wxT("detailspage"), wxEmptyString);
-	m_ptConfigData->m_strApplicationTitle = pConfig->Read(wxT("customtitle"), wxEmptyString);
-	m_ptConfigData->m_strApplicationIcon = pConfig->Read(wxT("customicon"), wxEmptyString);
 
-	// get lua settings
-	pConfig->SetPath(wxT("/Lua"));
-	m_ptConfigData->m_strLuaIncludePath = pConfig->Read(wxT("includepaths"), wxT("lua/?.lua"));
-	m_ptConfigData->m_strLuaStartupCode = pConfig->Read(wxT("startupcode"), wxT("require(\"muhkuh_system\")\nmuhkuh_system.boot_xml()\n"));
+	m_ptConfigData->read_config(pConfig);
 
-	// get all plugins
-	m_ptConfigData->m_ptPluginManager->read_config(pConfig);
-
-	// get all repositories
-	m_ptConfigData->m_ptRepositoryManager->read_config(pConfig);
 	// show all repositories in the combo box
 	updateRepositoryCombo();
 	// set the active repository
@@ -691,24 +680,8 @@ void muhkuh_mainFrame::write_config(void)
 	pConfig->Write(wxT("showtestdetails"),  fTestDetailsPageIsVisible);
 	pConfig->Write(wxT("showtips"),         m_fShowStartupTips);
 	pConfig->Write(wxT("tipidx"),           (long)m_sizStartupTipsIdx);
-	pConfig->Write(wxT("welcomepage"),      m_ptConfigData->m_strWelcomeFile);
-	pConfig->Write(wxT("detailspage"),      m_ptConfigData->m_strDetailsFile);
-	pConfig->Write(wxT("customtitle"),      m_ptConfigData->m_strApplicationTitle);
-	pConfig->Write(wxT("customicon"),       m_ptConfigData->m_strApplicationIcon);
 
-	pConfig->SetPath(wxT("/"));
-
-	// get lua settings
-	pConfig->SetPath(wxT("/Lua"));
-	pConfig->Write(wxT("includepaths"), m_ptConfigData->m_strLuaIncludePath);
-	pConfig->Write(wxT("startupcode"), m_ptConfigData->m_strLuaStartupCode);
-	pConfig->SetPath(wxT("/"));
-
-	/* Save all plugins. */
-	m_ptConfigData->m_ptPluginManager->write_config(pConfig);
-
-	/* Save repositories. */
-	m_ptConfigData->m_ptRepositoryManager->write_config(pConfig);
+	m_ptConfigData->write_config(pConfig);
 }
 
 
@@ -962,8 +935,8 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 		write_config();
 
 		/* Replace the default lua state. */
-		lua_muhkuh_create_default_state();
 		lua_muhkuh_register_config_data(m_ptConfigData);
+		lua_muhkuh_create_default_state();
 
 		reloadWelcomePage();
 		reloadDetailsPage();
@@ -1101,19 +1074,19 @@ bool muhkuh_mainFrame::executeTest_prepare_working_folder(void)
 	if( wxFileName::DirExists(strTempFolder)==false )
 	{
 		strMsg.Printf(_("The temporary working folder %s does not exist! Please create it or choose another folder."), strTempFolder.c_str());
-		wxMessageBox(strMsg, _("Invalid working folder"), wxICON_ERROR, this);
+		wxMessageBox(strMsg, _("Invalid working folder"), wxOK|wxICON_ERROR, this);
 		fResult = false;
 	}
 	else if( wxFileName::IsDirReadable(strTempFolder)==false )
 	{
 		strMsg.Printf(_("The application has no read access to the temporary working folder %s!"), strTempFolder.c_str());
-		wxMessageBox(strMsg, _("Invalid working folder"), wxICON_ERROR, this);
+		wxMessageBox(strMsg, _("Invalid working folder"), wxOK|wxICON_ERROR, this);
 		fResult = false;
 	}
 	else if( wxFileName::IsDirWritable(strTempFolder)==false )
 	{
 		strMsg.Printf(_("The application has no write access to the temporary working folder %s!"), strTempFolder.c_str());
-		wxMessageBox(strMsg, _("Invalid working folder"), wxICON_ERROR, this);
+		wxMessageBox(strMsg, _("Invalid working folder"), wxOK|wxICON_ERROR, this);
 		fResult = false;
 	}
 	else
@@ -1157,7 +1130,7 @@ bool muhkuh_mainFrame::executeTest_prepare_working_folder(void)
 					if( fResult!=true )
 					{
 						strMsg.Printf(_("Failed to remove the existing working folder %s!"), strTempWorkingFolder.c_str());
-						wxMessageBox(strMsg, _("The working folder already exists"), wxICON_ERROR, this);
+						wxMessageBox(strMsg, _("The working folder already exists"), wxOK|wxICON_ERROR, this);
 					}
 				}
 				else if( iResult==wxCANCEL )
@@ -1172,7 +1145,7 @@ bool muhkuh_mainFrame::executeTest_prepare_working_folder(void)
 				if( fResult!=true )
 				{
 					strMsg.Printf(_("Failed to create the working folder %s!"), strTempWorkingFolder.c_str());
-					wxMessageBox(strMsg, _("Invalid working folder"), wxICON_ERROR, this);
+					wxMessageBox(strMsg, _("Invalid working folder"), wxOK|wxICON_ERROR, this);
 				}
 				else
 				{
