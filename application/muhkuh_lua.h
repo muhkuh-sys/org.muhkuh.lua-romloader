@@ -30,6 +30,7 @@
 
 
 void MUHKUH_SO_API lua_muhkuh_register_config_data(muhkuh_config_data *ptConfigData);
+muhkuh_config_data *lua_muhkuh_get_config_data(void);
 muhkuh_plugin_manager MUHKUH_SO_API *lua_muhkuh_get_plugin_manager(lua_State *ptLuaState);
 
 lua_State MUHKUH_SO_API *lua_muhkuh_create_state(void);

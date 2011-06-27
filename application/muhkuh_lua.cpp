@@ -134,6 +134,12 @@ void lua_muhkuh_register_config_data(muhkuh_config_data *ptConfigData)
 }
 
 
+muhkuh_config_data *lua_muhkuh_get_config_data(void)
+{
+	return g_ptConfigData;
+}
+
+
 muhkuh_plugin_manager *lua_muhkuh_get_plugin_manager(lua_State *ptLuaState)
 {
 	muhkuh_plugin_manager *ptPluginManager;
@@ -147,6 +153,93 @@ muhkuh_plugin_manager *lua_muhkuh_get_plugin_manager(lua_State *ptLuaState)
 	}
 
 	return ptPluginManager;
+}
+
+
+static void lua_set_system_include_path(lua_State *ptLuaState)
+{
+	int iResult;
+	size_t sizOldCpath;
+	const char *pcOldCpath;
+	wxString strLuaSystemModulePath;
+	const char *pcLuaSystemModulePath;
+	size_t sizSystemPath;
+	size_t sizNewCpath;
+	char *pcNewCpath;
+
+
+	/* Get the lua system module path. */
+	if( g_ptConfigData==NULL )
+	{
+		wxLogError("No config data registered!");
+	}
+	else
+	{
+		strLuaSystemModulePath = g_ptConfigData->m_strLuaSystemModulePath;
+	
+		/* Get the global "package". */
+		lua_getglobal(ptLuaState, "package");
+		/* This must be a table. */
+		iResult = lua_istable(ptLuaState, -1);
+		if( iResult!=1 )
+		{
+			wxLogError("package is no table!");
+		}
+		else
+		{
+			lua_pushstring(ptLuaState, "cpath");
+			lua_rawget(ptLuaState, -2);
+			iResult = lua_isstring(ptLuaState, -1);
+			if( iResult!=1 )
+			{
+				/* Remove "cpath" from the stack. */
+				lua_pop(ptLuaState, 1);
+
+				wxLogError("package.cpath is no string!");
+			}
+			else
+			{
+				/* Get the string. */
+				pcOldCpath = lua_tolstring(ptLuaState, -1, &sizOldCpath);
+
+				/* Allocate space for the new cpath string. */
+				sizSystemPath = strLuaSystemModulePath.Len();
+				/* The new string consists of the old cpath, a semicolon, the system path and the trailing 0 byte. */
+				sizNewCpath = sizOldCpath + 1 + sizSystemPath + 1;
+				pcNewCpath = (char*)malloc(sizNewCpath);
+				if( pcNewCpath==NULL )
+				{
+					wxLogError("Failed to allocate %d bytes for the cpath buffer", sizNewCpath);
+
+					/* Remove "cpath" from the stack. */
+					lua_pop(ptLuaState, 1);
+				}
+				else
+				{
+					/* Start with the old cpath. */
+					memcpy(pcNewCpath, pcOldCpath, sizOldCpath);
+					/* Append the semicolon. */
+					pcNewCpath[sizOldCpath] = ';';
+					/* Append the system path. */
+					pcLuaSystemModulePath = strLuaSystemModulePath.fn_str();
+					memcpy(pcNewCpath+sizOldCpath+1, pcLuaSystemModulePath, sizSystemPath+1);
+					wxLogMessage("New cpath: '%s'", pcNewCpath);
+
+					/* Remove old cpath from the stack. */
+					lua_pop(ptLuaState, 1);
+
+					/* Push the new cpath on the stack. */
+					lua_pushstring(ptLuaState, "cpath");
+					lua_pushstring(ptLuaState, pcNewCpath);
+					lua_rawset(ptLuaState, -3);
+
+					free(pcNewCpath);
+				}
+			}
+		}
+		/* Remove "package" from the stack. */
+		lua_pop(ptLuaState, 1);
+	}
 }
 
 
@@ -169,6 +262,9 @@ lua_State *lua_muhkuh_create_state(void)
 
 		/* Replace the print function with lua_muhkuh_print. */
 		lua_register(ptLuaState, "print", lua_muhkuh_print);
+
+		/* Set the system include path. */
+		lua_set_system_include_path(ptLuaState);
 
 		/* Add the muhkuh binding. */
 		iResult = lua_muhkuh_run_code(ptLuaState, "require(\"muhkuh_components_lua\")\n", &pcResult);
