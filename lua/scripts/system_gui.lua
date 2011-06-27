@@ -9,18 +9,17 @@ aLuaModules = {
 aCode = {}
 
 table.insert(aCode, "-- Add all include paths.")
-table.insert(aCode, "package.path  = package.path  .. \";/home/cthelen/Compile/muhkuh_experimental/build/build/demo_layout/system_folder_is_somewhere_else/lua_modules/?.lua\"")
+table.insert(aCode, "package.path  = package.path  .. " .. "\";" .. muhkuh_components_lua.get_lua_script_path() .. "\"")
 table.insert(aCode, "")
 
 
 table.insert(aCode, "-- Add all search paths for plugins.")
-table.insert(aCode, "package.cpath = package.cpath .. \";/home/cthelen/Compile/muhkuh_experimental/build/build/demo_layout/system_folder_is_somewhere_else/lua_plugins/?.so\"")
+table.insert(aCode, "package.cpath = package.cpath .. " .. "\";" .. muhkuh_components_lua.get_lua_module_path() .. "\"")
 table.insert(aCode, "")
 
 
 table.insert(aCode, "-- Set the Muhkuh version.")
--- table.insert(aCode, "_G.__MUHKUH_VERSION = \"" .. muhkuh_app.get_version() .. "\"")
-table.insert(aCode, "_G.__MUHKUH_VERSION = \"Muhkuh 2.0.1234\"")
+table.insert(aCode, "_G.__MUHKUH_VERSION = \"" .. muhkuh_components_lua.get_version() .. "\"")
 table.insert(aCode, "")
 table.insert(aCode, "")
 
@@ -38,6 +37,7 @@ end
 table.insert(aCode, "")
 
 table.insert(aCode, "-- Load all enabled plugins.")
+table.insert(aCode, "_G.__MUHKUH_PLUGINS = {}")
 aLuaPlugins = muhkuh_components_lua.get_plugins()
 for iCnt,aAttr in ipairs(aLuaPlugins) do
 	if aAttr.is_ok==true and aAttr.enabled==true then
@@ -58,14 +58,8 @@ table.insert(aCode, "end")
 table.insert(aCode, "")
 
 
-table.insert(aCode, "-- NOTE: move this to a better place.")
-table.insert(aCode, "function muhkuh.TestHasFinished()")
-table.insert(aCode, "\twx.wxGetApp():ExitMainLoop()")
-table.insert(aCode, "end")
-table.insert(aCode, "")
-
-
 table.insert(aCode, "muhkuh_system.boot_xml()")
 
-return table.concat(aCode, "\n")
-
+strCode = table.concat(aCode, "\n")
+print(strCode)
+return strCode
