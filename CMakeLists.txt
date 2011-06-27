@@ -22,9 +22,9 @@ ELSE(UNIX AND NOT WIN32 AND NOT APPLE)
 	# Install everything in one folder on Win.
 	SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 	SET(INSTALL_DIR_EXECUTABLES "build")
-	SET(INSTALL_DIR_LUA_MODULES "build")
+	SET(INSTALL_DIR_LUA_MODULES "build/lua_plugins")
 	SET(INSTALL_DIR_SHARED_OBJECTS "build")
-	SET(INSTALL_DIR_LUA_SCRIPTS "build")
+	SET(INSTALL_DIR_LUA_SCRIPTS "build/lua")
 ENDIF(UNIX AND NOT WIN32 AND NOT APPLE)
 
 #----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ FIND_PACKAGE(SWIG REQUIRED)
 FIND_PACKAGE(PythonInterp)
 
 # This is the list of the wxwidgets modules required for the application.
-FIND_PACKAGE(wxWidgets REQUIRED base core xml net aui adv html xrc)
+FIND_PACKAGE(wxWidgets 2.9 REQUIRED base core xml net aui adv html)
 
 
 #----------------------------------------------------------------------------
