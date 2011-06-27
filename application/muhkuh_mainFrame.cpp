@@ -1211,7 +1211,7 @@ bool muhkuh_mainFrame::executeTest_generate_start_code(wxString strStartLuaFile)
 	fResult = false;
 
 	/* Run the startup code generator. */
-	iResult = lua_muhkuh_generate_text(NULL, m_ptConfigData->m_strLuaStartupCode.fn_str(), &pcStartupCode);
+	iResult = lua_muhkuh_generate_text(NULL, m_ptConfigData->m_strLuaStartupCode.c_str(), &pcStartupCode);
 	if( iResult!=0 )
 	{
 		strErrorMsg = wxString::FromAscii(lua_muhkuh_error_to_string(iResult));

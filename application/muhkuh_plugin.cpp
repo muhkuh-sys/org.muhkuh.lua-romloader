@@ -360,7 +360,7 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 				wxT("_G.__MUHKUH_PLUGINS = nil\n")
 				wxT("collectgarbage()\n")
 			, m_tPluginDescription.strLuaModuleName.c_str(), m_strPluginCfgPath.c_str(), m_tPluginDescription.strLuaModuleName.c_str());
-			iResult = lua_muhkuh_run_code(ptLuaState, strLuaCode.fn_str(), &pcLuaMessage);
+			iResult = lua_muhkuh_run_code(ptLuaState, strLuaCode.c_str(), &pcLuaMessage);
 			if( iResult!=0 )
 			{
 				strLuaMessage = wxString::FromAscii(pcLuaMessage);

@@ -313,7 +313,7 @@ void load(lua_State *ptLuaState, char *pcUrl, char **ppcBUFFER_OUT, size_t *psiz
 				// show the error message
 				strMessage.Printf(wxT("lua load: invalid URL '%s': %s"), strFileUrl.c_str(), muhkuh_lua_GetUrlErrorString(tUrlError));
 				wxLogMessage(strMessage);
-				lua_pushfstring(ptLuaState, strMessage.fn_str());
+				lua_pushfstring(ptLuaState, strMessage.c_str());
 				fResult = false;
 			}
 			else
@@ -394,7 +394,7 @@ void include(lua_State *ptLuaState, char *pcUrl, char *pcChunkName)
 			if( tUrlError!=wxURL_NOERR )
 			{
 				strMessage.Printf(wxT("lua include: invalid URL '%s': %s"), strFileUrl.fn_str(), muhkuh_lua_GetUrlErrorString(tUrlError));
-				lua_pushfstring(ptLuaState, strMessage.fn_str());
+				lua_pushfstring(ptLuaState, strMessage.c_str());
 			}
 			else
 			{

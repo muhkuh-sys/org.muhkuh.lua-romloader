@@ -56,7 +56,7 @@ const char *get_lua_script_path(void)
 	ptCfgData = lua_muhkuh_get_config_data();
 	if( ptCfgData!=NULL )
 	{
-		pcLuaScriptPath = ptCfgData->m_strLuaIncludePath.fn_str();
+		pcLuaScriptPath = ptCfgData->m_strLuaIncludePath.c_str();
 	}
 
 	return pcLuaScriptPath;
@@ -75,7 +75,7 @@ const char *get_lua_module_path(void)
 	ptCfgData = lua_muhkuh_get_config_data();
 	if( ptCfgData!=NULL )
 	{
-		pcLuaModulePath = ptCfgData->m_strLuaSystemModulePath.fn_str();
+		pcLuaModulePath = ptCfgData->m_strLuaSystemModulePath.c_str();
 	}
 
 	return pcLuaModulePath;
@@ -129,7 +129,7 @@ void get_plugins(lua_State *MUHKUH_SWIG_OUTPUT_CUSTOM_OBJECT)
 
 				/* Push the plugin name. */
 				lua_pushstring(ptLuaState, "name");
-				lua_pushstring(ptLuaState, ptPluginDescription->strPluginName.fn_str());
+				lua_pushstring(ptLuaState, ptPluginDescription->strPluginName.c_str());
 				lua_rawset(ptLuaState, -3);
 
 				/* Push the "is_ok" flag. */
@@ -144,7 +144,7 @@ void get_plugins(lua_State *MUHKUH_SWIG_OUTPUT_CUSTOM_OBJECT)
 
 				/* Push the plugin id. */
 				lua_pushstring(ptLuaState, "id");
-				lua_pushstring(ptLuaState, ptPluginDescription->strPluginId.fn_str());
+				lua_pushstring(ptLuaState, ptPluginDescription->strPluginId.c_str());
 				lua_rawset(ptLuaState, -3);
 
 				/* Push the plugin version major. */
@@ -164,12 +164,12 @@ void get_plugins(lua_State *MUHKUH_SWIG_OUTPUT_CUSTOM_OBJECT)
 
 				/* Push the plugin lua module name. */
 				lua_pushstring(ptLuaState, "module");
-				lua_pushstring(ptLuaState, ptPluginDescription->strLuaModuleName.fn_str());
+				lua_pushstring(ptLuaState, ptPluginDescription->strLuaModuleName.c_str());
 				lua_rawset(ptLuaState, -3);
 
 				/* Push the plugin init error. */
 				lua_pushstring(ptLuaState, "init_error");
-				lua_pushstring(ptLuaState, ptPluginManager->GetInitError(sizPluginCnt).fn_str());
+				lua_pushstring(ptLuaState, ptPluginManager->GetInitError(sizPluginCnt).c_str());
 				lua_rawset(ptLuaState, -3);
 			}
 			lua_rawset(ptLuaState, -3);

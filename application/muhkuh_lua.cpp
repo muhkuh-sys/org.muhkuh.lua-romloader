@@ -221,7 +221,7 @@ static void lua_set_system_include_path(lua_State *ptLuaState)
 					/* Append the semicolon. */
 					pcNewCpath[sizOldCpath] = ';';
 					/* Append the system path. */
-					pcLuaSystemModulePath = strLuaSystemModulePath.fn_str();
+					pcLuaSystemModulePath = strLuaSystemModulePath.c_str();
 					memcpy(pcNewCpath+sizOldCpath+1, pcLuaSystemModulePath, sizSystemPath+1);
 					wxLogMessage("New cpath: '%s'", pcNewCpath);
 
