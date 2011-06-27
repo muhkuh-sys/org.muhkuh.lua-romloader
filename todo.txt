@@ -1,3 +1,6 @@
+* The test tree holds the complete xml file for all scanned tests. This might be a bit too much. Just keep the test/subtest names and version infos. Get the rest when the test is started.
+
+* Change the config dialog for plugins to something like this: First select a number of include paths, scan all paths for xml files (warn for doubles), present this xml files with checkboxes as available plugins.
 
 * "muhkuh.load" needs the global __MUHKUH_TEST_XML at the moment to get the base url of the current running test. This was set by the muhkuh application. How can this be done in the plain cmdline mode?
 
