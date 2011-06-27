@@ -249,8 +249,6 @@ private:
 		user that it is there.
 	*/
 	muhkuh_config_data *m_ptConfigData;
-	// the temp file with the settings and the startup code
-	wxString m_strRunningTestTempFileName;
 
 	// the locale object
 	wxLocale m_locale;

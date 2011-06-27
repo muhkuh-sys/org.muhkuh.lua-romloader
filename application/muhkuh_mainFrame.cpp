@@ -1401,9 +1401,12 @@ bool muhkuh_mainFrame::process_server_output(void)
 void muhkuh_mainFrame::finishTest(void)
 {
 	bool fResult;
+	wxFileName tWorkingFolder;
+	wxString strMsg;
+	int iResult;
 
 
-	wxLogMessage(_("Test '%s' finished, cleaning up..."), m_strRunningTestName.c_str());
+	wxLogMessage(_("Test '%s' finished, cleaning up..."), m_strRunningTestName);
 
 	m_timerIdleWakeUp.Stop();
 
@@ -1415,22 +1418,32 @@ void muhkuh_mainFrame::finishTest(void)
 
 	if( m_ptTextCtrl_TestOutput!=NULL )
 	{
-		m_ptTextCtrl_TestOutput->AppendText(wxDateTime::Now().Format(wxT("%F %T")).c_str());
-		m_ptTextCtrl_TestOutput->AppendText(wxT("Test '"));
+		m_ptTextCtrl_TestOutput->AppendText(wxDateTime::Now().Format("%F %T"));
+		m_ptTextCtrl_TestOutput->AppendText("Test '");
 		m_ptTextCtrl_TestOutput->AppendText(m_strRunningTestName);
-		m_ptTextCtrl_TestOutput->AppendText(wxT("' finished.\n"));
+		m_ptTextCtrl_TestOutput->AppendText("' finished.\n");
 	}
 
 	/* forget current server output tab */
 	m_ptTextCtrl_TestOutput = NULL;
 
-	// remove the temp file
-	if( m_strRunningTestTempFileName.IsEmpty()==false && wxFileExists(m_strRunningTestTempFileName)==true )
+	/* Remove the working folder. */
+	if( m_strWorkingFolder.IsEmpty()==false )
 	{
-		fResult = wxRemoveFile(m_strRunningTestTempFileName);
-		if( fResult!=true )
+		tWorkingFolder.AssignDir(m_strWorkingFolder);
+		if( tWorkingFolder.DirExists()==true )
 		{
-			wxLogWarning(_("Failed to remove the temp file '%s'."), m_strRunningTestTempFileName.c_str());
+			do
+			{
+				fResult = tWorkingFolder.Rmdir(wxPATH_RMDIR_RECURSIVE);
+				if( fResult!=true )
+				{
+					strMsg.Printf(_("Failed to remove the working folder %s!\n\n"), m_strWorkingFolder);
+					strMsg.Append(_("This happens when a program is accessing files in the folder, e.g. one of the lua files are opened in an editor.\nClose all open files and retry.\n\n"));
+					strMsg.Append(_("Press OK to try again.\nPress Cancel to keep the folder."));
+					iResult = wxMessageBox(strMsg, _("The working folder can not be removed"), wxOK|wxCANCEL|wxICON_ERROR, this);
+				}
+			} while( fResult==false && iResult==wxOK );
 		}
 	}
 }
