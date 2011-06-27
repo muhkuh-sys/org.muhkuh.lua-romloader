@@ -88,22 +88,22 @@ function atComponentControl:create(tParent)
 end
 
 
-function atComponentControl:update_style()
+function atComponentControl:event_update_style()
 	local tStyle = g_atConfiguration.tStyle
 
 	self.tButtonBrowseSaveLogs:SetBitmapLabel(tStyle.tImageList:GetBitmap(tStyle.IMAGE_IDX_Folder))
 end
 
 
-function atComponentControl:update_fonts()
+function atComponentControl:event_update_fonts()
 end
 
 
-function atComponentControl:update_test()
+function atComponentControl:event_update_test()
 end
 
 
-function atComponentControl:update_test_results(uiSerialIdx, uiSingleTestIdx)
+function atComponentControl:event_update_test_results(uiSerialIdx, uiSingleTestIdx)
 end
 
 

@@ -64,17 +64,17 @@ function atResultGrid:create(tParent)
 end
 
 
-function atResultGrid:update_style()
+function atResultGrid:event_update_style()
 	local tStyle = g_atConfiguration.tStyle
 
 end
 
 
-function atResultGrid:update_fonts()
+function atResultGrid:event_update_fonts()
 end
 
 
-function atResultGrid:update_test()
+function atResultGrid:event_update_test()
 	-- Get the number of boards and the number of tests.
 	local uiSerialFirst = g_atDeviceTest.uiSerialFirst
 	local uiSerialLast = g_atDeviceTest.uiSerialLast
@@ -103,7 +103,7 @@ function atResultGrid:update_test()
 end
 
 
-function atResultGrid:update_test_results(uiSerialIdx, uiSingleTestIdx)
+function atResultGrid:event_update_test_results(uiSerialIdx, uiSingleTestIdx)
 	local uiSerialCntFirst = uiBoardIdx or g_atDeviceTest.uiSerialFirst
 	local uiSerialCntLast  = uiBoardIdx or g_atDeviceTest.uiSerialLast
 

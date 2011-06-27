@@ -138,7 +138,7 @@ end
 -- Event Interface.
 --
 
-function atComponentOverview:update_style()
+function atComponentOverview:event_update_style()
 	local tStyle = g_atConfiguration.tStyle
 
 	self.tIconTestsUntested:SetBitmap(tStyle.tImageList:GetBitmap(tStyle.IMAGE_IDX_TestsUntested))
@@ -147,7 +147,7 @@ function atComponentOverview:update_style()
 end
 
 
-function atComponentOverview:update_fonts()
+function atComponentOverview:event_update_fonts()
 	local tCfg = g_atConfiguration
 
 	self.tTextTestname:SetFont(tCfg.tFontHeadline)
@@ -175,7 +175,7 @@ function atComponentOverview:update_fonts()
 end
 
 
-function atComponentOverview:update_test()
+function atComponentOverview:event_update_test()
 	-- Get the number of boards.
 	local uiSerialFirst = g_atDeviceTest.uiSerialFirst
 	local uiSerialLast = g_atDeviceTest.uiSerialLast
@@ -189,7 +189,7 @@ function atComponentOverview:update_test()
 end
 
 
-function atComponentOverview:update_test_results(uiSerialIdx, uiSingleTestIdx)
+function atComponentOverview:event_update_test_results(uiSerialIdx, uiSingleTestIdx)
 	-- Get the number of boards and the number of tests.
 	local uiSerialFirst = g_atDeviceTest.uiSerialFirst
 	local uiSerialLast = g_atDeviceTest.uiSerialLast

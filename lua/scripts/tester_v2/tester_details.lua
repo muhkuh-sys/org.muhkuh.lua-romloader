@@ -47,21 +47,21 @@ function atComponentDetails:create(tParent)
 end
 
 
-function atComponentDetails:update_style()
+function atComponentDetails:event_update_style()
 	local tStyle = g_atConfiguration.tStyle
 
 end
 
 
-function atComponentDetails:update_fonts()
+function atComponentDetails:event_update_fonts()
 end
 
 
-function atComponentDetails:update_test()
+function atComponentDetails:event_update_test()
 end
 
 
-function atComponentDetails:update_test_results(uiSerialIdx, uiSingleTestIdx)
+function atComponentDetails:event_update_test_results(uiSerialIdx, uiSingleTestIdx)
 end
 
 

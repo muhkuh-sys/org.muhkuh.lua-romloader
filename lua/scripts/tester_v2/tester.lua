@@ -19,7 +19,7 @@
 -----------------------------------------------------------------------------
 
 require("wx")
-
+require("muhkuh")
 
 
 local IDCounter = nil
@@ -69,6 +69,13 @@ g_atTestResults = {}
 --
 
 local atMainFrame = {
+	ID_MAIN_FRAME = NewID(),
+	ID_MENU_TEST_START = NewID(),
+	ID_MENU_TEST_CANCEL = NewID(),
+	ID_MENU_TEST_SAVE_REPORT = NewID(),
+	ID_TESTER_PROCESS = NewID(),
+
+
 	m_atStyleFiles = {
 		"tester_style_supercow.lua"
 	},
@@ -128,7 +135,13 @@ local atMainFrame = {
 			row = 0,
 			position = 0
 		}
-	}
+	},
+
+	m_uiRunningTest_Serial_First = nil,
+	m_uiRunningTest_Serial_Last  = nil,
+
+	m_uiRunningTest_SingleTest_First = nil,
+	m_uiRunningTest_SingleTest_Last  = nil
 }
 
 
@@ -155,6 +168,9 @@ end
 
 
 function atMainFrame:init()
+	wx.wxLog.SetVerbose(true)
+	wx.wxLog.SetLogLevel(wx.wxLOG_Debug)
+
 	self:load_styles()
 	self:load_components()
 
@@ -172,7 +188,7 @@ function atMainFrame:create()
 	self:init()
 
 	-- Create the main Frame.
-	self.this = wx.wxFrame(wx.NULL, wx.wxID_ANY, "lalala", wx.wxDefaultPosition, wx.wxSize(640,480), wx.wxCAPTION+wx.wxRESIZE_BORDER+wx.wxCLOSE_BOX)
+	self.this = wx.wxFrame(wx.NULL, self.ID_MAIN_FRAME, "lalala", wx.wxDefaultPosition, wx.wxSize(640,480), wx.wxCAPTION+wx.wxRESIZE_BORDER+wx.wxCLOSE_BOX)
 	local this = self.this
 
 	m_tAuiManager = wxaui.wxAuiManager()
@@ -201,26 +217,14 @@ function atMainFrame:create()
 	end
 
 	-- Set the style and font to all components.
-	self:update_fonts()
-	self:update_style()
+	self:event_update_fonts(nil)
+	self:event_update_style(nil)
 
 	m_tAuiManager:Update()
 
+	this:Connect(self.ID_TESTER_PROCESS, wx.wxEVT_END_PROCESS, function(tEvent) atMainFrame:event_test_process_finished(tEvent) end)
+
 	return self
-end
-
-
-function atMainFrame:update_fonts()
-	for tKey,tComponent in pairs(g_atComponents) do
-		tComponent:update_fonts()
-	end
-end
-
-
-function atMainFrame:update_style()
-	for tKey,tComponent in pairs(g_atComponents) do
-		tComponent:update_style()
-	end
 end
 
 
@@ -244,10 +248,52 @@ function atMainFrame:set_test(atDeviceTest, uiSerial_First, uiSerial_Last)
 
 	g_atTestResults = atTestResults
 
-	for tKey,tComponent in pairs(g_atComponents) do
-		tComponent:update_test()
-		tComponent:update_test_results(nil, nil)
-	end
+	self:event_update_test(nil)
+	self:event_update_test_results(nil, nil, nil)
+end
+
+
+function atMainFrame:exit()
+	atMainFrame.this:Close()
+end
+
+-----------------------------------------------------------------------------
+--
+-- Main Frame Menu.
+--
+
+function atMainFrame:create_menu()
+	local this = self.this
+
+	-- Create the "File" menu.
+	local tMenu_File = wx.wxMenu()
+	tMenu_File:Append(wx.wxID_EXIT, "E&xit", "Quit the program")
+
+	-- Create the "Test" menu.
+	local tMenu_Test = wx.wxMenu()
+	tMenu_Test:Append(self.ID_MENU_TEST_START, "Start", "Start the test")
+	tMenu_Test:Append(self.ID_MENU_TEST_CANCEL, "Cancel", "Cancel the running test")
+	tMenu_Test:Append(self.ID_MENU_TEST_SAVE_REPORT, "Save Report", "Save the test report")
+
+	-- Create the "Help" menu.
+	local tMenu_Help = wx.wxMenu()
+	tMenu_Help:Append(wx.wxID_ABOUT, "&About", "About the tester.")
+
+	-- Put all menus in the menu bar.
+	local tMenuBar = wx.wxMenuBar()
+	tMenuBar:Append(tMenu_File, "&File")
+	tMenuBar:Append(tMenu_Test, "&Test")
+	tMenuBar:Append(tMenu_Help, "&Help")
+	this:SetMenuBar(tMenuBar)
+
+	-- TODO: connect all menu events to the functions.
+	this:Connect(wx.wxID_EXIT, wx.wxEVT_COMMAND_MENU_SELECTED, self.exit )
+
+	this:Connect(self.ID_MENU_TEST_START, wx.wxEVT_COMMAND_MENU_SELECTED, function(tEvent) atMainFrame:test_start(tEvent) end )
+
+	-- Create the status bar.
+	this:CreateStatusBar(1)
+	this:SetStatusText("Welcome to tester.")
 end
 
 
@@ -256,14 +302,194 @@ end
 -- Event Interface.
 --
 
-function atMainFrame:event_select_test(tSource, uiSerial, uiTestIdx)
+function atMainFrame:event_update_test(tSource)
+	-- Loop over all components.
 	for tKey,tComponent in pairs(g_atComponents) do
+		-- Send the event to the component if it is not the source.
 		if tComponent~=tSource then
-			tComponent:event_select_test(uiSerial, uiTestIdx)
+			-- Does the event handler exist?
+			if tComponent.event_update_test then
+				tComponent:event_update_test()
+			end
 		end
 	end
 end
 
+
+function atMainFrame:event_update_test_results(tSource, uiSerial, uiTestIdx)
+	-- Loop over all components.
+	for tKey,tComponent in pairs(g_atComponents) do
+		-- Send the event to the component if it is not the source.
+		if tComponent~=tSource then
+			-- Does the event handler exist?
+			if tComponent.event_update_test_results then
+				tComponent:event_update_test_results(uiSerial, uiTestIdx)
+			end
+		end
+	end
+end
+
+
+function atMainFrame:event_update_fonts(tSource)
+	-- Loop over all components.
+	for tKey,tComponent in pairs(g_atComponents) do
+		-- Send the event to the component if it is not the source.
+		if tComponent~=tSource then
+			-- Does the event handler exist?
+			if tComponent.event_update_fonts then
+				tComponent:event_update_fonts()
+			end
+		end
+	end
+end
+
+
+function atMainFrame:event_update_style(tSource)
+	-- Loop over all components.
+	for tKey,tComponent in pairs(g_atComponents) do
+		-- Send the event to the component if it is not the source.
+		if tComponent~=tSource then
+			-- Does the event handler exist?
+			if tComponent.event_update_style then
+				tComponent:event_update_style()
+			end
+		end
+	end
+end
+
+
+function atMainFrame:event_select_test(tSource, uiSerial, uiTestIdx)
+	-- Loop over all components.
+	for tKey,tComponent in pairs(g_atComponents) do
+		-- Send the event to the component if it is not the source.
+		if tComponent~=tSource then
+			-- Does the event handler exist?
+			if tComponent.event_select_test then
+				tComponent:event_select_test(uiSerial, uiTestIdx)
+			end
+		end
+	end
+end
+
+
+function atMainFrame:event_start_test(tSource, uiSerial, uiTestIdx)
+	-- Loop over all components.
+	for tKey,tComponent in pairs(g_atComponents) do
+		-- Send the event to the component if it is not the source.
+		if tComponent~=tSource then
+			-- Does the event handler exist?
+			if tComponent.event_start_test then
+				tComponent:event_start_test(uiSerial, uiTestIdx)
+			end
+		end
+	end
+end
+
+
+function atMainFrame:event_test_finished(tSource, uiSerial, uiTestIdx)
+	-- Loop over all components.
+	for tKey,tComponent in pairs(g_atComponents) do
+		-- Send the event to the component if it is not the source.
+		if tComponent~=tSource then
+			-- Does the event handler exist?
+			if tComponent.event_test_finished then
+				tComponent:event_test_finished(uiSerial, uiTestIdx)
+			end
+		end
+	end
+end
+
+
+-----------------------------------------------------------------------------
+--
+-- wxWidgets events.
+--
+
+function atMainFrame:event_test_process_finished(tEvent)
+	print("event test process finished")
+
+
+	-- Get the rest of the data from the process.
+	while self.m_tRunningTest_Process:IsInputAvailable()==true do
+		strData = self.m_tRunningTest_Process:GetInputStream():Read(4096)
+		self:event_test_message(nil, 1, strData)
+	end
+
+	while self.m_tRunningTest_Process:IsErrorAvailable()==true do
+		strData = self.m_tRunningTest_Process:GetErrorStream():Read(4096)
+		self:event_test_message(nil, 2, strData)
+	end
+
+	-- TODO: Get the test result from the process.
+	local eResult = TESTRESULT_OK
+
+	-- Delete the process object.
+	self.m_tRunningTest_Process = nil
+	collectgarbage("collect")
+
+	local uiSerial = self.m_tRunningTest_Serial
+	local uiSingleTest = self.m_tRunningTest_SingleTest
+
+	g_atTestResults[uiSerial].atResults[uiSingleTest].eResult = eResult
+	self:event_update_test_results(nil, uiSerial, uiSingleTest)
+
+	wx.wxLogMessage("Test finished.")
+
+	self:event_test_finished(nil, uiSerial, uiSingleTest)
+	-- Free the capture object.
+	self.m_tRunningTest_Capture = nil
+
+	-- Run more tests?
+	if uiSerial<self.m_uiRunningTest_Serial_Last or uiSingleTest<self.m_uiRunningTest_SingleTest_Last then
+		-- TODO: ask the user if we should move on.
+
+		-- Run the next test.
+		if uiSingleTest<self.m_uiRunningTest_SingleTest_Last then
+			uiSingleTest = uiSingleTest + 1
+		else
+			uiSerial = uiSerial + 1
+			uiSingleTest = self.m_uiRunningTest_SingleTest_First
+		end
+
+		self:run_one_single_test(uiSerial, uiSingleTest)
+	end
+end
+
+-----------------------------------------------------------------------------
+--
+-- Test functions.
+--
+
+function atMainFrame:test_start(tEvent)
+	print("start the test")
+
+
+	-- run all tests on all boards
+	local uiBoardIdx = nil
+	local uiSingleTestIdx = nil
+
+	self.m_uiRunningTest_Serial_First = uiBoardIdx or g_atDeviceTest.uiSerialFirst
+	self.m_uiRunningTest_Serial_Last  = uiBoardIdx or g_atDeviceTest.uiSerialLast
+
+	self.m_uiRunningTest_SingleTest_First = uiSingleTestIdx or 1
+	self.m_uiRunningTest_SingleTest_Last  = uiSingleTestIdx or #g_atDeviceTest.atSingleTests
+
+	self:run_one_single_test(self.m_uiRunningTest_Serial_First, self.m_uiRunningTest_SingleTest_First)
+end
+
+
+function atMainFrame:run_one_single_test(uiSerial, uiSingleTest)
+	-- Clear the test result.
+	print(uiSerial, uiSingleTest)
+	g_atTestResults[uiSerial].atResults[uiSingleTest].eResult = TESTRESULT_OPEN
+	self:event_update_test_results(nil, uiSerial, uiSingleTest)
+
+	self.m_tRunningTest_Serial = uiSerial
+	self.m_tRunningTest_SingleTest = uiSingleTest
+
+	self:event_select_test(nil, uiSerial, uiSingleTest)
+	self:event_start_test(nil, uiSerial, uiSingleTest)
+end
 
 -----------------------------------------------------------------------------
 --
@@ -273,7 +499,7 @@ end
 local tApplication = {}
 function tApplication:OnInit()
 	local tMainFrame = atMainFrame:create()
-
+	tMainFrame:create_menu()
 
 	-- set the test.
 	local atDeviceTest = {
@@ -282,7 +508,7 @@ function tApplication:OnInit()
 
 		-- The first and last serial number included in this test.
 		uiSerialFirst = 20000,
-		uiSerialLast  = 20009,
+		uiSerialLast  = 20000,
 
 		-- A list of all single tests in this device test.
 		atSingleTests = {
