@@ -42,6 +42,7 @@ muhkuh_config_data::muhkuh_config_data(const muhkuh_config_data *ptClone)
 	m_ptRepositoryManager = new muhkuh_repository_manager(ptClone->m_ptRepositoryManager);
 
 	m_strLuaIncludePath = ptClone->m_strLuaIncludePath;
+	m_strLuaSystemModulePath = ptClone->m_strLuaSystemModulePath;
 	m_strLuaStartupCode = ptClone->m_strLuaStartupCode;
 
 	m_strApplicationTitle = ptClone->m_strApplicationTitle;
@@ -63,4 +64,46 @@ muhkuh_config_data::~muhkuh_config_data(void)
 }
 
 
- 
+void muhkuh_config_data::read_config(wxConfigBase *pConfig)
+{
+	pConfig->SetPath("/MainFrame");
+	m_strWelcomeFile = pConfig->Read("welcomepage", wxEmptyString);
+	m_strDetailsFile = pConfig->Read("detailspage", wxEmptyString);
+	m_strApplicationTitle = pConfig->Read("customtitle", wxEmptyString);
+	m_strApplicationIcon = pConfig->Read("customicon", wxEmptyString);
+
+	/* Get lua settings. */
+	pConfig->SetPath("/Lua");
+	m_strLuaIncludePath = pConfig->Read("includepaths", "lua/?.lua");
+	m_strLuaSystemModulePath = pConfig->Read("system_modules", "lua_plugins/?.so");
+	m_strLuaStartupCode = pConfig->Read("startupcode", "dofile(\"lua/system_gui.lua\")\n");
+
+	/* Get all plugins. */
+	m_ptPluginManager->read_config(pConfig);
+
+	/* Get all repositories. */
+	m_ptRepositoryManager->read_config(pConfig);
+}
+
+
+void muhkuh_config_data::write_config(wxConfigBase *pConfig)
+{
+	pConfig->SetPath("/MainFrame");
+	pConfig->Write("welcomepage",  m_strWelcomeFile);
+	pConfig->Write("detailspage",  m_strDetailsFile);
+	pConfig->Write("customtitle",  m_strApplicationTitle);
+	pConfig->Write("customicon",   m_strApplicationIcon);
+
+	// get lua settings
+	pConfig->SetPath("/Lua");
+	pConfig->Write("includepaths", m_strLuaIncludePath);
+	pConfig->Write("system_modules", m_strLuaSystemModulePath);
+	pConfig->Write("startupcode",  m_strLuaStartupCode);
+
+	/* Save all plugins. */
+	m_ptPluginManager->write_config(pConfig);
+
+	/* Save repositories. */
+	m_ptRepositoryManager->write_config(pConfig);
+}
+

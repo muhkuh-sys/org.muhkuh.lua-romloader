@@ -35,6 +35,10 @@ public:
 	muhkuh_config_data(const muhkuh_config_data *ptClone);
 	~muhkuh_config_data(void);
 
+	void read_config(wxConfigBase *pConfig);
+	void write_config(wxConfigBase *pConfig);
+
+
 	wxString m_strWelcomeFile;
 	wxString m_strDetailsFile;
 
@@ -42,6 +46,7 @@ public:
 	muhkuh_repository_manager *m_ptRepositoryManager;
 
 	wxString m_strLuaIncludePath;
+	wxString m_strLuaSystemModulePath;
 	wxString m_strLuaStartupCode;
 
 	wxString m_strApplicationTitle;
