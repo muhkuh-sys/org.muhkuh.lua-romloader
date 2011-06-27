@@ -43,6 +43,45 @@ const char *get_version(void)
 	return pcMuhkuhVersion;
 }
 
+
+const char *get_lua_script_path(void)
+{
+	const char *pcLuaScriptPath;
+	muhkuh_config_data *ptCfgData;
+
+
+	/* Expect failure. */
+	pcLuaScriptPath = NULL;
+
+	ptCfgData = lua_muhkuh_get_config_data();
+	if( ptCfgData!=NULL )
+	{
+		pcLuaScriptPath = ptCfgData->m_strLuaIncludePath.fn_str();
+	}
+
+	return pcLuaScriptPath;
+}
+
+
+const char *get_lua_module_path(void)
+{
+	const char *pcLuaModulePath;
+	muhkuh_config_data *ptCfgData;
+
+
+	/* Expect failure. */
+	pcLuaModulePath = NULL;
+
+	ptCfgData = lua_muhkuh_get_config_data();
+	if( ptCfgData!=NULL )
+	{
+		pcLuaModulePath = ptCfgData->m_strLuaSystemModulePath.fn_str();
+	}
+
+	return pcLuaModulePath;
+}
+
+
 /* Get all plugins as a table with the plugin name as the key and a table with
  * the plugin attributes as the value.
  */

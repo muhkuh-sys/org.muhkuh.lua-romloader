@@ -30,4 +30,7 @@
 
 const char *get_version();
 
+const char *get_lua_script_path();
+const char *get_lua_module_path();
+
 void get_plugins(lua_State *MUHKUH_SWIG_OUTPUT_CUSTOM_OBJECT);
