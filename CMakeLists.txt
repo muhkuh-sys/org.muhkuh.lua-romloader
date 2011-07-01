@@ -5,6 +5,48 @@ PROJECT("muhkuh")
 
 #----------------------------------------------------------------------------
 #
+# Read the version file and parse it.
+#
+
+# Set the filename for the muhkuh version file.
+SET(MUHKUH_VERSION_FILE "${CMAKE_HOME_DIRECTORY}/muhkuh_version.txt")
+IF(EXISTS ${MUHKUH_VERSION_FILE})
+	# Set the regular expression for the muhkuh version. It is a sequence of 3 numbers separated by dots.
+	SET(MUHKUH_VERSION_REXEX "([0-9]+)\\.([0-9]+)\\.([0-9]+)")
+	# Read the contents of the muhkuh version file. Accept only data matching the version regex.
+	FILE(STRINGS ${MUHKUH_VERSION_FILE} MUHKUH_VERSION_ALL REGEX ${MUHKUH_VERSION_REXEX})
+	# Check if a valid version number was found.
+	IF("${MUHKUH_VERSION_ALL}" STREQUAL "")
+		# No valid version number found. The file contains garbage, which is a fatal error!
+		MESSAGE(FATAL_ERROR "The file ${MUHKUH_VERSION_FILE} contains no valid version in the form number.number.number .")
+	ELSE("${MUHKUH_VERSION_ALL}" STREQUAL "")
+		STRING(REGEX MATCH "${MUHKUH_VERSION_REXEX}" MUHKUH_VERSION_ALL ${MUHKUH_VERSION_ALL})
+		SET(MUHKUH_VERSION_MAJ ${CMAKE_MATCH_1})
+		SET(MUHKUH_VERSION_MIN ${CMAKE_MATCH_2})
+		SET(MUHKUH_VERSION_SUB ${CMAKE_MATCH_3})
+		MESSAGE("File ${MUHKUH_VERSION_FILE} found, version info: ${MUHKUH_VERSION_MAJ}.${MUHKUH_VERSION_MIN}.${MUHKUH_VERSION_SUB}")
+	ENDIF("${MUHKUH_VERSION_ALL}" STREQUAL "")
+ELSE(EXISTS ${MUHKUH_VERSION_FILE})
+	SET(MUHKUH_VERSION_MAJ 1)
+	SET(MUHKUH_VERSION_MIN 0)
+
+	FIND_PACKAGE(Subversion)
+	IF(EXISTS "${CMAKE_HOME_DIRECTORY}/.svn" AND ${Subversion_FOUND})
+		MESSAGE("Subversion data found, generating version info from revision number.")
+		Subversion_WC_INFO(${CMAKE_CURRENT_SOURCE_DIR} MUHKUH_SVN)
+		MESSAGE("Current revision is ${MUHKUH_SVN_WC_REVISION}")
+		SET(MUHKUH_VERSION_SUB ${MUHKUH_SVN_WC_REVISION})
+	ELSE(EXISTS "${CMAKE_HOME_DIRECTORY}/.svn" AND ${Subversion_FOUND})
+		MESSAGE("No file ${MUHKUH_VERSION_FILE} and no subversion data found, using a fixed version.")
+		SET(MUHKUH_VERSION_SUB 0)
+	ENDIF(EXISTS "${CMAKE_HOME_DIRECTORY}/.svn" AND ${Subversion_FOUND})
+ENDIF(EXISTS ${MUHKUH_VERSION_FILE})
+
+SET(MUHKUH_VERSION_YEAR 2010)
+
+
+#----------------------------------------------------------------------------
+#
 # Set some installation folders.
 #
 
@@ -41,6 +83,7 @@ FIND_PACKAGE(PythonInterp)
 # This is the list of the wxwidgets modules required for the application.
 FIND_PACKAGE(wxWidgets 2.9 REQUIRED base core xml net aui adv html)
 
+# TODO: Show a summary with FeatureSummary .
 
 #----------------------------------------------------------------------------
 #
@@ -74,6 +117,7 @@ ENDIF(USE_SYSTEM_LUA)
 SET(SWIG_RUNTIME_OUTPUT_PATH ${CMAKE_BINARY_DIR}/swig_runtime)
 MAKE_DIRECTORY(${SWIG_RUNTIME_OUTPUT_PATH})
 
+# TODO: Replace this and all other custom commands with ExternalProject ?
 ADD_CUSTOM_COMMAND(
 	OUTPUT ${SWIG_RUNTIME_OUTPUT_PATH}/swigluarun.h
 	COMMAND "${SWIG_EXECUTABLE}" -lua -external-runtime ${SWIG_RUNTIME_OUTPUT_PATH}/swigluarun.h
