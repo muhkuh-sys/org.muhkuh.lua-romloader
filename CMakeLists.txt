@@ -42,6 +42,7 @@ ELSE(EXISTS ${MUHKUH_VERSION_FILE})
 	ENDIF(EXISTS "${CMAKE_HOME_DIRECTORY}/.svn" AND ${Subversion_FOUND})
 ENDIF(EXISTS ${MUHKUH_VERSION_FILE})
 
+# TODO: Generate this, but how? There is no cmake function which returns the date.
 SET(MUHKUH_VERSION_YEAR 2010)
 
 
@@ -133,10 +134,12 @@ ADD_CUSTOM_TARGET(swigluarun DEPENDS ${SWIG_RUNTIME_OUTPUT_PATH}/swigluarun.h)
 # Set custom definitions for microsoft compiler.
 #
 
-if(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv|nmake)")
+if(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv)")
 	# Do not show msvs security warnings about unsafe functions.
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-ENDIF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv|nmake)")
+	# Set warning level to 2.
+	add_definitions(/W2)
+ENDIF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv)")
 
 
 #----------------------------------------------------------------------------
