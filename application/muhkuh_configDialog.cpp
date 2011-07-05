@@ -715,7 +715,6 @@ void muhkuh_configDialog::OnPluginSelectionChanged(wxTreeEvent &event)
 
 void muhkuh_configDialog::OnButtonOk(wxCommandEvent &tEvent)
 {
-	wxString strValue;
 	/* The dialog was closed with the OK button. Copy all values back to the class. */
 
 	if( m_ptRadioFileWelcome->GetValue()==true )
