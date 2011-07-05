@@ -26,8 +26,7 @@
 #include <wx/url.h>
 #include <wx/wfstream.h>
 
-
-DEFINE_EVENT_TYPE(wxEVT_MUHKUH_COPY_PROGRESS)
+#include "muhkuh_id.h"
 
 
 muhkuh_copy_process::muhkuh_copy_process(wxString strRemoteBase, wxString strLocalBase, wxEvtHandler *ptEventHandler)
@@ -439,25 +438,30 @@ void muhkuh_copy_process::send_progress_information(size_t sizProcessedBytes, si
 {
 	bool fResult;
 	wxString strFileName;
-	wxMuhkuhCopyProgressEvent tEvent(wxEVT_MUHKUH_COPY_PROGRESS, wxID_ANY);
+	wxMuhkuhCopyProgressMessage *ptMsg;
+	wxThreadEvent tEvent(wxEVT_COMMAND_THREAD, muhkuh_copyProcess_eventId);
 
+
+	ptMsg = new wxMuhkuhCopyProgressMessage();
 
 	/* Set the state. */
-	tEvent.SetState(m_tState);
+	ptMsg->SetState(m_tState);
 
 	/* Set the number of files to copy. */
-	tEvent.SetTotalFiles(m_astrTodoCopyFiles.GetCount());
+	ptMsg->SetTotalFiles(m_astrTodoCopyFiles.GetCount());
 	if( m_tState==MUHKUH_COPY_PROCESS_STATE_Copy )
 	{
-		tEvent.SetCurrentFileName(m_strCurrentFileName);
-		tEvent.SetCurrentFileIdx(m_sizCurrentFileIdx);
-		tEvent.SetCurrentFileBytesProcessed(sizProcessedBytes);
-		tEvent.SetCurrentFileSizeInBytes(sizTotalBytes);
+		ptMsg->SetCurrentFileName(m_strCurrentFileName);
+		ptMsg->SetCurrentFileIdx(m_sizCurrentFileIdx);
+		ptMsg->SetCurrentFileBytesProcessed(sizProcessedBytes);
+		ptMsg->SetCurrentFileSizeInBytes(sizTotalBytes);
 	}
 
 	if( m_ptEventHandler!=NULL )
 	{
-		m_ptEventHandler->AddPendingEvent(tEvent);
+		tEvent.SetPayload<wxMuhkuhCopyProgressMessage>(*ptMsg);
+		wxQueueEvent(m_ptEventHandler, tEvent.Clone());
+		wxDELETE(ptMsg);
 	}
 }
 

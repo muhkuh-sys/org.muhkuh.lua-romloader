@@ -76,7 +76,7 @@ BEGIN_EVENT_TABLE(muhkuh_mainFrame, wxFrame)
 
 	EVT_END_PROCESS(muhkuh_serverProcess_terminate,                 muhkuh_mainFrame::OnServerProcessTerminate)
 
-	EVT_MUHKUH_COPY_PROGRESS(wxID_ANY,                              muhkuh_mainFrame::OnCopyProgress)
+	EVT_THREAD(muhkuh_copyProcess_eventId,                          muhkuh_mainFrame::OnCopyProgress)
 
 	EVT_MOVE(muhkuh_mainFrame::OnMove)
 	EVT_SIZE(muhkuh_mainFrame::OnSize)
@@ -2290,8 +2290,9 @@ void muhkuh_mainFrame::OnServerProcessTerminate(wxProcessEvent &event)
 }
 
 
-void muhkuh_mainFrame::OnCopyProgress(wxMuhkuhCopyProgressEvent &tEvent)
+void muhkuh_mainFrame::OnCopyProgress(wxThreadEvent &tEvent)
 {
+	wxMuhkuhCopyProgressMessage tMsg;
 	size_t sizFilesCnt;
 	size_t sizFilesEnd;
 	int iProgress;
@@ -2302,11 +2303,12 @@ void muhkuh_mainFrame::OnCopyProgress(wxMuhkuhCopyProgressEvent &tEvent)
 	wxThread::ExitCode tExitCode;
 
 
+	tMsg = tEvent.GetPayload<wxMuhkuhCopyProgressMessage>();
 	if( m_ptCopyProgress!=NULL )
 	{
 		fProcessFinished = false;
 
-		tState = tEvent.GetState();
+		tState = tMsg.GetState();
 		switch( tState )
 		{
 		case MUHKUH_COPY_PROCESS_STATE_Idle:
@@ -2315,13 +2317,13 @@ void muhkuh_mainFrame::OnCopyProgress(wxMuhkuhCopyProgressEvent &tEvent)
 			break;
 
 		case MUHKUH_COPY_PROCESS_STATE_Scanning:
-			strMessage.Printf(_("Found %d files..."), tEvent.GetTotalFiles());
+			strMessage.Printf(_("Found %d files..."), tMsg.GetTotalFiles());
 			fKeepRunning = m_ptCopyProgress->Pulse(strMessage);
 			break;
 
 		case MUHKUH_COPY_PROCESS_STATE_Copy:
-			sizFilesCnt = tEvent.GetCurrentFileIdx();
-			sizFilesEnd = tEvent.GetTotalFiles();
+			sizFilesCnt = tMsg.GetCurrentFileIdx();
+			sizFilesEnd = tMsg.GetTotalFiles();
 			if( sizFilesEnd==0 )
 			{
 				iProgress = 0;
@@ -2330,7 +2332,7 @@ void muhkuh_mainFrame::OnCopyProgress(wxMuhkuhCopyProgressEvent &tEvent)
 			else
 			{
 				iProgress = 100000 * sizFilesCnt / sizFilesEnd;
-				strMessage.Printf(_("Copying file %s: %d bytes processed."), tEvent.GetCurrentFileName().c_str(), tEvent.GetCurrentFileBytesProcessed());
+				strMessage.Printf(_("Copying file %s: %d bytes processed."), tMsg.GetCurrentFileName().c_str(), tMsg.GetCurrentFileBytesProcessed());
 			}
 			fKeepRunning = m_ptCopyProgress->Update(iProgress, strMessage);
 			break;

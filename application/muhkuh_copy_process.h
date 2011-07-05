@@ -39,12 +39,10 @@ typedef enum
 } MUHKUH_COPY_PROCESS_STATE_T;
 
 
-/* FIXME: Replace this with wxThreadEvent. */
-class wxMuhkuhCopyProgressEvent: public wxEvent
+class wxMuhkuhCopyProgressMessage
 {
 public:
-	wxMuhkuhCopyProgressEvent(wxEventType tCommandType=wxEVT_NULL, int iId=0)
-	 : wxEvent(iId, tCommandType)
+	wxMuhkuhCopyProgressMessage(void)
 	{
 		m_tState = MUHKUH_COPY_PROCESS_STATE_Idle;
 		m_sizTotalFiles = 0;
@@ -52,8 +50,7 @@ public:
 		m_sizCurrentFileInBytes = 0;
 		m_sizCurrentFileBytesProcessed = 0;
 	}
-	wxMuhkuhCopyProgressEvent(const wxMuhkuhCopyProgressEvent &tSrc)
-	 : wxEvent(tSrc)
+	wxMuhkuhCopyProgressMessage(const wxMuhkuhCopyProgressMessage &tSrc)
 	{
 		m_tState                       = tSrc.m_tState;
 		m_sizTotalFiles                = tSrc.m_sizTotalFiles;
@@ -113,11 +110,6 @@ public:
 		m_strCurrentFileName = strCurrentFileName;
 	}
 
-	wxEvent *Clone(void) const
-	{
-		return new wxMuhkuhCopyProgressEvent(*this);
-	}
-
 protected:
 	MUHKUH_COPY_PROCESS_STATE_T m_tState;
 	size_t m_sizTotalFiles;
@@ -126,18 +118,6 @@ protected:
 	size_t m_sizCurrentFileBytesProcessed;
 	wxString m_strCurrentFileName;
 };
-
-
-DECLARE_EVENT_TYPE(wxEVT_MUHKUH_COPY_PROGRESS, -1)
-
-typedef void (wxEvtHandler::*wxMuhkuhCopyProgressEventFunction)(wxMuhkuhCopyProgressEvent&);
-
-#define EVT_MUHKUH_COPY_PROGRESS(id, fn) \
-    DECLARE_EVENT_TABLE_ENTRY( wxEVT_MUHKUH_COPY_PROGRESS, id, -1, \
-    (wxObjectEventFunction) (wxEventFunction) (wxCommandEventFunction) (wxNotifyEventFunction) \
-    wxStaticCastEvent( wxMuhkuhCopyProgressEventFunction, & fn ), (wxObject *) NULL ),
-
-
 
 
 class muhkuh_copy_process : public wxThreadHelper

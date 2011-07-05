@@ -93,14 +93,6 @@ enum
 	muhkuh_dirlistbox_BrowseButton,
 	muhkuh_dirlistbox_TextCtrl,
 
-	muhkuh_debugger_notebook,
-	muhkuh_debugger_buttonStepInto,
-	muhkuh_debugger_buttonStepOver,
-	muhkuh_debugger_buttonStepOut,
-	muhkuh_debugger_buttonContinue,
-	muhkuh_debugger_buttonBreak,
-	muhkuh_debugger_stackList,
-
 	muhkuh_scanner_thread_event,
 	muhkuh_tester_thread_event,
 	muhkuh_mainFrame_testFinish_event,
@@ -109,6 +101,7 @@ enum
 	muhkuh_debugConnectionSocket_event,
 
 	muhkuh_serverProcess_terminate,
+	muhkuh_copyProcess_eventId,
 };
 
 #endif  /* __MUHKUH_ID_H__ */

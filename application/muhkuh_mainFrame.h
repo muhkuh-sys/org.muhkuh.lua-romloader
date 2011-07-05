@@ -110,7 +110,7 @@ public:
 
 	void OnServerProcessTerminate(wxProcessEvent &event);
 
-	void OnCopyProgress(wxMuhkuhCopyProgressEvent &tEvent);
+	void OnCopyProgress(wxThreadEvent &tEvent);
 
 	void OnMove(wxMoveEvent &event);
 	void OnSize(wxSizeEvent &event);
