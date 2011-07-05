@@ -8,13 +8,15 @@ aLuaModules = {
 
 aCode = {}
 
+strPath = string.gsub(muhkuh_components_lua.get_lua_script_path(), "\\", "\\\\")
 table.insert(aCode, "-- Add all include paths.")
-table.insert(aCode, "package.path  = package.path  .. " .. "\";" .. muhkuh_components_lua.get_lua_script_path() .. "\"")
+table.insert(aCode, "package.path  = package.path  .. " .. "\";" .. strPath .. "\"")
 table.insert(aCode, "")
 
 
+strPath = string.gsub(muhkuh_components_lua.get_lua_module_path(), "\\", "\\\\")
 table.insert(aCode, "-- Add all search paths for plugins.")
-table.insert(aCode, "package.cpath = package.cpath .. " .. "\";" .. muhkuh_components_lua.get_lua_module_path() .. "\"")
+table.insert(aCode, "package.cpath = package.cpath .. " .. "\";" .. strPath .. "\"")
 table.insert(aCode, "")
 
 
