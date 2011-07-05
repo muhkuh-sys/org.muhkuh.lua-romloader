@@ -184,11 +184,11 @@ void uuencoder::get_progress_info(UUENCODER_PROGRESS_INFO_T *ptProgressInfo)
 
 bool uuencoder::isFinished(void) const
 {
-	int iResult;
+	bool fResult;
 
 
-	iResult = (m_tState==UUENCODE_STATE_Finished);
+	fResult = (m_tState==UUENCODE_STATE_Finished);
 
-	return iResult;
+	return fResult;
 }
 
