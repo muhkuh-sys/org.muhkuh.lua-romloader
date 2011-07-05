@@ -932,6 +932,7 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 		m_ptConfigData = ptConfigData;
 
 		/* Write the new config to disc. */
+		/* FIXME: this writes the old config, but why? */
 		write_config();
 
 		/* Replace the default lua state. */
@@ -1335,7 +1336,7 @@ void muhkuh_mainFrame::executeTestPart2(void)
 			}
 			else
 			{
-				strNow = wxDateTime::Now().Format("%F %T");
+				strNow = wxDateTime::Now().Format("%Y-%m-%d %H:%M:%S");
 				// create start message for the report tab
 				strMsg.Printf(_("%s: started test '%s'.\n"), strNow, m_strRunningTestName);
 				// create a new notebook tab
@@ -1368,7 +1369,7 @@ bool muhkuh_mainFrame::process_server_output(void)
 
 	if( m_ptServerProcess!=NULL && m_ptTextCtrl_TestOutput!=NULL )
 	{
-		strNow = wxDateTime::Now().Format(wxT("%F %T"));
+		strNow = wxDateTime::Now().Format(wxT("%Y-%m-%d %H:%M:%S"));
 
 		if( m_ptServerProcess->IsInputAvailable()==true )
 		{
@@ -1417,7 +1418,7 @@ void muhkuh_mainFrame::finishTest(void)
 
 	if( m_ptTextCtrl_TestOutput!=NULL )
 	{
-		m_ptTextCtrl_TestOutput->AppendText(wxDateTime::Now().Format("%F %T"));
+		m_ptTextCtrl_TestOutput->AppendText(wxDateTime::Now().Format("%Y-%m-%d %H:%M:%S"));
 		m_ptTextCtrl_TestOutput->AppendText("Test '");
 		m_ptTextCtrl_TestOutput->AppendText(m_strRunningTestName);
 		m_ptTextCtrl_TestOutput->AppendText("' finished.\n");
