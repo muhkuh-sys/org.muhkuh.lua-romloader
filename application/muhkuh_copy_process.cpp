@@ -252,7 +252,6 @@ bool muhkuh_copy_process::copy_file(wxString strRemoteUrl)
 	bool fResult;
 	int iLastSlash;
 	int iLastColon;
-	int iFilePart;
 	wxString strRemotePath;
 	wxString strRemoteFile;
 	wxFileName tLocalFileName;
@@ -436,7 +435,6 @@ bool muhkuh_copy_process::copy_file_data(wxInputStream *ptInputStream, wxOutputS
 
 void muhkuh_copy_process::send_progress_information(size_t sizProcessedBytes, size_t sizTotalBytes)
 {
-	bool fResult;
 	wxString strFileName;
 	wxMuhkuhCopyProgressMessage *ptMsg;
 	wxThreadEvent tEvent(wxEVT_COMMAND_THREAD, muhkuh_copyProcess_eventId);

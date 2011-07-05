@@ -1260,7 +1260,6 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 {
 	bool fResult;
 	wxString strTempWorkingFolder;    /* This is the folder where the mtd is depacked and the startup file is generated. */
-	muhkuh_split_testdescription *ptSlitter;
 	wxString strOldWorkingDirectory;  /* This is the current working folder before this function changes it. */
 	wxString strStartLuaFile;	  /* This is the complete path to the generated startup file. */
 	wxString strStartCmd;

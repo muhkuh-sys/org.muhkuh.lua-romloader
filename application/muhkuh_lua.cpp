@@ -438,9 +438,6 @@ int lua_muhkuh_run_code(lua_State *ptLuaState, const char *pcLuaCode, char **ppc
 {
 	int iResult;
 	char *pcResult;
-	const char *pcLuaResult;
-	size_t sizLuaResult;
-	int iLuaResult;
 
 
 	pcResult = NULL;

@@ -239,11 +239,6 @@ wxPanel *muhkuh_configDialog::createControls_application(wxWindow *ptParent)
 	wxStaticBoxSizer *ptDetailsPageSizer;
 	wxBoxSizer *ptWelcomeFileSizer;
 	wxBoxSizer *ptDetailsFileSizer;
-	wxStaticBoxSizer *ptAutostartSizer;
-	wxFlexGridSizer *ptAutostartGrid;
-	wxStaticText *ptLabelAutostart;
-	wxStaticText *ptLabelAutostartTest;
-	wxStaticText *ptLabelAutoexit;
 
 
 	// create the repository page
