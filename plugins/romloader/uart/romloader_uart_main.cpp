@@ -179,7 +179,7 @@ bool romloader_uart_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 
 romloader_uart::romloader_uart(const char *pcName, const char *pcTyp, romloader_uart_provider *ptProvider, const char *pcDeviceName)
  : romloader(pcName, pcTyp, ptProvider)
- , m_fIsConnected(false)
+ , m_fIsConnected(false) 
  , m_ptUartDev(NULL)
 {
 	printf("%s(%p): created in romloader_uart\n", m_pcName, this);
@@ -838,6 +838,7 @@ unsigned long romloader_uart::read_data32(lua_State *ptClientData, unsigned long
 
 void romloader_uart::read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
+	char *pcBufferStart;
 	char *pcBuffer;
 	size_t sizBuffer;
 	bool fOk;
@@ -851,30 +852,28 @@ void romloader_uart::read_image(unsigned long ulNetxAddress, unsigned long ulSiz
 	/* Be optimistic. */
 	fOk = true;
 
+	pcBufferStart = NULL;
+	sizBuffer = 0;
+
 	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
 		fOk = false;
 	}
-	else if( ulSize==0 )
+	/* if ulSize == 0, we return with fOk == true, pcBufferStart == NULL and sizBuffer == 0 */
+	else if( ulSize > 0 )
 	{
-		pcBuffer = NULL;
-		sizBuffer = 0;
-	}
-	else
-	{
-		sizBuffer = ulSize;
-		pcBuffer = (char*)malloc(sizBuffer);
-		if( pcBuffer==NULL )
+		pcBufferStart = (char*)malloc(ulSize);
+		if( pcBufferStart==NULL )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to allocate %d bytes!", m_pcName, this, ulSize);
 			fOk = false;
 		}
 		else
 		{
-			*ppcBUFFER_OUT = pcBuffer;
-			*psizBUFFER_OUT = sizBuffer;
+			sizBuffer = ulSize;
 
+			pcBuffer = pcBufferStart;
 			lBytesProcessed = 0;
 			do
 			{
@@ -917,6 +916,8 @@ void romloader_uart::read_image(unsigned long ulNetxAddress, unsigned long ulSiz
 						fIsRunning = callback_long(&tLuaFn, lBytesProcessed, lCallbackUserData);
 						if( fIsRunning!=true )
 						{
+							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): read_image cancelled!", m_pcName, this);
+							fOk = false;
 							break;
 						}
 					}
@@ -925,8 +926,14 @@ void romloader_uart::read_image(unsigned long ulNetxAddress, unsigned long ulSiz
 		}
 	}
 
-	if( fOk!=true )
+	if( fOk == true )
 	{
+		*ppcBUFFER_OUT = pcBufferStart;
+		*psizBUFFER_OUT = sizBuffer;
+	}
+	else
+	{
+		if ( pcBufferStart!=NULL) free(pcBufferStart); 
 		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
 	}
 }
@@ -1133,6 +1140,8 @@ void romloader_uart::write_image(unsigned long ulNetxAddress, const char *pcBUFF
 					fIsRunning = callback_long(&tLuaFn, lBytesProcessed, lCallbackUserData);
 					if( fIsRunning!=true )
 					{
+						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): write_image cancelled!", m_pcName, this);
+						fOk = false;
 						break;
 					}
 				}
@@ -1241,10 +1250,9 @@ void romloader_uart::call(unsigned long ulNetxAddress, unsigned long ulParameter
 							/* Send a cancel request to the device. */
 							tResult = send_packet(aucCancelBuf, 1);
 
-//							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): the call was canceled!", m_pcName, this);
-//							fOk = false;
-//							fOk = true;
-//							break;
+							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): the call was cancelled!", m_pcName, this);
+							fOk = false;
+							break;
 						}
 					}
 
