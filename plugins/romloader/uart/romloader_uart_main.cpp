@@ -1041,7 +1041,7 @@ void romloader_uart::write_data32(lua_State *ptClientData, unsigned long ulNetxA
 
 	ulValue = 0;
 
-	aucCommand[0] = MONITOR_COMMAND_Write | (MONITOR_ACCESSSIZE_Word<<6);
+	aucCommand[0] = MONITOR_COMMAND_Write | (MONITOR_ACCESSSIZE_Long<<6);
 	aucCommand[1] = 4;
 	aucCommand[2] =  ulNetxAddress      & 0xffU;
 	aucCommand[3] = (ulNetxAddress>>8 ) & 0xffU;
