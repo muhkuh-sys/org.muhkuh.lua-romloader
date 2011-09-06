@@ -179,7 +179,6 @@ bool romloader_uart_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 
 romloader_uart::romloader_uart(const char *pcName, const char *pcTyp, romloader_uart_provider *ptProvider, const char *pcDeviceName)
  : romloader(pcName, pcTyp, ptProvider)
- , m_fIsConnected(false) 
  , m_ptUartDev(NULL)
 {
 	printf("%s(%p): created in romloader_uart\n", m_pcName, this);

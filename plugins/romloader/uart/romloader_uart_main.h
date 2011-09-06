@@ -96,7 +96,6 @@ private:
 
 	bool chip_init(lua_State *ptClientData);
 
-	bool m_fIsConnected;
 	romloader_uart_device_platform *m_ptUartDev;
 
 	size_t m_sizPacketRingBufferHead;
