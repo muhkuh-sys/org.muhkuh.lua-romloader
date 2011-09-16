@@ -33,6 +33,8 @@ typedef struct
 	unsigned short usBcdDevice;
 	ROMLOADER_CHIPTYP tChiptyp;
 	ROMLOADER_ROMCODE tRomcode;
+	unsigned char ucConfiguration;
+	unsigned char ucInterface;
 	unsigned char ucEndpoint_In;
 	unsigned char ucEndpoint_Out;
 } NETX_USB_DEVICE_T;
@@ -48,7 +50,7 @@ protected:
 	char *m_pcPluginId;
 
 
-	static const NETX_USB_DEVICE_T atNetxUsbDevices[4];
+	static const NETX_USB_DEVICE_T atNetxUsbDevices[6];
 
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);
 

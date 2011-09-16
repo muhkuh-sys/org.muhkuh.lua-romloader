@@ -234,6 +234,10 @@ bool romloader_usb::chip_init(lua_State *ptClientData)
 			/* hboot2 software emu needs no special init. */
 			fResult = true;
 			break;
+		case ROMLOADER_ROMCODE_HBOOT2:
+			// this is an unknown combination
+			fResult = false;
+			break;
 		case ROMLOADER_ROMCODE_UNKNOWN:
 			fResult = false;
 			break;
@@ -255,6 +259,10 @@ bool romloader_usb::chip_init(lua_State *ptClientData)
 			/* hboot2 software emu needs no special init. */
 			fResult = true;
 			break;
+		case ROMLOADER_ROMCODE_HBOOT2:
+			// this is an unknown combination
+			fResult = false;
+			break;
 		case ROMLOADER_ROMCODE_UNKNOWN:
 			fResult = false;
 			break;
@@ -274,6 +282,60 @@ bool romloader_usb::chip_init(lua_State *ptClientData)
 			break;
 		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
 			/* hboot2 software emu needs no special init. */
+			fResult = true;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT2:
+			// this is an unknown combination
+			fResult = false;
+			break;
+		case ROMLOADER_ROMCODE_UNKNOWN:
+			fResult = false;
+			break;
+		}
+		break;
+
+	case ROMLOADER_CHIPTYP_NETX51:
+		switch( m_tRomcode )
+		{
+		case ROMLOADER_ROMCODE_ABOOT:
+			// this is an unknown combination
+			fResult = false;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT:
+			// this is an unknown combination
+			fResult = false;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
+			// this is an unknown combination
+			fResult = false;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT2:
+			/* HBoot2 needs no special init. */
+			fResult = true;
+			break;
+		case ROMLOADER_ROMCODE_UNKNOWN:
+			fResult = false;
+			break;
+		}
+		break;
+
+	case ROMLOADER_CHIPTYP_NETX52:
+		switch( m_tRomcode )
+		{
+		case ROMLOADER_ROMCODE_ABOOT:
+			// this is an unknown combination
+			fResult = false;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT:
+			// this is an unknown combination
+			fResult = false;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
+			// this is an unknown combination
+			fResult = false;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT2:
+			/* HBoot2 needs no special init. */
 			fResult = true;
 			break;
 		case ROMLOADER_ROMCODE_UNKNOWN:
@@ -370,7 +432,7 @@ unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long 
 
 	if( m_fIsConnected==false )
 	{
-		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data08: not connected!", m_pcName, this);
 		fOk = false;
 	}
 	else
@@ -389,12 +451,12 @@ unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long 
 		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
 		if( iResult!=0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to transfer command!", m_pcName, this);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data08: failed to transfer command!", m_pcName, this);
 			fOk = false;
 		}
 		else if( sizInBuf==0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): received empty answer!", m_pcName, this);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data08: received empty answer!", m_pcName, this);
 			fOk = false;
 		}
 		else
@@ -402,12 +464,13 @@ unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long 
 			ucStatus = aucInBuf[0];
 			if( ucStatus!=USBMON_STATUS_Ok )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data08: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 				fOk = false;
 			}
 			else if( sizInBuf!=2 )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer has invalid size!", m_pcName, this);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data08: answer has invalid size: %d", m_pcName, this, sizInBuf);
+				hexdump(aucInBuf, sizInBuf, 0);
 				fOk = false;
 			}
 			else
@@ -443,7 +506,7 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 
 	if( m_fIsConnected==false )
 	{
-		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data16: not connected!", m_pcName, this);
 		fOk = false;
 	}
 	else
@@ -462,12 +525,12 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
 		if( iResult!=0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to transfer command!", m_pcName, this);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data16: failed to transfer command!", m_pcName, this);
 			fOk = false;
 		}
 		else if( sizInBuf==0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): received empty answer!", m_pcName, this);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data16: received empty answer!", m_pcName, this);
 			fOk = false;
 		}
 		else
@@ -475,12 +538,13 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 			ucStatus = aucInBuf[0];
 			if( ucStatus!=USBMON_STATUS_Ok )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data16: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 				fOk = false;
 			}
 			else if( sizInBuf!=3 )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer has invalid size!", m_pcName, this);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data16: answer has invalid size!", m_pcName, this);
+				hexdump(aucInBuf, sizInBuf, 0);
 				fOk = false;
 			}
 			else
@@ -516,7 +580,7 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 
 	if( m_fIsConnected==false )
 	{
-		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data32: not connected!", m_pcName, this);
 		fOk = false;
 	}
 	else
@@ -535,12 +599,12 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
 		if( iResult!=0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to transfer command!", m_pcName, this);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data32: failed to transfer command!", m_pcName, this);
 			fOk = false;
 		}
 		else if( sizInBuf==0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): received empty answer!", m_pcName, this);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data32: received empty answer!", m_pcName, this);
 			fOk = false;
 		}
 		else
@@ -548,12 +612,13 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 			ucStatus = aucInBuf[0];
 			if( ucStatus!=USBMON_STATUS_Ok )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data32: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 				fOk = false;
 			}
 			else if( sizInBuf!=5 )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer has invalid size!", m_pcName, this);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data32: answer has invalid size!", m_pcName, this);
+				hexdump(aucInBuf, sizInBuf, 0);
 				fOk = false;
 			}
 			else
@@ -603,7 +668,7 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 
 	if( m_fIsConnected==false )
 	{
-		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
+		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): read_image: not connected!", m_pcName, this);
 		fOk = false;
 	}
 	/* if ulSize == 0, we return with fOk == true, pcBufferStart == NULL and sizBuffer == 0 */
@@ -612,7 +677,7 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 		pcBufferStart = (char*)malloc(ulSize);
 		if( pcBufferStart==NULL )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to allocate %d bytes!", m_pcName, this, ulSize);
+			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): read_image: failed to allocate %d bytes!", m_pcName, this, ulSize);
 			fOk = false;
 		}
 		else
@@ -643,13 +708,13 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 				iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
 				if( iResult!=0 )
 				{
-					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to transfer command!", m_pcName, this);
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): read_image: failed to transfer command!", m_pcName, this);
 					fOk = false;
 					break;
 				}
 				else if( sizInBuf==0 )
 				{
-					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): received empty answer!", m_pcName, this);
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): read_image: received empty answer!", m_pcName, this);
 					fOk = false;
 					break;
 				}
@@ -658,13 +723,14 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 					ucStatus = aucInBuf[0];
 					if( ucStatus!=USBMON_STATUS_Ok )
 					{
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): read_image: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 						fOk = false;
 						break;
 					}
 					else if( sizInBuf!=sizChunk+1 )
 					{
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer has invalid size!", m_pcName, this);
+						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): read_image: answer has invalid size!", m_pcName, this);
+						hexdump(aucInBuf, sizInBuf, 0);
 						fOk = false;
 						break;
 					}
@@ -717,7 +783,7 @@ void romloader_usb::write_data08(lua_State *ptClientData, unsigned long ulNetxAd
 
 	if( m_fIsConnected==false )
 	{
-		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data08: not connected!", m_pcName, this);
 		fOk = false;
 	}
 	else
@@ -737,12 +803,12 @@ void romloader_usb::write_data08(lua_State *ptClientData, unsigned long ulNetxAd
 		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
 		if( iResult!=0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to transfer command!", m_pcName, this);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data08: failed to transfer command!", m_pcName, this);
 			fOk = false;
 		}
 		else if( sizInBuf==0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): received empty answer!", m_pcName, this);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data08: received empty answer!", m_pcName, this);
 			fOk = false;
 		}
 		else
@@ -750,12 +816,13 @@ void romloader_usb::write_data08(lua_State *ptClientData, unsigned long ulNetxAd
 			ucStatus = aucInBuf[0];
 			if( ucStatus!=USBMON_STATUS_Ok )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data08: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 				fOk = false;
 			}
 			else if( sizInBuf!=1 )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer has invalid size!", m_pcName, this);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data08: answer has invalid size!", m_pcName, this);
+				hexdump(aucInBuf, sizInBuf, 0);
 				fOk = false;
 			}
 			else
@@ -787,7 +854,7 @@ void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 
 	if( m_fIsConnected==false )
 	{
-		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data16: not connected!", m_pcName, this);
 		fOk = false;
 	}
 	else
@@ -808,12 +875,12 @@ void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
 		if( iResult!=0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to transfer command!", m_pcName, this);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data16: failed to transfer command!", m_pcName, this);
 			fOk = false;
 		}
 		else if( sizInBuf==0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): received empty answer!", m_pcName, this);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data16: received empty answer!", m_pcName, this);
 			fOk = false;
 		}
 		else
@@ -821,12 +888,13 @@ void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 			ucStatus = aucInBuf[0];
 			if( ucStatus!=USBMON_STATUS_Ok )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data16: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 				fOk = false;
 			}
 			else if( sizInBuf!=1 )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer has invalid size!", m_pcName, this);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data16: answer has invalid size!", m_pcName, this);
+				hexdump(aucInBuf, sizInBuf, 0);
 				fOk = false;
 			}
 			else
@@ -858,7 +926,7 @@ void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 
 	if( m_fIsConnected==false )
 	{
-		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data32: not connected!", m_pcName, this);
 		fOk = false;
 	}
 	else
@@ -881,12 +949,12 @@ void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
 		if( iResult!=0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to transfer command!", m_pcName, this);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data32: failed to transfer command!", m_pcName, this);
 			fOk = false;
 		}
 		else if( sizInBuf==0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): received empty answer!", m_pcName, this);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data32: received empty answer!", m_pcName, this);
 			fOk = false;
 		}
 		else
@@ -894,12 +962,13 @@ void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 			ucStatus = aucInBuf[0];
 			if( ucStatus!=USBMON_STATUS_Ok )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data32: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 				fOk = false;
 			}
 			else if( sizInBuf!=1 )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer has invalid size!", m_pcName, this);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data32: answer has invalid size!", m_pcName, this);
+				hexdump(aucInBuf, sizInBuf, 0);
 				fOk = false;
 			}
 			else
@@ -937,7 +1006,7 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 
 	if( m_fIsConnected==false )
 	{
-		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
+		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): write_image: not connected!", m_pcName, this);
 		fOk = false;
 	}
 	else if( sizBUFFER_IN!=0 )
@@ -966,13 +1035,13 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 			iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
 			if( iResult!=0 )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to transfer command!", m_pcName, this);
+				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): write_image: failed to transfer command!", m_pcName, this);
 				fOk = false;
 				break;
 			}
 			else if( sizInBuf==0 )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): received empty answer!", m_pcName, this);
+				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): write_image: received empty answer!", m_pcName, this);
 				fOk = false;
 				break;
 			}
@@ -981,13 +1050,14 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 				ucStatus = aucInBuf[0];
 				if( ucStatus!=USBMON_STATUS_Ok )
 				{
-					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): write_image: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 					fOk = false;
 					break;
 				}
 				else if( sizInBuf!=1 )
 				{
-					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer has invalid size!", m_pcName, this);
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): write_image: answer has invalid size!", m_pcName, this);
+					hexdump(aucInBuf, sizInBuf, 0);
 					fOk = false;
 					break;
 				}
@@ -1035,7 +1105,7 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 
 	if( m_fIsConnected==false )
 	{
-		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
+		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: not connected!", m_pcName, this);
 		fOk = false;
 	}
 	else
@@ -1058,12 +1128,12 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
 		if( iResult!=0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to transfer command!", m_pcName, this);
+			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: failed to transfer command!", m_pcName, this);
 			fOk = false;
 		}
 		else if( sizInBuf==0 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): received empty answer!", m_pcName, this);
+			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: received empty answer!", m_pcName, this);
 			fOk = false;
 		}
 		else
@@ -1074,12 +1144,13 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 			ucStatus = aucInBuf[0];
 			if( ucStatus!=USBMON_STATUS_Ok )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command! Status: %d", m_pcName, this, ucStatus);
+				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 				fOk = false;
 			}
 			else if( sizInBuf!=1 )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer has invalid size!", m_pcName, this);
+				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: answer has invalid size!", m_pcName, this);
+				hexdump(aucInBuf, sizInBuf, 0);
 				fOk = false;
 			}
 			else
@@ -1096,7 +1167,7 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 					}
 					else if( iResult!=0 )
 					{
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to receive packet! (error %d)", m_pcName, this, iResult);
+						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: failed to receive packet! (error %d)", m_pcName, this, iResult);
 						fOk = false;
 						break;
 					}
@@ -1119,12 +1190,12 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 							printf("Received invalid packet:\n");
 							hexdump(aucInBuf, sizInBuf, 0);
 
-							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): received invalid packet!", m_pcName, this);
+							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: received invalid packet!", m_pcName, this);
 							fOk = false;
 							break;
 						}
 					}
-					
+
 					if (pcProgressData != NULL)
 					{
 						fIsRunning = callback_string(&tLuaFn, pcProgressData, sizProgressData, lCallbackUserData);

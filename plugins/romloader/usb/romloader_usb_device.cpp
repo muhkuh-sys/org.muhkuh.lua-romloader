@@ -28,7 +28,7 @@
 #       define strncasecmp _strnicmp
 #endif
 
-const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[4] =
+const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[6] =
 {
 	{
 		"netX500 V1",
@@ -37,6 +37,8 @@ const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[4] =
 		0x0100,
 		ROMLOADER_CHIPTYP_NETX500,
 		ROMLOADER_ROMCODE_ABOOT,
+		1,
+		0,
 		0x81,
 		0x01
 	},
@@ -47,6 +49,8 @@ const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[4] =
 		0x0001,
 		ROMLOADER_CHIPTYP_NETX500,
 		ROMLOADER_ROMCODE_HBOOT2_SOFT,
+		1,
+		0,
 		0x81,
 		0x01
 	},
@@ -57,6 +61,8 @@ const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[4] =
 		0x0001,
 		ROMLOADER_CHIPTYP_NETX10,
 		ROMLOADER_ROMCODE_HBOOT,
+		1,
+		0,
 		0x83,
 		0x04
 	},
@@ -67,7 +73,33 @@ const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[4] =
 		0x0002,
 		ROMLOADER_CHIPTYP_NETX10,
 		ROMLOADER_ROMCODE_HBOOT2_SOFT,
+		1,
+		0,
 		0x83,
+		0x04
+	},
+	{
+		"netX51",
+		0x1939,
+		0x0017,
+		0x0001,
+		ROMLOADER_CHIPTYP_NETX51,
+		ROMLOADER_ROMCODE_HBOOT2,
+		0,
+		1,
+		0x85,
+		0x04
+	},
+	{
+		"netX52",
+		0x1939,
+		0x0018,
+		0x0001,
+		ROMLOADER_CHIPTYP_NETX52,
+		ROMLOADER_ROMCODE_HBOOT2,
+		0,
+		1,
+		0x85,
 		0x04
 	}
 };

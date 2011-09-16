@@ -42,6 +42,7 @@
 
 #	ifdef _WIN32
 #	define ETIMEDOUT 116
+#       define EBUSY 16
 #	endif /* _WIN32 */
 
 	enum libusb_error
@@ -59,6 +60,7 @@
 		LIBUSB_ERROR_INTERRUPTED = -10,
 		LIBUSB_ERROR_NO_MEM = -11,
 		LIBUSB_ERROR_NOT_SUPPORTED = -12,
+		LIBUSB_ERROR_SYS_BUSY = -EBUSY,
 		LIBUSB_ERROR_OTHER = -99
 	};
 
@@ -97,18 +99,18 @@ public:
 	int execute_command(const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned char *aucInBuf, size_t *psizInBuf);
 
 protected:
-	ROMLOADER_CHIPTYP m_tChiptyp;
-	ROMLOADER_ROMCODE m_tRomcode;
-
-	unsigned char m_ucEndpoint_In;
-	unsigned char m_ucEndpoint_Out;
+	NETX_USB_DEVICE_T m_tDeviceId;
+//	ROMLOADER_CHIPTYP m_tChiptyp;
+//	ROMLOADER_ROMCODE m_tRomcode;
+//
+//	unsigned char m_ucEndpoint_In;
+//	unsigned char m_ucEndpoint_Out;
 
 private:
-	bool fIsDeviceNetx(libusb_device *ptDevice) const;
 	const NETX_USB_DEVICE_T *identifyDevice(libusb_device *ptDevice) const;
 
 	libusb_device *find_netx_device(libusb_device **ptDeviceList, ssize_t ssizDevList, unsigned int uiBusNr, unsigned int uiDeviceAdr);
-	int setup_netx_device(libusb_device *ptNetxDevice);
+	int setup_netx_device(libusb_device *ptNetxDevice, const NETX_USB_DEVICE_T *ptId);
 
 	int libusb_reset_and_close_device(void);
 //	int libusb_release_and_close_device(void);
@@ -128,9 +130,6 @@ private:
 	int netx500_load_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode, size_t sizNetxCode);
 	int netx500_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode);
 	int netx500_upgrade_romcode(libusb_device *ptDevice, libusb_device **pptUpdatedNetxDevice);
-
-	const int m_iConfiguration;
-	const int m_iInterface;
 
 
 
