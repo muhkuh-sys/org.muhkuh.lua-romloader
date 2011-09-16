@@ -1,0 +1,21 @@
+ACTION!="add|change", GOTO="netx_rules_end"
+SUBSYSTEM!="usb", GOTO="netx_rules_end"
+ENV{DEVTYPE}!="usb_device", GOTO="netx_rules_end"
+
+# netX500 romcode
+ATTRS{idVendor}=="0cc4", ATTRS{idProduct}=="0815", MODE="664", GROUP="plugdev"
+
+# netX50 romcode
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0002", MODE="664", GROUP="plugdev"
+
+# netX10 romcode
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="000c", MODE="664", GROUP="plugdev"
+
+# netX51 romcode
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0017", MODE="664", GROUP="plugdev"
+
+# netX52 romcode
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0018", MODE="664", GROUP="plugdev"
+
+LABEL="netx_rules_end"
+
