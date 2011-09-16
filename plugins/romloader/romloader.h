@@ -34,7 +34,9 @@ typedef enum
 	ROMLOADER_CHIPTYP_NETX100       = 2,
 	ROMLOADER_CHIPTYP_NETX50        = 3,
 	ROMLOADER_CHIPTYP_NETX5         = 4,
-	ROMLOADER_CHIPTYP_NETX10        = 5
+	ROMLOADER_CHIPTYP_NETX10        = 5,
+	ROMLOADER_CHIPTYP_NETX51        = 6,
+	ROMLOADER_CHIPTYP_NETX52        = 7
 } ROMLOADER_CHIPTYP;
 
 
@@ -43,7 +45,8 @@ typedef enum
 	ROMLOADER_ROMCODE_UNKNOWN       = 0,
 	ROMLOADER_ROMCODE_ABOOT         = 1,
 	ROMLOADER_ROMCODE_HBOOT         = 2,
-	ROMLOADER_ROMCODE_HBOOT2_SOFT   = 3
+	ROMLOADER_ROMCODE_HBOOT2_SOFT   = 3,
+	ROMLOADER_ROMCODE_HBOOT2        = 4
 } ROMLOADER_ROMCODE;
 
 /*-----------------------------------*/
@@ -108,7 +111,7 @@ private:
 		const char *pcRomcodeName;
 	} ROMLOADER_RESET_ID_T;
 
-	static const ROMLOADER_RESET_ID_T atResIds[4];
+	static const ROMLOADER_RESET_ID_T atResIds[6];
 };
 
 /*-----------------------------------*/
