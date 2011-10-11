@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2011 by Christoph Thelen and M. Trensch                 *
+ *   Copyright (C) 2010 by Christoph Thelen                                *
  *   doc_bacardi@users.sourceforge.net                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -19,39 +19,41 @@
  ***************************************************************************/
 
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
+#ifndef __MACHINE_INTERFACE_COMMANDS_H__
+#define __MACHINE_INTERFACE_COMMANDS_H__
 
 
-#ifndef __ROMLOADER_ETH_DEVICE_LINUX_H__
-#define __ROMLOADER_ETH_DEVICE_LINUX_H__
+#define MI_VERSION_MAJOR 1
+#define MI_VERSION_MINOR 0
 
-#include "romloader_eth_device.h"
+#define MI_ETH_MAX_PACKET_SIZE 1024
 
-
-class romloader_eth_device_linux : public romloader_eth_device
+typedef enum
 {
-public:
-	romloader_eth_device_linux(const char *pcServerName);
-	virtual ~romloader_eth_device_linux();
+	MI_COMMAND_Read                    = 0x00,
+	MI_COMMAND_Write                   = 0x01,
+	MI_COMMAND_Execute                 = 0x02
+} MI_COMMAND_T;
 
-	bool Open(void);
-	void Close(void);
-	int SendPacket(const unsigned char *pucData, size_t sizData);
-	int RecvPacket(unsigned char *pucData, size_t sizData, unsigned long ulTimeout, size_t *psizPacket);
+typedef enum
+{
+	MI_STATUS_Ok                        = 0x00,
+	MI_STATUS_CallMessage               = 0x01,
+	MI_STATUS_CallFinished              = 0x02,
+	MI_STATUS_InvalidCommand            = 0x03,
+	MI_STATUS_InvalidPacketSize         = 0x04,
+	MI_STATUS_InvalidSizeParameter      = 0x05
+} MI_STATUS_T;
 
-	static size_t ScanForServers(char ***pppcPortNames);
-
-private:
-	int m_iHbootServer_Socket;
-	union
-	{
-		struct sockaddr tAddr;
-		struct sockaddr_in tAddrIn;
-	} m_tHbootServer_Addr;
-
-};
+typedef enum
+{
+	MI_ACCESSSIZE_Byte                  = 0,
+	MI_ACCESSSIZE_Word                  = 1,
+	MI_ACCESSSIZE_Long                  = 2
+} MI_ACCESSSIZE_T;
 
 
-#endif  /* __ROMLOADER_ETH_DEVICE_LINUX_H__ */
+extern const unsigned char aucMachineInterface_magic[8];
+
+
+#endif  /* __MACHINE_INTERFACE_COMMANDS_H__ */

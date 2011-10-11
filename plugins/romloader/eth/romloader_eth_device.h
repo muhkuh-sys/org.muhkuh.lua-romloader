@@ -41,10 +41,14 @@ public:
 	/* low level interface is platform specific */
 	virtual bool Open(void) = 0;
 	virtual void Close(void) = 0;
-	virtual size_t SendPacket(const unsigned char *pucData, size_t sizData, unsigned long ulTimeout) = 0;
-	virtual size_t RecvPacket(unsigned char *pucData, size_t sizData, unsigned long ulTimeout) = 0;
+	virtual int SendPacket(const unsigned char *pucData, size_t sizData) = 0;
+	virtual int RecvPacket(unsigned char *pucData, size_t sizData, unsigned long ulTimeout, size_t *psizPacket) = 0;
 
-	virtual size_t ScanForServers(char ***pppcPortNames);
+
+protected:
+	char *m_pcServerName;
+
+
 private:
 };
 

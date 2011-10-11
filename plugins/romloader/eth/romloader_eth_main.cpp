@@ -176,16 +176,14 @@ bool romloader_eth_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 /*-------------------------------------*/
 
 
-romloader_eth::romloader_eth(const char *pcName, const char *pcTyp, romloader_eth_provider *ptProvider, const char *pcDeviceName)
+romloader_eth::romloader_eth(const char *pcName, const char *pcTyp, romloader_eth_provider *ptProvider, const char *pcServerName)
  : romloader(pcName, pcTyp, ptProvider)
  , m_fIsConnected(false)
  , m_ptEthDev(NULL)
 {
 	printf("%s(%p): created in romloader_eth\n", m_pcName, this);
 
-	m_ptEthDev = new romloader_eth_device_platform(pcDeviceName);
-
-	packet_ringbuffer_init();
+	m_ptEthDev = new romloader_eth_device_platform(pcServerName);
 }
 
 
@@ -329,12 +327,10 @@ void romloader_eth::Connect(lua_State *ptClientData)
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chiptyp!", m_pcName, this);
 		}
-/*
 		else if( chip_init(ptClientData)!=true )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to init chip!", m_pcName, this);
 		}
-*/
 		else
 		{
 			m_fIsConnected = true;
@@ -343,287 +339,30 @@ void romloader_eth::Connect(lua_State *ptClientData)
 
 		if( iResult!=0 )
 		{
-			m_ptUartDev->Close();
+			m_ptEthDev->Close();
 			MUHKUH_PLUGIN_EXIT_ERROR(ptClientData);
 		}
 	}
 }
 
 
-void romloader_uart::Disconnect(lua_State *ptClientData)
+void romloader_eth::Disconnect(lua_State *ptClientData)
 {
 	printf("%s(%p): disconnect\n", m_pcName, this);
 
-	if( m_ptUartDev!=NULL )
+	if( m_ptEthDev!=NULL )
 	{
-		m_ptUartDev->Close();
+		m_ptEthDev->Close();
 	}
 
 	m_fIsConnected = false;
 }
 
 
-void romloader_uart::packet_ringbuffer_init(void)
+int romloader_eth::execute_command(const unsigned char *aucCommand, size_t sizCommand, unsigned char *aucResponse, size_t sizResponse, size_t *psizResponse)
 {
-	m_sizPacketRingBufferHead = 0;
-	m_sizPacketRingBufferFill = 0;
-}
-
-
-UARTSTATUS_T romloader_uart::packet_ringbuffer_fill(size_t sizRequestedFillLevel)
-{
-	size_t sizWritePosition;
-	UARTSTATUS_T tResult;
-	size_t sizReceiveCnt;
-	size_t sizChunk;
-	size_t sizRead;
-
-
-	/* Expect success. */
-	tResult = UARTSTATUS_OK;
-
-	/* Does the buffer contain enough data? */
-	if( m_sizPacketRingBufferFill<sizRequestedFillLevel )
-	{
-		/* No -> receive the remaining amount of bytes. */
-		sizReceiveCnt = sizRequestedFillLevel - m_sizPacketRingBufferFill;
-		do
-		{
-			/* Get the write position. */
-			sizWritePosition = m_sizPacketRingBufferHead + m_sizPacketRingBufferFill;
-			if( sizWritePosition>=MONITOR_MAX_PACKET_SIZE )
-			{
-				sizWritePosition -= MONITOR_MAX_PACKET_SIZE;
-			}
-
-			/* Get the size of the remaining continuous buffer space. */
-			/* This is the maximum chunk which can be read in one piece. */
-			sizChunk = MONITOR_MAX_PACKET_SIZE - sizWritePosition;
-			/* Limit the chunk size to the requested size. */
-			if( sizChunk>sizReceiveCnt )
-			{
-				sizChunk = sizReceiveCnt;
-			}
-
-			/* Receive the chunk. */
-			sizRead = m_ptUartDev->RecvRaw(m_aucPacketRingBuffer+sizWritePosition, sizChunk, UART_BASE_TIMEOUT_MS + sizChunk*UART_CHAR_TIMEOUT_MS);
-
-			m_sizPacketRingBufferFill += sizChunk;
-			sizReceiveCnt -= sizChunk;
-
-			if( sizRead!=sizChunk )
-			{
-				fprintf(stderr, "ERROR: requested %d bytes, got only %d.\n", sizChunk, sizRead);
-				tResult = UARTSTATUS_TIMEOUT;
-				break;
-			}
-		} while( sizReceiveCnt>0 );
-	}
-
-	return tResult;
-}
-
-
-unsigned char romloader_uart::packet_ringbuffer_get(void)
-{
-	unsigned char ucByte;
-
-
-	ucByte = m_aucPacketRingBuffer[m_sizPacketRingBufferHead];
-
-	++m_sizPacketRingBufferHead;
-	if( m_sizPacketRingBufferHead>=MONITOR_MAX_PACKET_SIZE )
-	{
-		m_sizPacketRingBufferHead -= MONITOR_MAX_PACKET_SIZE;
-	}
-
-	--m_sizPacketRingBufferFill;
-
-	return ucByte;
-}
-
-
-int romloader_uart::packet_ringbuffer_peek(size_t sizOffset)
-{
-	size_t sizReadPosition;
-
-
-	sizReadPosition = m_sizPacketRingBufferHead + sizOffset;
-	if( sizReadPosition>=MONITOR_MAX_PACKET_SIZE )
-	{
-		sizReadPosition -= MONITOR_MAX_PACKET_SIZE;
-	}
-
-	return m_aucPacketRingBuffer[sizReadPosition];
-}
-
-
-UARTSTATUS_T romloader_uart::send_packet(const unsigned char *pucData, size_t sizData)
-{
-	unsigned char aucBuffer[MONITOR_MAX_PACKET_SIZE];
-	UARTSTATUS_T tResult;
-	unsigned short usCrc;
-	const unsigned char *pucCnt;
-	const unsigned char *pucEnd;
-	unsigned char ucData;
-	size_t sizSend;
-	size_t sizPacket;
-
-
-	/* The maximum packet size is reduced by the start char (1 byte), the size information (2 bytes) and the crc (2 bytes). */
-	if( sizData<=MONITOR_MAX_PACKET_SIZE-5 )
-	{
-		/* Set the packet start character. */
-		aucBuffer[0] = MONITOR_STREAM_PACKET_START;
-		/* Set the size of the user data. */
-		aucBuffer[1] = (unsigned char)(sizData & 0xff);
-		aucBuffer[2] = (unsigned char)(sizData >> 8);
-
-		/* Copy the user data. */
-		memcpy(aucBuffer+3, pucData, sizData);
-
-		/* Generate the crc. */
-		usCrc = 0;
-		pucCnt = aucBuffer + 1;
-		pucEnd = aucBuffer + 1 + 2 + sizData;
-		while( pucCnt<pucEnd )
-		{
-			usCrc = crc16(usCrc, *pucCnt);
-			++pucCnt;
-		}
-
-		/* Append the CRC. */
-		aucBuffer[sizData+3] = (usCrc>>8 ) & 0xffU;
-		aucBuffer[sizData+4] =  usCrc      & 0xffU;
-
-		/* Send the buffer. */
-		sizPacket = sizData + 5;
-		sizSend = m_ptUartDev->SendRaw(aucBuffer, sizPacket, UART_BASE_TIMEOUT_MS + sizPacket*UART_CHAR_TIMEOUT_MS);
-		if( sizSend==sizPacket )
-		{
-			tResult = UARTSTATUS_OK;
-		}
-		else
-		{
-			fprintf(stderr, "! send_packet: failed to send the packet!\n");
-			tResult = UARTSTATUS_SEND_FAILED;
-		}
-	}
-	else
-	{
-		fprintf(stderr, "! send_packet: packet too large: %d bytes!\n", sizData);
-		tResult = UARTSTATUS_PACKET_TOO_LARGE;
-	}
-
-	return tResult;
-}
-
-
-UARTSTATUS_T romloader_uart::receive_packet(void)
-{
-	size_t sizRead;
-	unsigned int uiRetries;
-	unsigned char ucData;
-	bool fFound;
-	UARTSTATUS_T tResult;
-	size_t sizData;
-	size_t sizPacket;
-	unsigned short usCrc;
-	size_t sizCnt;
-
-
-	/* Wait for the start character. */
-	fFound = false;
-	uiRetries = 10;
-	do
-	{
-		tResult = packet_ringbuffer_fill(1);
-		if( tResult==UARTSTATUS_OK )
-		{
-			ucData = packet_ringbuffer_get();
-			if( ucData==MONITOR_STREAM_PACKET_START )
-			{
-				fFound = true;
-				break;
-			}
-			else
-			{
-				fprintf(stderr, "WARNING: Skipping char 0x%02x.\n", ucData);
-			}
-		}
-		--uiRetries;
-	} while( uiRetries>0 );
-
-	if( fFound!=true )
-	{
-		fprintf(stderr, "receive_packet: no start char found!\n");
-		tResult = UARTSTATUS_FAILED_TO_SYNC;
-	}
-	else
-	{
-		/* Get the size information. */
-		tResult = packet_ringbuffer_fill(2);
-		if( tResult==UARTSTATUS_OK )
-		{
-			sizData  = packet_ringbuffer_peek(0);
-			sizData |= packet_ringbuffer_peek(1) << 8;
-
-			/* The complete packet consists of the size info, the user data and the crc.*/
-			sizPacket = 2 + sizData + 2;
-
-			/* Get the rest of the packet. */
-			tResult = packet_ringbuffer_fill(sizPacket);
-			if( tResult==UARTSTATUS_OK )
-			{
-				/* Generate the crc. */
-				usCrc = 0;
-				sizCnt = 0;
-				do
-				{
-					ucData = packet_ringbuffer_peek(sizCnt);
-					usCrc = crc16(usCrc, ucData);
-					++sizCnt;
-				} while( sizCnt<sizPacket );
-				if( usCrc==0 )
-				{
-					/* Get the complete packet. */
-					sizCnt = 0;
-					do
-					{
-						m_aucPacketInputBuffer[sizCnt] = packet_ringbuffer_get();
-						++sizCnt;
-					} while( sizCnt<sizPacket );
-
-					m_sizPacketInputBuffer = sizPacket;
-				}
-				else
-				{
-					fprintf(stderr, "! receive_packet: crc failed.\n");
-
-					/* Debug: get the complete packet and dump it. */
-					printf("packet size: 0x%08x bytes\n", sizPacket);
-					sizCnt = 0;
-					do
-					{
-						m_aucPacketInputBuffer[sizCnt] = packet_ringbuffer_get();
-						++sizCnt;
-					} while( sizCnt<sizPacket );
-					printf("Packet data:\n");
-					hexdump(m_aucPacketInputBuffer, sizPacket);
-
-					tResult = UARTSTATUS_CRC_MISMATCH;
-				}
-			}
-		}
-	}
-
-	return tResult;
-}
-
-
-UARTSTATUS_T romloader_uart::execute_command(const unsigned char *aucCommand, size_t sizCommand)
-{
-	UARTSTATUS_T tResult;
+	int iResult;
+	size_t sizRxPacket;
 	unsigned char ucStatus;
 	unsigned int uiRetryCnt;
 
@@ -631,42 +370,45 @@ UARTSTATUS_T romloader_uart::execute_command(const unsigned char *aucCommand, si
 	uiRetryCnt = 10;
 	do
 	{
-		tResult = send_packet(aucCommand, sizCommand);
-		if( tResult!=UARTSTATUS_OK )
+		iResult = m_ptEthDev->SendPacket(aucCommand, sizCommand);
+		if( iResult!=0 )
 		{
-			fprintf(stderr, "! execute_command: send_packet failed with errorcode %d\n", tResult);
+			fprintf(stderr, "! execute_command: send_packet failed with errorcode %d\n", iResult);
 		}
 		else
 		{
-			tResult = receive_packet();
-			if( tResult!=UARTSTATUS_OK )
+			iResult = m_ptEthDev->RecvPacket(aucResponse, sizResponse, 1000, &sizRxPacket);
+			if( iResult!=0 )
 			{
-				fprintf(stderr, "! execute_command: receive_packet failed with errorcode %d\n", tResult);
+				fprintf(stderr, "! execute_command: receive_packet failed with errorcode %d\n", iResult);
 			}
 			else
 			{
-				if( m_sizPacketInputBuffer<5 )
+				if( sizRxPacket<1 )
 				{
 					fprintf(stderr, "Error: received no user data!\n");
-					tResult = UARTSTATUS_MISSING_USERDATA;
+					iResult = -1;
 				}
 				else
 				{
-					ucStatus = m_aucPacketInputBuffer[2];
+					ucStatus = aucRxBuffer[0];
 					if( ucStatus==0 )
 					{
-						tResult = UARTSTATUS_OK;
+						/* Yay, received something with status ok. */
+						*psizResponse = sizRxPacket;
+						iResult = 0;
+						
 					}
 					else
 					{
 						fprintf(stderr, "Error: status is not ok: %d\n", ucStatus);
-						tResult = UARTSTATUS_COMMAND_EXECUTION_FAILED;
+						iResult = -1;
 					}
 				}
 			}
 		}
 
-		if( tResult!=UARTSTATUS_OK )
+		if( iResult!=0 )
 		{
 			--uiRetryCnt;
 			if( uiRetryCnt==0 )
@@ -684,18 +426,19 @@ UARTSTATUS_T romloader_uart::execute_command(const unsigned char *aucCommand, si
 			}
 		}
 
-	} while( tResult!=UARTSTATUS_OK );
+	} while( iResult!=0 );
 
-	return tResult;
+	return iResult;
 }
 
 
-unsigned char romloader_uart::read_data08(lua_State *ptClientData, unsigned long ulNetxAddress)
+unsigned char romloader_eth::read_data08(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
 	unsigned char aucCommand[6];
-	UARTSTATUS_T tResult;
+	int iResult;
 	unsigned char ucValue;
 	bool fOk;
+	size_t sizResponse;
 
 
 	/* Expect error. */
@@ -703,26 +446,26 @@ unsigned char romloader_uart::read_data08(lua_State *ptClientData, unsigned long
 
 	ucValue = 0;
 
-	aucCommand[0] = MONITOR_COMMAND_Read | (MONITOR_ACCESSSIZE_Byte<<6);
+	aucCommand[0] = MI_COMMAND_Read | (MI_ACCESSSIZE_Byte<<6);
 	aucCommand[1] = 1;
-	aucCommand[2] =  ulNetxAddress      & 0xffU;
-	aucCommand[3] = (ulNetxAddress>>8 ) & 0xffU;
-	aucCommand[4] = (ulNetxAddress>>16) & 0xffU;
-	aucCommand[5] = (ulNetxAddress>>24) & 0xffU;
-	tResult = execute_command(aucCommand, 6);
-	if( tResult!=UARTSTATUS_OK )
+	aucCommand[2] = (unsigned char)( ulNetxAddress      & 0xffU);
+	aucCommand[3] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
+	aucCommand[4] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
+	aucCommand[5] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
+	iResult = execute_command(aucCommand, 6, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
+	if( iResult<0 )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
 	}
 	else
 	{
-		if( m_sizPacketInputBuffer!=4+2 )
+		if( sizResponse!=1+1 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to read_data08 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to read_data08 has wrong packet size of %d!", m_pcName, this, sizResponse);
 		}
 		else
 		{
-			ucValue = m_aucPacketInputBuffer[3];
+			ucValue = aucRxBuffer[1];
 			fOk = true;
 		}
 	}
@@ -736,12 +479,13 @@ unsigned char romloader_uart::read_data08(lua_State *ptClientData, unsigned long
 }
 
 
-unsigned short romloader_uart::read_data16(lua_State *ptClientData, unsigned long ulNetxAddress)
+unsigned short romloader_eth::read_data16(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
 	unsigned char aucCommand[6];
-	UARTSTATUS_T tResult;
+	int iResult;
 	unsigned short usValue;
 	bool fOk;
+	size_t sizResponse;
 
 
 	/* Expect error. */
@@ -749,27 +493,27 @@ unsigned short romloader_uart::read_data16(lua_State *ptClientData, unsigned lon
 
 	usValue = 0;
 
-	aucCommand[0] = MONITOR_COMMAND_Read | (MONITOR_ACCESSSIZE_Word<<6);
+	aucCommand[0] = MI_COMMAND_Read | (MI_ACCESSSIZE_Word<<6);
 	aucCommand[1] = 2;
-	aucCommand[2] =  ulNetxAddress      & 0xffU;
-	aucCommand[3] = (ulNetxAddress>>8 ) & 0xffU;
-	aucCommand[4] = (ulNetxAddress>>16) & 0xffU;
-	aucCommand[5] = (ulNetxAddress>>24) & 0xffU;
-	tResult = execute_command(aucCommand, 6);
-	if( tResult!=UARTSTATUS_OK )
+	aucCommand[2] = (unsigned char)( ulNetxAddress      & 0xffU);
+	aucCommand[3] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
+	aucCommand[4] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
+	aucCommand[5] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
+	iResult = execute_command(aucCommand, 6, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
+	if( iResult<0 )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
 	}
 	else
 	{
-		if( m_sizPacketInputBuffer!=4+3 )
+		if( sizResponse!=1+2 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to read_data16 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to read_data16 has wrong packet size of %d!", m_pcName, this, sizResponse);
 		}
 		else
 		{
-			usValue = m_aucPacketInputBuffer[3] |
-				m_aucPacketInputBuffer[4]<<8;
+			usValue = aucRxBuffer[1] |
+			          aucRxBuffer[2]<<8;
 			fOk = true;
 		}
 	}
@@ -783,12 +527,13 @@ unsigned short romloader_uart::read_data16(lua_State *ptClientData, unsigned lon
 }
 
 
-unsigned long romloader_uart::read_data32(lua_State *ptClientData, unsigned long ulNetxAddress)
+unsigned long romloader_eth::read_data32(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
 	unsigned char aucCommand[6];
-	UARTSTATUS_T tResult;
+	int iResult;
 	unsigned long ulValue;
 	bool fOk;
+	size_t sizResponse;
 
 
 	/* Expect error. */
@@ -796,29 +541,29 @@ unsigned long romloader_uart::read_data32(lua_State *ptClientData, unsigned long
 
 	ulValue = 0;
 
-	aucCommand[0] = MONITOR_COMMAND_Read | (MONITOR_ACCESSSIZE_Long<<6);
+	aucCommand[0] = MI_COMMAND_Read | (MI_ACCESSSIZE_Long<<6);
 	aucCommand[1] = 4;
-	aucCommand[2] =  ulNetxAddress      & 0xffU;
-	aucCommand[3] = (ulNetxAddress>>8 ) & 0xffU;
-	aucCommand[4] = (ulNetxAddress>>16) & 0xffU;
-	aucCommand[5] = (ulNetxAddress>>24) & 0xffU;
-	tResult = execute_command(aucCommand, 6);
-	if( tResult!=UARTSTATUS_OK )
+	aucCommand[2] = (unsigned char)( ulNetxAddress      & 0xffU);
+	aucCommand[3] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
+	aucCommand[4] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
+	aucCommand[5] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
+	iResult = execute_command(aucCommand, 6, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
+	if( iResult<0 )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
 	}
 	else
 	{
-		if( m_sizPacketInputBuffer!=4+5 )
+		if( sizResponse!=1+4 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to read_data32 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to read_data32 has wrong packet size of %d!", m_pcName, this, sizResponse);
 		}
 		else
 		{
-			ulValue = m_aucPacketInputBuffer[3] |
-				m_aucPacketInputBuffer[4]<<8 |
-				m_aucPacketInputBuffer[5]<<16 |
-				m_aucPacketInputBuffer[6]<<24;
+			ulValue = aucRxBuffer[1] |
+			          aucRxBuffer[2]<<8 |
+			          aucRxBuffer[3]<<16 |
+			          aucRxBuffer[4]<<24;
 			fOk = true;
 		}
 	}
@@ -832,16 +577,17 @@ unsigned long romloader_uart::read_data32(lua_State *ptClientData, unsigned long
 }
 
 
-void romloader_uart::read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader_eth::read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	char *pcBuffer;
 	size_t sizBuffer;
 	bool fOk;
 	size_t sizChunk;
-	UARTSTATUS_T tResult;
-	unsigned char aucCommand[MONITOR_MAX_PACKET_SIZE];
+	unsigned char aucCommand[MI_ETH_MAX_PACKET_SIZE];
 	bool fIsRunning;
 	long lBytesProcessed;
+	size_t sizResponse;
+	int iResult;
 
 
 	/* Be optimistic. */
@@ -875,20 +621,20 @@ void romloader_uart::read_image(unsigned long ulNetxAddress, unsigned long ulSiz
 			do
 			{
 				sizChunk = ulSize;
-				if( sizChunk>MONITOR_MAX_PACKET_SIZE-6 )
+				if( sizChunk>MI_ETH_MAX_PACKET_SIZE-6 )
 				{
-					sizChunk = MONITOR_MAX_PACKET_SIZE-6;
+					sizChunk = MI_ETH_MAX_PACKET_SIZE-6;
 				}
 
-				aucCommand[0] = MONITOR_COMMAND_Read | (MONITOR_ACCESSSIZE_Byte<<6);
+				aucCommand[0] = MI_COMMAND_Read | (MI_ACCESSSIZE_Byte<<6);
 				aucCommand[1] = (unsigned char)sizChunk;
-				aucCommand[2] =  ulNetxAddress      & 0xffU;
-				aucCommand[3] = (ulNetxAddress>>8 ) & 0xffU;
-				aucCommand[4] = (ulNetxAddress>>16) & 0xffU;
-				aucCommand[5] = (ulNetxAddress>>24) & 0xffU;
+				aucCommand[2] = (unsigned char)( ulNetxAddress      & 0xffU);
+				aucCommand[3] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
+				aucCommand[4] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
+				aucCommand[5] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
 
-				tResult = execute_command(aucCommand, 6);
-				if( tResult!=UARTSTATUS_OK )
+				iResult = execute_command(aucCommand, 6, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
+				if( iResult<0 )
 				{
 					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
 					fOk = false;
@@ -896,15 +642,15 @@ void romloader_uart::read_image(unsigned long ulNetxAddress, unsigned long ulSiz
 				}
 				else
 				{
-					if( m_sizPacketInputBuffer!=4+sizChunk+1 )
+					if( sizResponse!=1+sizChunk )
 					{
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer to read_image has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
+						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer to read_image has wrong packet size of %d!", m_pcName, this, sizResponse);
 						fOk = false;
 						break;
 					}
 					else
 					{
-						memcpy(pcBuffer, m_aucPacketInputBuffer+3, sizChunk);
+						memcpy(pcBuffer, aucRxBuffer+1, sizChunk);
 						pcBuffer += sizChunk;
 						ulSize -= sizChunk;
 						ulNetxAddress += sizChunk;
@@ -928,12 +674,13 @@ void romloader_uart::read_image(unsigned long ulNetxAddress, unsigned long ulSiz
 }
 
 
-void romloader_uart::write_data08(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned char ucData)
+void romloader_eth::write_data08(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned char ucData)
 {
 	unsigned char aucCommand[7];
-	UARTSTATUS_T tResult;
 	unsigned long ulValue;
 	bool fOk;
+	size_t sizResponse;
+	int iResult;
 
 
 	/* Expect error. */
@@ -941,23 +688,23 @@ void romloader_uart::write_data08(lua_State *ptClientData, unsigned long ulNetxA
 
 	ulValue = 0;
 
-	aucCommand[0] = MONITOR_COMMAND_Write | (MONITOR_ACCESSSIZE_Byte<<6);
+	aucCommand[0] = MI_COMMAND_Write | (MI_ACCESSSIZE_Byte<<6);
 	aucCommand[1] = 1;
-	aucCommand[2] =  ulNetxAddress      & 0xffU;
-	aucCommand[3] = (ulNetxAddress>>8 ) & 0xffU;
-	aucCommand[4] = (ulNetxAddress>>16) & 0xffU;
-	aucCommand[5] = (ulNetxAddress>>24) & 0xffU;
+	aucCommand[2] = (unsigned char)( ulNetxAddress      & 0xffU);
+	aucCommand[3] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
+	aucCommand[4] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
+	aucCommand[5] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
 	aucCommand[6] = ucData;
-	tResult = execute_command(aucCommand, 7);
-	if( tResult!=UARTSTATUS_OK )
+	iResult = execute_command(aucCommand, 7, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
+	if( iResult<0 )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
 	}
 	else
 	{
-		if( m_sizPacketInputBuffer!=4+1 )
+		if( sizResponse!=1 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to write_data08 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to write_data08 has wrong packet size of %d!", m_pcName, this, sizResponse);
 		}
 		else
 		{
@@ -972,12 +719,13 @@ void romloader_uart::write_data08(lua_State *ptClientData, unsigned long ulNetxA
 }
 
 
-void romloader_uart::write_data16(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned short usData)
+void romloader_eth::write_data16(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned short usData)
 {
 	unsigned char aucCommand[8];
-	UARTSTATUS_T tResult;
 	unsigned long ulValue;
 	bool fOk;
+	size_t sizResponse;
+	int iResult;
 
 
 	/* Expect error. */
@@ -985,24 +733,24 @@ void romloader_uart::write_data16(lua_State *ptClientData, unsigned long ulNetxA
 
 	ulValue = 0;
 
-	aucCommand[0] = MONITOR_COMMAND_Write | (MONITOR_ACCESSSIZE_Word<<6);
+	aucCommand[0] = MI_COMMAND_Write | (MI_ACCESSSIZE_Word<<6);
 	aucCommand[1] = 2;
-	aucCommand[2] =  ulNetxAddress      & 0xffU;
-	aucCommand[3] = (ulNetxAddress>>8 ) & 0xffU;
-	aucCommand[4] = (ulNetxAddress>>16) & 0xffU;
-	aucCommand[5] = (ulNetxAddress>>24) & 0xffU;
-	aucCommand[6] =  usData    & 0xffU;
-	aucCommand[7] = (usData>>8)& 0xffU;
-	tResult = execute_command(aucCommand, 8);
-	if( tResult!=UARTSTATUS_OK )
+	aucCommand[2] = (unsigned char)( ulNetxAddress      & 0xffU);
+	aucCommand[3] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
+	aucCommand[4] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
+	aucCommand[5] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
+	aucCommand[6] = (unsigned char)( usData    & 0xffU);
+	aucCommand[7] = (unsigned char)((usData>>8)& 0xffU);
+	iResult = execute_command(aucCommand, 8, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
+	if( iResult<0 )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
 	}
 	else
 	{
-		if( m_sizPacketInputBuffer!=4+1 )
+		if( sizResponse!=1 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to write_data16 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to write_data16 has wrong packet size of %d!", m_pcName, this, sizResponse);
 		}
 		else
 		{
@@ -1017,12 +765,13 @@ void romloader_uart::write_data16(lua_State *ptClientData, unsigned long ulNetxA
 }
 
 
-void romloader_uart::write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData)
+void romloader_eth::write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData)
 {
 	unsigned char aucCommand[10];
-	UARTSTATUS_T tResult;
 	unsigned long ulValue;
 	bool fOk;
+	size_t sizResponse;
+	int iResult;
 
 
 	/* Expect error. */
@@ -1030,26 +779,26 @@ void romloader_uart::write_data32(lua_State *ptClientData, unsigned long ulNetxA
 
 	ulValue = 0;
 
-	aucCommand[0] = MONITOR_COMMAND_Write | (MONITOR_ACCESSSIZE_Word<<6);
+	aucCommand[0] = MI_COMMAND_Write | (MI_ACCESSSIZE_Word<<6);
 	aucCommand[1] = 4;
-	aucCommand[2] =  ulNetxAddress      & 0xffU;
-	aucCommand[3] = (ulNetxAddress>>8 ) & 0xffU;
-	aucCommand[4] = (ulNetxAddress>>16) & 0xffU;
-	aucCommand[5] = (ulNetxAddress>>24) & 0xffU;
-	aucCommand[6] =  ulData     & 0xffU;
-	aucCommand[7] = (ulData>> 8)& 0xffU;
-	aucCommand[8] = (ulData>>16)& 0xffU;
-	aucCommand[9] = (ulData>>24)& 0xffU;
-	tResult = execute_command(aucCommand, 10);
-	if( tResult!=UARTSTATUS_OK )
+	aucCommand[2] = (unsigned char)( ulNetxAddress      & 0xffU);
+	aucCommand[3] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
+	aucCommand[4] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
+	aucCommand[5] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
+	aucCommand[6] = (unsigned char)( ulData     & 0xffU);
+	aucCommand[7] = (unsigned char)((ulData>> 8)& 0xffU);
+	aucCommand[8] = (unsigned char)((ulData>>16)& 0xffU);
+	aucCommand[9] = (unsigned char)((ulData>>24)& 0xffU);
+	iResult = execute_command(aucCommand, 10, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
+	if( iResult<0 )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
 	}
 	else
 	{
-		if( m_sizPacketInputBuffer!=4+1 )
+		if( sizResponse!=1 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to write_data32 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
+			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to write_data32 has wrong packet size of %d!", m_pcName, this, sizResponse);
 		}
 		else
 		{
@@ -1064,18 +813,19 @@ void romloader_uart::write_data32(lua_State *ptClientData, unsigned long ulNetxA
 }
 
 
-void romloader_uart::write_image(unsigned long ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader_eth::write_image(unsigned long ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	bool fOk;
 	size_t sizChunk;
-	UARTSTATUS_T tResult;
-	unsigned char aucCommand[MONITOR_MAX_PACKET_SIZE];
+	unsigned char aucCommand[MI_ETH_MAX_PACKET_SIZE];
 	size_t sizOutBuf;
 	size_t sizInBuf;
 	unsigned char ucCommand;
 	unsigned char ucStatus;
 	bool fIsRunning;
 	long lBytesProcessed;
+	size_t sizResponse;
+	int iResult;
 
 
 	/* Be optimistic. */
@@ -1092,20 +842,20 @@ void romloader_uart::write_image(unsigned long ulNetxAddress, const char *pcBUFF
 		do
 		{
 			sizChunk = sizBUFFER_IN;
-			if( sizChunk>MONITOR_MAX_PACKET_SIZE-11 )
+			if( sizChunk>MI_ETH_MAX_PACKET_SIZE-6 )
 			{
-				sizChunk = MONITOR_MAX_PACKET_SIZE-11;
+				sizChunk = MI_ETH_MAX_PACKET_SIZE-6;
 			}
 
-			aucCommand[0] = MONITOR_COMMAND_Write | (MONITOR_ACCESSSIZE_Byte<<6);
-			aucCommand[1] = sizChunk;
-			aucCommand[2] =  ulNetxAddress      & 0xffU;
-			aucCommand[3] = (ulNetxAddress>>8 ) & 0xffU;
-			aucCommand[4] = (ulNetxAddress>>16) & 0xffU;
-			aucCommand[5] = (ulNetxAddress>>24) & 0xffU;
+			aucCommand[0] = MI_COMMAND_Write | (MI_ACCESSSIZE_Byte<<6);
+			aucCommand[1] = (unsigned char)(sizChunk);
+			aucCommand[2] = (unsigned char)( ulNetxAddress      & 0xffU);
+			aucCommand[3] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
+			aucCommand[4] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
+			aucCommand[5] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
 			memcpy(aucCommand+6, pcBUFFER_IN, sizChunk);
-			tResult = execute_command(aucCommand, sizChunk+6);
-			if( tResult!=UARTSTATUS_OK )
+			iResult = execute_command(aucCommand, sizChunk+6, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
+			if( sizResponse<0 )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
 				fOk = false;
@@ -1113,9 +863,9 @@ void romloader_uart::write_image(unsigned long ulNetxAddress, const char *pcBUFF
 			}
 			else
 			{
-				if( m_sizPacketInputBuffer!=4+1 )
+				if( sizResponse!=1 )
 				{
-					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer to write_data08 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer to write_data08 has wrong packet size of %d!", m_pcName, this, sizResponse);
 					fOk = false;
 					break;
 				}
@@ -1143,16 +893,16 @@ void romloader_uart::write_image(unsigned long ulNetxAddress, const char *pcBUFF
 }
 
 
-void romloader_uart::call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader_eth::call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	bool fOk;
-	UARTSTATUS_T tResult;
 	unsigned char aucCommand[9];
 	const unsigned char aucCancelBuf[1] = { 0x2b };
 	unsigned char ucStatus;
 	bool fIsRunning;
 	char *pcProgressData;
 	size_t sizProgressData;
+	size_t sizResponse;
 
 
 	if( m_fIsConnected==false )
@@ -1163,7 +913,7 @@ void romloader_uart::call(unsigned long ulNetxAddress, unsigned long ulParameter
 	else
 	{
 		/* Construct the command packet. */
-		aucCommand[0x00] = MONITOR_COMMAND_Execute;
+		aucCommand[0x00] = MI_COMMAND_Execute;
 		aucCommand[0x01] = (unsigned char)( ulNetxAddress      & 0xffU);
 		aucCommand[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
 		aucCommand[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
@@ -1175,17 +925,17 @@ void romloader_uart::call(unsigned long ulNetxAddress, unsigned long ulParameter
 
 		printf("Executing call command:\n");
 		hexdump(aucCommand, 9);
-		tResult = execute_command(aucCommand, 9);
-		if( tResult!=UARTSTATUS_OK )
+		sizResponse = execute_command(aucCommand, 9, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
+		if( sizResponse<0 )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
 			fOk = false;
 		}
 		else
 		{
-			if( m_sizPacketInputBuffer!=4+1 )
+			if( sizResponse!=4+1 )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer to call command has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
+				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer to call command has wrong packet size of %d!", m_pcName, this, sizResponse);
 				fOk = false;
 			}
 			else
@@ -1195,7 +945,7 @@ void romloader_uart::call(unsigned long ulNetxAddress, unsigned long ulParameter
 				{
 					pcProgressData = NULL;
 					sizProgressData = 0;
-
+#if 0
 					tResult = receive_packet();
 					if( tResult==UARTSTATUS_TIMEOUT )
 					{
@@ -1243,7 +993,7 @@ void romloader_uart::call(unsigned long ulNetxAddress, unsigned long ulParameter
 //							break;
 						}
 					}
-
+#endif
 				}
 			}
 		}
@@ -1259,19 +1009,19 @@ void romloader_uart::call(unsigned long ulNetxAddress, unsigned long ulParameter
 /*-------------------------------------*/
 
 
-romloader_uart_reference::romloader_uart_reference(void)
+romloader_eth_reference::romloader_eth_reference(void)
  : muhkuh_plugin_reference()
 {
 }
 
 
-romloader_uart_reference::romloader_uart_reference(const char *pcName, const char *pcTyp, bool fIsUsed, romloader_uart_provider *ptProvider)
+romloader_eth_reference::romloader_eth_reference(const char *pcName, const char *pcTyp, bool fIsUsed, romloader_eth_provider *ptProvider)
  : muhkuh_plugin_reference(pcName, pcTyp, fIsUsed, ptProvider)
 {
 }
 
 
-romloader_uart_reference::romloader_uart_reference(const romloader_uart_reference *ptCloneMe)
+romloader_eth_reference::romloader_eth_reference(const romloader_eth_reference *ptCloneMe)
  : muhkuh_plugin_reference(ptCloneMe)
 {
 }

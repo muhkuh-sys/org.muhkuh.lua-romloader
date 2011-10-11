@@ -21,7 +21,7 @@
 
 #include "../romloader.h"
 
-#include "netx/src/monitor_commands.h"
+#include "machine_interface_commands.h"
 
 
 #ifndef __ROMLOADER_ETH_MAIN_H__
@@ -43,10 +43,16 @@ class romloader_eth_provider;
 
 /*-----------------------------------*/
 
+/* This is the maximum size for a packet buffer in bytes.
+ * NOTE: This has nothing to do with the maximum packet size
+ * for a hboot backet.
+ */
+#define ETH_MAX_PACKET_SIZE 4096
+
 class romloader_eth : public romloader
 {
 public:
-	romloader_eth(const char *pcName, const char *pcTyp, romloader_eth_provider *ptProvider, char *pcDeviceName);
+	romloader_eth(const char *pcName, const char *pcTyp, romloader_eth_provider *ptProvider, const char *pcServerName);
 	~romloader_eth(void);
 
 // *** lua interface start ***
@@ -78,13 +84,16 @@ public:
 // *** lua interface end ***
 
 private:
-
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);
+	int execute_command(const unsigned char *aucCommand, size_t sizCommand, unsigned char *aucResponse, size_t sizResponse, size_t *psizResponse);
 
 	bool chip_init(lua_State *ptClientData);
 
 	bool m_fIsConnected;
 	romloader_eth_device_platform *m_ptEthDev;
+
+	unsigned char aucRxBuffer[ETH_MAX_PACKET_SIZE];
+	unsigned char aucTxBuffer[ETH_MAX_PACKET_SIZE];
 };
 
 /*-----------------------------------*/

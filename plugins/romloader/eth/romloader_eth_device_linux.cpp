@@ -19,23 +19,24 @@
  ***************************************************************************/
 
 
-#include <dirent.h>
 #include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <sys/time.h>
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <time.h>
+#include <unistd.h>
 
 
 #include "romloader_eth_device_linux.h"
+#include "machine_interface_commands.h"
 
 
 romloader_eth_device_linux::romloader_eth_device_linux(const char *pcServerName)
   : romloader_eth_device(pcServerName)
 {
+	/* No socket yet. */
+	m_iHbootServer_Socket = -1;
+
+	/* Clear the server address. */
+	memset(&m_tHbootServer_Addr, 0, sizeof(m_tHbootServer_Addr));
+
 }
 
 
@@ -47,11 +48,132 @@ romloader_eth_device_linux::~romloader_eth_device_linux(void)
 
 bool romloader_eth_device_linux::Open(void)
 {
+	bool fOk;
+	struct in_addr tServerAddress;
+	int iResult;
+	const unsigned short usHBootServerPort = 53280;
+	int iServerSocket;
+
+
+	iResult = inet_pton(AF_INET, m_pcServerName, &tServerAddress);
+	if( iResult!=1 )
+	{
+		fprintf(stderr, "Failed to convert the servername '%s' to an IP!\n", m_pcServerName);
+		fOk = false;
+	}
+	else
+	{
+		/* Open a socket. */
+		iServerSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+		if( iServerSocket==-1 )
+		{
+			fprintf(stderr, "Failed to create socket!\n");
+			fOk = false;
+		}
+		else
+		{
+			/* Get the address of the HBoot server. */
+			memset(&m_tHbootServer_Addr, 0, sizeof(m_tHbootServer_Addr));
+			m_tHbootServer_Addr.tAddrIn.sin_family = AF_INET;
+			m_tHbootServer_Addr.tAddrIn.sin_port = htons(usHBootServerPort);
+			memcpy(&m_tHbootServer_Addr.tAddrIn.sin_addr, &tServerAddress, sizeof(struct in_addr));
+
+			/* Copy the server socket handle. */
+			m_iHbootServer_Socket = iServerSocket;
+
+			fOk = true;
+		}
+	}
+
+	return fOk;
 }
 
 
 void romloader_eth_device_linux::Close(void)
 {
+	/* Shutdown the socket. */
+	shutdown(m_iHbootServer_Socket, SHUT_RDWR);
+
+	/* Close the socket. */
+	close(m_iHbootServer_Socket);
+}
+
+
+int romloader_eth_device_linux::SendPacket(const unsigned char *pucData, size_t sizData)
+{
+	ssize_t ssizResult;
+	int iResult;
+
+
+	/* Expect success. */
+	iResult = 0;
+
+	/* Send a packet. */
+	ssizResult = sendto(m_iHbootServer_Socket, pucData, sizData, 0, &m_tHbootServer_Addr.tAddr, sizeof(m_tHbootServer_Addr));
+	if( ssizResult==-1 )
+	{
+		fprintf(stderr, "Failed to send packet: %d: %s\n", errno, strerror(errno));
+		iResult = -1;
+	}
+	if( ssizResult!=sizData )
+	{
+		fprintf(stderr, "Failed to send packet. %d requested, but only %d sent.\n", sizData, ssizResult);
+		iResult = -1;
+	}
+
+	return iResult;
+}
+
+
+int romloader_eth_device_linux::RecvPacket(unsigned char *pucData, size_t sizData, unsigned long ulTimeout, size_t *psizPacket)
+{
+	fd_set tRxFileDescSet;
+	struct timeval tTimeVal;
+	int iResult;
+	ssize_t ssizPacket;
+
+
+	/* Watch the socket to see when it has input. */
+	FD_ZERO(&tRxFileDescSet);
+	FD_SET(m_iHbootServer_Socket, &tRxFileDescSet);
+
+	/* Wait 0.01 second each until no more data arrives or 100 packets were received. */
+	tTimeVal.tv_sec = 0;
+	tTimeVal.tv_usec = 10000;
+
+	/* Nothing received yet. */
+	ssizPacket = 0;
+
+	iResult = select(m_iHbootServer_Socket+1, &tRxFileDescSet, NULL, NULL, &tTimeVal);
+	if( iResult==0 )
+	{
+		/* Timeout and nothing received. */
+	}
+	else if( iResult==1 )
+	{
+		/* Receive the answer. */
+		ssizPacket = recvfrom(m_iHbootServer_Socket, pucData, sizData, 0, NULL, 0);
+		if( ssizPacket<0 )
+		{
+			fprintf(stderr, "Failed to receive packet.\n");
+			ssizPacket = 0;
+			iResult = -1;
+		}
+		else
+		{
+			/* All ok! */
+			iResult = 0;
+		}
+	}
+	else
+	{
+		fprintf(stderr, "Failed to wait for data.\n");
+	}
+
+	/* Return the packet's size. */
+	*psizPacket = (size_t)ssizPacket;
+
+	return iResult;
 }
 
 
@@ -81,6 +203,13 @@ size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 	unsigned int uiVersionMin;
 	unsigned long ulIp;
 	ssize_t ssizPacket;
+	size_t sizRefCnt;
+	size_t sizRefMax;
+	char **ppcRef;
+	char **ppcRefNew;
+	size_t sizEntry;
+	char *pcRef;
+	const unsigned char aucMagic[5] = { 0x00, 'M', 'O', 'O', 'H' };
 
 
 	/* Init References array. */
@@ -171,7 +300,7 @@ size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 							uiVersionMaj = aucBuffer[7] | aucBuffer[8]<<8U;
 
 							ulIp = uSrcAddr.tAddrIn.sin_addr.s_addr;
-							printf("Found HBoot V%d.%d at %d.%d.%d.%d .\n", uiVersionMaj, uiVersionMin, ulIp&0xffU, (ulIp>>8U)&0xffU, (ulIp>>16U)&0xffU, (ulIp>>24U)&0xffU);
+							printf("Found HBoot V%d.%d at %ld.%ld.%ld.%ld .\n", uiVersionMaj, uiVersionMin, ulIp&0xffU, (ulIp>>8U)&0xffU, (ulIp>>16U)&0xffU, (ulIp>>24U)&0xffU);
 
 							/* Is enough space in the array for one more entry? */
 							if( sizRefCnt>=sizRefMax )
@@ -199,7 +328,7 @@ size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 							{
 								break;
 							}
-							snprintf(pcRef, sizEntry, "romloader_eth_%d.%d.%d.%d", ulIp&0xffU, (ulIp>>8U)&0xffU, (ulIp>>16U)&0xffU, (ulIp>>24U)&0xffU);
+							snprintf(pcRef, sizEntry, "romloader_eth_%ld.%ld.%ld.%ld", ulIp&0xffU, (ulIp>>8U)&0xffU, (ulIp>>16U)&0xffU, (ulIp>>24U)&0xffU);
 							ppcRef[sizRefCnt++] = pcRef;
 						}
 					}
