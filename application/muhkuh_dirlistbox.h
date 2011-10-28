@@ -19,69 +19,53 @@
  ***************************************************************************/
 
 #include <wx/wx.h>
-#include <wx/dynarray.h>
-#include <wx/vlbox.h>
-#include <wx/tooltip.h>
+#include <wx/scrolwin.h>
 
 
 #ifndef __MUHKUH_DIRLISTBOX_H__
 #define __MUHKUH_DIRLISTBOX_H__
 
 
-WX_DEFINE_ARRAY_INT(int, taiPathPixelSize);
+typedef struct
+{
+	wxTextCtrl *ptTextCtrl;
+	wxBitmapButton *ptBitmapButton;
+} DIRLIST_ENTRY_T;
 
-class muhkuh_dirlistbox : public wxVListBox
+
+class muhkuh_dirlistbox : public wxScrolledWindow
 {
 public:
-	muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxPoint& pos, const wxSize& size, const wxArrayString& astrPaths, const wxString &strAppPath, long style);
+	muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxArrayString& astrPaths);
 	~muhkuh_dirlistbox(void);
 
-	size_t Append(const wxString&  item);
-	void Delete(unsigned int n);
-	unsigned int GetCount() const;
-	wxString  GetString(unsigned int n) const;
-	void SetString(unsigned int n, const wxString&  string);
-	void StartEdit(unsigned int n);
-	void CancelEdit(void);
+	wxString GetPaths(char cSeparator);
+	void OnButtonBrowse(wxCommandEvent &event);
+	void OnButtonAdd(wxCommandEvent &event);
+	void OnButtonRemove(wxCommandEvent &event);
+	void OnButtonEdit(wxCommandEvent &event);
+	void OnButtonUp(wxCommandEvent &event);
+	void OnButtonDown(wxCommandEvent &event);
 
-	void OnBrowseButton(wxCommandEvent &event);
-	void OnTextEnter(wxCommandEvent &event);
-	void OnKeyDown(wxKeyEvent& event);
-
-	wxString GetPaths(wxChar cSeparator) const;
-
-protected:
-	virtual void OnDrawItem(wxDC& dc, const wxRect& rect, size_t n) const;
-	virtual wxCoord OnMeasureItem(size_t n) const;
-
+	void OnFocusChild(wxChildFocusEvent &event);
 private:
-	static void stopEditing(muhkuh_dirlistbox *ptSelf);
+	bool select_path(wxString &strPath);
+	void append_new_list_item(wxString strPath);
+	void updateButtons(int iSelection);
 
-	// the array for all paths
-	wxArrayString m_astrPaths;
-	taiPathPixelSize m_aiPathPixelHeight;
-	taiPathPixelSize m_aiPathPixelWidth;
+	/* These items are not owned by this class. */
+	wxFlexGridSizer *m_ptSizer;
+	wxToolBar *m_ptToolBar;
 
-	// the application path
-	wxString m_strApplicationPath;
+	wxBitmap *m_ptBitmap;
 
-	// the default height for all lines
-	wxCoord tDefaultHeight;
+	size_t m_sizDirlistEntriesCnt;
+	size_t m_sizDirlistEntriesMax;
+	DIRLIST_ENTRY_T *m_patDirlistEntries;
 
-	// the active item is shown with an edit field and a browse button
-	// it's only valid if it's >=0
-	size_t sizActiveItem;
+	wxString strLastUsedPath;
 
-	// size of the browse button
-	int m_iButtonWidth;
-	int m_iDotDotDotWidth;
-
-	wxTextCtrl *m_ptTextCtrl;
-	wxButton *m_ptBrowseButton;
-	int m_iTextXOffset;
-	wxColor m_colTextNormal;
-	wxColor m_colTextSelected;
-	wxFont m_fontDirlist;
+	int m_iSelectedRow;
 
     DECLARE_EVENT_TABLE()
 };

@@ -18,402 +18,558 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "muhkuh_dirlistbox.h"
 
 #include <wx/filename.h>
+#include <wx/stdpaths.h>
 
-#include "muhkuh_id.h"
+#include "muhkuh_dirlistbox.h"
+#include "muhkuh_icons.h"
 
-BEGIN_EVENT_TABLE(muhkuh_dirlistbox, wxVListBox)
-	EVT_TEXT_ENTER(muhkuh_dirlistbox_TextCtrl,		muhkuh_dirlistbox::OnTextEnter)
-	EVT_BUTTON(muhkuh_dirlistbox_BrowseButton,		muhkuh_dirlistbox::OnBrowseButton)
+
+BEGIN_EVENT_TABLE(muhkuh_dirlistbox, wxScrolledWindow)
+	EVT_BUTTON(wxID_ANY,                                            muhkuh_dirlistbox::OnButtonBrowse)
+
+	EVT_TOOL(wxID_ADD,     muhkuh_dirlistbox::OnButtonAdd)
+	EVT_TOOL(wxID_DELETE,  muhkuh_dirlistbox::OnButtonRemove)
+	EVT_TOOL(wxID_EDIT,    muhkuh_dirlistbox::OnButtonEdit)
+	EVT_TOOL(wxID_UP,      muhkuh_dirlistbox::OnButtonUp)
+	EVT_TOOL(wxID_DOWN,    muhkuh_dirlistbox::OnButtonDown)
+
+	EVT_CHILD_FOCUS(muhkuh_dirlistbox::OnFocusChild)
 END_EVENT_TABLE()
 
-muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxPoint& pos, const wxSize& size, const wxArrayString& astrPaths, const wxString &strAppPath, long style)
- : wxVListBox(parent, id, pos, size, style)
- , m_astrPaths(astrPaths)
- , m_strApplicationPath(strAppPath)
+
+muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxArrayString& astrPaths)
+ : wxScrolledWindow(parent, id)
+ , m_sizDirlistEntriesCnt(0)
+ , m_sizDirlistEntriesMax(0)
+ , m_patDirlistEntries(NULL)
+ , m_ptBitmap(NULL)
+ , m_iSelectedRow(wxNOT_FOUND)
 {
-	wxSize tSize;
+	size_t sizNewSize;
+	DIRLIST_ENTRY_T *ptArray;
 	size_t sizCnt;
 	size_t sizMax;
-	wxMemoryDC memoryDC;
+	wxBoxSizer *ptMainSizer;
 
 
-	m_ptTextCtrl = new wxTextCtrl(this, muhkuh_dirlistbox_TextCtrl, wxT(""), wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER);
-	m_ptBrowseButton = new wxButton(this, muhkuh_dirlistbox_BrowseButton, wxT("..."), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
-	m_ptTextCtrl->Show(false);
-	m_ptBrowseButton->Show(false);
-
-	tSize = m_ptTextCtrl->GetEffectiveMinSize();
-	tDefaultHeight = tSize.GetHeight();
-
-	tSize.SetWidth(-1);
-	m_ptBrowseButton->SetMinSize(tSize);
-	tSize = m_ptBrowseButton->GetEffectiveMinSize();
-	m_iButtonWidth = tSize.GetWidth();
-
-	m_ptTextCtrl->Connect(muhkuh_dirlistbox_TextCtrl, wxEVT_KEY_DOWN, wxKeyEventHandler(muhkuh_dirlistbox::OnKeyDown));
-
-	// set default config values
-	m_iTextXOffset = 4;
-	m_colTextNormal = *wxBLACK;
-	m_colTextSelected = *wxWHITE;
-	m_fontDirlist = m_ptTextCtrl->GetFont();
-
-	// set font for this list
-	SetFont( m_fontDirlist );
-
-	// create a paintDC to get the pixel length of the path strings
-	// use this control's font
-	memoryDC.SetFont( m_fontDirlist );
-
-	// loop over all strings and get the pixel width
-	sizCnt = 0;
-	sizMax = m_astrPaths.GetCount();
-	while( sizCnt<sizMax )
+	/* Allocate an initial array for the dirlist entries.
+	 * The initial size is either 2 times the number of incoming paths or 16.
+	 * The higher value is used.
+	 */
+	sizNewSize = astrPaths.GetCount() * 2;
+	if( sizNewSize<16 )
 	{
-		tSize = memoryDC.GetTextExtent( m_astrPaths.Item(sizCnt) );
-		m_aiPathPixelHeight.Add( tSize.GetHeight() );
-		m_aiPathPixelWidth.Add( tSize.GetWidth() );
+		sizNewSize = 16;
+	}
+	ptArray = (DIRLIST_ENTRY_T*)malloc(sizeof(DIRLIST_ENTRY_T)*sizNewSize);
+	if( ptArray!=NULL )
+	{
+		m_patDirlistEntries = ptArray;
+		m_sizDirlistEntriesMax = sizNewSize;
+	}
+
+
+	/* Create the main sizer. */
+	ptMainSizer = new wxBoxSizer(wxVERTICAL);
+	SetSizer(ptMainSizer);
+
+
+	/* Create the flex grid sizer for the elements. */
+	m_ptSizer = new wxFlexGridSizer(2, 2, 0);
+	/* The first column holds the text. This one should grow on a resize. */
+	m_ptSizer->AddGrowableCol(0, 1);
+	/* The text column should only grow in horizontal size. It has only one line. */
+	m_ptSizer->SetFlexibleDirection(wxHORIZONTAL);
+	/* The 2nd column holds a button with a fixed size. It should not grow at all. */
+	m_ptSizer->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_NONE);
+	ptMainSizer->Add(m_ptSizer, 1, wxEXPAND);
+
+
+	/* Assign the standard folder bitmap. */
+	m_ptBitmap = new wxBitmap(icon_famfamfam_silk_folder);
+
+
+	/* Create the path toolbar. */
+	m_ptToolBar = new wxToolBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,  wxTB_HORIZONTAL|wxNO_BORDER|wxTB_TEXT);
+	m_ptToolBar->AddTool(wxID_ADD, _("Add"), icon_famfamfam_silk_folder_add, wxNullBitmap, wxITEM_NORMAL, _("Add Path"), _("Add a new include path to the list"));
+	m_ptToolBar->AddTool(wxID_DELETE, _("Remove"), icon_famfamfam_silk_folder_delete, wxNullBitmap, wxITEM_NORMAL, _("Remove Path"), _("Remove the selected include path from the list"));
+	m_ptToolBar->AddTool(wxID_EDIT, _("Edit"), icon_famfamfam_silk_folder_edit, wxNullBitmap, wxITEM_NORMAL, _("Edit Path"), _("Edit the selected include path"));
+	m_ptToolBar->AddTool(wxID_UP, _("Up"), icon_famfamfam_silk_arrow_up, wxNullBitmap, wxITEM_NORMAL, _("Move Path Up"), _("Move the selected include path up"));
+	m_ptToolBar->AddTool(wxID_DOWN, _("Down"), icon_famfamfam_silk_arrow_down, wxNullBitmap, wxITEM_NORMAL, _("Move Path Down"), _("Move the selected include path down"));
+	m_ptToolBar->EnableTool(wxID_DELETE, false);
+	m_ptToolBar->EnableTool(wxID_EDIT, false);
+	m_ptToolBar->EnableTool(wxID_UP, false);
+	m_ptToolBar->EnableTool(wxID_DOWN, false);
+	m_ptToolBar->Realize();
+	ptMainSizer->Add(m_ptToolBar, 0, wxEXPAND);
+
+	/* Add all elements from the paths array. */
+	sizCnt = 0;
+	sizMax = astrPaths.GetCount();
+	while(sizCnt<sizMax)
+	{
+		append_new_list_item(astrPaths.Item(sizCnt));
 		++sizCnt;
 	}
-	SetLineCount(sizMax);
-
-	// get the size of "..."
-	tSize = memoryDC.GetTextExtent( wxT("...") );
-	m_iDotDotDotWidth = tSize.GetWidth();
-
-	// no active item
-	sizActiveItem = -1;
 }
 
 
 muhkuh_dirlistbox::~muhkuh_dirlistbox(void)
 {
+	if( m_ptBitmap!=NULL )
+	{
+		free(m_ptBitmap);
+		m_ptBitmap = NULL;
+	}
+
+	if( m_patDirlistEntries!=NULL )
+	{
+		free(m_patDirlistEntries);
+		m_patDirlistEntries = NULL;
+	}
 }
 
 
-void muhkuh_dirlistbox::OnDrawItem(wxDC& dc, const wxRect& rect, size_t n) const
+wxString muhkuh_dirlistbox::GetPaths(char cSeparator)
 {
+	bool fFirstEntry;
+	DIRLIST_ENTRY_T *ptCnt;
+	DIRLIST_ENTRY_T *ptEnd;
 	wxString strPath;
-	wxSize tStringSize;
-	int iYOffset;
-	bool fIsSelected;
+	wxString strPathElement;
 
 
-	// set the font
-	dc.SetFont(m_fontDirlist);
-
-	// is this the active item?
-	if( n==sizActiveItem )
+	ptCnt = m_patDirlistEntries;
+	ptEnd = ptCnt + m_sizDirlistEntriesCnt;
+	fFirstEntry = true;
+	while(ptCnt<ptEnd)
 	{
-		// draw active item
-		m_ptTextCtrl->SetSize(rect.x, rect.y, rect.width-m_iButtonWidth, rect.height);
-		m_ptBrowseButton->SetSize(rect.x+rect.width-m_iButtonWidth, rect.y, m_iButtonWidth, rect.height);
-	}
-	else
-	{
-		// draw simple string
-
-		// is the index in range?
-		if( n<m_astrPaths.GetCount() )
+		strPathElement = ptCnt->ptTextCtrl->GetValue();
+		if( strPathElement.IsEmpty()==false )
 		{
-			strPath = m_astrPaths.Item(n);
-			tStringSize.Set( m_aiPathPixelWidth.Item(n), m_aiPathPixelHeight.Item(n) );
-		}
-		else
-		{
-			tStringSize.Set( 0, 0 );
-		}
-
-		// is the item selected? -> draw text with different color
-		fIsSelected = IsSelected(n);
-		dc.SetTextForeground( fIsSelected?m_colTextSelected:m_colTextNormal );
-
-		iYOffset = (tDefaultHeight - tStringSize.GetHeight())/2;
-		// does the text plus offset fit into the window?
-		if( (tStringSize.GetWidth()+m_iTextXOffset)>rect.width )
-		{
+			if( fFirstEntry==false )
 			{
-				wxDCClipper clip(dc, rect.x+m_iTextXOffset, rect.y, rect.width-m_iDotDotDotWidth, rect.height);
-				dc.DrawText(strPath, rect.x+m_iTextXOffset, rect.y+iYOffset);
+				strPath += cSeparator;
 			}
-			dc.DrawText(wxT("..."), rect.x+rect.width-m_iDotDotDotWidth, rect.y+iYOffset);
+			fFirstEntry = false;
+			strPath += strPathElement;
 		}
-		else
-		{
-			dc.DrawText(strPath, rect.x+m_iTextXOffset, rect.y+iYOffset);
-		}
+		++ptCnt;
 	}
+
+	return strPath;
 }
 
 
-wxCoord muhkuh_dirlistbox::OnMeasureItem(size_t n) const
+void muhkuh_dirlistbox::OnButtonBrowse(wxCommandEvent &event)
 {
-	// all lines have the same height, ignore 'n'
-	return tDefaultHeight;
-}
-
-
-
-size_t muhkuh_dirlistbox::Append(const wxString&  item)
-{
-	wxSize tSize;
-	size_t sizLineCount;
-	wxMemoryDC memoryDC;
-
-
-	// create a paintDC to get the pixel length of the path strings
-	// use this control's font
-	memoryDC.SetFont( m_fontDirlist );
-
-	// get the string's pixel size
-	tSize = memoryDC.GetTextExtent(item);
-	// append the new item to the path array
-	m_astrPaths.Add(item);
-	m_aiPathPixelHeight.Add( tSize.GetHeight() );
-	m_aiPathPixelWidth.Add( tSize.GetWidth() );
-	// set the new linecount
-	sizLineCount = m_astrPaths.GetCount();
-	SetLineCount(sizLineCount);
-
-	return sizLineCount-1;
-}
-
-
-void muhkuh_dirlistbox::Delete(unsigned int n)
-{
-	size_t sizLineCount;
-
-
-	// get old line count
-	sizLineCount = m_astrPaths.GetCount();
-	if( n<sizLineCount )
-	{
-		// remove the item from the path array
-		m_astrPaths.RemoveAt(n);
-		m_aiPathPixelHeight.RemoveAt(n);
-		m_aiPathPixelWidth.RemoveAt(n);
-		// set new linecount
-		--sizLineCount;
-		SetLineCount(sizLineCount);
-		// Redraw all modified lines
-		RefreshAll();
-	}
-}
-
-
-unsigned int muhkuh_dirlistbox::GetCount() const
-{
-	return m_astrPaths.GetCount();
-}
-
-
-wxString  muhkuh_dirlistbox::GetString(unsigned int n) const
-{
-	return m_astrPaths.Item(n);
-}
-
-
-void muhkuh_dirlistbox::SetString(unsigned int n, const wxString&  string)
-{
-	wxSize tSize;
-	size_t sizLineCount;
-	wxMemoryDC memoryDC;
-
-
-	// create a paintDC to get the pixel length of the path strings
-	// use this control's font
-	memoryDC.SetFont( m_fontDirlist );
-
-	// get old line count
-	sizLineCount = m_astrPaths.GetCount();
-	if( n<sizLineCount )
-	{
-		// get the string's pixel size
-		tSize = memoryDC.GetTextExtent(string);
-
-		// remove the old item from the path array
-		m_astrPaths.RemoveAt(n);
-		m_aiPathPixelHeight.RemoveAt(n);
-		m_aiPathPixelWidth.RemoveAt(n);
-
-		// insert the new item
-		m_astrPaths.Insert(string, n);
-		m_aiPathPixelHeight.Insert(tSize.GetHeight(), n);
-		m_aiPathPixelWidth.Insert(tSize.GetWidth(), n);
-
-		// Redraw the modified line
-		RefreshLine(n);
-	}
-}
-
-
-void muhkuh_dirlistbox::StartEdit(unsigned int n)
-{
-	size_t sizLineCount;
-
-
-	// get old line count
-	sizLineCount = m_astrPaths.GetCount();
-	if( n<sizLineCount )
-	{
-		// set the text ctrl contents
-		m_ptTextCtrl->SetValue(m_astrPaths.Item(n));
-
-		m_ptTextCtrl->Show(true);
-		m_ptBrowseButton->Show(true);
-
-		sizActiveItem = n;
-		// Redraw the modified line
-		RefreshLine(n);
-
-		// set the focus to the text ctrl
-		m_ptTextCtrl->SetFocus();
-	}
-}
-
-
-void muhkuh_dirlistbox::CancelEdit(void)
-{
-	muhkuh_dirlistbox::stopEditing(this);
-}
-
-
-void muhkuh_dirlistbox::OnBrowseButton(wxCommandEvent &event)
-{
-	wxDirDialog *testPathDialog;
-	wxString strDialogInitPath;
-	wxString strWild;
+	int iId;
+	size_t sizIdx;
 	wxString strPath;
-	int iFirstQm;
-	wxFileName fileName;
+	bool fIsUpdated;
 
 
-	if( sizActiveItem>=0 )
+
+	/* Is this an event from the text or button controls? */
+	iId = event.GetId();
+	if( iId>wxID_HIGHEST )
 	{
-		strDialogInitPath = m_ptTextCtrl->GetValue();
-		// find first '?'
-		iFirstQm = strDialogInitPath.Find(wxT('?'));
-		if( iFirstQm!=wxNOT_FOUND )
+		/* Get the index for the control. */
+		iId -= wxID_HIGHEST;
+		/* Is this a button control? */
+		if( (iId&1)==1 )
 		{
-			// cut off wildcart
-			strWild = strDialogInitPath.Mid(iFirstQm);
-			if( iFirstQm==0 )
+			sizIdx = iId / 2;
+
+			/* Is this a valid list index? */
+			if( sizIdx<m_sizDirlistEntriesCnt )
 			{
-				// only wildcart
-				strPath = wxEmptyString;
+				/* Get the text. */
+				strPath = m_patDirlistEntries[sizIdx].ptTextCtrl->GetValue();
+				fIsUpdated = select_path(strPath);
+				if( fIsUpdated==true )
+				{
+					m_patDirlistEntries[sizIdx].ptTextCtrl->SetValue(strPath);
+				}
+			}
+		}
+	}
+}
+
+
+void muhkuh_dirlistbox::OnButtonAdd(wxCommandEvent &event)
+{
+	wxString strPath;
+	bool fIsConfirmed;
+	wxTextCtrl *ptTextCtrl;
+
+
+	strPath = strLastUsedPath;
+	fIsConfirmed = select_path(strPath);
+	if( fIsConfirmed==true )
+	{
+		append_new_list_item(strPath);
+		m_ptSizer->Layout();
+
+		/* Set the focus to the new element. The new element goes always to the end of the list. */
+		if( m_sizDirlistEntriesCnt!=0 )
+		{
+			ptTextCtrl = m_patDirlistEntries[m_sizDirlistEntriesCnt-1].ptTextCtrl;
+			if( ptTextCtrl!=NULL )
+			{
+				ptTextCtrl->SetFocus();
+			}
+		}
+	}
+}
+
+
+void muhkuh_dirlistbox::OnButtonRemove(wxCommandEvent &event)
+{
+	size_t sizIdx;
+	size_t sizCnt;
+	wxTextCtrl *ptTextCtrl;
+	wxBitmapButton *ptBitmapButton;
+	wxWindow *ptWindow;
+	wxWindowID tIdText;
+	wxWindowID tIdButton;
+
+
+	/* Is the current selection a valid list index? */
+	if( m_iSelectedRow!=wxNOT_FOUND && m_iSelectedRow>=0 )
+	{
+		sizIdx = (size_t)m_iSelectedRow;
+		if( sizIdx<m_sizDirlistEntriesCnt )
+		{
+			ptTextCtrl = m_patDirlistEntries[sizIdx].ptTextCtrl;
+			ptBitmapButton = m_patDirlistEntries[sizIdx].ptBitmapButton;
+
+			/* Detach the items from the sizer. */
+			ptWindow = (wxWindow*)ptTextCtrl;
+			m_ptSizer->Detach(ptWindow);
+			ptWindow = (wxWindow*)ptBitmapButton;
+			m_ptSizer->Detach(ptWindow);
+
+			/* Remove the items from the parent. */
+			RemoveChild(ptTextCtrl);
+			RemoveChild(ptBitmapButton);
+
+			m_ptSizer->Layout();
+
+			/* Delete the items. */
+			ptTextCtrl->Destroy();
+			ptBitmapButton->Destroy();
+
+			/* Move the following table entries up and reindex them. */
+			sizCnt = sizIdx;
+			while(sizCnt+1<m_sizDirlistEntriesCnt)
+			{
+				/* Copy one element up. */
+				ptTextCtrl = m_patDirlistEntries[sizCnt+1].ptTextCtrl;
+				ptBitmapButton = m_patDirlistEntries[sizCnt+1].ptBitmapButton;
+				m_patDirlistEntries[sizCnt].ptTextCtrl = ptTextCtrl;
+				m_patDirlistEntries[sizCnt].ptBitmapButton = ptBitmapButton;
+
+				/* Generate the IDs for the text and the button from the list index. */
+				tIdText = wxID_HIGHEST + 2*sizCnt;
+				tIdButton = wxID_HIGHEST + 2*sizCnt + 1;
+
+				/* Set the new index. */
+				ptTextCtrl->SetId(tIdText);
+				ptBitmapButton->SetId(tIdButton);
+
+				++sizCnt;
+			}
+
+			/* The list has not one element less. */
+			--m_sizDirlistEntriesCnt;
+
+
+			/* Try to find a new focus element. */
+
+			/* Are still elements in the list? */
+			if( m_sizDirlistEntriesCnt==0 )
+			{
+				/* No entry. Select the panel. */
+				SetFocus();
 			}
 			else
 			{
-				strPath = strDialogInitPath.Left(iFirstQm);
-			}
-		}
-		else
-		{
-			// no wildcart -> use the whole string
-			strWild = wxEmptyString;
-			strPath = strDialogInitPath;
-		}
+				/* Yes -> there will be a new focus. */
 
-		fileName.Assign(strPath);
-		if(fileName.Normalize(wxPATH_NORM_ALL, m_strApplicationPath ,wxPATH_NATIVE))
-		{
-			strPath = fileName.GetFullPath();
-		}
+				/* Is the old index still valid? */
+				if( sizIdx+1>=m_sizDirlistEntriesCnt )
+				{
+					/* No -> use the last index instead. */
+					sizIdx = m_sizDirlistEntriesCnt - 1;
+				}
 
-		testPathDialog = new wxDirDialog(this, _("Choose the lua include path"));
-		testPathDialog->SetPath(strPath);
-
-		if( testPathDialog->ShowModal()==wxID_OK )
-		{
-			strPath = testPathDialog->GetPath() + wxFileName::GetPathSeparator() + strWild;
-			m_ptTextCtrl->SetValue(strPath);
-			// set focus back to textctrl
-			m_ptTextCtrl->SetFocus();
-		}
-		testPathDialog->Destroy();
-	}
-}
-
-
-void muhkuh_dirlistbox::OnTextEnter(wxCommandEvent &event)
-{
-	wxString strPath;
-	size_t sizItem;
-
-
-	if( sizActiveItem>=0 )
-	{
-		sizItem = sizActiveItem;
-		strPath = m_ptTextCtrl->GetValue();
-		stopEditing(this);
-		SetString(sizItem, strPath);
-	}
-}
-
-
-// NOTE: this function gets the textCtrl pointer as this. This means this is not good...
-void muhkuh_dirlistbox::OnKeyDown(wxKeyEvent& event)
-{
-	wxTextCtrl *ptTextCtrl;
-	muhkuh_dirlistbox *ptSelf;
-
-
-	ptTextCtrl = (wxTextCtrl*)event.GetEventObject();
-	if( ptTextCtrl!=NULL )
-	{
-		ptSelf = (muhkuh_dirlistbox*)ptTextCtrl->GetParent();
-		if( ptSelf!=NULL )
-		{
-			switch ( event.GetKeyCode() )
-			{
-			case WXK_ESCAPE:
-				muhkuh_dirlistbox::stopEditing(ptSelf);
-				ptSelf->RefreshAll();
-				break;
-			default:
-				event.Skip();
-				break;
+				/* Get the text control at the new focus position. */
+				ptTextCtrl = m_patDirlistEntries[m_sizDirlistEntriesCnt-1].ptTextCtrl;
+				if( ptTextCtrl!=NULL )
+				{
+					/* Focus the text control. */
+					ptTextCtrl->SetFocus();
+				}
 			}
 		}
 	}
 }
 
 
-void muhkuh_dirlistbox::stopEditing(muhkuh_dirlistbox *ptSelf)
+void muhkuh_dirlistbox::OnButtonEdit(wxCommandEvent &event)
 {
-	if( ptSelf->sizActiveItem>=0 )
+}
+
+
+void muhkuh_dirlistbox::OnButtonUp(wxCommandEvent &event)
+{
+	size_t sizIdx;
+	wxTextCtrl *ptTextCtrl0;
+	wxTextCtrl *ptTextCtrl1;
+	wxString strPath0;
+	wxString strPath1;
+
+
+	/* Is the current selection a valid list index? */
+	if( m_iSelectedRow!=wxNOT_FOUND && m_iSelectedRow>=0 )
 	{
-		ptSelf->m_ptTextCtrl->Show(false);
-		ptSelf->m_ptBrowseButton->Show(false);
-		ptSelf->sizActiveItem = -1;
+		sizIdx = (size_t)m_iSelectedRow;
+		if( sizIdx!=0 && sizIdx<m_sizDirlistEntriesCnt )
+		{
+			ptTextCtrl0 = m_patDirlistEntries[sizIdx-1].ptTextCtrl;
+			ptTextCtrl1 = m_patDirlistEntries[sizIdx].ptTextCtrl;
+
+			strPath0 = ptTextCtrl0->GetValue();
+			strPath1 = ptTextCtrl1->GetValue();
+
+			ptTextCtrl0->SetValue(strPath1);
+			ptTextCtrl1->SetValue(strPath0);
+
+			/* Move the focus one position up. */
+			ptTextCtrl0->SetFocus();
+		}
 	}
 }
 
 
-wxString muhkuh_dirlistbox::GetPaths(wxChar cSeparator) const
+void muhkuh_dirlistbox::OnButtonDown(wxCommandEvent &event)
 {
-	wxString strPaths;
+	size_t sizIdx;
+	wxTextCtrl *ptTextCtrl0;
+	wxTextCtrl *ptTextCtrl1;
+	wxString strPath0;
+	wxString strPath1;
+
+
+	/* Is the current selection a valid list index? */
+	if( m_iSelectedRow!=wxNOT_FOUND && m_iSelectedRow>=0 )
+	{
+		sizIdx = (size_t)m_iSelectedRow;
+		if( sizIdx+1<m_sizDirlistEntriesCnt )
+		{
+			ptTextCtrl0 = m_patDirlistEntries[sizIdx].ptTextCtrl;
+			ptTextCtrl1 = m_patDirlistEntries[sizIdx+1].ptTextCtrl;
+
+			strPath0 = ptTextCtrl0->GetValue();
+			strPath1 = ptTextCtrl1->GetValue();
+
+			ptTextCtrl0->SetValue(strPath1);
+			ptTextCtrl1->SetValue(strPath0);
+
+			/* Move the focus one position down. */
+			ptTextCtrl1->SetFocus();
+		}
+	}
+}
+
+
+void muhkuh_dirlistbox::OnFocusChild(wxChildFocusEvent &event)
+{
+	wxWindow *ptWindow;
+	int iSelectedRow;
+	size_t sizCnt;
+	size_t sizEnd;
+
+
+	ptWindow = event.GetWindow();
+
+	iSelectedRow = wxNOT_FOUND;
+
+	/* Search window pointer in list. */
+	sizCnt = 0;
+	sizEnd = m_sizDirlistEntriesCnt;
+	while(sizCnt<sizEnd)
+	{
+		if( (m_patDirlistEntries[sizCnt].ptTextCtrl==(wxTextCtrl*)ptWindow) || (m_patDirlistEntries[sizCnt].ptBitmapButton==(wxBitmapButton*)ptWindow) )
+		{
+			iSelectedRow = (int)sizCnt;
+			break;
+		}
+		++sizCnt;
+	}
+
+	updateButtons(iSelectedRow);
+	m_iSelectedRow = iSelectedRow;
+}
+
+
+bool muhkuh_dirlistbox::select_path(wxString &strPath)
+{
+	wxDirDialog *ptPathDialog;
+	wxFileName tFileName;
+	wxArrayString tPathComponents;
 	size_t sizCnt;
 	size_t sizMax;
+	bool fFoundPlaceHolder;
+	int iIndex;
+	wxString strDialogInitPath;
+	bool fPathUpdated;
 
 
-	sizCnt = 0;
-	sizMax = m_astrPaths.GetCount();
-	if( sizMax>0 )
+	/* Try to get an existing folder from the initial path. */
+	tFileName.AssignDir(strPath);
+
+	/* The lua include path may contain '?' as a placeholder for the module name.
+	 * Find the last element in the path which contains a '?'.
+	 */
+	tPathComponents = tFileName.GetDirs();
+	sizMax = tPathComponents.GetCount();
+	sizCnt = sizMax;
+	fFoundPlaceHolder = false;
+	while(sizCnt!=0)
 	{
-		while( (sizCnt+1)<sizMax )
+		--sizCnt;
+		iIndex = tPathComponents.Item(sizCnt).Find('?');
+		if( iIndex!=wxNOT_FOUND )
 		{
-			strPaths += m_astrPaths.Item(sizCnt) + cSeparator;
-			++sizCnt;
+			fFoundPlaceHolder = true;
+			break;
 		}
-		strPaths += m_astrPaths.Item(sizCnt);
+	}
+	/* Found a placeholder? */
+	if( fFoundPlaceHolder==true )
+	{
+		/* Remove it and all following path components. */
+		while( sizMax>sizCnt )
+		{
+			--sizMax;
+			tFileName.RemoveLastDir();
+		}
 	}
 
-	wxLogMessage(strPaths);
-	return strPaths;
+	/* Check if the path exists. If not, remove the last directory and try again. */
+	while( tFileName.DirExists()!=true && tFileName.GetDirCount()>0 )
+	{
+		tFileName.RemoveLastDir();
+	}
+
+	/* Is anything left? */
+	if( tFileName.GetDirCount()>0 )
+	{
+		/* Yes -> use it as the initial path. */
+		strDialogInitPath = tFileName.GetFullPath();
+	}
+	else
+	{
+		/* No -> take the plugins dir from the standard paths. */
+		strDialogInitPath = wxStandardPaths::Get().GetPluginsDir();
+	}
+
+	ptPathDialog = new wxDirDialog(this, _("Choose the lua include path"));
+	ptPathDialog->SetPath(strDialogInitPath);
+
+	fPathUpdated = false;
+	if( ptPathDialog->ShowModal()==wxID_OK )
+	{
+		strPath = ptPathDialog->GetPath() + wxFileName::GetPathSeparator() + wxT("?.lua");
+		strLastUsedPath = strPath;
+		fPathUpdated = true;
+	}
+	ptPathDialog->Destroy();
+
+	return fPathUpdated;
 }
 
 
+void muhkuh_dirlistbox::append_new_list_item(wxString strPath)
+{
+	size_t sizNewSize;
+	DIRLIST_ENTRY_T *ptNewArray;
+	wxTextCtrl *ptTextCtrl;
+	wxBitmapButton *ptBitmapButton;
+	wxWindowID tIdText;
+	wxWindowID tIdButton;
+
+
+	/* Is one more element in the array free? */
+	if( m_sizDirlistEntriesCnt>=m_sizDirlistEntriesMax )
+	{
+		/* No -> try to allocate more. */
+		sizNewSize = m_sizDirlistEntriesMax * 2;
+		/* Detect a wrap around. */
+		if( sizNewSize>m_sizDirlistEntriesMax )
+		{
+			ptNewArray = (DIRLIST_ENTRY_T*)realloc(m_patDirlistEntries, sizeof(DIRLIST_ENTRY_T)*sizNewSize);
+			if( ptNewArray!=NULL )
+			{
+				/* Ok, the array is resized now. */
+				m_patDirlistEntries = ptNewArray;
+				m_sizDirlistEntriesMax = sizNewSize;
+			}
+		}
+	}
+
+	if( m_sizDirlistEntriesCnt<m_sizDirlistEntriesMax )
+	{
+		/* Generate the IDs for the text and the button from the list index. */
+		tIdText = wxID_HIGHEST + 2*m_sizDirlistEntriesCnt;
+		tIdButton = wxID_HIGHEST + 2*m_sizDirlistEntriesCnt + 1;
+
+		/* Create the text and button controls. */
+		ptTextCtrl = new wxTextCtrl(this, tIdText, strPath, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE|wxTE_LEFT);
+		ptBitmapButton = new wxBitmapButton(this, tIdButton, *m_ptBitmap);
+
+		/* Add the text and button to the list. */
+		m_patDirlistEntries[m_sizDirlistEntriesCnt].ptTextCtrl = ptTextCtrl;
+		m_patDirlistEntries[m_sizDirlistEntriesCnt].ptBitmapButton = ptBitmapButton;
+
+		/* Add the text and button to the sizer. */
+		m_ptSizer->Add(ptTextCtrl, 0, wxEXPAND);
+		m_ptSizer->Add(ptBitmapButton);
+
+		++m_sizDirlistEntriesCnt;
+	}
+}
+
+
+void muhkuh_dirlistbox::updateButtons(int iSelection)
+{
+	size_t sizItemIdx;
+	bool fPathSelected;
+	bool fCanMoveUp;
+	bool fCanMoveDown;
+
+
+	if( iSelection!=wxNOT_FOUND )
+	{
+		sizItemIdx = (size_t)iSelection;
+		fPathSelected = true;
+		fCanMoveUp = (sizItemIdx>0);
+		fCanMoveDown = (sizItemIdx>=0) && ((sizItemIdx+1)<m_sizDirlistEntriesCnt);
+	}
+	else
+	{
+		/* The default is that no item is selected. */
+		fPathSelected = false;
+		fCanMoveUp = false;
+		fCanMoveDown = false;
+	}
+
+	m_ptToolBar->EnableTool(wxID_DELETE, fPathSelected);
+	m_ptToolBar->EnableTool(wxID_EDIT, fPathSelected);
+	m_ptToolBar->EnableTool(wxID_UP, fCanMoveUp);
+	m_ptToolBar->EnableTool(wxID_DOWN, fCanMoveDown);
+}

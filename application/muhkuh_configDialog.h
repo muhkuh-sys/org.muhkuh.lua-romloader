@@ -73,20 +73,13 @@ public:
 	void OnPluginSelectionChanging(wxTreeEvent &event);
 	void OnPluginKey(wxTreeEvent &event);
 
-	void OnAddLuaIncludePathButton(wxCommandEvent &event);
-	void OnRemoveLuaIncludePathButton(wxCommandEvent &event);
-	void OnEditLuaIncludePathButton(wxCommandEvent &event);
-	void OnMoveUpLuaIncludePathButton(wxCommandEvent &event);
-	void OnMoveDownLuaIncludePathButton(wxCommandEvent &event);
-	void OnLuaIncludePathSelectionChanged(wxCommandEvent &event);
-
 	void OnButtonOk(wxCommandEvent &event);
 private:
-	void createControls(void);
+	void createControls(wxArrayString &astrLuaIncludePath);
 	wxPanel *createControls_application(wxWindow *ptParent);
 	wxPanel *createControls_repository(wxWindow *ptParent);
 	wxPanel *createControls_plugin(wxWindow *ptParent);
-	wxPanel *createControls_lua(wxWindow *ptParent);
+	wxPanel *createControls_lua(wxWindow *ptParent, wxArrayString &astrLuaPaths);
 
 	void ShowNewRepository(long lIdx);
 	void ShowNewPlugin(long lIdx);
@@ -102,15 +95,11 @@ private:
 	void plugin_delete(void);
 	void plugin_enable(bool fEnablePlugin);
 
-	void luaIncludePathUpdateButtons(int iSelection);
-
 	int get_imagelist_index(muhkuh_repository::REPOSITORY_TYP_E eTyp);
 
 
 	muhkuh_config_data *m_ptConfigData;
 	wxString m_strApplicationPath;
-
-	wxArrayString m_astrLuaPaths;
 
 	// the controls
 	wxTreebook *m_treeBook;
@@ -128,7 +117,6 @@ private:
 	wxToolBar *m_repositoryToolBar;
 	wxToolBar *m_pluginToolBar;
 	wxTextCtrl *m_ptStartupCodeText;
-	wxToolBar *m_luaPathToolBar;
 	muhkuh_dirlistbox *m_ptPathListBox;
     DECLARE_EVENT_TABLE()
 };

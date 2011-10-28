@@ -90,9 +90,6 @@ enum
 	muhkuh_configReposEntryDialog_CheckboxSingleXmlRelPaths,
 	muhkuh_configReposEntryDialog_CheckboxAllLocalRelPaths,
 
-	muhkuh_dirlistbox_BrowseButton,
-	muhkuh_dirlistbox_TextCtrl,
-
 	muhkuh_scanner_thread_event,
 	muhkuh_tester_thread_event,
 	muhkuh_mainFrame_testFinish_event,
