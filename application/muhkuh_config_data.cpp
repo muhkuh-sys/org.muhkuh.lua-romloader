@@ -105,5 +105,7 @@ void muhkuh_config_data::write_config(wxConfigBase *pConfig)
 
 	/* Save repositories. */
 	m_ptRepositoryManager->write_config(pConfig);
+
+	pConfig->Flush();
 }
 
