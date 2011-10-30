@@ -21,6 +21,7 @@
 
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
+#include <wx/settings.h>
 
 #include "muhkuh_dirlistbox.h"
 #include "muhkuh_icons.h"
@@ -46,6 +47,7 @@ muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxAr
  , m_patDirlistEntries(NULL)
  , m_ptBitmap(NULL)
  , m_iSelectedRow(wxNOT_FOUND)
+ , m_iLastSelectedRow(wxNOT_FOUND)
 {
 	size_t sizNewSize;
 	DIRLIST_ENTRY_T *ptArray;
@@ -392,6 +394,7 @@ void muhkuh_dirlistbox::OnFocusChild(wxChildFocusEvent &event)
 	int iSelectedRow;
 	size_t sizCnt;
 	size_t sizEnd;
+	wxColor tColor;
 
 
 	ptWindow = event.GetWindow();
@@ -413,6 +416,33 @@ void muhkuh_dirlistbox::OnFocusChild(wxChildFocusEvent &event)
 
 	updateButtons(iSelectedRow);
 	m_iSelectedRow = iSelectedRow;
+
+	/* Dis the slection change? */
+	if( iSelectedRow!=m_iLastSelectedRow )
+	{
+		/* Was an element selected before? */
+		if( m_iLastSelectedRow!=wxNOT_FOUND && m_iLastSelectedRow>=0 )
+		{
+			/* Deselect the item. */
+			sizCnt = (size_t)m_iLastSelectedRow;
+			if( sizCnt<m_sizDirlistEntriesMax )
+			{
+				tColor = wxSystemSettings::GetColour(wxSYS_COLOUR_LISTBOX);
+				m_patDirlistEntries[sizCnt].ptTextCtrl->SetBackgroundColour(tColor);
+			}
+		}
+		if( iSelectedRow!=wxNOT_FOUND && iSelectedRow>=0 )
+		{
+			/* Select the item. */
+			sizCnt = (size_t)iSelectedRow;
+			if( sizCnt<m_sizDirlistEntriesMax )
+			{
+				tColor = wxSystemSettings::GetColour(wxSYS_COLOUR_HIGHLIGHT);
+				m_patDirlistEntries[sizCnt].ptTextCtrl->SetBackgroundColour(tColor);
+			}
+		}
+		m_iLastSelectedRow = iSelectedRow;
+	}
 }
 
 
@@ -531,6 +561,9 @@ void muhkuh_dirlistbox::append_new_list_item(wxString strPath)
 		/* Create the text and button controls. */
 		ptTextCtrl = new wxTextCtrl(this, tIdText, strPath, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE|wxTE_LEFT);
 		ptBitmapButton = new wxBitmapButton(this, tIdButton, *m_ptBitmap);
+
+		/* Set the text control's background color. */
+		ptTextCtrl->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_LISTBOX));
 
 		/* Add the text and button to the list. */
 		m_patDirlistEntries[m_sizDirlistEntriesCnt].ptTextCtrl = ptTextCtrl;

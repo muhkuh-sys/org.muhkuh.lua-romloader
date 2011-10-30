@@ -66,6 +66,7 @@ private:
 	wxString strLastUsedPath;
 
 	int m_iSelectedRow;
+	int m_iLastSelectedRow;
 
     DECLARE_EVENT_TABLE()
 };
