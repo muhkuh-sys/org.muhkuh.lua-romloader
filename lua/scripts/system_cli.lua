@@ -1,9 +1,10 @@
 -- List all system modules.
 require("bit")
-require("select_plugin")
+require("select_plugin_cli")
 require("tester_cli")
 
 -- List all plugins.
+require("romloader_eth")
 require("romloader_usb")
 require("romloader_uart")
 
