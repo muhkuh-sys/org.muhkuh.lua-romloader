@@ -1323,13 +1323,8 @@ int romloader_usb_device_libusb::update_old_netx_device(libusb_device *ptNetxDev
 		iResult = netx10_upgrade_romcode(ptNetxDevice, &ptUpdatedDevice);
 		break;
 
-	case ROMLOADER_CHIPTYP_NETX51:
-		/* No need to update netX51! */
-		iResult = LIBUSB_ERROR_OTHER;
-		break;
-
-	case ROMLOADER_CHIPTYP_NETX52:
-		/* No need to update netX52! */
+	case ROMLOADER_CHIPTYP_NETX56:
+		/* No need to update netX56! */
 		iResult = LIBUSB_ERROR_OTHER;
 		break;
 	}

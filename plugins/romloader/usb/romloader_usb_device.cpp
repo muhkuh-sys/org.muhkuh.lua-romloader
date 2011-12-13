@@ -79,23 +79,11 @@ const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[6] =
 		0x04
 	},
 	{
-		"netX51",
-		0x1939,
-		0x0017,
-		0x0001,
-		ROMLOADER_CHIPTYP_NETX51,
-		ROMLOADER_ROMCODE_HBOOT2,
-		0,
-		1,
-		0x85,
-		0x04
-	},
-	{
-		"netX52",
+		"netX56",
 		0x1939,
 		0x0018,
 		0x0001,
-		ROMLOADER_CHIPTYP_NETX52,
+		ROMLOADER_CHIPTYP_NETX56,
 		ROMLOADER_ROMCODE_HBOOT2,
 		0,
 		1,
