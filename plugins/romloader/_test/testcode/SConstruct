@@ -68,6 +68,9 @@ src_netx10  = Split(montest_sources_common + montest_sources_custom_netx10)
 env_netx500_default = env_default.CreateCompilerEnv('500', ['cpu=arm926ej-s'])
 env_netx500_default.Append(CPPPATH = ['src/netx500'])
 
+env_netx56_default  = env_default.CreateCompilerEnv('56',  ['cpu=arm966e-s'])
+env_netx56_default.Append(CPPPATH = ['src/netx56'])
+
 env_netx50_default  = env_default.CreateCompilerEnv('50',  ['cpu=arm966e-s'])
 env_netx50_default.Append(CPPPATH = ['src/netx50'])
 
@@ -78,32 +81,38 @@ env_netx10_default.Append(CPPPATH = ['src/netx10'])
 #
 # Build the files.
 #
-env_netx500_intram = env_netx500_default.Clone()
-env_netx500_intram.Replace(LDFILE = 'src/netx500/netx500.ld')
-src_netx500_intram = env_netx500_intram.SetBuildPath('targets/netx500_intram', 'src', src_netx500)
-elf_netx500_intram = env_netx500_intram.Elf('targets/montest_netx500.elf', src_netx500_intram)
-bin_netx500_intram = env_netx500_intram.ObjCopy('targets/montest_netx500.bin', elf_netx500_intram)
+#env_netx500_intram = env_netx500_default.Clone()
+#env_netx500_intram.Replace(LDFILE = 'src/netx500/netx500.ld')
+#src_netx500_intram = env_netx500_intram.SetBuildPath('targets/netx500_intram', 'src', src_netx500)
+#elf_netx500_intram = env_netx500_intram.Elf('targets/montest_netx500.elf', src_netx500_intram)
+#bin_netx500_intram = env_netx500_intram.ObjCopy('targets/montest_netx500.bin', elf_netx500_intram)
 
-env_netx50_intram = env_netx50_default.Clone()
-env_netx50_intram.Replace(LDFILE = 'src/netx50/netx50.ld')
-src_netx50_intram = env_netx50_intram.SetBuildPath('targets/netx50_intram', 'src', src_netx50)
-elf_netx50_intram = env_netx50_intram.Elf('targets/montest_netx50.elf', src_netx50_intram)
-bin_netx50_intram = env_netx50_intram.ObjCopy('targets/montest_netx50.bin', elf_netx50_intram)
+env_netx56 = env_netx56_default.Clone()
+env_netx56.Replace(LDFILE = 'src/netx56/netx56.ld')
+src_netx56 = env_netx56.SetBuildPath('targets/netx56_intram', 'src', montest_sources_common)
+elf_netx56 = env_netx56.Elf('targets/montest_netx56.elf', src_netx56)
+bin_netx56 = env_netx56.ObjCopy('targets/montest_netx56.bin', elf_netx56)
 
-env_netx10_intram = env_netx10_default.Clone()
-env_netx10_intram.Replace(LDFILE = 'src/netx10/netx10.ld')
-src_netx10_intram = env_netx10_intram.SetBuildPath('targets/netx10_intram', 'src', src_netx10)
-elf_netx10_intram = env_netx10_intram.Elf('targets/montest_netx10.elf', src_netx10_intram)
-bin_netx10_intram = env_netx10_intram.ObjCopy('targets/montest_netx10.bin', elf_netx10_intram)
+#env_netx50_intram = env_netx50_default.Clone()
+#env_netx50_intram.Replace(LDFILE = 'src/netx50/netx50.ld')
+#src_netx50_intram = env_netx50_intram.SetBuildPath('targets/netx50_intram', 'src', src_netx50)
+#elf_netx50_intram = env_netx50_intram.Elf('targets/montest_netx50.elf', src_netx50_intram)
+#bin_netx50_intram = env_netx50_intram.ObjCopy('targets/montest_netx50.bin', elf_netx50_intram)
+
+#env_netx10_intram = env_netx10_default.Clone()
+#env_netx10_intram.Replace(LDFILE = 'src/netx10/netx10.ld')
+#src_netx10_intram = env_netx10_intram.SetBuildPath('targets/netx10_intram', 'src', src_netx10)
+#elf_netx10_intram = env_netx10_intram.Elf('targets/montest_netx10.elf', src_netx10_intram)
+#bin_netx10_intram = env_netx10_intram.ObjCopy('targets/montest_netx10.bin', elf_netx10_intram)
 
 
 #----------------------------------------------------------------------------
 #
 # Build the zip distribution.
 #
-aTranslate = dict({
-	bin_netx500_intram[0]: 'plugins/romloader/usb/netx/targets/',
-	bin_netx50_intram[0]:  'plugins/romloader/usb/netx/targets/',
-	bin_netx10_intram[0]:  'plugins/romloader/usb/netx/targets/',
-})
-env_default.FlexZip('targets/montest_firmware.zip', bin_netx500_intram + bin_netx50_intram + bin_netx10_intram, ZIP_PATH_TRANSLATE=aTranslate)
+#aTranslate = dict({
+#	bin_netx500_intram[0]: 'plugins/romloader/usb/netx/targets/',
+#	bin_netx50_intram[0]:  'plugins/romloader/usb/netx/targets/',
+#	bin_netx10_intram[0]:  'plugins/romloader/usb/netx/targets/',
+#})
+#env_default.FlexZip('targets/montest_firmware.zip', bin_netx500_intram + bin_netx50_intram + bin_netx10_intram, ZIP_PATH_TRANSLATE=aTranslate)

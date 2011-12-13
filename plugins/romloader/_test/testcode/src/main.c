@@ -19,9 +19,6 @@
  ***************************************************************************/
 
 
-/* all netx io areas as structures */
-#include "netx_io_areas.h"
-
 #include "netx_consoleapp.h"
 #include "uprintf.h"
 
