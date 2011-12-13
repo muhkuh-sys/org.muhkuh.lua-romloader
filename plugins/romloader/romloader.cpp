@@ -169,7 +169,7 @@ bool romloader::detect_chiptyp(lua_State *ptClientData)
 }
 
 
-const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[6] =
+const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[5] =
 {
 	{
 		0xea080001,
@@ -215,23 +215,11 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[6] =
 		0xeafbfffa,
 		0x080f0008,
 		0x00006003,
-		ROMLOADER_CHIPTYP_NETX51,
-		"netX51",
-		ROMLOADER_ROMCODE_HBOOT2,
-		"HBoot2"
-	},
-
-	{
-		0xeafbfffa,
-		0x080f0008,
-		0x00007003,
-		ROMLOADER_CHIPTYP_NETX52,
-		"netX52",
-		ROMLOADER_ROMCODE_HBOOT2,
-		"HBoot2"
+		ROMLOADER_CHIPTYP_NETX56,
+		"netX56",
+		ROMLOADER_ROMCODE_HBOOT,
+		"HBoot"
 	}
-
-
 
 };
 
