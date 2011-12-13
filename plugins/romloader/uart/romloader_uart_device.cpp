@@ -829,7 +829,7 @@ bool romloader_uart_device::IdentifyLoader(void)
 		if( sizTransfered!=1 )
 		{
 			/* Failed to receive first char of knock response. */
-			fprintf(stderr, "Failed to receive first char of knock response.\n");
+			fprintf(stderr, "Failed to receive first char of knock response: %d.\n", sizTransfered);
 		}
 		else
 		{
