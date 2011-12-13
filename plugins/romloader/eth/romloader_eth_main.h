@@ -85,7 +85,6 @@ public:
 
 private:
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);
-	int execute_command(const unsigned char *aucCommand, size_t sizCommand, unsigned char *aucResponse, size_t sizResponse, size_t *psizResponse);
 
 	bool chip_init(lua_State *ptClientData);
 

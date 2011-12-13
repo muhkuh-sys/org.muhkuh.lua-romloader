@@ -51,8 +51,6 @@ bool romloader_eth_device_linux::Open(void)
 	bool fOk;
 	struct in_addr tServerAddress;
 	int iResult;
-	const unsigned short usHBootServerPort = 53280;
-	int iServerSocket;
 
 
 	iResult = inet_pton(AF_INET, m_pcServerName, &tServerAddress);
@@ -63,26 +61,38 @@ bool romloader_eth_device_linux::Open(void)
 	}
 	else
 	{
-		/* Open a socket. */
-		iServerSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-		if( iServerSocket==-1 )
-		{
-			fprintf(stderr, "Failed to create socket!\n");
-			fOk = false;
-		}
-		else
-		{
-			/* Get the address of the HBoot server. */
-			memset(&m_tHbootServer_Addr, 0, sizeof(m_tHbootServer_Addr));
-			m_tHbootServer_Addr.tAddrIn.sin_family = AF_INET;
-			m_tHbootServer_Addr.tAddrIn.sin_port = htons(usHBootServerPort);
-			memcpy(&m_tHbootServer_Addr.tAddrIn.sin_addr, &tServerAddress, sizeof(struct in_addr));
+		fOk = open_by_addr(&tServerAddress);
+	}
 
-			/* Copy the server socket handle. */
-			m_iHbootServer_Socket = iServerSocket;
+	return fOk;
+}
 
-			fOk = true;
-		}
+
+bool romloader_eth_device_linux::open_by_addr(struct in_addr *ptServerAddress)
+{
+	bool fOk;
+	int iServerSocket;
+
+
+	/* Open a socket. */
+	iServerSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if( iServerSocket==-1 )
+	{
+		fprintf(stderr, "Failed to create socket!\n");
+		fOk = false;
+	}
+	else
+	{
+		/* Get the address of the HBoot server. */
+		memset(&m_tHbootServer_Addr, 0, sizeof(m_tHbootServer_Addr));
+		m_tHbootServer_Addr.tAddrIn.sin_family = AF_INET;
+		m_tHbootServer_Addr.tAddrIn.sin_port = htons(m_usHBootServerPort);
+		memcpy(&m_tHbootServer_Addr.tAddrIn.sin_addr, ptServerAddress, sizeof(struct in_addr));
+
+		/* Copy the server socket handle. */
+		m_iHbootServer_Socket = iServerSocket;
+
+		fOk = true;
 	}
 
 	return fOk;
@@ -137,9 +147,9 @@ int romloader_eth_device_linux::RecvPacket(unsigned char *pucData, size_t sizDat
 	FD_ZERO(&tRxFileDescSet);
 	FD_SET(m_iHbootServer_Socket, &tRxFileDescSet);
 
-	/* Wait 0.01 second each until no more data arrives or 100 packets were received. */
-	tTimeVal.tv_sec = 0;
-	tTimeVal.tv_usec = 10000;
+	/* Wait 1 second for a new packet. */
+	tTimeVal.tv_sec = 1;
+	tTimeVal.tv_usec = 0;
 
 	/* Nothing received yet. */
 	ssizPacket = 0;
@@ -148,6 +158,7 @@ int romloader_eth_device_linux::RecvPacket(unsigned char *pucData, size_t sizDat
 	if( iResult==0 )
 	{
 		/* Timeout and nothing received. */
+		fprintf(stderr, "timeout\n");
 	}
 	else if( iResult==1 )
 	{
@@ -210,6 +221,7 @@ size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 	size_t sizEntry;
 	char *pcRef;
 	const unsigned char aucMagic[5] = { 0x00, 'M', 'O', 'O', 'H' };
+	size_t sizMaxPacket;
 
 
 	/* Init References array. */
@@ -234,7 +246,7 @@ size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 		}
 		else
 		{
-			/* Bind the socket to any interface and use the first free port . */
+			/* Bind the socket to any interface and use the first free port. */
 			saddr.sin_family = PF_INET;
 			saddr.sin_port = htons(0);
 			saddr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -298,10 +310,17 @@ size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 						{
 							uiVersionMin = aucBuffer[5] | aucBuffer[6]<<8U;
 							uiVersionMaj = aucBuffer[7] | aucBuffer[8]<<8U;
-
-							ulIp = uSrcAddr.tAddrIn.sin_addr.s_addr;
-							printf("Found HBoot V%d.%d at %ld.%ld.%ld.%ld .\n", uiVersionMaj, uiVersionMin, ulIp&0xffU, (ulIp>>8U)&0xffU, (ulIp>>16U)&0xffU, (ulIp>>24U)&0xffU);
-
+							sizMaxPacket = aucBuffer[9] | aucBuffer[10]<<8U;
+							ulIp = aucBuffer[14] | aucBuffer[13]<<8U  | aucBuffer[12]<<16U  | aucBuffer[11]<<24U;
+							
+							printf("Found HBoot V%d.%d at 0x%08lx.\n", uiVersionMaj, uiVersionMin, ulIp);
+/*
+							{
+								char buf[32];
+								inet_ntop(AF_INET, &uSrcAddr.tAddrIn.sin_addr.s_addr, buf, sizeof(buf));
+								printf("Found HBoot V%d.%d at %s .\n", uiVersionMaj, uiVersionMin, buf);
+							}
+*/
 							/* Is enough space in the array for one more entry? */
 							if( sizRefCnt>=sizRefMax )
 							{
@@ -350,4 +369,87 @@ size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 	return sizRefCnt;
 }
 
+
+int romloader_eth_device_linux::ExecuteCommand(const unsigned char *aucCommand, size_t sizCommand, unsigned char *aucResponse, size_t sizResponse, size_t *psizResponse)
+{
+	int iResult;
+	size_t sizRxPacket;
+	unsigned char ucStatus;
+	unsigned int uiRetryCnt;
+
+
+	uiRetryCnt = 10;
+	do
+	{
+		iResult = SendPacket(aucCommand, sizCommand);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "! execute_command: send_packet failed with errorcode %d\n", iResult);
+		}
+		else
+		{
+			iResult = RecvPacket(aucResponse, sizResponse, 1000, &sizRxPacket);
+			if( iResult!=0 )
+			{
+				fprintf(stderr, "! execute_command: receive_packet failed with errorcode %d\n", iResult);
+			}
+			else
+			{
+				if( sizRxPacket<1 )
+				{
+					fprintf(stderr, "Timeout!\n");
+					iResult = -1;
+				}
+				else
+				{
+					ucStatus = aucResponse[0];
+					if( ucStatus==0 )
+					{
+						/* Yay, received something with status ok. */
+						*psizResponse = sizRxPacket;
+						iResult = 0;
+						
+					}
+					else
+					{
+						fprintf(stderr, "Error: status is not ok: %d\n", ucStatus);
+						iResult = -1;
+					}
+				}
+			}
+		}
+
+		if( iResult!=0 )
+		{
+			--uiRetryCnt;
+			if( uiRetryCnt==0 )
+			{
+				fprintf(stderr, "Retried 10 times and nothing happened. Giving up!\n");
+				break;
+			}
+			else
+			{
+				fprintf(stderr, "***************************************\n");
+				fprintf(stderr, "*                                     *\n");
+				fprintf(stderr, "*            retry                    *\n");
+				fprintf(stderr, "*                                     *\n");
+				fprintf(stderr, "***************************************\n");
+				
+				/* Close the socket. */
+				fprintf(stderr, "close the socket\n");
+				close(m_iHbootServer_Socket);
+				
+				/* Delay 1 second. */
+				sleep(1);
+				
+				/* Open the socket again. */
+				fprintf(stderr, "open the socket again\n");
+				open_by_addr(&m_tHbootServer_Addr.tAddrIn.sin_addr);
+			}
+		}
+
+	} while( iResult!=0 );
+
+	return iResult;
+}
 
