@@ -8,20 +8,20 @@ aLuaModules = {
 
 aCode = {}
 
-strPath = string.gsub(muhkuh_components_lua.get_lua_script_path(), "\\", "\\\\")
+strPath = string.gsub(muhkuh_application.get_lua_script_path(), "\\", "\\\\")
 table.insert(aCode, "-- Add all include paths.")
 table.insert(aCode, "package.path  = package.path  .. " .. "\";" .. strPath .. "\"")
 table.insert(aCode, "")
 
 
-strPath = string.gsub(muhkuh_components_lua.get_lua_module_path(), "\\", "\\\\")
+strPath = string.gsub(muhkuh_application.get_lua_module_path(), "\\", "\\\\")
 table.insert(aCode, "-- Add all search paths for plugins.")
 table.insert(aCode, "package.cpath = package.cpath .. " .. "\";" .. strPath .. "\"")
 table.insert(aCode, "")
 
 
 table.insert(aCode, "-- Set the Muhkuh version.")
-table.insert(aCode, "_G.__MUHKUH_VERSION = \"" .. muhkuh_components_lua.get_version() .. "\"")
+table.insert(aCode, "_G.__MUHKUH_VERSION = \"" .. muhkuh_application.get_version() .. "\"")
 table.insert(aCode, "")
 table.insert(aCode, "")
 
@@ -40,7 +40,7 @@ table.insert(aCode, "")
 
 table.insert(aCode, "-- Load all enabled plugins.")
 table.insert(aCode, "_G.__MUHKUH_PLUGINS = {}")
-aLuaPlugins = muhkuh_components_lua.get_plugins()
+aLuaPlugins = muhkuh_application.get_plugins()
 for iCnt,aAttr in ipairs(aLuaPlugins) do
 	if aAttr.is_ok==true and aAttr.enabled==true then
 		table.insert(aCode, string.format("require(\"%s\")", aAttr.module))
