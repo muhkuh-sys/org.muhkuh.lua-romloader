@@ -26,8 +26,6 @@
 #include <wx/filename.h>
 #include <wx/xml/xml.h>
 
-#include "muhkuh_so_api.h"
-
 
 #if USE_LUA!=0
 #       include "lua.hpp"
@@ -40,16 +38,16 @@
 
 typedef struct
 {
-	wxString strPluginName;                                                                                                                                                                                      
+	wxString strPluginName;
 	wxString strPluginId;
-	unsigned int uiVersionMajor;                                                                                                                                                                                                     
-	unsigned int uiVersionMinor;                                                                                                                                                                                                     
+	unsigned int uiVersionMajor;
+	unsigned int uiVersionMinor;
 	unsigned int uiVersionSub;
 	wxString strLuaModuleName;
 } MUHKUH_PLUGIN_DESCRIPTION_T;
 
 
-class MUHKUH_SO_API muhkuh_plugin
+class muhkuh_plugin
 {
 public:
 	muhkuh_plugin(void);

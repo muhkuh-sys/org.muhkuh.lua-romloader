@@ -20,13 +20,19 @@
 
 
 #include <wx/log.h>
- 
+
 #include "muhkuh_lua.h"
+#include "muhkuh_version.h"
 
 
 #ifdef WIN32
 #       define snprintf _snprintf
 #endif
+
+
+#define SCRIPT_PUSH_ERROR(L,...) { lua_pushfstring(L,__VA_ARGS__); }
+#define SCRIPT_EXIT_ERROR(L) { lua_error(L); }
+#define SCRIPT_ERROR(L,...) { lua_pushfstring(L,__VA_ARGS__); lua_error(L); }
 
 
 typedef struct
@@ -98,7 +104,7 @@ static int lua_muhkuh_print(lua_State *ptLuaState)
 	{
 		/* Separate arguments with tabs. */
 		if( iArgCnt>1 )
-		{	
+		{
 			strElement = wxT("\t");
 		}
 
@@ -134,13 +140,13 @@ void lua_muhkuh_register_config_data(muhkuh_config_data *ptConfigData)
 }
 
 
-muhkuh_config_data *lua_muhkuh_get_config_data(void)
+static muhkuh_config_data *lua_muhkuh_get_config_data(void)
 {
 	return g_ptConfigData;
 }
 
 
-muhkuh_plugin_manager *lua_muhkuh_get_plugin_manager(lua_State *ptLuaState)
+static muhkuh_plugin_manager *lua_muhkuh_get_plugin_manager(lua_State *ptLuaState)
 {
 	muhkuh_plugin_manager *ptPluginManager;
 
@@ -176,7 +182,7 @@ static void lua_set_system_include_path(lua_State *ptLuaState)
 	else
 	{
 		strLuaSystemModulePath = g_ptConfigData->m_strLuaSystemModulePath;
-	
+
 		/* Get the global "package". */
 		lua_getglobal(ptLuaState, "package");
 		/* This must be a table. */
@@ -243,6 +249,203 @@ static void lua_set_system_include_path(lua_State *ptLuaState)
 }
 
 
+static const char *pcMuhkuhVersion =
+{
+	MUHKUH_APPLICATION_NAME " " MUHKUH_VERSION_STRING
+};
+
+static int lua_muhkuh_fn_get_version(lua_State *ptLuaState)
+{
+	lua_pushstring(ptLuaState, pcMuhkuhVersion);
+	return 1;
+}
+
+
+static int lua_muhkuh_fn_get_lua_script_path(lua_State *ptLuaState)
+{
+	const char *pcLuaScriptPath;
+	muhkuh_config_data *ptCfgData;
+
+
+	ptCfgData = lua_muhkuh_get_config_data();
+	if( ptCfgData!=NULL )
+	{
+		pcLuaScriptPath = ptCfgData->m_strLuaIncludePath.c_str();
+		lua_pushstring(ptLuaState, pcLuaScriptPath);
+	}
+	else
+	{
+		lua_pushnil(ptLuaState);
+	}
+
+	return 1;
+}
+
+
+static int lua_muhkuh_fn_get_lua_module_path(lua_State *ptLuaState)
+{
+	const char *pcLuaModulePath;
+	muhkuh_config_data *ptCfgData;
+
+
+	ptCfgData = lua_muhkuh_get_config_data();
+	if( ptCfgData!=NULL )
+	{
+		pcLuaModulePath = ptCfgData->m_strLuaSystemModulePath.c_str();
+		lua_pushstring(ptLuaState, pcLuaModulePath);
+	}
+	else
+	{
+		lua_pushnil(ptLuaState);
+	}
+
+	return 1;
+}
+
+
+static int lua_muhkuh_fn_get_plugins(lua_State *ptLuaState)
+{
+	muhkuh_plugin_manager *ptPluginManager;
+	size_t sizPlugins;
+	size_t sizPluginCnt;
+	const MUHKUH_PLUGIN_DESCRIPTION_T *ptPluginDescription;
+
+
+	ptPluginManager = lua_muhkuh_get_plugin_manager(ptLuaState);
+	if( ptPluginManager==NULL )
+	{
+		lua_pushnil(ptLuaState);
+		//SCRIPT_ERROR(ptLuaState, "Failed to get plugin manager!");
+	}
+	else
+	{
+		/* Get the number of plugins. */
+		sizPlugins = ptPluginManager->getPluginCount();
+		fprintf(stderr, "%d plugins\n", sizPlugins);
+
+		/* Crate a new table. */
+		lua_createtable(ptLuaState, sizPlugins, 0);
+
+		/* Loop over all plugins. */
+		sizPluginCnt = 0;
+		while( sizPluginCnt<sizPlugins )
+		{
+			ptPluginDescription = ptPluginManager->getPluginDescription(sizPluginCnt);
+
+			/* Push the index for the entry.
+			 * NOTE: this starts at 1 and not at 0.
+			 */
+			lua_pushnumber(ptLuaState, sizPluginCnt+1);
+			/* Create the attribute table for the plugin. */
+			if( ptPluginDescription==NULL )
+			{
+				lua_pushnil(ptLuaState);
+			}
+			else
+			{
+				lua_createtable(ptLuaState, 0, 0);
+
+				/* Push the plugin name. */
+				lua_pushstring(ptLuaState, "name");
+				lua_pushstring(ptLuaState, ptPluginDescription->strPluginName.c_str());
+				lua_rawset(ptLuaState, -3);
+
+				/* Push the "is_ok" flag. */
+				lua_pushstring(ptLuaState, "is_ok");
+				lua_pushboolean(ptLuaState, ptPluginManager->IsOk(sizPluginCnt) ? 1 : 0 );
+				lua_rawset(ptLuaState, -3);
+
+				/* Push the "enabled" flag. */
+				lua_pushstring(ptLuaState, "enabled");
+				lua_pushboolean(ptLuaState, ptPluginManager->GetEnable(sizPluginCnt) ? 1 : 0 );
+				lua_rawset(ptLuaState, -3);
+
+				/* Push the plugin id. */
+				lua_pushstring(ptLuaState, "id");
+				lua_pushstring(ptLuaState, ptPluginDescription->strPluginId.c_str());
+				lua_rawset(ptLuaState, -3);
+
+				/* Push the plugin version major. */
+				lua_pushstring(ptLuaState, "ver_maj");
+				lua_pushnumber(ptLuaState, ptPluginDescription->uiVersionMajor);
+				lua_rawset(ptLuaState, -3);
+
+				/* Push the plugin version minor. */
+				lua_pushstring(ptLuaState, "ver_min");
+				lua_pushnumber(ptLuaState, ptPluginDescription->uiVersionMinor);
+				lua_rawset(ptLuaState, -3);
+
+				/* Push the plugin version sub. */
+				lua_pushstring(ptLuaState, "ver_sub");
+				lua_pushnumber(ptLuaState, ptPluginDescription->uiVersionSub);
+				lua_rawset(ptLuaState, -3);
+
+				/* Push the plugin lua module name. */
+				lua_pushstring(ptLuaState, "module");
+				lua_pushstring(ptLuaState, ptPluginDescription->strLuaModuleName.c_str());
+				lua_rawset(ptLuaState, -3);
+
+				/* Push the plugin init error. */
+				lua_pushstring(ptLuaState, "init_error");
+				lua_pushstring(ptLuaState, ptPluginManager->GetInitError(sizPluginCnt).c_str());
+				lua_rawset(ptLuaState, -3);
+			}
+			lua_rawset(ptLuaState, -3);
+
+			++sizPluginCnt;
+		}
+	}
+
+	return 1;
+}
+
+
+typedef struct
+{
+	const char *pcName;
+	lua_CFunction pfn;
+} LUA_EXTENSION_FUNCTIONS_T;
+
+static LUA_EXTENSION_FUNCTIONS_T atLuaMuhkuhExtensionFunctions[4] =
+{
+	{ "get_version",                        lua_muhkuh_fn_get_version },
+	{ "get_lua_script_path",                lua_muhkuh_fn_get_lua_script_path },
+	{ "get_lua_module_path",                lua_muhkuh_fn_get_lua_module_path },
+	{ "get_plugins",                        lua_muhkuh_fn_get_plugins }
+};
+
+
+static void lua_muhkuh_register_muhkuh(lua_State *ptLuaState)
+{
+	size_t sizFns;
+	LUA_EXTENSION_FUNCTIONS_T *ptCnt;
+	LUA_EXTENSION_FUNCTIONS_T *ptEnd;
+
+
+	/* Get the number of extension functions. */
+	sizFns = sizeof(atLuaMuhkuhExtensionFunctions)/sizeof(atLuaMuhkuhExtensionFunctions[0]);
+
+	/* Create a new table with 0 array elements and 4 non-array elements. */
+	lua_createtable(ptLuaState, 0, sizFns);
+
+	/* Loop over all extension functions and add them to the table. */
+	ptCnt = atLuaMuhkuhExtensionFunctions;
+	ptEnd = ptCnt + sizFns;
+	while( ptCnt<ptEnd )
+	{
+		/* Create a table entry. */
+		lua_pushstring(ptLuaState, ptCnt->pcName);
+		lua_pushcclosure(ptLuaState, ptCnt->pfn, 0);
+		lua_rawset(ptLuaState, -3);
+
+		++ptCnt;
+	}
+
+	/* Set the table to the global "muhkuh_application". */
+	lua_setglobal(ptLuaState, "muhkuh_application");
+}
+
+
 lua_State *lua_muhkuh_create_state(void)
 {
 	lua_State *ptLuaState;
@@ -263,20 +466,11 @@ lua_State *lua_muhkuh_create_state(void)
 		/* Replace the print function with lua_muhkuh_print. */
 		lua_register(ptLuaState, "print", lua_muhkuh_print);
 
+		/* Add the "muhkuh" table. */
+		lua_muhkuh_register_muhkuh(ptLuaState);
+
 		/* Set the system include path. */
 		lua_set_system_include_path(ptLuaState);
-
-		/* Add the muhkuh binding. */
-		iResult = lua_muhkuh_run_code(ptLuaState, "require(\"muhkuh_components_lua\")\n", &pcResult);
-		if( iResult!=0 )
-		{
-			wxLogError(_("Failed to init muhkuh components LUA binding!"));
-			if( pcResult!=NULL )
-			{
-				wxLogError(wxString::FromAscii(pcResult));
-				free(pcResult);
-			}
-		}
 
 		/* Init done, restart GC. */
 		lua_gc(ptLuaState, LUA_GCRESTART, 0);

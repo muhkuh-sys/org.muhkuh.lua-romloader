@@ -25,10 +25,9 @@
 
 #include "muhkuh_plugin_manager.h"
 #include "muhkuh_repository_manager.h"
-#include "muhkuh_so_api.h"
 
 
-class MUHKUH_SO_API muhkuh_config_data
+class muhkuh_config_data
 {
 public:
 	muhkuh_config_data(void);

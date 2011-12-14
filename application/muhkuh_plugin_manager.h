@@ -28,14 +28,13 @@
 
 
 #include "muhkuh_plugin.h"
-#include "muhkuh_so_api.h"
 
 
 #ifndef __MUHKUH_PLUGIN_MANAGER_H__
 #define __MUHKUH_PLUGIN_MANAGER_H__
 
 
-class MUHKUH_SO_API muhkuh_plugin_manager
+class muhkuh_plugin_manager
 {
 public:
 	muhkuh_plugin_manager(void);

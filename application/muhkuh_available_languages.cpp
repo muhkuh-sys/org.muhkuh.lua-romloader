@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2010 by Christoph Thelen                                *
+ *   Copyright (C) 2011 by Christoph Thelen                                *
  *   doc_bacardi@users.sourceforge.net                                     *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -19,18 +19,14 @@
  ***************************************************************************/
 
 
-%module muhkuh_components_lua
-
-%{
-	#include "muhkuh_components.h"
-%}
-
-%include muhkuh_typemaps.i
+#include "muhkuh_available_languages.h"
+#include "muhkuh_flags.h"
 
 
-const char *get_version();
-
-const char *get_lua_script_path();
-const char *get_lua_module_path();
-
-void get_plugins(lua_State *MUHKUH_SWIG_OUTPUT_CUSTOM_OBJECT);
+const LANGUAGE_INFO_T atAvailaleApplicationLanguages[4] =
+{
+	{ wxLANGUAGE_DEFAULT,           "System default",               NULL },
+	{ wxLANGUAGE_GERMAN,            "German",                       icon_famfamfam_flags_de },
+	{ wxLANGUAGE_ENGLISH,           "English",                      icon_famfamfam_flags_gb },
+	{ wxLANGUAGE_ENGLISH_US,	"English (U.S.)",               icon_famfamfam_flags_us }
+};

@@ -6,7 +6,9 @@
 
 #include <wx/html/htmlcell.h>
 
-#include "muhkuh_lua.h"
+#if USE_LUA!=0
+#       include "muhkuh_lua.h"
+#endif
 
 
 FORCE_LINK_ME(muhkuh_htmltag_lua)
@@ -22,6 +24,7 @@ TAG_HANDLER_BEGIN(LUA, "LUA")
 		char *pcResult;
 
 
+#if USE_LUA!=0
 		/* Get the lua script. */
 		strLuaCode = m_WParser->GetInnerSource(tag);
 
@@ -36,6 +39,9 @@ TAG_HANDLER_BEGIN(LUA, "LUA")
 		{
 			strHtmlCode = wxEmptyString;
 		}
+#else
+		strHtmlCode = "ERROR: can not parse lua tag. No lua support built in.";
+#endif
 
 		ParseInnerSource(strHtmlCode);
 		return true;

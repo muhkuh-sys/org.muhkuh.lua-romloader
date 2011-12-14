@@ -26,24 +26,21 @@
 #define __MUHKUH_LUA_H__
 
 #include "muhkuh_config_data.h"
-#include "muhkuh_so_api.h"
 
 
-void MUHKUH_SO_API lua_muhkuh_register_config_data(muhkuh_config_data *ptConfigData);
-muhkuh_config_data MUHKUH_SO_API *lua_muhkuh_get_config_data(void);
-muhkuh_plugin_manager MUHKUH_SO_API *lua_muhkuh_get_plugin_manager(lua_State *ptLuaState);
+void lua_muhkuh_register_config_data(muhkuh_config_data *ptConfigData);
 
-lua_State MUHKUH_SO_API *lua_muhkuh_create_state(void);
-void MUHKUH_SO_API lua_muhkuh_create_default_state(void);
-void MUHKUH_SO_API lua_muhkuh_close_default_state(void);
+lua_State *lua_muhkuh_create_state(void);
+void lua_muhkuh_create_default_state(void);
+void lua_muhkuh_close_default_state(void);
 
-int MUHKUH_SO_API lua_muhkuh_get_memory_usage(lua_State *ptLuaState);
+int lua_muhkuh_get_memory_usage(lua_State *ptLuaState);
 
-int MUHKUH_SO_API lua_muhkuh_generate_text(lua_State *ptLuaState, const char *pcLuaCode, char **ppcResult);
-int MUHKUH_SO_API lua_muhkuh_run_code(lua_State *ptLuaState, const char *pcLuaCode, char **ppcResult);
+int lua_muhkuh_generate_text(lua_State *ptLuaState, const char *pcLuaCode, char **ppcResult);
+int lua_muhkuh_run_code(lua_State *ptLuaState, const char *pcLuaCode, char **ppcResult);
 
-const char MUHKUH_SO_API *lua_muhkuh_error_to_string(int iLuaError);
-const char MUHKUH_SO_API *lua_muhkuh_type_to_string(int iLuaType);
+const char *lua_muhkuh_error_to_string(int iLuaError);
+const char *lua_muhkuh_type_to_string(int iLuaType);
 
 
 #endif  /* __MUHKUH_LUA_H__ */

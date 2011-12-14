@@ -21,7 +21,9 @@
 
 #include "muhkuh_plugin.h"
 
-#include "muhkuh_lua.h"
+#if USE_LUA!=0
+#       include "muhkuh_lua.h"
+#endif
 
 #include <wx/file.h>
 #include <wx/log.h>
@@ -312,11 +314,12 @@ bool muhkuh_plugin::openXml(wxString strXmlPath)
 bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 {
 	bool fResult;
+	wxString strLuaMessage;
+#if USE_LUA!=0
 	int iResult;
 	lua_State *ptLuaState;
 	wxString strLuaCode;
 	char *pcLuaMessage;
-	wxString strLuaMessage;
 
 
 	wxLogMessage(m_strMe + _("loading plugin '%s'"), strPluginCfgPath.c_str());
@@ -376,6 +379,12 @@ bool muhkuh_plugin::Load(wxString strPluginCfgPath)
 			lua_close(ptLuaState);
 		}
 	}
+#else
+	strLuaMessage = "ERROR: can not load lua plugin. No lua support built in.";
+	setInitError(strLuaMessage, strPluginCfgPath);
+	wxLogError(strLuaMessage);
+	fResult = false;
+#endif
 
 	return fResult;
 }

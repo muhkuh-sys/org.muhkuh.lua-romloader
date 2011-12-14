@@ -28,6 +28,7 @@
 #include "growbuffer.h"
 #include "muhkuh_aboutDialog.h"
 #include "muhkuh_app.h"
+#include "muhkuh_available_languages.h"
 #include "muhkuh_brokenPluginDialog.h"
 #include "muhkuh_icons.h"
 #include "muhkuh_id.h"
@@ -107,6 +108,11 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	int iLanguage;
 
 
+	/* Create a status bar with 2 fields. */
+	CreateStatusBar(2);
+	/* Use pane 1 for menu and toolbar help. */
+	SetStatusBarPane(0);
+
 	/* Create a new config data object. */
 	m_ptConfigData = new muhkuh_config_data();
 
@@ -120,12 +126,36 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 	wxConfigBase::Set(ptConfig);
 	ptConfig->SetRecordDefaults();
 
-	// TODO: init the locale to a value from the config file
-//	iLanguage = wxLANGUAGE_GERMAN;
-//	iLanguage = wxLANGUAGE_ENGLISH_US;
-	iLanguage = wxLocale::GetSystemLanguage();
-//	wxLogMessage(_("Using language '%s'."), wxLocale::GetLanguageName(iLanguage).fn_str());
-	if( m_locale.Init(iLanguage, wxLOCALE_CONV_ENCODING)==false )
+	/* Init the locale to a value from the config file. */
+	ptConfig->SetPath("/Application");
+	iLanguage = ptConfig->Read("locale", wxLANGUAGE_UNKNOWN);
+
+	/* Ak the user if the config file had no language entry. */
+	if( iLanguage==wxLANGUAGE_UNKNOWN )
+	{
+		wxArrayString astrLangNames;
+		const LANGUAGE_INFO_T *ptCnt;
+		const LANGUAGE_INFO_T *ptEnd;
+
+		ptCnt = atAvailaleApplicationLanguages;
+		ptEnd = ptCnt + (sizeof(atAvailaleApplicationLanguages)/sizeof(atAvailaleApplicationLanguages[0]));
+		while( ptCnt<ptEnd )
+		{
+			astrLangNames.Add(ptCnt->pcName);
+			++ptCnt;
+		}
+		int lng = wxGetSingleChoiceIndex
+                  (
+                    _("Please choose language:"),
+                    _("Language"),
+                    astrLangNames
+                  );
+	}
+
+
+//	iLanguage = wxLocale::GetSystemLanguage();
+	wxLogMessage(_("Using language '%s'."), wxLocale::GetLanguageName(iLanguage).fn_str());
+	if( m_locale.Init(iLanguage, wxLOCALE_LOAD_DEFAULT)==false )
 	{
 		// NOTE: translate this so the default system language may be used at least.
 		wxLogError(_("The language '%s' is not supported by the system."), wxLocale::GetLanguageName(iLanguage).c_str());
@@ -146,11 +176,6 @@ muhkuh_mainFrame::muhkuh_mainFrame(void)
 
 	// use aui manager for this frame
 	m_auiMgr.SetManagedWindow(this);
-
-	// create a status bar with text on the left side and a gauge on the right
-	CreateStatusBar(2);
-	// use pane 1 for menu and toolbar help
-	SetStatusBarPane(0);
 
 	// create the menu bar
 	createMenu();
@@ -257,7 +282,9 @@ muhkuh_mainFrame::~muhkuh_mainFrame(void)
 	if( m_ptConfigData!=NULL )
 	{
 		delete m_ptConfigData;
+#if USE_LUA!=0
 		lua_muhkuh_register_config_data(NULL);
+#endif
 	}
 
 	m_auiMgr.UnInit();
@@ -436,7 +463,7 @@ void muhkuh_mainFrame::reloadWelcomePage(void)
 	if( m_ptConfigData->m_strWelcomeFile.IsEmpty()==true )
 	{
 		// use the default welcome message
-		strPage = _("<html><head><title>Welcome</title></head><body><h1>Welcome to <lua>return muhkuh_components_lua.get_version()</lua></h1></body></html>");
+		strPage = _("<html><head><title>Welcome</title></head><body><h1>Welcome to <lua>return muhkuh_application.get_version()</lua></h1></body></html>");
 	}
 	else
 	{
@@ -471,7 +498,7 @@ void muhkuh_mainFrame::reloadDetailsPage(void)
 			  wxT("	local subTestName\n")
 			  wxT("\n")
 			  wxT("\n")
-			  wxT("	testDesc = muhkuh.GetSelectedTest()\n")
+			  wxT("	testDesc = muhkuh_application.GetSelectedTest()\n")
 			  wxT("	if testDesc then\n")
 			  wxT("		testName = testDesc:testDescription_getName()\n")
 			  wxT("		pageTitle = \"Test Details for \" .. testName\n")
@@ -615,7 +642,7 @@ void muhkuh_mainFrame::read_config(void)
 			m_notebook->DeletePage(iPageIdx);
 		}
 		// forget the pointer
-		m_testDetailsHtml = NULL;	
+		m_testDetailsHtml = NULL;
 	}
 }
 
@@ -784,6 +811,7 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 	int iLuaMemKb;
 	wxULongLong tLuaMemBytes;
 	bool fHasMoreInput;
+	wxStatusBar *ptStatusBar;
 
 
 	switch(m_state)
@@ -847,8 +875,13 @@ void muhkuh_mainFrame::OnIdle(wxIdleEvent& event)
 	strStatus += strMemStatus;
 #endif
 
-	// set the status text
-	SetStatusText(strStatus, 1);
+	/* Does the status bar already exist? */
+	ptStatusBar = GetStatusBar();
+	if( ptStatusBar!=NULL )
+	{
+		/* Set the status text. */
+		ptStatusBar->SetStatusText(strStatus, 1);
+	}
 
 	event.Skip();
 }
@@ -935,9 +968,11 @@ void muhkuh_mainFrame::OnConfigDialog(wxCommandEvent& WXUNUSED(event))
 		/* FIXME: this writes the old config, but why? */
 		write_config();
 
+#if USE_LUA!=0
 		/* Replace the default lua state. */
 		lua_muhkuh_register_config_data(m_ptConfigData);
 		lua_muhkuh_create_default_state();
+#endif
 
 		reloadWelcomePage();
 		reloadDetailsPage();
@@ -1218,17 +1253,18 @@ bool muhkuh_mainFrame::executeTest_generate_start_code(wxString strStartLuaFile)
 		strErrorMsg = wxString::FromAscii(lua_muhkuh_error_to_string(iResult));
 		strStartupCode = wxString::FromAscii(pcStartupCode);
 		strMsg.Printf(_("Failed to execute the startup code generator: %d: %s : %s"), iResult, strErrorMsg, strStartupCode);
+		wxLogError(strMsg);
 		strMsg.Append(_("The startup code generator can be defined in the lua section of the configuration dialog."));
 		wxMessageBox(strMsg, _("Server startup error"), wxOK|wxICON_ERROR, this);
 	}
 	else
 	{
 		wxLogDebug("Lua startup code: %s", pcStartupCode);
-		
+
 		/* Create the filename. */
 		tFileName.AssignDir(m_strWorkingFolder);
 		tFileName.SetFullName(strStartLuaFile);
-		
+
 		/* Create the lua file. */
 		fResult = tFile.Create(tFileName.GetFullPath(), true);
 		if( fResult!=true )
@@ -1293,7 +1329,7 @@ void muhkuh_mainFrame::executeTestPart2(void)
 
 
 	muhkuh_split_testdescription *ptSplitter;
-	wxString strOldWorkingDirectory;  /* This is the current working folder before this function changes it. */
+	struct wxExecuteEnv tExecEnv;
 	wxString strStartLuaFile;	  /* This is the complete path to the generated startup file. */
 	wxString strStartCmd;
 
@@ -1308,13 +1344,6 @@ void muhkuh_mainFrame::executeTestPart2(void)
 		fResult = executeTest_generate_start_code(strStartLuaFile);
 		if( fResult==true )
 		{
-			/* Save the old working directory. It will be restored at the end of this function. */
-			strOldWorkingDirectory = wxFileName::GetCwd();
-
-			/* Change the working directory to the temp folder. */
-			wxLogMessage("Changing to folder %s", m_strWorkingFolder);
-			wxFileName::SetCwd(m_strWorkingFolder);
-
 			wxLogMessage(_("execute test '%s', index %d"), m_strRunningTestName, m_sizRunningTest_SubTestIdx);
 
 
@@ -1328,7 +1357,16 @@ void muhkuh_mainFrame::executeTestPart2(void)
 			strStartCmd.Printf("lua %s", strStartLuaFile);
 			wxLogMessage("start command: %s", strStartCmd);
 
-			m_lServerPid = wxExecute(strStartCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, m_ptServerProcess);
+			/* Create the execute environment.
+			 * This provides the working folder and the environment variables.
+			 */
+			tExecEnv.cwd = m_strWorkingFolder;
+			/* TODO: add an env dialog in the configuration and set all variables. */
+                        wxGetEnvMap(&tExecEnv.env);
+			/* FIXME: this is a demo for an environment variable. Remove it when the ENV dialog is finished. */
+			tExecEnv.env["LD_LIBRARY_PATH"] = "/home/baccy/Coding/muhkuh/branches/plugin_interface_v2/build/build";
+
+			m_lServerPid = wxExecute(strStartCmd, wxEXEC_ASYNC|wxEXEC_MAKE_GROUP_LEADER, m_ptServerProcess, &tExecEnv);
 			if( m_lServerPid==0 )
 			{
 				strMsg.Printf(_("Failed to start the server with command: %s"), strStartCmd);
@@ -1349,9 +1387,6 @@ void muhkuh_mainFrame::executeTestPart2(void)
 				// start the timer to poll the server for input
 				m_timerIdleWakeUp.Start(100);
 			}
-
-			/* Restore old working directory. */
-			wxFileName::SetCwd(strOldWorkingDirectory);
 		}
 	}
 }
@@ -1427,6 +1462,7 @@ void muhkuh_mainFrame::finishTest(void)
 	/* forget current server output tab */
 	m_ptTextCtrl_TestOutput = NULL;
 
+	/* TODO: add a kind of debug switch which keeps the working folder. */
 	/* Remove the working folder. */
 	if( m_strWorkingFolder.IsEmpty()==false )
 	{
@@ -2139,7 +2175,7 @@ bool muhkuh_mainFrame::addTestTree(testTreeItemData *ptTestTreeItem)
 					}
 				}
 			} while( iCmp!=0 );
-	
+
                         // check for error (element already exists)
                         if( iCmp==0 )
                         {
