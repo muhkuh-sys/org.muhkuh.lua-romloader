@@ -28,12 +28,12 @@ atComponentTestLog = {
 }
 
 function atComponentTestLog:local_get_log_window(uiSerial, uiTestIdx)
-	local atResults = g_atTestResults[uiSerial].atResults
+	local atResults = tester.g_atTestResults[uiSerial].atResults
 	-- Does the test already have a log?
 	local tLogWindow = atResults[uiTestIdx].tNotebook
 	if not tLogWindow then
 		-- No log window yet -> create a new one.
-		local aTestAttr = g_atDeviceTest.atSingleTests[uiTestIdx]
+		local aTestAttr = tester.g_atDeviceTest.atSingleTests[uiTestIdx]
 		if aTestAttr~=nil then
 			local strTestName = aTestAttr.strName
 			-- Add another demo page to the notebook.
@@ -77,7 +77,7 @@ end
 
 
 function atComponentTestLog:event_update_style()
-	local tStyle = g_atConfiguration.tStyle
+	local tStyle = tester.g_atConfiguration.tStyle
 
 end
 
@@ -127,5 +127,5 @@ function atComponentTestLog:event_start_test(uiSerial, uiTestIdx)
 end
 
 
-g_atComponents["log"] = atComponentTestLog
+tester.g_atComponents["log"] = atComponentTestLog
 

@@ -27,7 +27,7 @@ function atResultGrid.grid_select_cell(tEvent)
 	local iRow = tEvent:GetRow()
 	local iCol = tEvent:GetCol()
 
-	local uiSerial = g_atDeviceTest.uiSerialFirst + iRow
+	local uiSerial = tester.g_atDeviceTest.uiSerialFirst + iRow
 	local uiTestIdx = iCol + 1
 
 	atResultGrid.tParent:event_select_test(atResultGrid, uiSerial, uiTestIdx)
@@ -39,7 +39,7 @@ function atResultGrid.grid_select_label(tEvent)
 
 
 	if iRow>=0 and iCol==-1 then
-		local uiSerial = g_atDeviceTest.uiSerialFirst + iRow
+		local uiSerial = tester.g_atDeviceTest.uiSerialFirst + iRow
 		atResultGrid.tParent:event_select_test(atResultGrid, uiSerial, nil)
 	else
 		tEvent:Veto()
@@ -65,7 +65,7 @@ end
 
 
 function atResultGrid:event_update_style()
-	local tStyle = g_atConfiguration.tStyle
+	local tStyle = tester.g_atConfiguration.tStyle
 
 end
 
@@ -76,10 +76,10 @@ end
 
 function atResultGrid:event_update_test()
 	-- Get the number of boards and the number of tests.
-	local uiSerialFirst = g_atDeviceTest.uiSerialFirst
-	local uiSerialLast = g_atDeviceTest.uiSerialLast
-	local uiBoards = g_atDeviceTest.uiSerialLast - uiSerialFirst + 1
-	local uiTests  = g_atDeviceTest.sizSingleTests
+	local uiSerialFirst = tester.g_atDeviceTest.uiSerialFirst
+	local uiSerialLast = tester.g_atDeviceTest.uiSerialLast
+	local uiBoards = tester.g_atDeviceTest.uiSerialLast - uiSerialFirst + 1
+	local uiTests  = tester.g_atDeviceTest.sizSingleTests
 
 	-- Delete all rows and columns.
 	self.this:DeleteCols(0, self.this:GetNumberCols())
@@ -98,26 +98,26 @@ function atResultGrid:event_update_test()
 
 	-- Set all column labels.
 	for uiCol=1,uiTests do
-		self.this:SetColLabelValue(uiCol-1, g_atDeviceTest.atSingleTests[uiCol].strName)
+		self.this:SetColLabelValue(uiCol-1, tester.g_atDeviceTest.atSingleTests[uiCol].strName)
 	end
 end
 
 
 function atResultGrid:event_update_test_results(uiSerialIdx, uiSingleTestIdx)
-	local uiSerialCntFirst = uiBoardIdx or g_atDeviceTest.uiSerialFirst
-	local uiSerialCntLast  = uiBoardIdx or g_atDeviceTest.uiSerialLast
+	local uiSerialCntFirst = uiBoardIdx or tester.g_atDeviceTest.uiSerialFirst
+	local uiSerialCntLast  = uiBoardIdx or tester.g_atDeviceTest.uiSerialLast
 
 	local uiSingleTestCntFirst = uiSingleTestIdx or 1
-	local uiSingleTestCntLast  = uiSingleTestIdx or g_atDeviceTest.sizSingleTests
+	local uiSingleTestCntLast  = uiSingleTestIdx or tester.g_atDeviceTest.sizSingleTests
 
 	for uiSerialCnt = uiSerialCntFirst, uiSerialCntLast do
-		local atResults = g_atTestResults[uiSerialCnt].atResults
+		local atResults = tester.g_atTestResults[uiSerialCnt].atResults
 		for uiSingleTestCnt = uiSingleTestCntFirst, uiSingleTestCntLast do
 			local eResult = atResults[uiSingleTestCnt].eResult
-			local uiRow = uiSerialCnt - g_atDeviceTest.uiSerialFirst
+			local uiRow = uiSerialCnt - tester.g_atDeviceTest.uiSerialFirst
 			local uiCol = uiSingleTestCnt - 1
-			self.this:SetCellValue(uiRow, uiCol, astrTestResult[eResult])
-			self.this:SetCellBackgroundColour(uiRow, uiCol, atTestResultColor[eResult])
+			self.this:SetCellValue(uiRow, uiCol, tester.astrTestResult[eResult])
+			self.this:SetCellBackgroundColour(uiRow, uiCol, tester.atTestResultColor[eResult])
 		end
 	end
 end
@@ -127,5 +127,5 @@ function atResultGrid:event_select_test(uiSerial, uiTestIdx)
 end
 
 
-g_atComponents["result_grid"] = atResultGrid
+tester.g_atComponents["result_grid"] = atResultGrid
 

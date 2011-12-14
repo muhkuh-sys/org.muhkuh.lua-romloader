@@ -359,4 +359,4 @@ atStyle_SuperCow.IMAGE_IDX_TestsFailed   = tImageList:Add(wx.wxBitmap(muhkuh_tes
 
 atStyle_SuperCow.IMAGE_IDX_Folder        = tImageList:Add(wx.wxBitmap(icon_famfamfam_silk_folder))
 
-table.insert(g_atStyles, atStyle_SuperCow)
+table.insert(tester.g_atStyles, atStyle_SuperCow)

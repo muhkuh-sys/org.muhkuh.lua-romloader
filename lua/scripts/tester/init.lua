@@ -18,17 +18,20 @@
 --   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             --
 -----------------------------------------------------------------------------
 
+module("tester", package.seeall)
+
+
 require("wx")
 require("muhkuh")
 
 
-local IDCounter = nil
+local TESTER_ID_COUNTER = nil
 function NewID()
-	if not IDCounter then
-		IDCounter = wx.wxID_HIGHEST
+	if not TESTER_ID_COUNTER then
+		TESTER_ID_COUNTER = wx.wxID_HIGHEST
 	end
-	IDCounter = IDCounter + 1
-	return IDCounter
+	TESTER_ID_COUNTER = TESTER_ID_COUNTER + 1
+	return TESTER_ID_COUNTER
 end
 
 
@@ -62,6 +65,7 @@ g_atConfiguration = {}
 g_atDeviceTest = {}
 g_atTestResults = {}
 
+g_pfnOriginalPrintFunction = nil
 
 -----------------------------------------------------------------------------
 --
@@ -499,7 +503,7 @@ function atMainFrame:test_read(uiSerial_First, uiSerial_Last)
 				strName = aAttr.name,
 				strVersion = aAttr.version
 			}
-			table.append(atDeviceTest.atSingleTests, aSubTest)
+			table.insert(atDeviceTest.atSingleTests, aSubTest)
 		end
 	end
 
@@ -538,6 +542,18 @@ function atMainFrame:run_one_single_test(uiSerial, uiSingleTest)
 	self:event_start_test(nil, uiSerial, uiSingleTest)
 end
 
+
+function atMainFrame:catch_prints(...)
+	-- Loop over all arguments and combine them to one big string.
+	astrMsg = {}
+	for iCnt=1,select("#",...) do
+		-- Get one argument.
+		table.insert(astrMsg, select(iCnt,...))
+	end
+	strMsg = table.concat(astrMsg, "\t")
+	
+end
+
 -----------------------------------------------------------------------------
 --
 -- Application
@@ -561,8 +577,13 @@ function tApplication:OnInit()
 	return true
 end
 
-tApplication:OnInit()
 
+function run()
+	-- Save the original print function. Maybe we can restore it later.
+	g_pfnOriginalPrintFunction = _G.print
+	-- Use the new print function.
+	_G.print = catch_prints
 
-wx.wxGetApp():MainLoop()
+	tApplication:OnInit()
+end
 

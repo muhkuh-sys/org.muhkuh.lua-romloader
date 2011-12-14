@@ -34,12 +34,12 @@ function atComponentOverview:local_update_test_results(uiSerialIdx)
 	local uiTestsOk = 0
 	local uiTestsFailed = 0
 	
-	local atResults = g_atTestResults[uiSerialIdx].atResults
-	for uiSingleTestCnt = 1,g_atDeviceTest.sizSingleTests do
+	local atResults = tester.g_atTestResults[uiSerialIdx].atResults
+	for uiSingleTestCnt = 1,tester.g_atDeviceTest.sizSingleTests do
 		local eResult = atResults[uiSingleTestCnt].eResult
-		if eResult==TESTRESULT_OPEN or eResult==TESTRESULT_CANCELED then
+		if eResult==tester.TESTRESULT_OPEN or eResult==tester.TESTRESULT_CANCELED then
 			uiTestsUntested = uiTestsUntested + 1
-		elseif eResult==TESTRESULT_OK then
+		elseif eResult==tester.TESTRESULT_OK then
 			uiTestsOk = uiTestsOk + 1
 		else
 			uiTestsFailed = uiTestsFailed + 1
@@ -139,7 +139,7 @@ end
 --
 
 function atComponentOverview:event_update_style()
-	local tStyle = g_atConfiguration.tStyle
+	local tStyle = tester.g_atConfiguration.tStyle
 
 	self.tIconTestsUntested:SetBitmap(tStyle.tImageList:GetBitmap(tStyle.IMAGE_IDX_TestsUntested))
 	self.tIconTestsOk:SetBitmap(tStyle.tImageList:GetBitmap(tStyle.IMAGE_IDX_TestsOk))
@@ -148,7 +148,7 @@ end
 
 
 function atComponentOverview:event_update_fonts()
-	local tCfg = g_atConfiguration
+	local tCfg = tester.g_atConfiguration
 
 	self.tTextTestname:SetFont(tCfg.tFontHeadline)
 	self.tTextSerialnumber0:SetFont(tCfg.tFontNormal)
@@ -177,8 +177,8 @@ end
 
 function atComponentOverview:event_update_test()
 	-- Get the number of boards.
-	local uiSerialFirst = g_atDeviceTest.uiSerialFirst
-	local uiSerialLast = g_atDeviceTest.uiSerialLast
+	local uiSerialFirst = tester.g_atDeviceTest.uiSerialFirst
+	local uiSerialLast = tester.g_atDeviceTest.uiSerialLast
 
 	-- Display the new serial range.
 	self.tTextSerialnumber3:SetLabel(string.format("%d", uiSerialFirst))
@@ -191,10 +191,10 @@ end
 
 function atComponentOverview:event_update_test_results(uiSerialIdx, uiSingleTestIdx)
 	-- Get the number of boards and the number of tests.
-	local uiSerialFirst = g_atDeviceTest.uiSerialFirst
-	local uiSerialLast = g_atDeviceTest.uiSerialLast
-	local uiBoards = g_atDeviceTest.uiSerialLast - uiSerialFirst + 1
-	local uiTests  = g_atDeviceTest.sizSingleTests
+	local uiSerialFirst = tester.g_atDeviceTest.uiSerialFirst
+	local uiSerialLast = tester.g_atDeviceTest.uiSerialLast
+	local uiBoards = tester.g_atDeviceTest.uiSerialLast - uiSerialFirst + 1
+	local uiTests  = tester.g_atDeviceTest.sizSingleTests
 
 
 	-- Is this update event for the complete table? -> Only update the current serial number.
@@ -215,5 +215,5 @@ function atComponentOverview:event_select_test(uiSerialIdx, uiTestIdx)
 end
 
 
-g_atComponents["overview"] = atComponentOverview
+tester.g_atComponents["overview"] = atComponentOverview
 

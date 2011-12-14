@@ -48,7 +48,7 @@ end
 
 
 function atComponentDetails:event_update_style()
-	local tStyle = g_atConfiguration.tStyle
+	local tStyle = tester.g_atConfiguration.tStyle
 
 end
 
@@ -69,5 +69,5 @@ function atComponentDetails:event_select_test(uiSerial, uiTestIdx)
 end
 
 
-g_atComponents["details"] = atComponentDetails
+tester.g_atComponents["details"] = atComponentDetails
 

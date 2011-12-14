@@ -22,7 +22,7 @@ require("wx")
 
 
 local atComponentControl = {
-	ID_BUTTON_BROWSE_SAVE_LOGS = NewID()
+	ID_BUTTON_BROWSE_SAVE_LOGS = tester.NewID()
 }
 
 
@@ -89,7 +89,7 @@ end
 
 
 function atComponentControl:event_update_style()
-	local tStyle = g_atConfiguration.tStyle
+	local tStyle = tester.g_atConfiguration.tStyle
 
 	self.tButtonBrowseSaveLogs:SetBitmapLabel(tStyle.tImageList:GetBitmap(tStyle.IMAGE_IDX_Folder))
 end
@@ -111,5 +111,5 @@ function atComponentControl:event_select_test(uiSerial, uiTestIdx)
 end
 
 
-g_atComponents["control"] = atComponentControl
+tester.g_atComponents["control"] = atComponentControl
 
