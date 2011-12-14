@@ -37,7 +37,8 @@ function atComponentTestLog:local_get_log_window(uiSerial, uiTestIdx)
 		if aTestAttr~=nil then
 			local strTestName = aTestAttr.strName
 			-- Add another demo page to the notebook.
-			tLogWindow = muhkuh.wxLuaTtyCtrl(self.this:GetId(), wx.wxID_ANY)
+			local lStyle = wx.wxTE_MULTILINE + wx. wxTE_READONLY + wx.wxTE_DONTWRAP
+			tLogWindow = wx.wxTextCtrl(self.this, wx.wxID_ANY, "haha!\n", wx.wxDefaultPosition, wx.wxDefaultSize, lStyle)
 			local strCaption = string.format("#%d: %s", uiSerial, strTestName)
 			self.this:AddPage(tLogWindow, strCaption, false)
 			
