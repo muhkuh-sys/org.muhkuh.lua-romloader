@@ -35,7 +35,7 @@ function atComponentOverview:local_update_test_results(uiSerialIdx)
 	local uiTestsFailed = 0
 	
 	local atResults = g_atTestResults[uiSerialIdx].atResults
-	for uiSingleTestCnt = 1, #g_atDeviceTest.atSingleTests do
+	for uiSingleTestCnt = 1,g_atDeviceTest.sizSingleTests do
 		local eResult = atResults[uiSingleTestCnt].eResult
 		if eResult==TESTRESULT_OPEN or eResult==TESTRESULT_CANCELED then
 			uiTestsUntested = uiTestsUntested + 1
@@ -194,7 +194,7 @@ function atComponentOverview:event_update_test_results(uiSerialIdx, uiSingleTest
 	local uiSerialFirst = g_atDeviceTest.uiSerialFirst
 	local uiSerialLast = g_atDeviceTest.uiSerialLast
 	local uiBoards = g_atDeviceTest.uiSerialLast - uiSerialFirst + 1
-	local uiTests  = #g_atDeviceTest.atSingleTests
+	local uiTests  = g_atDeviceTest.sizSingleTests
 
 
 	-- Is this update event for the complete table? -> Only update the current serial number.

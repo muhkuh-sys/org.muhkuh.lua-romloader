@@ -77,15 +77,15 @@ local atMainFrame = {
 
 
 	m_atStyleFiles = {
-		"tester_style_supercow.lua"
+		"tester.style.supercow"
 	},
 
 	m_atComponentFiles = {
-		"tester_overview.lua",
-		"tester_control.lua",
-		"tester_details.lua",
-		"tester_log.lua",
-		"tester_resultgrid.lua"
+		"tester.overview",
+		"tester.control",
+		"tester.details",
+		"tester.log",
+		"tester.resultgrid"
 	},
 
 	-- The default layout
@@ -149,8 +149,7 @@ function atMainFrame:load_styles()
 	print("loading styles...")
 	for tKey,strFilename in pairs(self.m_atStyleFiles) do
 		print(string.format("\t'%s'", strFilename))
-		local fnChunk,strError = loadfile(strFilename)
-		assert(fnChunk, string.format("failed to load style '%s':\n%s", strFilename, strError or ""))()
+		require(strFilename)
 	end
 	print("finished loading styles!")
 end
@@ -160,8 +159,7 @@ function atMainFrame:load_components()
 	print("loading components...")
 	for tKey,strFilename in pairs(self.m_atComponentFiles) do
 		print(string.format("\t'%s'", strFilename))
-		local fnChunk,strError = loadfile(strFilename)
-		assert(fnChunk, string.format("failed to load component '%s':\n%s", strFilename, strError or ""))()
+		require(strFilename)
 	end
 	print("finished loading components!")
 end
@@ -228,7 +226,7 @@ function atMainFrame:create()
 end
 
 
-function atMainFrame:set_test(atDeviceTest, uiSerial_First, uiSerial_Last)
+function atMainFrame:set_test(atDeviceTest)
 	-- Remember the device test.
 	g_atDeviceTest = atDeviceTest
 
@@ -240,7 +238,7 @@ function atMainFrame:set_test(atDeviceTest, uiSerial_First, uiSerial_Last)
 	for uiSerialCnt=atDeviceTest.uiSerialFirst,atDeviceTest.uiSerialLast do
 		-- Create the result for one serial number.
 		local atBoardResult = {}
-		for tKey,atTest in ipairs(atDeviceTest.atSingleTests) do
+		for iCnt=1,atDeviceTest.sizSingleTests do
 			table.insert(atBoardResult, { eResult=TESTRESULT_OPEN, strLog="", tNotebook=nil })
 		end
 		atTestResults[uiSerialCnt] = { uiSerial=uiSerialCnt, atResults=atBoardResult}
@@ -460,6 +458,55 @@ end
 -- Test functions.
 --
 
+-- Read the test description from the file 'test_description.lua'. This file
+-- must be in the current working folder. It contains a simple table definition,
+-- which maps the sub test numbers to a 'name' and 'version' pair.
+function atMainFrame:test_read(uiSerial_First, uiSerial_Last)
+	local atDeviceTest = {
+		-- The name of the test.
+		strName = "",
+
+		-- The first and last serial number included in this test.
+		uiSerialFirst = uiSerial_First,
+		uiSerialLast  = uiSerial_Last,
+
+		-- A list of all single tests in this device test.
+		sizSingleTests = 0,
+		atSingleTests = {}
+	}
+
+	-- Try to execute the file.
+	local fStatus,aResult = pcall(dofile, "test_description.lua")
+	if fStatus==false then
+		print("Failed to read the file test_description.lua !")
+		print(aResult)
+	elseif type(_G.__MUHKUH_ALL_TESTS)~="table" then
+		print("The test description did not define a global array named __MUHKUH_ALL_TESTS !")
+		fStatus = false
+	elseif type(_G.__MUHKUH_ALL_TESTS[0])~="table" then
+		print("The list of tests has no root entry!")
+		fStatus = false
+	elseif #_G.__MUHKUH_ALL_TESTS==0 then
+		print("The list of tests is empty!")
+		fStatus = false
+	end
+
+	if fStatus==true then
+		atDeviceTest.strName = _G.__MUHKUH_ALL_TESTS[0].name
+		atDeviceTest.sizSingleTests = #_G.__MUHKUH_ALL_TESTS
+		for iCnt,aAttr in ipairs(_G.__MUHKUH_ALL_TESTS) do
+			local aSubTest = {
+				strName = aAttr.name,
+				strVersion = aAttr.version
+			}
+			table.append(atDeviceTest.atSingleTests, aSubTest)
+		end
+	end
+
+	return atDeviceTest
+end
+
+
 function atMainFrame:test_start(tEvent)
 	print("start the test")
 
@@ -472,7 +519,7 @@ function atMainFrame:test_start(tEvent)
 	self.m_uiRunningTest_Serial_Last  = uiBoardIdx or g_atDeviceTest.uiSerialLast
 
 	self.m_uiRunningTest_SingleTest_First = uiSingleTestIdx or 1
-	self.m_uiRunningTest_SingleTest_Last  = uiSingleTestIdx or #g_atDeviceTest.atSingleTests
+	self.m_uiRunningTest_SingleTest_Last  = uiSingleTestIdx or g_atDeviceTest.sizSingleTests
 
 	self:run_one_single_test(self.m_uiRunningTest_Serial_First, self.m_uiRunningTest_SingleTest_First)
 end
@@ -501,31 +548,12 @@ function tApplication:OnInit()
 	local tMainFrame = atMainFrame:create()
 	tMainFrame:create_menu()
 
+	local uiSerial_First = 20000
+	local uiSerial_Last  = 20000
+
 	-- set the test.
-	local atDeviceTest = {
-		-- The name of the test.
-		strName = "NXDM10 S301 test",
-
-		-- The first and last serial number included in this test.
-		uiSerialFirst = 20000,
-		uiSerialLast  = 20000,
-
-		-- A list of all single tests in this device test.
-		atSingleTests = {
-			{
-				strName = "Uart Test",
-				strParameter = {},
-				strCode = "return 0"
-			},
-			{
-				strName = "SPI Flash Test",
-				strParameter = {},
-				strCode = "return 0"
-			}
-		}
-	}
+	local atDeviceTest = tMainFrame:test_read(uiSerial_First, uiSerial_Last)
 	tMainFrame:set_test(atDeviceTest)
-
 
 	local tFrame = tMainFrame.this
 	wx.wxGetApp():SetTopWindow(tFrame)

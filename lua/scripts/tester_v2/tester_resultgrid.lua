@@ -79,7 +79,7 @@ function atResultGrid:event_update_test()
 	local uiSerialFirst = g_atDeviceTest.uiSerialFirst
 	local uiSerialLast = g_atDeviceTest.uiSerialLast
 	local uiBoards = g_atDeviceTest.uiSerialLast - uiSerialFirst + 1
-	local uiTests  = #g_atDeviceTest.atSingleTests
+	local uiTests  = g_atDeviceTest.sizSingleTests
 
 	-- Delete all rows and columns.
 	self.this:DeleteCols(0, self.this:GetNumberCols())
@@ -108,7 +108,7 @@ function atResultGrid:event_update_test_results(uiSerialIdx, uiSingleTestIdx)
 	local uiSerialCntLast  = uiBoardIdx or g_atDeviceTest.uiSerialLast
 
 	local uiSingleTestCntFirst = uiSingleTestIdx or 1
-	local uiSingleTestCntLast  = uiSingleTestIdx or #g_atDeviceTest.atSingleTests
+	local uiSingleTestCntLast  = uiSingleTestIdx or g_atDeviceTest.sizSingleTests
 
 	for uiSerialCnt = uiSerialCntFirst, uiSerialCntLast do
 		local atResults = g_atTestResults[uiSerialCnt].atResults
