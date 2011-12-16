@@ -67,6 +67,76 @@ g_atTestResults = {}
 
 g_pfnOriginalPrintFunction = nil
 
+
+
+-----------------------------------------------------------------------------
+--
+-- Exported functions for tests.
+--
+
+local m_commonPlugin = nil
+
+_G.__MUHKUH_TEST_RESULT_OK          = 1
+_G.__MUHKUH_TEST_RESULT_CANCEL      = 2
+_G.__MUHKUH_TEST_RESULT_FAIL        = -1
+_G.__MUHKUH_TEST_RESULT_FATALERROR  = -2
+
+
+function getCommonPlugin(pattern)
+	local pattern = pattern or ".*"
+	if not m_commonPlugin then
+		local plugin = select_plugin.SelectPlugin(pattern)
+		if plugin then
+			print("tester.getCommonPlugin: trying to connect")
+			local fOk, strError = pcall(plugin.Connect, plugin)
+			if fOk then
+				print("connected")
+				m_commonPlugin = plugin
+			else
+				print(strError)
+				print("could not connect")
+				print(debug.traceback())
+			end
+		end
+	end
+	return m_commonPlugin
+end
+
+function closeCommonPlugin()
+	if m_commonPlugin then
+		m_commonPlugin:Disconnect()
+		m_commonPlugin = nil
+	end
+end
+
+function hexdump(strData, iBytesPerRow)
+	local iCnt
+	local iByteCnt
+	local strDump
+
+
+	if not iBytesPerRow then
+		iBytesPerRow = 16
+	end
+
+	iByteCnt = 0
+	for iCnt=1,strData:len() do
+		if iByteCnt==0 then
+			strDump = string.format("%08X :", iCnt-1)
+		end
+		strDump = strDump .. string.format(" %02X", strData:byte(iCnt))
+		iByteCnt = iByteCnt + 1
+		if iByteCnt==iBytesPerRow then
+			iByteCnt = 0
+			print(strDump)
+		end
+	end
+	if iByteCnt~=0 then
+		print(strDump)
+	end
+end
+
+
 -----------------------------------------------------------------------------
 --
 -- Main frame
@@ -404,61 +474,6 @@ end
 
 -----------------------------------------------------------------------------
 --
--- wxWidgets events.
---
-
-function atMainFrame:event_test_process_finished(tEvent)
-	print("event test process finished")
-
-
-	-- Get the rest of the data from the process.
-	while self.m_tRunningTest_Process:IsInputAvailable()==true do
-		strData = self.m_tRunningTest_Process:GetInputStream():Read(4096)
-		self:event_test_message(nil, 1, strData)
-	end
-
-	while self.m_tRunningTest_Process:IsErrorAvailable()==true do
-		strData = self.m_tRunningTest_Process:GetErrorStream():Read(4096)
-		self:event_test_message(nil, 2, strData)
-	end
-
-	-- TODO: Get the test result from the process.
-	local eResult = TESTRESULT_OK
-
-	-- Delete the process object.
-	self.m_tRunningTest_Process = nil
-	collectgarbage("collect")
-
-	local uiSerial = self.m_tRunningTest_Serial
-	local uiSingleTest = self.m_tRunningTest_SingleTest
-
-	g_atTestResults[uiSerial].atResults[uiSingleTest].eResult = eResult
-	self:event_update_test_results(nil, uiSerial, uiSingleTest)
-
-	wx.wxLogMessage("Test finished.")
-
-	self:event_test_finished(nil, uiSerial, uiSingleTest)
-	-- Free the capture object.
-	self.m_tRunningTest_Capture = nil
-
-	-- Run more tests?
-	if uiSerial<self.m_uiRunningTest_Serial_Last or uiSingleTest<self.m_uiRunningTest_SingleTest_Last then
-		-- TODO: ask the user if we should move on.
-
-		-- Run the next test.
-		if uiSingleTest<self.m_uiRunningTest_SingleTest_Last then
-			uiSingleTest = uiSingleTest + 1
-		else
-			uiSerial = uiSerial + 1
-			uiSingleTest = self.m_uiRunningTest_SingleTest_First
-		end
-
-		self:run_one_single_test(uiSerial, uiSingleTest)
-	end
-end
-
------------------------------------------------------------------------------
---
 -- Test functions.
 --
 
@@ -526,6 +541,21 @@ function atMainFrame:test_start(tEvent)
 	self.m_uiRunningTest_SingleTest_Last  = uiSingleTestIdx or g_atDeviceTest.sizSingleTests
 
 	self:run_one_single_test(self.m_uiRunningTest_Serial_First, self.m_uiRunningTest_SingleTest_First)
+
+--	-- Run more tests?
+--	if uiSerial<self.m_uiRunningTest_Serial_Last or uiSingleTest<self.m_uiRunningTest_SingleTest_Last then
+--		-- TODO: ask the user if we should move on.
+--
+--		-- Run the next test.
+--		if uiSingleTest<self.m_uiRunningTest_SingleTest_Last then
+--			uiSingleTest = uiSingleTest + 1
+--		else
+--			uiSerial = uiSerial + 1
+--			uiSingleTest = self.m_uiRunningTest_SingleTest_First
+--		end
+--
+--		self:run_one_single_test(uiSerial, uiSingleTest)
+--	end
 end
 
 
@@ -540,19 +570,61 @@ function atMainFrame:run_one_single_test(uiSerial, uiSingleTest)
 
 	self:event_select_test(nil, uiSerial, uiSingleTest)
 	self:event_start_test(nil, uiSerial, uiSingleTest)
-end
 
+	-- This is the filename of the base parameters.
+	local strParametersBase = "test_description_0_par.lua"
+	-- This is the filename of the subtest parameters.
+	local strParametersSubtest = string.format("test_description_%d_par.lua", uiSingleTest)
+	-- This is the filename of the subtest code.
+	local strCodeSubtest = string.format("test_description_%d_code.lua", uiSingleTest)
 
-function atMainFrame:catch_prints(...)
-	-- Loop over all arguments and combine them to one big string.
-	astrMsg = {}
-	for iCnt=1,select("#",...) do
-		-- Get one argument.
-		table.insert(astrMsg, select(iCnt,...))
-	end
-	strMsg = table.concat(astrMsg, "\t")
+	-- This is the test result.
+	local eResult
 	
+	_G.__MUHKUH_TEST_PARAMETER = {}
+	fResult,tResult = pcall(dofile, strParametersBase)
+	if fResult~=true then
+		print("*** ERROR ***")
+		print(string.format("*** Failed to execute the parameter file '%s'.", strParametersBase))
+		print(string.format("*** Error: %s", tResult))
+		eResult = TESTRESULT_FATAL_ERROR
+	else
+		fResult,tResult = pcall(dofile, strParametersSubtest)
+		if fResult~=true then
+			print("*** ERROR ***")
+			print(string.format("*** Failed to execute the parameter file '%s'.", strParametersSubtest))
+			print(string.format("*** Error: %s", tResult))
+			eResult = TESTRESULT_FATAL_ERROR
+		else
+			fResult,tResult = pcall(dofile, strCodeSubtest)
+			if fResult~=true then
+				print("*** ERROR ***")
+				print(string.format("*** Failed to execute the code file '%s'.", strCodeSubtest))
+				print(string.format("*** Error: %s", tResult))
+				eResult = TESTRESULT_FATAL_ERROR
+			else
+				-- Translate the Muhkuh result to the internal values.
+				if tResult==__MUHKUH_TEST_RESULT_OK then
+					eResult = TESTRESULT_OK
+				elseif tResult==__MUHKUH_TEST_RESULT_FAIL then
+					eResult = TESTRESULT_FAILED
+				elseif tResult==__MUHKUH_TEST_RESULT_CANCEL then
+					eResult = TESTRESULT_CANCELED
+				else
+					eResult = TESTRESULT_FATAL_ERROR
+				end
+			end
+		end
+	end
+
+	g_atTestResults[uiSerial].atResults[uiSingleTest].eResult = eResult
+	self:event_update_test_results(nil, uiSerial, uiSingleTest)
+
+	wx.wxLogMessage("Test finished.")
+
+	self:event_test_finished(nil, uiSerial, uiSingleTest)
 end
+
 
 -----------------------------------------------------------------------------
 --
@@ -581,9 +653,9 @@ end
 function run()
 	-- Save the original print function. Maybe we can restore it later.
 	g_pfnOriginalPrintFunction = _G.print
-	-- Use the new print function.
-	_G.print = catch_prints
 
 	tApplication:OnInit()
+
+	wx.wxGetApp():MainLoop()
 end
 

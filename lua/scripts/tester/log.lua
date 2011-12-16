@@ -22,6 +22,8 @@ require("wx")
 require("muhkuh")
 
 
+g_tActiveLogWindow = nil
+
 atComponentTestLog = {
 	m_tStyleMessage = nil,
 	m_tStyleError = nil
@@ -96,8 +98,6 @@ end
 
 
 function atComponentTestLog:event_select_test(uiSerial, uiTestIdx)
-	local this = self.this
-	
 	-- Only process events for a subtest.
 	if uiSerial~=nil and uiTestIdx~=nil then
 		local tLogWindow = self:local_get_log_window(uiSerial, uiTestIdx)
@@ -112,20 +112,38 @@ end
 
 
 function atComponentTestLog:event_start_test(uiSerial, uiTestIdx)
-	local this = self.this
-	
 	-- Only process events for a subtest.
 	if uiSerial~=nil and uiTestIdx~=nil then
-		local tActivePty = self:local_get_log_window(uiSerial, uiTestIdx)
-
-		local aArgs = { "/bin/echo", "123", "abc", "lalala" }
-		local iResult = tActivePty:run(aArgs[1], aArgs)
-		print(iResult)
+		g_tActiveLogWindow = self:local_get_log_window(uiSerial, uiTestIdx)
 	else
-		print("lalala")
+		g_tActiveLogWindow = nil
 	end
 end
 
+
+function atComponentTestLog:event_test_finished(uiSerial, uiTestIdx)
+	g_tActiveLogWindow = nil
+end
+
+
+function catch_prints(...)
+	if g_tActiveLogWindow~=nil then
+		-- Loop over all arguments and combine them to one big string.
+		astrMsg = {}
+		for iCnt=1,select("#",...) do
+			-- Get one argument.
+			table.insert(astrMsg, tostring(select(iCnt,...)))
+		end
+		table.insert(astrMsg, "\n")
+		g_tActiveLogWindow:AppendText(table.concat(astrMsg, "\t"))
+	else
+		tester.g_pfnOriginalPrintFunction(...)
+	end
+end
+
+
+-- Catch prints in the output window.
+_G.print = catch_prints
 
 tester.g_atComponents["log"] = atComponentTestLog
 
