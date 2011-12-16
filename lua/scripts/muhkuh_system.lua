@@ -92,12 +92,15 @@ function boot_xml()
 	local alltests = nil
 
 
-	-- create the window
-	create_window()
+-- TODO: only create the muhkuh panel for old tests. How can I decide this?
+--	-- create the window
+--	create_window()
 
+	_G.__MUHKUH_TEST_PARAMETER = {}
 	dofile("test_description_0_par.lua")
 	dofile("test_description_0_code.lua")
 
-	wx.wxGetApp():MainLoop()
+-- TODO: only enter the main loop for old tests. How can I decide this?
+--	wx.wxGetApp():MainLoop()
 end
 
