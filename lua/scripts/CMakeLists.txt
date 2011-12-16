@@ -8,21 +8,22 @@ if(${LUA51_FOUND})
 		muhkuh_system.lua
 		select_plugin_cli.lua
 		select_plugin_gui.lua
+		serialnr.lua
 		system_cli.lua
 		system_gui.lua
 		tester_cli.lua
 	)
 
-#		tester_v2/tester.lua
-#		tester_v2/tester_control.lua
-#		tester_v2/tester_details.lua
-#		tester_v2/tester_log.lua
-#		tester_v2/tester_overview.lua
-#		tester_v2/tester_resultgrid.lua
-#		tester_v2/tester_style_supercow.lua
-
 	# Install the scripts.
 	INSTALL(FILES ${lua_scripts_install_files} DESTINATION ${INSTALL_DIR_LUA_SCRIPTS})
 
-	INSTALL(FILES tester_gui.lua DESTINATION ${INSTALL_DIR_LUA_SCRIPTS} RENAME tester.lua)
+	INSTALL(FILES tester/init.lua DESTINATION ${INSTALL_DIR_LUA_SCRIPTS}/tester)
+	INSTALL(FILES tester/control.lua DESTINATION ${INSTALL_DIR_LUA_SCRIPTS}/tester)
+	INSTALL(FILES tester/details.lua DESTINATION ${INSTALL_DIR_LUA_SCRIPTS}/tester)
+	INSTALL(FILES tester/log.lua DESTINATION ${INSTALL_DIR_LUA_SCRIPTS}/tester)
+	INSTALL(FILES tester/overview.lua DESTINATION ${INSTALL_DIR_LUA_SCRIPTS}/tester)
+	INSTALL(FILES tester/resultgrid.lua DESTINATION ${INSTALL_DIR_LUA_SCRIPTS}/tester)
+	INSTALL(FILES tester/style/supercow.lua DESTINATION ${INSTALL_DIR_LUA_SCRIPTS}/tester/style)
+
+	INSTALL(FILES tester_gui.lua DESTINATION ${INSTALL_DIR_LUA_SCRIPTS} RENAME tester_old.lua)
 endif(${LUA51_FOUND})
