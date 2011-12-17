@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include <wx/wx.h>
+#include <wx/dynarray.h>
 #include <wx/scrolwin.h>
 
 
@@ -26,17 +27,28 @@
 #define __MUHKUH_DIRLISTBOX_H__
 
 
-typedef struct
+class muhkuh_dirlistbox_element
 {
-	wxTextCtrl *ptTextCtrl;
-	wxBitmapButton *ptBitmapButton;
-} DIRLIST_ENTRY_T;
+public:
+	muhkuh_dirlistbox_element(void)
+	{
+		m_strPath.Empty();
+		m_ulFixedExtensions = 0;
+		m_strCustomExtension.Empty();
+	}
+
+	wxString m_strPath;
+	unsigned long m_ulFixedExtensions;
+	wxString m_strCustomExtension;
+};
+
+WX_DECLARE_OBJARRAY(muhkuh_dirlistbox_element, MuhkuhDirlistboxElementArray);
 
 
 class muhkuh_dirlistbox : public wxScrolledWindow
 {
 public:
-	muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxArrayString& astrPaths);
+	muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, wxString& strPathList, const wxArrayString& astrFixedExtensions, bool fAllowCustomExtension);
 	~muhkuh_dirlistbox(void);
 
 	wxString GetPaths(char cSeparator);
@@ -49,8 +61,18 @@ public:
 
 	void OnFocusChild(wxChildFocusEvent &event);
 private:
+	wxTextCtrl *get_textctrl(size_t sizIndex);
+	wxCheckBox *get_checkbox(size_t sizIndex);
+	void read_row(size_t sizRow, muhkuh_dirlistbox_element &tElement);
+	int find_window_in_sizer(wxWindow *ptWindow);
+	void split_path_list(wxString& strPathList, char cSeparator);
+	void highlight_row(size_t sizRow, bool fHighlight);
+	void focus_index(size_t sizIndex);
+	void exchange_text_ctrl(size_t sizIndex0, size_t sizIndex1);
+	void exchange_checkbox(size_t sizIndex0, size_t sizIndex1);
+	void exchange_rows(size_t sizRow0, size_t sizRow1);
 	bool select_path(wxString &strPath);
-	void append_new_list_item(wxString strPath);
+	void append_new_list_item(muhkuh_dirlistbox_element &tElement);
 	void updateButtons(int iSelection);
 
 	/* These items are not owned by this class. */
@@ -59,9 +81,15 @@ private:
 
 	wxBitmap *m_ptBitmap;
 
-	size_t m_sizDirlistEntriesCnt;
-	size_t m_sizDirlistEntriesMax;
-	DIRLIST_ENTRY_T *m_patDirlistEntries;
+	/* The number of fixed extensions which can be selected with a checkbox. */
+	size_t m_sizFixedExtensions;
+	wxArrayString m_astrFixedExtensions;
+	bool m_fAllowCustomExtension;
+	int m_iTotalColumns;
+
+	unsigned long m_ulDefaultFixedExtensions;
+
+	MuhkuhDirlistboxElementArray m_atPaths;
 
 	wxString strLastUsedPath;
 

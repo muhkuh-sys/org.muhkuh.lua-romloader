@@ -22,9 +22,14 @@
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
 #include <wx/settings.h>
+#include <wx/tglbtn.h>
 
 #include "muhkuh_dirlistbox.h"
 #include "muhkuh_icons.h"
+
+
+#include <wx/arrimpl.cpp>
+WX_DEFINE_OBJARRAY(MuhkuhDirlistboxElementArray);
 
 
 BEGIN_EVENT_TABLE(muhkuh_dirlistbox, wxScrolledWindow)
@@ -40,46 +45,48 @@ BEGIN_EVENT_TABLE(muhkuh_dirlistbox, wxScrolledWindow)
 END_EVENT_TABLE()
 
 
-muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxArrayString& astrPaths)
+muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, wxString& strPathList, const wxArrayString& astrFixedExtensions, bool fAllowCustomExtension)
  : wxScrolledWindow(parent, id)
- , m_sizDirlistEntriesCnt(0)
- , m_sizDirlistEntriesMax(0)
- , m_patDirlistEntries(NULL)
  , m_ptBitmap(NULL)
  , m_iSelectedRow(wxNOT_FOUND)
  , m_iLastSelectedRow(wxNOT_FOUND)
 {
 	size_t sizNewSize;
-	DIRLIST_ENTRY_T *ptArray;
 	size_t sizCnt;
 	size_t sizMax;
 	wxBoxSizer *ptMainSizer;
+	int iCols;
 
 
-	/* Allocate an initial array for the dirlist entries.
-	 * The initial size is either 2 times the number of incoming paths or 16.
-	 * The higher value is used.
-	 */
-	sizNewSize = astrPaths.GetCount() * 2;
-	if( sizNewSize<16 )
-	{
-		sizNewSize = 16;
-	}
-	ptArray = (DIRLIST_ENTRY_T*)malloc(sizeof(DIRLIST_ENTRY_T)*sizNewSize);
-	if( ptArray!=NULL )
-	{
-		m_patDirlistEntries = ptArray;
-		m_sizDirlistEntriesMax = sizNewSize;
-	}
+	m_sizFixedExtensions = astrFixedExtensions.GetCount();
+	m_astrFixedExtensions = astrFixedExtensions;
+	m_fAllowCustomExtension = fAllowCustomExtension;
 
+	/* Enable all fixed extensions by default for new entries. */
+	/* TODO: make this a parameter, maybe... */
+	m_ulDefaultFixedExtensions = (1<<(m_sizFixedExtensions+1))-1;
+
+	/* FIXME: pass the separator as a class argument. */
+	split_path_list(strPathList, ';');
 
 	/* Create the main sizer. */
 	ptMainSizer = new wxBoxSizer(wxVERTICAL);
 	SetSizer(ptMainSizer);
 
+	/* Get the number of cols. */
+	/* The minimum number of columns is 2: one for the path and one for the browse button. */
+	iCols  = 2;
+	/* Append the number of standard extensions. */
+	iCols += m_sizFixedExtensions;
+	/* Add one more column if a custom extension is allowed. */
+	if( m_fAllowCustomExtension==true )
+	{
+		++iCols;
+	}
+	m_iTotalColumns = iCols;
 
 	/* Create the flex grid sizer for the elements. */
-	m_ptSizer = new wxFlexGridSizer(2, 2, 0);
+	m_ptSizer = new wxFlexGridSizer(iCols, 2, 0);
 	/* The first column holds the text. This one should grow on a resize. */
 	m_ptSizer->AddGrowableCol(0, 1);
 	/* The text column should only grow in horizontal size. It has only one line. */
@@ -109,10 +116,10 @@ muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, const wxAr
 
 	/* Add all elements from the paths array. */
 	sizCnt = 0;
-	sizMax = astrPaths.GetCount();
+	sizMax = m_atPaths.GetCount();
 	while(sizCnt<sizMax)
 	{
-		append_new_list_item(astrPaths.Item(sizCnt));
+		append_new_list_item(m_atPaths.Item(sizCnt));
 		++sizCnt;
 	}
 }
@@ -125,40 +132,358 @@ muhkuh_dirlistbox::~muhkuh_dirlistbox(void)
 		free(m_ptBitmap);
 		m_ptBitmap = NULL;
 	}
+}
 
-	if( m_patDirlistEntries!=NULL )
+
+void muhkuh_dirlistbox::split_path_list(wxString& strPathList, char cSeparator)
+{
+	int iSeparatorPos;
+	wxArrayString astrPaths;
+	size_t sizPathCnt;
+	size_t sizPathEnd;
+	wxFileName tIncludePath;
+	wxArrayString astrDirs;
+	size_t sizDirCnt;
+	size_t sizDirEnd;
+	wxString strDir;
+	wxString strSuffix;
+	int iIndex;
+	muhkuh_dirlistbox_element tElement;
+
+
+	/* Remove any old path lists. */
+	m_atPaths.Clear();
+
+	/* Split the include paths. */
+	while( strPathList.IsEmpty()==false )
 	{
-		free(m_patDirlistEntries);
-		m_patDirlistEntries = NULL;
+		iSeparatorPos = strPathList.Find(cSeparator);
+		if( iSeparatorPos==wxNOT_FOUND )
+		{
+			astrPaths.Add(strPathList);
+			break;
+		}
+		else
+		{
+			if( iSeparatorPos>0 )
+			{
+				astrPaths.Add(strPathList.Left(iSeparatorPos) );
+			}
+			strPathList = strPathList.Mid(iSeparatorPos+1);
+		}
+	}
+
+
+	/* Sort the include paths */
+	sizPathCnt = 0;
+	sizPathEnd = astrPaths.GetCount();
+	while(sizPathCnt<sizPathEnd)
+	{
+		/* Search for forbidden chars. */
+		tIncludePath.AssignDir(astrPaths.Item(sizPathCnt));
+		astrDirs = tIncludePath.GetDirs();
+		sizDirCnt = 0;
+		sizDirEnd = astrDirs.GetCount();
+		while(sizDirCnt<sizDirEnd)
+		{
+			strDir = astrDirs.Item(sizDirCnt);
+			if( strDir.find_first_of(wxFileName::GetForbiddenChars(wxPATH_NATIVE), 0)<strDir.Len() )
+			{
+				break;
+			}
+			++sizDirCnt;
+		}
+		if(sizDirCnt<sizDirEnd)
+		{
+			/* Remove all valid dir components from the dirs array. */
+			if( sizDirCnt>0 )
+			{
+				astrDirs.RemoveAt(0, sizDirCnt);
+			}
+			/* Remove all invalid dir components from the path. */
+			while(sizDirEnd>sizDirCnt)
+			{
+				tIncludePath.RemoveLastDir();
+				--sizDirEnd;
+			}
+		}
+
+		/* Get the path and the suffix. */
+		tElement.m_strPath = tIncludePath.GetFullPath(wxPATH_NATIVE);
+
+		strSuffix.Clear();
+		sizDirCnt = 0;
+		sizDirEnd = astrDirs.GetCount();
+		while(sizDirCnt<sizDirEnd)
+		{
+			strSuffix += astrDirs.Item(sizDirCnt);
+			++sizDirCnt;
+			if(sizDirCnt<sizDirEnd)
+			{
+				strSuffix += wxFileName::GetPathSeparator();
+			}
+		}
+		
+		iIndex = m_astrFixedExtensions.Index(strSuffix);
+		if( iIndex==wxNOT_FOUND )
+		{
+			/* Add this as a custom extension. */
+			tElement.m_ulFixedExtensions = 0;
+			tElement.m_strCustomExtension = strSuffix;
+		}
+		else
+		{
+			/* This is one of the fixed extensions. */
+			tElement.m_ulFixedExtensions = 1 << iIndex;
+			tElement.m_strCustomExtension.Clear();
+		}
+
+		/* Search elements with the same path. */
+		sizDirCnt = 0;
+		sizDirEnd = m_atPaths.GetCount();
+		while(sizDirCnt<sizDirEnd)
+		{
+			muhkuh_dirlistbox_element &tCnt = m_atPaths.Item(sizDirCnt);
+
+			/* The elements can be combined if the paths match and one of the following conditions is true:
+			 *  1) The new elements custom extension is empty.
+			 *  2) The existing elemets custom extension is empty.
+			 *  3) Both custom extensions match.
+			 */
+			if( tElement.m_strPath==tCnt.m_strPath &&
+			    ( (tElement.m_strCustomExtension.IsEmpty()==true) ||
+			      (tCnt.m_strCustomExtension.IsEmpty()==true) ||
+			      (tElement.m_strCustomExtension==tCnt.m_strCustomExtension)
+			    )
+			)
+			{
+				/* Combine the fixed extension flags. */
+				tCnt.m_ulFixedExtensions |= tElement.m_ulFixedExtensions;
+				
+				/* Keep the new extension if there was none. */
+				if( tCnt.m_strCustomExtension.IsEmpty()==true && tElement.m_strCustomExtension.IsEmpty()==false )
+				{
+					tCnt.m_strCustomExtension = tElement.m_strCustomExtension;
+				}
+				
+				/* Entry processed! */
+				break;
+			}
+
+			++sizDirCnt;
+		}
+		/* Add a new list entry? */
+		if( (sizDirEnd==0) || (sizDirCnt==sizDirEnd) )
+		{
+			m_atPaths.Add(tElement);
+		}
+		
+		++sizPathCnt;
+	}
+}
+
+
+int muhkuh_dirlistbox::find_window_in_sizer(wxWindow *ptWindow)
+{
+	int iSelectedRow;
+	const wxSizerItemList &tSizerItems = m_ptSizer->GetChildren();
+	wxSizerItemList::const_iterator tIter;
+	wxSizerItem *ptSizerItem;
+	size_t sizCnt;
+
+
+	iSelectedRow = wxNOT_FOUND;
+
+	sizCnt = 0;
+	tIter = tSizerItems.begin();
+	while(tIter!=tSizerItems.end())
+	{
+		ptSizerItem = *tIter;
+		if( ptSizerItem!=NULL && ptSizerItem->GetWindow()==ptWindow )
+		{
+			/* Get the row from the index. */
+			iSelectedRow = sizCnt / m_iTotalColumns;
+			break;
+		}
+		else
+		{
+			++sizCnt;
+			++tIter;
+		}
+	}
+
+	return iSelectedRow;
+}
+
+
+wxTextCtrl *muhkuh_dirlistbox::get_textctrl(size_t sizIndex)
+{
+	wxTextCtrl *ptTextCtrl;
+	wxSizerItem *ptSizerItem;
+	wxWindow *ptWindow;
+
+
+	ptTextCtrl = NULL;
+
+	ptSizerItem = m_ptSizer->GetItem(sizIndex);
+	if( ptSizerItem!=NULL && ptSizerItem->IsWindow()==true )
+	{
+		ptWindow = ptSizerItem->GetWindow();
+		if( ptWindow->IsKindOf(wxCLASSINFO(wxTextCtrl))==true )
+		{
+			ptTextCtrl = (wxTextCtrl*)ptWindow;
+		}
+	}
+
+	return ptTextCtrl;
+}
+
+
+wxCheckBox *muhkuh_dirlistbox::get_checkbox(size_t sizIndex)
+{
+	wxCheckBox *ptCheckBox;
+	wxSizerItem *ptSizerItem;
+	wxWindow *ptWindow;
+
+
+	ptCheckBox = NULL;
+
+	ptSizerItem = m_ptSizer->GetItem(sizIndex);
+	if( ptSizerItem!=NULL && ptSizerItem->IsWindow()==true )
+	{
+		ptWindow = ptSizerItem->GetWindow();
+		if( ptWindow->IsKindOf(wxCLASSINFO(wxCheckBox))==true )
+		{
+			ptCheckBox = (wxCheckBox*)ptWindow;
+		}
+	}
+
+	return ptCheckBox;
+}
+
+
+void muhkuh_dirlistbox::read_row(size_t sizRow, muhkuh_dirlistbox_element &tElement)
+{
+	size_t sizCnt;
+	size_t sizEnd;
+	wxTextCtrl *ptTextCtrl;
+	wxCheckBox *ptCheckBox;
+	unsigned long ulBits;
+	unsigned long ulMaskCnt;
+
+
+	/* Get the index of the first element in the row. */
+	sizCnt = sizRow * m_iTotalColumns;
+
+	ptTextCtrl = get_textctrl(sizCnt);
+	if( ptTextCtrl!=NULL )
+	{
+		tElement.m_strPath = ptTextCtrl->GetValue();
+	}
+	else
+	{
+		tElement.m_strPath.Clear();
+	}
+
+	/* Loop over all checkboxes. */
+	++sizCnt;
+	sizEnd = sizRow * m_iTotalColumns + 1 + m_iTotalColumns;
+	ulBits = 0;
+	ulMaskCnt = 1;
+	while(sizCnt<sizEnd)
+	{
+		ptCheckBox = get_checkbox(sizCnt);
+		if( ptCheckBox!=NULL && ptCheckBox->GetValue()==true )
+		{
+			ulBits |= ulMaskCnt;
+		}
+		ulMaskCnt <<= 1;
+		++sizCnt;
+	}
+	tElement.m_ulFixedExtensions = ulBits;
+
+	/* Get the custom extension. */
+	ptTextCtrl = get_textctrl(sizCnt);
+	if( ptTextCtrl!=NULL )
+	{
+		tElement.m_strCustomExtension = ptTextCtrl->GetValue();
+	}
+	else
+	{
+		tElement.m_strCustomExtension.Clear();
 	}
 }
 
 
 wxString muhkuh_dirlistbox::GetPaths(char cSeparator)
 {
-	bool fFirstEntry;
-	DIRLIST_ENTRY_T *ptCnt;
-	DIRLIST_ENTRY_T *ptEnd;
 	wxString strPath;
-	wxString strPathElement;
+	bool fIsFirst;
+	size_t sizRowCnt;
+	size_t sizRowEnd;
+	muhkuh_dirlistbox_element tElement;
+	size_t sizExtCnt;
+	size_t sizExtEnd;
 
 
-	ptCnt = m_patDirlistEntries;
-	ptEnd = ptCnt + m_sizDirlistEntriesCnt;
-	fFirstEntry = true;
-	while(ptCnt<ptEnd)
+	fIsFirst = true;
+
+	/* Loop over all rows. */
+	sizRowCnt = 0;
+	sizRowEnd = m_ptSizer->GetEffectiveRowsCount();
+	while(sizRowCnt<sizRowEnd)
 	{
-		strPathElement = ptCnt->ptTextCtrl->GetValue();
-		if( strPathElement.IsEmpty()==false )
+		read_row(sizRowCnt, tElement);
+		if( tElement.m_strPath.IsEmpty()==false )
 		{
-			if( fFirstEntry==false )
+			if( tElement.m_ulFixedExtensions==0 && tElement.m_strCustomExtension.IsEmpty()==true )
 			{
-				strPath += cSeparator;
+				if( fIsFirst==false )
+				{
+					strPath.Append(cSeparator);
+				}
+				else
+				{
+					fIsFirst = false;
+				}
+				strPath.Append(tElement.m_strPath);
 			}
-			fFirstEntry = false;
-			strPath += strPathElement;
+			else
+			{
+				/* Add all fixed extensions. */
+				sizExtCnt = 0;
+				sizExtEnd = m_sizFixedExtensions;
+				while(sizExtCnt<sizExtEnd)
+				{
+					if( (tElement.m_ulFixedExtensions&(1<<sizExtCnt))!=0 )
+					{
+						if( fIsFirst==false )
+						{
+							strPath.Append(cSeparator);
+						}
+						else
+						{
+							fIsFirst = false;
+						}
+						strPath.Append(tElement.m_strPath + m_astrFixedExtensions.Item(sizExtCnt));
+					}
+				}
+				
+				/* Add the custom extension. */
+				if( tElement.m_strCustomExtension.IsEmpty()==false )
+				{
+					if( fIsFirst==false )
+					{
+						strPath.Append(cSeparator);
+					}
+					else
+					{
+						fIsFirst = false;
+					}
+					strPath.Append(tElement.m_strPath + tElement.m_strCustomExtension);
+				}
+			}
 		}
-		++ptCnt;
 	}
 
 	return strPath;
@@ -167,33 +492,36 @@ wxString muhkuh_dirlistbox::GetPaths(char cSeparator)
 
 void muhkuh_dirlistbox::OnButtonBrowse(wxCommandEvent &event)
 {
-	int iId;
+	wxObject *ptObj;
+	wxBitmapButton *ptBitmapButton;
+	int iRow;
 	size_t sizIdx;
+	wxTextCtrl *ptTextCtrl;
 	wxString strPath;
 	bool fIsUpdated;
 
 
-
-	/* Is this an event from the text or button controls? */
-	iId = event.GetId();
-	if( iId>wxID_HIGHEST )
+	/* Get the object associated with the event. */
+	ptObj = event.GetEventObject();
+	if( ptObj!=NULL && ptObj->IsKindOf(wxCLASSINFO(wxBitmapButton))==true )
 	{
-		/* Get the index for the control. */
-		iId -= wxID_HIGHEST;
-		/* Is this a button control? */
-		if( (iId&1)==1 )
-		{
-			sizIdx = iId / 2;
+		ptBitmapButton = (wxBitmapButton*)ptObj;
 
-			/* Is this a valid list index? */
-			if( sizIdx<m_sizDirlistEntriesCnt )
+		/* Look up the button in the sizer. */
+		iRow = find_window_in_sizer(ptBitmapButton);
+		if( iRow!=wxNOT_FOUND && iRow>=0 )
+		{
+			/* Get the index of the text control. */
+			sizIdx = (size_t)(iRow * m_iTotalColumns);
+			ptTextCtrl = get_textctrl(sizIdx);
+			if( ptTextCtrl!=NULL )
 			{
 				/* Get the text. */
-				strPath = m_patDirlistEntries[sizIdx].ptTextCtrl->GetValue();
+				strPath = ptTextCtrl->GetValue();
 				fIsUpdated = select_path(strPath);
 				if( fIsUpdated==true )
 				{
-					m_patDirlistEntries[sizIdx].ptTextCtrl->SetValue(strPath);
+					ptTextCtrl->SetValue(strPath);
 				}
 			}
 		}
@@ -205,94 +533,66 @@ void muhkuh_dirlistbox::OnButtonAdd(wxCommandEvent &event)
 {
 	wxString strPath;
 	bool fIsConfirmed;
-	wxTextCtrl *ptTextCtrl;
+	size_t sizIndex;
+	muhkuh_dirlistbox_element tElement;
 
 
 	strPath = strLastUsedPath;
 	fIsConfirmed = select_path(strPath);
 	if( fIsConfirmed==true )
 	{
-		append_new_list_item(strPath);
+		tElement.m_strPath = strPath;
+		tElement.m_ulFixedExtensions = m_ulDefaultFixedExtensions;
+		append_new_list_item(tElement);
 		m_ptSizer->Layout();
 
 		/* Set the focus to the new element. The new element goes always to the end of the list. */
-		if( m_sizDirlistEntriesCnt!=0 )
-		{
-			ptTextCtrl = m_patDirlistEntries[m_sizDirlistEntriesCnt-1].ptTextCtrl;
-			if( ptTextCtrl!=NULL )
-			{
-				ptTextCtrl->SetFocus();
-			}
-		}
+		sizIndex = (m_ptSizer->GetEffectiveRowsCount() - 1) * m_iTotalColumns;
+		focus_index(sizIndex);
 	}
 }
 
 
 void muhkuh_dirlistbox::OnButtonRemove(wxCommandEvent &event)
 {
-	size_t sizIdx;
+	size_t sizRow;
 	size_t sizCnt;
-	wxTextCtrl *ptTextCtrl;
-	wxBitmapButton *ptBitmapButton;
+	size_t sizEnd;
+	wxSizerItem *ptSizerItem;
 	wxWindow *ptWindow;
-	wxWindowID tIdText;
-	wxWindowID tIdButton;
 
 
 	/* Is the current selection a valid list index? */
 	if( m_iSelectedRow!=wxNOT_FOUND && m_iSelectedRow>=0 )
 	{
-		sizIdx = (size_t)m_iSelectedRow;
-		if( sizIdx<m_sizDirlistEntriesCnt )
+		sizRow = (size_t)m_iSelectedRow;
+		if( sizRow<m_ptSizer->GetEffectiveRowsCount() )
 		{
-			ptTextCtrl = m_patDirlistEntries[sizIdx].ptTextCtrl;
-			ptBitmapButton = m_patDirlistEntries[sizIdx].ptBitmapButton;
-
-			/* Detach the items from the sizer. */
-			ptWindow = (wxWindow*)ptTextCtrl;
-			m_ptSizer->Detach(ptWindow);
-			ptWindow = (wxWindow*)ptBitmapButton;
-			m_ptSizer->Detach(ptWindow);
-
-			/* Remove the items from the parent. */
-			RemoveChild(ptTextCtrl);
-			RemoveChild(ptBitmapButton);
-
-			m_ptSizer->Layout();
-
-			/* Delete the items. */
-			ptTextCtrl->Destroy();
-			ptBitmapButton->Destroy();
-
-			/* Move the following table entries up and reindex them. */
-			sizCnt = sizIdx;
-			while(sizCnt+1<m_sizDirlistEntriesCnt)
+			sizCnt = sizRow * m_iTotalColumns;
+			sizEnd = sizRow * m_iTotalColumns + m_iTotalColumns;
+			while(sizEnd>sizCnt)
 			{
-				/* Copy one element up. */
-				ptTextCtrl = m_patDirlistEntries[sizCnt+1].ptTextCtrl;
-				ptBitmapButton = m_patDirlistEntries[sizCnt+1].ptBitmapButton;
-				m_patDirlistEntries[sizCnt].ptTextCtrl = ptTextCtrl;
-				m_patDirlistEntries[sizCnt].ptBitmapButton = ptBitmapButton;
+				--sizEnd;
 
-				/* Generate the IDs for the text and the button from the list index. */
-				tIdText = wxID_HIGHEST + 2*sizCnt;
-				tIdButton = wxID_HIGHEST + 2*sizCnt + 1;
-
-				/* Set the new index. */
-				ptTextCtrl->SetId(tIdText);
-				ptBitmapButton->SetId(tIdButton);
-
-				++sizCnt;
+				ptSizerItem = m_ptSizer->GetItem(sizEnd);
+				if( ptSizerItem!=NULL && ptSizerItem->IsWindow()==true )
+				{
+					ptWindow = ptSizerItem->GetWindow();
+					if( ptWindow!=NULL )
+					{
+						m_ptSizer->Detach(ptWindow);
+						RemoveChild(ptWindow);
+						ptWindow->Destroy();
+					}
+				}
 			}
 
-			/* The list has not one element less. */
-			--m_sizDirlistEntriesCnt;
-
+			m_ptSizer->Layout();
 
 			/* Try to find a new focus element. */
 
 			/* Are still elements in the list? */
-			if( m_sizDirlistEntriesCnt==0 )
+			if( m_ptSizer->GetEffectiveRowsCount()==0 )
 			{
 				/* No entry. Select the panel. */
 				SetFocus();
@@ -302,19 +602,13 @@ void muhkuh_dirlistbox::OnButtonRemove(wxCommandEvent &event)
 				/* Yes -> there will be a new focus. */
 
 				/* Is the old index still valid? */
-				if( sizIdx+1>=m_sizDirlistEntriesCnt )
+				if( sizRow+1>=m_ptSizer->GetEffectiveRowsCount() )
 				{
 					/* No -> use the last index instead. */
-					sizIdx = m_sizDirlistEntriesCnt - 1;
+					sizRow = m_ptSizer->GetEffectiveRowsCount() - 1;
 				}
 
-				/* Get the text control at the new focus position. */
-				ptTextCtrl = m_patDirlistEntries[m_sizDirlistEntriesCnt-1].ptTextCtrl;
-				if( ptTextCtrl!=NULL )
-				{
-					/* Focus the text control. */
-					ptTextCtrl->SetFocus();
-				}
+				focus_index(sizRow*m_iTotalColumns);
 			}
 		}
 	}
@@ -323,35 +617,46 @@ void muhkuh_dirlistbox::OnButtonRemove(wxCommandEvent &event)
 
 void muhkuh_dirlistbox::OnButtonEdit(wxCommandEvent &event)
 {
+	size_t sizIdx;
+	wxTextCtrl *ptTextCtrl;
+	wxString strPath;
+	bool fIsUpdated;
+
+
+	if( m_iSelectedRow!=wxNOT_FOUND )
+	{
+		/* Get the index of the text control. */
+		sizIdx = (size_t)(m_iSelectedRow * m_iTotalColumns);
+		ptTextCtrl = get_textctrl(sizIdx);
+		if( ptTextCtrl!=NULL )
+		{
+			/* Get the text. */
+			strPath = ptTextCtrl->GetValue();
+			fIsUpdated = select_path(strPath);
+			if( fIsUpdated==true )
+			{
+				ptTextCtrl->SetValue(strPath);
+			}
+		}
+	}
 }
 
 
 void muhkuh_dirlistbox::OnButtonUp(wxCommandEvent &event)
 {
-	size_t sizIdx;
-	wxTextCtrl *ptTextCtrl0;
-	wxTextCtrl *ptTextCtrl1;
-	wxString strPath0;
-	wxString strPath1;
+	size_t sizRow;
 
 
 	/* Is the current selection a valid list index? */
 	if( m_iSelectedRow!=wxNOT_FOUND && m_iSelectedRow>=0 )
 	{
-		sizIdx = (size_t)m_iSelectedRow;
-		if( sizIdx!=0 && sizIdx<m_sizDirlistEntriesCnt )
+		sizRow = (size_t)m_iSelectedRow;
+		if( sizRow!=0 && sizRow<m_ptSizer->GetEffectiveRowsCount() )
 		{
-			ptTextCtrl0 = m_patDirlistEntries[sizIdx-1].ptTextCtrl;
-			ptTextCtrl1 = m_patDirlistEntries[sizIdx].ptTextCtrl;
-
-			strPath0 = ptTextCtrl0->GetValue();
-			strPath1 = ptTextCtrl1->GetValue();
-
-			ptTextCtrl0->SetValue(strPath1);
-			ptTextCtrl1->SetValue(strPath0);
+			exchange_rows(sizRow-1, sizRow);
 
 			/* Move the focus one position up. */
-			ptTextCtrl0->SetFocus();
+			focus_index((sizRow-1)*m_iTotalColumns);
 		}
 	}
 }
@@ -359,30 +664,19 @@ void muhkuh_dirlistbox::OnButtonUp(wxCommandEvent &event)
 
 void muhkuh_dirlistbox::OnButtonDown(wxCommandEvent &event)
 {
-	size_t sizIdx;
-	wxTextCtrl *ptTextCtrl0;
-	wxTextCtrl *ptTextCtrl1;
-	wxString strPath0;
-	wxString strPath1;
+	size_t sizRow;
 
 
 	/* Is the current selection a valid list index? */
 	if( m_iSelectedRow!=wxNOT_FOUND && m_iSelectedRow>=0 )
 	{
-		sizIdx = (size_t)m_iSelectedRow;
-		if( sizIdx+1<m_sizDirlistEntriesCnt )
+		sizRow = (size_t)m_iSelectedRow;
+		if( sizRow+1<m_ptSizer->GetEffectiveRowsCount() )
 		{
-			ptTextCtrl0 = m_patDirlistEntries[sizIdx].ptTextCtrl;
-			ptTextCtrl1 = m_patDirlistEntries[sizIdx+1].ptTextCtrl;
-
-			strPath0 = ptTextCtrl0->GetValue();
-			strPath1 = ptTextCtrl1->GetValue();
-
-			ptTextCtrl0->SetValue(strPath1);
-			ptTextCtrl1->SetValue(strPath0);
+			exchange_rows(sizRow, sizRow+1);
 
 			/* Move the focus one position down. */
-			ptTextCtrl1->SetFocus();
+			focus_index((sizRow+1)*m_iTotalColumns);
 		}
 	}
 }
@@ -392,56 +686,170 @@ void muhkuh_dirlistbox::OnFocusChild(wxChildFocusEvent &event)
 {
 	wxWindow *ptWindow;
 	int iSelectedRow;
-	size_t sizCnt;
-	size_t sizEnd;
+	size_t sizRow;
 	wxColor tColor;
 
 
-	ptWindow = event.GetWindow();
-
-	iSelectedRow = wxNOT_FOUND;
-
-	/* Search window pointer in list. */
-	sizCnt = 0;
-	sizEnd = m_sizDirlistEntriesCnt;
-	while(sizCnt<sizEnd)
-	{
-		if( (m_patDirlistEntries[sizCnt].ptTextCtrl==(wxTextCtrl*)ptWindow) || (m_patDirlistEntries[sizCnt].ptBitmapButton==(wxBitmapButton*)ptWindow) )
-		{
-			iSelectedRow = (int)sizCnt;
-			break;
-		}
-		++sizCnt;
-	}
+	iSelectedRow = find_window_in_sizer(event.GetWindow());
 
 	updateButtons(iSelectedRow);
 	m_iSelectedRow = iSelectedRow;
 
-	/* Dis the slection change? */
+	/* Did the slection change? */
 	if( iSelectedRow!=m_iLastSelectedRow )
 	{
 		/* Was an element selected before? */
 		if( m_iLastSelectedRow!=wxNOT_FOUND && m_iLastSelectedRow>=0 )
 		{
 			/* Deselect the item. */
-			sizCnt = (size_t)m_iLastSelectedRow;
-			if( sizCnt<m_sizDirlistEntriesMax )
-			{
-				tColor = wxSystemSettings::GetColour(wxSYS_COLOUR_LISTBOX);
-				m_patDirlistEntries[sizCnt].ptTextCtrl->SetBackgroundColour(tColor);
-			}
+			sizRow = (size_t)m_iLastSelectedRow;
+			highlight_row(sizRow, false);
 		}
 		if( iSelectedRow!=wxNOT_FOUND && iSelectedRow>=0 )
 		{
 			/* Select the item. */
-			sizCnt = (size_t)iSelectedRow;
-			if( sizCnt<m_sizDirlistEntriesMax )
-			{
-				tColor = wxSystemSettings::GetColour(wxSYS_COLOUR_HIGHLIGHT);
-				m_patDirlistEntries[sizCnt].ptTextCtrl->SetBackgroundColour(tColor);
-			}
+			sizRow = (size_t)iSelectedRow;
+			highlight_row(sizRow, true);
 		}
 		m_iLastSelectedRow = iSelectedRow;
+	}
+}
+
+
+void muhkuh_dirlistbox::highlight_row(size_t sizRow, bool fHighlight)
+{
+	wxSystemColour tColorIndex;
+	wxColor tColor;
+	size_t sizCnt;
+	size_t sizEnd;
+	wxSizerItem *ptSizerItem;
+	wxWindow *ptWindow;
+
+
+	if( sizRow<m_ptSizer->GetEffectiveRowsCount() )
+	{
+		if( fHighlight==true )
+		{
+			tColorIndex = wxSYS_COLOUR_HIGHLIGHT;
+		}
+		else
+		{
+			tColorIndex = wxSYS_COLOUR_LISTBOX;
+		}
+		tColor = wxSystemSettings::GetColour(tColorIndex);
+
+		/* Loop over all elements in the list except the button. */
+		sizCnt = sizRow * m_iTotalColumns;
+		sizEnd = sizRow * m_iTotalColumns + m_iTotalColumns - 1;
+		while(sizCnt<sizEnd)
+		{
+			ptSizerItem = m_ptSizer->GetItem(sizCnt);
+			if( ptSizerItem!=NULL && ptSizerItem->IsWindow()==true )
+			{
+				ptWindow = ptSizerItem->GetWindow();
+				if( ptWindow!=NULL )
+				{
+					ptWindow->SetBackgroundColour(tColor);
+				}
+			}
+			++sizCnt;
+		}
+	}
+}
+
+
+void muhkuh_dirlistbox::focus_index(size_t sizIndex)
+{
+	wxSizerItem *ptSizerItem;
+	wxWindow *ptWindow;
+
+
+	ptSizerItem = m_ptSizer->GetItem(sizIndex);
+	if( ptSizerItem!=NULL && ptSizerItem->IsWindow()==true )
+	{
+		ptWindow = ptSizerItem->GetWindow();
+		if( ptWindow!=NULL )
+		{
+			ptWindow->SetFocus();
+		}
+	}
+}
+
+
+void muhkuh_dirlistbox::exchange_text_ctrl(size_t sizIndex0, size_t sizIndex1)
+{
+	wxTextCtrl *ptTextCtrl0;
+	wxTextCtrl *ptTextCtrl1;
+	wxString strData0;
+	wxString strData1;
+
+
+	ptTextCtrl0 = get_textctrl(sizIndex0);
+	ptTextCtrl1 = get_textctrl(sizIndex1);
+	if( ptTextCtrl0!=NULL && ptTextCtrl1!=NULL )
+	{
+		strData0 = ptTextCtrl0->GetValue();
+		strData1 = ptTextCtrl1->GetValue();
+		
+		ptTextCtrl0->SetValue(strData1);
+		ptTextCtrl1->SetValue(strData0);
+	}
+}
+
+
+void muhkuh_dirlistbox::exchange_checkbox(size_t sizIndex0, size_t sizIndex1)
+{
+	wxCheckBox *ptCheckBox0;
+	wxCheckBox *ptCheckBox1;
+	bool fData0;
+	bool fData1;
+
+
+	ptCheckBox0 = get_checkbox(sizIndex0);
+	ptCheckBox1 = get_checkbox(sizIndex1);
+	if( ptCheckBox0!=NULL && ptCheckBox1!=NULL )
+	{
+		fData0 = ptCheckBox0->GetValue();
+		fData1 = ptCheckBox1->GetValue();
+		
+		ptCheckBox0->SetValue(fData1);
+		ptCheckBox1->SetValue(fData0);
+	}
+}
+
+
+void muhkuh_dirlistbox::exchange_rows(size_t sizRow0, size_t sizRow1)
+{
+	size_t sizIndex0;
+	size_t sizIndex1;
+	size_t sizCnt;
+	size_t sizEnd;
+
+
+	/* Swap the paths. */
+	sizIndex0 = sizRow0 * m_iTotalColumns;
+	sizIndex1 = sizRow1 * m_iTotalColumns;
+	exchange_text_ctrl(sizIndex0, sizIndex1);
+	
+	/* Loop over all fixed extensions. */
+	sizCnt = 1;
+	sizEnd = 1 + m_sizFixedExtensions;
+	while(sizCnt<sizEnd)
+	{
+		/* Swap the checkboxes. */
+		sizIndex0 = sizRow0 * m_iTotalColumns + sizCnt;
+		sizIndex1 = sizRow1 * m_iTotalColumns + sizCnt;
+		exchange_checkbox(sizIndex0, sizIndex1);
+		
+		++sizCnt;
+	}
+
+	/* Swap the custom extension. */
+	if( m_fAllowCustomExtension==true )
+	{
+		sizIndex0 = sizRow0 * m_iTotalColumns + 1 + m_sizFixedExtensions;
+		sizIndex1 = sizRow1 * m_iTotalColumns + 1 + m_sizFixedExtensions;
+		exchange_text_ctrl(sizIndex0, sizIndex1);
 	}
 }
 
@@ -514,7 +922,7 @@ bool muhkuh_dirlistbox::select_path(wxString &strPath)
 	fPathUpdated = false;
 	if( ptPathDialog->ShowModal()==wxID_OK )
 	{
-		strPath = ptPathDialog->GetPath() + wxFileName::GetPathSeparator() + wxT("?.lua");
+		strPath = ptPathDialog->GetPath() + wxFileName::GetPathSeparator();
 		strLastUsedPath = strPath;
 		fPathUpdated = true;
 	}
@@ -524,57 +932,38 @@ bool muhkuh_dirlistbox::select_path(wxString &strPath)
 }
 
 
-void muhkuh_dirlistbox::append_new_list_item(wxString strPath)
+void muhkuh_dirlistbox::append_new_list_item(muhkuh_dirlistbox_element &tElement)
 {
-	size_t sizNewSize;
-	DIRLIST_ENTRY_T *ptNewArray;
+	size_t sizCnt;
 	wxTextCtrl *ptTextCtrl;
+	wxCheckBox *ptCheckBox;
+	bool fIsChecked;
 	wxBitmapButton *ptBitmapButton;
-	wxWindowID tIdText;
-	wxWindowID tIdButton;
 
 
-	/* Is one more element in the array free? */
-	if( m_sizDirlistEntriesCnt>=m_sizDirlistEntriesMax )
+	/* Create the text control. */
+	ptTextCtrl = new wxTextCtrl(this, wxID_ANY, tElement.m_strPath, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE|wxTE_LEFT);
+	/* Set the text control's background color. */
+	ptTextCtrl->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_LISTBOX));
+	/* Add the text to the sizer. */
+	m_ptSizer->Add(ptTextCtrl, 0, wxEXPAND);
+	
+	/* Add the checkboxes. */
+	for(sizCnt=0; sizCnt<m_sizFixedExtensions; ++sizCnt)
 	{
-		/* No -> try to allocate more. */
-		sizNewSize = m_sizDirlistEntriesMax * 2;
-		/* Detect a wrap around. */
-		if( sizNewSize>m_sizDirlistEntriesMax )
-		{
-			ptNewArray = (DIRLIST_ENTRY_T*)realloc(m_patDirlistEntries, sizeof(DIRLIST_ENTRY_T)*sizNewSize);
-			if( ptNewArray!=NULL )
-			{
-				/* Ok, the array is resized now. */
-				m_patDirlistEntries = ptNewArray;
-				m_sizDirlistEntriesMax = sizNewSize;
-			}
-		}
+		fIsChecked = (tElement.m_ulFixedExtensions & (1<<sizCnt)) != 0;
+		ptCheckBox = new wxCheckBox(this, wxID_ANY, m_astrFixedExtensions.Item(sizCnt));
+		ptCheckBox->SetValue(fIsChecked);
+		m_ptSizer->Add(ptCheckBox);
+	}
+	if( m_fAllowCustomExtension==true )
+	{
+		ptTextCtrl = new wxTextCtrl(this, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, wxBORDER_NONE|wxTE_LEFT);
+		m_ptSizer->Add(ptTextCtrl);
 	}
 
-	if( m_sizDirlistEntriesCnt<m_sizDirlistEntriesMax )
-	{
-		/* Generate the IDs for the text and the button from the list index. */
-		tIdText = wxID_HIGHEST + 2*m_sizDirlistEntriesCnt;
-		tIdButton = wxID_HIGHEST + 2*m_sizDirlistEntriesCnt + 1;
-
-		/* Create the text and button controls. */
-		ptTextCtrl = new wxTextCtrl(this, tIdText, strPath, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE|wxTE_LEFT);
-		ptBitmapButton = new wxBitmapButton(this, tIdButton, *m_ptBitmap);
-
-		/* Set the text control's background color. */
-		ptTextCtrl->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_LISTBOX));
-
-		/* Add the text and button to the list. */
-		m_patDirlistEntries[m_sizDirlistEntriesCnt].ptTextCtrl = ptTextCtrl;
-		m_patDirlistEntries[m_sizDirlistEntriesCnt].ptBitmapButton = ptBitmapButton;
-
-		/* Add the text and button to the sizer. */
-		m_ptSizer->Add(ptTextCtrl, 0, wxEXPAND);
-		m_ptSizer->Add(ptBitmapButton);
-
-		++m_sizDirlistEntriesCnt;
-	}
+	ptBitmapButton = new wxBitmapButton(this, wxID_ANY, *m_ptBitmap);
+	m_ptSizer->Add(ptBitmapButton);
 }
 
 
@@ -591,7 +980,7 @@ void muhkuh_dirlistbox::updateButtons(int iSelection)
 		sizItemIdx = (size_t)iSelection;
 		fPathSelected = true;
 		fCanMoveUp = (sizItemIdx>0);
-		fCanMoveDown = (sizItemIdx>=0) && ((sizItemIdx+1)<m_sizDirlistEntriesCnt);
+		fCanMoveDown = (sizItemIdx>=0) && ((sizItemIdx+1)<m_ptSizer->GetEffectiveRowsCount());
 	}
 	else
 	{
