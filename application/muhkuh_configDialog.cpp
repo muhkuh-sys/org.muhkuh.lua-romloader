@@ -73,28 +73,8 @@ muhkuh_configDialog::muhkuh_configDialog(wxWindow *parent, const wxString strApp
 	// set the title
 	SetTitle(_("Muhkuh Settings"));
 
-	// split up the include paths
-	strLuaIncludePath = m_ptConfigData->m_strLuaIncludePath;
-	while( strLuaIncludePath.IsEmpty()==false )
-	{
-		iColonPos = strLuaIncludePath.Find(wxT(';'));
-		if( iColonPos==wxNOT_FOUND )
-		{
-			astrLuaIncludePath.Add( strLuaIncludePath );
-			break;
-		}
-		else
-		{
-			if( iColonPos>0 )
-			{
-				astrLuaIncludePath.Add( strLuaIncludePath.Left(iColonPos) );
-			}
-			strLuaIncludePath = strLuaIncludePath.Mid(iColonPos+1);
-		}
-	}
-
 	// create the controls
-	createControls(astrLuaIncludePath);
+	createControls();
 
 	// get dialog settings
 	pConfig = wxConfigBase::Get();
@@ -182,7 +162,7 @@ muhkuh_configDialog::~muhkuh_configDialog(void)
 }
 
 
-void muhkuh_configDialog::createControls(wxArrayString &astrLuaIncludePath)
+void muhkuh_configDialog::createControls(void)
 {
 	wxBoxSizer *ptMainSizer;
 	wxBoxSizer *ptbuttonSizer;
@@ -208,7 +188,7 @@ void muhkuh_configDialog::createControls(wxArrayString &astrLuaIncludePath)
 	m_treeBook->AddPage(createControls_application(m_treeBook), _("Application"), true, 0);
 	m_treeBook->AddPage(createControls_repository(m_treeBook), _("Repositories"), false, 1);
 	m_treeBook->AddPage(createControls_plugin(m_treeBook), _("Plugins"), false, 2);
-	m_treeBook->AddPage(createControls_lua(m_treeBook, astrLuaIncludePath), _("Lua"), false, 3);
+	m_treeBook->AddPage(createControls_lua(m_treeBook), _("Lua"), false, 3);
 
 	ptbuttonSizer = new wxBoxSizer(wxHORIZONTAL);
 	ptMainSizer->Add(ptbuttonSizer, 0, wxEXPAND);
@@ -383,10 +363,11 @@ wxPanel *muhkuh_configDialog::createControls_plugin(wxWindow *ptParent)
 }
 
 
-wxPanel *muhkuh_configDialog::createControls_lua(wxWindow *ptParent, wxArrayString &astrLuaPaths)
+wxPanel *muhkuh_configDialog::createControls_lua(wxWindow *ptParent)
 {
 	wxPanel *ptLuaPanel;
 	wxBoxSizer *ptMainSizer;
+	wxArrayString astrScriptFixedExtensions;
 	wxStaticBoxSizer *ptPathSizer;
 	wxStaticBoxSizer *ptStartupCodeSizer;
 
@@ -398,10 +379,12 @@ wxPanel *muhkuh_configDialog::createControls_lua(wxWindow *ptParent, wxArrayStri
 	ptMainSizer = new wxBoxSizer(wxVERTICAL);
 	ptLuaPanel->SetSizer(ptMainSizer);
 
-	// create the path sizer
+	// create the script path sizer
 	ptPathSizer = new wxStaticBoxSizer(wxVERTICAL, ptLuaPanel, _("Include Paths"));
 	ptMainSizer->Add(ptPathSizer, 1, wxEXPAND);
-	m_ptPathListBox = new muhkuh_dirlistbox(ptLuaPanel, wxID_ANY, astrLuaPaths);
+	astrScriptFixedExtensions.Add("?.lua");
+	astrScriptFixedExtensions.Add("?/init.lua");
+	m_ptPathListBox = new muhkuh_dirlistbox(ptLuaPanel, wxID_ANY, m_ptConfigData->m_strLuaIncludePath, astrScriptFixedExtensions, true);
 	ptPathSizer->Add(m_ptPathListBox, 1, wxEXPAND);
 
 

@@ -75,11 +75,11 @@ public:
 
 	void OnButtonOk(wxCommandEvent &event);
 private:
-	void createControls(wxArrayString &astrLuaIncludePath);
+	void createControls(void);
 	wxPanel *createControls_application(wxWindow *ptParent);
 	wxPanel *createControls_repository(wxWindow *ptParent);
 	wxPanel *createControls_plugin(wxWindow *ptParent);
-	wxPanel *createControls_lua(wxWindow *ptParent, wxArrayString &astrLuaPaths);
+	wxPanel *createControls_lua(wxWindow *ptParent);
 
 	void ShowNewRepository(long lIdx);
 	void ShowNewPlugin(long lIdx);
