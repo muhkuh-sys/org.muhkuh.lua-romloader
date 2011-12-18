@@ -18,6 +18,9 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+
+#include <stddef.h>
+
 #include <wx/wx.h>
 #include <wx/dynarray.h>
 #include <wx/scrolwin.h>

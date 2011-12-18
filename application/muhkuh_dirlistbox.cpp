@@ -56,6 +56,7 @@ muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, wxString& 
 	size_t sizMax;
 	wxBoxSizer *ptMainSizer;
 	int iCols;
+	muhkuh_dirlistbox_element tElement;
 
 
 	m_sizFixedExtensions = astrFixedExtensions.GetCount();
@@ -64,7 +65,7 @@ muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, wxString& 
 
 	/* Enable all fixed extensions by default for new entries. */
 	/* TODO: make this a parameter, maybe... */
-	m_ulDefaultFixedExtensions = (1<<(m_sizFixedExtensions+1))-1;
+	m_ulDefaultFixedExtensions = (1<<m_sizFixedExtensions)-1;
 
 	/* FIXME: pass the separator as a class argument. */
 	split_path_list(strPathList, ';');
@@ -117,10 +118,21 @@ muhkuh_dirlistbox::muhkuh_dirlistbox(wxWindow *parent, wxWindowID id, wxString& 
 	/* Add all elements from the paths array. */
 	sizCnt = 0;
 	sizMax = m_atPaths.GetCount();
-	while(sizCnt<sizMax)
+	if( sizMax==0 )
 	{
-		append_new_list_item(m_atPaths.Item(sizCnt));
-		++sizCnt;
+		/* Add one dummy element. */
+		tElement.m_strPath.Clear();
+		tElement.m_ulFixedExtensions = m_ulDefaultFixedExtensions;
+		tElement.m_strCustomExtension.Clear();
+		append_new_list_item(tElement);
+	}
+	else
+	{
+		while(sizCnt<sizMax)
+		{
+			append_new_list_item(m_atPaths.Item(sizCnt));
+			++sizCnt;
+		}
 	}
 }
 
@@ -387,7 +399,7 @@ void muhkuh_dirlistbox::read_row(size_t sizRow, muhkuh_dirlistbox_element &tElem
 
 	/* Loop over all checkboxes. */
 	++sizCnt;
-	sizEnd = sizRow * m_iTotalColumns + 1 + m_iTotalColumns;
+	sizEnd = sizRow * m_iTotalColumns + 1 + m_sizFixedExtensions;
 	ulBits = 0;
 	ulMaskCnt = 1;
 	while(sizCnt<sizEnd)
@@ -533,22 +545,49 @@ void muhkuh_dirlistbox::OnButtonAdd(wxCommandEvent &event)
 {
 	wxString strPath;
 	bool fIsConfirmed;
+	bool fIsDummyElement;
 	size_t sizIndex;
 	muhkuh_dirlistbox_element tElement;
+	wxTextCtrl *ptTextCtrl;
 
 
 	strPath = strLastUsedPath;
 	fIsConfirmed = select_path(strPath);
 	if( fIsConfirmed==true )
 	{
-		tElement.m_strPath = strPath;
-		tElement.m_ulFixedExtensions = m_ulDefaultFixedExtensions;
-		append_new_list_item(tElement);
-		m_ptSizer->Layout();
+		/* Does the list only contain one dummy element? */
+		fIsDummyElement = false;
+		if( m_ptSizer->GetEffectiveRowsCount()==1 )
+		{
+			read_row(0, tElement);
+			if( tElement.m_strPath.IsEmpty()==true && tElement.m_ulFixedExtensions==m_ulDefaultFixedExtensions && tElement.m_strCustomExtension.IsEmpty()==true )
+			{
+				fIsDummyElement = true;
+			}
+		}
+		
+		if( fIsDummyElement==true )
+		{
+			/* Replace the dummy element. */
+			/* NOTE: It is only necessary to modify the path. All other fields of the dummy element have already the correct values. */
+			ptTextCtrl = get_textctrl(0);
+			if( ptTextCtrl!=NULL )
+			{
+				ptTextCtrl->SetValue(strPath);
+			}
+			focus_index(0);
+		}
+		else
+		{
+			tElement.m_strPath = strPath;
+			tElement.m_ulFixedExtensions = m_ulDefaultFixedExtensions;
+			append_new_list_item(tElement);
+			m_ptSizer->Layout();
 
-		/* Set the focus to the new element. The new element goes always to the end of the list. */
-		sizIndex = (m_ptSizer->GetEffectiveRowsCount() - 1) * m_iTotalColumns;
-		focus_index(sizIndex);
+			/* Set the focus to the new element. The new element goes always to the end of the list. */
+			sizIndex = (m_ptSizer->GetEffectiveRowsCount() - 1) * m_iTotalColumns;
+			focus_index(sizIndex);
+		}
 	}
 }
 
@@ -556,60 +595,88 @@ void muhkuh_dirlistbox::OnButtonAdd(wxCommandEvent &event)
 void muhkuh_dirlistbox::OnButtonRemove(wxCommandEvent &event)
 {
 	size_t sizRow;
+	size_t sizRowMax;
 	size_t sizCnt;
 	size_t sizEnd;
 	wxSizerItem *ptSizerItem;
 	wxWindow *ptWindow;
+	wxTextCtrl *ptTextCtrl;
+	wxCheckBox *ptCheckBox;
+	unsigned long ulBits;
 
 
 	/* Is the current selection a valid list index? */
 	if( m_iSelectedRow!=wxNOT_FOUND && m_iSelectedRow>=0 )
 	{
 		sizRow = (size_t)m_iSelectedRow;
-		if( sizRow<m_ptSizer->GetEffectiveRowsCount() )
+		sizRowMax = m_ptSizer->GetEffectiveRowsCount();
+		if( sizRow<sizRowMax )
 		{
-			sizCnt = sizRow * m_iTotalColumns;
-			sizEnd = sizRow * m_iTotalColumns + m_iTotalColumns;
-			while(sizEnd>sizCnt)
+			/* Is this the last row? */
+			if( sizRowMax==1 )
 			{
-				--sizEnd;
-
-				ptSizerItem = m_ptSizer->GetItem(sizEnd);
-				if( ptSizerItem!=NULL && ptSizerItem->IsWindow()==true )
+				/* Yes -> Just clear the entries and keep the row. */
+				sizCnt = sizRow * m_iTotalColumns;
+				ptTextCtrl = get_textctrl(sizCnt);
+				if( ptTextCtrl!=NULL )
 				{
-					ptWindow = ptSizerItem->GetWindow();
-					if( ptWindow!=NULL )
-					{
-						m_ptSizer->Detach(ptWindow);
-						RemoveChild(ptWindow);
-						ptWindow->Destroy();
-					}
+					ptTextCtrl->SetValue(wxEmptyString);
 				}
-			}
-
-			m_ptSizer->Layout();
-
-			/* Try to find a new focus element. */
-
-			/* Are still elements in the list? */
-			if( m_ptSizer->GetEffectiveRowsCount()==0 )
-			{
-				/* No entry. Select the panel. */
-				SetFocus();
+				++sizCnt;
+				sizEnd = sizRow * m_iTotalColumns + 1 + m_sizFixedExtensions;
+				ulBits = m_ulDefaultFixedExtensions;
+				while(sizCnt<sizEnd)
+				{
+					ptCheckBox = get_checkbox(sizCnt);
+					if( ptCheckBox!=NULL )
+					{
+						ptCheckBox->SetValue( (ulBits&1)!=0 );
+						ulBits >>= 1;
+					}
+					++sizCnt;
+				}
+				ptTextCtrl = get_textctrl(sizCnt);
+				if( ptTextCtrl!=NULL )
+				{
+					ptTextCtrl->SetValue(wxEmptyString);
+				}
 			}
 			else
 			{
-				/* Yes -> there will be a new focus. */
-
-				/* Is the old index still valid? */
-				if( sizRow+1>=m_ptSizer->GetEffectiveRowsCount() )
+				/* No -> remove the row. */
+				sizCnt = sizRow * m_iTotalColumns;
+				sizEnd = sizRow * m_iTotalColumns + m_iTotalColumns;
+				while(sizEnd>sizCnt)
 				{
-					/* No -> use the last index instead. */
-					sizRow = m_ptSizer->GetEffectiveRowsCount() - 1;
+					--sizEnd;
+
+					ptSizerItem = m_ptSizer->GetItem(sizEnd);
+					if( ptSizerItem!=NULL && ptSizerItem->IsWindow()==true )
+					{
+						ptWindow = ptSizerItem->GetWindow();
+						if( ptWindow!=NULL )
+						{
+							m_ptSizer->Detach(ptWindow);
+							RemoveChild(ptWindow);
+							ptWindow->Destroy();
+						}
+					}
 				}
 
-				focus_index(sizRow*m_iTotalColumns);
+				/* Display the changes. */
+				m_ptSizer->Layout();
 			}
+
+			/* Try to find a new focus element. */
+
+			/* Is the old index still valid? */
+			if( sizRow+1>=m_ptSizer->GetEffectiveRowsCount() )
+			{
+				/* No -> use the last index instead. */
+				sizRow = m_ptSizer->GetEffectiveRowsCount() - 1;
+			}
+
+			focus_index(sizRow*m_iTotalColumns);
 		}
 	}
 }
