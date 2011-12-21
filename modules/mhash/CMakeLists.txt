@@ -27,7 +27,7 @@ set_source_files_properties(mhash.i PROPERTIES CPLUSPLUS ON)
 set_source_files_properties(mhash.i PROPERTIES SWIG_FLAGS "-I${CMAKE_HOME_DIRECTORY}/modules/typemaps")
 
 
-set(mhash_SOURCES
+set(module_mhash_SOURCES
 	mhash_state.cpp
 	mhash-0.9.9-hilrom/lib/adler32.c
 	mhash-0.9.9-hilrom/lib/crc16.c
@@ -56,7 +56,7 @@ set(mhash_SOURCES
 	mhash-0.9.9-hilrom/lib/whirlpool.c
 )
 
-set(mhash_HEADERS
+set(module_mhash_HEADERS
 	mhash_state.h
 	mhash_config.h
 	mhash-0.9.9-hilrom/include/mhash.h
@@ -88,27 +88,32 @@ set(mhash_HEADERS
 )
 
 # Build the library.
-add_library(mhash_lib STATIC ${mhash_SOURCES})
+ADD_LIBRARY(module_mhash_lib STATIC ${module_mhash_SOURCES})
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
-	SET_TARGET_PROPERTIES(mhash_lib PROPERTIES COMPILE_FLAGS -fPIC)
+	SET_TARGET_PROPERTIES(module_mhash_lib PROPERTIES COMPILE_FLAGS -fPIC)
 ENDIF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
 
-if(${LUA51_FOUND})
+
+IF(${LUA51_FOUND})
 	# Build the Lua module.
-	swig_add_module(mhash lua mhash.i)
-	swig_link_libraries(mhash mhash_lib ${LUA_LIBRARIES})
-	set_property(TARGET mhash PROPERTY PREFIX "")
+	SWIG_ADD_MODULE(module_mhash_lua lua mhash.i)
+	SWIG_LINK_LIBRARIES(module_mhash_lua module_mhash_lib ${LUA_LIBRARIES})
 
-	# install the lua module
-	INSTALL(TARGETS mhash DESTINATION ${INSTALL_DIR_LUA_MODULES})
-endif(${LUA51_FOUND})
+	# Install the lua module.
+	GET_TARGET_PROPERTY(module_mhash_lua_location ${SWIG_MODULE_module_mhash_lua_REAL_NAME} LOCATION)
+	INSTALL(FILES ${module_mhash_lua_location} DESTINATION ${INSTALL_DIR_LUA_MODULES} RENAME mhash${CMAKE_SHARED_MODULE_SUFFIX})
+ENDIF(${LUA51_FOUND})
 
 
-if(${PYTHONLIBS_FOUND})
+IF(${PYTHONLIBS_FOUND})
 	# Build the Python module.
-	swig_add_module(mhashmodule python mhash.i)
-	swig_link_libraries(mhashmodule mhash_lib ${PYTHON_LIBRARIES})
-	set_target_properties(_mhashmodule PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${MODULE_PYTHON_OUTPUT_PATH})
-endif(${PYTHONLIBS_FOUND})
+	SWIG_ADD_MODULE(module_mhash_python python mhash.i)
+	SWIG_LINK_LIBRARIES(module_mhash_python module_mhash_lib ${PYTHON_LIBRARIES})
+
+	# Install the python module and the import helper.
+	GET_TARGET_PROPERTY(module_mhash_python_location ${SWIG_MODULE_module_mhash_python_REAL_NAME} LOCATION)
+	INSTALL(FILES ${module_mhash_python_location} DESTINATION ${INSTALL_DIR_PYTHON_MODULES} RENAME _mhash${CMAKE_SHARED_MODULE_SUFFIX})
+	INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/mhash.py DESTINATION ${INSTALL_DIR_PYTHON_MODULES})
+ENDIF(${PYTHONLIBS_FOUND})
 
