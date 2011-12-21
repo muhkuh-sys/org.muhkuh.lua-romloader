@@ -64,8 +64,8 @@ ELSE(UNIX)
 ENDIF(UNIX)
 
 
-set_source_files_properties(romloader_usb.i PROPERTIES CPLUSPLUS ON)
-set_property(SOURCE romloader_usb.i PROPERTY SWIG_FLAGS ${USB_DEFINES} -I${CMAKE_HOME_DIRECTORY}/modules/typemaps)
+SET_SOURCE_FILES_PROPERTIES(romloader_usb.i PROPERTIES CPLUSPLUS ON)
+SET_PROPERTY(SOURCE romloader_usb.i PROPERTY SWIG_FLAGS ${USB_DEFINES} -I${CMAKE_HOME_DIRECTORY}/modules/typemaps)
 
 
 SET(romloader_usb_SOURCES
@@ -83,9 +83,9 @@ SET(romloader_usb_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.h
 )
 
-add_definitions(${USB_DEFINES})
+ADD_DEFINITIONS(${USB_DEFINES})
 
-add_library(romloader_usb_lib STATIC ${romloader_usb_SOURCES})
+ADD_LIBRARY(romloader_usb_lib STATIC ${romloader_usb_SOURCES})
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
 	SET_TARGET_PROPERTIES(romloader_usb_lib PROPERTIES COMPILE_FLAGS -fPIC)
@@ -105,15 +105,15 @@ ADD_DEPENDENCIES(romloader_usb_lib netx_usb_firmware)
 # Build the lua plugin.
 #
 
-if(${LUA51_FOUND})
+IF(${LUA51_FOUND})
 	# Build the Lua module.
-	SWIG_ADD_MODULE(romloader_usb lua romloader_usb.i)
-	SWIG_LINK_LIBRARIES(romloader_usb romloader_usb_lib ${LUA_LIBRARIES} ${USB_LIBRARIES} romloader_lib)
-	set_property(TARGET romloader_usb PROPERTY PREFIX "")
+	SWIG_ADD_MODULE(plugins_romloader_romloader_usb_LUA lua romloader_usb.i)
+	SWIG_LINK_LIBRARIES(plugins_romloader_romloader_usb_LUA romloader_usb_lib ${LUA_LIBRARIES} ${USB_LIBRARIES} plugins_romloader_LIB)
 
-	# Install the targets.
-	INSTALL(TARGETS romloader_usb DESTINATION ${INSTALL_DIR_LUA_MODULES})
-endif(${LUA51_FOUND})
+	# Install the lua module.
+	GET_TARGET_PROPERTY(plugins_romloader_romloader_usb_LUA_LOCATION ${SWIG_MODULE_plugins_romloader_romloader_usb_LUA_REAL_NAME} LOCATION)
+	INSTALL(FILES ${plugins_romloader_romloader_usb_LUA_LOCATION} DESTINATION ${INSTALL_DIR_LUA_MODULES} RENAME romloader_usb${CMAKE_SHARED_MODULE_SUFFIX})
+ENDIF(${LUA51_FOUND})
 
 
 #----------------------------------------------------------------------------

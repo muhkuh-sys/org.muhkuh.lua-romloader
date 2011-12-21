@@ -27,4 +27,4 @@ ADD_DEPENDENCIES(muhkuh_plugin_interface swigluarun)
 TARGET_LINK_LIBRARIES(muhkuh_plugin_interface ${LUA_LIBRARIES})
 
 # Install the targets.
-INSTALL(TARGETS muhkuh_plugin_interface DESTINATION ${INSTALL_DIR_LUA_MODULES})
+INSTALL(TARGETS muhkuh_plugin_interface DESTINATION ${INSTALL_DIR_SHARED_OBJECTS})

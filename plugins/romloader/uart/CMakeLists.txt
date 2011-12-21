@@ -105,15 +105,15 @@ ADD_DEPENDENCIES(romloader_uart_lib netx_uart_firmware)
 # Build the lua plugin.
 #
 
-if(${LUA51_FOUND})
+IF(${LUA51_FOUND})
 	# Build the Lua module.
-	SWIG_ADD_MODULE(romloader_uart lua romloader_uart.i)
-	SWIG_LINK_LIBRARIES(romloader_uart romloader_uart_lib ${LUA_LIBRARIES} romloader_lib)
-	set_property(TARGET romloader_uart PROPERTY PREFIX "")
+	SWIG_ADD_MODULE(plugins_romloader_romloader_uart_LUA lua romloader_uart.i)
+	SWIG_LINK_LIBRARIES(plugins_romloader_romloader_uart_LUA romloader_uart_lib ${LUA_LIBRARIES} plugins_romloader_LIB)
 
-	# Install the targets.
-	INSTALL(TARGETS romloader_uart DESTINATION ${INSTALL_DIR_LUA_MODULES})
-endif(${LUA51_FOUND})
+	# Install the lua module.
+	GET_TARGET_PROPERTY(plugins_romloader_romloader_uart_LUA_LOCATION ${SWIG_MODULE_plugins_romloader_romloader_uart_LUA_REAL_NAME} LOCATION)
+	INSTALL(FILES ${plugins_romloader_romloader_uart_LUA_LOCATION} DESTINATION ${INSTALL_DIR_LUA_MODULES} RENAME romloader_uart${CMAKE_SHARED_MODULE_SUFFIX})
+ENDIF(${LUA51_FOUND})
 
 
 #----------------------------------------------------------------------------
