@@ -27,9 +27,9 @@
 /*-----------------------------------*/
 
 #if defined(_WINDOWS)
-#define MUHKUH_EXPORT __declspec(dllexport)
+#       define MUHKUH_EXPORT __declspec(dllexport)
 #else
-#define MUHKUH_EXPORT
+#       define MUHKUH_EXPORT
 #endif
 
 /*-----------------------------------*/
@@ -42,7 +42,7 @@ typedef struct
 {
 	lua_State* L; /* the state */
 	int ref;      /* a ref in the lua global index */
-}SWIGLUA_REF;
+} SWIGLUA_REF;
 #endif
 
 /*-----------------------------------*/
@@ -170,5 +170,5 @@ private:
 /*-----------------------------------*/
 
 
-#endif	/* __MUHKUH_PLUGIN_INTERFACE__ */
+#endif  /* __MUHKUH_PLUGIN_INTERFACE__ */
 
