@@ -50,7 +50,7 @@ protected:
 	char *m_pcPluginId;
 
 
-	static const NETX_USB_DEVICE_T atNetxUsbDevices[6];
+	static const NETX_USB_DEVICE_T atNetxUsbDevices[5];
 
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);
 
