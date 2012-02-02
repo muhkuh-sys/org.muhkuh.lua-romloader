@@ -170,7 +170,11 @@ static const SERIAL_COMM_UI_FN_T tUsbCallConsole =
 
 static void usbmon_call(unsigned long ulAddress, unsigned long ulR0)
 {
-	PFN_MONITOR_CALL_T ptCall;
+	/* NOTE: the function is marked as volatile to keep the call at the right place.
+	         Without this keyword, GCC 4.3.3 moves the function after the first call
+	         to usb_send_byte. It would be nice to get rid of this. :(
+	*/
+	volatile PFN_MONITOR_CALL_T ptCall;
 
 
 	ptCall = (PFN_MONITOR_CALL_T)ulAddress;
@@ -188,7 +192,7 @@ static void usbmon_call(unsigned long ulAddress, unsigned long ulR0)
 	usb_send_byte(USBMON_STATUS_CallMessage);
 
 	/* Call the routine. */
-	ptCall(ulR0);
+	(*ptCall)(ulR0);
 
 	/* Flush any remaining bytes in the fifo. */
 	usb_send_packet();
