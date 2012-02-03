@@ -171,6 +171,17 @@ void usb_send_packet(void)
 	ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_in_handshake = 1<<USB_FIFO_Uart_TX;
 	ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_in_handshake = 0;
 
+	/* Wait until the FIFO is empty. */
+	/* NOTE: without this, the transfer fails under very rare conditions.
+	         I have no idea if this check is enough and the irq_raw condition can
+	         be skipped, so I choose the safe side and keep both.
+	*/
+	do
+	{
+		ulRawIrq  = ptUsbDevFifoCtrlArea->aulUsb_dev_fifo_ctrl_status[USB_FIFO_Uart_TX];
+		ulRawIrq &= HOSTMSK(usb_dev_fifo_ctrl_status4_in_fill_level)|HOSTMSK(usb_dev_fifo_ctrl_status4_out_fill_level);
+	} while( ulRawIrq!=0 );
+
 	/* Wait until the packet is sent. */
 	do
 	{
