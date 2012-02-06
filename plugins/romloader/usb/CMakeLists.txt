@@ -58,8 +58,8 @@ ELSE(UNIX)
 		#       It does not allow a complete device reset.
 		SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=0)
 		INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/include/)
-		LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/lib/msvc)
-		SET(USB_LIBRARIES libusb setupapi)
+		# LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/lib/msvc)
+		# SET(USB_LIBRARIES libusb setupapi)
 	ENDIF(WIN32)
 ENDIF(UNIX)
 

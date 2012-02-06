@@ -68,6 +68,11 @@
 #	include <libusb-1.0/libusb.h>
 #endif
 
+bool libusb_load();
+bool libusb_isloaded();
+void libusb_unload();
+
+
 #include "romloader_usb_device.h"
 
 

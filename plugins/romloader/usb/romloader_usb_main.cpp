@@ -38,11 +38,13 @@ romloader_usb_provider::romloader_usb_provider(swig_type_info *p_romloader_usb, 
  : muhkuh_plugin_provider("romloader_usb")
  , m_ptUsbDevice(NULL)
 {
-/*	printf("%s(%p): provider create\n", m_pcPluginId, this); */
+    printf("%s(%p): provider create\n", m_pcPluginId, this);
 
 	/* get the romloader_usb lua type */
 	m_ptPluginTypeInfo = p_romloader_usb;
 	m_ptReferenceTypeInfo = p_romloader_usb_reference;
+
+	libusb_load();
 
 	/* create a new libusb context */
 	m_ptUsbDevice = new romloader_usb_device_libusb(m_pcPluginId);
@@ -51,7 +53,9 @@ romloader_usb_provider::romloader_usb_provider(swig_type_info *p_romloader_usb, 
 
 romloader_usb_provider::~romloader_usb_provider(void)
 {
-/*	printf("%s(%p): provider delete\n", m_pcPluginId, this); */
+	printf("%s(%p): provider delete\n", m_pcPluginId, this); 
+
+	libusb_unload();
 
 	if( m_ptUsbDevice!=NULL )
 	{
@@ -71,6 +75,11 @@ int romloader_usb_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 
 
 	sizReferences = 0;
+
+	if (!libusb_isloaded())
+	{
+		return sizReferences;
+	}
 
 	/* check the libusb context */
 	if( m_ptUsbDevice==NULL )
