@@ -75,9 +75,6 @@ ENDIF(UNIX AND NOT WIN32 AND NOT APPLE)
 # Find all packages.
 #
 
-# Lua is required for internal scripting and tests.
-FIND_PACKAGE(Lua51 REQUIRED)
-
 # Swig is required to generate the bindings.
 FIND_PACKAGE(SWIG REQUIRED)
 
@@ -91,6 +88,28 @@ SET(wxWidgets_USE_STATIC ON)
 FIND_PACKAGE(wxWidgets 2.9 REQUIRED html adv aui net xml core base)
 
 # TODO: Show a summary with FeatureSummary .
+
+
+#----------------------------------------------------------------------------
+#
+# Muhkuh can build modules for the Lua language. This section allows to user
+# to choose which lua version should be used - the one bundled with muhkuh,
+# or a systemwide installed lua.
+#
+# The default is to use the systemwide lua.
+#
+
+OPTION(USE_SYSTEM_LUA "Use the systemwide installed lua version instead of the muhkuh internal one." ON)
+IF(USE_SYSTEM_LUA)
+	# Use the system version.
+	FIND_PACKAGE(Lua51 REQUIRED)
+ELSE(USE_SYSTEM_LUA)
+	# Use the internal lua version.
+	SET(LUA51_FOUND TRUE)
+	SET(LUA_LIBRARIES lualib)
+	SET(LUA_INCLUDE_DIR ${CMAKE_HOME_DIRECTORY}/lua/lib/lua-5.1.4/src/)
+ENDIF(USE_SYSTEM_LUA)
+
 
 #----------------------------------------------------------------------------
 #
@@ -122,6 +141,7 @@ ADD_CUSTOM_TARGET(swigluarun DEPENDS ${SWIG_RUNTIME_OUTPUT_PATH}/swigluarun.h)
 if(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv|nmake)")
 	# Do not show msvs security warnings about unsafe functions.
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+	add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
 ENDIF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv|nmake)")
 
 if(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv)")
@@ -135,7 +155,7 @@ ENDIF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv)")
 # Include the projects in the subdirectories.
 #
 
-add_subdirectory(application)
+# add_subdirectory(application)
 add_subdirectory(lua)
 add_subdirectory(modules)
 add_subdirectory(plugins)
