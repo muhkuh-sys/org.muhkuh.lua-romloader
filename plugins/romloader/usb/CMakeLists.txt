@@ -110,9 +110,12 @@ IF(${LUA51_FOUND})
 	SWIG_ADD_MODULE(plugins_romloader_romloader_usb_LUA lua romloader_usb.i)
 	SWIG_LINK_LIBRARIES(plugins_romloader_romloader_usb_LUA romloader_usb_lib ${LUA_LIBRARIES} ${USB_LIBRARIES} plugins_romloader_LIB)
 
+	# Rename the output file to "romloader_usb".
+	SET_PROPERTY(TARGET plugins_romloader_romloader_usb_LUA PROPERTY PREFIX "")
+	SET_PROPERTY(TARGET plugins_romloader_romloader_usb_LUA PROPERTY OUTPUT_NAME "romloader_usb")
+
 	# Install the lua module.
-	GET_TARGET_PROPERTY(plugins_romloader_romloader_usb_LUA_LOCATION ${SWIG_MODULE_plugins_romloader_romloader_usb_LUA_REAL_NAME} LOCATION)
-	INSTALL(FILES ${plugins_romloader_romloader_usb_LUA_LOCATION} DESTINATION ${INSTALL_DIR_LUA_MODULES} RENAME romloader_usb${CMAKE_SHARED_MODULE_SUFFIX})
+	INSTALL(TARGETS plugins_romloader_romloader_usb_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
 ENDIF(${LUA51_FOUND})
 
 

@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 
 
-add_subdirectory(eth)
+# The ethernet driver is not ported to windows yet.
+IF(UNIX)
+	add_subdirectory(eth)
+ENDIF(UNIX)
 add_subdirectory(usb)
 add_subdirectory(uart)
 
@@ -54,9 +57,12 @@ IF(${LUA51_FOUND})
 	SWIG_ADD_MODULE(plugins_romloader_LUA lua romloader.i)
 	SWIG_LINK_LIBRARIES(plugins_romloader_LUA plugins_romloader_LIB ${LUA_LIBRARIES})
 
+	# Rename the output file to "romloader".
+	SET_PROPERTY(TARGET plugins_romloader_LUA PROPERTY PREFIX "")
+	SET_PROPERTY(TARGET plugins_romloader_LUA PROPERTY OUTPUT_NAME "romloader")
+
 	# Install the lua module.
-	GET_TARGET_PROPERTY(plugins_romloader_LUA_LOCATION ${SWIG_MODULE_plugins_romloader_LUA_REAL_NAME} LOCATION)
-	INSTALL(FILES ${plugins_romloader_LUA_LOCATION} DESTINATION ${INSTALL_DIR_LUA_MODULES} RENAME romloader${CMAKE_SHARED_MODULE_SUFFIX})
+	INSTALL(TARGETS plugins_romloader_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
 ENDIF(${LUA51_FOUND})
 
 
