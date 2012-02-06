@@ -155,7 +155,7 @@ ENDIF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv)")
 # Include the projects in the subdirectories.
 #
 
-# add_subdirectory(application)
+add_subdirectory(application)
 add_subdirectory(lua)
 add_subdirectory(modules)
 add_subdirectory(plugins)
