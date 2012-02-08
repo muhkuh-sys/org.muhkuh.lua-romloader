@@ -168,9 +168,12 @@ function mbin_set_parameter(tPlugin, aAttr, aParameter)
 	if type(aParameter)=="table" then
 		tPlugin:write_data32(aAttr.ulParameterStartAddress+0x04, aAttr.ulParameterStartAddress+0x0c)  -- Address of test parameters.
 
-		-- TODO: write all parameters from the 'aParameter' array.
+		for iIdx,ulValue in ipairs(aParameter) do
+			tPlugin:write_data32(aAttr.ulParameterStartAddress+0x0c+((iIdx-1)*4), ulValue)
+		end
 	else
-		tPlugin:write_data32(aAttr.ulParameterStartAddress+0x04, aParameter)  -- One single parameter.
+		-- One single parameter.
+		tPlugin:write_data32(aAttr.ulParameterStartAddress+0x04, aParameter)
 	end
 end
 
@@ -191,6 +194,7 @@ end
 function mbin_simple_run(tParentWindow, tPlugin, strFilename, aParameter)
 	local aAttr
 	aAttr = mbin_open(strFilename)
+	mbin_debug(aAttr)
 	mbin_write(tParentWindow, tPlugin, aAttr)
 	mbin_set_parameter(tPlugin, aAttr, aParameter)
 	return mbin_execute(tParentWindow, tPlugin, aAttr)
