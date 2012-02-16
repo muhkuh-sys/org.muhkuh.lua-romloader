@@ -94,6 +94,15 @@ const char *muhkuh_plugin::GetTyp(void) const
 }
 
 
+// wrapper functions for compatibility with old function names
+void		muhkuh_plugin::connect(lua_State *ptClientData)		{return Connect(ptClientData);}
+void		muhkuh_plugin::disconnect(lua_State *ptClientData)	{return Disconnect(ptClientData);}
+bool		muhkuh_plugin::is_connected(void) const				{return IsConnected();}
+const char *muhkuh_plugin::get_name(void) const					{return GetName();}
+const char *muhkuh_plugin::get_typ(void) const					{return GetTyp();}
+
+
+
 char *muhkuh_plugin::clone_string(const char *pcStr, size_t sizMax)
 {
 	char *pcClone;

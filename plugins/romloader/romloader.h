@@ -85,6 +85,12 @@ public:
 	virtual ROMLOADER_ROMCODE GetRomcode(void) const;
 	virtual const char *GetRomcodeName(ROMLOADER_ROMCODE tRomcode) const;
 
+	// wrapper functions for compatibility with old function names
+	virtual ROMLOADER_CHIPTYP get_chiptyp(void) const;
+	virtual const char *get_chiptyp_name(ROMLOADER_CHIPTYP tChiptyp) const;
+	virtual ROMLOADER_ROMCODE get_romcode(void) const;
+	virtual const char *get_romcode_name(ROMLOADER_ROMCODE tRomcode) const;
+
 // *** lua interface end ***
 
 protected:

@@ -93,6 +93,14 @@ public:
 	// returns the device typ
 	virtual const char *GetTyp(void) const;
 
+	// wrapper functions for compatibility with old function names
+	virtual void connect(lua_State *ptClientData);
+	virtual void disconnect(lua_State *ptClientData);
+	virtual bool is_connected(void) const;
+	virtual const char *get_name(void) const;
+	virtual const char *get_typ(void) const;
+
+
 protected:
 	char *clone_string(const char *pcStr, size_t sizMax);
 

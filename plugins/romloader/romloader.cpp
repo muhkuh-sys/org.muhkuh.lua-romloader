@@ -78,6 +78,8 @@ const char *romloader::GetChiptypName(ROMLOADER_CHIPTYP tChiptyp) const
 }
 
 
+
+
 const char *romloader::GetRomcodeName(ROMLOADER_ROMCODE tRomcode) const
 {
 	const char *pcRomcode;
@@ -103,6 +105,11 @@ const char *romloader::GetRomcodeName(ROMLOADER_ROMCODE tRomcode) const
 	return pcRomcode;
 }
 
+// wrapper functions for compatibility with old function names
+ROMLOADER_CHIPTYP romloader::get_chiptyp(void) const						{return GetChiptyp();}
+ROMLOADER_ROMCODE romloader::get_romcode(void) const						{return GetRomcode();}
+const char	*romloader::get_chiptyp_name(ROMLOADER_CHIPTYP tChiptyp) const	{return GetChiptypName(tChiptyp);}
+const char *romloader::get_romcode_name(ROMLOADER_ROMCODE tRomcode) const	{return GetRomcodeName(tRomcode);}
 
 bool romloader::detect_chiptyp(lua_State *ptClientData)
 {
