@@ -65,7 +65,8 @@ ELSE(UNIX AND NOT WIN32 AND NOT APPLE)
 	# Install everything in one folder on Win.
 	SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 	SET(INSTALL_DIR_EXECUTABLES "build")
-	SET(INSTALL_DIR_LUA_MODULES "build")
+	SET(INSTALL_DIR_LUA_MODULES "build/lua_plugins")
+	SET(INSTALL_DIR_PYTHON_MODULES "build/python_plugins")
 	SET(INSTALL_DIR_SHARED_OBJECTS "build")
 	SET(INSTALL_DIR_LUA_SCRIPTS "build/lua")
 ENDIF(UNIX AND NOT WIN32 AND NOT APPLE)
@@ -155,7 +156,7 @@ ENDIF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv)")
 # Include the projects in the subdirectories.
 #
 
-add_subdirectory(application)
+#add_subdirectory(application)
 add_subdirectory(lua)
 add_subdirectory(modules)
 add_subdirectory(plugins)
