@@ -20,11 +20,38 @@
 
 
 #include "netx_consoleapp.h"
+#include "systime.h"
 #include "uprintf.h"
 
 #include "main.h"
 
 /*-----------------------------------*/
+
+static void delay_print(unsigned int uiMessages, unsigned long ulDelayMs)
+{
+	unsigned int uiCnt;
+	unsigned long ulTimer;
+	int iElapsed;
+
+
+	/* print a lot of messages */
+	uprintf(". counting from 0 to %d and %dms delay.\n", uiMessages, ulDelayMs);
+	for(uiCnt=0; uiCnt<uiMessages; ++uiCnt)
+	{
+		if( ulDelayMs!=0 )
+		{
+			ulTimer = systime_get_ms();
+			do
+			{
+				iElapsed = systime_elapsed(ulTimer, ulDelayMs);
+			} while( iElapsed==0 );
+		}
+		uprintf("%% %d/%d\n", uiCnt, uiMessages);
+	}
+
+
+}
+
 
 /* This is your main function for the test,
    your control starts here. */
@@ -34,8 +61,10 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(NETX_CONSOLEAPP_PARAMETER_T *ptTes
 	NETX_CONSOLEAPP_RESULT_T tTestResult;
 	/* this is the input parameter from the xml file */
 	unsigned long ulParameter;
-	int iMax, iCnt;
 
+
+	/* Init all modules. */
+	systime_init();
 
 	/* the input parameter is  */
 	ulParameter = (unsigned long)ptTestParam->pvInitParams;
@@ -49,13 +78,11 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(NETX_CONSOLEAPP_PARAMETER_T *ptTes
 	uprintf("012345678901234567890123456789012345678901234567890123456789012345678901234567\n");
 	uprintf("000000000011111111112222222222333333333344444444445555555555666666666677777777\n");
 
-	/* print a lot of messages */
-	iMax = 100;
-	uprintf(". counting from 0 to %d\n", iMax);
-	for(iCnt=0; iCnt<iMax; ++iCnt)
-	{
-		uprintf("%% %d/%d\n", iCnt, iMax);
-	}
+	/* Print messages with a specific delay. */
+	delay_print(100,    0);
+	delay_print(  8,  500);
+	delay_print(  4, 1000);
+	delay_print(  2, 2000);
 
 	/* write parameter to return message */
 	ptTestParam->pvReturnMessage = (void*)ulParameter;

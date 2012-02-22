@@ -36,6 +36,7 @@ montest_sources = """
 	src/init_netx_test.S
 	src/main.c
 	src/netx_consoleapp.c
+	src/systime.c
 	src/uprintf.c
 """
 
@@ -46,16 +47,16 @@ montest_sources = """
 #
 
 env_netx500_default = env_default.CreateCompilerEnv('500', ['cpu=arm926ej-s'])
-env_netx500_default.Append(CPPPATH = ['src/netx500'])
+env_netx500_default.Append(CPPPATH = ['platform'])
 
 env_netx56_default  = env_default.CreateCompilerEnv('56',  ['cpu=arm966e-s'])
-env_netx56_default.Append(CPPPATH = ['src/netx56'])
+env_netx56_default.Append(CPPPATH = ['platform'])
 
 env_netx50_default  = env_default.CreateCompilerEnv('50',  ['cpu=arm966e-s'])
-env_netx50_default.Append(CPPPATH = ['src/netx50'])
+env_netx50_default.Append(CPPPATH = ['platform'])
 
 env_netx10_default  = env_default.CreateCompilerEnv('10',  ['cpu=arm966e-s'])
-env_netx10_default.Append(CPPPATH = ['src/netx10'])
+env_netx10_default.Append(CPPPATH = ['platform'])
 
 #----------------------------------------------------------------------------
 #
