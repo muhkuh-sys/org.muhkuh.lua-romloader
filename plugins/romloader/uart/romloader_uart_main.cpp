@@ -412,12 +412,12 @@ UARTSTATUS_T romloader_uart::packet_ringbuffer_fill(size_t sizRequestedFillLevel
 			/* Receive the chunk. */
 			sizRead = m_ptUartDev->RecvRaw(m_aucPacketRingBuffer+sizWritePosition, sizChunk, UART_BASE_TIMEOUT_MS + sizChunk*UART_CHAR_TIMEOUT_MS);
 
-			m_sizPacketRingBufferFill += sizChunk;
-			sizReceiveCnt -= sizChunk;
+			m_sizPacketRingBufferFill += sizRead;
+			sizReceiveCnt -= sizRead;
 
 			if( sizRead!=sizChunk )
 			{
-				fprintf(stderr, "ERROR: requested %d bytes, got only %d.\n", sizChunk, sizRead);
+//				fprintf(stderr, "TIMEOUT: requested %d bytes, got only %d.\n", sizChunk, sizRead);
 				tResult = UARTSTATUS_TIMEOUT;
 				break;
 			}
