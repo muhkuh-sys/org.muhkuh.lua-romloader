@@ -29,10 +29,12 @@ INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 IF(UNIX)
 	SET(romloader_eth_platform_SOURCES romloader_eth_device_linux.cpp)
 	SET(romloader_eth_platform_HEADERS romloader_eth_device_linux.h)
+	SET(romloader_eth_platform_LIBS )
 ELSE(UNIX)
 	IF(WIN32)
 		SET(romloader_eth_platform_SOURCES romloader_eth_device_win.cpp)
 		SET(romloader_eth_platform_HEADERS romloader_eth_device_win.h)
+		SET(romloader_eth_platform_LIBS Ws2_32)
 	ENDIF(WIN32)
 ENDIF(UNIX)
 
@@ -72,10 +74,13 @@ SET_SOURCE_FILES_PROPERTIES(${ETH_FIRMWARE_SOURCES} ${ETH_FIRMWARE_HEADERS}
 if(${LUA51_FOUND})
 	# Build the Lua module.
 	SWIG_ADD_MODULE(plugins_romloader_romloader_eth_LUA lua romloader_eth.i)
-	SWIG_LINK_LIBRARIES(plugins_romloader_romloader_eth_LUA romloader_eth_lib ${LUA_LIBRARIES} plugins_romloader_LIB)
+	SWIG_LINK_LIBRARIES(plugins_romloader_romloader_eth_LUA romloader_eth_lib ${LUA_LIBRARIES} ${romloader_eth_platform_LIBS} plugins_romloader_LIB)
+
+	# Rename the output file to "romloader_usb".
+	SET_PROPERTY(TARGET plugins_romloader_romloader_eth_LUA PROPERTY PREFIX "")
+	SET_PROPERTY(TARGET plugins_romloader_romloader_eth_LUA PROPERTY OUTPUT_NAME "romloader_eth")
 
 	# Install the lua module.
-	GET_TARGET_PROPERTY(plugins_romloader_romloader_eth_LUA_LOCATION ${SWIG_MODULE_plugins_romloader_romloader_eth_LUA_REAL_NAME} LOCATION)
-	INSTALL(FILES ${plugins_romloader_romloader_eth_LUA_LOCATION} DESTINATION ${INSTALL_DIR_LUA_MODULES} RENAME romloader_eth${CMAKE_SHARED_MODULE_SUFFIX})
+	INSTALL(TARGETS plugins_romloader_romloader_eth_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
 endif(${LUA51_FOUND})
 

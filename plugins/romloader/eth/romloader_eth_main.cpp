@@ -20,7 +20,6 @@
 
 #include <ctype.h>
 #include <stdio.h>
-#include <unistd.h>
 
 
 #include "romloader_eth_main.h"
