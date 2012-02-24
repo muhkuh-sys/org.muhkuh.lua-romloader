@@ -1,21 +1,43 @@
 ACTION!="add|change", GOTO="netx_rules_end"
-SUBSYSTEM!="usb", GOTO="netx_rules_end"
-ENV{DEVTYPE}!="usb_device", GOTO="netx_rules_end"
 
-# netX500 romcode
+#-----------------------------------------------------------------------------
+#
+# USB rules
+#
+SUBSYSTEM!="usb", GOTO="netx_usb_rules_end"
+ENV{DEVTYPE}!="usb_device", GOTO="netx_usb_rules_end"
+
+# netX100/500 ABoot V1.0
 ATTRS{idVendor}=="0cc4", ATTRS{idProduct}=="0815", MODE="664", GROUP="plugdev"
 
-# netX50 romcode
+# netX50
 ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0002", MODE="664", GROUP="plugdev"
 
-# netX10 romcode
+# netX10
 ATTRS{idVendor}=="1939", ATTRS{idProduct}=="000c", MODE="664", GROUP="plugdev"
 
-# netX51 romcode
-ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0017", MODE="664", GROUP="plugdev"
-
-# netX52 romcode
+# netX51
 ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0018", MODE="664", GROUP="plugdev"
+
+# netX52
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0019", MODE="664", GROUP="plugdev"
+
+LABEL="netx_usb_rules_end"
+
+
+#-----------------------------------------------------------------------------
+#
+# UIO rules
+#
+SUBSYSTEM!="uio", GOTO="netx_uio_rules_end"
+
+# Hilscher PLX
+ATTR{name}=="netx_plx", MODE="664", GROUP="plugdev"
+
+LABEL="netx_uio_rules_end"
+
+
+#-----------------------------------------------------------------------------
 
 LABEL="netx_rules_end"
 
