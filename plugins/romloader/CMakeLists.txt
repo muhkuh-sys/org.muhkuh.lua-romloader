@@ -2,9 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 
 # The ethernet driver is not ported to windows yet.
-IF(UNIX)
-	add_subdirectory(eth)
-ENDIF(UNIX)
+add_subdirectory(eth)
 add_subdirectory(usb)
 add_subdirectory(uart)
 
