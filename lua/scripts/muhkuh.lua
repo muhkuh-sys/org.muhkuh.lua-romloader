@@ -43,6 +43,9 @@ local function load_from_working_folder(strFileName, fFileIsText)
 
 	-- Load the complete file.
 	hFile = io.open(strPath, strMode)
+	if hFile==nil then
+		error("Failed to open file: " .. strPath)
+	end
 	local strData = hFile:read("*a")
 	hFile:close()
 
