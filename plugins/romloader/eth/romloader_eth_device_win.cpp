@@ -277,7 +277,7 @@ size_t romloader_eth_device_win::ScanForServers(char ***pppcDeviceNames)
 		else
 		{
 			/* Bind the socket to any interface and use the first free port. */
-			saddr.sin_family = PF_INET;
+			saddr.sin_family = AF_INET;
 			saddr.sin_port = htons(0);
 			saddr.sin_addr.s_addr = htonl(INADDR_ANY);
 			iResult = bind(tSocket, (struct sockaddr *)&saddr, sizeof(struct sockaddr_in));
@@ -327,6 +327,7 @@ size_t romloader_eth_device_win::ScanForServers(char ***pppcDeviceNames)
 					}
 					else if( iResult==1 )
 					{
+						iAddrLen = sizeof(uSrcAddr.tAddrIn);
 						iPacketSize = recvfrom(tSocket, (char*)aucBuffer, MI_ETH_MAX_PACKET_SIZE, 0, &uSrcAddr.tAddr, &iAddrLen);
 						if( iPacketSize==-1 )
 						{
