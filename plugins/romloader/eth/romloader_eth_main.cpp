@@ -244,6 +244,8 @@ bool romloader_eth::chip_init(lua_State *ptClientData)
 	bool fResult;
 
 
+	fResult = false;
+
 	switch( m_tChiptyp )
 	{
 	case ROMLOADER_CHIPTYP_NETX500:
@@ -298,6 +300,33 @@ bool romloader_eth::chip_init(lua_State *ptClientData)
 			break;
 		}
 		break;
+
+
+	case ROMLOADER_CHIPTYP_NETX56:
+		switch( m_tRomcode )
+		{
+		case ROMLOADER_ROMCODE_ABOOT:
+			// this is an unknown combination
+			fResult = false;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT:
+			// this is an unknown combination
+			fResult = false;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
+			// this is an unknown combination
+			fResult = true;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT2:
+			/* hboot2 needs no special init. */
+			fResult = true;
+			break;
+		case ROMLOADER_ROMCODE_UNKNOWN:
+			fResult = false;
+			break;
+		}
+		break;
+
 
 	case ROMLOADER_CHIPTYP_UNKNOWN:
 		fResult = false;
