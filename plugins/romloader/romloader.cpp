@@ -225,7 +225,7 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[5] =
 		ROMLOADER_CHIPTYP_NETX56,
 		"netX56",
 		ROMLOADER_ROMCODE_HBOOT2,
-		"HBoot"
+		"HBoot2"
 	}
 
 };
