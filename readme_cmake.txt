@@ -75,8 +75,20 @@ Select Visual Studio 9:
 
  cmake -G "Visual Studio 9 2008"
 
+Select MinGW:
+
+ cmake -G "MinGW Makefiles" ..
+
+
 Set the install folder
 ----------------------
 
  cmake -D CMAKE_INSTALL_PREFIX=/tmp/muhkuh ..
+
+
+
+cmake -G "MinGW Makefiles" -DSWIG_EXECUTABLE=C:/tools/swigwin-2.0.4/swig.exe -D wxWidgets_ROOT_DIR=C:\chris\wxWidgets-2.9.3 -DLUA_LIBRARIES=C:/chris/LuaDist-batteries-0.8-Windows-x86/bin/liblua.dll -DLUA_INCLUDE_DIR=C:/chris/LuaDist-batteries-0.8-Windows-x86/include ..
+
+
+cmake -G "Visual Studio 9 2008" -DSWIG_EXECUTABLE=C:/tools/swigwin-2.0.4/swig.exe -D wxWidgets_ROOT_DIR=C:\chris\wxWidgets-2.9.1 -DLUA_LIBRARIES=C:/Programme/Lua/5.1/lib/lua5.1.lib -DLUA_INCLUDE_DIR=C:/Programme/Lua/5.1/include ../..
 
