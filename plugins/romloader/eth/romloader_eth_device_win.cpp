@@ -129,18 +129,19 @@ void romloader_eth_device_win::Close(void)
 int romloader_eth_device_win::SendPacket(const unsigned char *pucData, size_t sizData)
 {
 	int iResult;
+	int iSendResult;
 
 
 	/* Expect success. */
 	iResult = 0;
 
 	/* Send a packet. */
-	iResult = sendto(m_tHbootServer_Socket, (const char*)pucData, sizData, 0, &m_tHbootServer_Addr.tAddr, sizeof(m_tHbootServer_Addr));
-	if( iResult==-1 )
+	iSendResult = sendto(m_tHbootServer_Socket, (const char*)pucData, sizData, 0, (SOCKADDR *)&m_tHbootServer_Addr.tAddr, sizeof(m_tHbootServer_Addr));
+	if( iSendResult==SOCKET_ERROR )
 	{
 		fprintf(stderr, "Failed to send packet: %d: %s\n", errno, strerror(errno));
 	}
-	if( iResult!=sizData )
+	else if( iSendResult!=sizData )
 	{
 		fprintf(stderr, "Failed to send packet. %d requested, but only %d sent.\n", sizData, iResult);
 		iResult = -1;
