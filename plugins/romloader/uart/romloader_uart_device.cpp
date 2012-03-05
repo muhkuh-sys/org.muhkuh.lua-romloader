@@ -440,50 +440,6 @@ bool romloader_uart_device::GetLine(unsigned char **ppucLine, const char *pcEol,
 }
 
 
-const romloader_uart_device::ROMCODE_RESET_ID_T romloader_uart_device::atResIds[4] =
-{
-	{
-		0xea080001,
-		0x00200008,
-		0x00001000,
-		ROMLOADER_CHIPTYP_NETX500,
-		"netX500",
-		ROMLOADER_ROMCODE_ABOOT,
-		"ABoot"
-	},
-
-	{
-		0xea080002,
-		0x00200008,
-		0x00003002,
-		ROMLOADER_CHIPTYP_NETX100,
-		"netX100",
-		ROMLOADER_ROMCODE_ABOOT,
-		"ABoot"
-	},
-
-	{
-		0xeac83ffc,
-		0x08200008,
-		0x00002001,
-		ROMLOADER_CHIPTYP_NETX50,
-		"netX50",
-		ROMLOADER_ROMCODE_HBOOT,
-		"HBoot"
-	},
-
-	{
-		0xeafdfffa,
-		0x08070008,
-		0x00005003,
-		ROMLOADER_CHIPTYP_NETX10,
-		"netX10",
-		ROMLOADER_ROMCODE_HBOOT,
-		"HBoot"
-	}
-};
-
-
 bool romloader_uart_device::legacy_read(unsigned long ulAddress, unsigned long *pulValue)
 {
 	union
@@ -691,75 +647,29 @@ bool romloader_uart_device::netx50_start_code(void)
 }
 
 
-bool romloader_uart_device::update_device(void)
+bool romloader_uart_device::update_device(ROMLOADER_CHIPTYP tChiptyp, ROMLOADER_ROMCODE tRomcode)
 {
 	bool fOk;
-	unsigned long ulResetVector;
-	unsigned long ulVersion;
-	const ROMCODE_RESET_ID_T *ptCnt;
-	const ROMCODE_RESET_ID_T *ptEnd;
-	const ROMCODE_RESET_ID_T *ptDev;
 
 
-	/* Read the reset vector. */
-	fOk = legacy_read(0U, &ulResetVector);
-	if( fOk==true )
+	/* Expect success. */
+	fOk = true;
+
+	if( tChiptyp==ROMLOADER_CHIPTYP_NETX50 )
 	{
-		fprintf(stderr, "Reset vector: 0x%08lx\n", ulResetVector);
-		ptCnt = atResIds;
-		ptEnd = atResIds + (sizeof(atResIds)/sizeof(atResIds[0]));
-		ptDev = NULL;
-		while( ptCnt<ptEnd )
+		fOk = netx50_load_code(auc_uartmon_netx50_bootstrap, sizeof(auc_uartmon_netx50_bootstrap));
+		if( fOk==true )
 		{
-			if( ptCnt->ulResetVector==ulResetVector )
+			fOk = netx50_start_code();
+			if( fOk==true )
 			{
-				fOk = legacy_read(ptCnt->ulVersionAddress, &ulVersion);
-				if( fOk==true )
+				if( SendRaw(auc_uartmon_netx50_monitor, sizeof(auc_uartmon_netx50_monitor), 500)!=sizeof(auc_uartmon_netx50_monitor) )
 				{
-					if( ptCnt->ulVersionValue==ulVersion )
-					{
-						ptDev = ptCnt;
-						break;
-					}
-				}
-				else
-				{
-					fprintf(stderr, "Failed to read the version data at address 0x%08lx!\n", ptCnt->ulVersionAddress);
-					break;
-				}
-			}
-			++ptCnt;
-		}
-
-		if( ptDev==NULL )
-		{
-			fprintf(stderr, "Failed to identify the device!\n");
-			fOk = false;
-		}
-		else
-		{
-			fprintf(stderr, "Found %s on %s.\n", ptDev->pcRomcodeName, ptDev->pcChiptypName);
-			if( ptDev->tChiptyp==ROMLOADER_CHIPTYP_NETX50 )
-			{
-				fOk = netx50_load_code(auc_uartmon_netx50_bootstrap, sizeof(auc_uartmon_netx50_bootstrap));
-				if( fOk==true )
-				{
-					fOk = netx50_start_code();
-					if( fOk==true )
-					{
-						if( SendRaw(auc_uartmon_netx50_monitor, sizeof(auc_uartmon_netx50_monitor), 500)!=sizeof(auc_uartmon_netx50_monitor) )
-						{
-							fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
-							fOk = false;
-						}
-					}
+					fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
+					fOk = false;
 				}
 			}
 		}
-	}
-	else
-	{
-		fprintf(stderr, "Failed to read the reset vector!\n");
 	}
 	
 	return fOk;
@@ -792,129 +702,6 @@ bool romloader_uart_device::SendBlankLineAndDiscardResponse(void)
 	}
 
 	return fOk;
-}
-
-
-bool romloader_uart_device::IdentifyLoader(void)
-{
-	bool fResult = false;
-	const unsigned char aucKnock[5] = { '*', 0x00, 0x00, '*', '#' };
-	const unsigned char aucKnockResponseMi[7] = { 0x09, 0x00, 0x00, 0x4d, 0x4f, 0x4f, 0x48 };
-	unsigned char aucData[13];
-	size_t sizCnt;
-	size_t sizTransfered;
-	unsigned long ulMiVersionMaj;
-	unsigned long ulMiVersionMin;
-	bool fDeviceNeedsUpdate;
-	unsigned short usCrc;
-
-
-	/* No update by default. */
-	fDeviceNeedsUpdate = false;
-
-	/* Send knock sequence with 500ms second timeout. */
-	if( SendRaw(aucKnock, sizeof(aucKnock), 500)!=sizeof(aucKnock) )
-	{
-		/* Failed to send knock sequence to device. */
-		fprintf(stderr, "Failed to send knock sequence to device.\n");
-	}
-	else if( Flush()!=true )
-	{
-		/* Failed to flush the knock sequence. */
-		fprintf(stderr, "Failed to flush the knock sequence.\n");
-	}
-	else
-	{
-		sizTransfered = RecvRaw(aucData, 1, 1000);
-		if( sizTransfered!=1 )
-		{
-			/* Failed to receive first char of knock response. */
-			fprintf(stderr, "Failed to receive first char of knock response: %d.\n", sizTransfered);
-		}
-		else
-		{
-			printf("received knock response: 0x%02x\n", aucData[0]);
-			/* Knock echoed -> this is the prompt or the machine interface. */
-			if( aucData[0]=='*' )
-			{
-				printf("ok, received star!\n");
-
-				/* Get rest of the response. */
-				sizTransfered = RecvRaw(aucData, 13, 500);
-				hexdump(aucData, sizTransfered);
-				printf("%d\n", sizTransfered);
-				hexdump(aucKnockResponseMi, 7);
-				if( sizTransfered==0 )
-				{
-					fprintf(stderr, "Failed to receive response after the star!\n");
-				}
-				else if( sizTransfered==13 && memcmp(aucData, aucKnockResponseMi, 7)==0 )
-				{
-					/* Build the crc for the packet. */
-					usCrc = 0;
-					for(sizCnt=0; sizCnt<13; ++sizCnt)
-					{
-						usCrc = crc16(usCrc, aucData[sizCnt]);
-					}
-					if( usCrc!=0 )
-					{
-						fprintf(stderr, "Crc of version packet is invalid!\n");
-					}
-					else
-					{
-						ulMiVersionMin = aucData[7] | (aucData[8]<<8);;
-						ulMiVersionMaj = aucData[9] | (aucData[10]<<8);
-						printf("Found new machine interface V%ld.%ld.\n", ulMiVersionMaj, ulMiVersionMin);
-						fResult = true;
-					}
-				}
-				else if( sizTransfered==2 && aucData[0]=='*' && aucData[1]=='#' )
-				{
-					printf("ok, received '*#'!\n");
-					fResult = SendBlankLineAndDiscardResponse();
-					fDeviceNeedsUpdate = fResult;
-					fResult = true;
-				}
-				else
-				{
-					printf("received strange response after the star: 0x%02x\n", aucData[0]);
-				}
-			}
-			else if( aucData[0]=='#' )
-			{
-				printf("ok, received hash!\n");
-
-				fDeviceNeedsUpdate = true;
-				fResult = true;
-			}
-			else
-			{
-				/* This seems to be the welcome message. */
-
-				/* The welcome message can be quite trashed depending on the driver. Just discard the characters until the first timeout and send enter. */
-
-				/* Discard all data until timeout. */
-				do
-				{
-					sizTransfered = RecvRaw(aucData, 1, 200);
-				} while( sizTransfered==1 );
-
-				fResult = SendBlankLineAndDiscardResponse();
-				fDeviceNeedsUpdate = fResult;
-			}
-		}
-	}
-
-	if( fResult==true )
-	{
-		if( fDeviceNeedsUpdate==true )
-		{
-			fResult = update_device();
-		}
-	}
-
-
-	return fResult;
 }
 
 

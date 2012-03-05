@@ -94,6 +94,7 @@ private:
 
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);
 
+	bool identify_loader(bool *pfNeedsUpdate);
 	bool chip_init(lua_State *ptClientData);
 
 	romloader_uart_device_platform *m_ptUartDev;

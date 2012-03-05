@@ -105,11 +105,6 @@ public:
 
 protected:
 	NETX_USB_DEVICE_T m_tDeviceId;
-//	ROMLOADER_CHIPTYP m_tChiptyp;
-//	ROMLOADER_ROMCODE m_tRomcode;
-//
-//	unsigned char m_ucEndpoint_In;
-//	unsigned char m_ucEndpoint_Out;
 
 private:
 	const NETX_USB_DEVICE_T *identifyDevice(libusb_device *ptDevice) const;

@@ -32,6 +32,59 @@
 
 /*-------------------------------------*/
 
+class romloader_uart_legacy_read_functinoid : public romloader_read_functinoid
+{
+public:
+	romloader_uart_legacy_read_functinoid(romloader_uart_device *ptDevice)
+	{
+		m_ptDevice = ptDevice;
+	}
+
+	unsigned long read_data32(unsigned long ulAddress)
+	{
+		bool fOk;
+		unsigned long ulValue;
+
+
+		fOk = m_ptDevice->legacy_read(ulAddress, &ulValue);
+		if( fOk!=true )
+		{
+			ulValue = 0;
+		}
+		return ulValue;
+	}
+
+private:
+	romloader_uart_device *m_ptDevice;
+};
+
+
+class romloader_uart_mi_read_functinoid : public romloader_read_functinoid
+{
+public:
+	romloader_uart_mi_read_functinoid(romloader_uart *ptDevice, lua_State *ptClientData)
+	{
+		m_ptDevice = ptDevice;
+		m_ptClientData = ptClientData;
+	}
+
+	unsigned long read_data32(unsigned long ulAddress)
+	{
+		unsigned long ulValue;
+
+
+		ulValue = m_ptDevice->read_data32(m_ptClientData, ulAddress);
+		return ulValue;
+	}
+
+private:
+	romloader_uart *m_ptDevice;
+	lua_State *m_ptClientData;
+};
+
+
+/*-------------------------------------*/
+
 const char *romloader_uart_provider::m_pcPluginNamePattern = "romloader_uart_%s";
 
 romloader_uart_provider::romloader_uart_provider(swig_type_info *p_romloader_uart, swig_type_info *p_romloader_uart_reference)
@@ -239,6 +292,121 @@ void romloader_uart::hexdump(const unsigned char *pucData, unsigned long ulSize)
 }
 
 
+bool romloader_uart::identify_loader(bool *pfNeedsUpdate)
+{
+	bool fResult = false;
+	const unsigned char aucKnock[5] = { '*', 0x00, 0x00, '*', '#' };
+	const unsigned char aucKnockResponseMi[7] = { 0x09, 0x00, 0x00, 0x4d, 0x4f, 0x4f, 0x48 };
+	unsigned char aucData[13];
+	size_t sizCnt;
+	size_t sizTransfered;
+	unsigned long ulMiVersionMaj;
+	unsigned long ulMiVersionMin;
+	bool fDeviceNeedsUpdate;
+	unsigned short usCrc;
+
+
+	/* No update by default. */
+	fDeviceNeedsUpdate = false;
+
+	/* Send knock sequence with 500ms second timeout. */
+	if( m_ptUartDev->SendRaw(aucKnock, sizeof(aucKnock), 500)!=sizeof(aucKnock) )
+	{
+		/* Failed to send knock sequence to device. */
+		fprintf(stderr, "Failed to send knock sequence to device.\n");
+	}
+	else if( m_ptUartDev->Flush()!=true )
+	{
+		/* Failed to flush the knock sequence. */
+		fprintf(stderr, "Failed to flush the knock sequence.\n");
+	}
+	else
+	{
+		sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 1000);
+		if( sizTransfered!=1 )
+		{
+			/* Failed to receive first char of knock response. */
+			fprintf(stderr, "Failed to receive first char of knock response: %d.\n", sizTransfered);
+		}
+		else
+		{
+			printf("received knock response: 0x%02x\n", aucData[0]);
+			/* Knock echoed -> this is the prompt or the machine interface. */
+			if( aucData[0]=='*' )
+			{
+				printf("ok, received star!\n");
+
+				/* Get rest of the response. */
+				sizTransfered = m_ptUartDev->RecvRaw(aucData, 13, 500);
+				hexdump(aucData, sizTransfered);
+				printf("%d\n", sizTransfered);
+				hexdump(aucKnockResponseMi, 7);
+				if( sizTransfered==0 )
+				{
+					fprintf(stderr, "Failed to receive response after the star!\n");
+				}
+				else if( sizTransfered==13 && memcmp(aucData, aucKnockResponseMi, 7)==0 )
+				{
+					/* Build the crc for the packet. */
+					usCrc = 0;
+					for(sizCnt=0; sizCnt<13; ++sizCnt)
+					{
+						usCrc = crc16(usCrc, aucData[sizCnt]);
+					}
+					if( usCrc!=0 )
+					{
+						fprintf(stderr, "Crc of version packet is invalid!\n");
+					}
+					else
+					{
+						ulMiVersionMin = aucData[7] | (aucData[8]<<8);;
+						ulMiVersionMaj = aucData[9] | (aucData[10]<<8);
+						printf("Found new machine interface V%ld.%ld.\n", ulMiVersionMaj, ulMiVersionMin);
+						fResult = true;
+					}
+				}
+				else if( sizTransfered==2 && aucData[0]=='*' && aucData[1]=='#' )
+				{
+					printf("ok, received '*#'!\n");
+					fResult = m_ptUartDev->SendBlankLineAndDiscardResponse();
+					fDeviceNeedsUpdate = fResult;
+					fResult = true;
+				}
+				else
+				{
+					printf("received strange response after the star: 0x%02x\n", aucData[0]);
+				}
+			}
+			else if( aucData[0]=='#' )
+			{
+				printf("ok, received hash!\n");
+
+				fDeviceNeedsUpdate = true;
+				fResult = true;
+			}
+			else
+			{
+				/* This seems to be the welcome message. */
+
+				/* The welcome message can be quite trashed depending on the driver. Just discard the characters until the first timeout and send enter. */
+
+				/* Discard all data until timeout. */
+				do
+				{
+					sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 200);
+				} while( sizTransfered==1 );
+
+				fResult = m_ptUartDev->SendBlankLineAndDiscardResponse();
+				fDeviceNeedsUpdate = fResult;
+			}
+		}
+	}
+
+	*pfNeedsUpdate = fDeviceNeedsUpdate;
+	return fResult;
+}
+
+
 bool romloader_uart::chip_init(lua_State *ptClientData)
 {
 	bool fResult;
@@ -264,6 +432,10 @@ bool romloader_uart::chip_init(lua_State *ptClientData)
 			break;
 		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
 			/* hboot2 software emu needs no special init. */
+			fResult = true;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT2:
+			/* hboot2 needs no special init. */
 			fResult = true;
 			break;
 		case ROMLOADER_ROMCODE_UNKNOWN:
@@ -293,6 +465,64 @@ bool romloader_uart::chip_init(lua_State *ptClientData)
 			write_data32(ptClientData, 0x1c005830, 0);
 			fResult = true;
 			break;
+		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
+			/* hboot2 soft needs no special init. */
+			fResult = true;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT2:
+			/* hboot2 needs no special init. */
+			fResult = true;
+			break;
+		case ROMLOADER_ROMCODE_UNKNOWN:
+			fResult = false;
+			break;
+		}
+		break;
+
+	case ROMLOADER_CHIPTYP_NETX10:
+		switch( m_tRomcode )
+		{
+		case ROMLOADER_ROMCODE_ABOOT:
+			/* This is an unknown combination. */
+			fResult = false;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT:
+			/* This is an unknown combination. */
+			fResult = false;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
+			/* This is an unknown combination. */
+			fResult = false;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT2:
+			/* hboot2 needs no special init. */
+			fResult = true;
+			break;
+		case ROMLOADER_ROMCODE_UNKNOWN:
+			fResult = false;
+			break;
+		}
+		break;
+
+	case ROMLOADER_CHIPTYP_NETX56:
+		switch( m_tRomcode )
+		{
+		case ROMLOADER_ROMCODE_ABOOT:
+			/* This is an unknown combination. */
+			fResult = false;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT:
+			/* This is an unknown combination. */
+			fResult = false;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
+			/* This is an unknown combination. */
+			fResult = false;
+			break;
+		case ROMLOADER_ROMCODE_HBOOT2:
+			/* hboot2 needs no special init. */
+			fResult = true;
+			break;
 		case ROMLOADER_ROMCODE_UNKNOWN:
 			fResult = false;
 			break;
@@ -310,11 +540,14 @@ bool romloader_uart::chip_init(lua_State *ptClientData)
 
 void romloader_uart::Connect(lua_State *ptClientData)
 {
-	int iResult;
+	romloader_uart_legacy_read_functinoid tFnLegacy(m_ptUartDev);
+	romloader_uart_mi_read_functinoid tFnMi(this, ptClientData);
+	bool fResult;
+	bool fDeviceNeedsUpdate;
 
 
 	/* Expect error. */
-	iResult = -1;
+	fResult = false;
 
 	printf("%s(%p): connect\n", m_pcName, this);
 
@@ -323,28 +556,57 @@ void romloader_uart::Connect(lua_State *ptClientData)
 		// detect_chiptyp and chip_init call read/write_data which require m_fIsConnected == true
 		m_fIsConnected = true;
 
-		if( m_ptUartDev->Open()!=true )
+		fResult = m_ptUartDev->Open();
+		if( fResult!=true )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to open device!", m_pcName, this);
 		}
-		else if( m_ptUartDev->IdentifyLoader()!=true )
-		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to identify loader!", m_pcName, this);
-		}
-		else if( detect_chiptyp(ptClientData)!=true )
-		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chiptyp!", m_pcName, this);
-		}
-		else if( chip_init(ptClientData)!=true )
-		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to init chip!", m_pcName, this);
-		}
 		else
 		{
-			iResult = 0;
+			fResult = identify_loader(&fDeviceNeedsUpdate);
+			if( fResult!=true )
+			{
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to identify loader!", m_pcName, this);
+			}
+			else
+			{
+				if( fDeviceNeedsUpdate==true )
+				{
+					fResult = detect_chiptyp(&tFnLegacy);
+					if( fResult!=true )
+					{
+						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chiptyp!", m_pcName, this);
+					}
+					else
+					{
+						fResult = m_ptUartDev->update_device(m_tChiptyp, m_tRomcode);
+						if( fResult!=true )
+						{
+							MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to update the device!", m_pcName, this);
+						}
+					}
+				}
+				else
+				{
+					fResult = detect_chiptyp(&tFnMi);
+					if( fResult!=true )
+					{
+						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chiptyp!", m_pcName, this);
+					}
+				}
+
+				if( fResult==true )
+				{
+					fResult = chip_init(ptClientData);
+					if( fResult!=true )
+					{
+						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to init chip!", m_pcName, this);
+					}
+				}
+			}
 		}
 
-		if( iResult!=0 )
+		if( fResult!=true )
 		{
 			m_fIsConnected = false;
 			m_ptUartDev->Close();

@@ -32,6 +32,32 @@
 
 /*-------------------------------------*/
 
+class romloader_eth_read_functinoid : public romloader_read_functinoid
+{
+public:
+	romloader_eth_read_functinoid(romloader_eth *ptDevice, lua_State *ptClientData)
+	{
+		m_ptDevice = ptDevice;
+		m_ptClientData = ptClientData;
+	}
+
+	unsigned long read_data32(unsigned long ulAddress)
+	{
+		unsigned long ulValue;
+
+
+		ulValue = m_ptDevice->read_data32(m_ptClientData, ulAddress);
+		return ulValue;
+	}
+
+private:
+	romloader_eth *m_ptDevice;
+	lua_State *m_ptClientData;
+};
+
+
+/*-------------------------------------*/
+
 const char *romloader_eth_provider::m_pcPluginNamePattern = "romloader_eth_%s";
 
 romloader_eth_provider::romloader_eth_provider(swig_type_info *p_romloader_eth, swig_type_info *p_romloader_eth_reference)
@@ -340,6 +366,7 @@ bool romloader_eth::chip_init(lua_State *ptClientData)
 void romloader_eth::Connect(lua_State *ptClientData)
 {
 	int iResult;
+	romloader_eth_read_functinoid tFn(this, ptClientData);
 
 
 	/* Expect error. */
@@ -353,7 +380,7 @@ void romloader_eth::Connect(lua_State *ptClientData)
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to open device!", m_pcName, this);
 		}
-		else if( detect_chiptyp(ptClientData)!=true )
+		else if( detect_chiptyp(&tFn)!=true )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chiptyp!", m_pcName, this);
 		}

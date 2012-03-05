@@ -50,6 +50,15 @@ typedef enum
 
 /*-----------------------------------*/
 
+class MUHKUH_EXPORT romloader_read_functinoid
+{
+public:
+	romloader_read_functinoid(void) {}
+
+	virtual unsigned long read_data32(unsigned long ulAddress) = 0;
+};
+
+
 class MUHKUH_EXPORT romloader : public muhkuh_plugin
 {
 protected:
@@ -94,17 +103,6 @@ public:
 // *** lua interface end ***
 
 protected:
-	bool detect_chiptyp(lua_State *ptClientData);
-	unsigned int crc16(unsigned short usCrc, unsigned char ucData);
-	bool callback_long(SWIGLUA_REF *ptLuaFn, long lProgressData, long lCallbackUserData);
-	bool callback_string(SWIGLUA_REF *ptLuaFn, const char *pcProgressData, size_t sizProgressData, long lCallbackUserData);
-
-	ROMLOADER_CHIPTYP m_tChiptyp;
-	ROMLOADER_ROMCODE m_tRomcode;
-
-private:
-	bool callback_common(SWIGLUA_REF *ptLuaFn, long lCallbackUserData, int iOldTopOfStack);
-
 	typedef struct
 	{
 		unsigned long ulResetVector;
@@ -115,6 +113,18 @@ private:
 		ROMLOADER_ROMCODE tRomcode;
 		const char *pcRomcodeName;
 	} ROMLOADER_RESET_ID_T;
+
+
+	bool detect_chiptyp(romloader_read_functinoid *ptFn);
+	unsigned int crc16(unsigned short usCrc, unsigned char ucData);
+	bool callback_long(SWIGLUA_REF *ptLuaFn, long lProgressData, long lCallbackUserData);
+	bool callback_string(SWIGLUA_REF *ptLuaFn, const char *pcProgressData, size_t sizProgressData, long lCallbackUserData);
+
+	ROMLOADER_CHIPTYP m_tChiptyp;
+	ROMLOADER_ROMCODE m_tRomcode;
+
+private:
+	bool callback_common(SWIGLUA_REF *ptLuaFn, long lCallbackUserData, int iOldTopOfStack);
 
 	static const ROMLOADER_RESET_ID_T atResIds[5];
 };

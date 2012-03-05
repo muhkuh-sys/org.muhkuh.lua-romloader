@@ -50,9 +50,11 @@ public:
 
 
 	/* higher level interface */
+	bool legacy_read(unsigned long ulAddress, unsigned long *pulValue);
+	bool update_device(ROMLOADER_CHIPTYP tChiptyp, ROMLOADER_ROMCODE tRomcode);
 	bool wait_for_prompt(unsigned long ulTimeout);
 	bool GetLine(unsigned char **ppucLine, const char *pcEol, unsigned long ulTimeout);
-	bool IdentifyLoader(void);
+	bool SendBlankLineAndDiscardResponse(void);
 
 	static unsigned int crc16(unsigned short usCrc, unsigned char ucData);
 
@@ -91,23 +93,8 @@ protected:
 #endif
 
 private:
-	typedef struct
-	{
-		unsigned long ulResetVector;
-		unsigned long ulVersionAddress;
-		unsigned long ulVersionValue;
-		ROMLOADER_CHIPTYP tChiptyp;
-		const char *pcChiptypName;
-		ROMLOADER_ROMCODE tRomcode;
-		const char *pcRomcodeName;
-	} ROMCODE_RESET_ID_T;
-	static const ROMCODE_RESET_ID_T atResIds[4];
-
-	bool legacy_read(unsigned long ulAddress, unsigned long *pulValue);
-        bool netx50_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode);
+	bool netx50_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode);
 	bool netx50_start_code(void);
-	bool SendBlankLineAndDiscardResponse(void);
-	bool update_device(void);
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);
 };
 

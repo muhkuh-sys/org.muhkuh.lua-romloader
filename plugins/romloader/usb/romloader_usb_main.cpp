@@ -32,6 +32,32 @@
 
 /*-------------------------------------*/
 
+class romloader_usb_read_functinoid : public romloader_read_functinoid
+{
+public:
+	romloader_usb_read_functinoid(romloader_usb *ptDevice, lua_State *ptClientData)
+	{
+		m_ptDevice = ptDevice;
+		m_ptClientData = ptClientData;
+	}
+
+	unsigned long read_data32(unsigned long ulAddress)
+	{
+		unsigned long ulValue;
+
+
+		ulValue = m_ptDevice->read_data32(m_ptClientData, ulAddress);
+		return ulValue;
+	}
+
+private:
+	romloader_usb *m_ptDevice;
+	lua_State *m_ptClientData;
+};
+
+
+/*-------------------------------------*/
+
 const char *romloader_usb_provider::m_pcPluginNamePattern = "romloader_usb_%02x_%02x";
 
 romloader_usb_provider::romloader_usb_provider(swig_type_info *p_romloader_usb, swig_type_info *p_romloader_usb_reference)
@@ -342,6 +368,7 @@ bool romloader_usb::chip_init(lua_State *ptClientData)
 void romloader_usb::Connect(lua_State *ptClientData)
 {
 	int iResult;
+	romloader_usb_read_functinoid tFn(this, ptClientData);
 
 
 	if( m_fIsConnected!=false )
@@ -360,7 +387,7 @@ void romloader_usb::Connect(lua_State *ptClientData)
 			/* NOTE: set m_fIsConnected to true here or detect_chiptyp and chip_init will fail! */
 			m_fIsConnected = true;
 
-			if( detect_chiptyp(ptClientData)!=true )
+			if( detect_chiptyp(&tFn)!=true )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chiptyp!", m_pcName, this);
 				m_fIsConnected = false;
