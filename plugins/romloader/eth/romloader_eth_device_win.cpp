@@ -321,7 +321,7 @@ size_t romloader_eth_device_win::ScanForServers(char ***pppcDeviceNames)
 					tv.tv_usec = 10000;
 
 					iResult = select(tSocket+1, &rfds, NULL, NULL, &tv);
-					if( iResult==-1 )
+					if( iResult==SOCKET_ERROR )
 					{
 						fprintf(stderr, "Failed to wait for data.\n");
 						break;
