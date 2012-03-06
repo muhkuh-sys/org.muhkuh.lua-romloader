@@ -65,63 +65,89 @@ end
 tPlugin:Connect()
 
 
+-- Get the maximum test area for the current chip.
+ulTestAreaStart = nil
+ulTestAreaSize  = nil
+
+local tAsicTyp = tPlugin:GetChiptyp()
+if tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX500 or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX100 then
+	ulTestAreaStart = 0x00008000
+	ulTestAreaSize  = 0x00018000
+elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX56 then
+	ulTestAreaStart = 0x08008000
+	ulTestAreaSize  = 0x00018000
+elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX50 then
+	ulTestAreaStart = 0x08008000
+	ulTestAreaSize  = 0x00018000
+elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX10 then
+	ulTestAreaStart = 0x08008000
+	ulTestAreaSize  = 0x00018000
+else
+	error("Unknown chiptyp! " .. tostring(tAsicTyp))
+end
+
+
 -- get the test parameters
-local testarea = tonumber(__MUHKUH_TEST_PARAMETER["testarea"])
-local testsize = tonumber(__MUHKUH_TEST_PARAMETER["testsize"])
-local parameter_loops = tonumber(__MUHKUH_TEST_PARAMETER["loops"])
+local ulTestSize = tonumber(__MUHKUH_TEST_PARAMETER["testsize"])
+local uiParameterLoops = tonumber(__MUHKUH_TEST_PARAMETER["loops"])
 
-local ulLoopCounter = 0
+-- Limit the test size to the size of the test area.
+if ulTestSize>ulTestAreaSize then
+	ulTestSize = ulTestAreaSize
+end
+
+local uiLoopCounter = 0
 -- If the "loops" parameter is 0, loop forever (or until an error occurs).
-local fLoopEndless = (parameter_loops==0)
+local fLoopEndless = (uiParameterLoops==0)
 
-while fLoopEndless==true or ulLoopCounter<parameter_loops do
+while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 	print("***************************************")
 	print("***************************************")
 	print("**                                   **")
-	print(string.format("** Loop %08d                     **", ulLoopCounter))
+	print(string.format("** Loop %08d                     **", uiLoopCounter))
 	print("**                                   **")
 	print("***************************************")
 	print("***************************************")
 
 	print("---------------------------------------")
 	print(" test 32 bit access")
-	test32(tPlugin, testarea, 0x00000000)
-	test32(tPlugin, testarea, 0x000000FF)
-	test32(tPlugin, testarea, 0x0000FF00)
-	test32(tPlugin, testarea, 0x00FF0000)
-	test32(tPlugin, testarea, 0xFF000000)
+	test32(tPlugin, ulTestAreaStart, 0x00000000)
+	test32(tPlugin, ulTestAreaStart, 0x000000FF)
+	test32(tPlugin, ulTestAreaStart, 0x0000FF00)
+	test32(tPlugin, ulTestAreaStart, 0x00FF0000)
+	test32(tPlugin, ulTestAreaStart, 0xFF000000)
 	print("Ok!")
 	print(" ")
 
 	print("---------------------------------------")
 	print(" test 16 bit access")
-	test16(tPlugin, testarea, 0x0000)
-	test16(tPlugin, testarea, 0x00FF)
-	test16(tPlugin, testarea, 0xFF00)
+	test16(tPlugin, ulTestAreaStart, 0x0000)
+	test16(tPlugin, ulTestAreaStart, 0x00FF)
+	test16(tPlugin, ulTestAreaStart, 0xFF00)
 	print("Ok!")
 	print(" ")
 
 	print("---------------------------------------")
 	print(" test 8 bit access")
-	test08(tPlugin, testarea, 0x00)
-	test08(tPlugin, testarea, 0xFF)
+	test08(tPlugin, ulTestAreaStart, 0x00)
+	test08(tPlugin, ulTestAreaStart, 0xFF)
 	print("Ok!")
 	print(" ")
 
 	print("---------------------------------------")
 	print(" range test, write32")
-	data = get_rnd_data(testsize)
+	data = get_rnd_data(ulTestSize)
 	print("Writing data in 32 bit chunks:")
 	tester.hexdump(data,16)
 	for i=0,data:len()/4-1 do
 		local value
 		local address
 		value = data:byte(i*4+1) + 0x00000100*data:byte(i*4+2) + 0x00010000*data:byte(i*4+3) + 0x01000000*data:byte(i*4+4)
-		address = testarea + i*4
+		address = ulTestAreaStart + i*4
 		print(string.format("write data:    0x%08X = 0x%08X", address, value))
 		tPlugin:write_data32(address, value)
 	end
-	data_readback = tester.stdRead(none, tPlugin, testarea, data:len())
+	data_readback = tester.stdRead(none, tPlugin, ulTestAreaStart, data:len())
 	print("Readback data:")
 	tester.hexdump(data_readback,16)
 	if data~=data_readback then
@@ -132,18 +158,18 @@ while fLoopEndless==true or ulLoopCounter<parameter_loops do
 
 	print("---------------------------------------")
 	print(" range test, write16")
-	data = get_rnd_data(testsize)
+	data = get_rnd_data(ulTestSize)
 	print("Writing data in 16 bit chunks:")
 	tester.hexdump(data,16)
 	for i=0,data:len()/2-1 do
 		local value
 		local address
 		value = data:byte(i*2+1) + 0x00000100*data:byte(i*2+2)
-		address = testarea + i*2
+		address = ulTestAreaStart + i*2
 		print(string.format("write data:    0x%08X = 0x%04X", address, value))
 		tPlugin:write_data16(address, value)
 	end
-	data_readback = tester.stdRead(none, tPlugin, testarea, data:len())
+	data_readback = tester.stdRead(none, tPlugin, ulTestAreaStart, data:len())
 	print("Readback data:")
 	tester.hexdump(data_readback,16)
 	if data~=data_readback then
@@ -154,18 +180,18 @@ while fLoopEndless==true or ulLoopCounter<parameter_loops do
 
 	print("---------------------------------------")
 	print(" range test, write08")
-	data = get_rnd_data(testsize)
+	data = get_rnd_data(ulTestSize)
 	print("Writing data in 8 bit chunks:")
 	tester.hexdump(data,16)
 	for i=0,data:len()-1 do
 		local value
 		local address
 		value = data:byte(i+1)
-		address = testarea + i
+		address = ulTestAreaStart + i
 		print(string.format("write data:    0x%08X = 0x%02X", address, value))
 		tPlugin:write_data08(address, value)
 	end
-	data_readback = tester.stdRead(none, tPlugin, testarea, data:len())
+	data_readback = tester.stdRead(none, tPlugin, ulTestAreaStart, data:len())
 	print("Readback data:")
 	tester.hexdump(data_readback,16)
 	if data~=data_readback then
@@ -176,15 +202,15 @@ while fLoopEndless==true or ulLoopCounter<parameter_loops do
 
 	print("---------------------------------------")
 	print(" range test, read32")
-	data = get_rnd_data(testsize)
+	data = get_rnd_data(ulTestSize)
 	print("Writing image:")
 	tester.hexdump(data,16)
-	tester.stdWrite(none, tPlugin, testarea, data)
+	tester.stdWrite(none, tPlugin, ulTestAreaStart, data)
 	data_readback = ""
 	for i=0,data:len()/4-1 do
 		local value
 		local address
-		address = testarea + i*4
+		address = ulTestAreaStart + i*4
 		value = tPlugin:read_data32(address)
 		print(string.format("read data: 0x%08X = 0x%08X", address, value))
 		data_readback = data_readback .. string.char( bit.band(            value,      0xff) )
@@ -202,15 +228,15 @@ while fLoopEndless==true or ulLoopCounter<parameter_loops do
 
 	print("---------------------------------------")
 	print(" range test, read16")
-	data = get_rnd_data(testsize)
+	data = get_rnd_data(ulTestSize)
 	print("Writing image:")
 	tester.hexdump(data,16)
-	tester.stdWrite(none, tPlugin, testarea, data)
+	tester.stdWrite(none, tPlugin, ulTestAreaStart, data)
 	data_readback = ""
 	for i=0,data:len()/2-1 do
 		local value
 		local address
-		address = testarea + i*2
+		address = ulTestAreaStart + i*2
 		value = tPlugin:read_data16(address)
 		print(string.format("read data: 0x%08X = 0x%04X", address, value))
 		data_readback = data_readback .. string.char( bit.band(            value,      0xff) )
@@ -226,15 +252,15 @@ while fLoopEndless==true or ulLoopCounter<parameter_loops do
 
 	print("---------------------------------------")
 	print(" range test, read08")
-	data = get_rnd_data(testsize)
+	data = get_rnd_data(ulTestSize)
 	print("Writing image:")
 	tester.hexdump(data,16)
-	tester.stdWrite(none, tPlugin, testarea, data)
+	tester.stdWrite(none, tPlugin, ulTestAreaStart, data)
 	data_readback = ""
 	for i=0,data:len()-1 do
 		local value
 		local address
-		address = testarea + i
+		address = ulTestAreaStart + i
 		value = tPlugin:read_data08(address)
 		print(string.format("read data: 0x%08X = 0x%02X", address, value))
 		data_readback = data_readback .. string.char( bit.band(            value,      0xff) )
@@ -247,7 +273,7 @@ while fLoopEndless==true or ulLoopCounter<parameter_loops do
 	print("Ok!")
 	print(" ")
 
-	ulLoopCounter = ulLoopCounter + 1
+	uiLoopCounter = uiLoopCounter + 1
 end
 
 
