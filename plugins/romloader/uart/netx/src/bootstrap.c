@@ -21,7 +21,16 @@
 
 #include <string.h>
 #include "bootstrap_serial_vectors.h"
-#include "uartmon_netx50_monitor_run.h"
+
+#if ASIC_TYP==500
+#       include "uartmon_netx500_monitor_run.h"
+#elif ASIC_TYP==50
+#       include "uartmon_netx50_monitor_run.h"
+#elif ASIC_TYP==10
+#       include "uartmon_netx10_monitor_run.h"
+#else
+#       error "no host define set!"
+#endif
 
 
 typedef void (*PFN_START_ADR_T)(void) __attribute__ ((noreturn));
@@ -58,12 +67,12 @@ void bootstrap(void)
 	}
 #endif
 
-	pucCnt = (unsigned char*)MONITOR_DATA_START_NETX50;
-	pucEnd = (unsigned char*)MONITOR_DATA_END_NETX50;
+	pucCnt = (unsigned char*)MONITOR_DATA_START;
+	pucEnd = (unsigned char*)MONITOR_DATA_END;
 	do
 	{
 		*(pucCnt++) = (unsigned char)SERIAL_GET();
 	} while( pucCnt<pucEnd );
-	((PFN_START_ADR_T)(MONITOR_EXEC_NETX50))();
+	((PFN_START_ADR_T)(MONITOR_EXEC))();
 }
 

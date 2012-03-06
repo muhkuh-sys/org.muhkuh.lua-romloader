@@ -115,6 +115,16 @@ src_netx500_monitor = env_netx500_monitor.SetBuildPath('targets/netx500_monitor'
 elf_netx500_monitor = env_netx500_monitor.Elf('targets/uartmon_netx500_monitor.elf', src_netx500_monitor)
 bin_netx500_monitor = env_netx500_monitor.ObjCopy('targets/uartmon_netx500_monitor.bin', elf_netx500_monitor)
 arr_netx500_monitor = env_netx500_monitor.DataArray('targets/uartmon_netx500_monitor.c', bin_netx500_monitor, DATAARRAY_NAME='auc_uartmon_netx500_monitor')
+env_netx500_monitor.GccSymbolTemplate('targets/uartmon_netx500_monitor_run.h', elf_netx500_monitor, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_monitor_run.h')
+
+env_netx500_bootstrap = env_netx500_bootstrap_default.Clone()
+env_netx500_bootstrap.Replace(LDFILE = 'src/netx500/netx500_bootstrap.ld')
+env_netx500_bootstrap.Append(CPPPATH = ['targets'])
+src_netx500_bootstrap = env_netx500_bootstrap.SetBuildPath('targets/netx500_bootstrap', 'src', src_bootstrap_netx500)
+elf_netx500_bootstrap = env_netx500_bootstrap.Elf('targets/uartmon_netx500_bootstrap.elf', src_netx500_bootstrap)
+bin_netx500_bootstrap = env_netx500_bootstrap.ObjCopy('targets/uartmon_netx500_bootstrap.bin', elf_netx500_bootstrap)
+arr_netx500_bootstrap = env_netx500_bootstrap.DataArray('targets/uartmon_netx500_bootstrap.c', bin_netx500_bootstrap, DATAARRAY_NAME='auc_uartmon_netx500_bootstrap')
+env_netx500_bootstrap.GccSymbolTemplate('targets/uartmon_netx500_bootstrap_run.h', elf_netx500_bootstrap, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_bootstrap_run.h')
 
 #----------------------------------------------------------------------------
 #
@@ -127,7 +137,7 @@ src_netx50_monitor = env_netx50_monitor.SetBuildPath('targets/netx50_monitor', '
 elf_netx50_monitor = env_netx50_monitor.Elf('targets/uartmon_netx50_monitor.elf', src_netx50_monitor)
 bin_netx50_monitor = env_netx50_monitor.ObjCopy('targets/uartmon_netx50_monitor.bin', elf_netx50_monitor)
 arr_netx50_monitor = env_netx50_monitor.DataArray('targets/uartmon_netx50_monitor.c', bin_netx50_monitor, DATAARRAY_NAME='auc_uartmon_netx50_monitor')
-env_netx50_monitor.GccSymbolTemplate('targets/uartmon_netx50_monitor_run.h', elf_netx50_monitor, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_netx50_monitor_run.h')
+env_netx50_monitor.GccSymbolTemplate('targets/uartmon_netx50_monitor_run.h', elf_netx50_monitor, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_monitor_run.h')
 
 env_netx50_bootstrap = env_netx50_bootstrap_default.Clone()
 env_netx50_bootstrap.Replace(LDFILE = 'src/netx50/netx50_bootstrap.ld')
@@ -136,7 +146,7 @@ src_netx50_bootstrap = env_netx50_bootstrap.SetBuildPath('targets/netx50_bootstr
 elf_netx50_bootstrap = env_netx50_bootstrap.Elf('targets/uartmon_netx50_bootstrap.elf', src_netx50_bootstrap)
 bin_netx50_bootstrap = env_netx50_bootstrap.ObjCopy('targets/uartmon_netx50_bootstrap.bin', elf_netx50_bootstrap)
 arr_netx50_bootstrap = env_netx50_bootstrap.DataArray('targets/uartmon_netx50_bootstrap.c', bin_netx50_bootstrap, DATAARRAY_NAME='auc_uartmon_netx50_bootstrap')
-env_netx50_bootstrap.GccSymbolTemplate('targets/uartmon_netx50_bootstrap_run.h', elf_netx50_bootstrap, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_netx50_bootstrap_run.h')
+env_netx50_bootstrap.GccSymbolTemplate('targets/uartmon_netx50_bootstrap_run.h', elf_netx50_bootstrap, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_bootstrap_run.h')
 
 #----------------------------------------------------------------------------
 #
@@ -149,6 +159,7 @@ src_netx10_monitor = env_netx10_monitor.SetBuildPath('targets/netx10_monitor', '
 elf_netx10_monitor = env_netx10_monitor.Elf('targets/uartmon_netx10_monitor.elf', src_netx10_monitor)
 bin_netx10_monitor = env_netx10_monitor.ObjCopy('targets/uartmon_netx10_monitor.bin', elf_netx10_monitor)
 arr_netx10_monitor = env_netx10_monitor.DataArray('targets/uartmon_netx10_monitor.c', bin_netx10_monitor, DATAARRAY_NAME='auc_uartmon_netx10_monitor')
+env_netx10_monitor.GccSymbolTemplate('targets/uartmon_netx10_monitor_run.h', elf_netx10_monitor, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_monitor_run.h')
 
 #env_netx10_bootstrap = env_netx10_bootstrap_default.Clone()
 #env_netx10_bootstrap.Replace(LDFILE = 'src/netx10/netx10_bootstrap.ld')
