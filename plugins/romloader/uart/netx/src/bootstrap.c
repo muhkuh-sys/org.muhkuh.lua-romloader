@@ -46,7 +46,7 @@ void bootstrap(void)
 	typedef void (*PFN_SERIAL_V1_INIT_T)(void);
 
 	/* Check the output handlers. */
-	if( tSerialV1Vectors.fn.fnPut==NULL )
+	if( tSerialVectors.fn.fnPut==NULL )
 	{
 		/* NOTE:
 		   On netX500 and netX100 the romcode disables the UART before the call and reenables it when the call
@@ -60,10 +60,10 @@ void bootstrap(void)
 
 		// set the vectors to the romcode
 		// NOTE: all routines are thumb-code, bit #0 of the address must be set to switch the mode
-		tSerialV1Vectors.fn.fnGet   = (PFN_SERIAL_GET_T)(0x00201664|1);
-		tSerialV1Vectors.fn.fnPut   = (PFN_SERIAL_PUT_T)(0x00201646|1);
-		tSerialV1Vectors.fn.fnPeek  = (PFN_SERIAL_PEEK_T)(0x002016b0|1);
-		tSerialV1Vectors.fn.fnFlush = (PFN_SERIAL_FLUSH_T)(0x002016ba|1);
+		tSerialVectors.fn.fnGet   = (PFN_SERIAL_GET_T)(0x00201664|1);
+		tSerialVectors.fn.fnPut   = (PFN_SERIAL_PUT_T)(0x00201646|1);
+		tSerialVectors.fn.fnPeek  = (PFN_SERIAL_PEEK_T)(0x002016b0|1);
+		tSerialVectors.fn.fnFlush = (PFN_SERIAL_FLUSH_T)(0x002016ba|1);
 	}
 #endif
 
