@@ -25,7 +25,7 @@ MEMORY
 	ASSERT_EMPTY(rwx)     : ORIGIN = 0x00000000, LENGTH = 0
 
 	DTCM(rw)              : ORIGIN = 0x04000000, LENGTH = 0x00001000
-	INTRAM(rwx)           : ORIGIN = 0x08000000, LENGTH = 0x00018000
+	INTRAM_MON(rwx)       : ORIGIN = 0x08000100, LENGTH = 0x00003f00
 }
 
 
@@ -54,7 +54,7 @@ SECTIONS
 	/* set the top of the stack to the end of INTRAM1 */
 	stack_top = ORIGIN(DTCM) + LENGTH(DTCM) - 0x10;
 
-	.code ORIGIN(INTRAM)+0x100 :
+	.code ORIGIN(INTRAM_MON) :
 	{
 		load_address = . ;
 
@@ -64,7 +64,7 @@ SECTIONS
 		*(.rodata*)
 		
 		end_address = . ;
-	} >INTRAM
+	} >INTRAM_MON
 
 	.bss :
 	{
@@ -76,7 +76,7 @@ SECTIONS
 		*(COMMON)
 
 		__bss_end__ = . ;
-	} >INTRAM
+	} >INTRAM_MON
 
 
 	/* Stabs debugging sections.  */

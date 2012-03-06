@@ -34,7 +34,7 @@
 	.equ SR_Irq,            0x80
 	.equ SR_Fiq,            0x40
 
-#include "netx_regdef.S"
+#include "netx_io_areas.S"
 
 @--------------------------------------
 

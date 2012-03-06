@@ -572,6 +572,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 			{
 				if( fDeviceNeedsUpdate==true )
 				{
+					fprintf(stderr, "The device needs an update.\n");
 					fResult = detect_chiptyp(&tFnLegacy);
 					if( fResult!=true )
 					{
@@ -588,6 +589,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 				}
 				else
 				{
+					fprintf(stderr, "The device does not need an update.\n");
 					fResult = detect_chiptyp(&tFnMi);
 					if( fResult!=true )
 					{

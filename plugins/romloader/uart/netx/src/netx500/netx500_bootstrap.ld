@@ -22,73 +22,48 @@ ENTRY(start)
 
 MEMORY
 {
-	ASSERT_EMPTY(rwx):  ORIGIN = 0x00000000,  LENGTH = 0
+	ASSERT_EMPTY(rwx)  : ORIGIN = 0x00000000, LENGTH = 0
 
-	INTRAM0_MON(rwx):   ORIGIN = 0x08000100,  LENGTH = 0x00003f00
+	DTCM(rw)           : ORIGIN = 0x10000000, LENGTH = 0x00002000
+	INTRAM(rwx)        : ORIGIN = 0x00004000, LENGTH = 0x00004000
 }
 
 
 /* Section Definitions */
 SECTIONS
 {
-	/* These sections must be empty, put them in a memory with a size of
-	 * 0 bytes
-	 */
 	.assert_empty (NOLOAD) :
 	{
-		/* NOTE: include all sections here which should be empty.
-		 */
+		/* NOTE: include all sections here which should be empty. */
 		*(.data)
+		*(.bss)
+		*(COMMON)		
 		*(.glue*)
 		*(.vfp11_veneer)
 		*(.v4_bx)
 	} >ASSERT_EMPTY
 
 
-	/* This is the installer part. It copies the code to its execution
-	 * place. After that, it is no longer needed.
-	 */
-	.code_init ORIGIN(INTRAM2_ITCM) :
+	.serialvectors ORIGIN(DTCM)+LENGTH(DTCM)-0x10 :
+	{
+		PROVIDE ( tSerialVectors = . );
+		. = . + 0x10;
+	} >DTCM
+
+	/* set the top of the stack to the end of INTRAM1 */
+	stack_top = ORIGIN(DTCM) + LENGTH(DTCM) - 0x10;
+
+	.code ORIGIN(INTRAM) :
 	{
 		load_address = . ;
 
 		*(.header)
 		*(.init_code)
-	} >INTRAM2_ITCM
-
-
-	.serial_vectors ORIGIN(INTRAM0_MON) :
-	{
-		tSerialV2Vectors = . ;
-		. = . + 0x10;
-	} >INTRAM0_MON
-
-	.code ORIGIN(INTRAM0_MON)+SIZEOF(.serial_vectors) : AT(ORIGIN(INTRAM2_ITCM)+SIZEOF(.code_init))
-	{
-		__copy_dst_start__ = . ;
-
 		*(.text)
 		*(.rodata*)
-
-		__copy_dst_end__ = . ;
-	} >INTRAM0_MON
-	__copy_src_start__ = LOADADDR(.code);
-	end_address = LOADADDR(.code) + SIZEOF(.code);
-
-	.bss :
-	{
-		/* zero-initialized data */
-		__bss_start__ = . ;
-
-		*(.bss)
-		*(COMMON)
-
-		__bss_end__ = . ;
-	} >INTRAM0_MON
-
-	/* Set the top of the stack to the start of the code. */
-	stack_top = ORIGIN(INTRAM0_MON) + LENGTH(INTRAM0_MON);
-
+		
+		end_address = . ;
+	} >INTRAM
 
 	/* Stabs debugging sections.  */
 	.stab          0 : { *(.stab) }

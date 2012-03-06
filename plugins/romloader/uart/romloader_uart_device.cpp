@@ -23,17 +23,17 @@
 
 #include "../uuencoder.h"
 
-//#include "netx/targets/uartmon_netx10_bootstrap_run.h"
+#include "netx/targets/uartmon_netx10_bootstrap_run.h"
 #include "netx/targets/uartmon_netx50_bootstrap_run.h"
-//#include "netx/targets/uartmon_netx500_bootstrap_run.h"
+#include "netx/targets/uartmon_netx500_bootstrap_run.h"
 
 /* This is the array definition for the bootstrap firmware. */
-//#include "netx/targets/uartmon_netx10_bootstrap.h"
+#include "netx/targets/uartmon_netx10_bootstrap.h"
 #include "netx/targets/uartmon_netx50_bootstrap.h"
-//#include "netx/targets/uartmon_netx500_bootstrap.h"
+#include "netx/targets/uartmon_netx500_bootstrap.h"
 
 //#include "netx/targets/uartmon_netx10_monitor_run.h"
-#include "netx/targets/uartmon_netx50_monitor_run.h"
+//#include "netx/targets/uartmon_netx50_monitor_run.h"
 //#include "netx/targets/uartmon_netx500_monitor_run.h"
 
 /* This is the array definition for the monitor firmware. */
@@ -50,7 +50,7 @@
 #       define CRITICAL_SECTION_ENTER(cs) EnterCriticalSection(&cs)
 #       define CRITICAL_SECTION_LEAVE(cs) LeaveCriticalSection(&cs)
 
-#	define SLEEP_MS(ms) Sleep(ms)
+#       define SLEEP_MS(ms) Sleep(ms)
 #else
 #       define CRITICAL_SECTION_ENTER(cs) pthread_mutex_lock(&cs)
 #       define CRITICAL_SECTION_LEAVE(cs) pthread_mutex_unlock(&cs)
@@ -58,10 +58,10 @@
 	static const pthread_mutex_t s_mutex_init = PTHREAD_MUTEX_INITIALIZER;
 
 #       include <unistd.h>
-#	define SLEEP_MS(ms) usleep(ms*1000)
+#       define SLEEP_MS(ms) usleep(ms*1000)
 #endif
 
-	
+
 
 romloader_uart_device::romloader_uart_device(const char *pcPortName)
  : m_pcPortName(NULL)
@@ -513,6 +513,12 @@ bool romloader_uart_device::legacy_read(unsigned long ulAddress, unsigned long *
 }
 
 
+bool romloader_uart_device::netx10_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode)
+{
+	return false;
+}
+
+
 bool romloader_uart_device::netx50_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode)
 {
 	size_t sizLine;
@@ -607,6 +613,88 @@ bool romloader_uart_device::netx50_load_code(const unsigned char *pucNetxCode, s
 }
 
 
+bool romloader_uart_device::netx500_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode)
+{
+	unsigned short usCrc;
+	size_t sizCnt;
+	size_t sizLine;
+	union
+	{
+		unsigned char auc[64];
+		char ac[64];
+	} uBuffer;
+	union
+	{
+		unsigned char *puc;
+		char *pc;
+	} uResponse;
+	unsigned int uiTimeoutMs;
+	bool fOk;
+
+
+	/* Be optimistic. */
+	fOk = true;
+
+	uiTimeoutMs = 100;
+
+	/* Get the CRC16 checksum for the bootstrap code. */
+	usCrc = 0xffff;
+	for(sizCnt=0; sizCnt<sizNetxCode; sizCnt++)
+	{
+		usCrc = crc16(usCrc, pucNetxCode[sizCnt]);
+	}
+
+	/* Construct the command. */
+	sizLine = snprintf(uBuffer.ac, sizeof(uBuffer), "LOAD %lx %x %x 10000\n", BOOTSTRAP_DATA_START_NETX500, sizNetxCode, usCrc);
+	printf("Load command:\n");
+	hexdump(uBuffer.auc, sizLine);
+	if( SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
+	{
+		fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
+		fOk = false;
+	}
+	else if( GetLine(&uResponse.puc, "\r\n", 500)!=true )
+	{
+		fprintf(stderr, "%s(%p): Failed to get command echo!\n", m_pcPortName, this);
+		fOk = false;
+	}
+	else
+	{
+		printf("response: '%s'\n", uResponse.pc);
+		free(uResponse.puc);
+
+		printf("Uploading firmware...\n");
+		if( SendRaw(pucNetxCode, sizNetxCode, 500)!=sizNetxCode )
+		{
+			fprintf(stderr, "%s(%p): Failed to upload the firmware!\n", m_pcPortName, this);
+			fOk = false;
+		}
+		else
+		{
+			fOk = GetLine(&uResponse.puc, "\r\n>", 2000);
+			if( fOk==true )
+			{
+				printf("response: '%s'\n", uResponse.pc);
+				free(uResponse.puc);
+			}
+			else
+			{
+				fprintf(stderr, "Failed to get response.\n");
+			}
+		}
+	}
+
+	return fOk;
+}
+
+
+
+bool romloader_uart_device::netx10_start_code(void)
+{
+	return false;
+}
+
+
 bool romloader_uart_device::netx50_start_code(void)
 {
 	union
@@ -647,16 +735,62 @@ bool romloader_uart_device::netx50_start_code(void)
 }
 
 
+bool romloader_uart_device::netx500_start_code(void)
+{
+	union
+	{
+		unsigned char auc[64];
+		char ac[64];
+	} uBuffer;
+	union
+	{
+		unsigned char *puc;
+		char *pc;
+	} uResponse;
+	size_t sizLine;
+	bool fOk;
+	unsigned long ulExecAddress;
+
+
+	/* Construct the command. */
+	sizLine = sprintf(uBuffer.ac, "CALL %lx\n", BOOTSTRAP_EXEC_NETX500);
+	printf("Load command: '%s'\n", uBuffer.ac);
+
+	if( SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
+	{
+		fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
+		fOk = false;
+	}
+	else if( GetLine(&uResponse.puc, "\r\n", 2000)!=true )
+	{
+		fprintf(stderr, "%s(%p): Failed to get command echo!\n", m_pcPortName, this);
+		fOk = false;
+	}
+	else
+	{
+		printf("Response: '%s'\n", uResponse.pc);
+		free(uResponse.puc);
+		fOk = true;
+	}
+
+	return fOk;
+}
+
+
 bool romloader_uart_device::update_device(ROMLOADER_CHIPTYP tChiptyp, ROMLOADER_ROMCODE tRomcode)
 {
 	bool fOk;
 
+
+	fprintf(stderr, "update device.\n");
 
 	/* Expect success. */
 	fOk = true;
 
 	if( tChiptyp==ROMLOADER_CHIPTYP_NETX50 )
 	{
+		fprintf(stderr, "update netx50.\n");
+
 		fOk = netx50_load_code(auc_uartmon_netx50_bootstrap, sizeof(auc_uartmon_netx50_bootstrap));
 		if( fOk==true )
 		{
@@ -664,6 +798,40 @@ bool romloader_uart_device::update_device(ROMLOADER_CHIPTYP tChiptyp, ROMLOADER_
 			if( fOk==true )
 			{
 				if( SendRaw(auc_uartmon_netx50_monitor, sizeof(auc_uartmon_netx50_monitor), 500)!=sizeof(auc_uartmon_netx50_monitor) )
+				{
+					fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
+					fOk = false;
+				}
+			}
+		}
+	}
+	else if( tChiptyp==ROMLOADER_CHIPTYP_NETX500 || tChiptyp==ROMLOADER_CHIPTYP_NETX100 )
+	{
+		fprintf(stderr, "update netx500.\n");
+
+		fOk = netx500_load_code(auc_uartmon_netx500_bootstrap, sizeof(auc_uartmon_netx500_bootstrap));
+		{
+			fOk = netx500_start_code();
+			if( fOk==true )
+			{
+				if( SendRaw(auc_uartmon_netx500_monitor, sizeof(auc_uartmon_netx500_monitor), 500)!=sizeof(auc_uartmon_netx500_monitor) )
+				{
+					fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
+					fOk = false;
+				}
+			}
+		}
+	}
+	else if( tChiptyp==ROMLOADER_CHIPTYP_NETX10 )
+	{
+		fprintf(stderr, "update netx10.\n");
+
+		fOk = netx10_load_code(auc_uartmon_netx10_bootstrap, sizeof(auc_uartmon_netx10_bootstrap));
+		{
+			fOk = netx10_start_code();
+			if( fOk==true )
+			{
+				if( SendRaw(auc_uartmon_netx10_monitor, sizeof(auc_uartmon_netx10_monitor), 500)!=sizeof(auc_uartmon_netx10_monitor) )
 				{
 					fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
 					fOk = false;

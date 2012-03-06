@@ -19,6 +19,8 @@
  ***************************************************************************/
 
 
+#include "netx_io_areas.S"
+
 	.section .init_code, "ax"
 	.arm
 
@@ -82,27 +84,6 @@ start:
 	@
 	@ This is the arm926ej-s init.
 	@
-
-	@ Invalidate instruction and data caches.
-	mcr     p15,    0, r0, c7, c7, 0
-	@ Clear data pipe.
-	mcr     p15,    0, r0, c7, c10, 4
-	@ Clear instruction and data translation buffers.
-	mcr     p15,    0, r0, c8, c7, 0
-
-	@ Get the ctrl register.
-	mrc     p15,    0, r0, c1, c0, 0
-	@ Disable mmu, alignment check and data cache.
-	bic     r0,     r0, #0x0007
-	@ Disable system protection and instruction cache.
-	bic     r0,     r0, #0x1100
-	@ Write back ctrl register.
-	mcr     p15,    0, r0, c1, c0, 0
-
-	@ Enable the TCM.
-	ldr     r0,     =HOSTADR(dTCM_base)
-	orr     r0,     r0, #1
-	mcr     p15,    0, r0, c9, c1, 0
 #else
 #	error "Unknown ASIC_TYP"
 #endif

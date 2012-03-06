@@ -24,10 +24,19 @@
 
 #if ASIC_TYP==500
 #       include "uartmon_netx500_monitor_run.h"
+#       define MONITOR_DATA_START MONITOR_DATA_START_NETX500
+#       define MONITOR_DATA_END   MONITOR_DATA_END_NETX500
+#       define MONITOR_EXEC       MONITOR_EXEC_NETX500
 #elif ASIC_TYP==50
 #       include "uartmon_netx50_monitor_run.h"
+#       define MONITOR_DATA_START MONITOR_DATA_START_NETX50
+#       define MONITOR_DATA_END   MONITOR_DATA_END_NETX50
+#       define MONITOR_EXEC       MONITOR_EXEC_NETX50
 #elif ASIC_TYP==10
 #       include "uartmon_netx10_monitor_run.h"
+#       define MONITOR_DATA_START MONITOR_DATA_START_NETX10
+#       define MONITOR_DATA_END   MONITOR_DATA_END_NETX10
+#       define MONITOR_EXEC       MONITOR_EXEC_NETX10
 #else
 #       error "no host define set!"
 #endif
@@ -45,26 +54,22 @@ void bootstrap(void)
 #if ASIC_TYP==100 || ASIC_TYP==500
 	typedef void (*PFN_SERIAL_V1_INIT_T)(void);
 
-	/* Check the output handlers. */
-	if( tSerialVectors.fn.fnPut==NULL )
-	{
-		/* NOTE:
-		   On netX500 and netX100 the romcode disables the UART before the call and reenables it when the call
-		   returns. This means we have to init the uart here.
-		*/
+	/* NOTE:
+	   On netX500 and netX100 the romcode disables the UART before the call and reenables it when the call
+	   returns. This means we have to init the uart here.
+	*/
 
-		/* Reinit the romcode uart routines, they are deactivated right before the 'CALL' command enters the user's code.
-		   NOTE: the routine is thumb-code, bit #0 of the address must be set to switch the mode.
-		*/
-		((PFN_SERIAL_V1_INIT_T)(0x002015f4|1))();
+	/* Reinit the romcode uart routines, they are deactivated right before the 'CALL' command enters the user's code.
+	   NOTE: the routine is thumb-code, bit #0 of the address must be set to switch the mode.
+	*/
+	((PFN_SERIAL_V1_INIT_T)(0x002015f4|1))();
 
-		// set the vectors to the romcode
-		// NOTE: all routines are thumb-code, bit #0 of the address must be set to switch the mode
-		tSerialVectors.fn.fnGet   = (PFN_SERIAL_GET_T)(0x00201664|1);
-		tSerialVectors.fn.fnPut   = (PFN_SERIAL_PUT_T)(0x00201646|1);
-		tSerialVectors.fn.fnPeek  = (PFN_SERIAL_PEEK_T)(0x002016b0|1);
-		tSerialVectors.fn.fnFlush = (PFN_SERIAL_FLUSH_T)(0x002016ba|1);
-	}
+	// set the vectors to the romcode
+	// NOTE: all routines are thumb-code, bit #0 of the address must be set to switch the mode
+	tSerialVectors.fn.fnGet   = (PFN_SERIAL_GET_T)(0x00201664|1);
+	tSerialVectors.fn.fnPut   = (PFN_SERIAL_PUT_T)(0x00201646|1);
+	tSerialVectors.fn.fnPeek  = (PFN_SERIAL_PEEK_T)(0x002016b0|1);
+	tSerialVectors.fn.fnFlush = (PFN_SERIAL_FLUSH_T)(0x002016ba|1);
 #endif
 
 	pucCnt = (unsigned char*)MONITOR_DATA_START;

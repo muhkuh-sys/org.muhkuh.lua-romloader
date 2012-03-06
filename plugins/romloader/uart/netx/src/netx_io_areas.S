@@ -28,15 +28,15 @@
 #if ASIC_TYP==500
 #       define HOST NX500
 #       define HOSTNAME "netx500"
-#       include "netx500_regdef.s"
+#       include "netx500/netx500_regdef.s"
 #elif ASIC_TYP==50
 #       define HOST NX50
 #       define HOSTNAME "netx50"
-#       include "netx50_regdef.s"
+#       include "netx50/netx50_regdef.s"
 #elif ASIC_TYP==10
 #       define HOST NX10
 #       define HOSTNAME "netx10"
-#       include "netx10_regdef.s"
+#       include "netx10/netx10_regdef.s"
 #else
 #       error "no host define set!"
 #endif

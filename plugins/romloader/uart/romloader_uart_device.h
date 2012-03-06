@@ -93,8 +93,12 @@ protected:
 #endif
 
 private:
+	bool netx10_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode);
 	bool netx50_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode);
+	bool netx500_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode);
+	bool netx10_start_code(void);
 	bool netx50_start_code(void);
+	bool netx500_start_code(void);
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);
 };
 
