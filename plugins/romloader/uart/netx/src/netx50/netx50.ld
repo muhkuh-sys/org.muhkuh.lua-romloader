@@ -22,16 +22,19 @@ ENTRY(start)
 
 MEMORY
 {
-	ASSERT_EMPTY(rwx)	: ORIGIN = 0x00000000, LENGTH = 0
+	ASSERT_EMPTY(rwx)     : ORIGIN = 0x00000000, LENGTH = 0
 
-	DTCM(rw)		: ORIGIN = 0x04000000, LENGTH = 0x00001000
-	INTRAM(rwx)		: ORIGIN = 0x08000000, LENGTH = 0x00018000
+	DTCM(rw)              : ORIGIN = 0x04000000, LENGTH = 0x00001000
+	INTRAM(rwx)           : ORIGIN = 0x08000000, LENGTH = 0x00018000
 }
 
 
 /* Section Definitions */
 SECTIONS
 {
+	/* These sections must be empty, put them in a memory with a size of
+	 * 0 bytes
+	 */
 	.assert_empty (NOLOAD) :
 	{
 		/* NOTE: include all sections here which should be empty. */

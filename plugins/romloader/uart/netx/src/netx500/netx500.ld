@@ -37,8 +37,7 @@ SECTIONS
 	 */
 	.assert_empty (NOLOAD) :
 	{
-		/* NOTE: include all sections here which should be empty.
-		 */
+		/* NOTE: include all sections here which should be empty. */
 		*(.data)
 		*(.glue*)
 		*(.vfp11_veneer)
