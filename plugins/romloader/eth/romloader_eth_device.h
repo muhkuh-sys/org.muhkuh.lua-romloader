@@ -27,8 +27,6 @@
 #ifdef _WINDOWS
 #       include <windows.h>
 #       define PATH_MAX 259
-#else
-#       include <pthread.h>
 #endif
 
 
