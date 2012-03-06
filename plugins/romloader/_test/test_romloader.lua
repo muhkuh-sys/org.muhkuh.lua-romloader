@@ -273,6 +273,37 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 	print("Ok!")
 	print(" ")
 
+
+	print("---------------------------------------")
+	print(" call test")
+	-- Get the chiptyp.
+	local tAsicTyp = tPlugin:GetChiptyp()
+	-- Get the binary for the ASIC.
+	print(string.format("detected chip type: %d %s", tAsicTyp, tPlugin:GetChiptypName(tAsicTyp)))
+	local uiAsicType = nil
+	if tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX50 then
+		uiAsicType = 50
+	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX100 or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX500 then
+		uiAsicType = 500
+	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX10 then
+		uiAsicType = 10
+	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX56 then
+		uiAsicType = 56
+	end
+
+	if uiAsicType==nil then
+		error("Unknown chiptyp! " .. tostring(tAsicTyp))
+	end
+
+	local strBinaryName = string.format("montest_netx%d.bin", uiAsicType)
+
+	ulMagic = 0x12345678
+	ulResult = tester.mbin_simple_run(nil, tPlugin, strBinaryName, ulMagic)
+	if ulResult~=0 then
+		error(string.format("The code returned an error code: 0x%08x", ulResult))
+	end
+
+
 	uiLoopCounter = uiLoopCounter + 1
 end
 
