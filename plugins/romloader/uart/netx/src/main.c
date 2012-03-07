@@ -27,37 +27,15 @@
 #include "monitor_commands.h"
 #include "transport.h"
 #include "serial_vectors.h"
+#include "uart.h"
 
 /*-----------------------------------*/
 
-#if CFG_DEBUGMSG!=0
-#       include "uprintf.h"
-#       include "uart.h"
-
-#       if ASIC_TYP==10
-	static const UART_CONFIGURATION_T tUartCfg =
-	{
-		.uc_rx_mmio = 20U,
-		.uc_tx_mmio = 21U,
-		.uc_rts_mmio = 0xffU,
-		.uc_cts_mmio = 0xffU,
-		.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
-	};
-#       elif ASIC_TYP==50
-	static const UART_CONFIGURATION_T tUartCfg =
-	{
-		.uc_rx_mmio = 34U,
-		.uc_tx_mmio = 35U,
-		.uc_rts_mmio = 0xffU,
-		.uc_cts_mmio = 0xffU,
-		.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
-	};
-#       elif ASIC_TYP==100 || ASIC_TYP==500
+#if ASIC_TYP==100 || ASIC_TYP==500
 	static const UART_CONFIGURATION_T tUartCfg =
 	{
 		.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
 	};
-#       endif
 #endif
 
 
@@ -94,28 +72,18 @@ void uart_monitor(void)
 	systime_init();
 
 #if ASIC_TYP==100 || ASIC_TYP==500
-	typedef void (*PFN_ABOOT_SERIAL_INIT_T)(void);
+	/* The netX500 and netX100 romcode uart put routine converts LF (0x0a)
+	 * to CR LF (0x0d 0x0a). It is not possible to send binary data with
+	 * it. Replace the vectors with custom routines. */
 
-	/* Check the output handlers. */
-	if( tSerialV1Vectors.fn.fnPut==NULL )
-	{
-		/* NOTE:
-		   On netX500 and netX100 the romcode disables the UART before the call and reenables it when the call
-		   returns. This means we have to init the uart here.
-		*/
+	/* Initialize the UART. */
+	uart_init(&tUartCfg);
 
-		/* Reinit the romcode uart routines, they are deactivated right before the 'CALL' command enters the user's code.
-		   NOTE: the routine is thumb-code, bit #0 of the address must be set to switch the mode.
-		*/
-		((PFN_ABOOT_SERIAL_INIT_T)(0x002015f4|1))();
-
-		// set the vectors to the romcode
-		// NOTE: all routines are thumb-code, bit #0 of the address must be set to switch the mode
-		tSerialV2Vectors.fn.fnGet   = (PFN_SERIAL_V2_GET_T)(0x00201664|1);
-		tSerialV2Vectors.fn.fnPut   = (PFN_SERIAL_V2_PUT_T)(0x00201646|1);
-		tSerialV2Vectors.fn.fnPeek  = (PFN_SERIAL_V2_PEEK_T)(0x002016b0|1);
-		tSerialV2Vectors.fn.fnFlush = (PFN_SERIAL_V2_FLUSH_T)(0x002016ba|1);
-	}
+	/* Set the new vectors. */
+	tSerialV2Vectors.fn.fnGet   = uart_get;
+	tSerialV2Vectors.fn.fnPut   = uart_put;
+	tSerialV2Vectors.fn.fnPeek  = uart_peek;
+	tSerialV2Vectors.fn.fnFlush = uart_flush;
 #endif
 
 #if CFG_DEBUGMSG!=0

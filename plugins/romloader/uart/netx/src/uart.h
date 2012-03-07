@@ -55,7 +55,7 @@ typedef struct
 } UART_CONFIGURATION_T;
 
 
-int uart_init(const UART_CONFIGURATION_T *ptCfg);
+void uart_init(const UART_CONFIGURATION_T *ptCfg);
 void uart_put(unsigned int uiChar);
 void uart_flush(void);
 unsigned char uart_get(void);

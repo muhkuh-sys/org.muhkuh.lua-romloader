@@ -23,9 +23,6 @@
 #include "netx_io_areas.h"
 
 
-#if CFG_DEBUGMSG!=0
-
-
 #define ARRAYSIZE(a) (sizeof(a)/sizeof(a[0]))
 
 
@@ -80,15 +77,11 @@ static const UART_INSTANCE_T tUartInstance =
 };
 
 
-int uart_init(const UART_CONFIGURATION_T *ptCfg)
+void uart_init(const UART_CONFIGURATION_T *ptCfg)
 {
 	unsigned long ulValue;
 	HOSTADEF(UART) *ptUartArea;
-	int iResult;
 
-
-	/* expect error */
-	iResult = -1;
 
 	/* get the uart area */
 	ptUartArea = tUartInstance.ptArea;
@@ -134,10 +127,6 @@ int uart_init(const UART_CONFIGURATION_T *ptCfg)
 	/* enable the drivers */
 	ulValue = HOSTMSK(uartdrvout_DRVTX);
 	ptUartArea->ulUartdrvout = ulValue;
-
-	iResult = 0;
-
-	return iResult;
 }
 
 
@@ -237,7 +226,3 @@ void uart_close(void)
 	ptUartArea->ulUartrts = 0;
 	ptUartArea->ulUartdrvout = 0;
 }
-
-
-#endif
-

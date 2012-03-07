@@ -38,7 +38,6 @@ sources_common = """
 	src/systime.c
 	src/transport.c
 	src/uart.c
-	src/uprintf.c
 """
 
 
