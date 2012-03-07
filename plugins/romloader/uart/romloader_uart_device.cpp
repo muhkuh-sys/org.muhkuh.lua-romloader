@@ -23,20 +23,17 @@
 
 #include "../uuencoder.h"
 
+/* Load- and entry points for the bootstrap firmware. */
 #include "netx/targets/uartmon_netx10_bootstrap_run.h"
 #include "netx/targets/uartmon_netx50_bootstrap_run.h"
 #include "netx/targets/uartmon_netx500_bootstrap_run.h"
 
-/* This is the array definition for the bootstrap firmware. */
+/* Data of the bootstrap firmware. */
 #include "netx/targets/uartmon_netx10_bootstrap.h"
 #include "netx/targets/uartmon_netx50_bootstrap.h"
 #include "netx/targets/uartmon_netx500_bootstrap.h"
 
-//#include "netx/targets/uartmon_netx10_monitor_run.h"
-//#include "netx/targets/uartmon_netx50_monitor_run.h"
-//#include "netx/targets/uartmon_netx500_monitor_run.h"
-
-/* This is the array definition for the monitor firmware. */
+/* Data of the monitor firmware. */
 #include "netx/targets/uartmon_netx10_monitor.h"
 #include "netx/targets/uartmon_netx50_monitor.h"
 #include "netx/targets/uartmon_netx500_monitor.h"
