@@ -28,6 +28,13 @@
 #       define strncasecmp _strnicmp
 #endif
 
+/* FIXME: remove the chiptype from this list.
+ * Most devices have a fixed relation between the USB ID and the chip type.
+ * This is not the case for the HBootV2 Emulation. Here all chips are covered
+ * with one single USB ID. This means the plugin can only get the ROMCODE
+ * information and thus the used protocol from the USB ID. The chip type must
+ * be detected with memory reads.
+ */
 const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[6] =
 {
 	{
