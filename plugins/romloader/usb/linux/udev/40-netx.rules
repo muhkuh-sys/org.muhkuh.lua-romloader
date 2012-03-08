@@ -16,6 +16,9 @@ ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0002", MODE="664", GROUP="plugdev"
 # netX10
 ATTRS{idVendor}=="1939", ATTRS{idProduct}=="000c", MODE="664", GROUP="plugdev"
 
+# HBoot2 Soft
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0015", MODE="664", GROUP="plugdev"
+
 # netX51
 ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0018", MODE="664", GROUP="plugdev"
 
