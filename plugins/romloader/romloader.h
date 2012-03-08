@@ -105,13 +105,18 @@ public:
 protected:
 	typedef struct
 	{
+		ROMLOADER_ROMCODE tRomcode;
+		const char *pcName;
+	} ROMCODE_NAME_T;
+
+	typedef struct
+	{
 		unsigned long ulResetVector;
 		unsigned long ulVersionAddress;
 		unsigned long ulVersionValue;
 		ROMLOADER_CHIPTYP tChiptyp;
 		const char *pcChiptypName;
 		ROMLOADER_ROMCODE tRomcode;
-		const char *pcRomcodeName;
 	} ROMLOADER_RESET_ID_T;
 
 
@@ -124,9 +129,11 @@ protected:
 	ROMLOADER_ROMCODE m_tRomcode;
 
 private:
+
 	bool callback_common(SWIGLUA_REF *ptLuaFn, long lCallbackUserData, int iOldTopOfStack);
 
 	static const ROMLOADER_RESET_ID_T atResIds[5];
+	static const ROMCODE_NAME_T atRomcodeName[4];
 };
 
 /*-----------------------------------*/

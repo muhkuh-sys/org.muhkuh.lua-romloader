@@ -78,25 +78,33 @@ const char *romloader::GetChiptypName(ROMLOADER_CHIPTYP tChiptyp) const
 }
 
 
+const romloader::ROMCODE_NAME_T romloader::atRomcodeName[4] =
+{
+	{ ROMLOADER_ROMCODE_ABOOT,              "ABoot" },
+	{ ROMLOADER_ROMCODE_HBOOT,              "HBoot" },
+	{ ROMLOADER_ROMCODE_HBOOT2_SOFT,        "HBoot2 Soft" },
+	{ ROMLOADER_ROMCODE_HBOOT2,             "HBoot2" }
+};
 
 
 const char *romloader::GetRomcodeName(ROMLOADER_ROMCODE tRomcode) const
 {
 	const char *pcRomcode;
-	const ROMLOADER_RESET_ID_T *ptCnt, *ptEnd;
+	const ROMCODE_NAME_T *ptCnt;
+	const ROMCODE_NAME_T *ptEnd;
 
 
 	// init romcode name with unknown name
 	pcRomcode = "unknown romcode";
 
 	// loop over all known romcodes and search the romcode typ
-	ptCnt = atResIds;
-	ptEnd = ptCnt + (sizeof(atResIds)/sizeof(atResIds[0]));
+	ptCnt = atRomcodeName;
+	ptEnd = atRomcodeName + (sizeof(atRomcodeName)/sizeof(atRomcodeName[0]));
 	while( ptCnt<ptEnd )
 	{
 		if( ptCnt->tRomcode==tRomcode )
 		{
-			pcRomcode = ptCnt->pcRomcodeName;
+			pcRomcode = ptCnt->pcName;
 			break;
 		}
 		++ptCnt;
@@ -106,10 +114,10 @@ const char *romloader::GetRomcodeName(ROMLOADER_ROMCODE tRomcode) const
 }
 
 // wrapper functions for compatibility with old function names
-ROMLOADER_CHIPTYP romloader::get_chiptyp(void) const						{return GetChiptyp();}
-ROMLOADER_ROMCODE romloader::get_romcode(void) const						{return GetRomcode();}
-const char	*romloader::get_chiptyp_name(ROMLOADER_CHIPTYP tChiptyp) const	{return GetChiptypName(tChiptyp);}
-const char *romloader::get_romcode_name(ROMLOADER_ROMCODE tRomcode) const	{return GetRomcodeName(tRomcode);}
+ROMLOADER_CHIPTYP  romloader::get_chiptyp(void) const                             {return GetChiptyp();}
+ROMLOADER_ROMCODE  romloader::get_romcode(void) const                             {return GetRomcode();}
+const char        *romloader::get_chiptyp_name(ROMLOADER_CHIPTYP tChiptyp) const  {return GetChiptypName(tChiptyp);}
+const char        *romloader::get_romcode_name(ROMLOADER_ROMCODE tRomcode) const  {return GetRomcodeName(tRomcode);}
 
 bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 {
@@ -180,8 +188,7 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[5] =
 		0x00001000,
 		ROMLOADER_CHIPTYP_NETX500,
 		"netX500",
-		ROMLOADER_ROMCODE_ABOOT,
-		"ABoot"
+		ROMLOADER_ROMCODE_ABOOT
 	},
 
 	{
@@ -190,8 +197,7 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[5] =
 		0x00003002,
 		ROMLOADER_CHIPTYP_NETX100,
 		"netX100",
-		ROMLOADER_ROMCODE_ABOOT,
-		"ABoot"
+		ROMLOADER_ROMCODE_ABOOT
 	},
 
 	{
@@ -200,8 +206,7 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[5] =
 		0x00002001,
 		ROMLOADER_CHIPTYP_NETX50,
 		"netX50",
-		ROMLOADER_ROMCODE_HBOOT,
-		"HBoot"
+		ROMLOADER_ROMCODE_HBOOT
 	},
 
 	{
@@ -210,8 +215,7 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[5] =
 		0x00005003,
 		ROMLOADER_CHIPTYP_NETX10,
 		"netX10",
-		ROMLOADER_ROMCODE_HBOOT,
-		"HBoot"
+		ROMLOADER_ROMCODE_HBOOT
 	},
 
 	{
@@ -220,10 +224,8 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[5] =
 		0x00006003,
 		ROMLOADER_CHIPTYP_NETX56,
 		"netX56",
-		ROMLOADER_ROMCODE_HBOOT2,
-		"HBoot2"
+		ROMLOADER_ROMCODE_HBOOT2
 	}
-
 };
 
 
