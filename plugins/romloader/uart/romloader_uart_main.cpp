@@ -521,12 +521,12 @@ bool romloader_uart::chip_init(lua_State *ptClientData)
 			fResult = false;
 			break;
 		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
-			/* This is an unknown combination. */
-			fResult = false;
+			/* This is the updated device. */
+			fResult = true;
 			break;
 		case ROMLOADER_ROMCODE_HBOOT2:
-			/* hboot2 needs no special init. */
-			fResult = true;
+			/* This is an unknown combination. */
+			fResult = false;
 			break;
 		case ROMLOADER_ROMCODE_UNKNOWN:
 			fResult = false;
