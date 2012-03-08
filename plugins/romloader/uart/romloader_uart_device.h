@@ -50,8 +50,9 @@ public:
 
 
 	/* higher level interface */
-	bool legacy_read(unsigned long ulAddress, unsigned long *pulValue);
-	bool update_device(ROMLOADER_CHIPTYP tChiptyp, ROMLOADER_ROMCODE tRomcode);
+	bool legacy_read_v1(unsigned long ulAddress, unsigned long *pulValue);
+	bool legacy_read_v2(unsigned long ulAddress, unsigned long *pulValue);
+	ROMLOADER_ROMCODE update_device(ROMLOADER_CHIPTYP tChiptyp, ROMLOADER_ROMCODE tRomcode);
 	bool wait_for_prompt(unsigned long ulTimeout);
 	bool GetLine(unsigned char **ppucLine, const char *pcEol, unsigned long ulTimeout);
 	bool SendBlankLineAndDiscardResponse(void);

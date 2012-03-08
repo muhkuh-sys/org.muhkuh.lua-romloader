@@ -437,7 +437,7 @@ bool romloader_uart_device::GetLine(unsigned char **ppucLine, const char *pcEol,
 }
 
 
-bool romloader_uart_device::legacy_read(unsigned long ulAddress, unsigned long *pulValue)
+bool romloader_uart_device::legacy_read_v1(unsigned long ulAddress, unsigned long *pulValue)
 {
 	union
 	{
@@ -479,6 +479,79 @@ bool romloader_uart_device::legacy_read(unsigned long ulAddress, unsigned long *
 			free(uResponse.puc);
 
 			/* Receive one line. This is the command result. */
+			fOk = GetLine(&uResponse.puc, "\r\n>", 2000);
+			if( fOk==false )
+			{
+				fprintf(stderr, "failed to get command response!\n");
+			}
+			else
+			{
+				iResult = sscanf(uResponse.pc, "%08lx: %08lx", &ulReadbackAddress, &ulValue);
+				if( iResult==2 && ulAddress==ulReadbackAddress )
+				{
+					if( pulValue!=NULL )
+					{
+						*pulValue = ulValue;
+					}
+				}
+				else
+				{
+					fprintf(stderr, "The command response is invalid!\n");
+					fOk = false;
+				}
+				sizCmd = strlen(uResponse.pc);
+				hexdump(uResponse.puc, sizCmd);
+				free(uResponse.puc);
+			}
+		}
+	}
+
+	return fOk;
+}
+
+
+bool romloader_uart_device::legacy_read_v2(unsigned long ulAddress, unsigned long *pulValue)
+{
+	union
+	{
+		unsigned char auc[32];
+		char ac[32];
+	} uCmd;
+	union
+	{
+		unsigned char *puc;
+		char *pc;
+	} uResponse;
+	size_t sizCmd;
+	bool fOk;
+	int iResult;
+	unsigned long ulReadbackAddress;
+	unsigned long ulValue;
+
+
+	sizCmd = snprintf(uCmd.ac, 32, "D %lx ++3\n", ulAddress);
+	/* Send the command with 500ms second timeout. */
+	if( SendRaw(uCmd.auc, sizCmd, 500)!=sizCmd )
+	{
+		/* Failed to send the command to the device. */
+		fprintf(stderr, "Failed to send the command to the device.\n");
+		fOk = false;
+	}
+	else
+	{
+		/* Receive one line. This is the command echo. */
+		fOk = GetLine(&uResponse.puc, "\r\n", 2000);
+		if( fOk==false )
+		{
+			fprintf(stderr, "failed to get command response!\n");
+		}
+		else
+		{
+			sizCmd = strlen(uResponse.pc);
+			hexdump(uResponse.puc, sizCmd);
+			free(uResponse.puc);
+
+			/* Receive the rest of the output until the command prompt. This is the command result. */
 			fOk = GetLine(&uResponse.puc, "\r\n>", 2000);
 			if( fOk==false )
 			{
@@ -774,15 +847,16 @@ bool romloader_uart_device::netx500_start_code(void)
 }
 
 
-bool romloader_uart_device::update_device(ROMLOADER_CHIPTYP tChiptyp, ROMLOADER_ROMCODE tRomcode)
+ROMLOADER_ROMCODE romloader_uart_device::update_device(ROMLOADER_CHIPTYP tChiptyp, ROMLOADER_ROMCODE tRomcode)
 {
 	bool fOk;
+	ROMLOADER_ROMCODE tNewRomcode;
 
 
 	fprintf(stderr, "update device.\n");
 
-	/* Expect success. */
-	fOk = true;
+	/* Expect failure. */
+	tNewRomcode = ROMLOADER_ROMCODE_UNKNOWN;
 
 	if( tChiptyp==ROMLOADER_CHIPTYP_NETX50 )
 	{
@@ -797,7 +871,11 @@ bool romloader_uart_device::update_device(ROMLOADER_CHIPTYP tChiptyp, ROMLOADER_
 				if( SendRaw(auc_uartmon_netx50_monitor, sizeof(auc_uartmon_netx50_monitor), 500)!=sizeof(auc_uartmon_netx50_monitor) )
 				{
 					fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
-					fOk = false;
+				}
+				else
+				{
+					/* The ROM code is now HBOOT2_SOFT */
+					tNewRomcode = ROMLOADER_ROMCODE_HBOOT2_SOFT;
 				}
 			}
 		}
@@ -814,7 +892,11 @@ bool romloader_uart_device::update_device(ROMLOADER_CHIPTYP tChiptyp, ROMLOADER_
 				if( SendRaw(auc_uartmon_netx500_monitor, sizeof(auc_uartmon_netx500_monitor), 500)!=sizeof(auc_uartmon_netx500_monitor) )
 				{
 					fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
-					fOk = false;
+				}
+				else
+				{
+					/* The ROM code is now HBOOT2_SOFT */
+					tNewRomcode = ROMLOADER_ROMCODE_HBOOT2_SOFT;
 				}
 			}
 		}
@@ -831,13 +913,17 @@ bool romloader_uart_device::update_device(ROMLOADER_CHIPTYP tChiptyp, ROMLOADER_
 				if( SendRaw(auc_uartmon_netx10_monitor, sizeof(auc_uartmon_netx10_monitor), 500)!=sizeof(auc_uartmon_netx10_monitor) )
 				{
 					fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
-					fOk = false;
+				}
+				else
+				{
+					/* The ROM code is now HBOOT2_SOFT */
+					tNewRomcode = ROMLOADER_ROMCODE_HBOOT2_SOFT;
 				}
 			}
 		}
 	}
 	
-	return fOk;
+	return tNewRomcode;
 }
 
 

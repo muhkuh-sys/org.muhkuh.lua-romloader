@@ -32,10 +32,10 @@
 
 /*-------------------------------------*/
 
-class romloader_uart_legacy_read_functinoid : public romloader_read_functinoid
+class romloader_uart_legacy_v1_read_functinoid : public romloader_read_functinoid
 {
 public:
-	romloader_uart_legacy_read_functinoid(romloader_uart_device *ptDevice)
+	romloader_uart_legacy_v1_read_functinoid(romloader_uart_device *ptDevice)
 	{
 		m_ptDevice = ptDevice;
 	}
@@ -46,7 +46,34 @@ public:
 		unsigned long ulValue;
 
 
-		fOk = m_ptDevice->legacy_read(ulAddress, &ulValue);
+		fOk = m_ptDevice->legacy_read_v1(ulAddress, &ulValue);
+		if( fOk!=true )
+		{
+			ulValue = 0;
+		}
+		return ulValue;
+	}
+
+private:
+	romloader_uart_device *m_ptDevice;
+};
+
+
+class romloader_uart_legacy_v2_read_functinoid : public romloader_read_functinoid
+{
+public:
+	romloader_uart_legacy_v2_read_functinoid(romloader_uart_device *ptDevice)
+	{
+		m_ptDevice = ptDevice;
+	}
+
+	unsigned long read_data32(unsigned long ulAddress)
+	{
+		bool fOk;
+		unsigned long ulValue;
+
+
+		fOk = m_ptDevice->legacy_read_v2(ulAddress, &ulValue);
 		if( fOk!=true )
 		{
 			ulValue = 0;
@@ -372,6 +399,13 @@ bool romloader_uart::identify_loader(bool *pfNeedsUpdate)
 					fDeviceNeedsUpdate = fResult;
 					fResult = true;
 				}
+				else if( sizTransfered==4 && aucData[0]==0x00 && aucData[1]==0x00 && aucData[2]=='*' && aucData[3]=='#' )
+				{
+					printf("ok, received '<null><null>*#'!\n");
+					fResult = m_ptUartDev->SendBlankLineAndDiscardResponse();
+					fDeviceNeedsUpdate = fResult;
+					fResult = true;
+				}
 				else
 				{
 					printf("received strange response after the star: 0x%02x\n", aucData[0]);
@@ -419,12 +453,8 @@ bool romloader_uart::chip_init(lua_State *ptClientData)
 		switch( m_tRomcode )
 		{
 		case ROMLOADER_ROMCODE_ABOOT:
-			// aboot does not set the serial vectors
-			write_data32(ptClientData, 0x10001ff0, 0);
-			write_data32(ptClientData, 0x10001ff4, 0);
-			write_data32(ptClientData, 0x10001ff8, 0);
-			write_data32(ptClientData, 0x10001ffc, 0);
-			fResult = true;
+			/* aboot is updated to hboot2 soft. aboot should never arrive here. */
+			fResult = false;
 			break;
 		case ROMLOADER_ROMCODE_HBOOT:
 			// hboot needs no special init
@@ -540,10 +570,12 @@ bool romloader_uart::chip_init(lua_State *ptClientData)
 
 void romloader_uart::Connect(lua_State *ptClientData)
 {
-	romloader_uart_legacy_read_functinoid tFnLegacy(m_ptUartDev);
+	romloader_uart_legacy_v1_read_functinoid tFnLegacyV1(m_ptUartDev);
+	romloader_uart_legacy_v2_read_functinoid tFnLegacyV2(m_ptUartDev);
 	romloader_uart_mi_read_functinoid tFnMi(this, ptClientData);
 	bool fResult;
 	bool fDeviceNeedsUpdate;
+	ROMLOADER_ROMCODE tNewRomcode;
 
 
 	/* Expect error. */
@@ -573,17 +605,32 @@ void romloader_uart::Connect(lua_State *ptClientData)
 				if( fDeviceNeedsUpdate==true )
 				{
 					fprintf(stderr, "The device needs an update.\n");
-					fResult = detect_chiptyp(&tFnLegacy);
+					/* Try to detect the chiptype with the old commandset ("DUMP"). */
+					fResult = detect_chiptyp(&tFnLegacyV1);
 					if( fResult!=true )
 					{
-						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chiptyp!", m_pcName, this);
-					}
-					else
-					{
-						fResult = m_ptUartDev->update_device(m_tChiptyp, m_tRomcode);
+						/* Failed to get the info with the old commandset. Now try the new command ("D"). */
+						fResult = detect_chiptyp(&tFnLegacyV2);
 						if( fResult!=true )
 						{
+							MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chiptyp!", m_pcName, this);
+						}
+					}
+					
+					if( fResult==true )
+					{
+						fprintf(stderr, "Old romcode: %d %s\n", m_tRomcode, get_romcode_name(m_tRomcode));
+						tNewRomcode = m_ptUartDev->update_device(m_tChiptyp, m_tRomcode);
+						if( tNewRomcode==ROMLOADER_ROMCODE_UNKNOWN )
+						{
+							fResult = false;
 							MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to update the device!", m_pcName, this);
+						}
+						else
+						{
+							/* The ROM code was updated. */
+							m_tRomcode = tNewRomcode;
+							fprintf(stderr, "New romcode: %d %s\n", m_tRomcode, get_romcode_name(m_tRomcode));
 						}
 					}
 				}
