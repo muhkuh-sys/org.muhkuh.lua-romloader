@@ -333,6 +333,9 @@ bool romloader_uart::identify_loader(bool *pfNeedsUpdate)
 	unsigned short usCrc;
 
 
+	/* The ROM code is unknown. */
+	m_tRomcode = ROMLOADER_ROMCODE_UNKNOWN;
+
 	/* No update by default. */
 	fDeviceNeedsUpdate = false;
 
@@ -389,6 +392,10 @@ bool romloader_uart::identify_loader(bool *pfNeedsUpdate)
 						ulMiVersionMin = aucData[7] | (aucData[8]<<8);;
 						ulMiVersionMaj = aucData[9] | (aucData[10]<<8);
 						printf("Found new machine interface V%ld.%ld.\n", ulMiVersionMaj, ulMiVersionMin);
+
+						/* The ROM code version is either HBoot2_Soft or HBoot2. */
+						m_tRomcode = ROMLOADER_ROMCODE_HBOOT2;
+
 						fResult = true;
 					}
 				}
@@ -457,16 +464,16 @@ bool romloader_uart::chip_init(lua_State *ptClientData)
 			fResult = false;
 			break;
 		case ROMLOADER_ROMCODE_HBOOT:
-			// hboot needs no special init
-			fResult = true;
+			/* Unknown combination. */
+			fResult = false;
 			break;
 		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
 			/* hboot2 software emu needs no special init. */
 			fResult = true;
 			break;
 		case ROMLOADER_ROMCODE_HBOOT2:
-			/* hboot2 needs no special init. */
-			fResult = true;
+			/* Unknown combination. */
+			fResult = false;
 			break;
 		case ROMLOADER_ROMCODE_UNKNOWN:
 			fResult = false;
@@ -478,30 +485,22 @@ bool romloader_uart::chip_init(lua_State *ptClientData)
 		switch( m_tRomcode )
 		{
 		case ROMLOADER_ROMCODE_ABOOT:
-			// this is an unknown combination
+			/* Unknown combination. */
 			fResult = false;
 			break;
 		case ROMLOADER_ROMCODE_HBOOT:
-			// hboot needs no special init
-			// netx50 needs sdram fix
-			printf("%s(%p): running netx50 sdram fix...\n", m_pcName, this);
-			write_data32(ptClientData, 0x1c005830, 0x00000001);
-			write_data32(ptClientData, 0x1c005104, 0xbffffffc);
-			write_data32(ptClientData, 0x1c00510c, 0x00480001);
-			write_data32(ptClientData, 0x1c005110, 0x00000001);
-			printf("%s(%p): netx50 sdram fix ok!\n", m_pcName, this);
-			write_data32(ptClientData, 0x1c00510c, 0);
-			write_data32(ptClientData, 0x1c005110, 0);
-			write_data32(ptClientData, 0x1c005830, 0);
-			fResult = true;
+			/* The ROM code is HBoot, but it is updated to HBoot2_soft.
+			 * HBoot should never arrive here.
+			 */
+			fResult = false;
 			break;
 		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
 			/* hboot2 soft needs no special init. */
 			fResult = true;
 			break;
 		case ROMLOADER_ROMCODE_HBOOT2:
-			/* hboot2 needs no special init. */
-			fResult = true;
+			/* Unknown combination. */
+			fResult = false;
 			break;
 		case ROMLOADER_ROMCODE_UNKNOWN:
 			fResult = false;
@@ -637,10 +636,24 @@ void romloader_uart::Connect(lua_State *ptClientData)
 				else
 				{
 					fprintf(stderr, "The device does not need an update.\n");
+					/* Get the ROM code version assumed from the knock response. */
+					tNewRomcode = m_tRomcode;
 					fResult = detect_chiptyp(&tFnMi);
 					if( fResult!=true )
 					{
 						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chiptyp!", m_pcName, this);
+					}
+					else
+					{
+						/* Is this an updated device?
+						 * In this case the knock response indicates a HBoot2 interface,
+						 * but the detected ROM code is not HBoot2.
+						 */
+						if( tNewRomcode==ROMLOADER_ROMCODE_HBOOT2 && m_tRomcode!=ROMLOADER_ROMCODE_HBOOT2 )
+						{
+							/* This is an updated device. */
+							m_tRomcode = ROMLOADER_ROMCODE_HBOOT2_SOFT;
+						}
 					}
 				}
 
