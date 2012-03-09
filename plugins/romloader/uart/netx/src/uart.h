@@ -56,10 +56,19 @@ typedef struct
 
 
 void uart_init(const UART_CONFIGURATION_T *ptCfg);
-void uart_put(unsigned int uiChar);
-void uart_flush(void);
-unsigned char uart_get(void);
-unsigned int uart_peek(void);
+
+#if ASIC_TYP==10
+	void uart_put(unsigned int tHandle, unsigned char ucChar);
+	void uart_flush(unsigned int tHandle);
+	unsigned int uart_get(unsigned int tHandle);
+	unsigned int uart_peek(unsigned int tHandle);
+#else
+	void uart_put(unsigned int uiChar);
+	void uart_flush(void);
+	unsigned char uart_get(void);
+	unsigned int uart_peek(void);
+#endif
+
 void uart_close(void);
 
 

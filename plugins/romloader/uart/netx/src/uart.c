@@ -130,7 +130,11 @@ void uart_init(const UART_CONFIGURATION_T *ptCfg)
 }
 
 
+#if ASIC_TYP==10
+void uart_put(unsigned int tHandle __attribute__((unused)), unsigned char ucChar)
+#else
 void uart_put(unsigned int uiChar)
+#endif
 {
 	HOSTADEF(UART) *ptUartArea;
 	unsigned long ulVal;
@@ -146,11 +150,19 @@ void uart_put(unsigned int uiChar)
 		ulVal &= HOSTMSK(uartfr_TXFF);
 	} while( ulVal!=0 );
 
-	ptUartArea->ulUartdr = uiChar & 0xff;
+#if ASIC_TYP==10
+	ptUartArea->ulUartdr = ucChar;
+#else
+	ptUartArea->ulUartdr = (unsigned char)(uiChar & 0xffU);
+#endif
 }
 
 
+#if ASIC_TYP==10
+void uart_flush(unsigned int tHandle __attribute__((unused)))
+#else
 void uart_flush(void)
+#endif
 {
 	HOSTADEF(UART) *ptUartArea;
 	unsigned long ulVal;
@@ -167,7 +179,11 @@ void uart_flush(void)
 }
 
 
+#if ASIC_TYP==10
+unsigned int uart_get(unsigned int tHandle __attribute__((unused)))
+#else
 unsigned char uart_get(void)
+#endif
 {
 	HOSTADEF(UART) *ptUartArea;
 	unsigned long ulVal;
@@ -185,13 +201,21 @@ unsigned char uart_get(void)
 	} while( ulVal!=0 );
 
 	/* Get the received byte */
-	uiData = (unsigned int)ptUartArea->ulUartdr;
+	uiData = (unsigned int)(ptUartArea->ulUartdr & 0xffU);
 
+#if ASIC_TYP==10
+	return uiData;
+#else
 	return (unsigned char)uiData;
+#endif
 }
 
 
+#if ASIC_TYP==10
+unsigned int uart_peek(unsigned int tHandle __attribute__((unused)))
+#else
 unsigned int uart_peek(void)
+#endif
 {
 	HOSTADEF(UART) *ptUartArea;
 	unsigned int uiIsNotEmpty;
@@ -214,7 +238,11 @@ void uart_close(void)
 
 
 	/* flush the buffer */
+#if ASIC_TYP==10
+	uart_flush(0);
+#else
 	uart_flush();
+#endif
 
 	/* get the uart area */
 	ptUartArea = tUartInstance.ptArea;
