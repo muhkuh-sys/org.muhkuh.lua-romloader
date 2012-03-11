@@ -16,4 +16,6 @@
 
 * cancel request for a running tester
 
-
+* Support for MinGW32/64.
+  Here is a very good overview of all identification macros:
+    http://sourceforge.net/apps/mediawiki/predef/index.php?title=Compilers
