@@ -23,8 +23,8 @@
 
 #include "romloader_baka_main.h"
 
-#ifdef _WIN32
-	#define snprintf _snprintf
+#if defined(_MSC_VER)
+#       define snprintf _snprintf
 #endif
 
 const char *romloader_baka_provider::m_pcPluginNamePattern = "baka_%d";

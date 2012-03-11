@@ -23,7 +23,7 @@
 
 #include <stdio.h>
 
-#if defined(WIN32)
+#if defined(_MSC_VER)
 #	define snprintf _snprintf
 #endif
 

@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef _WINDOWS
+#if defined(_MSC_VER)
 #       define snprintf _snprintf
 #endif
 

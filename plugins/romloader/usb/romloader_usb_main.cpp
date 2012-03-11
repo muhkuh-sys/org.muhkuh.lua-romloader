@@ -25,7 +25,7 @@
 #include "romloader_usb_main.h"
 #include "netx/src/usbmonitor_commands.h"
 
-#ifdef _WINDOWS
+#if defined(_MSC_VER)
 	#define snprintf _snprintf
 	#define ssize_t size_t
 #endif

@@ -26,7 +26,7 @@
 #define UART_BASE_TIMEOUT_MS 500
 #define UART_CHAR_TIMEOUT_MS 50
 
-#ifdef _WIN32
+#if defined(_MSC_VER)
 #       define snprintf _snprintf
 #endif
 

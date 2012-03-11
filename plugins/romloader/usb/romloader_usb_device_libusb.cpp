@@ -28,7 +28,7 @@
 
 #include <stdlib.h>
 
-#if defined(WIN32)
+#if defined(_MSC_VER)
 #	define snprintf _snprintf
 #	define SLEEP_MS(ms) Sleep(ms)
 #else
@@ -147,7 +147,7 @@ bool libusb_load()
 
 		while (ptPfnEntry < ptPfnTableEnd)
 		{
-			pvFn = GetProcAddress(hLibusb, ptPfnEntry->pstrFnName);
+			pvFn = (void*)GetProcAddress(hLibusb, ptPfnEntry->pstrFnName);
 			*(ptPfnEntry->ppFnPtr) = pvFn;
 
 			if (pvFn == NULL)

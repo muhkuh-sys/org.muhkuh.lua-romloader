@@ -26,7 +26,7 @@
 
 #define ETH_REPLY_TIMEOUT_MS 500
 
-#ifdef _WIN32
+#if defined(_MSC_VER)
 #       define snprintf _snprintf
 #endif
 

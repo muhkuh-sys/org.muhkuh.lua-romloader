@@ -22,7 +22,7 @@
 #include "romloader_eth_device_win.h"
 #include "machine_interface_commands.h"
 
-#if defined(WIN32)
+#if defined(_MSC_VER)
 #       define snprintf _snprintf
 #endif
 

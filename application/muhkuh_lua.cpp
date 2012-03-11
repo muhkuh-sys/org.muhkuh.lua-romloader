@@ -25,7 +25,7 @@
 #include "muhkuh_version.h"
 
 
-#ifdef WIN32
+#if defined(_MSC_VER)
 #       define snprintf _snprintf
 #endif
 
