@@ -23,7 +23,6 @@
 #define __ROMLOADER_ETH_DEVICE_WIN_H__
 
 #include <winsock2.h>
-#include <ws2ipdef.h>
 #include <ws2tcpip.h>
 
 #include "romloader_eth_device.h"
