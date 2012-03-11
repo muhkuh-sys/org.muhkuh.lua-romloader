@@ -41,21 +41,26 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef _WINDOWS
-#       define snprintf _snprintf
 
+#if defined(_MSC_VER)
+#       define snprintf _snprintf
+#       define SLEEP_MS(ms) Sleep(ms)
+#elif defined(__GNUC__) || defined(__MINGW32__) || defined(__MINGW64__)
+#       include <unistd.h>
+#       define SLEEP_MS(ms) usleep(ms*1000)
+#endif
+
+
+#if MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_MSVC
 #       define CRITICAL_SECTION_ENTER(cs) EnterCriticalSection(&cs)
 #       define CRITICAL_SECTION_LEAVE(cs) LeaveCriticalSection(&cs)
-
-#       define SLEEP_MS(ms) Sleep(ms)
-#else
+#elif MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_PTHREAD
 #       define CRITICAL_SECTION_ENTER(cs) pthread_mutex_lock(&cs)
 #       define CRITICAL_SECTION_LEAVE(cs) pthread_mutex_unlock(&cs)
 
 	static const pthread_mutex_t s_mutex_init = PTHREAD_MUTEX_INITIALIZER;
-
-#       include <unistd.h>
-#       define SLEEP_MS(ms) usleep(ms*1000)
+#else
+#       error "Unknown threading selected!"
 #endif
 
 
@@ -67,10 +72,12 @@ romloader_uart_device::romloader_uart_device(const char *pcPortName)
 {
 	m_pcPortName = strdup(pcPortName);
 
-#ifdef _WINDOWS
+#ifdef MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_MSVC
 	InitializeCriticalSection(&m_csCardLock);
-#else
+#elif MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_PTHREAD
 	memcpy(&m_csCardLock, &s_mutex_init, sizeof(pthread_mutex_t));
+#else
+#       error "Unknown threading selected!"
 #endif
 }
 
@@ -79,8 +86,12 @@ romloader_uart_device::~romloader_uart_device(void)
 {
 	deleteCards();
 
-#ifdef _WINDOWS
+#ifdef MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_MSVC
 	DeleteCriticalSection(&m_csCardLock);
+#elif MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_PTHREAD
+	/* Nothing to do here. */
+#else
+#       error "Unknown threading selected!"
 #endif
 }
 
@@ -175,10 +186,14 @@ void romloader_uart_device::writeCards(const unsigned char *pucBuffer, size_t si
 	CRITICAL_SECTION_LEAVE(m_csCardLock);
 
 	/* Set the signal for received data. */
-#ifndef _WINDOWS
+#ifdef MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_MSVC
+	/* Nothing to do here. */
+#elif MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_PTHREAD
 	pthread_mutex_lock(&m_tRxDataAvail_Mutex);
 	pthread_cond_signal(&m_tRxDataAvail_Condition);
 	pthread_mutex_unlock(&m_tRxDataAvail_Mutex);
+#else
+#       error "Unknown threading selected!"
 #endif
 }
 

@@ -24,11 +24,17 @@
 
 #include "../romloader.h"
 
-#ifdef _WINDOWS
+#define MUHKUH_USE_THREADING_PTHREAD 0
+#define MUHKUH_USE_THREADING_MSVC 1
+
+
+#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
 #       include <windows.h>
 #       define PATH_MAX 259
-#else
+#       define MUHKUH_USE_THREADING MUHKUH_USE_THREADING_MSVC
+#elif defined(__GNUC__)
 #       include <pthread.h>
+#       define MUHKUH_USE_THREADING MUHKUH_USE_THREADING_PTHREAD
 #endif
 
 
@@ -84,13 +90,15 @@ protected:
 
 	tBufferCard *m_ptFirstCard;
 	tBufferCard *m_ptLastCard;
-#ifdef _WINDOWS
+#if MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_MSVC
 	CRITICAL_SECTION m_csCardLock;
-#else
+#elif MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_PTHREAD
 	pthread_mutex_t m_csCardLock;
 
 	pthread_cond_t m_tRxDataAvail_Condition;
 	pthread_mutex_t m_tRxDataAvail_Mutex;
+#else
+#       error "Unknown threading selected!"
 #endif
 
 private:
