@@ -30,11 +30,15 @@
 
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
 #       include <windows.h>
-#       define PATH_MAX 259
 #       define MUHKUH_USE_THREADING MUHKUH_USE_THREADING_MSVC
 #elif defined(__GNUC__)
 #       include <pthread.h>
 #       define MUHKUH_USE_THREADING MUHKUH_USE_THREADING_PTHREAD
+#endif
+
+
+#if defined(_MSC_VER)
+#       define PATH_MAX 259
 #endif
 
 
