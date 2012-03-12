@@ -72,7 +72,7 @@ romloader_uart_device::romloader_uart_device(const char *pcPortName)
 {
 	m_pcPortName = strdup(pcPortName);
 
-#ifdef MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_MSVC
+#if MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_MSVC
 	InitializeCriticalSection(&m_csCardLock);
 #elif MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_PTHREAD
 	memcpy(&m_csCardLock, &s_mutex_init, sizeof(pthread_mutex_t));
@@ -86,7 +86,7 @@ romloader_uart_device::~romloader_uart_device(void)
 {
 	deleteCards();
 
-#ifdef MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_MSVC
+#if MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_MSVC
 	DeleteCriticalSection(&m_csCardLock);
 #elif MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_PTHREAD
 	/* Nothing to do here. */
@@ -186,7 +186,7 @@ void romloader_uart_device::writeCards(const unsigned char *pucBuffer, size_t si
 	CRITICAL_SECTION_LEAVE(m_csCardLock);
 
 	/* Set the signal for received data. */
-#ifdef MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_MSVC
+#if MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_MSVC
 	/* Nothing to do here. */
 #elif MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_PTHREAD
 	pthread_mutex_lock(&m_tRxDataAvail_Mutex);
