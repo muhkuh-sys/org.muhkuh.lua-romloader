@@ -87,9 +87,9 @@ ADD_DEFINITIONS(${USB_DEFINES})
 
 ADD_LIBRARY(romloader_usb_lib STATIC ${romloader_usb_SOURCES})
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
-IF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 	SET_TARGET_PROPERTIES(romloader_usb_lib PROPERTIES COMPILE_FLAGS -fPIC)
-ENDIF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
                             ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h

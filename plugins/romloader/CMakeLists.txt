@@ -45,9 +45,9 @@ ADD_LIBRARY(plugins_romloader_LIB STATIC ${plugins_romloader_lib_SOURCES})
 TARGET_LINK_LIBRARIES(plugins_romloader_LIB muhkuh_plugin_interface)
 
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
-IF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 	SET_TARGET_PROPERTIES(plugins_romloader_LIB PROPERTIES COMPILE_FLAGS -fPIC)
-ENDIF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
 
 IF(${LUA51_FOUND})

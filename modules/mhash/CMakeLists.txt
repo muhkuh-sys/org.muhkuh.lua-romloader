@@ -73,9 +73,9 @@ set(module_mhash_HEADERS
 # Build the library.
 ADD_LIBRARY(module_mhash_lib STATIC ${module_mhash_SOURCES})
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
-IF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 	SET_TARGET_PROPERTIES(module_mhash_lib PROPERTIES COMPILE_FLAGS -fPIC)
-ENDIF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
 
 ADD_SUBDIRECTORY(bindings)

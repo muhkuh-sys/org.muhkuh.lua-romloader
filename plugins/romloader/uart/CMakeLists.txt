@@ -92,9 +92,9 @@ SET(romloader_uart_HEADERS
 add_library(romloader_uart_lib STATIC ${romloader_uart_SOURCES})
 target_link_libraries(romloader_uart_lib ${romloader_uart_platform_LIBS})
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
-IF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 	SET_TARGET_PROPERTIES(romloader_uart_lib PROPERTIES COMPILE_FLAGS -fPIC)
-ENDIF(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
 SET_SOURCE_FILES_PROPERTIES(${UART_FIRMWARE_SOURCES} ${UART_FIRMWARE_HEADERS}
                             PROPERTIES GENERATED 1)
