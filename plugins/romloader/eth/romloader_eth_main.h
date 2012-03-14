@@ -28,7 +28,7 @@
 #define __ROMLOADER_ETH_MAIN_H__
 
 
-#if defined(MSVC) || defined(__MINGW32__) || defined(__MINGW64__)
+#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
 	#include "romloader_eth_device_win.h"
 	#define romloader_eth_device_platform romloader_eth_device_win
 #else
