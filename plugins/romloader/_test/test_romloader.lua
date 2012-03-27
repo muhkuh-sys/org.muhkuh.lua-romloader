@@ -46,15 +46,154 @@ local function test08(tPlugin, address, value)
 	end
 end
 
-local function get_rnd_data(len)
-	local data = ""
-	for i=1,len do
-		data = data .. string.char(math.random(0,255))
+
+--------------------------------------------------------------------------
+-- execute binary, checking output in message callback
+--------------------------------------------------------------------------
+-- [netX 0] . *** test skeleton start ***
+-- 
+-- [netX 0] . Parameter Address: 0x08018880
+-- 
+-- [netX 0] . Parameter: 0x12345678
+-- 
+-- [netX 0] 012345678901234567890123456789012345678901234567890123456789012
+-- [netX 0] 345678901234567
+-- 
+-- [netX 0] 000000000011111111112222222222333333333344444444445555555555666
+-- [netX 0] 666666677777777
+-- 
+-- [netX 0] . counting from 0 to 100 and 0ms delay.
+-- ...
+-- [netX 0] % 97/100
+-- [netX 0] % 98/100
+-- [netX 0] % 99/100
+-- [netX 0] . counting from 0 to 8 and 500ms delay.
+-- [netX 0] % 0/8
+-- [netX 0] % 1/8
+-- [netX 0] % 2/8
+-- [netX 0] % 3/8
+-- [netX 0] % 4/8
+-- [netX 0] % 5/8
+-- [netX 0] % 6/8
+-- [netX 0] % 7/8
+-- [netX 0] . counting from 0 to 4 and 1000ms delay.
+-- [netX 0] % 0/4
+-- [netX 0] % 1/4
+-- [netX 0] % 2/4
+-- [netX 0] % 3/4
+-- [netX 0] . counting from 0 to 2 and 2000ms delay.
+-- [netX 0] % 0/2
+
+astrExpectedOutput = {}
+
+function addExpectedOutput(str)
+	table.insert(astrExpectedOutput, str)
+end
+
+function addExpectedOutputLoop(n, iMsDelay)
+	addExpectedOutput(string.format(". counting from 0 to %d and %dms delay.%s", n, iMsDelay, strNetxCR))
+	for i=0, n-1 do
+		addExpectedOutput(string.format("%% %d/%d%s", i, n, strNetxCR))
 	end
-	return data
+end
+
+strNetxCR = "\r\n"
+addExpectedOutput(". *** test skeleton start ***" .. strNetxCR)
+--addExpectedOutput(". Parameter Address: 0x08018880" .. strNetxCR)
+addExpectedOutput("skip")
+addExpectedOutput(". Parameter: 0x12345678" .. strNetxCR)
+addExpectedOutput("012345678901234567890123456789012345678901234567890123456789012345678901234567" .. strNetxCR)
+addExpectedOutput("000000000011111111112222222222333333333344444444445555555555666666666677777777" .. strNetxCR)
+addExpectedOutputLoop(100, 0)
+addExpectedOutputLoop(8, 500)
+addExpectedOutputLoop(4, 1000)
+addExpectedOutputLoop(2, 2000)
+addExpectedOutput("ok" .. strNetxCR)
+
+
+
+-- Get the next piece of expected output.
+-- If the Plugin is USB, split the current line into 63 byte segments
+-- Uses:
+-- astrExpectedOutput    array of expected output lines
+-- iExpectedOutputLine   index into astrExpectedOutput
+-- iLinePos              1-based position in iExpectedOutputLine
+-- tPlugin               plugin, used to check we're using USB
+USB_BLOCK_SIZE = 63
+function getExpectedOutput()
+	local strLine = astrExpectedOutput[iExpectedOutputLine]
+	local strExpected
+	
+	if tPlugin:GetTyp()=="romloader_usb" then
+		local iLen = strLine:len()
+		strExpected = strLine:sub(iLinePos, iLinePos + USB_BLOCK_SIZE - 1)
+		iLinePos = iLinePos + USB_BLOCK_SIZE
+		if iLinePos > iLen then
+			iLinePos = 1
+			iExpectedOutputLine = iExpectedOutputLine + 1
+		end
+		
+	else
+		strExpected = strLine
+		iExpectedOutputLine = iExpectedOutputLine + 1
+	end
+
+		return strExpected
 end
 
 
+function fnCallbackCheckOutput(a,b)
+	print(string.format("[netX %d] %s", b, a))
+	
+	-- error if a is not a string
+	if type(a)~="string" then
+		print("Message callback called with non-string")
+		print(type(a))
+		error("Message callback called with non-string")
+		
+	-- allow a to be an empty string (due to timeout?)
+	elseif a == "" then
+		print("Message callback called with empty string")
+		
+	-- check if a is the expected string
+	else
+		local strExpected = getExpectedOutput()
+		if a == strExpected or strExpected=="skip" then
+			-- ok
+		else
+			print("Unexpected output")
+			print("Expected:")
+			print(strExpected)
+			print("Received:")
+			print(a)
+			if a then
+				print(string.format("%d bytes", a:len()))
+				tester.hexdump(a,16)
+			end
+			error("Unexpected output")
+			end
+	end
+	return true
+end
+
+
+
+
+function mbin_simple_run(tParentWindow, tPlugin, strFilename, aParameter)
+	local aAttr
+	aAttr = tester.mbin_open(strFilename)
+	tester.mbin_debug(aAttr)
+	tester.mbin_write(tParentWindow, tPlugin, aAttr)
+	tester.mbin_set_parameter(tPlugin, aAttr, aParameter)
+	-- function mbin_execute(tParentWindow, tPlugin, aAttr, fnCallback, ulUserData)
+	iExpectedOutputLine = 1
+	iLinePos = 1
+	return tester.mbin_execute(tParentWindow, tPlugin, aAttr, fnCallbackCheckOutput, 0)
+end
+
+--------------------------------------------------------------------------
+--  
+--------------------------------------------------------------------------
 
 
 tPlugin = select_plugin.SelectPlugin()
@@ -75,13 +214,13 @@ if tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX500 or tAsicTyp==romloader.ROMLOADE
 	ulTestAreaSize  = 0x00018000
 elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX56 then
 	ulTestAreaStart = 0x08008000
-	ulTestAreaSize  = 0x00018000
+	ulTestAreaSize  = 0x000a0000
 elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX50 then
 	ulTestAreaStart = 0x08008000
-	ulTestAreaSize  = 0x00018000
+	ulTestAreaSize  = 0x00010000
 elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX10 then
 	ulTestAreaStart = 0x08008000
-	ulTestAreaSize  = 0x00018000
+	ulTestAreaSize  = 0x00028000
 else
 	error("Unknown chiptyp! " .. tostring(tAsicTyp))
 end
@@ -298,7 +437,7 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 	local strBinaryName = string.format("montest_netx%d.bin", uiAsicType)
 
 	ulMagic = 0x12345678
-	ulResult = tester.mbin_simple_run(nil, tPlugin, strBinaryName, ulMagic)
+	ulResult = mbin_simple_run(nil, tPlugin, strBinaryName, ulMagic)
 	if ulResult~=0 then
 		error(string.format("The code returned an error code: 0x%08x", ulResult))
 	end
