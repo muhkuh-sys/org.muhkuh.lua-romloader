@@ -1,0 +1,76 @@
+# -*- coding: utf-8 -*-
+#-------------------------------------------------------------------------#
+#   Copyright (C) 2011 by Christoph Thelen                                #
+#   doc_bacardi@users.sourceforge.net                                     #
+#                                                                         #
+#   This program is free software; you can redistribute it and/or modify  #
+#   it under the terms of the GNU General Public License as published by  #
+#   the Free Software Foundation; either version 2 of the License, or     #
+#   (at your option) any later version.                                   #
+#                                                                         #
+#   This program is distributed in the hope that it will be useful,       #
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
+#   GNU General Public License for more details.                          #
+#                                                                         #
+#   You should have received a copy of the GNU General Public License     #
+#   along with this program; if not, write to the                         #
+#   Free Software Foundation, Inc.,                                       #
+#   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             #
+#-------------------------------------------------------------------------#
+
+
+#----------------------------------------------------------------------------
+#
+# Set up the Muhkuh Build System.
+#
+
+SConscript('mbs/SConscript')
+Import('env_default')
+
+#----------------------------------------------------------------------------
+# This is the list of sources. The elements must be separated with whitespace
+# (i.e. spaces, tabs, newlines). The amount of whitespace does not matter.
+sources = """
+	src/machine_interface.c
+"""
+
+
+#----------------------------------------------------------------------------
+#
+# Create the compiler environments.
+#
+
+env_default.Append(CPPPATH = ['src'])
+
+env_netx500_default = env_default.CreateCompilerEnv('500', ['cpu=arm926ej-s'])
+env_netx50_default = env_default.CreateCompilerEnv('50', ['cpu=arm966e-s'])
+env_netx10_default = env_default.CreateCompilerEnv('10', ['cpu=arm966e-s'])
+
+
+#----------------------------------------------------------------------------
+#
+# Build the netX500 files.
+#
+env_netx500 = env_netx500_default.Clone()
+src_netx500 = env_netx500.SetBuildPath('targets/netx500', 'src', sources)
+elf_netx500 = env_netx500.StaticLibrary('targets/libmi_netx500.a', src_netx500)
+
+
+#----------------------------------------------------------------------------
+#
+# Build the netX50 files.
+#
+env_netx50 = env_netx50_default.Clone()
+src_netx50 = env_netx50.SetBuildPath('targets/netx50_monitor', 'src', sources)
+elf_netx50 = env_netx50.StaticLibrary('targets/libmi_netx50.a', src_netx50)
+
+
+#----------------------------------------------------------------------------
+#
+# Build the netX10 files.
+#
+env_netx10 = env_netx10_default.Clone()
+src_netx10 = env_netx10.SetBuildPath('targets/netx10_monitor', 'src', sources)
+elf_netx10 = env_netx10.StaticLibrary('targets/libmi_netx10.a', src_netx10)
+
