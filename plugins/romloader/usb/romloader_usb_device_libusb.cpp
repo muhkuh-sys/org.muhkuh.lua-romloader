@@ -524,8 +524,6 @@ int romloader_usb_device_libusb::detect_interfaces(romloader_usb_reference ***pp
 			while( ptDevCnt<ptDevEnd )
 			{
 				ptDev = *ptDevCnt;
-//				fDeviceIsNetx = fIsDeviceNetx(ptDev);
-//				if( fDeviceIsNetx==true )
 				ptId = identifyDevice(ptDev);
 				if( ptId!=NULL )
 				{
@@ -1353,24 +1351,6 @@ int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice
 				/* Start the code parameter. */
 				netx500_start_code(ptDevHandle, auc_usbmon_netx500_intram);
 
-				/* FIXME: Why is this dummy read necessary? */
-				{
-					unsigned char aucOutBuf[64];
-					unsigned char aucInBuf[64];
-					size_t sizInBuf;
-					int iRes;
-
-					m_ptDevHandle = ptDevHandle;
-					aucOutBuf[0x00] = USBMON_COMMAND_Read|(USBMON_ACCESSSIZE_Long<<6U);
-					aucOutBuf[0x01] = 4;
-					aucOutBuf[0x02] = 0;
-					aucOutBuf[0x03] = 0;
-					aucOutBuf[0x04] = 0;
-					aucOutBuf[0x05] = 0;
-					iRes = execute_command(aucOutBuf, 6, aucInBuf, &sizInBuf);
-					//printf("Dummy exec: %d %d 0x%02x\n", iRes, sizInBuf, aucInBuf[0]);
-				}
-
 				/* Release the interface. */
 				libusb_release_interface(ptDevHandle, m_tDeviceId.ucInterface);
 
@@ -1487,7 +1467,7 @@ int romloader_usb_device_libusb::update_old_netx_device(libusb_device *ptNetxDev
 		break;
 
 	case ROMLOADER_CHIPTYP_NETX50:
-		/* TODO: insert update code for the netX10. */
+		/* The netX50 romcode provides a CDC device over USB. It is not handled by this plugin. */
 		iResult = LIBUSB_ERROR_OTHER;
 		break;
 
