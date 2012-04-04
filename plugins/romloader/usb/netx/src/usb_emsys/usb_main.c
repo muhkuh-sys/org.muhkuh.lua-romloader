@@ -215,6 +215,7 @@ void usb_sendPendingPacket(void)
 void usb_handleReset(void)
 {
         unsigned int event;
+	unsigned long ulValue;
 
 
         // get the pending port events
@@ -247,7 +248,9 @@ void usb_handleReset(void)
 		/* Set endpoint number. */
 		ptUsbCoreArea->ulPIPE_ADDR = 1;
 		/* Set max packet size. */
-		ptUsbCoreArea->ulPIPE_CFG = Usb_Ep1_PacketSize;
+		ulValue  = Usb_Ep1_PacketSize;
+		ulValue |= MSK_USB_PIPE_CFG_ET_BULK;
+		ptUsbCoreArea->ulPIPE_CFG = ulValue;
 		/* Activate pipe and set direction to 'input'. */
 		ptUsbCoreArea->ulPIPE_CTRL = MSK_USB_PIPE_CTRL_ACT | DEF_USB_PIPE_CTRL_TPID_IN;
 		/* No data to send yet. */
@@ -258,7 +261,9 @@ void usb_handleReset(void)
 		/* Set endpoint number. */
 		ptUsbCoreArea->ulPIPE_ADDR = 1;
 		/* Set max packet size. */
-		ptUsbCoreArea->ulPIPE_CFG = Usb_Ep2_PacketSize;
+		ulValue  = Usb_Ep2_PacketSize;
+		ulValue |= MSK_USB_PIPE_CFG_ET_BULK;
+		ptUsbCoreArea->ulPIPE_CFG = ulValue;
 		/* Set data pointer to Usb_Ep2_Buffer. */
 		ptUsbCoreArea->ulPIPE_DATA_PTR = Usb_Ep2_Buffer>>2;
 		/* Data buffer valid, ready to receive bytes. */
