@@ -25,7 +25,7 @@
 #include "muhkuh_aboutDialog.h"
 
 #if USE_LUA!=0
-#include "lua.hpp"
+#       include "lua.hpp"
 #endif
 
 muhkuh_aboutDialog::muhkuh_aboutDialog(wxWindow* parent, const wxString &strVersion, wxIconBundle &frameIcons)
@@ -290,7 +290,11 @@ void muhkuh_aboutDialog::setAbout(wxHtmlWindow *ptHtmlWin)
 #endif
 
 #ifdef __VISUALC__
-	// The value of this macro corresponds to the compiler version: 1020 for 4.2 (the first supported version), 1100 for 5.0, 1200 for 6.0 and so on 
+	/* The value of this macro corresponds to the compiler version:
+	 * 1020 for 4.2 (the first supported version),
+	 * 1100 for 5.0,
+	 * 1200 for 6.0 and so on
+	 */
 	strCompiler.Printf(wxT("Microsoft Visual C++ v%d.%02d"), __VISUALC__/100 - 6, __VISUALC__%100);
 #endif
 
