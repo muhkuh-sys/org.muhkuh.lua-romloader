@@ -147,10 +147,10 @@ private:
 	void write_config(void);
 
 	bool executeTest_prepare_working_folder(void);
-	void executeTest_extract_mtd(muhkuh_wrap_xml *ptTestData);
-	bool executeTest_generate_start_code(wxString strStartLuaFile);
-	void executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex);
-	void executeTestPart2(void);
+	int depackTest_extract_mtd(muhkuh_wrap_xml *ptTestData);
+	bool depackTest_generate_start_code(wxString strStartLuaFile);
+	void depackTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex);
+	void depackTestPart2(void);
 	bool process_server_output(void);
 	void finishTest(void);
 

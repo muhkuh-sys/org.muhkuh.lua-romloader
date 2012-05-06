@@ -50,27 +50,27 @@ wxThread::ExitCode muhkuh_copy_process::Entry(void)
 	wxFileSystem tFileSystemRemote;
 	wxString strCurrentItem;
 	wxString strFileUrl;
-	wxString strRelativePath;
+	bool fDestroyRequested;
 	bool fResult;
 	size_t sizFileEnd;
 
 
-	/* A fresh start -> clear all todo lists. */
+	/* A fresh start -> clear all TODO lists. */
 	m_astrTodoProcessFolders.Empty();
 	m_astrVisitedFolders.Empty();
 	m_astrTodoCopyFiles.Empty();
 
 	/* Loop over the complete remote directory structure and collect all files and folders. */
 
-	/* Add the base folder of the test to the copy todo list. */
+	/* Add the base folder of the test to the copy TODO list. */
 	m_astrTodoProcessFolders.Add(m_strRemoteBase);
 
-	/* Process all entries in the copy todo list. */
+	/* Process all entries in the copy TODO list. */
 	m_tState = MUHKUH_COPY_PROCESS_STATE_Scanning;
 	fResult = true;
 	while( m_astrTodoProcessFolders.IsEmpty()==false )
 	{
-		/* Get the first entry from the todo list. */
+		/* Get the first entry from the TODO list. */
 		strCurrentItem = m_astrTodoProcessFolders.Item(0);
 		/* Remove it from the list so it will not be processed again. */
 		m_astrTodoProcessFolders.RemoveAt(0,1);
@@ -93,7 +93,8 @@ wxThread::ExitCode muhkuh_copy_process::Entry(void)
 		strFileUrl = tFileSystemRemote.FindFirst("*", wxFILE);
 		while( strFileUrl.IsEmpty()==false )
 		{
-			if( m_thread->TestDestroy()==true )
+			fDestroyRequested = m_thread->TestDestroy();
+			if( fDestroyRequested==true )
 			{
 				fResult = false;
 				break;
@@ -108,11 +109,17 @@ wxThread::ExitCode muhkuh_copy_process::Entry(void)
 			strFileUrl = tFileSystemRemote.FindNext();
 		}
 
-		/* Now add all subfolders to the todo list. */
+		if( fResult!=true )
+		{
+			break;
+		}
+
+		/* Now add all subfolders to the TODO list. */
 		strFileUrl = tFileSystemRemote.FindFirst("*", wxDIR);
 		while( strFileUrl.IsEmpty()==false )
 		{
-			if( m_thread->TestDestroy()==true )
+			fDestroyRequested = m_thread->TestDestroy();
+			if( fDestroyRequested==true )
 			{
 				fResult = false;
 				break;
@@ -137,6 +144,11 @@ wxThread::ExitCode muhkuh_copy_process::Entry(void)
 
 			strFileUrl = tFileSystemRemote.FindNext();
 		}
+
+		if( fResult!=true )
+		{
+			break;
+		}
 	}
 
 	if( fResult==true )
@@ -147,13 +159,14 @@ wxThread::ExitCode muhkuh_copy_process::Entry(void)
 		sizFileEnd = m_astrTodoCopyFiles.GetCount();
 		while( m_sizCurrentFileIdx<sizFileEnd )
 		{
-			if( m_thread->TestDestroy()==true )
+			fDestroyRequested = m_thread->TestDestroy();
+			if( fDestroyRequested==true )
 			{
 				fResult = false;
 				break;
 			}
 
-			/* Get the first entry from the todo list. */
+			/* Get the first entry from the TODO list. */
 			strCurrentItem = m_astrTodoCopyFiles.Item(m_sizCurrentFileIdx);
 			wxLogDebug("Processing file '%s'", strCurrentItem);
 
@@ -164,9 +177,6 @@ wxThread::ExitCode muhkuh_copy_process::Entry(void)
 			++m_sizCurrentFileIdx;
 		}
 	}
-
-	m_tState = MUHKUH_COPY_PROCESS_STATE_Finished;
-	send_progress_information();
 
 	return (wxThread::ExitCode)(fResult ? 0 : 1);
 }

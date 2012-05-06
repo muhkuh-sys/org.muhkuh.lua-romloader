@@ -34,8 +34,7 @@ typedef enum
 {
 	MUHKUH_COPY_PROCESS_STATE_Idle              = 0,
 	MUHKUH_COPY_PROCESS_STATE_Scanning          = 1,
-	MUHKUH_COPY_PROCESS_STATE_Copy              = 2,
-	MUHKUH_COPY_PROCESS_STATE_Finished          = 3
+	MUHKUH_COPY_PROCESS_STATE_Copy              = 2
 } MUHKUH_COPY_PROCESS_STATE_T;
 
 

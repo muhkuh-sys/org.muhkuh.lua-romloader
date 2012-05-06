@@ -1023,7 +1023,7 @@ void muhkuh_mainFrame::OnTestExecute(wxCommandEvent& WXUNUSED(event))
 			if( ptWrapXml!=NULL )
 			{
 				// execute the main test
-				executeTest(ptWrapXml, 0);
+				depackTest(ptWrapXml, 0);
 			}
 		}
 	}
@@ -1032,7 +1032,27 @@ void muhkuh_mainFrame::OnTestExecute(wxCommandEvent& WXUNUSED(event))
 
 void muhkuh_mainFrame::OnTestDepack(wxCommandEvent& WXUNUSED(event))
 {
-	wxLogMessage("Depack test");
+	wxTreeItemId tItemId;
+	const testTreeItemData *ptItemData;
+	muhkuh_wrap_xml *ptWrapXml;
+
+
+	/* Get the selected item from the tree. */
+	tItemId = m_treeCtrl->GetSelection();
+	if ( tItemId.IsOk()==true )
+	{
+		ptItemData = (const testTreeItemData*)m_treeCtrl->GetItemData(tItemId);
+		if( ptItemData!=NULL )
+		{
+			ptWrapXml = ptItemData->getXmlDescription();
+			if( ptWrapXml!=NULL )
+			{
+				// execute the main test
+//				executeTest(ptWrapXml, 0);
+				wxLogMessage("Depack test");
+			}
+		}
+	}
 }
 
 
@@ -1110,7 +1130,6 @@ bool muhkuh_mainFrame::executeTest_prepare_working_folder(void)
 	fResult = true;
 
 	/* Get the working temp folder. */
-	//strTempWorkingFolder = wxT("/home/cthelen/Compile/muhkuh_experimental/build/build/demo_layout/");
 	strTempFolder = wxFileName::GetTempDir();
 
 	/* Check if the temp working folder exists. */
@@ -1167,8 +1186,7 @@ bool muhkuh_mainFrame::executeTest_prepare_working_folder(void)
 				iResult = wxMessageBox(strMsg, _("The working folder already exists"), wxCANCEL|wxOK|wxICON_EXCLAMATION, this);
 				if( iResult==wxOK )
 				{
-					/* Ok, remove the complete folder! */
-					/* FIXME: Rmdir only removes an empty folder in wx2.8 . Either move to 2.9 or write something recursive. */
+					/* OK, remove the complete folder! */
 					fResult = tWorkingDir.Rmdir(wxPATH_RMDIR_RECURSIVE);
 					if( fResult!=true )
 					{
@@ -1192,7 +1210,7 @@ bool muhkuh_mainFrame::executeTest_prepare_working_folder(void)
 				}
 				else
 				{
-					/* Ok, now we have a fresh working folder. */
+					/* OK, now we have a fresh working folder. */
 					m_strWorkingFolder = strTempWorkingFolder;
 				}
 			}
@@ -1203,42 +1221,59 @@ bool muhkuh_mainFrame::executeTest_prepare_working_folder(void)
 }
 
 
-void muhkuh_mainFrame::executeTest_extract_mtd(muhkuh_wrap_xml *ptTestData)
+int muhkuh_mainFrame::depackTest_extract_mtd(muhkuh_wrap_xml *ptTestData)
 {
 	size_t sizRepositoryIdx;
 	size_t sizTestIdx;
 	wxString strBaseUrl;
 	wxThreadError tThreadError;
+	wxThread::ExitCode tExitCode;
+	int iResult;
 
 
-	/* Get the base url of the test. */
+	/* The default exit code. */
+	iResult = -1;
+
+	/* Get the base URL of the test. */
 	sizRepositoryIdx = ptTestData->getRepositoryIndex();
 	sizTestIdx = ptTestData->getTestIndex();
 	strBaseUrl = m_ptConfigData->m_ptRepositoryManager->getTestlistBaseUrl(sizRepositoryIdx, sizTestIdx);
 
 	/* Create the progress dialog. */
-	m_ptCopyProgress = new wxProgressDialog(_("Copy files to a local working folder..."), wxT(" "), 100000, this, wxPD_AUTO_HIDE|wxPD_SMOOTH|wxPD_CAN_ABORT);
+	m_ptCopyProgress = new wxProgressDialog(_("Copy files to a local working folder..."), " ", 100000, this, wxPD_AUTO_HIDE|wxPD_SMOOTH|wxPD_CAN_ABORT);
 
 	/* Start the copy thread. */
 	m_ptCopyProcess = new muhkuh_copy_process(strBaseUrl, m_strWorkingFolder, GetEventHandler());
 	tThreadError = m_ptCopyProcess->CreateThread(wxTHREAD_JOINABLE);
-	if( tThreadError==wxTHREAD_NO_ERROR )
-	{
-		tThreadError = m_ptCopyProcess->GetThread()->Run();
-	}
-
 	if( tThreadError!=wxTHREAD_NO_ERROR )
 	{
 		wxLogError("Failed to create the copy thread!");
-		delete m_ptCopyProcess;
-		m_ptCopyProcess = NULL;
-		m_ptCopyProgress->Destroy();
-		m_ptCopyProgress = NULL;
 	}
+	else
+	{
+		tThreadError = m_ptCopyProcess->GetThread()->Run();
+		if( tThreadError!=wxTHREAD_NO_ERROR )
+		{
+			wxLogError("Failed to start the copy thread!");
+		}
+		else
+		{
+			/* Wait until the copy thread finished. */
+			tExitCode = m_ptCopyProcess->GetThread()->Wait();
+			iResult = (int)tExitCode;
+		}
+	}
+
+	delete m_ptCopyProcess;
+	m_ptCopyProcess = NULL;
+	m_ptCopyProgress->Destroy();
+	m_ptCopyProgress = NULL;
+
+	return iResult;
 }
 
 
-bool muhkuh_mainFrame::executeTest_generate_start_code(wxString strStartLuaFile)
+bool muhkuh_mainFrame::depackTest_generate_start_code(wxString strStartLuaFile)
 {
 	bool fResult;
 	int iResult;
@@ -1261,18 +1296,18 @@ bool muhkuh_mainFrame::executeTest_generate_start_code(wxString strStartLuaFile)
 		strStartupCode = wxString::FromAscii(pcStartupCode);
 		strMsg.Printf(_("Failed to execute the startup code generator: %d: %s : %s"), iResult, strErrorMsg, strStartupCode);
 		wxLogError(strMsg);
-		strMsg.Append(_("The startup code generator can be defined in the lua section of the configuration dialog."));
+		strMsg.Append(_("The startup code generator can be defined in the LUA section of the configuration dialog."));
 		wxMessageBox(strMsg, _("Server startup error"), wxOK|wxICON_ERROR, this);
 	}
 	else
 	{
-		wxLogDebug("Lua startup code: %s", pcStartupCode);
+		wxLogDebug("LUA startup code: %s", pcStartupCode);
 
 		/* Create the filename. */
 		tFileName.AssignDir(m_strWorkingFolder);
 		tFileName.SetFullName(strStartLuaFile);
 
-		/* Create the lua file. */
+		/* Create the LUA file. */
 		fResult = tFile.Create(tFileName.GetFullPath(), true);
 		if( fResult!=true )
 		{
@@ -1300,13 +1335,10 @@ bool muhkuh_mainFrame::executeTest_generate_start_code(wxString strStartLuaFile)
 }
 
 
-void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex)
+void muhkuh_mainFrame::depackTest(muhkuh_wrap_xml *ptTestData, unsigned int uiIndex)
 {
 	bool fResult;
-	wxString strTempWorkingFolder;    /* This is the folder where the mtd is depacked and the startup file is generated. */
-	wxString strOldWorkingDirectory;  /* This is the current working folder before this function changes it. */
-	wxString strStartLuaFile;	  /* This is the complete path to the generated startup file. */
-	wxString strStartCmd;
+	int iResult;
 
 
 	m_strRunningTestName = ptTestData->testDescription_getName();
@@ -1323,12 +1355,16 @@ void muhkuh_mainFrame::executeTest(muhkuh_wrap_xml *ptTestData, unsigned int uiI
 	if( fResult==true )
 	{
 		/* Extract the complete Test description. */
-		executeTest_extract_mtd(ptTestData);
+		iResult = depackTest_extract_mtd(ptTestData);
+		if( iResult==0 )
+		{
+			depackTestPart2();
+		}
 	}
 }
 
 
-void muhkuh_mainFrame::executeTestPart2(void)
+void muhkuh_mainFrame::depackTestPart2(void)
 {
 	bool fResult;
 	wxString strMsg;
@@ -1348,7 +1384,7 @@ void muhkuh_mainFrame::executeTestPart2(void)
 	{
 		/* Create the startup code. */
 		strStartLuaFile = "start_gui.lua";
-		fResult = executeTest_generate_start_code(strStartLuaFile);
+		fResult = depackTest_generate_start_code(strStartLuaFile);
 		if( fResult==true )
 		{
 			wxLogMessage(_("execute test '%s', index %d"), m_strRunningTestName, m_sizRunningTest_SubTestIdx);
@@ -2343,20 +2379,16 @@ void muhkuh_mainFrame::OnCopyProgress(wxThreadEvent &tEvent)
 	wxString strMessage;
 	MUHKUH_COPY_PROCESS_STATE_T tState;
 	bool fKeepRunning;
-	bool fProcessFinished;
-	wxThread::ExitCode tExitCode;
 
 
 	tMsg = tEvent.GetPayload<wxMuhkuhCopyProgressMessage>();
 	if( m_ptCopyProgress!=NULL )
 	{
-		fProcessFinished = false;
-
 		tState = tMsg.GetState();
 		switch( tState )
 		{
 		case MUHKUH_COPY_PROCESS_STATE_Idle:
-			strMessage = _("Initialising copy process...");
+			strMessage = _("Initializing the copy process...");
 			fKeepRunning = m_ptCopyProgress->Pulse(strMessage);
 			break;
 
@@ -2380,34 +2412,14 @@ void muhkuh_mainFrame::OnCopyProgress(wxThreadEvent &tEvent)
 			}
 			fKeepRunning = m_ptCopyProgress->Update(iProgress, strMessage);
 			break;
-
-		case MUHKUH_COPY_PROCESS_STATE_Finished:
-			iProgress = 100000;
-			strMessage.Printf(_("Finished."));
-			m_ptCopyProgress->Update(iProgress, strMessage);
-			fProcessFinished = true;
-			fKeepRunning = false;
-			break;
 		}
 
 		if(fKeepRunning==false)
 		{
 			fprintf(stderr, "Close request\n");
 
-			m_ptCopyProgress->Destroy();
-			m_ptCopyProgress = NULL;
-
-			if( fProcessFinished==false )
-			{
-				fprintf(stderr, "Detele thread\n");
-				m_ptCopyProcess->GetThread()->Delete();
-			}
-			tExitCode = m_ptCopyProcess->GetThread()->Wait();
-			fprintf(stderr, "Thread returned %p\n", tExitCode);
-			if( tExitCode==(wxThread::ExitCode)0 )
-			{
-				executeTestPart2();
-			}
+			fprintf(stderr, "Delete thread\n");
+			m_ptCopyProcess->GetThread()->Delete();
 		}
 	}
 }
@@ -2567,7 +2579,7 @@ void muhkuh_mainFrame::OnMtdLinkClicked(wxHtmlLinkEvent &event)
 							{
 								// execute the main test
 								wxLogMessage(_("executing test!"));
-								executeTest(ptWrapXml, uiCnt);
+								depackTest(ptWrapXml, uiCnt);
 							}
 						}
 					}
