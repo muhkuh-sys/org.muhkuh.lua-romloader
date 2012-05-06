@@ -479,6 +479,7 @@ wxString muhkuh_dirlistbox::GetPaths(char cSeparator)
 						}
 						strPath.Append(tElement.m_strPath + m_astrFixedExtensions.Item(sizExtCnt));
 					}
+					++sizExtCnt;
 				}
 				
 				/* Add the custom extension. */
@@ -496,6 +497,7 @@ wxString muhkuh_dirlistbox::GetPaths(char cSeparator)
 				}
 			}
 		}
+		++sizRowCnt;
 	}
 
 	return strPath;
