@@ -88,6 +88,7 @@ public:
 	void OnIdle(wxIdleEvent &event);
 
 	void OnTestExecute(wxCommandEvent &event);
+	void OnTestDepack(wxCommandEvent &event);
 	void OnTestHelp(wxCommandEvent &event);
 	void OnTestRescan(wxCommandEvent &event);
 	void OnTestCancel(wxCommandEvent &event);
@@ -183,7 +184,7 @@ private:
 	wxHtmlWindow *m_welcomeHtml;
 	wxHtmlWindow *m_testDetailsHtml;
 	wxButton *m_buttonCancelTest;
-	wxMenuBar *m_menuBar;
+	wxMenuBar *m_ptMenuBar;
 
 	// log target for all plugins
 	wxLog *m_pLogTarget;

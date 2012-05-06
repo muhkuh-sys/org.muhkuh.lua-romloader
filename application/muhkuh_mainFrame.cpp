@@ -49,6 +49,7 @@ BEGIN_EVENT_TABLE(muhkuh_mainFrame, wxFrame)
 	EVT_MENU(wxID_HELP,                                             muhkuh_mainFrame::OnHelp)
 
 	EVT_MENU(muhkuh_mainFrame_TestTree_Execute,                     muhkuh_mainFrame::OnTestExecute)
+	EVT_MENU(muhkuh_mainFrame_TestTree_Depack,                      muhkuh_mainFrame::OnTestDepack)
 	EVT_MENU(muhkuh_mainFrame_TestTree_ShowHelp,                    muhkuh_mainFrame::OnTestHelp)
 	EVT_MENU(muhkuh_mainFrame_TestTree_Rescan,                      muhkuh_mainFrame::OnTestRescan)
 	EVT_MENU(muhkuh_mainFrame_menuShowTip,                          muhkuh_mainFrame::OnShowTip)
@@ -293,58 +294,58 @@ muhkuh_mainFrame::~muhkuh_mainFrame(void)
 
 void muhkuh_mainFrame::createMenu(void)
 {
-	wxMenu *file_menu;
-	wxMenu *test_menu;
-	wxMenu *view_menu;
-	wxMenu *help_menu;
+	wxMenu *ptMenuFile;
+	wxMenu *ptMenuTest;
+	wxMenu *ptMenuView;
+	wxMenu *ptMenuHelp;
 	wxMenuItem *ptMenuItem;
 
 
-	file_menu = new wxMenu;
-	ptMenuItem = new wxMenuItem(file_menu, wxID_PREFERENCES, _("Preferences"), _("Open the preferences dialog"));
+	ptMenuFile = new wxMenu;
+	ptMenuItem = new wxMenuItem(ptMenuFile, wxID_PREFERENCES, _("Preferences"), _("Open the preferences dialog"));
 	ptMenuItem->SetBitmap(icon_famfamfam_silk_wrench);
-	file_menu->Append(ptMenuItem);
-	ptMenuItem = new wxMenuItem(file_menu, wxID_EXIT, wxString(_("Quit"))+wxT("\tCtrl+Q"), _("Quit the program"));
+	ptMenuFile->Append(ptMenuItem);
+	ptMenuItem = new wxMenuItem(ptMenuFile, wxID_EXIT, wxString(_("Quit"))+wxT("\tCtrl+Q"), _("Quit the program"));
 	ptMenuItem->SetBitmap(icon_famfamfam_silk_door_out);
-	file_menu->Append(ptMenuItem);
+	ptMenuFile->Append(ptMenuItem);
 
-	test_menu = new wxMenu;
-	ptMenuItem = new wxMenuItem(test_menu, muhkuh_mainFrame_menuTestCancel, _("Cancel"), _("Cancel the running test"));
+	ptMenuTest = new wxMenu;
+	ptMenuItem = new wxMenuItem(ptMenuTest, muhkuh_mainFrame_menuTestCancel, _("Cancel"), _("Cancel the running test"));
 	ptMenuItem->SetBitmap(icon_famfamfam_silk_cancel);
-	test_menu->Append(ptMenuItem);
-	ptMenuItem = new wxMenuItem(test_menu, muhkuh_mainFrame_menuTestRescan, wxString(_("Rescan"))+wxT("\tCtrl-R"), _("Rescan the repository"));
+	ptMenuTest->Append(ptMenuItem);
+	ptMenuItem = new wxMenuItem(ptMenuTest, muhkuh_mainFrame_menuTestRescan, wxString(_("Rescan"))+wxT("\tCtrl-R"), _("Rescan the repository"));
 	ptMenuItem->SetBitmap(icon_famfamfam_silk_database_refresh);
-	test_menu->Append(ptMenuItem);
+	ptMenuTest->Append(ptMenuItem);
 
-	view_menu = new wxMenu;
-	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewRepositoryPane,	_("View Repository Selector"),		_("Toggle the visibility of the repository selector"));
-	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewPanicButton,	_("View Panic Button"),			_("Toggle the visibility of the panic button"));
-	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewTestTree,		_("View Test Tree"),			_("Toggle the visibility of the test tree"));
-	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewMessageLog,		_("View Message Log"),			_("Toggle the visibility of the message log"));
-	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewWelcomePage,	_("View Welcome Page"),			_("Toggle the visibility of the Welcome page"));
-	view_menu->AppendCheckItem(muhkuh_mainFrame_menuViewTestDetails,	_("View Test Details"),			_("Toggle the visibility of the Test Details page"));
-	view_menu->Append(muhkuh_mainFrame_menuRestoreDefaultPerspective,	_("Restore Default Layout"),		_("Restore the default window layout"));
+	ptMenuView = new wxMenu;
+	ptMenuView->AppendCheckItem(muhkuh_mainFrame_menuViewRepositoryPane,	_("View Repository Selector"),		_("Toggle the visibility of the repository selector"));
+	ptMenuView->AppendCheckItem(muhkuh_mainFrame_menuViewPanicButton,	_("View Panic Button"),			_("Toggle the visibility of the panic button"));
+	ptMenuView->AppendCheckItem(muhkuh_mainFrame_menuViewTestTree,		_("View Test Tree"),			_("Toggle the visibility of the test tree"));
+	ptMenuView->AppendCheckItem(muhkuh_mainFrame_menuViewMessageLog,		_("View Message Log"),			_("Toggle the visibility of the message log"));
+	ptMenuView->AppendCheckItem(muhkuh_mainFrame_menuViewWelcomePage,	_("View Welcome Page"),			_("Toggle the visibility of the Welcome page"));
+	ptMenuView->AppendCheckItem(muhkuh_mainFrame_menuViewTestDetails,	_("View Test Details"),			_("Toggle the visibility of the Test Details page"));
+	ptMenuView->Append(muhkuh_mainFrame_menuRestoreDefaultPerspective,	_("Restore Default Layout"),		_("Restore the default window layout"));
 
-	help_menu = new wxMenu;
-	ptMenuItem = new wxMenuItem(help_menu, wxID_HELP, wxString(_("Help"))+wxT("\tCtrl+H"), _("Show the documentation"));
+	ptMenuHelp = new wxMenu;
+	ptMenuItem = new wxMenuItem(ptMenuHelp, wxID_HELP, wxString(_("Help"))+wxT("\tCtrl+H"), _("Show the documentation"));
 	ptMenuItem->SetBitmap(icon_famfamfam_silk_help);
-	help_menu->Append(ptMenuItem);
-	help_menu->AppendSeparator();
-	ptMenuItem = new wxMenuItem(help_menu, wxID_ABOUT, _("About"), _("Show details about Muhkuh"));
+	ptMenuHelp->Append(ptMenuItem);
+	ptMenuHelp->AppendSeparator();
+	ptMenuItem = new wxMenuItem(ptMenuHelp, wxID_ABOUT, _("About"), _("Show details about Muhkuh"));
 	ptMenuItem->SetBitmap(icon_famfamfam_silk_information);
-	help_menu->Append(ptMenuItem);
-	help_menu->AppendSeparator();
-	ptMenuItem = new wxMenuItem(help_menu, muhkuh_mainFrame_menuShowTip, _("Show Tip"), _("Show some tips about Muhkuh"));
+	ptMenuHelp->Append(ptMenuItem);
+	ptMenuHelp->AppendSeparator();
+	ptMenuItem = new wxMenuItem(ptMenuHelp, muhkuh_mainFrame_menuShowTip, _("Show Tip"), _("Show some tips about Muhkuh"));
 	ptMenuItem->SetBitmap(icon_famfamfam_silk_lightbulb);
-	help_menu->Append(ptMenuItem);
+	ptMenuHelp->Append(ptMenuItem);
 
-	m_menuBar = new wxMenuBar;
-	m_menuBar->Append(file_menu, _("&File"));
-	m_menuBar->Append(test_menu, _("&Test"));
-	m_menuBar->Append(view_menu, _("&View"));
-	m_menuBar->Append(help_menu, _("&Help"));
+	m_ptMenuBar = new wxMenuBar;
+	m_ptMenuBar->Append(ptMenuFile, _("&File"));
+	m_ptMenuBar->Append(ptMenuTest, _("&Test"));
+	m_ptMenuBar->Append(ptMenuView, _("&View"));
+	m_ptMenuBar->Append(ptMenuHelp, _("&Help"));
 
-	SetMenuBar(m_menuBar);
+	SetMenuBar(m_ptMenuBar);
 }
 
 
@@ -612,15 +613,15 @@ void muhkuh_mainFrame::read_config(void)
 		m_auiMgr.LoadPerspective(strPerspective,true);
 		// set the "view" buttons according to the new perspective
 		fPaneIsVisible = m_auiMgr.GetPane(m_repositoryCombo).IsShown();
-		m_menuBar->Check(muhkuh_mainFrame_menuViewRepositoryPane, fPaneIsVisible);
+		m_ptMenuBar->Check(muhkuh_mainFrame_menuViewRepositoryPane, fPaneIsVisible);
 		fPaneIsVisible = m_auiMgr.GetPane(m_buttonCancelTest).IsShown();
-		m_menuBar->Check(muhkuh_mainFrame_menuViewPanicButton, fPaneIsVisible);
+		m_ptMenuBar->Check(muhkuh_mainFrame_menuViewPanicButton, fPaneIsVisible);
 		fPaneIsVisible = m_auiMgr.GetPane(m_treeCtrl).IsShown();
-		m_menuBar->Check(muhkuh_mainFrame_menuViewTestTree, fPaneIsVisible);
+		m_ptMenuBar->Check(muhkuh_mainFrame_menuViewTestTree, fPaneIsVisible);
 		fPaneIsVisible = m_auiMgr.GetPane(m_textCtrl).IsShown();
-		m_menuBar->Check(muhkuh_mainFrame_menuViewMessageLog, fPaneIsVisible);
+		m_ptMenuBar->Check(muhkuh_mainFrame_menuViewMessageLog, fPaneIsVisible);
 	}
-	m_menuBar->Check(muhkuh_mainFrame_menuViewWelcomePage, fWelcomePageIsVisible);
+	m_ptMenuBar->Check(muhkuh_mainFrame_menuViewWelcomePage, fWelcomePageIsVisible);
 	if( m_welcomeHtml!=NULL && fWelcomePageIsVisible==false )
 	{
 		// close welcome page
@@ -632,7 +633,7 @@ void muhkuh_mainFrame::read_config(void)
 		// forget the pointer
 		m_welcomeHtml = NULL;
 	}
-	m_menuBar->Check(muhkuh_mainFrame_menuViewTestDetails, fTestDetailsPageIsVisible);
+	m_ptMenuBar->Check(muhkuh_mainFrame_menuViewTestDetails, fTestDetailsPageIsVisible);
 	if( m_testDetailsHtml!=NULL && fTestDetailsPageIsVisible==false )
 	{
 		// close test details page
@@ -740,13 +741,13 @@ void muhkuh_mainFrame::setState(muhkuh_mainFrame_state tNewState)
 	{
 	case muhkuh_mainFrame_state_scanning:
 		m_buttonCancelTest->Enable(false);
-		m_menuBar->Enable(muhkuh_mainFrame_menuTestCancel, false);
-		m_menuBar->Enable(muhkuh_mainFrame_menuViewWelcomePage, false);
-		m_menuBar->Enable(muhkuh_mainFrame_menuViewTestDetails, false);
+		m_ptMenuBar->Enable(muhkuh_mainFrame_menuTestCancel, false);
+		m_ptMenuBar->Enable(muhkuh_mainFrame_menuViewWelcomePage, false);
+		m_ptMenuBar->Enable(muhkuh_mainFrame_menuViewTestDetails, false);
 		m_repositoryCombo->Enable(false);
 		m_treeCtrl->Enable(false);
-		m_menuBar->Enable(wxID_PREFERENCES, false);
-		m_menuBar->Enable(muhkuh_mainFrame_menuTestRescan, false);
+		m_ptMenuBar->Enable(wxID_PREFERENCES, false);
+		m_ptMenuBar->Enable(muhkuh_mainFrame_menuTestRescan, false);
 		if( iWelcomePageIdx!=wxNOT_FOUND )
 		{
 			m_welcomeHtml->Enable(false);
@@ -759,14 +760,14 @@ void muhkuh_mainFrame::setState(muhkuh_mainFrame_state tNewState)
 
 	case muhkuh_mainFrame_state_idle:
 		m_buttonCancelTest->Enable(false);
-		m_menuBar->Enable(muhkuh_mainFrame_menuTestCancel, false);
-		m_menuBar->Enable(muhkuh_mainFrame_menuViewWelcomePage, true);
-		m_menuBar->Enable(muhkuh_mainFrame_menuViewTestDetails, true);
+		m_ptMenuBar->Enable(muhkuh_mainFrame_menuTestCancel, false);
+		m_ptMenuBar->Enable(muhkuh_mainFrame_menuViewWelcomePage, true);
+		m_ptMenuBar->Enable(muhkuh_mainFrame_menuViewTestDetails, true);
 		m_repositoryCombo->Enable(true);
 		m_treeCtrl->Enable(true);
-		m_menuBar->Enable(wxID_PREFERENCES, true);
+		m_ptMenuBar->Enable(wxID_PREFERENCES, true);
 		fRepositorySelected = (m_repositoryCombo->GetSelection() != wxNOT_FOUND);
-		m_menuBar->Enable(muhkuh_mainFrame_menuTestRescan, fRepositorySelected);
+		m_ptMenuBar->Enable(muhkuh_mainFrame_menuTestRescan, fRepositorySelected);
 		if( iWelcomePageIdx!=wxNOT_FOUND )
 		{
 			m_welcomeHtml->Enable(true);
@@ -779,14 +780,14 @@ void muhkuh_mainFrame::setState(muhkuh_mainFrame_state tNewState)
 
 	case muhkuh_mainFrame_state_testing:
 		m_buttonCancelTest->Enable(true);
-		m_menuBar->Enable(muhkuh_mainFrame_menuTestCancel, true);
-		m_menuBar->Enable(muhkuh_mainFrame_menuViewWelcomePage, false);
-		m_menuBar->Enable(muhkuh_mainFrame_menuViewTestDetails, false);
+		m_ptMenuBar->Enable(muhkuh_mainFrame_menuTestCancel, true);
+		m_ptMenuBar->Enable(muhkuh_mainFrame_menuViewWelcomePage, false);
+		m_ptMenuBar->Enable(muhkuh_mainFrame_menuViewTestDetails, false);
 		m_repositoryCombo->Enable(false);
 		m_treeCtrl->Enable(false);
-		m_menuBar->Enable(wxID_PREFERENCES, false);
-		m_menuBar->Enable(muhkuh_mainFrame_menuViewTestDetails, false);
-		m_menuBar->Enable(muhkuh_mainFrame_menuTestRescan, false);
+		m_ptMenuBar->Enable(wxID_PREFERENCES, false);
+		m_ptMenuBar->Enable(muhkuh_mainFrame_menuViewTestDetails, false);
+		m_ptMenuBar->Enable(muhkuh_mainFrame_menuTestRescan, false);
 		if( iWelcomePageIdx!=wxNOT_FOUND )
 		{
 			m_welcomeHtml->Enable(false);
@@ -1026,6 +1027,12 @@ void muhkuh_mainFrame::OnTestExecute(wxCommandEvent& WXUNUSED(event))
 			}
 		}
 	}
+}
+
+
+void muhkuh_mainFrame::OnTestDepack(wxCommandEvent& WXUNUSED(event))
+{
+	wxLogMessage("Depack test");
 }
 
 
@@ -1746,7 +1753,7 @@ void muhkuh_mainFrame::OnRestoreDefaultPerspective(wxCommandEvent &event)
 	if( iPageIdx==wxNOT_FOUND )
 	{
 		createWelcomeWindow();
-		m_menuBar->Check(muhkuh_mainFrame_menuViewWelcomePage, true);
+		m_ptMenuBar->Check(muhkuh_mainFrame_menuViewWelcomePage, true);
 	}
 
 	// create test details notebook
@@ -1761,7 +1768,7 @@ void muhkuh_mainFrame::OnRestoreDefaultPerspective(wxCommandEvent &event)
 	if( iPageIdx==wxNOT_FOUND )
 	{
 		createTestDetailsWindow();
-		m_menuBar->Check(muhkuh_mainFrame_menuViewTestDetails, true);
+		m_ptMenuBar->Check(muhkuh_mainFrame_menuViewTestDetails, true);
 	}
 }
 
@@ -1821,6 +1828,7 @@ void muhkuh_mainFrame::OnTestTreeContextMenu(wxTreeEvent &event)
                 strTitle.Printf(_("Menu for %s"), m_treeCtrl->GetItemText(itemId).c_str());
                 ptMenu = new wxMenu(strTitle);
                 ptMenu->Append(muhkuh_mainFrame_TestTree_Execute,       _("&Execute..."));
+                ptMenu->Append(muhkuh_mainFrame_TestTree_Depack,        _("&Depack..."));
                 ptMenu->Append(muhkuh_mainFrame_TestTree_ShowHelp,      _("&Show Help..."));
 		PopupMenu(ptMenu, pt);
 		delete ptMenu;
@@ -2267,14 +2275,14 @@ void muhkuh_mainFrame::OnNotebookPageClose(wxAuiNotebookEvent &event)
 	// close the welcome page?
 	if( ptWin==m_welcomeHtml )
 	{
-		m_menuBar->Check(muhkuh_mainFrame_menuViewWelcomePage, false);
+		m_ptMenuBar->Check(muhkuh_mainFrame_menuViewWelcomePage, false);
 		// forget the pointer
 		m_welcomeHtml = NULL;
 	}
 	// close the test details page?
 	else if( ptWin==m_testDetailsHtml )
 	{
-		m_menuBar->Check(muhkuh_mainFrame_menuViewTestDetails, false);
+		m_ptMenuBar->Check(muhkuh_mainFrame_menuViewTestDetails, false);
 		// forget the pointer
 		m_testDetailsHtml = NULL;
 	}
@@ -2289,19 +2297,19 @@ void muhkuh_mainFrame::OnPaneClose(wxAuiManagerEvent &event)
 	ptWindow = event.pane->window;
 	if( ptWindow==m_repositoryCombo )
 	{
-		m_menuBar->Check(muhkuh_mainFrame_menuViewRepositoryPane, false);
+		m_ptMenuBar->Check(muhkuh_mainFrame_menuViewRepositoryPane, false);
 	}
 	else if( ptWindow==m_buttonCancelTest )
 	{
-		m_menuBar->Check(muhkuh_mainFrame_menuViewPanicButton, false);
+		m_ptMenuBar->Check(muhkuh_mainFrame_menuViewPanicButton, false);
 	}
 	else if( ptWindow==m_treeCtrl )
 	{
-		m_menuBar->Check(muhkuh_mainFrame_menuViewTestTree, false);
+		m_ptMenuBar->Check(muhkuh_mainFrame_menuViewTestTree, false);
 	}
 	else if( ptWindow==m_textCtrl )
 	{
-		m_menuBar->Check(muhkuh_mainFrame_menuViewMessageLog, false);
+		m_ptMenuBar->Check(muhkuh_mainFrame_menuViewMessageLog, false);
 	}
 }
 

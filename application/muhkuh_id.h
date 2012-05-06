@@ -29,6 +29,7 @@ enum
 {
 	muhkuh_mainFrame_TestTree_Ctrl = wxID_HIGHEST,
 	muhkuh_mainFrame_TestTree_Execute,
+	muhkuh_mainFrame_TestTree_Depack,
 	muhkuh_mainFrame_TestTree_ShowHelp,
 	muhkuh_mainFrame_TestTree_Rescan,
 	muhkuh_mainFrame_RepositoryCombo_id,
