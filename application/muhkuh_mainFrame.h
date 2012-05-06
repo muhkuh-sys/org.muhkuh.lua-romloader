@@ -26,6 +26,7 @@
 #include <wx/aui/aui.h>
 #include <wx/bmpcbox.h>
 #include <wx/dir.h>
+#include <wx/event.h>
 #include <wx/frame.h>
 #include <wx/html/helpctrl.h>
 #include <wx/image.h>
