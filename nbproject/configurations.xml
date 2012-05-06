@@ -1,0 +1,2645 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="80">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <df name="muhkuh_experimental" root=".">
+      <df name="application">
+        <df name="icons">
+          <df name="custom">
+            <in>muhkuh_uninstall_016.xpm</in>
+            <in>muhkuh_uninstall_032.xpm</in>
+            <in>muhkuh_uninstall_064.xpm</in>
+            <in>muhkuh_uninstall_128.xpm</in>
+          </df>
+          <df name="famfamfam_flag_icons">
+          </df>
+          <df name="famfamfam_silk_icons_v013">
+          </df>
+          <df name="lua">
+          </df>
+        </df>
+        <df name="icons">
+          <df name="custom">
+            <in>muhkuh_016.xpm</in>
+            <in>muhkuh_032.xpm</in>
+            <in>muhkuh_064.xpm</in>
+            <in>muhkuh_128.xpm</in>
+          </df>
+          <df name="famfamfam_flag_icons">
+            <in>ad.xpm</in>
+            <in>ae.xpm</in>
+            <in>af.xpm</in>
+            <in>ag.xpm</in>
+            <in>ai.xpm</in>
+            <in>al.xpm</in>
+            <in>am.xpm</in>
+            <in>an.xpm</in>
+            <in>ao.xpm</in>
+            <in>ar.xpm</in>
+            <in>as.xpm</in>
+            <in>at.xpm</in>
+            <in>au.xpm</in>
+            <in>aw.xpm</in>
+            <in>ax.xpm</in>
+            <in>az.xpm</in>
+            <in>ba.xpm</in>
+            <in>bb.xpm</in>
+            <in>bd.xpm</in>
+            <in>be.xpm</in>
+            <in>bf.xpm</in>
+            <in>bg.xpm</in>
+            <in>bh.xpm</in>
+            <in>bi.xpm</in>
+            <in>bj.xpm</in>
+            <in>bm.xpm</in>
+            <in>bn.xpm</in>
+            <in>bo.xpm</in>
+            <in>br.xpm</in>
+            <in>bs.xpm</in>
+            <in>bt.xpm</in>
+            <in>bv.xpm</in>
+            <in>bw.xpm</in>
+            <in>by.xpm</in>
+            <in>bz.xpm</in>
+            <in>ca.xpm</in>
+            <in>cc.xpm</in>
+            <in>cd.xpm</in>
+            <in>cf.xpm</in>
+            <in>cg.xpm</in>
+            <in>ch.xpm</in>
+            <in>ci.xpm</in>
+            <in>ck.xpm</in>
+            <in>cl.xpm</in>
+            <in>cm.xpm</in>
+            <in>cn.xpm</in>
+            <in>co.xpm</in>
+            <in>cr.xpm</in>
+            <in>cs.xpm</in>
+            <in>cu.xpm</in>
+            <in>cv.xpm</in>
+            <in>cx.xpm</in>
+            <in>cy.xpm</in>
+            <in>cz.xpm</in>
+            <in>de.xpm</in>
+            <in>dj.xpm</in>
+            <in>dk.xpm</in>
+            <in>dm.xpm</in>
+            <in>do.xpm</in>
+            <in>dz.xpm</in>
+            <in>ec.xpm</in>
+            <in>ee.xpm</in>
+            <in>eg.xpm</in>
+            <in>eh.xpm</in>
+            <in>er.xpm</in>
+            <in>es.xpm</in>
+            <in>et.xpm</in>
+            <in>fi.xpm</in>
+            <in>fj.xpm</in>
+            <in>fk.xpm</in>
+            <in>fm.xpm</in>
+            <in>fo.xpm</in>
+            <in>fr.xpm</in>
+            <in>ga.xpm</in>
+            <in>gb.xpm</in>
+            <in>gd.xpm</in>
+            <in>ge.xpm</in>
+            <in>gf.xpm</in>
+            <in>gh.xpm</in>
+            <in>gi.xpm</in>
+            <in>gl.xpm</in>
+            <in>gm.xpm</in>
+            <in>gn.xpm</in>
+            <in>gp.xpm</in>
+            <in>gq.xpm</in>
+            <in>gr.xpm</in>
+            <in>gs.xpm</in>
+            <in>gt.xpm</in>
+            <in>gu.xpm</in>
+            <in>gw.xpm</in>
+            <in>gy.xpm</in>
+            <in>hk.xpm</in>
+            <in>hm.xpm</in>
+            <in>hn.xpm</in>
+            <in>hr.xpm</in>
+            <in>ht.xpm</in>
+            <in>hu.xpm</in>
+            <in>id.xpm</in>
+            <in>ie.xpm</in>
+            <in>il.xpm</in>
+            <in>in.xpm</in>
+            <in>io.xpm</in>
+            <in>iq.xpm</in>
+            <in>ir.xpm</in>
+            <in>is.xpm</in>
+            <in>it.xpm</in>
+            <in>jm.xpm</in>
+            <in>jo.xpm</in>
+            <in>jp.xpm</in>
+            <in>ke.xpm</in>
+            <in>kg.xpm</in>
+            <in>kh.xpm</in>
+            <in>ki.xpm</in>
+            <in>km.xpm</in>
+            <in>kn.xpm</in>
+            <in>kp.xpm</in>
+            <in>kr.xpm</in>
+            <in>kw.xpm</in>
+            <in>ky.xpm</in>
+            <in>kz.xpm</in>
+            <in>la.xpm</in>
+            <in>lb.xpm</in>
+            <in>lc.xpm</in>
+            <in>li.xpm</in>
+            <in>lk.xpm</in>
+            <in>lr.xpm</in>
+            <in>ls.xpm</in>
+            <in>lt.xpm</in>
+            <in>lu.xpm</in>
+            <in>lv.xpm</in>
+            <in>ly.xpm</in>
+            <in>ma.xpm</in>
+            <in>mc.xpm</in>
+            <in>md.xpm</in>
+            <in>me.xpm</in>
+            <in>mg.xpm</in>
+            <in>mh.xpm</in>
+            <in>mk.xpm</in>
+            <in>ml.xpm</in>
+            <in>mm.xpm</in>
+            <in>mn.xpm</in>
+            <in>mo.xpm</in>
+            <in>mp.xpm</in>
+            <in>mq.xpm</in>
+            <in>mr.xpm</in>
+            <in>ms.xpm</in>
+            <in>mt.xpm</in>
+            <in>mu.xpm</in>
+            <in>mv.xpm</in>
+            <in>mw.xpm</in>
+            <in>mx.xpm</in>
+            <in>my.xpm</in>
+            <in>mz.xpm</in>
+            <in>na.xpm</in>
+            <in>nc.xpm</in>
+            <in>ne.xpm</in>
+            <in>nf.xpm</in>
+            <in>ng.xpm</in>
+            <in>ni.xpm</in>
+            <in>nl.xpm</in>
+            <in>no.xpm</in>
+            <in>np.xpm</in>
+            <in>nr.xpm</in>
+            <in>nu.xpm</in>
+            <in>nz.xpm</in>
+            <in>om.xpm</in>
+            <in>pa.xpm</in>
+            <in>pe.xpm</in>
+            <in>pf.xpm</in>
+            <in>pg.xpm</in>
+            <in>ph.xpm</in>
+            <in>pk.xpm</in>
+            <in>pl.xpm</in>
+            <in>pm.xpm</in>
+            <in>pn.xpm</in>
+            <in>pr.xpm</in>
+            <in>ps.xpm</in>
+            <in>pt.xpm</in>
+            <in>pw.xpm</in>
+            <in>py.xpm</in>
+            <in>qa.xpm</in>
+            <in>re.xpm</in>
+            <in>ro.xpm</in>
+            <in>rs.xpm</in>
+            <in>ru.xpm</in>
+            <in>rw.xpm</in>
+            <in>sa.xpm</in>
+            <in>sb.xpm</in>
+            <in>sc.xpm</in>
+            <in>sd.xpm</in>
+            <in>se.xpm</in>
+            <in>sg.xpm</in>
+            <in>sh.xpm</in>
+            <in>si.xpm</in>
+            <in>sj.xpm</in>
+            <in>sk.xpm</in>
+            <in>sl.xpm</in>
+            <in>sm.xpm</in>
+            <in>sn.xpm</in>
+            <in>so.xpm</in>
+            <in>sr.xpm</in>
+            <in>st.xpm</in>
+            <in>sv.xpm</in>
+            <in>sy.xpm</in>
+            <in>sz.xpm</in>
+            <in>tc.xpm</in>
+            <in>td.xpm</in>
+            <in>tf.xpm</in>
+            <in>tg.xpm</in>
+            <in>th.xpm</in>
+            <in>tj.xpm</in>
+            <in>tk.xpm</in>
+            <in>tl.xpm</in>
+            <in>tm.xpm</in>
+            <in>tn.xpm</in>
+            <in>to.xpm</in>
+            <in>tr.xpm</in>
+            <in>tt.xpm</in>
+            <in>tv.xpm</in>
+            <in>tw.xpm</in>
+            <in>tz.xpm</in>
+            <in>ua.xpm</in>
+            <in>ug.xpm</in>
+            <in>um.xpm</in>
+            <in>us.xpm</in>
+            <in>uy.xpm</in>
+            <in>uz.xpm</in>
+            <in>va.xpm</in>
+            <in>vc.xpm</in>
+            <in>ve.xpm</in>
+            <in>vg.xpm</in>
+            <in>vi.xpm</in>
+            <in>vn.xpm</in>
+            <in>vu.xpm</in>
+            <in>wf.xpm</in>
+            <in>ws.xpm</in>
+            <in>ye.xpm</in>
+            <in>yt.xpm</in>
+            <in>za.xpm</in>
+            <in>zm.xpm</in>
+            <in>zw.xpm</in>
+          </df>
+          <df name="famfamfam_silk_icons_v013">
+            <in>accept.xpm</in>
+            <in>application_form_edit.xpm</in>
+            <in>arrow_down.xpm</in>
+            <in>arrow_up.xpm</in>
+            <in>cancel.xpm</in>
+            <in>cross.xpm</in>
+            <in>database.xpm</in>
+            <in>database_add.xpm</in>
+            <in>database_delete.xpm</in>
+            <in>database_edit.xpm</in>
+            <in>database_refresh.xpm</in>
+            <in>door_out.xpm</in>
+            <in>exclamation.xpm</in>
+            <in>folder.xpm</in>
+            <in>folder_add.xpm</in>
+            <in>folder_database.xpm</in>
+            <in>folder_delete.xpm</in>
+            <in>folder_edit.xpm</in>
+            <in>folder_table.xpm</in>
+            <in>help.xpm</in>
+            <in>information.xpm</in>
+            <in>key.xpm</in>
+            <in>lightbulb.xpm</in>
+            <in>plugin.xpm</in>
+            <in>plugin_add.xpm</in>
+            <in>plugin_delete.xpm</in>
+            <in>plugin_disabled.xpm</in>
+            <in>plugin_go.xpm</in>
+            <in>script.xpm</in>
+            <in>tag_blue.xpm</in>
+            <in>tick.xpm</in>
+            <in>wrench.xpm</in>
+          </df>
+          <df name="lua">
+            <in>lua.xpm</in>
+          </df>
+        </df>
+        <df name="templates">
+          <in>muhkuh_version.h</in>
+        </df>
+        <in>growbuffer.cpp</in>
+        <in>growbuffer.h</in>
+        <in>license.cpp</in>
+        <in>license.h</in>
+        <in>muhkuh_aboutDialog.cpp</in>
+        <in>muhkuh_aboutDialog.h</in>
+        <in>muhkuh_app.cpp</in>
+        <in>muhkuh_app.h</in>
+        <in>muhkuh_available_languages.cpp</in>
+        <in>muhkuh_available_languages.h</in>
+        <in>muhkuh_brokenPluginDialog.cpp</in>
+        <in>muhkuh_brokenPluginDialog.h</in>
+        <in>muhkuh_configDialog.cpp</in>
+        <in>muhkuh_configDialog.h</in>
+        <in>muhkuh_config_data.cpp</in>
+        <in>muhkuh_config_data.h</in>
+        <in>muhkuh_config_reposEntryDialog.cpp</in>
+        <in>muhkuh_config_reposEntryDialog.h</in>
+        <in>muhkuh_copy_process.cpp</in>
+        <in>muhkuh_copy_process.h</in>
+        <in>muhkuh_dirlistbox.cpp</in>
+        <in>muhkuh_dirlistbox.h</in>
+        <in>muhkuh_flags.cpp</in>
+        <in>muhkuh_flags.h</in>
+        <in>muhkuh_htmltag_lua.cpp</in>
+        <in>muhkuh_icons.cpp</in>
+        <in>muhkuh_icons.h</in>
+        <in>muhkuh_id.h</in>
+        <in>muhkuh_lua.cpp</in>
+        <in>muhkuh_lua.h</in>
+        <in>muhkuh_mainFrame.cpp</in>
+        <in>muhkuh_mainFrame.h</in>
+        <in>muhkuh_plugin.cpp</in>
+        <in>muhkuh_plugin.h</in>
+        <in>muhkuh_plugin_manager.cpp</in>
+        <in>muhkuh_plugin_manager.h</in>
+        <in>muhkuh_repository.cpp</in>
+        <in>muhkuh_repository.h</in>
+        <in>muhkuh_repository_manager.cpp</in>
+        <in>muhkuh_repository_manager.h</in>
+        <in>muhkuh_split_testdescription.cpp</in>
+        <in>muhkuh_split_testdescription.h</in>
+        <in>muhkuh_testTreeItemData.h</in>
+        <in>muhkuh_version.h</in>
+        <in>muhkuh_wrap_xml.cpp</in>
+        <in>muhkuh_wrap_xml.h</in>
+        <in>readFsFile.cpp</in>
+        <in>readFsFile.h</in>
+      </df>
+      <df name="bin">
+        <df name="lua">
+        </df>
+      </df>
+      <df name="build">
+        <df name="application">
+          <df name="CMakeFiles">
+            <df name="muhkuh.dir">
+            </df>
+          </df>
+        </df>
+        <df name="bin">
+        </df>
+        <df name="build">
+          <df name="demo_repos">
+          </df>
+          <df name="lua">
+            <df name="tester">
+              <df name="style">
+              </df>
+            </df>
+          </df>
+          <df name="lua_plugins">
+          </df>
+        </df>
+        <df name="CMakeFiles">
+          <df name="CMakeTmp">
+            <df name="CMakeFiles">
+              <df name="cmTryCompileExec.dir">
+              </df>
+            </df>
+          </df>
+          <df name="CompilerIdC">
+            <in>CMakeCCompilerId.c</in>
+          </df>
+          <df name="CompilerIdCXX">
+            <in>CMakeCXXCompilerId.cpp</in>
+          </df>
+          <df name="swigluarun.dir">
+          </df>
+        </df>
+        <df name="lua">
+          <df name="CMakeFiles">
+          </df>
+          <df name="lib">
+            <df name="CMakeFiles">
+            </df>
+          </df>
+          <df name="scripts">
+            <df name="CMakeFiles">
+            </df>
+          </df>
+        </df>
+        <df name="modules">
+          <df name="bit">
+            <df name="CMakeFiles">
+              <df name="bit.dir">
+              </df>
+            </df>
+            <in>bitLUA_wrap.c</in>
+          </df>
+          <df name="CMakeFiles">
+          </df>
+          <df name="mhash">
+            <df name="bindings">
+              <df name="CMakeFiles">
+              </df>
+              <df name="lua">
+                <df name="CMakeFiles">
+                  <df name="module_mhash_lua.dir">
+                    <df name="__">
+                    </df>
+                  </df>
+                </df>
+              </df>
+              <in>mhashLUA_wrap.cxx</in>
+            </df>
+            <df name="CMakeFiles">
+              <df name="module_mhash_lib.dir">
+                <df name="mhash-0.9.9-hilrom">
+                  <df name="lib">
+                  </df>
+                </df>
+              </df>
+            </df>
+          </df>
+        </df>
+        <df name="plugins">
+          <df name="CMakeFiles">
+            <df name="muhkuh_plugin_interface.dir">
+            </df>
+          </df>
+          <df name="romloader">
+            <df name="CMakeFiles">
+              <df name="plugins_romloader_LIB.dir">
+              </df>
+              <df name="plugins_romloader_LUA.dir">
+              </df>
+            </df>
+            <df name="eth">
+              <df name="CMakeFiles">
+                <df name="plugins_romloader_romloader_eth_LUA.dir">
+                </df>
+                <df name="romloader_eth_lib.dir">
+                </df>
+              </df>
+              <in>romloader_ethLUA_wrap.cxx</in>
+            </df>
+            <df name="usb">
+              <df name="CMakeFiles">
+                <df name="netx_usb_firmware.dir">
+                </df>
+                <df name="plugins_romloader_romloader_usb_LUA.dir">
+                </df>
+                <df name="romloader_usb_lib.dir">
+                  <df name="netx">
+                    <df name="targets">
+                    </df>
+                  </df>
+                </df>
+              </df>
+              <in>romloader_usbLUA_wrap.cxx</in>
+            </df>
+            <in>romloaderLUA_wrap.cxx</in>
+          </df>
+        </df>
+        <df name="swig_runtime">
+          <in>swigluarun.h</in>
+        </df>
+      </df>
+      <df name="docs">
+      </df>
+      <df name="installer">
+        <df name="inno">
+        </df>
+        <df name="rpm">
+        </df>
+      </df>
+      <df name="lua">
+        <df name="lib">
+          <df name="lua-5.1.4">
+            <df name="doc">
+            </df>
+            <df name="etc">
+              <in>all.c</in>
+              <in>lua.hpp</in>
+              <in>min.c</in>
+              <in>noparser.c</in>
+            </df>
+            <df name="src">
+              <in>lapi.c</in>
+              <in>lapi.h</in>
+              <in>lauxlib.c</in>
+              <in>lauxlib.h</in>
+              <in>lbaselib.c</in>
+              <in>lcode.c</in>
+              <in>lcode.h</in>
+              <in>ldblib.c</in>
+              <in>ldebug.c</in>
+              <in>ldebug.h</in>
+              <in>ldo.c</in>
+              <in>ldo.h</in>
+              <in>ldump.c</in>
+              <in>lfunc.c</in>
+              <in>lfunc.h</in>
+              <in>lgc.c</in>
+              <in>lgc.h</in>
+              <in>linit.c</in>
+              <in>liolib.c</in>
+              <in>llex.c</in>
+              <in>llex.h</in>
+              <in>llimits.h</in>
+              <in>lmathlib.c</in>
+              <in>lmem.c</in>
+              <in>lmem.h</in>
+              <in>loadlib.c</in>
+              <in>lobject.c</in>
+              <in>lobject.h</in>
+              <in>lopcodes.c</in>
+              <in>lopcodes.h</in>
+              <in>loslib.c</in>
+              <in>lparser.c</in>
+              <in>lparser.h</in>
+              <in>lstate.c</in>
+              <in>lstate.h</in>
+              <in>lstring.c</in>
+              <in>lstring.h</in>
+              <in>lstrlib.c</in>
+              <in>ltable.c</in>
+              <in>ltable.h</in>
+              <in>ltablib.c</in>
+              <in>ltm.c</in>
+              <in>ltm.h</in>
+              <in>lua.c</in>
+              <in>lua.h</in>
+              <in>luac.c</in>
+              <in>luaconf.h</in>
+              <in>lualib.h</in>
+              <in>lundump.c</in>
+              <in>lundump.h</in>
+              <in>lvm.c</in>
+              <in>lvm.h</in>
+              <in>lzio.c</in>
+              <in>lzio.h</in>
+              <in>print.c</in>
+            </df>
+            <df name="test">
+            </df>
+          </df>
+        </df>
+        <df name="scripts">
+          <df name="tester">
+            <df name="style">
+            </df>
+          </df>
+        </df>
+      </df>
+      <df name="modules">
+        <df name="bit">
+          <in>bit.c</in>
+          <in>bit.h</in>
+          <in>bit.i</in>
+        </df>
+        <df name="mhash">
+          <df name="_test">
+          </df>
+          <df name="bindings">
+            <df name="lua">
+            </df>
+            <df name="python">
+            </df>
+            <in>mhash.i</in>
+          </df>
+          <df name="mhash-0.9.9-hilrom">
+            <df name="CYGWIN-PATCHES">
+            </df>
+            <df name="doc">
+              <in>example.c</in>
+            </df>
+            <df name="include">
+              <df name="mutils">
+                <in>mglobal.h</in>
+                <in>mhash.h</in>
+                <in>mincludes.h</in>
+                <in>mtypes.h</in>
+                <in>mutils.h</in>
+              </df>
+              <in>mhash.h</in>
+            </df>
+            <df name="lib">
+              <in>adler32.c</in>
+              <in>crc16.c</in>
+              <in>crc32.c</in>
+              <in>gosthash.c</in>
+              <in>haval.c</in>
+              <in>hilrom.c</in>
+              <in>keygen.c</in>
+              <in>keygen.h</in>
+              <in>keygen_asis.c</in>
+              <in>keygen_hex.c</in>
+              <in>keygen_mcrypt.c</in>
+              <in>keygen_s2k.c</in>
+              <in>libdefs.h</in>
+              <in>md2.c</in>
+              <in>md4.c</in>
+              <in>md5.c</in>
+              <in>mhash.c</in>
+              <in>mhash_adler32.h</in>
+              <in>mhash_crc16.h</in>
+              <in>mhash_crc32.h</in>
+              <in>mhash_gost.h</in>
+              <in>mhash_haval.h</in>
+              <in>mhash_hilrom.h</in>
+              <in>mhash_int.h</in>
+              <in>mhash_md2.h</in>
+              <in>mhash_md4.h</in>
+              <in>mhash_md5.h</in>
+              <in>mhash_ripemd.h</in>
+              <in>mhash_sha1.h</in>
+              <in>mhash_sha256.h</in>
+              <in>mhash_sha256_sha224.h</in>
+              <in>mhash_sha512_sha384.h</in>
+              <in>mhash_snefru.h</in>
+              <in>mhash_tiger.h</in>
+              <in>mhash_whirlpool.h</in>
+              <in>ripemd.c</in>
+              <in>sha1.c</in>
+              <in>sha256.c</in>
+              <in>sha256_sha224.c</in>
+              <in>sha512_sha384.c</in>
+              <in>snefru.c</in>
+              <in>stdfns.c</in>
+              <in>tiger.c</in>
+              <in>tiger_sboxes.c</in>
+              <in>whirlpool.c</in>
+            </df>
+            <df name="src">
+              <in>driver.c</in>
+              <in>frag_test.c</in>
+              <in>hmac_test.c</in>
+              <in>keygen_test.c</in>
+              <in>mhash_save_restore_test.c</in>
+            </df>
+            <df name="win32">
+              <df name="libmhash">
+              </df>
+              <df name="mhash">
+              </df>
+            </df>
+          </df>
+          <df name="mutils">
+            <in>mhash_config.h</in>
+          </df>
+          <in>mhash_state.cpp</in>
+          <in>mhash_state.h</in>
+        </df>
+        <df name="muhkuh">
+          <df name="testbench">
+          </df>
+          <in>growbuffer.cpp</in>
+          <in>growbuffer.h</in>
+          <in>muhkuh.cpp</in>
+          <in>muhkuh.h</in>
+          <in>muhkuh.i</in>
+          <in>muhkuh_capture_std.cpp</in>
+          <in>muhkuh_capture_std.h</in>
+          <in>readFsFile.cpp</in>
+          <in>readFsFile.h</in>
+        </df>
+        <df name="typemaps">
+          <in>muhkuh_typemaps.i</in>
+        </df>
+      </df>
+      <df name="plugins">
+        <df name="dpm">
+          <df name="netx5">
+            <df name="_luaif">
+              <in>dpm_netx5_lua.cpp</in>
+              <in>dpm_netx5_lua_bind.cpp</in>
+              <in>dpm_netx5_wxlua_bindings.h</in>
+            </df>
+            <in>dpm_netx5_lua.i</in>
+            <in>dpm_netx5_main.cpp</in>
+            <in>dpm_netx5_main.h</in>
+          </df>
+          <in>dpm.cpp</in>
+          <in>dpm.h</in>
+          <in>dpm_lua.i</in>
+          <in>dpm_lua_override.h</in>
+        </df>
+        <df name="romloader">
+          <df name="_demos">
+            <df name="memory_read_gui">
+            </df>
+            <df name="memory_read_simple">
+            </df>
+            <df name="memory_read_tester">
+            </df>
+          </df>
+          <df name="_test">
+            <df name="testcode">
+              <df name="mbs">
+                <df name="deploy">
+                </df>
+                <df name="site_scons">
+                </df>
+                <df name="templates">
+                </df>
+                <df name="urlgrabber">
+                </df>
+              </df>
+              <df name="platform">
+                <df name="netx10">
+                  <in>netx10_io_areas.h</in>
+                  <in>netx10_regdef.h</in>
+                </df>
+                <df name="netx50">
+                  <in>netx50_io_areas.h</in>
+                  <in>netx50_regdef.h</in>
+                </df>
+                <df name="netx500">
+                  <in>netx500_io_areas.h</in>
+                  <in>netx500_regdef.h</in>
+                </df>
+                <df name="netx56">
+                  <in>netx56_io_areas.h</in>
+                  <in>netx56_regdef.h</in>
+                  <in>netx56_regdef.s</in>
+                </df>
+                <in>netx_io_areas.h</in>
+                <in>netx_regdef.s</in>
+              </df>
+              <df name="site_scons">
+              </df>
+              <df name="src">
+                <df name="netx10">
+                </df>
+                <df name="netx50">
+                </df>
+                <df name="netx500">
+                </df>
+                <df name="netx56">
+                </df>
+                <in>header.S</in>
+                <in>init_netx_test.S</in>
+                <in>main.c</in>
+                <in>main.h</in>
+                <in>netx_consoleapp.c</in>
+                <in>netx_consoleapp.h</in>
+                <in>serial_vectors.h</in>
+                <in>systime.c</in>
+                <in>systime.h</in>
+                <in>uprintf.c</in>
+                <in>uprintf.h</in>
+              </df>
+              <df name="targets">
+              </df>
+              <df name="templates">
+              </df>
+            </df>
+          </df>
+          <df name="baka">
+            <df name="_luaif">
+              <in>romloader_baka_wrap.cpp</in>
+              <in>swigluarun.h</in>
+            </df>
+            <in>romloader_baka.i</in>
+            <in>romloader_baka_main.cpp</in>
+            <in>romloader_baka_main.h</in>
+          </df>
+          <df name="eth">
+            <in>machine_interface_commands.h</in>
+            <in>romloader_eth.i</in>
+            <in>romloader_eth_device.cpp</in>
+            <in>romloader_eth_device.h</in>
+            <in>romloader_eth_device_linux.cpp</in>
+            <in>romloader_eth_device_linux.h</in>
+            <in>romloader_eth_device_win.cpp</in>
+            <in>romloader_eth_device_win.h</in>
+            <in>romloader_eth_main.cpp</in>
+            <in>romloader_eth_main.h</in>
+          </df>
+          <df name="machine_interface">
+            <df name="netx">
+              <df name="mbs">
+                <df name="deploy">
+                </df>
+                <df name="site_scons">
+                </df>
+                <df name="templates">
+                </df>
+                <df name="urlgrabber">
+                </df>
+              </df>
+              <df name="src">
+                <in>monitor.c</in>
+                <in>monitor.h</in>
+                <in>monitor_commands.h</in>
+                <in>transport.h</in>
+              </df>
+            </df>
+          </df>
+          <df name="openocd">
+            <df name="_luaif">
+              <in>romloader_openocd_lua.cpp</in>
+              <in>romloader_openocd_lua_bind.cpp</in>
+              <in>romloader_openocd_wxlua_bindings.h</in>
+            </df>
+            <df name="openocd">
+              <df name="helper">
+                <in>binarybuffer.c</in>
+                <in>binarybuffer.h</in>
+                <in>command.c</in>
+                <in>command.h</in>
+                <in>configuration.c</in>
+                <in>configuration.h</in>
+                <in>fileio.c</in>
+                <in>fileio.h</in>
+                <in>interpreter.c</in>
+                <in>interpreter.h</in>
+                <in>log.c</in>
+                <in>log.h</in>
+                <in>replacements.c</in>
+                <in>replacements.h</in>
+                <in>time_support.c</in>
+                <in>time_support.h</in>
+                <in>types.h</in>
+              </df>
+              <df name="jtag">
+                <in>ft2232.c</in>
+                <in>jtag.c</in>
+                <in>jtag.h</in>
+              </df>
+              <df name="target">
+                <in>algorithm.c</in>
+                <in>algorithm.h</in>
+                <in>arm720t.c</in>
+                <in>arm720t.h</in>
+                <in>arm7_9_common.c</in>
+                <in>arm7_9_common.h</in>
+                <in>arm7tdmi.c</in>
+                <in>arm7tdmi.h</in>
+                <in>arm920t.c</in>
+                <in>arm920t.h</in>
+                <in>arm926ejs.c</in>
+                <in>arm926ejs.h</in>
+                <in>arm966e.c</in>
+                <in>arm966e.h</in>
+                <in>arm9tdmi.c</in>
+                <in>arm9tdmi.h</in>
+                <in>arm_disassembler.c</in>
+                <in>arm_disassembler.h</in>
+                <in>arm_jtag.c</in>
+                <in>arm_jtag.h</in>
+                <in>arm_simulator.c</in>
+                <in>arm_simulator.h</in>
+                <in>armv4_5.c</in>
+                <in>armv4_5.h</in>
+                <in>armv4_5_cache.c</in>
+                <in>armv4_5_cache.h</in>
+                <in>armv4_5_mmu.c</in>
+                <in>armv4_5_mmu.h</in>
+                <in>armv7m.c</in>
+                <in>armv7m.h</in>
+                <in>breakpoints.c</in>
+                <in>breakpoints.h</in>
+                <in>cortex_m3.c</in>
+                <in>cortex_m3.h</in>
+                <in>cortex_swjdp.c</in>
+                <in>cortex_swjdp.h</in>
+                <in>embeddedice.c</in>
+                <in>embeddedice.h</in>
+                <in>etb.c</in>
+                <in>etb.h</in>
+                <in>etm.c</in>
+                <in>etm.h</in>
+                <in>etm_dummy.c</in>
+                <in>etm_dummy.h</in>
+                <in>image.c</in>
+                <in>image.h</in>
+                <in>oocd_trace.c</in>
+                <in>oocd_trace.h</in>
+                <in>register.c</in>
+                <in>register.h</in>
+                <in>target.c</in>
+                <in>target.h</in>
+                <in>target_request.c</in>
+                <in>target_request.h</in>
+                <in>trace.c</in>
+                <in>trace.h</in>
+                <in>xscale.c</in>
+                <in>xscale.h</in>
+              </df>
+              <df name="win">
+                <df name="include">
+                  <in>ftd2xx.h</in>
+                </df>
+                <df name="lib">
+                  <df name="msvc">
+                  </df>
+                </df>
+              </df>
+              <df name="xsvf">
+                <in>xsvf.c</in>
+                <in>xsvf.h</in>
+              </df>
+              <in>config.h</in>
+              <in>config_gcc.h</in>
+              <in>config_msvc.h</in>
+            </df>
+            <in>romloader_openocd_lua.i</in>
+            <in>romloader_openocd_main.cpp</in>
+            <in>romloader_openocd_main.h</in>
+          </df>
+          <df name="uart">
+            <df name="netx">
+              <df name="doc">
+              </df>
+              <df name="mbs">
+                <df name="deploy">
+                </df>
+                <df name="site_scons">
+                </df>
+                <df name="templates">
+                </df>
+                <df name="urlgrabber">
+                </df>
+              </df>
+              <df name="site_scons">
+              </df>
+              <df name="src">
+                <df name="netx10">
+                  <in>netx10_io_areas.c</in>
+                  <in>netx10_io_areas.h</in>
+                  <in>netx10_regdef.h</in>
+                  <in>netx10_regdef.s</in>
+                </df>
+                <df name="netx50">
+                  <in>netx50_io_areas.c</in>
+                  <in>netx50_io_areas.h</in>
+                  <in>netx50_regdef.h</in>
+                  <in>netx50_regdef.s</in>
+                </df>
+                <df name="netx500">
+                  <in>netx500_io_areas.c</in>
+                  <in>netx500_io_areas.h</in>
+                  <in>netx500_regdef.h</in>
+                  <in>netx500_regdef.s</in>
+                </df>
+                <in>bootstrap.c</in>
+                <in>bootstrap_init.S</in>
+                <in>bootstrap_serial_vectors.h</in>
+                <in>init_netx_test.S</in>
+                <in>main.c</in>
+                <in>main.h</in>
+                <in>netx_io_areas.S</in>
+                <in>netx_io_areas.h</in>
+                <in>netx_test.c</in>
+                <in>netx_test.h</in>
+                <in>serial_vectors.h</in>
+                <in>systime.c</in>
+                <in>systime.h</in>
+                <in>transport.c</in>
+                <in>uart.c</in>
+                <in>uart.h</in>
+              </df>
+              <df name="targets">
+                <df name="netx10_monitor">
+                </df>
+              </df>
+              <df name="templates">
+                <in>uartmon_netx10_bootstrap_run.h</in>
+                <in>uartmon_netx10_monitor_run.h</in>
+                <in>uartmon_netx500_bootstrap_run.h</in>
+                <in>uartmon_netx500_monitor_run.h</in>
+                <in>uartmon_netx50_bootstrap_run.h</in>
+                <in>uartmon_netx50_monitor_run.h</in>
+              </df>
+              <df name="testbench">
+              </df>
+            </df>
+            <df name="win">
+              <df name="driver">
+              </df>
+            </df>
+            <in>romloader_uart.i</in>
+            <in>romloader_uart_device.cpp</in>
+            <in>romloader_uart_device.h</in>
+            <in>romloader_uart_device_linux.cpp</in>
+            <in>romloader_uart_device_linux.h</in>
+            <in>romloader_uart_device_win.cpp</in>
+            <in>romloader_uart_device_win.h</in>
+            <in>romloader_uart_main.cpp</in>
+            <in>romloader_uart_main.h</in>
+          </df>
+          <df name="usb">
+            <df name="docs">
+            </df>
+            <df name="linux">
+              <df name="udev">
+              </df>
+            </df>
+            <df name="netx">
+              <df name="mbs">
+                <df name="deploy">
+                </df>
+                <df name="site_scons">
+                </df>
+                <df name="templates">
+                </df>
+                <df name="urlgrabber">
+                </df>
+              </df>
+              <df name="site_scons">
+              </df>
+              <df name="src">
+                <df name="netx10">
+                  <in>netx10_io_areas.c</in>
+                  <in>netx10_io_areas.h</in>
+                  <in>netx10_regdef.h</in>
+                </df>
+                <df name="netx500">
+                  <in>netx500_io_areas.c</in>
+                  <in>netx500_io_areas.h</in>
+                  <in>netx500_regdef.h</in>
+                </df>
+                <df name="usb_emsys">
+                  <in>usb.c</in>
+                  <in>usb.h</in>
+                  <in>usb_descriptors.c</in>
+                  <in>usb_descriptors.h</in>
+                  <in>usb_globals.c</in>
+                  <in>usb_globals.h</in>
+                  <in>usb_io.c</in>
+                  <in>usb_io.h</in>
+                  <in>usb_main.c</in>
+                  <in>usb_main.h</in>
+                  <in>usb_requests_common.h</in>
+                  <in>usb_requests_std.h</in>
+                  <in>usb_requests_top.c</in>
+                  <in>usb_requests_top.h</in>
+                </df>
+                <df name="usb_hsoc_v1">
+                  <in>usb.c</in>
+                  <in>usb.h</in>
+                </df>
+                <in>header.S</in>
+                <in>init_netx_test.S</in>
+                <in>main.c</in>
+                <in>main.h</in>
+                <in>netx_io_areas.h</in>
+                <in>netx_test.c</in>
+                <in>netx_test.h</in>
+                <in>options.c</in>
+                <in>options.h</in>
+                <in>serial_vectors.h</in>
+                <in>systime.c</in>
+                <in>systime.h</in>
+                <in>usbmon.c</in>
+                <in>usbmon.h</in>
+                <in>usbmonitor_commands.h</in>
+              </df>
+              <df name="targets">
+                <df name="netx10_intram">
+                  <df name="netx10">
+                  </df>
+                  <df name="usb_hsoc_v1">
+                  </df>
+                </df>
+                <df name="netx500_intram">
+                  <df name="netx500">
+                  </df>
+                  <df name="usb_emsys">
+                  </df>
+                </df>
+                <in>usbmon_netx10_intram.c</in>
+                <in>usbmon_netx10_intram.h</in>
+                <in>usbmon_netx500_intram.c</in>
+                <in>usbmon_netx500_intram.h</in>
+              </df>
+              <df name="templates">
+                <in>version.h</in>
+              </df>
+            </df>
+            <df name="win">
+              <df name="driver">
+                <df name="amd64">
+                </df>
+                <df name="ia64">
+                </df>
+                <df name="license">
+                  <df name="libusb-win32">
+                  </df>
+                </df>
+                <df name="x86">
+                </df>
+              </df>
+              <df name="include">
+                <in>usb.h</in>
+              </df>
+              <df name="lib">
+                <df name="msvc">
+                </df>
+                <df name="msvc_i64">
+                </df>
+                <df name="msvc_x64">
+                </df>
+              </df>
+            </df>
+            <in>romloader_usb.i</in>
+            <in>romloader_usb_device.cpp</in>
+            <in>romloader_usb_device.h</in>
+            <in>romloader_usb_device_libusb.cpp</in>
+            <in>romloader_usb_device_libusb.h</in>
+            <in>romloader_usb_main.cpp</in>
+            <in>romloader_usb_main.h</in>
+          </df>
+          <in>romloader.cpp</in>
+          <in>romloader.h</in>
+          <in>romloader.i</in>
+          <in>uuencoder.cpp</in>
+          <in>uuencoder.h</in>
+        </df>
+        <in>muhkuh_plugin_interface.cpp</in>
+        <in>muhkuh_plugin_interface.h</in>
+      </df>
+      <df name="regkuh">
+        <df name="templates">
+        </df>
+        <in>regkuh.cpp</in>
+        <in>regkuh.h</in>
+      </df>
+    </df>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false"
+                   kind="IMPORTANT_FILES_FOLDER">
+      <itemPath>CMakeLists.txt</itemPath>
+      <itemPath>build/Makefile</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <sourceFolderFilter>^(nbproject)$</sourceFolderFilter>
+  <sourceRootList>
+    <Elem>.</Elem>
+  </sourceRootList>
+  <projectmakefile>build/Makefile</projectmakefile>
+  <confs>
+    <conf name="Default" type="0">
+      <toolsSet>
+        <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
+        <compilerSet>default</compilerSet>
+      </toolsSet>
+      <makefileType>
+        <makeTool>
+          <buildCommandWorkingDir>build</buildCommandWorkingDir>
+          <buildCommand>${MAKE} -f Makefile install</buildCommand>
+          <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
+          <executablePath>build/build/muhkuh</executablePath>
+        </makeTool>
+      </makefileType>
+      <item path="application/icons/custom/muhkuh_uninstall_016.xpm"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="application/icons/custom/muhkuh_uninstall_032.xpm"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="application/icons/custom/muhkuh_uninstall_064.xpm"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="application/icons/custom/muhkuh_uninstall_128.xpm"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="application/templates/muhkuh_version.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="build/CMakeFiles/CompilerIdC/CMakeCCompilerId.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="build/CMakeFiles/CompilerIdCXX/CMakeCXXCompilerId.cpp"
+            ex="true"
+            tool="1"
+            flavor="0">
+      </item>
+      <item path="build/plugins/romloader/romloaderLUA_wrap.cxx"
+            ex="false"
+            tool="1"
+            flavor="0">
+        <ccTool>
+          <incDir>
+            <pElem>plugins/romloader</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>plugins_romloader_LUA_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <folder path="muhkuh_experimental/application">
+        <ccTool>
+          <incDir>
+            <pElem>/usr/local/include/wx-2.9</pElem>
+            <pElem>/usr/include/lua5.1</pElem>
+            <pElem>application</pElem>
+            <pElem>/usr/local/lib/wx/include/gtk2-unicode-static-2.9</pElem>
+            <pElem>build/application</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>USE_LUA=1</Elem>
+            <Elem>_FILE_OFFSET_BITS=64</Elem>
+            <Elem>__WXGTK__</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="muhkuh_experimental/build">
+        <cTool>
+          <incDir>
+            <pElem>/usr/include/lua5.1</pElem>
+            <pElem>modules/bit</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>bit_EXPORTS</Elem>
+          </preprocessorList>
+        </cTool>
+        <ccTool>
+          <incDir>
+            <pElem>/usr/include/lua5.1</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="muhkuh_experimental/build/modules">
+        <ccTool>
+          <incDir>
+            <pElem>modules/mhash/mhash-0.9.9-hilrom/lib</pElem>
+            <pElem>modules/mhash</pElem>
+            <pElem>modules/mhash/mhash-0.9.9-hilrom/include</pElem>
+            <pElem>build/modules/mhash/bindings/lua</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>module_mhash_lua_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="muhkuh_experimental/build/plugins">
+        <ccTool>
+          <incDir>
+            <pElem>build/swig_runtime</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="muhkuh_experimental/build/plugins/romloader/eth">
+        <ccTool>
+          <incDir>
+            <pElem>plugins/romloader/eth</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>plugins_romloader_romloader_eth_LUA_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="muhkuh_experimental/build/plugins/romloader/usb">
+        <ccTool>
+          <incDir>
+            <pElem>plugins/romloader/usb</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>ROMLOADER_USB_LIBUSB_VERSION=0</Elem>
+            <Elem>plugins_romloader_romloader_usb_LUA_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <folder path="muhkuh_experimental/modules">
+        <ccTool>
+          <incDir>
+            <pElem>modules/mhash/mhash-0.9.9-hilrom/lib</pElem>
+            <pElem>build/modules/mhash</pElem>
+            <pElem>modules/mhash</pElem>
+            <pElem>modules/mhash/mhash-0.9.9-hilrom/include</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="muhkuh_experimental/modules/bit">
+        <cTool>
+          <incDir>
+            <pElem>/usr/include/lua5.1</pElem>
+            <pElem>modules/bit</pElem>
+            <pElem>build/modules/bit</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>bit_EXPORTS</Elem>
+          </preprocessorList>
+        </cTool>
+      </folder>
+      <folder path="muhkuh_experimental/modules/mhash">
+        <cTool>
+          <incDir>
+            <pElem>modules/mhash/mhash-0.9.9-hilrom/lib</pElem>
+            <pElem>build/modules/mhash</pElem>
+            <pElem>modules/mhash</pElem>
+            <pElem>modules/mhash/mhash-0.9.9-hilrom/include</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="muhkuh_experimental/plugins">
+        <cTool>
+          <incDir>
+            <pElem>/usr/include/lua5.1</pElem>
+            <pElem>plugins/romloader/usb</pElem>
+            <pElem>build/swig_runtime</pElem>
+            <pElem>build/plugins/romloader/usb</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>ROMLOADER_USB_LIBUSB_VERSION=0</Elem>
+          </preprocessorList>
+        </cTool>
+        <ccTool>
+          <incDir>
+            <pElem>/usr/include/lua5.1</pElem>
+            <pElem>build/swig_runtime</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="muhkuh_experimental/plugins/romloader/eth">
+        <ccTool>
+          <incDir>
+            <pElem>build/plugins/romloader/eth</pElem>
+            <pElem>plugins/romloader/eth</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="muhkuh_experimental/plugins/romloader/usb">
+        <ccTool>
+          <incDir>
+            <pElem>plugins/romloader/usb</pElem>
+            <pElem>build/plugins/romloader/usb</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>ROMLOADER_USB_LIBUSB_VERSION=0</Elem>
+          </preprocessorList>
+        </ccTool>
+      </folder>
+      <item path="lua/lib/lua-5.1.4/etc/all.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/etc/lua.hpp" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/etc/min.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/etc/noparser.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lapi.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lapi.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lauxlib.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lauxlib.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lbaselib.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lcode.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lcode.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/ldblib.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/ldebug.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/ldebug.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/ldo.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/ldo.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/ldump.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lfunc.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lfunc.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lgc.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lgc.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/linit.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/liolib.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/llex.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/llex.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/llimits.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lmathlib.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lmem.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lmem.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/loadlib.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lobject.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lobject.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lopcodes.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lopcodes.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/loslib.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lparser.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lparser.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lstate.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lstate.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lstring.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lstring.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lstrlib.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/ltable.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/ltable.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/ltablib.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/ltm.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/ltm.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lua.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lua.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/luac.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/luaconf.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lualib.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lundump.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lundump.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lvm.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lvm.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lzio.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/lzio.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="lua/lib/lua-5.1.4/src/print.c" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="modules/bit/bit.i" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="modules/mhash/bindings/mhash.i" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="modules/mhash/mhash-0.9.9-hilrom/doc/example.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="modules/mhash/mhash-0.9.9-hilrom/lib/mhash_sha256.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="modules/mhash/mhash-0.9.9-hilrom/src/driver.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="modules/mhash/mhash-0.9.9-hilrom/src/frag_test.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="modules/mhash/mhash-0.9.9-hilrom/src/hmac_test.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="modules/mhash/mhash-0.9.9-hilrom/src/keygen_test.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="modules/mhash/mhash-0.9.9-hilrom/src/mhash_save_restore_test.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="modules/muhkuh/growbuffer.cpp" ex="true" tool="1" flavor="0">
+      </item>
+      <item path="modules/muhkuh/growbuffer.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="modules/muhkuh/muhkuh.cpp" ex="true" tool="1" flavor="0">
+      </item>
+      <item path="modules/muhkuh/muhkuh.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="modules/muhkuh/muhkuh.i" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="modules/muhkuh/muhkuh_capture_std.cpp"
+            ex="true"
+            tool="1"
+            flavor="0">
+      </item>
+      <item path="modules/muhkuh/muhkuh_capture_std.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="modules/muhkuh/readFsFile.cpp" ex="true" tool="1" flavor="0">
+      </item>
+      <item path="modules/muhkuh/readFsFile.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="modules/typemaps/muhkuh_typemaps.i" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="plugins/dpm/dpm.cpp" ex="true" tool="1" flavor="0">
+      </item>
+      <item path="plugins/dpm/dpm.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="plugins/dpm/dpm_lua.i" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="plugins/dpm/dpm_lua_override.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="plugins/dpm/netx5/_luaif/dpm_netx5_lua.cpp"
+            ex="true"
+            tool="1"
+            flavor="0">
+      </item>
+      <item path="plugins/dpm/netx5/_luaif/dpm_netx5_lua_bind.cpp"
+            ex="true"
+            tool="1"
+            flavor="0">
+      </item>
+      <item path="plugins/dpm/netx5/_luaif/dpm_netx5_wxlua_bindings.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/dpm/netx5/dpm_netx5_lua.i" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="plugins/dpm/netx5/dpm_netx5_main.cpp" ex="true" tool="1" flavor="0">
+      </item>
+      <item path="plugins/dpm/netx5/dpm_netx5_main.h" ex="true" tool="3" flavor="0">
+      </item>
+      <item path="plugins/muhkuh_plugin_interface.cpp" ex="false" tool="1" flavor="0">
+        <ccTool>
+          <incDir>
+            <pElem>plugins</pElem>
+            <pElem>build/plugins</pElem>
+          </incDir>
+          <preprocessorList>
+            <Elem>muhkuh_plugin_interface_EXPORTS</Elem>
+          </preprocessorList>
+        </ccTool>
+      </item>
+      <item path="plugins/romloader/_test/testcode/platform/netx10/netx10_io_areas.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/platform/netx10/netx10_regdef.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/platform/netx50/netx50_io_areas.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/platform/netx50/netx50_regdef.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/platform/netx500/netx500_io_areas.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/platform/netx500/netx500_regdef.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/platform/netx56/netx56_io_areas.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/platform/netx56/netx56_regdef.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/platform/netx56/netx56_regdef.s"
+            ex="true"
+            tool="4"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/platform/netx_io_areas.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/platform/netx_regdef.s"
+            ex="true"
+            tool="4"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/src/header.S"
+            ex="true"
+            tool="4"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/src/init_netx_test.S"
+            ex="true"
+            tool="4"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/src/main.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/src/main.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/src/netx_consoleapp.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/src/netx_consoleapp.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/src/serial_vectors.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/src/systime.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/src/systime.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/src/uprintf.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/_test/testcode/src/uprintf.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/baka/_luaif/romloader_baka_wrap.cpp"
+            ex="true"
+            tool="1"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/baka/_luaif/swigluarun.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/baka/romloader_baka.i"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/baka/romloader_baka_main.cpp"
+            ex="true"
+            tool="1"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/baka/romloader_baka_main.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/eth/romloader_eth.i"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/eth/romloader_eth_device_win.cpp"
+            ex="true"
+            tool="1"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/eth/romloader_eth_device_win.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/machine_interface/netx/src/monitor.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/machine_interface/netx/src/monitor.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/machine_interface/netx/src/monitor_commands.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/machine_interface/netx/src/transport.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/_luaif/romloader_openocd_lua.cpp"
+            ex="true"
+            tool="1"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/_luaif/romloader_openocd_lua_bind.cpp"
+            ex="true"
+            tool="1"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/_luaif/romloader_openocd_wxlua_bindings.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/config.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/config_gcc.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/config_msvc.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/binarybuffer.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/binarybuffer.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/command.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/command.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/configuration.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/configuration.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/fileio.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/fileio.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/interpreter.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/interpreter.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/log.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/log.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/replacements.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/replacements.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/time_support.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/time_support.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/helper/types.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/jtag/ft2232.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/jtag/jtag.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/jtag/jtag.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/algorithm.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/algorithm.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm720t.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm720t.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm7_9_common.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm7_9_common.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm7tdmi.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm7tdmi.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm920t.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm920t.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm926ejs.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm926ejs.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm966e.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm966e.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm9tdmi.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm9tdmi.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm_disassembler.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm_disassembler.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm_jtag.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm_jtag.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm_simulator.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/arm_simulator.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/armv4_5.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/armv4_5.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/armv4_5_cache.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/armv4_5_cache.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/armv4_5_mmu.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/armv4_5_mmu.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/armv7m.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/armv7m.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/breakpoints.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/breakpoints.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/cortex_m3.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/cortex_m3.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/cortex_swjdp.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/cortex_swjdp.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/embeddedice.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/embeddedice.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/etb.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/etb.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/etm.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/etm.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/etm_dummy.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/etm_dummy.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/image.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/image.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/oocd_trace.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/oocd_trace.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/register.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/register.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/target.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/target.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/target_request.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/target_request.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/trace.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/trace.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/xscale.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/target/xscale.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/win/include/ftd2xx.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/xsvf/xsvf.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/openocd/xsvf/xsvf.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/romloader_openocd_lua.i"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/romloader_openocd_main.cpp"
+            ex="true"
+            tool="1"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/openocd/romloader_openocd_main.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/romloader.cpp" ex="false" tool="1" flavor="0">
+        <ccTool>
+          <incDir>
+            <pElem>build/plugins/romloader</pElem>
+            <pElem>plugins/romloader</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="plugins/romloader/romloader.i" ex="true" tool="0" flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/bootstrap.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/bootstrap_init.S"
+            ex="true"
+            tool="4"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/bootstrap_serial_vectors.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/init_netx_test.S"
+            ex="true"
+            tool="4"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/main.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/main.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/netx10/netx10_io_areas.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/netx10/netx10_io_areas.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/netx10/netx10_regdef.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/netx10/netx10_regdef.s"
+            ex="true"
+            tool="4"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/netx50/netx50_io_areas.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/netx50/netx50_io_areas.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/netx50/netx50_regdef.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/netx50/netx50_regdef.s"
+            ex="true"
+            tool="4"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/netx500/netx500_io_areas.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/netx500/netx500_io_areas.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/netx500/netx500_regdef.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/netx500/netx500_regdef.s"
+            ex="true"
+            tool="4"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/netx_io_areas.S"
+            ex="true"
+            tool="4"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/netx_io_areas.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/netx_test.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/netx_test.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/serial_vectors.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/systime.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/systime.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/transport.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/uart.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/src/uart.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/templates/uartmon_netx10_bootstrap_run.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/templates/uartmon_netx10_monitor_run.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/templates/uartmon_netx500_bootstrap_run.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/templates/uartmon_netx500_monitor_run.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/templates/uartmon_netx50_bootstrap_run.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/netx/templates/uartmon_netx50_monitor_run.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/romloader_uart.i"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/romloader_uart_device.cpp"
+            ex="true"
+            tool="1"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/romloader_uart_device.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/romloader_uart_device_linux.cpp"
+            ex="true"
+            tool="1"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/romloader_uart_device_linux.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/romloader_uart_device_win.cpp"
+            ex="true"
+            tool="1"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/romloader_uart_device_win.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/romloader_uart_main.cpp"
+            ex="true"
+            tool="1"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uart/romloader_uart_main.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/header.S"
+            ex="true"
+            tool="4"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/init_netx_test.S"
+            ex="true"
+            tool="4"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/main.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/main.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/netx10/netx10_io_areas.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/netx10/netx10_io_areas.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/netx10/netx10_regdef.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/netx500/netx500_io_areas.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/netx500/netx500_io_areas.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/netx500/netx500_regdef.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/netx_io_areas.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/netx_test.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/netx_test.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/options.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/options.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/serial_vectors.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/systime.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/systime.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usb_emsys/usb.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usb_emsys/usb.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usb_emsys/usb_descriptors.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usb_emsys/usb_descriptors.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usb_emsys/usb_globals.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usb_emsys/usb_globals.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usb_emsys/usb_io.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usb_emsys/usb_io.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usb_emsys/usb_main.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usb_emsys/usb_main.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usb_emsys/usb_requests_common.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usb_emsys/usb_requests_std.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usb_emsys/usb_requests_top.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usb_emsys/usb_requests_top.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usb_hsoc_v1/usb.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usb_hsoc_v1/usb.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usbmon.c"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/src/usbmon.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/netx/templates/version.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/romloader_usb.i"
+            ex="true"
+            tool="0"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/usb/win/include/usb.h"
+            ex="true"
+            tool="3"
+            flavor="0">
+      </item>
+      <item path="plugins/romloader/uuencoder.cpp" ex="false" tool="1" flavor="0">
+        <ccTool>
+          <incDir>
+            <pElem>build/plugins/romloader</pElem>
+            <pElem>plugins/romloader</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="regkuh/regkuh.cpp" ex="true" tool="1" flavor="0">
+      </item>
+      <item path="regkuh/regkuh.h" ex="true" tool="3" flavor="0">
+      </item>
+    </conf>
+  </confs>
+</configurationDescriptor>
