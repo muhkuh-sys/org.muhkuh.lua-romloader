@@ -28,146 +28,101 @@
 SConscript('mbs/SConscript')
 Import('env_default')
 
+SConscript('platform/SConscript')
+Import('platform_lib_netx500', 'platform_lib_netx56', 'platform_lib_netx50', 'platform_lib_netx10')
+
 #----------------------------------------------------------------------------
 # This is the list of sources. The elements must be separated with whitespace
 # (i.e. spaces, tabs, newlines). The amount of whitespace does not matter.
-sources_common = """
+sources_monitor = """
 	src/init_netx_test.S
 	src/main.c
-	src/monitor.c
-	src/systime.c
 	src/transport.c
-	src/uart.c
 """
 
 
-sources_custom_netx500 = """
-	src/netx500/netx500_io_areas.c
-"""
-
-
-sources_custom_netx50 = """
-	src/netx50/netx50_io_areas.c
-"""
-
-
-sources_custom_netx10 = """
-	src/netx10/netx10_io_areas.c
-"""
-
-src_netx500 = Split(sources_common+sources_custom_netx500)
-src_netx50  = Split(sources_common+sources_custom_netx50)
-src_netx10  = Split(sources_common+sources_custom_netx10)
-
-
-sources_bootstrap_common = """
+sources_bootstrap = """
 	src/bootstrap_init.S
 	src/bootstrap.c
 """
 
-sources_bootstrap_custom_netx500 = """
-	src/netx500/netx500_io_areas.c
-"""
-
-sources_bootstrap_custom_netx50 = """
-	src/netx50/netx50_io_areas.c
-"""
-
-sources_bootstrap_custom_netx10 = """
-	src/netx10/netx10_io_areas.c
-"""
-
-src_bootstrap_netx500 = Split(sources_bootstrap_common)
-src_bootstrap_netx50  = Split(sources_bootstrap_common)
-src_bootstrap_netx10  = Split(sources_bootstrap_common)
 
 #----------------------------------------------------------------------------
 #
 # Create the compiler environments.
 #
 
-env_default.Append(CPPPATH = ['src'])
-
-env_netx500_monitor_default = env_default.CreateCompilerEnv('500', ['cpu=arm926ej-s'])
-env_netx500_monitor_default.Append(CPPPATH = ['src/netx500'])
-
-env_netx50_monitor_default = env_default.CreateCompilerEnv('50', ['cpu=arm966e-s'])
-env_netx50_monitor_default.Append(CPPPATH = ['src/netx50'])
-
-env_netx10_monitor_default = env_default.CreateCompilerEnv('10', ['cpu=arm966e-s'])
-env_netx10_monitor_default.Append(CPPPATH = ['src/netx10'])
-
-
-env_netx500_bootstrap_default = env_default.CreateCompilerEnv('500', ['cpu=arm926ej-s', 'thumb'])
-env_netx50_bootstrap_default = env_default.CreateCompilerEnv('50', ['cpu=arm966e-s', 'thumb'])
-env_netx10_bootstrap_default = env_default.CreateCompilerEnv('10', ['cpu=arm966e-s', 'thumb'])
-
+env_default.Append(CPPPATH = ['src', '../../machine_interface/netx/src', 'platform/src', 'platform/src/lib'])
+#env_default.Append(LIBPATH = ['../../machine_interface/netx/targets'])
+libmi_netx500 = [File('../../machine_interface/netx/targets/libmi_netx500.a')]
+libmi_netx50  = [File('../../machine_interface/netx/targets/libmi_netx50.a')]
+libmi_netx10  = [File('../../machine_interface/netx/targets/libmi_netx10.a')]
 
 #----------------------------------------------------------------------------
 #
 # Build the netX500 files.
 #
-env_netx500_monitor = env_netx500_monitor_default.Clone()
+env_netx500_monitor = env_default.CreateCompilerEnv('500', ['arch=armv5te'])
 env_netx500_monitor.Replace(LDFILE = 'src/netx500/netx500.ld')
 env_netx500_monitor.Append(CPPPATH = ['src/netx500'])
-src_netx500_monitor = env_netx500_monitor.SetBuildPath('targets/netx500_monitor', 'src', src_netx500)
-elf_netx500_monitor = env_netx500_monitor.Elf('targets/uartmon_netx500_monitor.elf', src_netx500_monitor)
+src_netx500_monitor = env_netx500_monitor.SetBuildPath('targets/netx500_monitor', 'src', sources_monitor)
+elf_netx500_monitor = env_netx500_monitor.Elf('targets/uartmon_netx500_monitor.elf', src_netx500_monitor + platform_lib_netx500 + libmi_netx500)
 bin_netx500_monitor = env_netx500_monitor.ObjCopy('targets/uartmon_netx500_monitor.bin', elf_netx500_monitor)
 arr_netx500_monitor = env_netx500_monitor.DataArray('targets/uartmon_netx500_monitor.c', bin_netx500_monitor, DATAARRAY_NAME='auc_uartmon_netx500_monitor')
-env_netx500_monitor.GccSymbolTemplate('targets/uartmon_netx500_monitor_run.h', elf_netx500_monitor, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_netx500_monitor_run.h')
+sym_netx500_monitor = env_netx500_monitor.GccSymbolTemplate('targets/uartmon_netx500_monitor_run.h', elf_netx500_monitor, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_netx500_monitor_run.h')
 
-env_netx500_bootstrap = env_netx500_bootstrap_default.Clone()
+env_netx500_bootstrap = env_default.CreateCompilerEnv('500', ['arch=armv5te', 'thumb'])
 env_netx500_bootstrap.Replace(LDFILE = 'src/netx500/netx500_bootstrap.ld')
 env_netx500_bootstrap.Append(CPPPATH = ['targets'])
-src_netx500_bootstrap = env_netx500_bootstrap.SetBuildPath('targets/netx500_bootstrap', 'src', src_bootstrap_netx500)
+src_netx500_bootstrap = env_netx500_bootstrap.SetBuildPath('targets/netx500_bootstrap', 'src', sources_bootstrap)
 elf_netx500_bootstrap = env_netx500_bootstrap.Elf('targets/uartmon_netx500_bootstrap.elf', src_netx500_bootstrap)
 bin_netx500_bootstrap = env_netx500_bootstrap.ObjCopy('targets/uartmon_netx500_bootstrap.bin', elf_netx500_bootstrap)
 arr_netx500_bootstrap = env_netx500_bootstrap.DataArray('targets/uartmon_netx500_bootstrap.c', bin_netx500_bootstrap, DATAARRAY_NAME='auc_uartmon_netx500_bootstrap')
-env_netx500_bootstrap.GccSymbolTemplate('targets/uartmon_netx500_bootstrap_run.h', elf_netx500_bootstrap, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_netx500_bootstrap_run.h')
+sym_netx500_bootstrap = env_netx500_bootstrap.GccSymbolTemplate('targets/uartmon_netx500_bootstrap_run.h', elf_netx500_bootstrap, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_netx500_bootstrap_run.h')
 
 #----------------------------------------------------------------------------
 #
 # Build the netX50 files.
 #
-env_netx50_monitor = env_netx50_monitor_default.Clone()
+env_netx50_monitor = env_default.CreateCompilerEnv('50', ['arch=armv5te'])
 env_netx50_monitor.Replace(LDFILE = 'src/netx50/netx50.ld')
 env_netx50_monitor.Append(CPPPATH = ['src/netx50'])
-src_netx50_monitor = env_netx50_monitor.SetBuildPath('targets/netx50_monitor', 'src', src_netx50)
-elf_netx50_monitor = env_netx50_monitor.Elf('targets/uartmon_netx50_monitor.elf', src_netx50_monitor)
+src_netx50_monitor = env_netx50_monitor.SetBuildPath('targets/netx50_monitor', 'src', sources_monitor)
+elf_netx50_monitor = env_netx50_monitor.Elf('targets/uartmon_netx50_monitor.elf', src_netx50_monitor + platform_lib_netx50 + libmi_netx50)
 bin_netx50_monitor = env_netx50_monitor.ObjCopy('targets/uartmon_netx50_monitor.bin', elf_netx50_monitor)
 arr_netx50_monitor = env_netx50_monitor.DataArray('targets/uartmon_netx50_monitor.c', bin_netx50_monitor, DATAARRAY_NAME='auc_uartmon_netx50_monitor')
-env_netx50_monitor.GccSymbolTemplate('targets/uartmon_netx50_monitor_run.h', elf_netx50_monitor, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_netx50_monitor_run.h')
+sym_netx50_monitor = env_netx50_monitor.GccSymbolTemplate('targets/uartmon_netx50_monitor_run.h', elf_netx50_monitor, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_netx50_monitor_run.h')
 
-env_netx50_bootstrap = env_netx50_bootstrap_default.Clone()
+env_netx50_bootstrap = env_default.CreateCompilerEnv('50', ['arch=armv5te', 'thumb'])
 env_netx50_bootstrap.Replace(LDFILE = 'src/netx50/netx50_bootstrap.ld')
 env_netx50_bootstrap.Append(CPPPATH = ['targets'])
-src_netx50_bootstrap = env_netx50_bootstrap.SetBuildPath('targets/netx50_bootstrap', 'src', src_bootstrap_netx50)
+src_netx50_bootstrap = env_netx50_bootstrap.SetBuildPath('targets/netx50_bootstrap', 'src', sources_bootstrap)
 elf_netx50_bootstrap = env_netx50_bootstrap.Elf('targets/uartmon_netx50_bootstrap.elf', src_netx50_bootstrap)
 bin_netx50_bootstrap = env_netx50_bootstrap.ObjCopy('targets/uartmon_netx50_bootstrap.bin', elf_netx50_bootstrap)
 arr_netx50_bootstrap = env_netx50_bootstrap.DataArray('targets/uartmon_netx50_bootstrap.c', bin_netx50_bootstrap, DATAARRAY_NAME='auc_uartmon_netx50_bootstrap')
-env_netx50_bootstrap.GccSymbolTemplate('targets/uartmon_netx50_bootstrap_run.h', elf_netx50_bootstrap, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_netx50_bootstrap_run.h')
+sym_netx50_bootstrap = env_netx50_bootstrap.GccSymbolTemplate('targets/uartmon_netx50_bootstrap_run.h', elf_netx50_bootstrap, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_netx50_bootstrap_run.h')
 
 #----------------------------------------------------------------------------
 #
 # Build the netX10 files.
 #
-env_netx10_monitor = env_netx10_monitor_default.Clone()
+env_netx10_monitor = env_default.CreateCompilerEnv('10', ['arch=armv5te'])
 env_netx10_monitor.Replace(LDFILE = 'src/netx10/netx10.ld')
 env_netx10_monitor.Append(CPPPATH = ['src/netx10'])
-src_netx10_monitor = env_netx10_monitor.SetBuildPath('targets/netx10_monitor', 'src', src_netx10)
-elf_netx10_monitor = env_netx10_monitor.Elf('targets/uartmon_netx10_monitor.elf', src_netx10_monitor)
+src_netx10_monitor = env_netx10_monitor.SetBuildPath('targets/netx10_monitor', 'src', sources_monitor)
+elf_netx10_monitor = env_netx10_monitor.Elf('targets/uartmon_netx10_monitor.elf', src_netx10_monitor + platform_lib_netx10 + libmi_netx10)
 bin_netx10_monitor = env_netx10_monitor.ObjCopy('targets/uartmon_netx10_monitor.bin', elf_netx10_monitor)
 arr_netx10_monitor = env_netx10_monitor.DataArray('targets/uartmon_netx10_monitor.c', bin_netx10_monitor, DATAARRAY_NAME='auc_uartmon_netx10_monitor')
-env_netx10_monitor.GccSymbolTemplate('targets/uartmon_netx10_monitor_run.h', elf_netx10_monitor, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_netx10_monitor_run.h')
+sym_netx10_monitor = env_netx10_monitor.GccSymbolTemplate('targets/uartmon_netx10_monitor_run.h', elf_netx10_monitor, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_netx10_monitor_run.h')
 
-env_netx10_bootstrap = env_netx10_bootstrap_default.Clone()
+env_netx10_bootstrap = env_default.CreateCompilerEnv('10', ['arch=armv5te', 'thumb'])
 env_netx10_bootstrap.Replace(LDFILE = 'src/netx10/netx10_bootstrap.ld')
 env_netx10_bootstrap.Append(CPPPATH = ['targets'])
-src_netx10_bootstrap = env_netx10_bootstrap.SetBuildPath('targets/netx10_bootstrap', 'src', src_bootstrap_netx10)
+src_netx10_bootstrap = env_netx10_bootstrap.SetBuildPath('targets/netx10_bootstrap', 'src', sources_bootstrap)
 elf_netx10_bootstrap = env_netx10_bootstrap.Elf('targets/uartmon_netx10_bootstrap.elf', src_netx10_bootstrap)
 bin_netx10_bootstrap = env_netx10_bootstrap.ObjCopy('targets/uartmon_netx10_bootstrap.bin', elf_netx10_bootstrap)
 arr_netx10_bootstrap = env_netx10_bootstrap.DataArray('targets/uartmon_netx10_bootstrap.c', bin_netx10_bootstrap, DATAARRAY_NAME='auc_uartmon_netx10_bootstrap')
-env_netx10_bootstrap.GccSymbolTemplate('targets/uartmon_netx10_bootstrap_run.h', elf_netx10_bootstrap, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_netx10_bootstrap_run.h')
+sym_netx10_bootstrap = env_netx10_bootstrap.GccSymbolTemplate('targets/uartmon_netx10_bootstrap_run.h', elf_netx10_bootstrap, GCCSYMBOLTEMPLATE_TEMPLATE='templates/uartmon_netx10_bootstrap_run.h')
 
 #----------------------------------------------------------------------------
 #
@@ -176,12 +131,17 @@ env_netx10_bootstrap.GccSymbolTemplate('targets/uartmon_netx10_bootstrap_run.h',
 env_default.Diff('targets/uartmon_firmware.diff', arr_netx500_monitor + arr_netx10_monitor, DIFF_PATCHED_FOLDER='plugins/romloader/uart/netx')
 
 
-aTranslate = dict({
-	arr_netx500_monitor[0]: 'plugins/romloader/uart/netx/targets/',
-	arr_netx500_monitor[1]: 'plugins/romloader/uart/netx/targets/',
-	arr_netx50_monitor[0]:  'plugins/romloader/uart/netx/targets/',
-	arr_netx50_monitor[1]:  'plugins/romloader/uart/netx/targets/',
-	arr_netx10_monitor[0]:  'plugins/romloader/uart/netx/targets/',
-	arr_netx10_monitor[1]:  'plugins/romloader/uart/netx/targets/'
-})
-env_default.FlexZip('targets/uartmon_firmware.zip', arr_netx500_monitor + arr_netx50_monitor + arr_netx10_monitor, ZIP_PATH_TRANSLATE=aTranslate)
+tRelease = env_default.ArchiveList('zip')
+tRelease.AddFiles('plugins/romloader/uart/netx/targets/',  arr_netx500_monitor,
+                                                           sym_netx500_monitor,
+                                                           arr_netx500_bootstrap,
+                                                           sym_netx500_bootstrap)
+tRelease.AddFiles('plugins/romloader/uart/netx/targets/',  arr_netx50_monitor,
+                                                           sym_netx50_monitor,
+                                                           arr_netx50_bootstrap,
+                                                           sym_netx50_bootstrap)
+tRelease.AddFiles('plugins/romloader/uart/netx/targets/',  arr_netx10_monitor,
+                                                           sym_netx10_monitor,
+                                                           arr_netx10_bootstrap,
+                                                           sym_netx10_bootstrap)
+tArc = env_default.Archive('targets/uartmon_firmware.zip', None, ARCHIVE_CONTENTS=tRelease)

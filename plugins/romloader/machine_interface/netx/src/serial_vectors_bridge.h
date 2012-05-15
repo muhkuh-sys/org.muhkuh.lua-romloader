@@ -19,14 +19,14 @@
  ***************************************************************************/
 
 
-#ifndef __SERIAL_VECTORS_H__
-#define __SERIAL_VECTORS_H__
+#ifndef __SERIAL_VECTORS_BRIDGE_H__
+#define __SERIAL_VECTORS_BRIDGE_H__
 
 /* The V1 vectors are the interface to the hardware. They send data to the PC
    and receive data from there.
 */
 
-#if ASIC_TYP==500 || ASIC_TYP==100 || ASIC_TYP==10
+#if ASIC_TYP==10
 	typedef unsigned int (*PFN_SERIAL_V1_GET_T)(unsigned int tHandle);
 	typedef void         (*PFN_SERIAL_V1_PUT_T)(unsigned int tHandle, unsigned char ucChar);
 	typedef unsigned int (*PFN_SERIAL_V1_PEEK_T)(unsigned int tHandle);
@@ -95,6 +95,6 @@ typedef union
 extern SERIAL_V2_COMM_UI_FN_T tSerialV2Vectors;
 
 
-#endif	/* __SERIAL_VECTORS_H__ */
+#endif  /* __SERIAL_VECTORS_BRIDGE_H__ */
 
 

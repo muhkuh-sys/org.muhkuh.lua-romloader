@@ -66,7 +66,9 @@ static const SERIAL_V1_COMM_UI_FN_T tSerialNetx50UsbVectors =
 
 static unsigned int netx50_usb_peek(void)
 {
-	/* This is the routine for usb communication. Call this on a regular basis to get new USB packets. */
+	/* This is the routine for USB communication. Call this on a regular
+	 * basis to get new USB packets.
+	 */
 	typedef void (*PFN_SERIAL_V1_CYCLIC_T)(void);
 
 
@@ -80,17 +82,20 @@ void uart_monitor(void)
 {
 	systime_init();
 
-#if ASIC_TYP==100 || ASIC_TYP==500 || ASIC_TYP==10
-	/* The netX500 and netX100 romcode uart put routine converts LF (0x0a)
+#if ASIC_TYP==500 || ASIC_TYP==100 || ASIC_TYP==10
+	/* All ASICs in this group can not use the ROM routines for UART
+	 * communication.
+	 * 
+	 * The netX500 and netX100 ROM code UART put routine converts LF (0x0a)
 	 * to CR LF (0x0d 0x0a). It is not possible to send binary data with
 	 * it. Replace the vectors with custom routines.
 	 * 
-	 * The netX10 romcode uses areas in bank0 around offset 0x8180. This is
-	 * outside the RAM area reserved for the monitor code.
+	 * The netX10 ROM code uses areas in bank0 around offset 0x8180. This
+	 * is outside the RAM area reserved for the monitor code.
 	 */
 
 	/* Initialize the UART. */
-	uart_init(&tUartCfg);
+	uart_init(0, &tUartCfg);
 
 	/* Set the new vectors. */
 	tSerialV1Vectors.fn.fnGet   = uart_get;

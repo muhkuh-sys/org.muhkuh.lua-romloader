@@ -24,7 +24,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "serial_vectors.h"
+#include "serial_vectors_bridge.h"
 #include "monitor_commands.h"
 #include "transport.h"
 
@@ -49,7 +49,7 @@ typedef void (*PFN_MONITOR_CALL_T)(unsigned long ulR0);
 
 static void send_status(MONITOR_STATUS_T tStatus)
 {
-	/* Write the status to the fifo. */
+	/* Write the status to the FIFO. */
 	transport_send_byte(tStatus);
 
 	/* Send the packet. */
@@ -65,19 +65,20 @@ static void command_read_memory(unsigned long ulAddress, unsigned long ulSize, M
 	int iCnt;
 
 
-//	uprintf("read 0x%04x->0x%08x\n", ulSize, ulAddress);
-
 	/* Get the start address. */
 	uAdrCnt.ul = ulAddress;
 	/* Get the end address. */
 	uAdrEnd.ul = ulAddress + ulSize;
 
-	/* Write status "Ok" to the fifo. */
+	/* Write status "OK" to the FIFO. */
 	transport_send_byte(MONITOR_STATUS_Ok);
 
-	/* Write data bytes to the fifo. */
+	/* Write data bytes to the FIFO. */
 	do
 	{
+		/* Initialize the output value. */
+		ulValue = 0;
+
 		/* Get the next data element in the requested access width. */
 		switch(tAccessSize)
 		{
@@ -94,7 +95,7 @@ static void command_read_memory(unsigned long ulAddress, unsigned long ulSize, M
 			break;
 		}
 
-		/* Add the data byte-by-byte to the fifo. */
+		/* Add the data byte-by-byte to the FIFO. */
 		iCnt = 1<<tAccessSize;
 		do
 		{

@@ -32,7 +32,7 @@ Import('env_default')
 # This is the list of sources. The elements must be separated with whitespace
 # (i.e. spaces, tabs, newlines). The amount of whitespace does not matter.
 sources = """
-	src/machine_interface.c
+	src/monitor.c
 """
 
 
@@ -41,18 +41,14 @@ sources = """
 # Create the compiler environments.
 #
 
-env_default.Append(CPPPATH = ['src'])
-
-env_netx500_default = env_default.CreateCompilerEnv('500', ['cpu=arm926ej-s'])
-env_netx50_default = env_default.CreateCompilerEnv('50', ['cpu=arm966e-s'])
-env_netx10_default = env_default.CreateCompilerEnv('10', ['cpu=arm966e-s'])
+env_default.Append(CPPPATH = ['src', 'platform/src/lib'])
 
 
 #----------------------------------------------------------------------------
 #
 # Build the netX500 files.
 #
-env_netx500 = env_netx500_default.Clone()
+env_netx500 = env_default.CreateCompilerEnv('500', ['arch=armv5te'])
 src_netx500 = env_netx500.SetBuildPath('targets/netx500', 'src', sources)
 elf_netx500 = env_netx500.StaticLibrary('targets/libmi_netx500.a', src_netx500)
 
@@ -61,7 +57,7 @@ elf_netx500 = env_netx500.StaticLibrary('targets/libmi_netx500.a', src_netx500)
 #
 # Build the netX50 files.
 #
-env_netx50 = env_netx50_default.Clone()
+env_netx50 = env_default.CreateCompilerEnv('50', ['arch=armv5te'])
 src_netx50 = env_netx50.SetBuildPath('targets/netx50_monitor', 'src', sources)
 elf_netx50 = env_netx50.StaticLibrary('targets/libmi_netx50.a', src_netx50)
 
@@ -70,7 +66,7 @@ elf_netx50 = env_netx50.StaticLibrary('targets/libmi_netx50.a', src_netx50)
 #
 # Build the netX10 files.
 #
-env_netx10 = env_netx10_default.Clone()
+env_netx10 = env_default.CreateCompilerEnv('10', ['arch=armv5te'])
 src_netx10 = env_netx10.SetBuildPath('targets/netx10_monitor', 'src', sources)
 elf_netx10 = env_netx10.StaticLibrary('targets/libmi_netx10.a', src_netx10)
 

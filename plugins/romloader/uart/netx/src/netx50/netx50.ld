@@ -40,6 +40,8 @@ SECTIONS
 		/* NOTE: include all sections here which should be empty. */
 		*(.data)
 		*(.glue*)
+		*(.igot.plt)
+		*(.iplt)
 		*(.vfp11_veneer)
 		*(.v4_bx)
 	} >ASSERT_EMPTY
@@ -60,7 +62,7 @@ SECTIONS
 
 		*(.header)
 		*(.init_code)
-		*(.text)
+		*(.text*)
 		*(.rodata*)
 		
 		end_address = . ;

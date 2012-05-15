@@ -21,7 +21,7 @@
 
 #include "../romloader.h"
 
-#include "netx/src/monitor_commands.h"
+#include "../machine_interface/netx/src/monitor_commands.h"
 
 
 #ifndef __ROMLOADER_UART_MAIN_H__
