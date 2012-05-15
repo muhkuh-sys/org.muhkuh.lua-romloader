@@ -40,6 +40,8 @@ SECTIONS
 		 */
 		*(.data)
 		*(.glue*)
+		*(.igot.plt)
+		*(.iplt)
 		*(.vfp11_veneer)
 		*(.v4_bx)
 	} >ASSERT_EMPTY
@@ -58,7 +60,7 @@ SECTIONS
 
 		*(.header)
 		*(.init_code)
-		*(.text)
+		*(.text*)
 		*(.rodata*)
 	} >INTRAM_MON
 	end_address = LOADADDR(.code) + SIZEOF(.code);
