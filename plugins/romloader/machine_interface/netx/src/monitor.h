@@ -24,7 +24,8 @@
 
 
 void monitor_init(void);
-void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPacketSize);
+void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPacketSize, unsigned short usMaxpacketSize);
+void monitor_send_magic(unsigned short usMaxpacketSize);
 
 
 #endif  /* __MONITOR_H__ */

@@ -27,6 +27,7 @@ void transport_loop(void);
 
 void transport_send_byte(unsigned char ucData);
 void transport_send_packet(void);
+void transport_resend_packet(void);
 
 unsigned char transport_call_console_get(void);
 void transport_call_console_put(unsigned int uiChar);

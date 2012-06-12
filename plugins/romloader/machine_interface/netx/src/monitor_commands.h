@@ -23,12 +23,20 @@
 #define __MONITOR_COMMANDS_H__
 
 
-#define MONITOR_MAX_PACKET_SIZE 256
-
 #define MONITOR_STREAM_PACKET_START 0x2a
 
-#define MONITOR_VERSION_MAJOR 1
+#define MONITOR_VERSION_MAJOR 2
 #define MONITOR_VERSION_MINOR 0
+
+#define MONITOR_COMMAND_MSK     0x0fU
+#define MONITOR_COMMAND_SRT     0U
+#define MONITOR_ACCESSSIZE_MSK  0x30U
+#define MONITOR_ACCESSSIZE_SRT  4U
+#define MONITOR_STATUS_MSK      0x3fU
+#define MONITOR_STATUS_SRT      0U
+#define MONITOR_SEQUENCE_MSK    0xc0U
+#define MONITOR_SEQUENCE_SRT    6U
+
 
 typedef enum
 {
@@ -44,7 +52,8 @@ typedef enum
 	MONITOR_STATUS_CallFinished              = 0x02,
 	MONITOR_STATUS_InvalidCommand            = 0x03,
 	MONITOR_STATUS_InvalidPacketSize         = 0x04,
-	MONITOR_STATUS_InvalidSizeParameter      = 0x05
+	MONITOR_STATUS_InvalidSizeParameter      = 0x05,
+	MONITOR_STATUS_InvalidSequenceNumber     = 0x06
 } MONITOR_STATUS_T;
 
 typedef enum
