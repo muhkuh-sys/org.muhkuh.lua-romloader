@@ -23,11 +23,20 @@
 			<version>8.6.6_1</version>
 			<typ>tar.bz2</typ>
 		</tool>
+<!--
 		<tool>
 			<group>org.gnu.gcc</group>
 			<name>gcc-arm-none-eabi</name>
 			<package>gcc-arm-none-eabi_${platform}_${machine}</package>
 			<version>4.6.2_1</version>
+			<typ>tar.bz2</typ>
+		</tool>
+-->
+		<tool>
+			<group>org.gnu.gcc</group>
+			<name>gcc-arm-elf</name>
+			<package>gcc-arm-elf_${platform}_${machine}</package>
+			<version>4.3.3_6</version>
 			<typ>tar.bz2</typ>
 		</tool>
 	</tools>
