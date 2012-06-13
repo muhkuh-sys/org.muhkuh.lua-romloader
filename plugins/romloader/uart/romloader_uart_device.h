@@ -60,15 +60,9 @@ public:
 
 
 	/* higher level interface */
-	bool legacy_read_v1(unsigned long ulAddress, unsigned long *pulValue);
-	bool legacy_read_v2(unsigned long ulAddress, unsigned long *pulValue);
-	ROMLOADER_ROMCODE update_device(ROMLOADER_CHIPTYP tChiptyp, ROMLOADER_ROMCODE tRomcode);
 	bool wait_for_prompt(unsigned long ulTimeout);
 	bool GetLine(unsigned char **ppucLine, const char *pcEol, unsigned long ulTimeout);
 	bool SendBlankLineAndDiscardResponse(void);
-
-	static unsigned int crc16(unsigned short usCrc, unsigned char ucData);
-
 
 	static const size_t mc_sizCardSize = 16384;
 	struct sBufferCard;
@@ -89,6 +83,7 @@ public:
 	size_t readCards(unsigned char *pucBuffer, size_t sizBufferSize);
 	size_t getCardSize(void) const;
 
+
 protected:
 	char *m_pcPortName;
 
@@ -106,12 +101,6 @@ protected:
 #endif
 
 private:
-	bool netx10_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode);
-	bool netx50_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode);
-	bool netx500_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode);
-	bool netx10_start_code(void);
-	bool netx50_start_code(void);
-	bool netx500_start_code(void);
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);
 };
 

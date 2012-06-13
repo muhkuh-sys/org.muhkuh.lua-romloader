@@ -77,6 +77,9 @@ set_property(SOURCE romloader_uart.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTOR
 SET(romloader_uart_SOURCES
 	romloader_uart_device.cpp
 	romloader_uart_main.cpp
+	romloader_uart_read_functinoid_aboot.cpp
+	romloader_uart_read_functinoid_hboot1.cpp
+	romloader_uart_read_functinoid_mi1.cpp
 	${romloader_uart_platform_SOURCES}
 	${UART_FIRMWARE_SOURCES}
 )
@@ -84,6 +87,9 @@ SET(romloader_uart_SOURCES
 SET(romloader_uart_HEADERS
 	romloader_uart_device.h
 	romloader_uart_main.h
+	romloader_uart_read_functinoid_aboot.h
+	romloader_uart_read_functinoid_hboot1.h
+	romloader_uart_read_functinoid_mi1.h
 	${romloader_uart_platform_HEADERS}
 	${UART_FIRMWARE_HEADERS}
 )

@@ -37,19 +37,6 @@
 #endif
 
 
-typedef enum
-{
-	UARTSTATUS_OK           = 0,
-	UARTSTATUS_TIMEOUT      = 1,
-	UARTSTATUS_PACKET_TOO_LARGE = 2,
-	UARTSTATUS_SEND_FAILED = 3,
-	UARTSTATUS_FAILED_TO_SYNC = 4,
-	UARTSTATUS_CRC_MISMATCH = 5,
-	UARTSTATUS_MISSING_USERDATA = 6,
-	UARTSTATUS_COMMAND_EXECUTION_FAILED = 7
-} UARTSTATUS_T;
-
-
 /*-----------------------------------*/
 
 class romloader_uart_provider;
@@ -91,20 +78,46 @@ public:
 // *** lua interface end ***
 
 private:
+	typedef enum ROMLOADER_COMMANDSET_ENUM
+	{
+		ROMLOADER_COMMANDSET_UNKNOWN          = 0,
+		ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1  = 1,
+		ROMLOADER_COMMANDSET_MI1              = 2,
+		ROMLOADER_COMMANDSET_MI2              = 3
+	} ROMLOADER_COMMANDSET_T;
 
+	typedef enum
+	{
+		UARTSTATUS_OK                        = 0,
+		UARTSTATUS_TIMEOUT                   = 1,
+		UARTSTATUS_PACKET_TOO_LARGE          = 2,
+		UARTSTATUS_SEND_FAILED               = 3,
+		UARTSTATUS_FAILED_TO_SYNC            = 4,
+		UARTSTATUS_CRC_MISMATCH              = 5,
+		UARTSTATUS_MISSING_USERDATA          = 6,
+		UARTSTATUS_COMMAND_EXECUTION_FAILED  = 7,
+		UARTSTATUS_SEQUENCE_MISMATCH         = 8
+	} UARTSTATUS_T;
+
+	static const size_t sizMaxPacketSizeHost = 4096;
+	size_t m_sizMaxPacketSizeClient;
+	
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);
 
-	bool identify_loader(bool *pfNeedsUpdate);
+	bool identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet);
+	bool synchronize(void);
 	bool chip_init(lua_State *ptClientData);
 
 	romloader_uart_device_platform *m_ptUartDev;
 
+	unsigned int m_uiMonitorSequence;
+
 	size_t m_sizPacketRingBufferHead;
 	size_t m_sizPacketRingBufferFill;
-	unsigned char m_aucPacketRingBuffer[MONITOR_MAX_PACKET_SIZE];
+	unsigned char m_aucPacketRingBuffer[sizMaxPacketSizeHost];
 
 	size_t m_sizPacketInputBuffer;
-	unsigned char m_aucPacketInputBuffer[MONITOR_MAX_PACKET_SIZE];
+	unsigned char m_aucPacketInputBuffer[sizMaxPacketSizeHost];
 
 
 	void packet_ringbuffer_init(void);
@@ -112,6 +125,7 @@ private:
 	unsigned char packet_ringbuffer_get(void);
 	int packet_ringbuffer_peek(size_t sizOffset);
 
+	UARTSTATUS_T send_sync_command(void);
 	UARTSTATUS_T send_packet(const unsigned char *pucData, size_t sizData);
 	UARTSTATUS_T receive_packet(void);
 	UARTSTATUS_T execute_command(const unsigned char *aucCommand, size_t sizCommand);
