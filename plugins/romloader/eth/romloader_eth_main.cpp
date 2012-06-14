@@ -769,7 +769,7 @@ void romloader_eth::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 
 	ulValue = 0;
 
-	aucCommand[ 0] = MI_COMMAND_Write | (MI_ACCESSSIZE_Word<<6);
+	aucCommand[ 0] = MI_COMMAND_Write | (MI_ACCESSSIZE_Long<<6);
 	aucCommand[ 1] = 4;
 	aucCommand[ 2] = 0;
 	aucCommand[ 3] = (unsigned char)( ulNetxAddress      & 0xffU);
