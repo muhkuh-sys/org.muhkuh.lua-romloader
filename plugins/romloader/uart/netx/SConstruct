@@ -28,8 +28,26 @@
 SConscript('mbs/SConscript')
 Import('env_default')
 
+
+#----------------------------------------------------------------------------
+#
+# Create the compiler environments.
+#
+env_default.Append(CPPPATH = ['src', '../../machine_interface/netx/src', 'platform/src', 'platform/src/lib'])
+env_netx500_default = env_default.CreateCompilerEnv('500', ['cpu=arm926ej-s'])
+env_netx56_default = env_default.CreateCompilerEnv('56', ['cpu=arm966e-s'])
+env_netx50_default = env_default.CreateCompilerEnv('50', ['cpu=arm966e-s'])
+env_netx10_default = env_default.CreateCompilerEnv('10', ['cpu=arm966e-s'])
+Export('env_netx500_default', 'env_netx56_default', 'env_netx50_default', 'env_netx10_default')
+
+
+#----------------------------------------------------------------------------
+#
+# Build the platform libraries.
+#
 SConscript('platform/SConscript')
 Import('platform_lib_netx500', 'platform_lib_netx56', 'platform_lib_netx50', 'platform_lib_netx10')
+
 
 #----------------------------------------------------------------------------
 # This is the list of sources. The elements must be separated with whitespace
@@ -47,13 +65,6 @@ sources_bootstrap = """
 """
 
 
-#----------------------------------------------------------------------------
-#
-# Create the compiler environments.
-#
-
-env_default.Append(CPPPATH = ['src', '../../machine_interface/netx/src', 'platform/src', 'platform/src/lib'])
-#env_default.Append(LIBPATH = ['../../machine_interface/netx/targets'])
 libmi_netx500 = [File('../../machine_interface/netx/targets/libmi_netx500.a')]
 libmi_netx50  = [File('../../machine_interface/netx/targets/libmi_netx50.a')]
 libmi_netx10  = [File('../../machine_interface/netx/targets/libmi_netx10.a')]
@@ -62,7 +73,7 @@ libmi_netx10  = [File('../../machine_interface/netx/targets/libmi_netx10.a')]
 #
 # Build the netX500 files.
 #
-env_netx500_monitor = env_default.CreateCompilerEnv('500', ['cpu=arm926ej-s'])
+env_netx500_monitor = env_netx500_default.Clone()
 env_netx500_monitor.Replace(LDFILE = 'src/netx500/netx500.ld')
 env_netx500_monitor.Append(CPPPATH = ['src/netx500'])
 src_netx500_monitor = env_netx500_monitor.SetBuildPath('targets/netx500_monitor', 'src', sources_monitor)
@@ -84,7 +95,7 @@ sym_netx500_bootstrap = env_netx500_bootstrap.GccSymbolTemplate('targets/uartmon
 #
 # Build the netX50 files.
 #
-env_netx50_monitor = env_default.CreateCompilerEnv('50', ['cpu=arm966e-s'])
+env_netx50_monitor = env_netx50_default.Clone()
 env_netx50_monitor.Replace(LDFILE = 'src/netx50/netx50.ld')
 env_netx50_monitor.Append(CPPPATH = ['src/netx50'])
 src_netx50_monitor = env_netx50_monitor.SetBuildPath('targets/netx50_monitor', 'src', sources_monitor)
@@ -106,7 +117,7 @@ sym_netx50_bootstrap = env_netx50_bootstrap.GccSymbolTemplate('targets/uartmon_n
 #
 # Build the netX10 files.
 #
-env_netx10_monitor = env_default.CreateCompilerEnv('10', ['cpu=arm966e-s'])
+env_netx10_monitor = env_netx10_default.Clone()
 env_netx10_monitor.Replace(LDFILE = 'src/netx10/netx10.ld')
 env_netx10_monitor.Append(CPPPATH = ['src/netx10'])
 src_netx10_monitor = env_netx10_monitor.SetBuildPath('targets/netx10_monitor', 'src', sources_monitor)
