@@ -53,7 +53,7 @@ SECTIONS
 	{
 		load_address = . ;
 
-		*(.header)
+		KEEP(*(.header))
 		*(.init_code)
 	} >INTRAM2_ITCM
 

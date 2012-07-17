@@ -49,7 +49,7 @@ SECTIONS
 	{
 		load_address = . ;
 
-		*(.header)
+		KEEP(*(.header))
 		*(.init_code)
 		*(.text)
 		*(.rodata*)
