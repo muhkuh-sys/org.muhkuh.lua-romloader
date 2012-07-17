@@ -45,4 +45,5 @@
 /* import interfaces */
 %include "../../muhkuh_plugin_interface.h"
 %include "../romloader.h"
+%include "../romloader_def.h"
 %include "romloader_uart_main.h"

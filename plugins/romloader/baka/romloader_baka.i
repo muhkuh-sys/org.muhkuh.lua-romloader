@@ -47,4 +47,5 @@
 /* TODO: split the interface in multiple files. */
 %include "../../muhkuh_plugin_interface.h"
 %include "../romloader.h"
+%include "../romloader_def.h"
 %include "romloader_baka_main.h"
