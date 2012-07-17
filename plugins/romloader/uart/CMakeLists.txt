@@ -42,15 +42,6 @@ SET(UART_FIRMWARE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx1
                           ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_bootstrap.h
                           ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_bootstrap_run.h)
 
-ADD_CUSTOM_COMMAND(OUTPUT ${UART_FIRMWARE_SOURCES} ${UART_FIRMWARE_HEADERS}
-                   COMMAND ${PYTHON_EXECUTABLE} mbs/setup.py
-                   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/netx
-                   COMMENT "Build the netx uart firmware"
-                   VERBATIM)
-
-ADD_CUSTOM_TARGET(netx_uart_firmware 
-                  DEPENDS ${UART_FIRMWARE_SOURCES} ${UART_FIRMWARE_HEADERS})
-
 
 #----------------------------------------------------------------------------
 #
@@ -101,11 +92,6 @@ target_link_libraries(romloader_uart_lib ${romloader_uart_platform_LIBS})
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 	SET_TARGET_PROPERTIES(romloader_uart_lib PROPERTIES COMPILE_FLAGS -fPIC)
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-
-SET_SOURCE_FILES_PROPERTIES(${UART_FIRMWARE_SOURCES} ${UART_FIRMWARE_HEADERS}
-                            PROPERTIES GENERATED 1)
-
-ADD_DEPENDENCIES(romloader_uart_lib netx_uart_firmware)
 
 
 #----------------------------------------------------------------------------

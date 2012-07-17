@@ -26,20 +26,11 @@ INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 # Compile the netX USB firmware.
 #
 
-ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.h
-                   COMMAND ${PYTHON_EXECUTABLE} mbs/setup.py
-                   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/netx
-                   COMMENT "Build the netx usb firmware"
-                   VERBATIM)
+SET(USB_FIRMWARE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
+                         ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.c)
 
-ADD_CUSTOM_TARGET(netx_usb_firmware
-                  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.h)
+SET(USB_FIRMWARE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h
+                         ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.h)
 
 
 #----------------------------------------------------------------------------
@@ -72,15 +63,13 @@ SET(romloader_usb_SOURCES
 	romloader_usb_device.cpp
 	romloader_usb_device_libusb.cpp
 	romloader_usb_main.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
-	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.c
+	${USB_FIRMWARE_SOURCES}
 )
 
 SET(romloader_usb_HEADERS
 	romloader_usb_device_libusb.h
 	romloader_usb_main.h
-	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h
-	${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.h
+	${USB_FIRMWARE_HEADERS}
 )
 
 ADD_DEFINITIONS(${USB_DEFINES})
@@ -90,14 +79,6 @@ ADD_LIBRARY(romloader_usb_lib STATIC ${romloader_usb_SOURCES})
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 	SET_TARGET_PROPERTIES(romloader_usb_lib PROPERTIES COMPILE_FLAGS -fPIC)
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-
-SET_SOURCE_FILES_PROPERTIES(${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
-                            ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h
-                            ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.c
-                            ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.h
-                            PROPERTIES GENERATED 1)
-
-ADD_DEPENDENCIES(romloader_usb_lib netx_usb_firmware)
 
 
 #----------------------------------------------------------------------------
