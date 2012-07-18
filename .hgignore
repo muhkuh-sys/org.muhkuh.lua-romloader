@@ -8,6 +8,7 @@ syntax: regexp
 ^site_scons/site_init.py$
 
 # Ignore all files in the targets folder.
+^build/
 ^plugins/romloader/_test/testcode/targets/
 ^plugins/romloader/machine_interface/netx/targets/
 ^plugins/romloader/uart/netx/targets/
