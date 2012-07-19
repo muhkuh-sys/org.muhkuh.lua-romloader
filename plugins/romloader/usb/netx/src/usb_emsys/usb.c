@@ -26,7 +26,7 @@
 #include "netx_io_areas.h"
 #include "options.h"
 
-#include "usbmonitor_commands.h"
+#include "monitor_commands.h"
 
 #include "usb_descriptors.h"
 #include "usb_io.h"
@@ -39,6 +39,8 @@
 #define false (1==0)
 
 #define ARRAYSIZE(a) (sizeof(a)/sizeof((a)[0]))
+
+#define MONITOR_USB_MAX_PACKET_SIZE 64
 
 
 /*-----------------------------------*/
@@ -196,13 +198,13 @@ void usb_call_console_put(unsigned int uiChar)
 
 	/* Reached the maximum packet size? */
 	ulFillLevel = usb_get_tx_fill_level();
-	if( ulFillLevel>=sizeof(USBMON_PACKET_MESSAGE_T) )
+	if( ulFillLevel>=MONITOR_USB_MAX_PACKET_SIZE )
 	{
 		/* Yes -> send the packet. */
 		usb_send_packet();
 
 		/* Start a new packet. */
-		usb_send_byte(USBMON_STATUS_CallMessage);
+		usb_send_byte(MONITOR_STATUS_CallMessage);
 	}
 }
 
@@ -223,7 +225,7 @@ void usb_call_console_flush(void)
 	usb_send_packet();
 
 	/* Start the new message packet. */
-	usb_send_byte(USBMON_STATUS_CallMessage);
+	usb_send_byte(MONITOR_STATUS_CallMessage);
 }
 
 

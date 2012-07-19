@@ -26,7 +26,7 @@
 
 #include "serial_vectors.h"
 #include "usb.h"
-#include "usbmonitor_commands.h"
+#include "monitor_commands.h"
 
 
 /*-----------------------------------*/
@@ -50,9 +50,9 @@ static SERIAL_COMM_UI_FN_T tOldVectors;
 /*-----------------------------------*/
 
 
-static void usbmon_send_status(USBMON_STATUS_T tStatus)
+static void usbmon_send_status(MONITOR_STATUS_T tStatus)
 {
-	/* Write the status to the fifo. */
+	/* Write the status to the FIFO. */
 	usb_send_byte(tStatus);
 
 	/* Send the packet. */
@@ -60,7 +60,7 @@ static void usbmon_send_status(USBMON_STATUS_T tStatus)
 }
 
 
-static void usbmon_read(unsigned long ulAddress, unsigned long ulSize, USBMON_ACCESSSIZE_T tAccessSize)
+static void usbmon_read(unsigned long ulAddress, unsigned long ulSize, MONITOR_ACCESSSIZE_T tAccessSize)
 {
 	ADR_T uAdrCnt;
 	ADR_T uAdrEnd;
@@ -73,29 +73,29 @@ static void usbmon_read(unsigned long ulAddress, unsigned long ulSize, USBMON_AC
 	/* Get the end address. */
 	uAdrEnd.ul = ulAddress + ulSize;
 
-	/* Write status "Ok" to the fifo. */
-	usb_send_byte(USBMON_STATUS_Ok);
+	/* Write status "OK" to the FIFO. */
+	usb_send_byte(MONITOR_STATUS_Ok);
 
-	/* Write data bytes to the fifo. */
+	/* Write data bytes to the FIFO. */
 	do
 	{
 		/* Get the next data element in the requested access width. */
 		switch(tAccessSize)
 		{
-		case USBMON_ACCESSSIZE_Byte:
+		case MONITOR_ACCESSSIZE_Byte:
 			ulValue = *(uAdrCnt.puc++);
 			break;
 
-		case USBMON_ACCESSSIZE_Word:
+		case MONITOR_ACCESSSIZE_Word:
 			ulValue = *(uAdrCnt.pus++);
 			break;
 
-		case USBMON_ACCESSSIZE_Long:
+		case MONITOR_ACCESSSIZE_Long:
 			ulValue = *(uAdrCnt.pul++);
 			break;
 		}
 
-		/* Add the data byte-by-byte to the fifo. */
+		/* Add the data byte-by-byte to the FIFO. */
 		iCnt = 1<<tAccessSize;
 		do
 		{
@@ -110,7 +110,7 @@ static void usbmon_read(unsigned long ulAddress, unsigned long ulSize, USBMON_AC
 }
 
 
-static void usbmon_write(const unsigned char *pucData, unsigned long ulAddress, unsigned long ulDataSize, USBMON_ACCESSSIZE_T tAccessSize)
+static void usbmon_write(const unsigned char *pucData, unsigned long ulAddress, unsigned long ulDataSize, MONITOR_ACCESSSIZE_T tAccessSize)
 {
 	const unsigned char *pucCnt;
 	const unsigned char *pucEnd;
@@ -131,17 +131,17 @@ static void usbmon_write(const unsigned char *pucData, unsigned long ulAddress, 
 		/* Get the next data element in the requested access width. */
 		switch(tAccessSize)
 		{
-		case USBMON_ACCESSSIZE_Byte:
+		case MONITOR_ACCESSSIZE_Byte:
 			*(uAdrDst.puc++) = *(pucCnt++);
 			break;
 
-		case USBMON_ACCESSSIZE_Word:
+		case MONITOR_ACCESSSIZE_Word:
 			ulValue  = *(pucCnt++);
 			ulValue |= *(pucCnt++) << 8;
 			*(uAdrDst.pus++) = (unsigned short)ulValue;
 			break;
 
-		case USBMON_ACCESSSIZE_Long:
+		case MONITOR_ACCESSSIZE_Long:
 			ulValue  = *(pucCnt++);
 			ulValue |= *(pucCnt++) << 8;
 			ulValue |= *(pucCnt++) << 16;
@@ -152,7 +152,7 @@ static void usbmon_write(const unsigned char *pucData, unsigned long ulAddress, 
 	} while( pucCnt<pucEnd);
 
 	/* Send the status packet. */
-	usbmon_send_status(USBMON_STATUS_Ok);
+	usbmon_send_status(MONITOR_STATUS_Ok);
 }
 
 
@@ -180,7 +180,7 @@ static void usbmon_call(unsigned long ulAddress, unsigned long ulR0)
 	ptCall = (PFN_MONITOR_CALL_T)ulAddress;
 
 	/* Send the status packet. */
-	usbmon_send_status(USBMON_STATUS_Ok);
+	usbmon_send_status(MONITOR_STATUS_Ok);
 
 	/* Save the old vectors. */
 	memcpy(&tOldVectors, &tSerialVectors, sizeof(SERIAL_COMM_UI_FN_T));
@@ -189,19 +189,19 @@ static void usbmon_call(unsigned long ulAddress, unsigned long ulR0)
 	memcpy(&tSerialVectors, &tUsbCallConsole, sizeof(SERIAL_COMM_UI_FN_T));
 
 	/* Start the new message packet. */
-	usb_send_byte(USBMON_STATUS_CallMessage);
+	usb_send_byte(MONITOR_STATUS_CallMessage);
 
 	/* Call the routine. */
 	(*ptCall)(ulR0);
 
-	/* Flush any remaining bytes in the fifo. */
+	/* Flush any remaining bytes in the FIFO. */
 	usb_send_packet();
 
 	/* Restore the old vectors. */
 	memcpy(&tSerialVectors, &tOldVectors, sizeof(SERIAL_COMM_UI_FN_T));
 
 	/* The call finished, notify the PC. */
-	usbmon_send_status(USBMON_STATUS_CallFinished);
+	usbmon_send_status(MONITOR_STATUS_CallFinished);
 }
 
 
@@ -221,27 +221,27 @@ static unsigned long get_unaligned_dword(const unsigned char *pucBuffer)
 
 void usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacketSize)
 {
-	USBMON_COMMAND_T tCmd;
+	MONITOR_COMMAND_T tCmd;
 	unsigned long ulDataSize;
 	unsigned long ulAddress;
-	USBMON_ACCESSSIZE_T tAccessSize;
+	MONITOR_ACCESSSIZE_T tAccessSize;
 	unsigned long ulR0;
 
 
 	/* Get the command and the data size from the first byte. */
-	tCmd = (USBMON_COMMAND_T)(pucPacket[0]&0x3fU);
-	tAccessSize = (USBMON_ACCESSSIZE_T)(pucPacket[0]>>6U);
+	tCmd = (MONITOR_COMMAND_T)(pucPacket[0]&0x3fU);
+	tAccessSize = (MONITOR_ACCESSSIZE_T)(pucPacket[0]>>6U);
 	ulDataSize = pucPacket[1];
 
 
-	if( tCmd==USBMON_COMMAND_Execute )
+	if( tCmd==MONITOR_COMMAND_Execute )
 	{
 		/* Get the address. */
 		ulAddress = get_unaligned_dword(pucPacket + 1);
 
 		if( ulPacketSize!=9U )
 		{
-			usbmon_send_status(USBMON_STATUS_InvalidPacketSize);
+			usbmon_send_status(MONITOR_STATUS_InvalidPacketSize);
 		}
 		else
 		{
@@ -249,36 +249,36 @@ void usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacke
 			usbmon_call(ulAddress, ulR0);
 		}
 	}
-	else if( tCmd==USBMON_COMMAND_Read )
+	else if( tCmd==MONITOR_COMMAND_Read )
 	{
 		/* Get the address. */
 		ulAddress = get_unaligned_dword(pucPacket + 2);
 
 		if( ulPacketSize!=6 )
 		{
-			usbmon_send_status(USBMON_STATUS_InvalidPacketSize);
+			usbmon_send_status(MONITOR_STATUS_InvalidPacketSize);
 		}
 		else if( ulDataSize>63 )
 		{
-			usbmon_send_status(USBMON_STATUS_InvalidSizeParameter);
+			usbmon_send_status(MONITOR_STATUS_InvalidSizeParameter);
 		}
 		else
 		{
 			usbmon_read(ulAddress, ulDataSize, tAccessSize);
 		}
 	}
-	else if( tCmd==USBMON_COMMAND_Write )
+	else if( tCmd==MONITOR_COMMAND_Write )
 	{
 		/* Get the address. */
 		ulAddress = get_unaligned_dword(pucPacket + 2);
 
 		if( ulPacketSize!=(6+ulDataSize) )
 		{
-			usbmon_send_status(USBMON_STATUS_InvalidPacketSize);
+			usbmon_send_status(MONITOR_STATUS_InvalidPacketSize);
 		}
 		else if( ulDataSize>58 )
 		{
-			usbmon_send_status(USBMON_STATUS_InvalidSizeParameter);
+			usbmon_send_status(MONITOR_STATUS_InvalidSizeParameter);
 		}
 		else
 		{
@@ -287,7 +287,7 @@ void usbmon_process_packet(const unsigned char *pucPacket, unsigned long ulPacke
 	}
 	else
 	{
-		usbmon_send_status(USBMON_STATUS_InvalidCommand);
+		usbmon_send_status(MONITOR_STATUS_InvalidCommand);
 	}
 }
 
