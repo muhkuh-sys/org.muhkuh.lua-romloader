@@ -60,7 +60,7 @@ SECTIONS
 
 	.serial_vectors ORIGIN(INTRAM0_MON) :
 	{
-		tSerialVectors = . ;
+		tSerialV2Vectors = . ;
 		. = . + 0x10;
 	} >INTRAM0_MON
 

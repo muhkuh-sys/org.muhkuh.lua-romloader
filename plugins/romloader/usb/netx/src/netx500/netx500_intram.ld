@@ -71,7 +71,7 @@ SECTIONS
 
 	.serialvectors ORIGIN(DTCM)+LENGTH(DTCM)-0x10 :
 	{
-		tSerialVectors = . ;
+		tSerialV2Vectors = . ;
 		. = . + 0x10;
 	} >DTCM
 

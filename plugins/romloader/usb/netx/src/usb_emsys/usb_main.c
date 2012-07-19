@@ -19,9 +19,11 @@
  ***************************************************************************/
 
 #include "usb_main.h"
+
+#include "monitor.h"
+#include "usb.h"
 #include "usb_io.h"
 #include "usb_requests_top.h"
-#include "usbmon.h"
 
 
 //---------------------------------------------------------------------------
@@ -179,7 +181,7 @@ void usb_pingpong(void)
 				{
 					usb_io_read_fifo((Usb_Ep2_Buffer>>2), ulPacketSize, receiveBuffer);
 
-					usbmon_process_packet(receiveBuffer, ulPacketSize);
+					monitor_process_packet(receiveBuffer, ulPacketSize, MONITOR_USB_MAX_PACKET_SIZE);
 
 					/* Ready for new commands. Reactivate the input pipe. */
 					usb_activateInputPipe();

@@ -24,8 +24,7 @@
 #include "netx_io_areas.h"
 #include "options.h"
 
-#include "monitor_commands.h"
-#include "usbmon.h"
+#include "monitor.h"
 
 /*-----------------------------------*/
 
@@ -35,7 +34,7 @@
 
 #define ARRAYSIZE(a) (sizeof(a)/sizeof((a)[0]))
 
-#define MONITOR_USB_MAX_PACKET_SIZE 64
+static unsigned char aucPacketRx[MONITOR_USB_MAX_PACKET_SIZE];
 
 /*-----------------------------------*/
 
@@ -62,12 +61,6 @@ typedef enum
 	USB_FIFO_Uart_RX                = 5,
 	USB_FIFO_Interrupt_In           = 6
 } USB_FIFO_T;
-
-
-/*-----------------------------------*/
-
-
-static unsigned char aucPacketRx[64];
 
 
 /*-----------------------------------*/
@@ -112,6 +105,7 @@ void usb_deinit(void)
 }
 
 
+
 void usb_init(void)
 {
 	HOSTDEF(ptUsbDevCtrlArea);
@@ -128,9 +122,7 @@ void usb_init(void)
 	ptUsbDevCtrlArea->ulUsb_dev_irq_mask = 0;
 
 	/* Reset all FIFOs. */
-	ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_conf = DFLT_VAL_NX10_usb_dev_fifo_ctrl_conf_auto_out_ack | DFLT_VAL_NX10_usb_dev_fifo_ctrl_conf_mode | HOSTMSK(usb_dev_fifo_ctrl_conf_reset);
-	/* Release the reset. */
-	ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_conf = DFLT_VAL_NX10_usb_dev_fifo_ctrl_conf_auto_out_ack | DFLT_VAL_NX10_usb_dev_fifo_ctrl_conf_mode;
+	usb_reset_fifo();
 
 	ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_out_handshake = HOSTMSK(usb_dev_fifo_ctrl_out_handshake_ack);
 	ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_out_handshake = 0;
@@ -161,22 +153,70 @@ void usb_init(void)
 }
 
 
-void usb_send_byte(unsigned char ucData)
+
+void usb_reset_fifo(void)
 {
-	HOSTDEF(ptUsvDevFifoArea);
+	HOSTDEF(ptUsbDevFifoCtrlArea);
 
 
-	/* Write the status to the FIFO. */
-	ptUsvDevFifoArea->aulUsb_dev_fifo[USB_FIFO_Uart_TX] = ucData;
+	ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_conf = DFLT_VAL_NX10_usb_dev_fifo_ctrl_conf_auto_out_ack | DFLT_VAL_NX10_usb_dev_fifo_ctrl_conf_mode | HOSTMSK(usb_dev_fifo_ctrl_conf_reset);
+	ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_conf = DFLT_VAL_NX10_usb_dev_fifo_ctrl_conf_auto_out_ack | DFLT_VAL_NX10_usb_dev_fifo_ctrl_conf_mode;
 }
 
 
-void usb_send_packet(void)
+
+void usb_loop(void)
+{
+	unsigned long ulFillLevel;
+	unsigned char *pucCnt;
+	unsigned char *pucEnd;
+
+
+	/* wait for a character in the input FIFO */
+
+	/* get the UART RX input fill level */
+	ulFillLevel = usb_get_rx_fill_level();
+	if( ulFillLevel>0 )
+	{
+		/* Is the fill level valid? */
+		if( ulFillLevel>MONITOR_USB_MAX_PACKET_SIZE )
+		{
+			/* Reset the FIFO. */
+			usb_reset_fifo();
+		}
+		else
+		{
+			/* Copy the complete packet to the buffer. */
+			pucCnt = aucPacketRx;
+			pucEnd = aucPacketRx + ulFillLevel;
+			do
+			{
+				*(pucCnt++) = usb_get_byte();
+			} while( pucCnt<pucEnd );
+
+			monitor_process_packet(aucPacketRx, ulFillLevel, MONITOR_USB_MAX_PACKET_SIZE);
+		}
+	}
+}
+
+
+
+void usb_send_packet(const unsigned char *pucPacket, size_t sizPacket)
 {
 	HOSTDEF(ptUsbDevCtrlArea);
+	HOSTDEF(ptUsbDevFifoArea);
 	HOSTDEF(ptUsbDevFifoCtrlArea);
+	const unsigned char *pucCnt;
+	const unsigned char *pucEnd;
 	unsigned long ulRawIrq;
 
+
+	pucCnt = pucPacket;
+	pucEnd = pucCnt + sizPacket;
+	while( pucCnt<pucEnd )
+	{
+		ptUsbDevFifoArea->aulUsb_dev_fifo[USB_FIFO_Uart_TX] = *(pucCnt++);
+	}
 
 	/* Trigger packet send. */
 	ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_in_handshake = 1<<USB_FIFO_Uart_TX;
@@ -205,6 +245,7 @@ void usb_send_packet(void)
 }
 
 
+
 unsigned long usb_get_rx_fill_level(void)
 {
 	HOSTDEF(ptUsbDevFifoCtrlArea);
@@ -216,6 +257,7 @@ unsigned long usb_get_rx_fill_level(void)
 	ulFillLevel >>= HOSTSRT(usb_dev_fifo_ctrl_status0_out_fill_level);
 	return ulFillLevel;
 }
+
 
 
 unsigned long usb_get_tx_fill_level(void)
@@ -231,6 +273,7 @@ unsigned long usb_get_tx_fill_level(void)
 }
 
 
+
 unsigned char usb_get_byte(void)
 {
 	HOSTDEF(ptUsvDevFifoArea);
@@ -244,104 +287,3 @@ unsigned char usb_get_byte(void)
 
 
 /*-----------------------------------*/
-
-
-unsigned char usb_call_console_get(void)
-{
-	unsigned long ulFillLevel;
-	unsigned char ucData;
-
-
-	/* Wait for a byte in the FIFO. */
-	do
-	{
-		ulFillLevel = usb_get_rx_fill_level();
-	} while( ulFillLevel==0 );
-
-	/* Get a byte from the FIFO. */
-	ucData = usb_get_byte();
-	return ucData;
-}
-
-
-void usb_call_console_put(unsigned int uiChar)
-{
-	unsigned long ulFillLevel;
-
-
-	/* Add the byte to the FIFO. */
-	usb_send_byte((unsigned char)uiChar);
-
-	/* Reached the maximum packet size? */
-	ulFillLevel = usb_get_tx_fill_level();
-	if( ulFillLevel>=MONITOR_USB_MAX_PACKET_SIZE )
-	{
-		/* Yes -> send the packet. */
-		usb_send_packet();
-
-		/* Start a new packet. */
-		usb_send_byte(MONITOR_STATUS_CallMessage);
-	}
-}
-
-
-unsigned int usb_call_console_peek(void)
-{
-	unsigned long ulFillLevel;
-
-
-	ulFillLevel = usb_get_rx_fill_level();
-	return (ulFillLevel==0) ? 0U : 1U;
-}
-
-
-void usb_call_console_flush(void)
-{
-	/* Flush all waiting data. */
-	usb_send_packet();
-
-	/* Start the new message packet. */
-	usb_send_byte(MONITOR_STATUS_CallMessage);
-}
-
-
-/*-----------------------------------*/
-
-
-void usb_loop(void)
-{
-	unsigned long ulFillLevel;
-	unsigned char *pucCnt;
-	unsigned char *pucEnd;
-
-
-	/* start loop-back */
-	while(1)
-	{
-		/* wait for a character in the input FIFO */
-
-		/* get the UART RX input fill level */
-		ulFillLevel = usb_get_rx_fill_level();
-		if( ulFillLevel>0 )
-		{
-			/* Is the fill level valid? */
-			if( ulFillLevel>64 )
-			{
-				ulFillLevel = 64;
-			}
-			else
-			{
-				/* Copy the complete packet to the buffer. */
-				pucCnt = aucPacketRx;
-				pucEnd = aucPacketRx + ulFillLevel;
-				do
-				{
-					*(pucCnt++) = usb_get_byte();
-				} while( pucCnt<pucEnd );
-
-				usbmon_process_packet(aucPacketRx, ulFillLevel);
-			}
-		}
-	}
-}
-

@@ -37,11 +37,11 @@ sources_common = """
 	src/init_netx_test.S
 	src/main.c
 	src/options.c
-	src/usbmon.c
 """
 
 
 sources_custom_netx500 = """
+	src/usb_emsys/transport.c
 	src/usb_emsys/usb.c
 	src/usb_emsys/usb_descriptors.c
 	src/usb_emsys/usb_globals.c
@@ -52,6 +52,7 @@ sources_custom_netx500 = """
 
 
 sources_custom_netx10 = """
+	src/usb_hsoc_v1/transport.c
 	src/usb_hsoc_v1/usb.c
 """
 
@@ -64,7 +65,7 @@ env_netx500 = env_netx500_default.Clone()
 env_netx500.Append(CPPPATH = ['src', 'src/usb_emsys', '../../machine_interface/netx/src', '#platform/src', '#platform/src/lib'])
 env_netx500.Replace(LDFILE = 'src/netx500/netx500_intram.ld')
 src_netx500 = env_netx500.SetBuildPath('targets/netx500_intram', 'src', sources_common + sources_custom_netx500)
-elf_netx500 = env_netx500.Elf('targets/usbmon_netx500_intram', src_netx500 + platform_lib_netx500)
+elf_netx500 = env_netx500.Elf('targets/usbmon_netx500_intram', src_netx500 + platform_lib_netx500 + libmi_netx500)
 bin_netx500 = env_netx500.ObjCopy('targets/usbmon_netx500_intram', elf_netx500)
 arr_netx500 = env_netx500.DataArray('targets/usbmon_netx500_intram.c', bin_netx500, DATAARRAY_NAME='auc_usbmon_netx500_intram')
 
@@ -77,7 +78,7 @@ env_netx10 = env_netx10_default.Clone()
 env_netx10.Append(CPPPATH = ['src', 'src/usb_hsoc_v1', '../../machine_interface/netx/src', '#platform/src', '#platform/src/lib'])
 env_netx10.Replace(LDFILE = 'src/netx10/netx10_intram.ld')
 src_netx10 = env_netx10.SetBuildPath('targets/netx10_intram', 'src', sources_common + sources_custom_netx10)
-elf_netx10 = env_netx10.Elf('targets/usbmon_netx10_intram', src_netx10 + platform_lib_netx10)
+elf_netx10 = env_netx10.Elf('targets/usbmon_netx10_intram', src_netx10 + platform_lib_netx10 + libmi_netx10)
 bin_netx10 = env_netx10.ObjCopy('targets/usbmon_netx10_intram', elf_netx10)
 arr_netx10 = env_netx10.DataArray('targets/usbmon_netx10_intram.c', bin_netx10, DATAARRAY_NAME='auc_usbmon_netx10_intram')
 

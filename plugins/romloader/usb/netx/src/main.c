@@ -25,9 +25,7 @@
 
 #include "netx_io_areas.h"
 #include "options.h"
-#include "systime.h"
-#include "usb.h"
-#include "usbmon.h"
+#include "transport.h"
 
 
 /*-----------------------------------*/
@@ -35,12 +33,13 @@
 void usb_monitor(void)
 {
 	options_set_default();
-	systime_init();
 
-	usb_deinit();
+	transport_init();
 
-	usb_init();
-	usb_loop();
+	while(1)
+	{
+		transport_loop();
+	}
 }
 
 
