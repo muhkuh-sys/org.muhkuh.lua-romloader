@@ -387,20 +387,33 @@ void romloader_usb::Connect(lua_State *ptClientData)
 			/* NOTE: set m_fIsConnected to true here or detect_chiptyp and chip_init will fail! */
 			m_fIsConnected = true;
 
-			if( detect_chiptyp(&tFn)!=true )
+			/* Synchronize with the client to get these settings:
+			 *   chip type
+			 *   sequence number
+			 *   maximum packet size
+			 */
+			if( synchronize()!=true )
 			{
+				fprintf(stderr, "%s(%p): failed to detect chiptyp!", m_pcName, this);
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chiptyp!", m_pcName, this);
 				m_fIsConnected = false;
 				m_ptUsbDevice->Disconnect();
 				iResult = -1;
 			}
+/*
 			else if( chip_init(ptClientData)!=true )
 			{
+				fprintf(stderr, "%s(%p): failed to init chip!", m_pcName, this);
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to init chip!", m_pcName, this);
 				m_fIsConnected = false;
 				m_ptUsbDevice->Disconnect();
 				iResult = -1;
 			}
+*/
+			/* STOP HERE */
+			fprintf(stderr, "STOP HERE!\n");
+			iResult = -1;
+
 		}
 
 		if( iResult!=LIBUSB_SUCCESS )
@@ -425,6 +438,105 @@ void romloader_usb::Disconnect(lua_State *ptClientData)
 
 	m_fIsConnected = false;
 }
+
+
+
+bool romloader_usb::synchronize(void)
+{
+	const unsigned char aucMagicMooh[4] = { 0x4d, 0x4f, 0x4f, 0x48 };
+	bool fResult;
+	int iResult;
+	unsigned char ucData;
+	unsigned char aucInBuf[64];
+	size_t sizInBuf;
+	/* The expected knock response is 13 bytes:
+	 *    1 status byte
+	 *   12 data bytes (see monitor_commands.h for more information)
+	 */
+	const size_t sizExpectedResponse = 13;
+	unsigned char ucSequence;
+	unsigned long ulMiVersionMin;
+	unsigned long ulMiVersionMaj;
+	ROMLOADER_CHIPTYP tChipType;
+	ROMLOADER_ROMCODE tRomCode;
+	size_t sizMaxPacketSize;
+
+
+	printf("+synchronize()\n");
+
+	fResult = false;
+
+	if( m_fIsConnected==false )
+	{
+		fprintf(stderr, "%s(%p): synchronize: not connected!\n", m_pcName, this);
+	}
+	else
+	{
+		ucData = 0xffU;
+		iResult = m_ptUsbDevice->execute_command(&ucData, 1, aucInBuf, &sizInBuf);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "%s(%p): synchronize: failed to transfer command!\n", m_pcName, this);
+		}
+		else if( sizInBuf==0 )
+		{
+			fprintf(stderr, "%s(%p): synchronize: received empty answer!\n", m_pcName, this);
+		}
+		else if( sizInBuf!=sizExpectedResponse )
+		{
+			fprintf(stderr, "synchronize: Received knock sequence with invalid size of %d. Expected: %d.\n", sizInBuf, sizExpectedResponse);
+			hexdump(aucInBuf, sizInBuf, 0);
+		}
+		else if( memcmp(aucInBuf+1, aucMagicMooh, sizeof(aucMagicMooh))!=0 )
+		{
+			fprintf(stderr, "Received knock sequence has no magic.\n");
+			hexdump(aucInBuf, sizInBuf, 0);
+		}
+		else
+		{
+			fprintf(stderr, "Packet:\n");
+			hexdump(aucInBuf, sizInBuf, 0);
+
+			/* Get the sequence number from the status byte. */
+			ucSequence = (aucInBuf[0x00] & MONITOR_SEQUENCE_MSK) >> MONITOR_SEQUENCE_SRT;
+			fprintf(stderr, "Sequence number: 0x%02x\n", ucSequence);
+
+			ulMiVersionMin =  ((unsigned long)(aucInBuf[0x05])) |
+			                 (((unsigned long)(aucInBuf[0x06]))<<8U);
+			ulMiVersionMaj =  ((unsigned long)(aucInBuf[0x07])) |
+			                 (((unsigned long)(aucInBuf[0x08]))<<8U);
+			printf("Machine interface V%ld.%ld.\n", ulMiVersionMaj, ulMiVersionMin);
+
+			tChipType = (ROMLOADER_CHIPTYP)(aucInBuf[0x09]);
+			tRomCode  = (ROMLOADER_ROMCODE)(aucInBuf[0x0a]);
+			printf("Chip type : %d\n", tChipType);
+			printf("ROM code : %d\n", tRomCode);
+
+			sizMaxPacketSize =  ((size_t)(aucInBuf[0x0b])) |
+			                   (((size_t)(aucInBuf[0x0c]))<<8U);
+			printf("Maximum packet size: 0x%04x\n", sizMaxPacketSize);
+//			/* Limit the packet size to the buffer size. */
+//			if( sizMaxPacketSize>sizMaxPacketSizeHost )
+//			{
+//				sizMaxPacketSize = sizMaxPacketSizeHost;
+//				printf("Limit maximum packet size to 0x%04x\n", sizMaxPacketSize);
+//			}
+
+			/* Set the new values. */
+//			m_uiMonitorSequence = ucSequence;
+//			m_tChiptyp = tChipType;
+//			m_tRomcode = tRomCode;
+//			m_sizMaxPacketSizeClient = sizMaxPacketSize;
+
+			fResult = true;
+		}
+	}
+
+	printf("-synchronize(): fResult=%d\n", fResult);
+
+	return fResult;
+}
+
 
 
 /* read a byte (8bit) from the netx to the pc */

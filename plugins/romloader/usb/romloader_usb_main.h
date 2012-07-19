@@ -78,6 +78,7 @@ private:
 		size_t sizPos;
 	} DATA_BUFFER_T;
 
+	bool synchronize(void);
 	bool chip_init(lua_State *ptClientData);
 
 	romloader_usb_provider *m_ptUsbProvider;
