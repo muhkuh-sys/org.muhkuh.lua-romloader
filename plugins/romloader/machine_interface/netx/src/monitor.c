@@ -278,6 +278,7 @@ void monitor_init(void)
 
 void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPacketSize, unsigned short usMaxpacketSize)
 {
+	unsigned char ucCommand;
 	MONITOR_COMMAND_T tCmd;
 	unsigned long ulDataSize;
 	unsigned long ulAddress;
@@ -286,83 +287,91 @@ void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPack
 	unsigned long ulR0;
 
 
-	/* Get the command and the data size from the first byte. */
-	tCmd = (MONITOR_COMMAND_T)((pucPacket[0]&MONITOR_COMMAND_MSK)>>MONITOR_COMMAND_SRT);
-	tAccessSize = (MONITOR_ACCESSSIZE_T)((pucPacket[0]&MONITOR_ACCESSSIZE_MSK)>>MONITOR_ACCESSSIZE_SRT);
-	ucSequence = (pucPacket[0]&MONITOR_SEQUENCE_MSK)>>MONITOR_SEQUENCE_SRT;
-	ulDataSize = pucPacket[1];
-
-
-	if( ucSequence==ucSequenceCurrent )
+	ucCommand = pucPacket[0];
+	if( ucCommand==MONITOR_COMMAND_Magic )
 	{
-		if( tCmd==MONITOR_COMMAND_Execute )
-		{
-			/* Get the address. */
-			ulAddress = get_unaligned_dword(pucPacket + 1);
-
-			if( ulPacketSize!=9U )
-			{
-				send_status(MONITOR_STATUS_InvalidPacketSize);
-			}
-			else
-			{
-				ulR0 = get_unaligned_dword(pucPacket + 5);
-				command_call(ulAddress, ulR0);
-			}
-		}
-		else if( tCmd==MONITOR_COMMAND_Read )
-		{
-			/* Get the address. */
-			ulAddress = get_unaligned_dword(pucPacket + 2);
-
-			if( ulPacketSize!=6 )
-			{
-				send_status(MONITOR_STATUS_InvalidPacketSize);
-			}
-			else if( ulDataSize>usMaxpacketSize-6U )
-			{
-				send_status(MONITOR_STATUS_InvalidSizeParameter);
-			}
-			else
-			{
-				command_read_memory(ulAddress, ulDataSize, tAccessSize);
-			}
-		}
-		else if( tCmd==MONITOR_COMMAND_Write )
-		{
-			/* Get the address. */
-			ulAddress = get_unaligned_dword(pucPacket + 2U);
-
-			if( ulPacketSize!=(6U+ulDataSize) )
-			{
-				send_status(MONITOR_STATUS_InvalidPacketSize);
-			}
-			else if( ulDataSize>usMaxpacketSize-6U )
-			{
-				send_status(MONITOR_STATUS_InvalidSizeParameter);
-			}
-			else
-			{
-				command_write_memory(pucPacket+6U, ulAddress, ulDataSize, tAccessSize);
-			}
-		}
-		else
-		{
-			send_status(MONITOR_STATUS_InvalidCommand);
-		}
-		
-		next_sequence_number();
-	}
-	else if( ucSequence==ucSequenceLast )
-	{
-		/* This is the last transfer's sequence number.
-		 * Resend the last packet.
-		 */
-		transport_resend_packet();
+		monitor_send_magic(usMaxpacketSize);
 	}
 	else
 	{
-		send_status(MONITOR_STATUS_InvalidSequenceNumber);
+		/* Get the command and the data size from the first byte. */
+		tCmd = (MONITOR_COMMAND_T)((ucCommand&MONITOR_COMMAND_MSK)>>MONITOR_COMMAND_SRT);
+		tAccessSize = (MONITOR_ACCESSSIZE_T)((ucCommand&MONITOR_ACCESSSIZE_MSK)>>MONITOR_ACCESSSIZE_SRT);
+		ucSequence = (ucCommand&MONITOR_SEQUENCE_MSK)>>MONITOR_SEQUENCE_SRT;
+		ulDataSize = pucPacket[1];
+
+
+		if( ucSequence==ucSequenceCurrent )
+		{
+			if( tCmd==MONITOR_COMMAND_Execute )
+			{
+				/* Get the address. */
+				ulAddress = get_unaligned_dword(pucPacket + 1);
+
+				if( ulPacketSize!=9U )
+				{
+					send_status(MONITOR_STATUS_InvalidPacketSize);
+				}
+				else
+				{
+					ulR0 = get_unaligned_dword(pucPacket + 5);
+					command_call(ulAddress, ulR0);
+				}
+			}
+			else if( tCmd==MONITOR_COMMAND_Read )
+			{
+				/* Get the address. */
+				ulAddress = get_unaligned_dword(pucPacket + 2);
+
+				if( ulPacketSize!=6 )
+				{
+					send_status(MONITOR_STATUS_InvalidPacketSize);
+				}
+				else if( ulDataSize>usMaxpacketSize-6U )
+				{
+					send_status(MONITOR_STATUS_InvalidSizeParameter);
+				}
+				else
+				{
+					command_read_memory(ulAddress, ulDataSize, tAccessSize);
+				}
+			}
+			else if( tCmd==MONITOR_COMMAND_Write )
+			{
+				/* Get the address. */
+				ulAddress = get_unaligned_dword(pucPacket + 2U);
+
+				if( ulPacketSize!=(6U+ulDataSize) )
+				{
+					send_status(MONITOR_STATUS_InvalidPacketSize);
+				}
+				else if( ulDataSize>usMaxpacketSize-6U )
+				{
+					send_status(MONITOR_STATUS_InvalidSizeParameter);
+				}
+				else
+				{
+					command_write_memory(pucPacket+6U, ulAddress, ulDataSize, tAccessSize);
+				}
+			}
+			else
+			{
+				send_status(MONITOR_STATUS_InvalidCommand);
+			}
+
+			next_sequence_number();
+		}
+		else if( ucSequence==ucSequenceLast )
+		{
+			/* This is the last transfer's sequence number.
+			 * Resend the last packet.
+			 */
+			transport_resend_packet();
+		}
+		else
+		{
+			send_status(MONITOR_STATUS_InvalidSequenceNumber);
+		}
 	}
 }
 
