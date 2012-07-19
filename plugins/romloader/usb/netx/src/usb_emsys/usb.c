@@ -73,7 +73,7 @@ void usb_deinit(void)
 
 void usb_init(void)
 {
-	/* NOTE: This is a kickstart. The core must start in running mode! */
+	/* NOTE: This is a kick-start. The core must start in running mode! */
 
 	globalState = USB_State_Configured;
 
@@ -82,10 +82,10 @@ void usb_init(void)
 #if 0
 	/* Soft reset. */
 	ptUsbCoreArea->ulUsb_core_ctrl = 1;
-	/* Release reset and set ID Func. */
+	/* Release reset and set ID Function. */
 	ptUsbCoreArea->ulUsb_core_ctrl = 8;
 
-	/* Set ID pullup and read connector ID value. */
+	/* Set ID pull-up and read connector ID value. */
 	ptUsbCoreArea->ulPORT_CTRL = MSK_USB_PORT_CTRL_ID_PU;
 	ptUsbCoreArea->ulPORT_CTRL = 0;
 #endif
@@ -113,10 +113,11 @@ void usb_send_byte(unsigned char ucData)
 
 void usb_send_packet(void)
 {
+	HOSTDEF(ptUsbCoreArea);
 	unsigned long ulPipeEvent;
 
 
-	/* Write the packet data to the fifo. */
+	/* Write the packet data to the FIFO. */
 	usb_io_write_fifo(Usb_Ep1_Buffer>>2, sizSendData, aucSendData);
 	/* Send the packet. */
 	usb_io_sendDataPacket(1, sizSendData);
@@ -169,7 +170,7 @@ unsigned char usb_get_byte(void)
 	unsigned char ucData;
 
 
-	/* Get a byte from the fifo. */
+	/* Get a byte from the FIFO. */
 	ucData = (unsigned char)ptUsvDevFifoArea->aulUsb_dev_fifo[USB_FIFO_Uart_RX];
 	return ucData;
 }
@@ -190,7 +191,7 @@ void usb_call_console_put(unsigned int uiChar)
 	unsigned long ulFillLevel;
 
 
-	/* Add the byte to the fifo. */
+	/* Add the byte to the FIFO. */
 	usb_send_byte((unsigned char)uiChar);
 
 	/* Reached the maximum packet size? */
@@ -228,6 +229,7 @@ void usb_call_console_flush(void)
 
 void usb_loop(void)
 {
+	HOSTDEF(ptUsbCoreArea);
 	unsigned long ulPortEvent;
 
 

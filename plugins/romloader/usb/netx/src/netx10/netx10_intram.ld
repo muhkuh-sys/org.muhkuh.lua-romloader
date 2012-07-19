@@ -68,7 +68,7 @@ SECTIONS
 	{
 		__copy_dst_start__ = . ;
 
-		*(.text)
+		*(.text*)
 		*(.rodata*)
 
 		__copy_dst_end__ = . ;

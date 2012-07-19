@@ -28,6 +28,9 @@
 
 static void usb_activateInputPipe(void)
 {
+	HOSTDEF(ptUsbCoreArea);
+
+
 	// select pipe 2
 	ptUsbCoreArea->ulPIPE_SEL = 0x02;
 	// set data pointer to Usb_Ep2_Buffer
@@ -39,6 +42,7 @@ static void usb_activateInputPipe(void)
 
 void usb_pingpong(void)
 {
+	HOSTDEF(ptUsbCoreArea);
 	unsigned long ulMainEvent;
 	unsigned long ulPipeEvent;
 	unsigned long ulPacketSize;
@@ -71,9 +75,9 @@ void usb_pingpong(void)
 				// Pipe Event detected: SETUP
 				// read Request
 
-				// get packetsize (in dwords) and convert to bytes
+				// get packet size (in DWORDS) and convert to bytes
 				ulPacketSize = ptUsbCoreArea->ulPIPE_DATA_PTR << 2;
-				// datasize must be at least standard header
+				// data size must be at least standard header
 				if( ulPacketSize==0x08 )
 				{
 					usb_io_read_fifo(Usb_Ep0_Buffer>>2, ulPacketSize, setupBuffer);
@@ -129,7 +133,7 @@ void usb_pingpong(void)
 				// data wanted?
 				if( tOutTransactionNeeded==USB_SetupTransaction_OutTransaction )
 				{
-					// get packetsize in bytes
+					// get packet size in bytes
 					ulPacketSize = Usb_Ep2_PacketSize - (ptUsbCoreArea->ulPIPE_DATA_TBYTES&(~MSK_USB_PIPE_DATA_TBYTES_DBV));
 					if( ulPacketSize<=Usb_Ep0_PacketSize )
 					{
@@ -214,6 +218,7 @@ void usb_sendPendingPacket(void)
 
 void usb_handleReset(void)
 {
+	HOSTDEF(ptUsbCoreArea);
         unsigned int event;
 	unsigned long ulValue;
 
@@ -228,13 +233,13 @@ void usb_handleReset(void)
                 // clear the reset event
                 ptUsbCoreArea->ulPSC_EV = event;
 
-                // set endpoint 0 packet size
+                // set end point 0 packet size
                 ptUsbCoreArea->ulPIPE_CFG = Usb_Ep0_PacketSize;
 
                 // go to default state
                 globalState = USB_State_Default;
 
-                // reset current config (as if we had more than one)
+                // reset current configuration (as if we had more than one)
                 currentConfig = 0;
 
                 tOutTransactionNeeded = USB_SetupTransaction_NoOutTransaction;
@@ -245,7 +250,7 @@ void usb_handleReset(void)
 
 		/* Select pipe #1. */
 		ptUsbCoreArea->ulPIPE_SEL = 1;
-		/* Set endpoint number. */
+		/* Set end point number. */
 		ptUsbCoreArea->ulPIPE_ADDR = 1;
 		/* Set max packet size. */
 		ulValue  = Usb_Ep1_PacketSize;
@@ -258,7 +263,7 @@ void usb_handleReset(void)
 		
 		/* Select pipe #2. */
 		ptUsbCoreArea->ulPIPE_SEL = 2;
-		/* Set endpoint number. */
+		/* Set end point number. */
 		ptUsbCoreArea->ulPIPE_ADDR = 1;
 		/* Set max packet size. */
 		ulValue  = Usb_Ep2_PacketSize;

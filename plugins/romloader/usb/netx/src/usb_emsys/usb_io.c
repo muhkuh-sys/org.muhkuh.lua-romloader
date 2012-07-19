@@ -42,8 +42,8 @@ void usb_io_read_fifo(unsigned int uiDwOffset, unsigned int uiByteCount, unsigne
 void usb_io_write_fifo(unsigned int uiDwOffset, unsigned int uiByteCount, const unsigned char *pucBuffer)
 {
 	/*
-	  NOTE: the ahbl switch can not write bytewise to registers or all other
-	  bytes in the dword are set to the same value
+	  NOTE: the AHBL switch can not write bytes to registers or all other
+	  bytes in the DWORD are set to the same value.
 	*/
 	const unsigned char *pucSc;
 	unsigned long *pulDc, *pulDe;
@@ -51,7 +51,7 @@ void usb_io_write_fifo(unsigned int uiDwOffset, unsigned int uiByteCount, const 
 	unsigned long ulValue;
 
 
-	/* round up the bytecount */
+	/* Round up the number of bytes to a multiple of 32 bits. */
 	uiByteCount += 3;
 
 	pucSc = pucBuffer;
@@ -73,6 +73,9 @@ void usb_io_write_fifo(unsigned int uiDwOffset, unsigned int uiByteCount, const 
 
 void usb_io_sendDataPacket(unsigned int uiPipeNr, unsigned int uiPacketSize)
 {
+	HOSTDEF(ptUsbCoreArea);
+
+
 	ptUsbCoreArea->ulPIPE_SEL = uiPipeNr;
 	ptUsbCoreArea->ulPIPE_CTRL = MSK_USB_PIPE_CTRL_ACT | DEF_USB_PIPE_CTRL_TPID_IN;
 	ptUsbCoreArea->ulPIPE_DATA_PTR = uiPipeNr<<5U;

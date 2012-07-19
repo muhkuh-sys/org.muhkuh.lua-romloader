@@ -61,7 +61,7 @@ static packet_handler_stall_req_t getStatus(setupPacket_t *pPacket)
 		break;
 
 	case 3:
-		/* Get the endpoint status. */
+		/* Get the end point status. */
 		uiEndpoint = pPacket->tHeader.wIndex & 0xffU;
 		iSendStatus = 1;
 		usStatus = 0x0000;
@@ -83,8 +83,11 @@ static packet_handler_stall_req_t getStatus(setupPacket_t *pPacket)
 	return tResult;
 }
 
+
+
 void usb_requests_handle_request_top(setupPacket_t *ptSetupPkt)
 {
+	HOSTDEF(ptUsbCoreArea);
 	packet_handler_stall_req_t tSendStall;
 	unsigned int uiIdx;
 
@@ -167,7 +170,7 @@ void usb_requests_handle_request_top(setupPacket_t *ptSetupPkt)
 
 				if( uiIdx<2 )
 				{
-					// set current config
+					// set current configuration
 					currentConfig = uiIdx;
 					globalState = uiIdx + USB_State_Address;
 					tSendStall = PKT_HANDLER_Send_Zero;

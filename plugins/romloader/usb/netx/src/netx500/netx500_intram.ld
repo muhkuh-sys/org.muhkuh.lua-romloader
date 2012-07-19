@@ -51,7 +51,7 @@ SECTIONS
 
 		KEEP(*(.header))
 		*(.init_code)
-		*(.text)
+		*(.text*)
 		*(.rodata*)
 	} >INTRAM0
 
