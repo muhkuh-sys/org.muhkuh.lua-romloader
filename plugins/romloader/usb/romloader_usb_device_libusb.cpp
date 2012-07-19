@@ -24,7 +24,7 @@
 #include <stdio.h>
 
 #include "romloader_usb_device_libusb.h"
-#include "netx/src/usbmonitor_commands.h"
+#include "../machine_interface/netx/src/monitor_commands.h"
 
 #include <stdlib.h>
 
@@ -836,6 +836,8 @@ int romloader_usb_device_libusb::Connect(unsigned int uiBusNr, unsigned int uiDe
 		}
 	}
 
+	printf("-Connect(): iResult=%d\n", iResult);
+
 	return iResult;
 }
 
@@ -883,6 +885,7 @@ const NETX_USB_DEVICE_T *romloader_usb_device_libusb::identifyDevice(libusb_devi
 					)
 					{
 						/* Found a matching device. */
+						printf("identifyDevice: Found dev %04x:%04x:%04x\n", sDevDesc.idVendor, sDevDesc.idProduct, sDevDesc.bcdDevice);
 						ptDevHit = ptDevCnt;
 						break;
 					}
@@ -1355,6 +1358,8 @@ int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice
 				libusb_release_interface(ptDevHandle, m_tDeviceId.ucInterface);
 
 				libusb_close(ptDevHandle);
+
+				printf("ROM code update finished!\n");
 
 				*pptUpdatedNetxDevice = ptDevice;
 				iResult = 0;

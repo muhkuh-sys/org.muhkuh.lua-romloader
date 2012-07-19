@@ -23,7 +23,7 @@
 #include <stdio.h>
 
 #include "romloader_usb_main.h"
-#include "netx/src/usbmonitor_commands.h"
+#include "../machine_interface/netx/src/monitor_commands.h"
 
 #if defined(_MSC_VER)
 	#define snprintf _snprintf
@@ -449,8 +449,8 @@ unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long 
 	else
 	{
 		/* Construct the command packet. */
-		ucCommand  = USBMON_COMMAND_Read;
-		ucCommand |= USBMON_ACCESSSIZE_Byte << 6U;
+		ucCommand  = MONITOR_COMMAND_Read;
+		ucCommand |= MONITOR_ACCESSSIZE_Byte << 6U;
 		aucOutBuf[0x00] = ucCommand;
 		aucOutBuf[0x01] = sizeof(unsigned char);
 		aucOutBuf[0x02] = (unsigned char)( ulNetxAddress      & 0xff);
@@ -473,7 +473,7 @@ unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long 
 		else
 		{
 			ucStatus = aucInBuf[0];
-			if( ucStatus!=USBMON_STATUS_Ok )
+			if( ucStatus!=MONITOR_STATUS_Ok )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data08: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 				fOk = false;
@@ -523,8 +523,8 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 	else
 	{
 		/* Construct the command packet. */
-		ucCommand  = USBMON_COMMAND_Read;
-		ucCommand |= USBMON_ACCESSSIZE_Word << 6U;
+		ucCommand  = MONITOR_COMMAND_Read;
+		ucCommand |= MONITOR_ACCESSSIZE_Word << 6U;
 		aucOutBuf[0x00] = ucCommand;
 		aucOutBuf[0x01] = sizeof(unsigned short);
 		aucOutBuf[0x02] = (unsigned char)( ulNetxAddress      & 0xff);
@@ -547,7 +547,7 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 		else
 		{
 			ucStatus = aucInBuf[0];
-			if( ucStatus!=USBMON_STATUS_Ok )
+			if( ucStatus!=MONITOR_STATUS_Ok )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data16: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 				fOk = false;
@@ -589,6 +589,8 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 	unsigned char ucStatus;
 
 
+	printf("+read_data32(): ptClientData=0x%p, ulNetxAddress=0x%08lx\n", ptClientData, ulNetxAddress);
+
 	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data32: not connected!", m_pcName, this);
@@ -597,8 +599,8 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 	else
 	{
 		/* Construct the command packet. */
-		ucCommand  = USBMON_COMMAND_Read;
-		ucCommand |= USBMON_ACCESSSIZE_Long << 6U;
+		ucCommand  = MONITOR_COMMAND_Read;
+		ucCommand |= MONITOR_ACCESSSIZE_Long << 6U;
 		aucOutBuf[0x00] = ucCommand;
 		aucOutBuf[0x01] = sizeof(unsigned long);
 		aucOutBuf[0x02] = (unsigned char)( ulNetxAddress      & 0xff);
@@ -621,7 +623,7 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 		else
 		{
 			ucStatus = aucInBuf[0];
-			if( ucStatus!=USBMON_STATUS_Ok )
+			if( ucStatus!=MONITOR_STATUS_Ok )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data32: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 				fOk = false;
@@ -642,6 +644,9 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 			}
 		}
 	}
+
+	/* Print the function end marker already here as the MUHKUH_PLUGIN_EXIT_ERROR might leave the function. */
+	printf("-read_data32(): fOk=%d, ulData=0x%08lx\n", fOk, ulData);
 
 	if( fOk!=true )
 	{
@@ -706,8 +711,8 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 				}
 
 				/* Construct the command packet. */
-				ucCommand  = USBMON_COMMAND_Read;
-				ucCommand |= USBMON_ACCESSSIZE_Byte << 6U;
+				ucCommand  = MONITOR_COMMAND_Read;
+				ucCommand |= MONITOR_ACCESSSIZE_Byte << 6U;
 				aucOutBuf[0x00] = ucCommand;
 				aucOutBuf[0x01] = (unsigned char)sizChunk;
 				aucOutBuf[0x02] = (unsigned char)( ulNetxAddress      & 0xff);
@@ -732,7 +737,7 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 				else
 				{
 					ucStatus = aucInBuf[0];
-					if( ucStatus!=USBMON_STATUS_Ok )
+					if( ucStatus!=MONITOR_STATUS_Ok )
 					{
 						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): read_image: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 						fOk = false;
@@ -800,8 +805,8 @@ void romloader_usb::write_data08(lua_State *ptClientData, unsigned long ulNetxAd
 	else
 	{
 		/* Construct the command packet. */
-		ucCommand  = USBMON_COMMAND_Write;
-		ucCommand |= USBMON_ACCESSSIZE_Byte << 6U;
+		ucCommand  = MONITOR_COMMAND_Write;
+		ucCommand |= MONITOR_ACCESSSIZE_Byte << 6U;
 		aucOutBuf[0x00] = ucCommand;
 		aucOutBuf[0x01] = sizeof(unsigned char);
 		aucOutBuf[0x02] = (unsigned char)( ulNetxAddress      & 0xff);
@@ -825,7 +830,7 @@ void romloader_usb::write_data08(lua_State *ptClientData, unsigned long ulNetxAd
 		else
 		{
 			ucStatus = aucInBuf[0];
-			if( ucStatus!=USBMON_STATUS_Ok )
+			if( ucStatus!=MONITOR_STATUS_Ok )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data08: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 				fOk = false;
@@ -871,8 +876,8 @@ void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 	else
 	{
 		/* Construct the command packet. */
-		ucCommand  = USBMON_COMMAND_Write;
-		ucCommand |= USBMON_ACCESSSIZE_Word << 6U;
+		ucCommand  = MONITOR_COMMAND_Write;
+		ucCommand |= MONITOR_ACCESSSIZE_Word << 6U;
 		aucOutBuf[0x00] = ucCommand;
 		aucOutBuf[0x01] = sizeof(unsigned short);
 		aucOutBuf[0x02] = (unsigned char)( ulNetxAddress      & 0xff);
@@ -897,7 +902,7 @@ void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 		else
 		{
 			ucStatus = aucInBuf[0];
-			if( ucStatus!=USBMON_STATUS_Ok )
+			if( ucStatus!=MONITOR_STATUS_Ok )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data16: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 				fOk = false;
@@ -943,8 +948,8 @@ void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 	else
 	{
 		/* Construct the command packet. */
-		ucCommand  = USBMON_COMMAND_Write;
-		ucCommand |= USBMON_ACCESSSIZE_Long << 6U;
+		ucCommand  = MONITOR_COMMAND_Write;
+		ucCommand |= MONITOR_ACCESSSIZE_Long << 6U;
 		aucOutBuf[0x00] = ucCommand;
 		aucOutBuf[0x01] = sizeof(unsigned long);
 		aucOutBuf[0x02] = (unsigned char)( ulNetxAddress      & 0xff);
@@ -971,7 +976,7 @@ void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 		else
 		{
 			ucStatus = aucInBuf[0];
-			if( ucStatus!=USBMON_STATUS_Ok )
+			if( ucStatus!=MONITOR_STATUS_Ok )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data32: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 				fOk = false;
@@ -1032,8 +1037,8 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 			}
 
 			/* Construct the command packet. */
-			ucCommand  = USBMON_COMMAND_Write;
-			ucCommand |= USBMON_ACCESSSIZE_Byte << 6U;
+			ucCommand  = MONITOR_COMMAND_Write;
+			ucCommand |= MONITOR_ACCESSSIZE_Byte << 6U;
 			aucOutBuf[0x00] = ucCommand;
 			aucOutBuf[0x01] = (unsigned char)sizChunk;
 			aucOutBuf[0x02] = (unsigned char)( ulNetxAddress      & 0xff);
@@ -1059,7 +1064,7 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 			else
 			{
 				ucStatus = aucInBuf[0];
-				if( ucStatus!=USBMON_STATUS_Ok )
+				if( ucStatus!=MONITOR_STATUS_Ok )
 				{
 					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): write_image: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 					fOk = false;
@@ -1122,7 +1127,7 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 	else
 	{
 		/* Construct the command packet. */
-		ucCommand = USBMON_COMMAND_Execute;
+		ucCommand = MONITOR_COMMAND_Execute;
 		aucOutBuf[0x00] = ucCommand;
 		aucOutBuf[0x01] = (unsigned char)( ulNetxAddress      & 0xff);
 		aucOutBuf[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xff);
@@ -1153,7 +1158,7 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 			hexdump(aucInBuf, sizInBuf, 0);
 
 			ucStatus = aucInBuf[0];
-			if( ucStatus!=USBMON_STATUS_Ok )
+			if( ucStatus!=MONITOR_STATUS_Ok )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: failed to execute command! Status: %d", m_pcName, this, ucStatus);
 				fOk = false;
@@ -1184,12 +1189,12 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 					}
 					else
 					{
-						if( sizInBuf==1 && aucInBuf[0]==USBMON_STATUS_CallFinished )
+						if( sizInBuf==1 && aucInBuf[0]==MONITOR_STATUS_CallFinished )
 						{
 							fOk = true;
 							break;
 						}
-						else if( sizInBuf>=1 && aucInBuf[0]==USBMON_STATUS_CallMessage )
+						else if( sizInBuf>=1 && aucInBuf[0]==MONITOR_STATUS_CallMessage )
 						{
 //							printf("Received message:\n");
 //							hexdump(aucInBuf+1, sizInBuf-1, 0);
