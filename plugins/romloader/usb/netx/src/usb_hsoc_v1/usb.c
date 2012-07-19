@@ -167,34 +167,43 @@ void usb_reset_fifo(void)
 
 void usb_loop(void)
 {
+	HOSTDEF(ptUsbDevCtrlArea);
+	unsigned long ulValue;
 	unsigned long ulFillLevel;
 	unsigned char *pucCnt;
 	unsigned char *pucEnd;
 
 
-	/* wait for a character in the input FIFO */
-
-	/* get the UART RX input fill level */
-	ulFillLevel = usb_get_rx_fill_level();
-	if( ulFillLevel>0 )
+	/* Wait for a new packet. */
+	ulValue  = ptUsbDevCtrlArea->ulUsb_dev_irq_raw;
+	ulValue &= HOSTMSK(usb_dev_irq_raw_jtag_rx_packet_received);
+	if( ulValue!=0 )
 	{
-		/* Is the fill level valid? */
-		if( ulFillLevel>MONITOR_USB_MAX_PACKET_SIZE )
-		{
-			/* Reset the FIFO. */
-			usb_reset_fifo();
-		}
-		else
-		{
-			/* Copy the complete packet to the buffer. */
-			pucCnt = aucPacketRx;
-			pucEnd = aucPacketRx + ulFillLevel;
-			do
-			{
-				*(pucCnt++) = usb_get_byte();
-			} while( pucCnt<pucEnd );
+		/* Acknowledge the IRQ. */
+		ptUsbDevCtrlArea->ulUsb_dev_irq_raw = HOSTMSK(usb_dev_irq_raw_jtag_rx_packet_received);
 
-			monitor_process_packet(aucPacketRx, ulFillLevel, MONITOR_USB_MAX_PACKET_SIZE);
+		/* Get the UART RX input fill level. */
+		ulFillLevel = usb_get_rx_fill_level();
+		if( ulFillLevel>0 )
+		{
+			/* Is the fill level valid? */
+			if( ulFillLevel>MONITOR_USB_MAX_PACKET_SIZE )
+			{
+				/* Reset the FIFO. */
+				usb_reset_fifo();
+			}
+			else
+			{
+				/* Copy the complete packet to the buffer. */
+				pucCnt = aucPacketRx;
+				pucEnd = aucPacketRx + ulFillLevel;
+				do
+				{
+					*(pucCnt++) = usb_get_byte();
+				} while( pucCnt<pucEnd );
+
+				monitor_process_packet(aucPacketRx, ulFillLevel, MONITOR_USB_MAX_PACKET_SIZE);
+			}
 		}
 	}
 }
