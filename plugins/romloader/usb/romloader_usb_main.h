@@ -78,15 +78,36 @@ private:
 		size_t sizPos;
 	} DATA_BUFFER_T;
 
+	typedef enum USBSTATUS_ENUM
+	{
+		USBSTATUS_OK                        = 0,
+		USBSTATUS_TIMEOUT                   = 1,
+		USBSTATUS_PACKET_TOO_LARGE          = 2,
+		USBSTATUS_SEND_FAILED               = 3,
+		USBSTATUS_RECEIVE_FAILED            = 4,
+		USBSTATUS_FAILED_TO_SYNC            = 5,
+		USBSTATUS_CRC_MISMATCH              = 6,
+		USBSTATUS_MISSING_USERDATA          = 7,
+		USBSTATUS_COMMAND_EXECUTION_FAILED  = 8,
+		USBSTATUS_SEQUENCE_MISMATCH         = 9
+	} USBSTATUS_T;
+
+	static const size_t m_sizMaxPacketSizeHost = 4096;
+	size_t m_sizMaxPacketSizeClient;
+	unsigned char m_aucPacketOutputBuffer[m_sizMaxPacketSizeHost];
+	unsigned char m_aucPacketInputBuffer[m_sizMaxPacketSizeHost];
+
+	unsigned int m_uiMonitorSequence;
+
 	bool synchronize(void);
-	bool chip_init(lua_State *ptClientData);
+	USBSTATUS_T execute_command(const unsigned char *aucCommand, size_t sizCommand, size_t *psizReceivePacket);
 
 	romloader_usb_provider *m_ptUsbProvider;
 
 	unsigned int m_uiBusNr;
 	unsigned int m_uiDeviceAdr;
 
-	/* pointer to the usb device and the usb device handle */
+	/* Pointer to the USB device and the USB device handle. */
 	romloader_usb_device_libusb *m_ptUsbDevice;
 };
 
