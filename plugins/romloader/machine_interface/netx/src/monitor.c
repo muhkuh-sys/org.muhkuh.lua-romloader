@@ -327,7 +327,7 @@ void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPack
 				{
 					send_status(MONITOR_STATUS_InvalidPacketSize);
 				}
-				else if( ulDataSize>usMaxpacketSize-6U )
+				else if( ulDataSize>usMaxpacketSize-1U )
 				{
 					send_status(MONITOR_STATUS_InvalidSizeParameter);
 				}
@@ -345,10 +345,6 @@ void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPack
 				{
 					send_status(MONITOR_STATUS_InvalidPacketSize);
 				}
-				else if( ulDataSize>usMaxpacketSize-6U )
-				{
-					send_status(MONITOR_STATUS_InvalidSizeParameter);
-				}
 				else
 				{
 					command_write_memory(pucPacket+6U, ulAddress, ulDataSize, tAccessSize);
@@ -364,7 +360,7 @@ void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPack
 		else if( ucSequence==ucSequenceLast )
 		{
 			/* This is the last transfer's sequence number.
-			 * Resend the last packet.
+			 * Send the last packet again.
 			 */
 			transport_resend_packet();
 		}
