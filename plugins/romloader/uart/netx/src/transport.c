@@ -281,7 +281,7 @@ void transport_loop(void)
 					++sizCrcPosition;
 				}
 
-				monitor_process_packet(aucPacketInputBuffer, sizPacket, MONITOR_MAX_PACKET_SIZE_UART);
+				monitor_process_packet(aucPacketInputBuffer, sizPacket, MONITOR_MAX_PACKET_SIZE_UART-5U);
 			}
 /*
 			else
