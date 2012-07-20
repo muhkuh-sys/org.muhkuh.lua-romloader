@@ -773,7 +773,6 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 				{
 					sizChunk = m_sizMaxPacketSizeClient - 1;
 				}
-				printf("chunk size: %d\n", sizChunk);
 
 				/* Get the next sequence number. */
 				m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
@@ -1135,9 +1134,6 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 {
 	bool fOk;
 	int iResult;
-	unsigned char aucOutBuf[64];
-	unsigned char aucInBuf[64];
-	size_t sizOutBuf;
 	size_t sizInBuf;
 	unsigned char ucCommand;
 	unsigned char ucStatus;
@@ -1147,6 +1143,8 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 	USBSTATUS_T tResult;
 
 
+	printf("+call(): ulNetxAddress=0x%08lx, ulParameterR0=0x%08lx, tLuaFn.L=0x%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, ulParameterR0, tLuaFn.L, lCallbackUserData);
+
 	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: not connected!", m_pcName, this);
@@ -1155,110 +1153,91 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 	else
 	{
 		/* Construct the command packet. */
-		ucCommand = MONITOR_COMMAND_Execute;
-		aucOutBuf[0x00] = ucCommand;
-		aucOutBuf[0x01] = (unsigned char)( ulNetxAddress      & 0xff);
-		aucOutBuf[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xff);
-		aucOutBuf[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xff);
-		aucOutBuf[0x04] = (unsigned char)((ulNetxAddress>>24) & 0xff);
-		aucOutBuf[0x05] = (unsigned char)( ulParameterR0      & 0xff);
-		aucOutBuf[0x06] = (unsigned char)((ulParameterR0>>8 ) & 0xff);
-		aucOutBuf[0x07] = (unsigned char)((ulParameterR0>>16) & 0xff);
-		aucOutBuf[0x08] = (unsigned char)((ulParameterR0>>24) & 0xff);
-		sizOutBuf = 9;
+		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Execute;
+		m_aucPacketOutputBuffer[0x01] = (unsigned char)( ulNetxAddress      & 0xff);
+		m_aucPacketOutputBuffer[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xff);
+		m_aucPacketOutputBuffer[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xff);
+		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>>24) & 0xff);
+		m_aucPacketOutputBuffer[0x05] = (unsigned char)( ulParameterR0      & 0xff);
+		m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulParameterR0>>8 ) & 0xff);
+		m_aucPacketOutputBuffer[0x07] = (unsigned char)((ulParameterR0>>16) & 0xff);
+		m_aucPacketOutputBuffer[0x08] = (unsigned char)((ulParameterR0>>24) & 0xff);
 
-		printf("Executing call command:\n");
-		hexdump(aucOutBuf, sizOutBuf, 0);
-		iResult = m_ptUsbDevice->execute_command(aucOutBuf, sizOutBuf, aucInBuf, &sizInBuf);
-		if( iResult!=0 )
+		tResult = execute_command(m_aucPacketOutputBuffer, 9, &sizInBuf);
+		if( tResult!=USBSTATUS_OK )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: failed to transfer command!", m_pcName, this);
+			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
 			fOk = false;
 		}
-		else if( sizInBuf==0 )
+		else if( sizInBuf!=1 )
 		{
-			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: received empty answer!", m_pcName, this);
+			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: answer has invalid size!", m_pcName, this);
+			hexdump(m_aucPacketInputBuffer, sizInBuf, 0);
 			fOk = false;
 		}
 		else
 		{
-			printf("Received call status:\n");
-			hexdump(aucInBuf, sizInBuf, 0);
+			/* Receive message packets. */
+			while(1)
+			{
+				pcProgressData = NULL;
+				sizProgressData = 0;
 
-			ucStatus = aucInBuf[0];
-			if( ucStatus!=MONITOR_STATUS_Ok )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: failed to execute command! Status: %d", m_pcName, this, ucStatus);
-				fOk = false;
-			}
-			else if( sizInBuf!=1 )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: answer has invalid size!", m_pcName, this);
-				hexdump(aucInBuf, sizInBuf, 0);
-				fOk = false;
-			}
-			else
-			{
-				/* Receive message packets. */
-				while(1)
+				iResult = m_ptUsbDevice->receive_packet(m_aucPacketInputBuffer, &sizInBuf, 500);
+				if( iResult==LIBUSB_ERROR_TIMEOUT )
+				{ // should we print anything if a timeout occurs?
+				}
+				else if( iResult!=0 )
 				{
-					pcProgressData = NULL;
-					sizProgressData = 0;
-
-					iResult = m_ptUsbDevice->receive_packet(aucInBuf, &sizInBuf, 500);
-					if( iResult==LIBUSB_ERROR_TIMEOUT )
-					{ // should we print anything if a timeout occurs?
-					}
-					else if( iResult!=0 )
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: failed to receive packet! (error %d)", m_pcName, this, iResult);
+					fOk = false;
+					break;
+				}
+				else
+				{
+					if( sizInBuf==1 && m_aucPacketInputBuffer[0]==MONITOR_STATUS_CallFinished )
 					{
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: failed to receive packet! (error %d)", m_pcName, this, iResult);
+						fOk = true;
+						break;
+					}
+					else if( sizInBuf>=1 && m_aucPacketInputBuffer[0]==MONITOR_STATUS_CallMessage )
+					{
+//						printf("Received message:\n");
+//						hexdump(aucInBuf+1, sizInBuf-1, 0);
+						pcProgressData = (char*)m_aucPacketInputBuffer+1;
+						sizProgressData = sizInBuf-1;
+					}
+					else if( sizInBuf!=0 )
+					{
+						printf("Received invalid packet:\n");
+						hexdump(m_aucPacketInputBuffer, sizInBuf, 0);
+
+						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: received invalid packet!", m_pcName, this);
 						fOk = false;
 						break;
 					}
-					else
-					{
-						if( sizInBuf==1 && aucInBuf[0]==MONITOR_STATUS_CallFinished )
-						{
-							fOk = true;
-							break;
-						}
-						else if( sizInBuf>=1 && aucInBuf[0]==MONITOR_STATUS_CallMessage )
-						{
-//							printf("Received message:\n");
-//							hexdump(aucInBuf+1, sizInBuf-1, 0);
-							pcProgressData = (char*)aucInBuf+1;
-							sizProgressData = sizInBuf-1;
-						}
-						else if( sizInBuf!=0 )
-						{
-							printf("Received invalid packet:\n");
-							hexdump(aucInBuf, sizInBuf, 0);
-
-							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: received invalid packet!", m_pcName, this);
-							fOk = false;
-							break;
-						}
-					}
-
-					if (pcProgressData != NULL)
-					{
-						fIsRunning = callback_string(&tLuaFn, pcProgressData, sizProgressData, lCallbackUserData);
-						if( fIsRunning!=true )
-						{
-							/* Send a cancel request to the device. */
-							aucOutBuf[0] = 0x2b;
-							iResult = m_ptUsbDevice->send_packet(aucOutBuf, 1, 100);
-
-							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): the call was cancelled!", m_pcName, this);
-							fOk = false;
-							break;
-						}
-					}
-
 				}
+
+				if (pcProgressData != NULL)
+				{
+					fIsRunning = callback_string(&tLuaFn, pcProgressData, sizProgressData, lCallbackUserData);
+					if( fIsRunning!=true )
+					{
+						/* Send a cancel request to the device. */
+						m_aucPacketOutputBuffer[0] = 0x2b;
+						iResult = m_ptUsbDevice->send_packet(m_aucPacketOutputBuffer, 1, 100);
+
+						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): the call was cancelled!", m_pcName, this);
+						fOk = false;
+						break;
+					}
+				}
+
 			}
 		}
 	}
+
+	printf("-call(): fOk=%d\n", fOk);
 
 	if( fOk!=true )
 	{
