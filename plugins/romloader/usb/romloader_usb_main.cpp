@@ -32,6 +32,32 @@
 
 /*-------------------------------------*/
 
+#if CFG_DEBUGMSG!=0
+	/* show all messages by default */
+	static unsigned long s_ulCurSettings = 0xffffffff;
+
+	#define DEBUGZONE(n)  (s_ulCurSettings&(0x00000001<<(n)))
+
+	/* NOTE: These defines must match the ZONE_* defines. */
+	#define DBG_ZONE_ERROR      0
+	#define DBG_ZONE_WARNING    1
+	#define DBG_ZONE_FUNCTION   2
+	#define DBG_ZONE_INIT       3
+	#define DBG_ZONE_VERBOSE    7
+
+	#define ZONE_ERROR          DEBUGZONE(DBG_ZONE_ERROR)
+	#define ZONE_WARNING        DEBUGZONE(DBG_ZONE_WARNING)
+	#define ZONE_FUNCTION       DEBUGZONE(DBG_ZONE_FUNCTION)
+	#define ZONE_INIT           DEBUGZONE(DBG_ZONE_INIT)
+	#define ZONE_VERBOSE        DEBUGZONE(DBG_ZONE_VERBOSE)
+
+	#define DEBUGMSG(cond,printf_exp) ((void)((cond)?(uprintf printf_exp),1:0))
+#else  /* CFG_DEBUGMSG!=0 */
+	#define DEBUGMSG(cond,printf_exp) ((void)0)
+#endif /* CFG_DEBUGMSG!=0 */
+
+
+
 class romloader_usb_read_functinoid : public romloader_read_functinoid
 {
 public:
@@ -64,22 +90,24 @@ romloader_usb_provider::romloader_usb_provider(swig_type_info *p_romloader_usb, 
  : muhkuh_plugin_provider("romloader_usb")
  , m_ptUsbDevice(NULL)
 {
-    printf("%s(%p): provider create\n", m_pcPluginId, this);
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb_provider(): p_romloader_usb=0x%p, p_romloader_usb_reference=0x%p\n", p_romloader_usb, p_romloader_usb_reference));
 
-	/* get the romloader_usb lua type */
+	/* Get the romloader_usb LUA type. */
 	m_ptPluginTypeInfo = p_romloader_usb;
 	m_ptReferenceTypeInfo = p_romloader_usb_reference;
 
 	libusb_load();
 
-	/* create a new libusb context */
+	/* Create a new libusb context */
 	m_ptUsbDevice = new romloader_usb_device_libusb(m_pcPluginId);
+
+	DEBUGMSG(ZONE_FUNCTION, ("-romloader_usb_provider()\n"));
 }
 
 
 romloader_usb_provider::~romloader_usb_provider(void)
 {
-	printf("%s(%p): provider delete\n", m_pcPluginId, this); 
+	DEBUGMSG(ZONE_FUNCTION, ("+~romloader_usb_provider()\n"));
 
 	libusb_unload();
 
@@ -87,6 +115,8 @@ romloader_usb_provider::~romloader_usb_provider(void)
 	{
 		delete m_ptUsbDevice;
 	}
+
+	DEBUGMSG(ZONE_FUNCTION, ("-~romloader_usb_provider()\n"));
 }
 
 
@@ -99,6 +129,8 @@ int romloader_usb_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 	romloader_usb_reference *ptRef;
 	size_t sizReferences;
 
+
+	DEBUGMSG(ZONE_FUNCTION, ("+DetectInterfaces(): ptLuaStateForTableAccess=0x%p\n", ptLuaStateForTableAccess));
 
 	sizReferences = 0;
 
@@ -134,6 +166,8 @@ int romloader_usb_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 		}
 	}
 
+	DEBUGMSG(ZONE_FUNCTION, ("-DetectInterfaces(): sizReferences=%d\n", sizReferences));
+
 	return sizReferences;
 }
 
@@ -145,6 +179,8 @@ romloader_usb *romloader_usb_provider::ClaimInterface(const muhkuh_plugin_refere
 	unsigned int uiBusNr;
 	unsigned int uiDevAdr;
 
+
+	DEBUGMSG(ZONE_FUNCTION, ("+ClaimInterface(): ptReference=0x%p\n", ptReference));
 
 	/* expect error */
 	ptPlugin = NULL;
@@ -168,7 +204,7 @@ romloader_usb *romloader_usb_provider::ClaimInterface(const muhkuh_plugin_refere
 		else if( m_ptUsbDevice==NULL )
 		{
 			/* libusb was not initialized */
-			printf("%s(%p): libusb was not initialized!\n", m_pcPluginId, this);
+			fprintf(stderr, "%s(%p): libusb was not initialized!\n", m_pcPluginId, this);
 		}
 		else
 		{
@@ -176,6 +212,8 @@ romloader_usb *romloader_usb_provider::ClaimInterface(const muhkuh_plugin_refere
 			printf("%s(%p): claim_interface(): claimed interface %s.\n", m_pcPluginId, this, pcName);
 		}
 	}
+
+	DEBUGMSG(ZONE_FUNCTION, ("-ClaimInterface(): ptPlugin=0x%p\n", ptPlugin));
 
 	return ptPlugin;
 }
@@ -189,9 +227,10 @@ bool romloader_usb_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 	unsigned int uiDevAdr;
 
 
+	DEBUGMSG(ZONE_FUNCTION, ("+ReleaseInterface(): ptPlugin=0x%p\n", ptPlugin));
+
 	/* expect error */
 	fOk = false;
-
 
 	if( ptPlugin==NULL )
 	{
@@ -214,6 +253,8 @@ bool romloader_usb_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 			fOk = true;
 		}
 	}
+
+	DEBUGMSG(ZONE_FUNCTION, ("-ReleaseInterface(): fOk=%d\n", fOk));
 
 	return fOk;
 }
