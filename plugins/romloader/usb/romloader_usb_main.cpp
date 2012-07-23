@@ -1184,8 +1184,12 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 	}
 	else
 	{
+		/* Get the next sequence number. */
+		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
+
 		/* Construct the command packet. */
-		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Execute;
+		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Execute |
+		                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		m_aucPacketOutputBuffer[0x01] = (unsigned char)( ulNetxAddress      & 0xff);
 		m_aucPacketOutputBuffer[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xff);
 		m_aucPacketOutputBuffer[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xff);
@@ -1227,12 +1231,13 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 				}
 				else
 				{
-					if( sizInBuf==1 && m_aucPacketInputBuffer[0]==MONITOR_STATUS_CallFinished )
+					ucStatus = m_aucPacketInputBuffer[0] & MONITOR_STATUS_MSK;
+					if( sizInBuf==1 && ucStatus==MONITOR_STATUS_CallFinished )
 					{
 						fOk = true;
 						break;
 					}
-					else if( sizInBuf>=1 && m_aucPacketInputBuffer[0]==MONITOR_STATUS_CallMessage )
+					else if( sizInBuf>=1 && ucStatus==MONITOR_STATUS_CallMessage )
 					{
 //						printf("Received message:\n");
 //						hexdump(aucInBuf+1, sizInBuf-1, 0);
