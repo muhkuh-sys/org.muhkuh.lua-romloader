@@ -1119,7 +1119,6 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 			memcpy(m_aucPacketOutputBuffer+6, pcBUFFER_IN, sizChunk);
 
 			tResult = execute_command(m_aucPacketOutputBuffer, sizChunk+6, &sizInBuf);
-			printf("write_image: execute_command returned %d\n", tResult);
 			if( tResult!=USBSTATUS_OK )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
