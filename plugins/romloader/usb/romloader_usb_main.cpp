@@ -26,8 +26,8 @@
 #include "../machine_interface/netx/src/monitor_commands.h"
 
 #if defined(_MSC_VER)
-	#define snprintf _snprintf
-	#define ssize_t size_t
+#       define snprintf _snprintf
+#       define ssize_t size_t
 #endif
 
 /*-------------------------------------*/
@@ -65,7 +65,7 @@ romloader_usb_provider::romloader_usb_provider(swig_type_info *p_romloader_usb, 
  : muhkuh_plugin_provider("romloader_usb")
  , m_ptUsbDevice(NULL)
 {
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb_provider::romloader_usb_provider(): p_romloader_usb=0x%p, p_romloader_usb_reference=0x%p\n", p_romloader_usb, p_romloader_usb_reference));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb_provider::romloader_usb_provider(): p_romloader_usb=%p, p_romloader_usb_reference=%p\n", p_romloader_usb, p_romloader_usb_reference));
 
 	/* Get the romloader_usb LUA type. */
 	m_ptPluginTypeInfo = p_romloader_usb;
@@ -105,7 +105,7 @@ int romloader_usb_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 	size_t sizReferences;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb_provider::DetectInterfaces(): ptLuaStateForTableAccess=0x%p\n", ptLuaStateForTableAccess));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb_provider::DetectInterfaces(): ptLuaStateForTableAccess=%p\n", ptLuaStateForTableAccess));
 
 	sizReferences = 0;
 
@@ -155,7 +155,7 @@ romloader_usb *romloader_usb_provider::ClaimInterface(const muhkuh_plugin_refere
 	unsigned int uiDevAdr;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb_provider::ClaimInterface(): ptReference=0x%p\n", ptReference));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb_provider::ClaimInterface(): ptReference=%p\n", ptReference));
 
 	/* expect error */
 	ptPlugin = NULL;
@@ -188,7 +188,7 @@ romloader_usb *romloader_usb_provider::ClaimInterface(const muhkuh_plugin_refere
 		}
 	}
 
-	DEBUGMSG(ZONE_FUNCTION, ("-romloader_usb_provider::ClaimInterface(): ptPlugin=0x%p\n", ptPlugin));
+	DEBUGMSG(ZONE_FUNCTION, ("-romloader_usb_provider::ClaimInterface(): ptPlugin=%p\n", ptPlugin));
 
 	return ptPlugin;
 }
@@ -202,7 +202,7 @@ bool romloader_usb_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 	unsigned int uiDevAdr;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb_provider::ReleaseInterface(): ptPlugin=0x%p\n", ptPlugin));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb_provider::ReleaseInterface(): ptPlugin=%p\n", ptPlugin));
 
 	/* expect error */
 	fOk = false;
@@ -244,7 +244,7 @@ romloader_usb::romloader_usb(const char *pcName, const char *pcTyp, romloader_us
  , m_uiDeviceAdr(uiDeviceAdr)
  , m_ptUsbDevice(NULL)
 {
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::romloader_usb(): pcName='%s', pcTyp='%s', ptProvider=0x%p, uiBusNr=%d, uiDeviceAdr=%d\n", pcName, pcTyp, ptProvider, uiBusNr, uiDeviceAdr));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::romloader_usb(): pcName='%s', pcTyp='%s', ptProvider=%p, uiBusNr=%d, uiDeviceAdr=%d\n", pcName, pcTyp, ptProvider, uiBusNr, uiDeviceAdr));
 
 	/* create a new libusb context */
 	m_ptUsbDevice = new romloader_usb_device_libusb(m_pcName);
@@ -272,7 +272,7 @@ void romloader_usb::Connect(lua_State *ptClientData)
 	int iResult;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::Connect(): ptClientData=0x%p\n", ptClientData));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::Connect(): ptClientData=%p\n", ptClientData));
 
 	if( m_fIsConnected!=false )
 	{
@@ -319,7 +319,7 @@ void romloader_usb::Connect(lua_State *ptClientData)
 /* close the connection to the device */
 void romloader_usb::Disconnect(lua_State *ptClientData)
 {
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::Disconnect(): ptClientData=0x%p\n", ptClientData));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::Disconnect(): ptClientData=%p\n", ptClientData));
 
 	/* NOTE: allow disconnects even if the plugin was already disconnected. */
 
@@ -443,7 +443,7 @@ romloader_usb::USBSTATUS_T romloader_usb::execute_command(const unsigned char *a
 	size_t sizPacketInputBuffer;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("-romloader_usb::execute_command(): aucCommand=0x%p, sizCommand=%d, psizReceivePacket=0x%p\n", aucCommand, sizCommand, psizReceivePacket));
+	DEBUGMSG(ZONE_FUNCTION, ("-romloader_usb::execute_command(): aucCommand=%p, sizCommand=%d, psizReceivePacket=%p\n", aucCommand, sizCommand, psizReceivePacket));
 
 	uiRetryCnt = 10;
 	do
@@ -553,7 +553,7 @@ unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long 
 	USBSTATUS_T tResult;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::read_data08(): ptClientData=0x%p, ulNetxAddress=0x%08lx\n", ptClientData, ulNetxAddress));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::read_data08(): ptClientData=%p, ulNetxAddress=0x%08lx\n", ptClientData, ulNetxAddress));
 
 	if( m_fIsConnected==false )
 	{
@@ -622,7 +622,7 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 	USBSTATUS_T tResult;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::read_data16(): ptClientData=0x%p, ulNetxAddress=0x%08lx\n", ptClientData, ulNetxAddress));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::read_data16(): ptClientData=%p, ulNetxAddress=0x%08lx\n", ptClientData, ulNetxAddress));
 
 	if( m_fIsConnected==false )
 	{
@@ -692,7 +692,7 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 	USBSTATUS_T tResult;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::read_data32(): ptClientData=0x%p, ulNetxAddress=0x%08lx\n", ptClientData, ulNetxAddress));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::read_data32(): ptClientData=%p, ulNetxAddress=0x%08lx\n", ptClientData, ulNetxAddress));
 
 	if( m_fIsConnected==false )
 	{
@@ -770,7 +770,7 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 	USBSTATUS_T tResult;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::read_image(): ulNetxAddress=0x%08lx, ulSize=0x%08lx, ppcBUFFER_OUT=0x%p, psizBUFFER_OUT=0x%p, tLuaFn.L=0x%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, ulSize, ppcBUFFER_OUT, psizBUFFER_OUT, tLuaFn.L, lCallbackUserData));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::read_image(): ulNetxAddress=0x%08lx, ulSize=0x%08lx, ppcBUFFER_OUT=%p, psizBUFFER_OUT=%p, tLuaFn.L=%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, ulSize, ppcBUFFER_OUT, psizBUFFER_OUT, tLuaFn.L, lCallbackUserData));
 
 	/* Be optimistic. */
 	fOk = true;
@@ -820,7 +820,6 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 				m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
 
 				tResult = execute_command(m_aucPacketOutputBuffer, 6, &sizInBuf);
-				printf("execute_command returned %d\n", tResult);
 				if( tResult!=USBSTATUS_OK )
 				{
 					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
@@ -857,7 +856,7 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 		}
 	}
 
-	DEBUGMSG(ZONE_FUNCTION, ("-romloader_usb::read_image(): fOk=%d, pcBufferStart=0x%p, sizBuffer=0x%08x\n", fOk, pcBufferStart, sizBuffer));
+	DEBUGMSG(ZONE_FUNCTION, ("-romloader_usb::read_image(): fOk=%d, pcBufferStart=%p, sizBuffer=0x%08x\n", fOk, pcBufferStart, sizBuffer));
 
 	if( fOk == true )
 	{
@@ -887,7 +886,7 @@ void romloader_usb::write_data08(lua_State *ptClientData, unsigned long ulNetxAd
 	USBSTATUS_T tResult;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::write_data08(): ptClientData=0x%p, ulNetxAddress=0x08lx, ucData=0x%02lx\n", ptClientData, ulNetxAddress, ucData));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::write_data08(): ptClientData=%p, ulNetxAddress=0x08lx, ucData=0x%02lx\n", ptClientData, ulNetxAddress, ucData));
 
 	if( m_fIsConnected==false )
 	{
@@ -950,7 +949,7 @@ void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 	USBSTATUS_T tResult;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::write_data16(): ptClientData=0x%p, ulNetxAddress=0x08lx, usData=0x%04lx\n", ptClientData, ulNetxAddress, usData));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::write_data16(): ptClientData=%p, ulNetxAddress=0x08lx, usData=0x%04lx\n", ptClientData, ulNetxAddress, usData));
 
 	if( m_fIsConnected==false )
 	{
@@ -1014,7 +1013,7 @@ void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 	USBSTATUS_T tResult;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::write_data32(): ptClientData=0x%p, ulNetxAddress=0x08lx, ulData=0x%08lx\n", ptClientData, ulNetxAddress, ulData));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::write_data32(): ptClientData=%p, ulNetxAddress=0x08lx, ulData=0x%08lx\n", ptClientData, ulNetxAddress, ulData));
 
 	if( m_fIsConnected==false )
 	{
@@ -1083,7 +1082,7 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 	USBSTATUS_T tResult;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::write_image(): ulNetxAddress=0x%08lx, pcBUFFER_IN=0x%p, sizBUFFER_IN=0x%08x, tLuaFn.L=0x%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, pcBUFFER_IN, sizBUFFER_IN, tLuaFn.L, lCallbackUserData));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::write_image(): ulNetxAddress=0x%08lx, pcBUFFER_IN=%p, sizBUFFER_IN=0x%08x, tLuaFn.L=%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, pcBUFFER_IN, sizBUFFER_IN, tLuaFn.L, lCallbackUserData));
 
 	/* Be optimistic. */
 	fOk = true;
@@ -1174,7 +1173,7 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 	USBSTATUS_T tResult;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::call(): ulNetxAddress=0x%08lx, ulParameterR0=0x%08lx, tLuaFn.L=0x%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, ulParameterR0, tLuaFn.L, lCallbackUserData));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::call(): ulNetxAddress=0x%08lx, ulParameterR0=0x%08lx, tLuaFn.L=%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, ulParameterR0, tLuaFn.L, lCallbackUserData));
 
 	if( m_fIsConnected==false )
 	{
