@@ -576,7 +576,6 @@ unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long 
 		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
 
 		tResult = execute_command(m_aucPacketOutputBuffer, 6, &sizInBuf);
-		printf("execute_command returned %d\n", tResult);
 		if( tResult!=USBSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
@@ -645,7 +644,6 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
 
 		tResult = execute_command(m_aucPacketOutputBuffer, 6, &sizInBuf);
-		printf("execute_command returned %d\n", tResult);
 		if( tResult!=USBSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
@@ -715,7 +713,6 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
 
 		tResult = execute_command(m_aucPacketOutputBuffer, 6, &sizInBuf);
-		printf("execute_command returned %d\n", tResult);
 		if( tResult!=USBSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
@@ -910,7 +907,6 @@ void romloader_usb::write_data08(lua_State *ptClientData, unsigned long ulNetxAd
 		m_aucPacketOutputBuffer[0x06] = ucData;
 
 		tResult = execute_command(m_aucPacketOutputBuffer, 7, &sizInBuf);
-		printf("write_data08: execute_command returned %d\n", tResult);
 		if( tResult!=USBSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
@@ -974,7 +970,6 @@ void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 		m_aucPacketOutputBuffer[0x07] = (unsigned char)((usData>>8U) & 0xffU);
 
 		tResult = execute_command(m_aucPacketOutputBuffer, 8, &sizInBuf);
-		printf("write_data16: execute_command returned %d\n", tResult);
 		if( tResult!=USBSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
@@ -1040,7 +1035,6 @@ void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 		m_aucPacketOutputBuffer[0x09] = (unsigned char)((ulData>>24U) & 0xffU);
 
 		tResult = execute_command(m_aucPacketOutputBuffer, 10, &sizInBuf);
-		printf("write_data32: execute_command returned %d\n", tResult);
 		if( tResult!=USBSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
