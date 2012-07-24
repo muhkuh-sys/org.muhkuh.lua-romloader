@@ -535,7 +535,7 @@ int romloader_usb_device_libusb::detect_interfaces(romloader_usb_reference ***pp
  * It is the same open/set_config/claim, except that here no error is printed if BUSY.
  */
 					iResult = setup_netx_device(ptDev, ptId);
-					if( iResult!=LIBUSB_SUCCESS && iResult!=LIBUSB_ERROR_BUSY && iResult!=LIBUSB_ERROR_SYS_BUSY )
+					if( iResult!=LIBUSB_SUCCESS && iResult!=LIBUSB_ERROR_BUSY /* && iResult!=LIBUSB_ERROR_SYS_BUSY */ )
 					{
 						/* Failed to open the interface, do not add it to the list. */
 						fprintf(stderr, "%s(%p): failed to setup the device %s: %d:%s\n", m_pcPluginId, this, acName, iResult, libusb_strerror(iResult));
@@ -665,7 +665,8 @@ int romloader_usb_device_libusb::setup_netx_device(libusb_device *ptNetxDevice, 
 	int iResult;
 
 
-//	printf("%s(%p): open device.\n", m_pcPluginId, this);
+	printf("romloader_usb_device_libusb::setup_netx_device(): ptNetxDevice=%p, ptId=%p", ptNetxDevice, ptId);
+
 	iResult = libusb_open(ptNetxDevice, &m_ptDevHandle);
 	if( iResult!=LIBUSB_SUCCESS )
 	{
@@ -693,7 +694,7 @@ int romloader_usb_device_libusb::setup_netx_device(libusb_device *ptNetxDevice, 
 //			printf("%s(%p): claim interface %d.\n", m_pcPluginId, this, ptId->ucInterface);
 			iResult = libusb_claim_interface(m_ptDevHandle, ptId->ucInterface);
 			/* Do not print an error message for busy devices. This will be done above. */
-			if( iResult!=LIBUSB_SUCCESS && iResult!=LIBUSB_ERROR_SYS_BUSY )
+			if( iResult!=LIBUSB_SUCCESS && iResult!=LIBUSB_ERROR_BUSY )
 			{
 				/* Failed to claim the interface. */
 				fprintf(stderr, "%s(%p): failed to claim interface %d: %d:%s\n", m_pcPluginId, this, ptId->ucInterface, iResult, libusb_strerror(iResult));
@@ -777,8 +778,12 @@ int romloader_usb_device_libusb::Connect(unsigned int uiBusNr, unsigned int uiDe
 				iResult = update_old_netx_device(ptUsbDevice, &ptUpdatedNetxDevice);
 				if( iResult==LIBUSB_SUCCESS )
 				{
-					/* Free the old device. */
-					libusb_unref_device(ptUsbDevice);
+					printf("ptUsbDevice=%p, ptUpdatedNetxDevice=%p\n", ptUsbDevice, ptUpdatedNetxDevice);
+					if( ptUsbDevice!=ptUpdatedNetxDevice )
+					{
+						/* Free the old device. */
+						libusb_unref_device(ptUsbDevice);
+					}
 					/* Use the updated device. */
 					ptUsbDevice = ptUpdatedNetxDevice;
 				}
@@ -794,7 +799,7 @@ int romloader_usb_device_libusb::Connect(unsigned int uiBusNr, unsigned int uiDe
 			if( iResult==LIBUSB_SUCCESS )
 			{
 				iResult = setup_netx_device(ptUsbDevice, ptId);
-				if( iResult==LIBUSB_ERROR_BUSY || iResult==LIBUSB_ERROR_SYS_BUSY )
+				if( iResult==LIBUSB_ERROR_BUSY /* || iResult==LIBUSB_ERROR_SYS_BUSY */ )
 				{
 					fprintf(stderr, "%s(%p): the device is busy. Maybe some other program is accessing it right now.\n", m_pcPluginId, this);
 					libusb_unref_device(ptUsbDevice);
@@ -818,7 +823,7 @@ int romloader_usb_device_libusb::Connect(unsigned int uiBusNr, unsigned int uiDe
 						fprintf(stderr, "%s(%p): reset ok!\n", m_pcPluginId, this);
 
 						iResult = setup_netx_device(ptUsbDevice, ptId);
-						if( iResult==LIBUSB_ERROR_BUSY || iResult==LIBUSB_ERROR_SYS_BUSY )
+						if( iResult==LIBUSB_ERROR_BUSY /* || iResult==LIBUSB_ERROR_SYS_BUSY */ )
 						{
 							fprintf(stderr, "%s(%p): the device is busy after the reset. Maybe some other program is accessing it right now.\n", m_pcPluginId, this);
 						}
@@ -871,7 +876,7 @@ const NETX_USB_DEVICE_T *romloader_usb_device_libusb::identifyDevice(libusb_devi
 		iResult = libusb_open(ptDevice, &ptDevHandle);
 		if( iResult==LIBUSB_SUCCESS )
 		{
-			iResult = libusb_get_descriptor(ptDevHandle, LIBUSB_DT_DEVICE, 0, &sDevDesc, sizeof(struct libusb_device_descriptor));
+			iResult = libusb_get_descriptor(ptDevHandle, LIBUSB_DT_DEVICE, 0, (unsigned char*)&sDevDesc, sizeof(struct libusb_device_descriptor));
 			if( iResult==sizeof(struct libusb_device_descriptor) )
 			{
 				ptDevCnt = atNetxUsbDevices;
@@ -885,7 +890,7 @@ const NETX_USB_DEVICE_T *romloader_usb_device_libusb::identifyDevice(libusb_devi
 					)
 					{
 						/* Found a matching device. */
-						printf("identifyDevice: Found dev %04x:%04x:%04x\n", sDevDesc.idVendor, sDevDesc.idProduct, sDevDesc.bcdDevice);
+						printf("identifyDevice: Found device %04x:%04x:%04x\n", sDevDesc.idVendor, sDevDesc.idProduct, sDevDesc.bcdDevice);
 						ptDevHit = ptDevCnt;
 						break;
 					}
@@ -1311,12 +1316,54 @@ int romloader_usb_device_libusb::netx10_upgrade_romcode(libusb_device *ptDevice,
 }
 
 
+libusb_device *romloader_usb_device_libusb::find_usb_device_by_location(unsigned char ucLocation_Bus, unsigned char ucLocation_Port)
+{
+	libusb_device *ptFound;
+	ssize_t ssizDevices;
+	libusb_device **pptUsbDevCnt;
+	libusb_device **pptUsbDevMax;
+	unsigned char ucDevice_Bus;
+	unsigned char ucDevice_Port;
+
+
+	/* Nothing found yet. */
+	ptFound = NULL;
+	
+	/* Get a list with all connected devices. */
+	ssizDevices = libusb_get_device_list(m_ptLibUsbContext, &pptUsbDevCnt);
+	pptUsbDevMax = pptUsbDevCnt + ssizDevices;
+	while(pptUsbDevCnt<pptUsbDevMax)
+	{
+		/* Get the bus and the port of the device. */
+		ucDevice_Bus = libusb_get_bus_number(*pptUsbDevCnt);
+		ucDevice_Port = libusb_get_port_number(*pptUsbDevCnt);
+		
+		/* Is this the requested location? */
+		if( ucLocation_Bus==ucDevice_Bus && ucLocation_Port==ucDevice_Port )
+		{
+			/* Yes -> this is the device. */
+			ptFound = *pptUsbDevCnt;
+			
+			/* Reference the device. */
+			libusb_ref_device(ptFound);
+			
+			break;
+		}
+		++pptUsbDevCnt;
+	}
+
+	return ptFound;
+}
+
+
 int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice, libusb_device **pptUpdatedNetxDevice)
 {
 	int iResult;
 	libusb_device_handle *ptDevHandle;
+	unsigned char ucDevAddr_Bus;
+	unsigned char ucDevAddr_Port;
 
-
+	
 	printf(". Found old netX500 romcode, starting download.\n");
 
 	iResult = libusb_open(ptDevice, &ptDevHandle);
@@ -1354,15 +1401,50 @@ int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice
 				/* Start the code parameter. */
 				netx500_start_code(ptDevHandle, auc_usbmon_netx500_intram);
 
+				/* Get the bus and port number to identify the device later. */
+				ucDevAddr_Bus  = libusb_get_bus_number(ptDevice);
+				ucDevAddr_Port = libusb_get_port_number(ptDevice);
+//				printf("bus: 0x%02x, port: 0x%02x\n", ucDevAddr_Bus, ucDevAddr_Port);
+
+//				/* Delay for 250ms to give the code time to start. */
+//				SLEEP_MS(250);
+
+				/* Reset the device.
+				 * NOTE: does this trigger a driver change on windows?
+				 */
+				printf("reset\n");
+				iResult = libusb_reset_device(ptDevHandle);
+				if( iResult==LIBUSB_ERROR_NOT_FOUND )
+				{
+					printf("re-enumeration required\n");
+				}
+				else if( iResult!=0 )
+				{
+					printf("reset error: %d\n", iResult);
+				}
+				SLEEP_MS(250);
+				
 				/* Release the interface. */
 				libusb_release_interface(ptDevHandle, m_tDeviceId.ucInterface);
 
 				libusb_close(ptDevHandle);
+				
+				libusb_unref_device(ptDevice);
 
 				printf("ROM code update finished!\n");
 
-				*pptUpdatedNetxDevice = ptDevice;
-				iResult = 0;
+				/* Look for a device at the same port. */
+				ptDevice = find_usb_device_by_location(ucDevAddr_Bus, ucDevAddr_Port);
+				if( ptDevice!=NULL )
+				{
+					*pptUpdatedNetxDevice = ptDevice;
+					iResult = 0;
+				}
+				else
+				{
+					fprintf(stderr, "%s(%p): The device did not appear again after a reset.\n", m_pcPluginId, this);
+					iResult = -1;
+				}
 			}
 		}
 	}
