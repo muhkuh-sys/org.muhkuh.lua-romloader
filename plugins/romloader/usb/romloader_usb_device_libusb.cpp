@@ -778,12 +778,6 @@ int romloader_usb_device_libusb::Connect(unsigned int uiBusNr, unsigned int uiDe
 				iResult = update_old_netx_device(ptUsbDevice, &ptUpdatedNetxDevice);
 				if( iResult==LIBUSB_SUCCESS )
 				{
-					printf("ptUsbDevice=%p, ptUpdatedNetxDevice=%p\n", ptUsbDevice, ptUpdatedNetxDevice);
-					if( ptUsbDevice!=ptUpdatedNetxDevice )
-					{
-						/* Free the old device. */
-						libusb_unref_device(ptUsbDevice);
-					}
 					/* Use the updated device. */
 					ptUsbDevice = ptUpdatedNetxDevice;
 				}
@@ -1362,6 +1356,7 @@ int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice
 	libusb_device_handle *ptDevHandle;
 	unsigned char ucDevAddr_Bus;
 	unsigned char ucDevAddr_Port;
+	int iDelay;
 
 	
 	printf(". Found old netX500 romcode, starting download.\n");
@@ -1406,9 +1401,6 @@ int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice
 				ucDevAddr_Port = libusb_get_port_number(ptDevice);
 //				printf("bus: 0x%02x, port: 0x%02x\n", ucDevAddr_Bus, ucDevAddr_Port);
 
-//				/* Delay for 250ms to give the code time to start. */
-//				SLEEP_MS(250);
-
 				/* Reset the device.
 				 * NOTE: does this trigger a driver change on windows?
 				 */
@@ -1434,7 +1426,24 @@ int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice
 				printf("ROM code update finished!\n");
 
 				/* Look for a device at the same port. */
-				ptDevice = find_usb_device_by_location(ucDevAddr_Bus, ucDevAddr_Port);
+				iDelay = 20;
+				do
+				{
+					ptDevice = find_usb_device_by_location(ucDevAddr_Bus, ucDevAddr_Port);
+					if( ptDevice!=NULL )
+					{
+						break;
+					}
+					else
+					{
+						--iDelay;
+						if( iDelay>0 )
+						{
+							SLEEP_MS(100);
+						}
+					}
+				} while( iDelay>0 );
+				
 				if( ptDevice!=NULL )
 				{
 					*pptUpdatedNetxDevice = ptDevice;
