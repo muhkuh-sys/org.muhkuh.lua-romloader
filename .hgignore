@@ -20,3 +20,6 @@ syntax: glob
 
 # Ignore all compiled python modules.
 *.pyc
+
+# Ignore all backup files.
+*~
