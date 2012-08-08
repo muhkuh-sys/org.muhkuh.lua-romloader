@@ -1299,6 +1299,8 @@ int romloader_usb_device_libusb::netx10_upgrade_romcode(libusb_device *ptDevice,
 				libusb_release_interface(ptDevHandle, m_tDeviceId.ucInterface);
 				libusb_close(ptDevHandle);
 
+				SLEEP_MS(100);
+
 				*pptUpdatedNetxDevice = ptDevice;
 
 				iResult = 0;
