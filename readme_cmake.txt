@@ -92,3 +92,16 @@ cmake -G "MinGW Makefiles" -DSWIG_EXECUTABLE=C:/tools/swigwin-2.0.4/swig.exe -D 
 
 cmake -G "Visual Studio 9 2008" -DSWIG_EXECUTABLE=C:/tools/swigwin-2.0.4/swig.exe -D wxWidgets_ROOT_DIR=C:\chris\wxWidgets-2.9.1 -DLUA_LIBRARIES=C:/Programme/Lua/5.1/lib/lua5.1.lib -DLUA_INCLUDE_DIR=C:/Programme/Lua/5.1/include ../..
 
+
+Set the MBS server
+------------------
+
+Create the file '.mbs.xml' in your 'Documents and Settings' folder (e.g. 'C:\Dokumente und Einstellungen\Christoph'):
+
+	<?xml version="1.0" encoding="UTF-8" ?> 
+	<muhkuh_buildsystem>
+		<repositories>
+			<repository name="nexus@netx01">http://nexus.netx01/content/repositories/mbs_testing</repository> 
+		</repositories>
+	</muhkuh_buildsystem>
+
