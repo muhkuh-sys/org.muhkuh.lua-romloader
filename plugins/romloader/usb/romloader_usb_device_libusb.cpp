@@ -1396,64 +1396,15 @@ int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice
 				/* Start the code parameter. */
 				netx500_start_code(ptDevHandle, auc_usbmon_netx500_intram);
 
-				/* Get the bus and port number to identify the device later. */
-				ucDevAddr_Bus  = libusb_get_bus_number(ptDevice);
-				ucDevAddr_Port = libusb_get_port_number(ptDevice);
-//				printf("bus: 0x%02x, port: 0x%02x\n", ucDevAddr_Bus, ucDevAddr_Port);
-
-				/* Reset the device.
-				 * NOTE: does this trigger a driver change on windows?
-				 */
-				printf("reset\n");
-				iResult = libusb_reset_device(ptDevHandle);
-				if( iResult==LIBUSB_ERROR_NOT_FOUND )
-				{
-					printf("re-enumeration required\n");
-				}
-				else if( iResult!=0 )
-				{
-					printf("reset error: %d\n", iResult);
-				}
-				SLEEP_MS(250);
-				
 				/* Release the interface. */
 				libusb_release_interface(ptDevHandle, m_tDeviceId.ucInterface);
 
 				libusb_close(ptDevHandle);
-				
-				libusb_unref_device(ptDevice);
 
-				printf("ROM code update finished!\n");
-
-				/* Look for a device at the same port. */
-				iDelay = 20;
-				do
-				{
-					ptDevice = find_usb_device_by_location(ucDevAddr_Bus, ucDevAddr_Port);
-					if( ptDevice!=NULL )
-					{
-						break;
-					}
-					else
-					{
-						--iDelay;
-						if( iDelay>0 )
-						{
-							SLEEP_MS(100);
-						}
-					}
-				} while( iDelay>0 );
+				SLEEP_MS(100);
 				
-				if( ptDevice!=NULL )
-				{
-					*pptUpdatedNetxDevice = ptDevice;
-					iResult = 0;
-				}
-				else
-				{
-					fprintf(stderr, "%s(%p): The device did not appear again after a reset.\n", m_pcPluginId, this);
-					iResult = -1;
-				}
+				*pptUpdatedNetxDevice = ptDevice;
+				iResult = 0;
 			}
 		}
 	}
