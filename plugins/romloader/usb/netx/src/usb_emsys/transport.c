@@ -41,7 +41,6 @@ void transport_init(void)
 	sizPacketTxFill = 0;
 	sizPacketTxFillLast = 0;
 
-	usb_deinit();
 	usb_init();
 }
 

@@ -88,6 +88,7 @@ void usb_init(void)
 	tSendEpState = USB_SendEndpoint_Idle;
 
 	usb_descriptors_init();
+	usb_activateInputPipe();
 }
 
 

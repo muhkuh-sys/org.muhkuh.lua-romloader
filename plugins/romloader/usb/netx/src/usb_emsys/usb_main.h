@@ -21,17 +21,17 @@
 
 #include "usb_globals.h"
 
-#ifndef __usb__
-#define __usb__
 
-//-------------------------------------
+#ifndef __USB_MAIN_H__
+#define __USB_MAIN_H__
 
-void usb_main_init(void);
-void usb_main_deinit(void);
-void usb_handleReset(void);
+/*-------------------------------------------------------------------------*/
+
+void usb_activateInputPipe(void);
 void usb_pingpong(void);
+void usb_handleReset(void);
 
-//-------------------------------------
+/*-------------------------------------------------------------------------*/
 
-#endif  // __usb__
+#endif  /* __USB_MAIN_H__ */
 
