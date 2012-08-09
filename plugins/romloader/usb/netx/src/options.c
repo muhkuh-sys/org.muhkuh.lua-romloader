@@ -23,15 +23,29 @@
 
 #include "options.h"
 
+#include "netx_io_areas.h"
+
+
+#if ASIC_TYP==10
+#       define USB_VENDOR_ID  0x1939
+#       define USB_PRODUCT_ID 0x000c
+#       define USB_RELEASE_ID 0x0002
+#elif ASIC_TYP==56
+#       define USB_VENDOR_ID  0x1939
+#       define USB_PRODUCT_ID 0x0018
+#       define USB_RELEASE_ID 0x0002
+#else
+#       error "Unknown ASIC_TYP"
+#endif
 
 static const OPTIONS_T t_default_options =
 {
 	.t_usb_settings.uCfg.auc =
 	{
 		/* device descriptor */
-		0x39, 0x19,             /* vendor id */
-		0x0c, 0x00,             /* product id */
-		0x02, 0x00,             /* device release number */
+		(USB_VENDOR_ID &0xffU), ((USB_VENDOR_ID >>8U)&0xffU),             /* vendor id */
+		(USB_PRODUCT_ID&0xffU), ((USB_PRODUCT_ID>>8U)&0xffU),             /* product id */
+		(USB_RELEASE_ID&0xffU), ((USB_RELEASE_ID>>8U)&0xffU),             /* device release number */
 		/* config descriptor */
 		0x00, 0x00,             /* conf. characteristics, max. power consumption */
 
@@ -66,8 +80,37 @@ static const OPTIONS_T t_default_options =
 OPTIONS_T g_t_options;
 
 
+typedef enum
+{
+	CHIP_SUBTYP_NETX50              = 0,
+	CHIP_SUBTYP_NETX51              = 1,
+	CHIP_SUBTYP_NETX52              = 2
+} CHIP_SUBTYP_T;
+
+
 void options_set_default(void)
 {
+#if ASIC_TYP==56
+	HOSTDEF(ptAsicCtrlArea);
+	unsigned long ulValue;
+	unsigned long ulChipSubType;
+	CHIP_SUBTYP_T tChipSubTyp;
+#endif
+
+
 	memcpy(&g_t_options, &t_default_options, sizeof(OPTIONS_T));
+
+#if ASIC_TYP==56
+	/* Is this a netX52? */
+	ulValue = ptAsicCtrlArea->ulSample_at_nres;
+	ulChipSubType  = (ulValue&HOSTMSK(sample_at_nres_sar_mem_a18))>> HOSTSRT(sample_at_nres_sar_mem_a18);
+	ulChipSubType |= (ulValue&HOSTMSK(sample_at_nres_sar_mem_a19))>>(HOSTSRT(sample_at_nres_sar_mem_a19)-1);
+	tChipSubTyp = (CHIP_SUBTYP_T)ulChipSubType;
+	if(tChipSubTyp==CHIP_SUBTYP_NETX52)
+	{
+		/* Set product ID 0x0019 for netX52 boards. */
+		g_t_options.t_usb_settings.uCfg.auc[2] = 0x19U;
+	}
+#endif
 }
 

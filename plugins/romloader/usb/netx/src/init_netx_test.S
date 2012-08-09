@@ -47,7 +47,7 @@ start:
 
 	mov     r4,     #0
 
-#if ASIC_TYP==50 || ASIC_TYP==10
+#if ASIC_TYP==56 || ASIC_TYP==10
 	@
 	@ This is the arm966e-j init.
 	@
@@ -101,7 +101,7 @@ start:
 	@ return address.
 	stmfd   sp!, {r1, r2, lr}
 
-#if ASIC_TYP==10
+#if ASIC_TYP==56 || ASIC_TYP==10
 	@ Copy the data section.
 	ldr     r0, =__copy_src_start__
 	ldr     r1, =__copy_dst_start__

@@ -24,15 +24,19 @@
 #include <string.h>
 
 #include "netx_io_areas.h"
-#include "options.h"
 #include "transport.h"
 
+#if ASIC_TYP==56 || ASIC_TYP==10
+#       include "options.h"
+#endif
 
 /*-----------------------------------*/
 
 void usb_monitor(void)
 {
+#if ASIC_TYP==56 || ASIC_TYP==10
 	options_set_default();
+#endif
 
 	transport_init();
 

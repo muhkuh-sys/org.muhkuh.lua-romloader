@@ -26,7 +26,7 @@
 #
 Import('env_default', 'env_netx500_default',  'env_netx56_default', 'env_netx50_default', 'env_netx10_default')
 Import('platform_lib_netx500', 'platform_lib_netx56', 'platform_lib_netx50', 'platform_lib_netx10')
-Import('libmi_netx500', 'libmi_netx50', 'libmi_netx10')
+Import('libmi_netx500', 'libmi_netx56', 'libmi_netx50', 'libmi_netx10')
 
 
 #----------------------------------------------------------------------------
@@ -36,7 +36,6 @@ sources_common = """
 	src/header.S
 	src/init_netx_test.S
 	src/main.c
-	src/options.c
 """
 
 
@@ -52,10 +51,17 @@ sources_custom_netx500 = """
 
 
 sources_custom_netx10 = """
+	src/options.c
 	src/usb_hsoc_v1/transport.c
 	src/usb_hsoc_v1/usb.c
 """
 
+
+sources_custom_netx56 = """
+	src/options.c
+	src/usb_hsoc_v2/transport.c
+	src/usb_hsoc_v2/usb.c
+"""
 
 #----------------------------------------------------------------------------
 #
@@ -68,6 +74,19 @@ src_netx500 = env_netx500.SetBuildPath('targets/netx500_intram', 'src', sources_
 elf_netx500 = env_netx500.Elf('targets/usbmon_netx500_intram', src_netx500 + platform_lib_netx500 + libmi_netx500)
 bin_netx500 = env_netx500.ObjCopy('targets/usbmon_netx500_intram', elf_netx500)
 arr_netx500 = env_netx500.DataArray('targets/usbmon_netx500_intram.c', bin_netx500, DATAARRAY_NAME='auc_usbmon_netx500_intram')
+
+
+#----------------------------------------------------------------------------
+#
+# Build the netX56 files.
+#
+env_netx56 = env_netx56_default.Clone()
+env_netx56.Append(CPPPATH = ['src', 'src/usb_hsoc_v2', '../../machine_interface/netx/src', '#platform/src', '#platform/src/lib'])
+env_netx56.Replace(LDFILE = File('src/netx56/netx56.ld'))
+src_netx56 = env_netx56.SetBuildPath('targets/netx56', 'src', sources_common + sources_custom_netx56)
+elf_netx56 = env_netx56.Elf('targets/usbmon_netx56.elf', src_netx56 + platform_lib_netx56 + libmi_netx56)
+bin_netx56 = env_netx56.ObjCopy('targets/usbmon_netx56.bin', elf_netx56)
+arr_netx56 = env_netx56.DataArray('targets/usbmon_netx56.c', bin_netx56, DATAARRAY_NAME='auc_usbmon_netx56')
 
 
 #----------------------------------------------------------------------------
