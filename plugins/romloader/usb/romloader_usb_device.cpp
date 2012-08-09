@@ -35,7 +35,7 @@
  * information and thus the used protocol from the USB ID. The chip type must
  * be detected with memory reads.
  */
-const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[6] =
+const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[8] =
 {
 	{
 		"netX500 V1",
@@ -98,12 +98,36 @@ const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[6] =
 		0x04
 	},
 	{
+		"netX51 HBootV2 Emulation",
+		0x1939,
+		0x0018,
+		0x0002,
+		ROMLOADER_CHIPTYP_NETX56,
+		ROMLOADER_ROMCODE_HBOOT2_SOFT,
+		0,
+		1,
+		0x85,
+		0x04
+	},
+	{
 		"netX52",
 		0x1939,
 		0x0019,
 		0x0001,
 		ROMLOADER_CHIPTYP_NETX56,
 		ROMLOADER_ROMCODE_HBOOT2,
+		0,
+		1,
+		0x85,
+		0x04
+	},
+	{
+		"netX52 HBootV2 Emulation",
+		0x1939,
+		0x0019,
+		0x0002,
+		ROMLOADER_CHIPTYP_NETX56,
+		ROMLOADER_ROMCODE_HBOOT2_SOFT,
 		0,
 		1,
 		0x85,
