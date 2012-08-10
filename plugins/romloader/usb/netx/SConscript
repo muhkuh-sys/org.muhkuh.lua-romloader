@@ -69,11 +69,11 @@ sources_custom_netx56 = """
 #
 env_netx500 = env_netx500_default.Clone()
 env_netx500.Append(CPPPATH = ['src', 'src/usb_emsys', '../../machine_interface/netx/src', '#platform/src', '#platform/src/lib'])
-env_netx500.Replace(LDFILE = File('src/netx500/netx500_intram.ld'))
-src_netx500 = env_netx500.SetBuildPath('targets/netx500_intram', 'src', sources_common + sources_custom_netx500)
-elf_netx500 = env_netx500.Elf('targets/usbmon_netx500_intram', src_netx500 + platform_lib_netx500 + libmi_netx500)
-bin_netx500 = env_netx500.ObjCopy('targets/usbmon_netx500_intram', elf_netx500)
-arr_netx500 = env_netx500.DataArray('targets/usbmon_netx500_intram.c', bin_netx500, DATAARRAY_NAME='auc_usbmon_netx500_intram')
+env_netx500.Replace(LDFILE = File('src/netx500/netx500.ld'))
+src_netx500 = env_netx500.SetBuildPath('targets/netx500', 'src', sources_common + sources_custom_netx500)
+elf_netx500 = env_netx500.Elf('targets/usbmon_netx500.elf', src_netx500 + platform_lib_netx500 + libmi_netx500)
+bin_netx500 = env_netx500.ObjCopy('targets/usbmon_netx500.bin', elf_netx500)
+arr_netx500 = env_netx500.DataArray('targets/usbmon_netx500.c', bin_netx500, DATAARRAY_NAME='auc_usbmon_netx500')
 
 
 #----------------------------------------------------------------------------
@@ -95,11 +95,11 @@ arr_netx56 = env_netx56.DataArray('targets/usbmon_netx56.c', bin_netx56, DATAARR
 #
 env_netx10 = env_netx10_default.Clone()
 env_netx10.Append(CPPPATH = ['src', 'src/usb_hsoc_v1', '../../machine_interface/netx/src', '#platform/src', '#platform/src/lib'])
-env_netx10.Replace(LDFILE = File('src/netx10/netx10_intram.ld'))
-src_netx10 = env_netx10.SetBuildPath('targets/netx10_intram', 'src', sources_common + sources_custom_netx10)
-elf_netx10 = env_netx10.Elf('targets/usbmon_netx10_intram', src_netx10 + platform_lib_netx10 + libmi_netx10)
-bin_netx10 = env_netx10.ObjCopy('targets/usbmon_netx10_intram', elf_netx10)
-arr_netx10 = env_netx10.DataArray('targets/usbmon_netx10_intram.c', bin_netx10, DATAARRAY_NAME='auc_usbmon_netx10_intram')
+env_netx10.Replace(LDFILE = File('src/netx10/netx10.ld'))
+src_netx10 = env_netx10.SetBuildPath('targets/netx10', 'src', sources_common + sources_custom_netx10)
+elf_netx10 = env_netx10.Elf('targets/usbmon_netx10', src_netx10 + platform_lib_netx10 + libmi_netx10)
+bin_netx10 = env_netx10.ObjCopy('targets/usbmon_netx10', elf_netx10)
+arr_netx10 = env_netx10.DataArray('targets/usbmon_netx10.c', bin_netx10, DATAARRAY_NAME='auc_usbmon_netx10')
 
 
 #----------------------------------------------------------------------------
