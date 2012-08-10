@@ -131,6 +131,7 @@ private:
 	int netx500_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode);
 	int netx500_upgrade_romcode(libusb_device *ptDevice, libusb_device **pptUpdatedNetxDevice);
 	/* netx56 update routines. */
+	int netx56_execute_command(libusb_device_handle* ptDevHandle, const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned char *aucInBuf, size_t *psizInBuf);
 	int netx56_load_code(libusb_device_handle* ptDevHandle, const unsigned char* pucNetxCode, size_t sizNetxCode);
 	int netx56_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode);
 	int netx56_upgrade_romcode(libusb_device *ptDevice, libusb_device **pptUpdatedNetxDevice);

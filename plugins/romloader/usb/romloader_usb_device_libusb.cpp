@@ -771,11 +771,18 @@ int romloader_usb_device_libusb::Connect(unsigned int uiBusNr, unsigned int uiDe
 			switch(m_tDeviceId.tRomcode)
 			{
 			case ROMLOADER_ROMCODE_UNKNOWN:
+				/* No update plan for an unknown device. */
+				iResult = LIBUSB_ERROR_OTHER;
+				break;
+
+			case ROMLOADER_ROMCODE_HBOOT2_SOFT:
+				/* No plan to update an already updated device. */
 				iResult = LIBUSB_ERROR_OTHER;
 				break;
 
 			case ROMLOADER_ROMCODE_ABOOT:
 			case ROMLOADER_ROMCODE_HBOOT:
+			case ROMLOADER_ROMCODE_HBOOT2:
 				iResult = update_old_netx_device(ptUsbDevice, &ptUpdatedNetxDevice);
 				if( iResult==LIBUSB_SUCCESS )
 				{
@@ -784,9 +791,9 @@ int romloader_usb_device_libusb::Connect(unsigned int uiBusNr, unsigned int uiDe
 				}
 				break;
 
-			case ROMLOADER_ROMCODE_HBOOT2_SOFT:
-			case ROMLOADER_ROMCODE_HBOOT2:
-				/* The device uses the hboot v2 protocol. */
+			case ROMLOADER_ROMCODE_HBOOT3:
+			case ROMLOADER_ROMCODE_HBOOT3_SOFT:
+				/* The device uses the hboot v3 protocol. */
 				iResult = LIBUSB_SUCCESS;
 				break;
 			}
@@ -1180,6 +1187,49 @@ int romloader_usb_device_libusb::netx10_load_code(libusb_device_handle* ptDevHan
 }
 
 
+int romloader_usb_device_libusb::netx56_execute_command(libusb_device_handle *ptDevHandle, const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned char *aucInBuf, size_t *psizInBuf)
+{
+	int iResult;
+	size_t sizProcessed;
+	int iProcessed;
+	unsigned int uiTimeoutMs;
+	const unsigned char ucEndpoint_In = 0x85;
+	const unsigned char ucEndpoint_Out = 0x04;
+
+
+	uiTimeoutMs = 500; // 100
+
+	iResult = libusb_bulk_transfer(ptDevHandle, ucEndpoint_Out, (unsigned char*)aucOutBuf, sizOutBuf, &iProcessed, uiTimeoutMs);
+	if( iResult!=0 )
+	{
+		fprintf(stderr, "%s(%p): Failed to send data: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
+	}
+	else if( sizOutBuf!=iProcessed )
+	{
+		fprintf(stderr, "%s(%p): Requested to send %d bytes, but only %d were processed!\n", m_pcPluginId, this, sizOutBuf, iProcessed);
+		iResult = 1;
+	}
+	else
+	{
+		iResult = libusb_bulk_transfer(ptDevHandle, ucEndpoint_In, aucInBuf, 64, &iProcessed, uiTimeoutMs);
+		if( iResult==0 )
+		{
+			if( iProcessed==0 )
+			{
+				fprintf(stderr, "%s(%p): Received empty packet!\n", m_pcPluginId, this);
+				iResult = 1;
+			}
+			else
+			{
+				*psizInBuf = iProcessed;
+			}
+		}
+	}
+
+	return iResult;
+}
+
+
 int romloader_usb_device_libusb::netx56_load_code(libusb_device_handle* ptDevHandle, const unsigned char* pucNetxCode, size_t sizNetxCode)
 {
 	size_t sizChunk;
@@ -1193,6 +1243,8 @@ int romloader_usb_device_libusb::netx56_load_code(libusb_device_handle* ptDevHan
 	unsigned char aucRxBuf[64];
 	unsigned long ulNetxAddress;
 
+
+//	fprintf(stderr, "+netx56_load_code(): ptDevHandle=%p, pucNetxCode=%p, sizNetxCode=%d\n", ptDevHandle, pucNetxCode, sizNetxCode);
 
 	/* Be optimistic. */
 	iResult = 0;
@@ -1228,7 +1280,7 @@ int romloader_usb_device_libusb::netx56_load_code(libusb_device_handle* ptDevHan
 			aucTxBuf[0x05] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
 			memcpy(aucTxBuf+6, pucNetxCode, sizChunk);
 
-			iResult = execute_command(aucTxBuf, sizChunk+6, aucRxBuf, &sizInBuf);
+			iResult = netx56_execute_command(ptDevHandle, aucTxBuf, sizChunk+6, aucRxBuf, &sizInBuf);
 			if( iResult!=0 )
 			{
 				break;
@@ -1359,7 +1411,7 @@ int romloader_usb_device_libusb::netx56_start_code(libusb_device_handle *ptDevHa
 	aucTxBuf[0x07] = 0x00U;
 	aucTxBuf[0x08] = 0x00U;
 
-	iResult = execute_command(aucTxBuf, 9, aucRxBuf, &sizRxBuf);
+	iResult = netx56_execute_command(ptDevHandle, aucTxBuf, 9, aucRxBuf, &sizRxBuf);
 	if( iResult!=0 )
 	{
 		iResult = -1;
@@ -1555,38 +1607,29 @@ int romloader_usb_device_libusb::netx56_upgrade_romcode(libusb_device *ptDevice,
 	}
 	else
 	{
-		/* set the configuration */
-		iResult = libusb_set_configuration(ptDevHandle, 1);
+		iResult = libusb_claim_interface(ptDevHandle, 1);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "%s(%p): Failed to set config 1: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
+			fprintf(stderr, "%s(%p): Failed to claim interface 1: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
+
+			libusb_close(ptDevHandle);
 		}
 		else
 		{
-			iResult = libusb_claim_interface(ptDevHandle, 0);
-			if( iResult!=0 )
-			{
-				fprintf(stderr, "%s(%p): Failed to claim interface 0: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
+			/* Load data. */
+			netx56_load_code(ptDevHandle, auc_usbmon_netx56, sizeof(auc_usbmon_netx56));
 
-				libusb_close(ptDevHandle);
-			}
-			else
-			{
-				/* Load data. */
-				netx56_load_code(ptDevHandle, auc_usbmon_netx56, sizeof(auc_usbmon_netx56));
+			/* Start the code. */
+			netx56_start_code(ptDevHandle, auc_usbmon_netx56);
 
-				/* Start the code. */
-				netx56_start_code(ptDevHandle, auc_usbmon_netx56);
+			libusb_release_interface(ptDevHandle, m_tDeviceId.ucInterface);
+			libusb_close(ptDevHandle);
 
-				libusb_release_interface(ptDevHandle, m_tDeviceId.ucInterface);
-				libusb_close(ptDevHandle);
+			SLEEP_MS(100);
 
-				SLEEP_MS(100);
+			*pptUpdatedNetxDevice = ptDevice;
 
-				*pptUpdatedNetxDevice = ptDevice;
-
-				iResult = 0;
-			}
+			iResult = 0;
 		}
 	}
 

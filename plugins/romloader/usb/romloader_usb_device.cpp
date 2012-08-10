@@ -50,12 +50,12 @@ const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[8] =
 		0x01
 	},
 	{
-		"netX500 HBootV2 Emulation",
+		"netX500 HBootV3 Emulation",
 		0x1939,
 		0x0015,
 		0x0001,
 		ROMLOADER_CHIPTYP_NETX500,
-		ROMLOADER_ROMCODE_HBOOT2_SOFT,
+		ROMLOADER_ROMCODE_HBOOT3_SOFT,
 		1,
 		0,
 		0x81,
@@ -74,12 +74,12 @@ const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[8] =
 		0x04
 	},
 	{
-		"netX10 HBootV2 Emulation",
+		"netX10 HBootV3 Emulation",
 		0x1939,
 		0x000c,
 		0x0002,
 		ROMLOADER_CHIPTYP_NETX10,
-		ROMLOADER_ROMCODE_HBOOT2_SOFT,
+		ROMLOADER_ROMCODE_HBOOT3_SOFT,
 		1,
 		0,
 		0x83,
@@ -98,12 +98,12 @@ const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[8] =
 		0x04
 	},
 	{
-		"netX51 HBootV2 Emulation",
+		"netX51 HBootV3 Emulation",
 		0x1939,
 		0x0018,
 		0x0002,
 		ROMLOADER_CHIPTYP_NETX56,
-		ROMLOADER_ROMCODE_HBOOT2_SOFT,
+		ROMLOADER_ROMCODE_HBOOT3_SOFT,
 		0,
 		1,
 		0x85,
@@ -122,12 +122,12 @@ const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[8] =
 		0x04
 	},
 	{
-		"netX52 HBootV2 Emulation",
+		"netX52 HBootV3 Emulation",
 		0x1939,
 		0x0019,
 		0x0002,
 		ROMLOADER_CHIPTYP_NETX56,
-		ROMLOADER_ROMCODE_HBOOT2_SOFT,
+		ROMLOADER_ROMCODE_HBOOT3_SOFT,
 		0,
 		1,
 		0x85,
