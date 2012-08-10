@@ -130,7 +130,12 @@ private:
 	int netx500_load_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode, size_t sizNetxCode);
 	int netx500_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode);
 	int netx500_upgrade_romcode(libusb_device *ptDevice, libusb_device **pptUpdatedNetxDevice);
-	libusb_device *find_usb_device_by_location(unsigned char ucLocation_Bus, unsigned char ucLocation_Port);
+	/* netx56 update routines. */
+	int netx56_load_code(libusb_device_handle* ptDevHandle, const unsigned char* pucNetxCode, size_t sizNetxCode);
+	int netx56_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode);
+	int netx56_upgrade_romcode(libusb_device *ptDevice, libusb_device **pptUpdatedNetxDevice);
+	
+/*	libusb_device *find_usb_device_by_location(unsigned char ucLocation_Bus, unsigned char ucLocation_Port); */
 
 	static const char *m_pcPluginNamePattern;
 
