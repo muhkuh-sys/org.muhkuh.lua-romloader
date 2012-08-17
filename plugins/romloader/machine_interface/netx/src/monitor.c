@@ -48,7 +48,7 @@ typedef void (*PFN_MONITOR_CALL_T)(unsigned long ulR0);
 /*-----------------------------------*/
 
 
-static const unsigned char aucMagic[10] =
+static const unsigned char aucMagic[9] =
 {
 	/* Magic */
 	'M', 'O', 'O', 'H',
@@ -73,9 +73,6 @@ static const unsigned char aucMagic[10] =
 #else
 #       error "Unknown ASIC type!"
 #endif
-
-	/* ROM code type */
-	ROMLOADER_ROMCODE_HBOOT2_SOFT
 
 	/* NOTE: Next 2 bytes define the maximum packet size. */
 	/* MaxPacketSize 0..7 */
