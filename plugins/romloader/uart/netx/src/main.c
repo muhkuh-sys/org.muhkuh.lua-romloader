@@ -40,7 +40,9 @@
 	{
 		.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
 	};
+#elif ASIC_TYP==56
 #elif ASIC_TYP==10
+	/* TODO: get the MMIO configuration from the ROM code options. */
 	static const UART_CONFIGURATION_T tUartCfg =
 	{
 		.uc_rx_mmio = 20U,
@@ -55,7 +57,19 @@
 SERIAL_V1_COMM_UI_FN_T tSerialV1Vectors;
 
 
-#if ASIC_TYP==50
+#if ASIC_TYP==56
+static const SERIAL_V1_COMM_UI_FN_T tSerialNetx56UsbCdcVectors =
+{
+	.aul =
+	{
+		0x080f4b41U,
+		0x080f4cadU,
+		0x080f4b45U,
+		0x080f4c89U
+	}
+};
+
+#elif ASIC_TYP==50
 static const SERIAL_V1_COMM_UI_FN_T tSerialNetx50UsbVectors =
 {
 	.aul =
@@ -116,13 +130,20 @@ void uart_monitor(void)
 		tSerialV1Vectors.fn.fnPeek = netx50_usb_peek;
 	}
 #elif ASIC_TYP==56
-	netx56_usb_uart_init();
-	
-	/* Copy the netX56 USB vectors to the V1 vectors. */
-	tSerialV1Vectors.fn.fnGet   = netx56_usb_uart_get;
-	tSerialV1Vectors.fn.fnPut   = netx56_usb_uart_put;
-	tSerialV1Vectors.fn.fnPeek  = netx56_usb_uart_peek;
-	tSerialV1Vectors.fn.fnFlush = netx56_usb_uart_flush;
+	if( memcmp(&tSerialV1Vectors, &tSerialNetx56UsbCdcVectors, sizeof(SERIAL_V1_COMM_UI_FN_T))==0 )
+	{
+		netx56_usb_uart_init();
+		
+		/* Copy the netX56 USB vectors to the V1 vectors. */
+		tSerialV1Vectors.fn.fnGet   = netx56_usb_uart_get;
+		tSerialV1Vectors.fn.fnPut   = netx56_usb_uart_put;
+		tSerialV1Vectors.fn.fnPeek  = netx56_usb_uart_peek;
+		tSerialV1Vectors.fn.fnFlush = netx56_usb_uart_flush;
+	}
+	else
+	{
+		while(1) {};
+	}
 #else
 #       error "Unknown ASIC_TYP!"
 #endif
