@@ -24,8 +24,8 @@ MEMORY
 {
 	ASSERT_EMPTY(rwx)  : ORIGIN = 0x00000000, LENGTH = 0
 
+	IOVECTORS(rwx)     : ORIGIN = 0x08000100, LENGTH = 0x00000010
 	INTRAM(rwx)        : ORIGIN = 0x08018000, LENGTH = 0x00001000
-	IOVECTORS(rwx)     : ORIGIN = 0x0809fff0, LENGTH = 0x00000010
 }
 
 
@@ -57,7 +57,7 @@ SECTIONS
 	{
 		load_address = . ;
 
-		*(.header)
+		KEEP(*(.header))
 		*(.init_code)
 		*(.text)
 		*(.rodata*)
