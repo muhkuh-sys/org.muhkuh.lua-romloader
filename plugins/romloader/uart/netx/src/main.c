@@ -29,6 +29,10 @@
 #include "serial_vectors.h"
 #include "uart.h"
 
+#if ASIC_TYP==56
+#       include "netx56/netx56_usb_uart.h"
+#endif
+
 /*-----------------------------------*/
 
 #if ASIC_TYP==100 || ASIC_TYP==500
@@ -111,6 +115,16 @@ void uart_monitor(void)
 	{
 		tSerialV1Vectors.fn.fnPeek = netx50_usb_peek;
 	}
+#elif ASIC_TYP==56
+	netx56_usb_uart_init();
+	
+	/* Copy the netX56 USB vectors to the V1 vectors. */
+	tSerialV1Vectors.fn.fnGet   = netx56_usb_uart_get;
+	tSerialV1Vectors.fn.fnPut   = netx56_usb_uart_put;
+	tSerialV1Vectors.fn.fnPeek  = netx56_usb_uart_peek;
+	tSerialV1Vectors.fn.fnFlush = netx56_usb_uart_flush;
+#else
+#       error "Unknown ASIC_TYP!"
 #endif
 
 	transport_init();

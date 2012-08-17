@@ -36,7 +36,7 @@
 #       define SERIAL_V1_PUT(c) tSerialV1Vectors.fn.fnPut(0, c)
 #       define SERIAL_V1_PEEK() tSerialV1Vectors.fn.fnPeek(0)
 #       define SERIAL_V1_FLUSH() tSerialV1Vectors.fn.fnFlush(0)
-#else
+#elif ASIC_TYP==56 || ASIC_TYP==50
 	typedef unsigned char (*PFN_SERIAL_V1_GET_T)(void);
 	typedef void          (*PFN_SERIAL_V1_PUT_T)(unsigned int iChar);
 	typedef unsigned int  (*PFN_SERIAL_V1_PEEK_T)(void);
@@ -46,6 +46,8 @@
 #       define SERIAL_V1_PUT(c) tSerialV1Vectors.fn.fnPut(c)
 #       define SERIAL_V1_PEEK() tSerialV1Vectors.fn.fnPeek()
 #       define SERIAL_V1_FLUSH() tSerialV1Vectors.fn.fnFlush()
+#else
+#       error "Unknown ASIC_TYP!"
 #endif
 
 typedef struct
