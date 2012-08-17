@@ -265,104 +265,6 @@ void romloader_eth::hexdump(const unsigned char *pucData, unsigned long ulSize)
 }
 
 
-bool romloader_eth::chip_init(lua_State *ptClientData)
-{
-	bool fResult;
-
-
-	fResult = false;
-
-	switch( m_tChiptyp )
-	{
-	case ROMLOADER_CHIPTYP_NETX500:
-	case ROMLOADER_CHIPTYP_NETX100:
-		switch( m_tRomcode )
-		{
-		case ROMLOADER_ROMCODE_ABOOT:
-			// aboot does not set the serial vectors
-			write_data32(ptClientData, 0x10001ff0, 0);
-			write_data32(ptClientData, 0x10001ff4, 0);
-			write_data32(ptClientData, 0x10001ff8, 0);
-			write_data32(ptClientData, 0x10001ffc, 0);
-			fResult = true;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT:
-			// hboot needs no special init
-			fResult = true;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
-			/* hboot2 software emu needs no special init. */
-			fResult = true;
-			break;
-		case ROMLOADER_ROMCODE_UNKNOWN:
-			fResult = false;
-			break;
-		}
-		break;
-
-	case ROMLOADER_CHIPTYP_NETX50:
-		switch( m_tRomcode )
-		{
-		case ROMLOADER_ROMCODE_ABOOT:
-			// this is an unknown combination
-			fResult = false;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT:
-			// hboot needs no special init
-			// netx50 needs sdram fix
-			printf("%s(%p): running netx50 sdram fix...\n", m_pcName, this);
-			write_data32(ptClientData, 0x1c005830, 0x00000001);
-			write_data32(ptClientData, 0x1c005104, 0xbffffffc);
-			write_data32(ptClientData, 0x1c00510c, 0x00480001);
-			write_data32(ptClientData, 0x1c005110, 0x00000001);
-			printf("%s(%p): netx50 sdram fix ok!\n", m_pcName, this);
-			write_data32(ptClientData, 0x1c00510c, 0);
-			write_data32(ptClientData, 0x1c005110, 0);
-			write_data32(ptClientData, 0x1c005830, 0);
-			fResult = true;
-			break;
-		case ROMLOADER_ROMCODE_UNKNOWN:
-			fResult = false;
-			break;
-		}
-		break;
-
-
-	case ROMLOADER_CHIPTYP_NETX56:
-		switch( m_tRomcode )
-		{
-		case ROMLOADER_ROMCODE_ABOOT:
-			// this is an unknown combination
-			fResult = false;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT:
-			// this is an unknown combination
-			fResult = false;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
-			// this is an unknown combination
-			fResult = true;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT2:
-			/* hboot2 needs no special init. */
-			fResult = true;
-			break;
-		case ROMLOADER_ROMCODE_UNKNOWN:
-			fResult = false;
-			break;
-		}
-		break;
-
-
-	case ROMLOADER_CHIPTYP_UNKNOWN:
-		fResult = false;
-		break;
-	}
-
-	return fResult;
-}
-
-
 void romloader_eth::Connect(lua_State *ptClientData)
 {
 	int iResult;
@@ -383,10 +285,6 @@ void romloader_eth::Connect(lua_State *ptClientData)
 		else if( detect_chiptyp(&tFn)!=true )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chiptyp!", m_pcName, this);
-		}
-		else if( chip_init(ptClientData)!=true )
-		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to init chip!", m_pcName, this);
 		}
 		else
 		{

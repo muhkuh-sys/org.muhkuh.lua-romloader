@@ -86,8 +86,6 @@ public:
 private:
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);
 
-	bool chip_init(lua_State *ptClientData);
-
 	bool m_fIsConnected;
 	romloader_eth_device_platform *m_ptEthDev;
 
