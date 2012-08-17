@@ -14,7 +14,7 @@ public:
 	romloader_uart_read_functinoid(void) {}
 
 	virtual unsigned long read_data32(unsigned long ulAddress) = 0;
-	virtual ROMLOADER_ROMCODE update_device(ROMLOADER_CHIPTYP tChiptyp) = 0;
+	virtual int update_device(ROMLOADER_CHIPTYP tChiptyp) = 0;
 
 protected:
 	unsigned int crc16(unsigned short usCrc, unsigned char ucData)

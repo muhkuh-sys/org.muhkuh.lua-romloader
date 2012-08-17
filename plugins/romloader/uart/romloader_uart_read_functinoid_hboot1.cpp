@@ -18,6 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include <stdio.h>
+
 
 #include "romloader_uart_read_functinoid_hboot1.h"
 
@@ -301,16 +303,16 @@ bool romloader_uart_read_functinoid_hboot1::netx10_start_code(void)
 
 
 
-ROMLOADER_ROMCODE romloader_uart_read_functinoid_hboot1::update_device(ROMLOADER_CHIPTYP tChiptyp)
+int romloader_uart_read_functinoid_hboot1::update_device(ROMLOADER_CHIPTYP tChiptyp)
 {
 	bool fOk;
-	ROMLOADER_ROMCODE tNewRomcode;
+	int iResult;
 
 
 	fprintf(stderr, "update device.\n");
 
 	/* Expect failure. */
-	tNewRomcode = ROMLOADER_ROMCODE_UNKNOWN;
+	iResult = -1;
 
 	switch(tChiptyp)
 	{
@@ -318,6 +320,7 @@ ROMLOADER_ROMCODE romloader_uart_read_functinoid_hboot1::update_device(ROMLOADER
 		fprintf(stderr, "update netx10.\n");
 
 		fOk = netx10_load_code(auc_uartmon_netx10_bootstrap, sizeof(auc_uartmon_netx10_bootstrap));
+		if( fOk==true )
 		{
 			fOk = netx10_start_code();
 			printf("start: %d\n", fOk);
@@ -329,8 +332,8 @@ ROMLOADER_ROMCODE romloader_uart_read_functinoid_hboot1::update_device(ROMLOADER
 				}
 				else
 				{
-					/* The ROM code is now HBOOT2_SOFT */
-					tNewRomcode = ROMLOADER_ROMCODE_HBOOT2_SOFT;
+					/* The ROM code is now HBOOT_SOFT */
+					iResult = 0;
 				}
 			}
 		}
@@ -342,11 +345,10 @@ ROMLOADER_ROMCODE romloader_uart_read_functinoid_hboot1::update_device(ROMLOADER
 	default:
 		/* No idea how to update this one! */
 		fprintf(stderr, "%s(%p): No strategy to update chip type %d!\n", m_pcPortName, this, tChiptyp);
-		tNewRomcode = ROMLOADER_ROMCODE_UNKNOWN;
 		break;
 	}
 	
-	return tNewRomcode;
+	return iResult;
 }
 
 

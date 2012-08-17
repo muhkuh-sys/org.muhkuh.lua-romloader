@@ -28,6 +28,7 @@ INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 
 SET(UART_FIRMWARE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx10_monitor.c
                           ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_monitor.c
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx56_monitor.c
                           ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx500_monitor.c
                           ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx10_bootstrap.c
                           ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_bootstrap.c
@@ -37,10 +38,16 @@ SET(UART_FIRMWARE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx1
                           ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx10_monitor_run.h
                           ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_monitor.h
                           ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_monitor_run.h
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx56_monitor.h
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx56_monitor_run.h
                           ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx500_monitor.h
                           ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx500_monitor_run.h
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx10_bootstrap.h
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx10_bootstrap_run.h
                           ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_bootstrap.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_bootstrap_run.h)
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx50_bootstrap_run.h
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx500_bootstrap.h
+                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx500_bootstrap_run.h)
 
 
 #----------------------------------------------------------------------------

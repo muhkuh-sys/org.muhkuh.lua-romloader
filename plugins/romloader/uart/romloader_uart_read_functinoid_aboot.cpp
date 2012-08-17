@@ -425,16 +425,16 @@ bool romloader_uart_read_functinoid_aboot::netx500_start_code(void)
 
 
 
-ROMLOADER_ROMCODE romloader_uart_read_functinoid_aboot::update_device(ROMLOADER_CHIPTYP tChiptyp)
+int romloader_uart_read_functinoid_aboot::update_device(ROMLOADER_CHIPTYP tChiptyp)
 {
 	bool fOk;
-	ROMLOADER_ROMCODE tNewRomcode;
+	int iResult;
 
 
 	fprintf(stderr, "update device.\n");
 
 	/* Expect failure. */
-	tNewRomcode = ROMLOADER_ROMCODE_UNKNOWN;
+	iResult = -1;
 
 	switch(tChiptyp)
 	{
@@ -453,8 +453,8 @@ ROMLOADER_ROMCODE romloader_uart_read_functinoid_aboot::update_device(ROMLOADER_
 				}
 				else
 				{
-					/* The ROM code is now HBOOT2_SOFT */
-					tNewRomcode = ROMLOADER_ROMCODE_HBOOT2_SOFT;
+					/* The ROM code is now HBOOT_SOFT */
+					iResult = 0;
 				}
 			}
 		}
@@ -476,8 +476,8 @@ ROMLOADER_ROMCODE romloader_uart_read_functinoid_aboot::update_device(ROMLOADER_
 				}
 				else
 				{
-					/* The ROM code is now HBOOT2_SOFT */
-					tNewRomcode = ROMLOADER_ROMCODE_HBOOT2_SOFT;
+					/* The ROM code is now HBOOT_SOFT */
+					iResult = 0;
 				}
 			}
 		}
@@ -488,9 +488,8 @@ ROMLOADER_ROMCODE romloader_uart_read_functinoid_aboot::update_device(ROMLOADER_
 	default:
 		/* No idea how to update this one! */
 		fprintf(stderr, "%s(%p): No strategy to update chip type %d!\n", m_pcPortName, this, tChiptyp);
-		tNewRomcode = ROMLOADER_ROMCODE_UNKNOWN;
 		break;
 	}
 	
-	return tNewRomcode;
+	return iResult;
 }
