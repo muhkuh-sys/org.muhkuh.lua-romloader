@@ -28,14 +28,7 @@
 #       define strncasecmp _strnicmp
 #endif
 
-/* FIXME: remove the chiptype from this list.
- * Most devices have a fixed relation between the USB ID and the chip type.
- * This is not the case for the HBootV2 Emulation. Here all chips are covered
- * with one single USB ID. This means the plugin can only get the ROMCODE
- * information and thus the used protocol from the USB ID. The chip type must
- * be detected with memory reads.
- */
-const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[8] =
+const romloader_usb_device::NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[8] =
 {
 	{
 		"netX500 V1",
@@ -43,19 +36,19 @@ const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[8] =
 		0x0815,
 		0x0100,
 		ROMLOADER_CHIPTYP_NETX500,
-		ROMLOADER_ROMCODE_ABOOT,
+		ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1,
 		1,
 		0,
 		0x81,
 		0x01
 	},
 	{
-		"netX500 HBootV3 Emulation",
+		"netX500 HBoot Emulation",
 		0x1939,
 		0x0015,
 		0x0001,
 		ROMLOADER_CHIPTYP_NETX500,
-		ROMLOADER_ROMCODE_HBOOT3_SOFT,
+		ROMLOADER_COMMANDSET_MI2,
 		1,
 		0,
 		0x81,
@@ -67,19 +60,19 @@ const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[8] =
 		0x000c,
 		0x0001,
 		ROMLOADER_CHIPTYP_NETX10,
-		ROMLOADER_ROMCODE_HBOOT,
+		ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1,
 		1,
 		0,
 		0x83,
 		0x04
 	},
 	{
-		"netX10 HBootV3 Emulation",
+		"netX10 HBoot Emulation",
 		0x1939,
 		0x000c,
 		0x0002,
 		ROMLOADER_CHIPTYP_NETX10,
-		ROMLOADER_ROMCODE_HBOOT3_SOFT,
+		ROMLOADER_COMMANDSET_MI2,
 		1,
 		0,
 		0x83,
@@ -91,19 +84,19 @@ const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[8] =
 		0x0018,
 		0x0001,
 		ROMLOADER_CHIPTYP_NETX56,
-		ROMLOADER_ROMCODE_HBOOT2,
+		ROMLOADER_COMMANDSET_MI1,
 		0,
 		1,
 		0x85,
 		0x04
 	},
 	{
-		"netX51 HBootV3 Emulation",
+		"netX51 HBoot Emulation",
 		0x1939,
 		0x0018,
 		0x0002,
 		ROMLOADER_CHIPTYP_NETX56,
-		ROMLOADER_ROMCODE_HBOOT3_SOFT,
+		ROMLOADER_COMMANDSET_MI2,
 		0,
 		1,
 		0x85,
@@ -115,19 +108,19 @@ const NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDevices[8] =
 		0x0019,
 		0x0001,
 		ROMLOADER_CHIPTYP_NETX56,
-		ROMLOADER_ROMCODE_HBOOT2,
+		ROMLOADER_COMMANDSET_MI1,
 		0,
 		1,
 		0x85,
 		0x04
 	},
 	{
-		"netX52 HBootV3 Emulation",
+		"netX52 HBoot Emulation",
 		0x1939,
 		0x0019,
 		0x0002,
 		ROMLOADER_CHIPTYP_NETX56,
-		ROMLOADER_ROMCODE_HBOOT3_SOFT,
+		ROMLOADER_COMMANDSET_MI2,
 		0,
 		1,
 		0x85,

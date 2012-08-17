@@ -352,7 +352,6 @@ bool romloader_usb::synchronize(void)
 	unsigned long ulMiVersionMin;
 	unsigned long ulMiVersionMaj;
 	ROMLOADER_CHIPTYP tChipType;
-	ROMLOADER_ROMCODE tRomCode;
 	size_t sizMaxPacketSize;
 
 
@@ -402,9 +401,7 @@ bool romloader_usb::synchronize(void)
 			printf("Machine interface V%ld.%ld.\n", ulMiVersionMaj, ulMiVersionMin);
 
 			tChipType = (ROMLOADER_CHIPTYP)(aucInBuf[0x09]);
-			tRomCode  = (ROMLOADER_ROMCODE)(aucInBuf[0x0a]);
 			printf("Chip type : %d\n", tChipType);
-			printf("ROM code : %d\n", tRomCode);
 
 			sizMaxPacketSize =  ((size_t)(aucInBuf[0x0b])) |
 			                   (((size_t)(aucInBuf[0x0c]))<<8U);
@@ -419,7 +416,6 @@ bool romloader_usb::synchronize(void)
 			/* Set the new values. */
 			m_uiMonitorSequence = ucSequence;
 			m_tChiptyp = tChipType;
-			m_tRomcode = tRomCode;
 			m_sizMaxPacketSizeClient = sizMaxPacketSize;
 
 			fResult = true;

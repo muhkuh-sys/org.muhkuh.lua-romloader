@@ -766,23 +766,21 @@ int romloader_usb_device_libusb::Connect(unsigned int uiBusNr, unsigned int uiDe
 
 		if( iResult==LIBUSB_SUCCESS )
 		{
+			/* NOTE: hier sollte eine generelle Entscheidung rein, ob das Gerät geupdated werden soll. */
+			
+			
+			
 			/* Does this device need an update? */
 			iResult = LIBUSB_ERROR_OTHER;
-			switch(m_tDeviceId.tRomcode)
+			switch(m_tDeviceId.tCommandSet)
 			{
-			case ROMLOADER_ROMCODE_UNKNOWN:
+			case ROMLOADER_COMMANDSET_UNKNOWN:
 				/* No update plan for an unknown device. */
 				iResult = LIBUSB_ERROR_OTHER;
 				break;
 
-			case ROMLOADER_ROMCODE_HBOOT2_SOFT:
-				/* No plan to update an already updated device. */
-				iResult = LIBUSB_ERROR_OTHER;
-				break;
-
-			case ROMLOADER_ROMCODE_ABOOT:
-			case ROMLOADER_ROMCODE_HBOOT:
-			case ROMLOADER_ROMCODE_HBOOT2:
+			case ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1:
+			case ROMLOADER_COMMANDSET_MI1:
 				iResult = update_old_netx_device(ptUsbDevice, &ptUpdatedNetxDevice);
 				if( iResult==LIBUSB_SUCCESS )
 				{
@@ -791,8 +789,7 @@ int romloader_usb_device_libusb::Connect(unsigned int uiBusNr, unsigned int uiDe
 				}
 				break;
 
-			case ROMLOADER_ROMCODE_HBOOT3:
-			case ROMLOADER_ROMCODE_HBOOT3_SOFT:
+			case ROMLOADER_COMMANDSET_MI2:
 				/* The device uses the hboot v3 protocol. */
 				iResult = LIBUSB_SUCCESS;
 				break;
@@ -861,7 +858,7 @@ void romloader_usb_device_libusb::Disconnect(void)
 }
 
 
-const NETX_USB_DEVICE_T *romloader_usb_device_libusb::identifyDevice(libusb_device *ptDevice) const
+const romloader_usb_device::NETX_USB_DEVICE_T *romloader_usb_device_libusb::identifyDevice(libusb_device *ptDevice) const
 {
 	const NETX_USB_DEVICE_T *ptDevHit;
 	int iResult;
