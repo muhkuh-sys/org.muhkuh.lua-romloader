@@ -35,18 +35,6 @@ typedef enum
 	ROMLOADER_CHIPTYP_NETX56        = 6
 } ROMLOADER_CHIPTYP;
 
-
-typedef enum
-{
-	ROMLOADER_ROMCODE_UNKNOWN       = 0,
-	ROMLOADER_ROMCODE_ABOOT         = 1,
-	ROMLOADER_ROMCODE_HBOOT         = 2,
-	ROMLOADER_ROMCODE_HBOOT2_SOFT   = 3,
-	ROMLOADER_ROMCODE_HBOOT2        = 4,
-	ROMLOADER_ROMCODE_HBOOT3_SOFT   = 5,
-	ROMLOADER_ROMCODE_HBOOT3        = 6
-} ROMLOADER_ROMCODE;
-
 /*-----------------------------------*/
 
 #endif  /* __ROMLOADER_DEF_H__ */

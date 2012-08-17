@@ -69,24 +69,16 @@ public:
 	// get chiptyp and romcode version
 	virtual ROMLOADER_CHIPTYP GetChiptyp(void) const;
 	virtual const char *GetChiptypName(ROMLOADER_CHIPTYP tChiptyp) const;
-	virtual ROMLOADER_ROMCODE GetRomcode(void) const;
-	virtual const char *GetRomcodeName(ROMLOADER_ROMCODE tRomcode) const;
 
 	// wrapper functions for compatibility with old function names
 	virtual ROMLOADER_CHIPTYP get_chiptyp(void) const;
 	virtual const char *get_chiptyp_name(ROMLOADER_CHIPTYP tChiptyp) const;
-	virtual ROMLOADER_ROMCODE get_romcode(void) const;
-	virtual const char *get_romcode_name(ROMLOADER_ROMCODE tRomcode) const;
+	virtual unsigned int get_romcode(void) const;
+	virtual const char *get_romcode_name(unsigned int tRomcode) const;
 
 // *** lua interface end ***
 
 protected:
-	typedef struct
-	{
-		ROMLOADER_ROMCODE tRomcode;
-		const char *pcName;
-	} ROMCODE_NAME_T;
-
 	typedef struct
 	{
 		unsigned long ulResetVector;
@@ -94,7 +86,6 @@ protected:
 		unsigned long ulVersionValue;
 		ROMLOADER_CHIPTYP tChiptyp;
 		const char *pcChiptypName;
-		ROMLOADER_ROMCODE tRomcode;
 	} ROMLOADER_RESET_ID_T;
 
 
@@ -104,14 +95,12 @@ protected:
 	bool callback_string(SWIGLUA_REF *ptLuaFn, const char *pcProgressData, size_t sizProgressData, long lCallbackUserData);
 
 	ROMLOADER_CHIPTYP m_tChiptyp;
-	ROMLOADER_ROMCODE m_tRomcode;
 
 private:
 
 	bool callback_common(SWIGLUA_REF *ptLuaFn, long lCallbackUserData, int iOldTopOfStack);
 
 	static const ROMLOADER_RESET_ID_T atResIds[5];
-	static const ROMCODE_NAME_T atRomcodeName[4];
 };
 
 /*-----------------------------------*/
