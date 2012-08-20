@@ -26,17 +26,17 @@
    and receive data from there.
 */
 
-#if ASIC_TYP==500 || ASIC_TYP==100 || ASIC_TYP==10
-	typedef unsigned int (*PFN_SERIAL_V1_GET_T)(unsigned int tHandle);
-	typedef void         (*PFN_SERIAL_V1_PUT_T)(unsigned int tHandle, unsigned char ucChar);
-	typedef unsigned int (*PFN_SERIAL_V1_PEEK_T)(unsigned int tHandle);
-	typedef void         (*PFN_SERIAL_V1_FLUSH_T)(unsigned int tHandle);
+#if ASIC_TYP==500 || ASIC_TYP==100 || ASIC_TYP==56 || ASIC_TYP==10
+	typedef unsigned char (*PFN_SERIAL_V1_GET_T)(void);
+	typedef void          (*PFN_SERIAL_V1_PUT_T)(unsigned char ucChar);
+	typedef unsigned int  (*PFN_SERIAL_V1_PEEK_T)(void);
+	typedef void          (*PFN_SERIAL_V1_FLUSH_T)(void);
 
-#       define SERIAL_V1_GET() tSerialV1Vectors.fn.fnGet(0)
-#       define SERIAL_V1_PUT(c) tSerialV1Vectors.fn.fnPut(0, c)
-#       define SERIAL_V1_PEEK() tSerialV1Vectors.fn.fnPeek(0)
-#       define SERIAL_V1_FLUSH() tSerialV1Vectors.fn.fnFlush(0)
-#elif ASIC_TYP==56 || ASIC_TYP==50
+#       define SERIAL_V1_GET() tSerialV1Vectors.fn.fnGet()
+#       define SERIAL_V1_PUT(c) tSerialV1Vectors.fn.fnPut(c)
+#       define SERIAL_V1_PEEK() tSerialV1Vectors.fn.fnPeek()
+#       define SERIAL_V1_FLUSH() tSerialV1Vectors.fn.fnFlush()
+#elif ASIC_TYP==50
 	typedef unsigned char (*PFN_SERIAL_V1_GET_T)(void);
 	typedef void          (*PFN_SERIAL_V1_PUT_T)(unsigned int iChar);
 	typedef unsigned int  (*PFN_SERIAL_V1_PEEK_T)(void);
