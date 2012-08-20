@@ -36,6 +36,7 @@ sources_monitor = """
 	src/init_netx_test.S
 	src/main.c
 	src/transport.c
+	src/uart.c
 """
 
 
