@@ -24,7 +24,8 @@ MEMORY
 {
 	ASSERT_EMPTY(rwx):  ORIGIN = 0x00000000,  LENGTH = 0
 
-	INTRAM_MON(rwx):   ORIGIN = 0x08000100,  LENGTH = 0x00003f00
+	INTRAM_MON(rwx):    ORIGIN = 0x08000100,  LENGTH = 0x00003f00
+	INTRAM_OPT(rx):     ORIGIN = 0x04008f74,  LENGTH = 0x0000000a
 }
 
 
@@ -45,6 +46,13 @@ SECTIONS
 		*(.vfp11_veneer)
 		*(.v4_bx)
 	} >ASSERT_EMPTY
+
+
+	.opt ORIGIN(INTRAM_OPT):
+	{
+		PROVIDE( atUartCfg = . );
+		. = . + LENGTH(INTRAM_OPT) ;
+	} >INTRAM_OPT
 
 
 	.serial_vectors ORIGIN(INTRAM_MON) :

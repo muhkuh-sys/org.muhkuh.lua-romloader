@@ -24,7 +24,8 @@ MEMORY
 {
 	ASSERT_EMPTY(rwx):  ORIGIN = 0x00000000,  LENGTH = 0
 
-	INTRAM_MON(rwx):   ORIGIN = 0x08000100,  LENGTH = 0x00003f00
+	INTRAM_MON(rwx):    ORIGIN = 0x08000100,  LENGTH = 0x00003f00
+	INTRAM_OPT(rx):     ORIGIN = 0x080912dc,  LENGTH = 0x0000000a
 }
 
 
@@ -78,6 +79,13 @@ SECTIONS
 
 	/* Set the top of the stack to the start of the code. */
 	stack_top = ORIGIN(INTRAM_MON) + LENGTH(INTRAM_MON);
+
+
+	.opt ORIGIN(INTRAM_OPT):
+	{
+		PROVIDE( atUartCfg = . );
+		. = . + 10;
+	} >INTRAM_OPT
 
 
 	/* Stabs debugging sections.  */
