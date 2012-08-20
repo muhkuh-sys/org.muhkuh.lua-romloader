@@ -52,20 +52,6 @@
 	} CONSOLE_DEVICE_T;
 
 	extern const unsigned long aulConsoleDevices[2];
-#elif ASIC_TYP==10
-	typedef struct
-	{
-		unsigned char uc_rx_mmio;
-		unsigned char uc_tx_mmio;
-		unsigned char uc_rts_mmio;
-		unsigned char uc_cts_mmio;
-		unsigned char uc_mode;
-		unsigned short us_baud_div;
-		unsigned char uc_connect1;
-		unsigned char uc_connect2;
-	} HBOOT_UART_CONFIGURATION_T;
-	
-	extern const HBOOT_UART_CONFIGURATION_T atUartCfg[2];
 #endif
 
 
@@ -132,14 +118,6 @@ void uart_monitor(void)
 	/* The netX10 ROM code uses areas in bank0 around offset 0x8180. This
 	 * is outside the RAM area reserved for the monitor code.
 	 */
-
-	/* Initialize the UART. */
-	tUartCfg.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200);
-	tUartCfg.uc_rx_mmio = atUartCfg[0].uc_rx_mmio;
-	tUartCfg.uc_tx_mmio = atUartCfg[0].uc_rx_mmio;
-	tUartCfg.uc_rts_mmio = atUartCfg[0].uc_rts_mmio;
-	tUartCfg.uc_cts_mmio = atUartCfg[0].uc_cts_mmio;
-	uart_init(&tUartCfg);
 
 	/* Set the new vectors. */
 	tSerialV1Vectors.fn.fnGet   = uart_get;
