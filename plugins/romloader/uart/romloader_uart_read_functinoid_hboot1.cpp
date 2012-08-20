@@ -94,7 +94,6 @@ bool romloader_uart_read_functinoid_hboot1::legacy_read_v2(unsigned long ulAddre
 		else
 		{
 			sizCmd = strlen(uResponse.pc);
-			hexdump(uResponse.puc, sizCmd);
 			free(uResponse.puc);
 
 			/* Receive the rest of the output until the command prompt. This is the command result. */
@@ -223,7 +222,6 @@ bool romloader_uart_read_functinoid_hboot1::netx10_load_code(const unsigned char
 				uiTimeoutMs = 100;
 				tUuencoder.get_progress_info(&tProgressInfo);
 				printf("%05d/%05d (%d%%)\n", tProgressInfo.sizProcessed, tProgressInfo.sizTotal, tProgressInfo.uiPercent);
-				printf("UUE line: '%s'\n", uBuffer.ac);
 				if( m_ptDevice->SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
 				{
 					fprintf(stderr, "%s(%p): Failed to send uue data!\n", m_pcPortName, this);
@@ -323,7 +321,6 @@ int romloader_uart_read_functinoid_hboot1::update_device(ROMLOADER_CHIPTYP tChip
 		if( fOk==true )
 		{
 			fOk = netx10_start_code();
-			printf("start: %d\n", fOk);
 			if( fOk==true )
 			{
 				if( m_ptDevice->SendRaw(auc_uartmon_netx10_monitor, sizeof(auc_uartmon_netx10_monitor), 500)!=sizeof(auc_uartmon_netx10_monitor) )
@@ -337,6 +334,7 @@ int romloader_uart_read_functinoid_hboot1::update_device(ROMLOADER_CHIPTYP tChip
 				}
 			}
 		}
+		break;
 
 
 	case ROMLOADER_CHIPTYP_NETX50:
