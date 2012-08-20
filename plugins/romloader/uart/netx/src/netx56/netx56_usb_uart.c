@@ -31,7 +31,7 @@ unsigned char netx56_usb_uart_get(void)
 }
 
 
-void netx56_usb_uart_put(unsigned int iChar)
+void netx56_usb_uart_put(unsigned char ucChar)
 {
 	HOSTDEF(ptUsbDevFifoArea);
 	HOSTDEF(ptUsbDevFifoCtrlArea);
@@ -46,7 +46,7 @@ void netx56_usb_uart_put(unsigned int iChar)
 		ulFillLevel >>= HOSTSRT(usb_dev_fifo_ctrl_uart_ep_tx_stat_fill_level);
 	} while ( ulFillLevel>=64 );
 
-	ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned char)iChar;
+	ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned long)ucChar;
 }
 
 
