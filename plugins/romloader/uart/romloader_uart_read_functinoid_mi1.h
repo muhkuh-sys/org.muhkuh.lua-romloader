@@ -34,7 +34,7 @@ public:
 	romloader_uart_read_functinoid_mi1(romloader_uart_device *ptDevice, char *pcPortName);
 
 	unsigned long read_data32(unsigned long ulNetxAddress);
-	ROMLOADER_ROMCODE update_device(ROMLOADER_CHIPTYP tChiptyp);
+	int update_device(ROMLOADER_CHIPTYP tChiptyp);
 
 private:
 	typedef enum
@@ -65,11 +65,13 @@ private:
 	unsigned char packet_ringbuffer_get(void);
 	int packet_ringbuffer_peek(size_t sizOffset);
 
-	
 	UARTSTATUS_T execute_command(const unsigned char *aucCommand, size_t sizCommand);
 	UARTSTATUS_T send_packet(const unsigned char *pucData, size_t sizData);
 	UARTSTATUS_T receive_packet(void);
 
+	bool write_image(unsigned long ulNetxAddress, const unsigned char *pucBUFFER_IN, size_t sizBUFFER_IN);
+	bool call(unsigned long ulNetxAddress, unsigned long ulParameterR0);
+	
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);
 
 	romloader_uart_device *m_ptUartDev;

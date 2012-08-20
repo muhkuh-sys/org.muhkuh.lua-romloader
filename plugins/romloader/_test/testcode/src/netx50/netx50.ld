@@ -59,7 +59,8 @@ SECTIONS
 	.code 0x08008000 :
 	{
 		load_address = . ;
-		*(.header)
+
+		KEEP(*(.header))
 		*(.init_code)
 		*(.text)
 	

@@ -18,6 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include <stdio.h>
+
 
 #include "romloader_uart_read_functinoid_hboot1.h"
 
@@ -92,7 +94,6 @@ bool romloader_uart_read_functinoid_hboot1::legacy_read_v2(unsigned long ulAddre
 		else
 		{
 			sizCmd = strlen(uResponse.pc);
-			hexdump(uResponse.puc, sizCmd);
 			free(uResponse.puc);
 
 			/* Receive the rest of the output until the command prompt. This is the command result. */
@@ -221,7 +222,6 @@ bool romloader_uart_read_functinoid_hboot1::netx10_load_code(const unsigned char
 				uiTimeoutMs = 100;
 				tUuencoder.get_progress_info(&tProgressInfo);
 				printf("%05d/%05d (%d%%)\n", tProgressInfo.sizProcessed, tProgressInfo.sizTotal, tProgressInfo.uiPercent);
-				printf("UUE line: '%s'\n", uBuffer.ac);
 				if( m_ptDevice->SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
 				{
 					fprintf(stderr, "%s(%p): Failed to send uue data!\n", m_pcPortName, this);
@@ -301,16 +301,16 @@ bool romloader_uart_read_functinoid_hboot1::netx10_start_code(void)
 
 
 
-ROMLOADER_ROMCODE romloader_uart_read_functinoid_hboot1::update_device(ROMLOADER_CHIPTYP tChiptyp)
+int romloader_uart_read_functinoid_hboot1::update_device(ROMLOADER_CHIPTYP tChiptyp)
 {
 	bool fOk;
-	ROMLOADER_ROMCODE tNewRomcode;
+	int iResult;
 
 
 	fprintf(stderr, "update device.\n");
 
 	/* Expect failure. */
-	tNewRomcode = ROMLOADER_ROMCODE_UNKNOWN;
+	iResult = -1;
 
 	switch(tChiptyp)
 	{
@@ -318,9 +318,9 @@ ROMLOADER_ROMCODE romloader_uart_read_functinoid_hboot1::update_device(ROMLOADER
 		fprintf(stderr, "update netx10.\n");
 
 		fOk = netx10_load_code(auc_uartmon_netx10_bootstrap, sizeof(auc_uartmon_netx10_bootstrap));
+		if( fOk==true )
 		{
 			fOk = netx10_start_code();
-			printf("start: %d\n", fOk);
 			if( fOk==true )
 			{
 				if( m_ptDevice->SendRaw(auc_uartmon_netx10_monitor, sizeof(auc_uartmon_netx10_monitor), 500)!=sizeof(auc_uartmon_netx10_monitor) )
@@ -329,11 +329,12 @@ ROMLOADER_ROMCODE romloader_uart_read_functinoid_hboot1::update_device(ROMLOADER
 				}
 				else
 				{
-					/* The ROM code is now HBOOT2_SOFT */
-					tNewRomcode = ROMLOADER_ROMCODE_HBOOT2_SOFT;
+					/* The ROM code is now HBOOT_SOFT */
+					iResult = 0;
 				}
 			}
 		}
+		break;
 
 
 	case ROMLOADER_CHIPTYP_NETX50:
@@ -342,11 +343,10 @@ ROMLOADER_ROMCODE romloader_uart_read_functinoid_hboot1::update_device(ROMLOADER
 	default:
 		/* No idea how to update this one! */
 		fprintf(stderr, "%s(%p): No strategy to update chip type %d!\n", m_pcPortName, this, tChiptyp);
-		tNewRomcode = ROMLOADER_ROMCODE_UNKNOWN;
 		break;
 	}
 	
-	return tNewRomcode;
+	return iResult;
 }
 
 

@@ -255,9 +255,9 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 	unsigned long ulMiVersionMin;
 	ROMLOADER_COMMANDSET_T tCmdSet;
 	unsigned short usCrc;
-	const size_t sizExpectedKnockResponse = 17;
-	size_t sizExpectedPacket;
-	unsigned char aucData[sizExpectedKnockResponse];
+	size_t sizPacket;
+	unsigned char aucData[32];
+	unsigned char ucStatus;
 
 
 	/* The command set is unknown by default. */
@@ -288,72 +288,122 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 			/* Knock echoed -> this is the prompt or the machine interface. */
 			if( aucData[0]==MONITOR_STREAM_PACKET_START )
 			{
-//				printf("OK, received star!\n");
-
-				/* Get rest of the response. */
-				sizTransfered = m_ptUartDev->RecvRaw(aucData, sizExpectedKnockResponse, 500);
-				hexdump(aucData, sizTransfered);
-				printf("%d\n", sizTransfered);
-				sizExpectedPacket = sizExpectedKnockResponse - 4;
-				if( sizTransfered==0 )
+				sizTransfered = m_ptUartDev->RecvRaw(aucData, 2, 500);
+				if( sizTransfered!=2 )
 				{
-					fprintf(stderr, "Failed to receive response after the star!\n");
-				}
-				else if( sizTransfered==sizExpectedKnockResponse &&
-					aucData[0]==((unsigned char)( sizExpectedPacket     &0xffU)) &&
-					aucData[1]==((unsigned char)((sizExpectedPacket>>8U)&0xffU)) &&
-					((aucData[2] & MONITOR_STATUS_MSK)==MONITOR_STATUS_Ok) &&
-					memcmp(aucData+3, aucMagicMooh, sizeof(aucMagicMooh))==0 )
-				{
-					/* Build the CRC for the packet. */
-					usCrc = 0;
-					for(sizCnt=0; sizCnt<sizExpectedKnockResponse; ++sizCnt)
-					{
-						usCrc = crc16(usCrc, aucData[sizCnt]);
-					}
-					if( usCrc!=0 )
-					{
-						fprintf(stderr, "CRC of version packet is invalid!\n");
-					}
-					else
-					{
-						ulMiVersionMin = aucData[7] | (aucData[8]<<8);;
-						ulMiVersionMaj = aucData[9] | (aucData[10]<<8);
-						printf("Found new machine interface V%ld.%ld.\n", ulMiVersionMaj, ulMiVersionMin);
-
-						if( ulMiVersionMaj==1 )
-						{
-							tCmdSet = ROMLOADER_COMMANDSET_MI1;
-						}
-						else if( ulMiVersionMaj==2 )
-						{
-							tCmdSet = ROMLOADER_COMMANDSET_MI2;
-						}
-
-						fResult = true;
-					}
-				}
-				else if( sizTransfered==2 && aucData[0]=='*' && aucData[1]=='#' )
-				{
-					printf("OK, received '*#'!\n");
-					fResult = m_ptUartDev->SendBlankLineAndDiscardResponse();
-					if( fResult==true )
-					{
-						tCmdSet = ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1;
-					}
-				}
-				else if( sizTransfered==4 && aucData[0]==0x00 && aucData[1]==0x00 && aucData[2]=='*' && aucData[3]=='#' )
-				{
-					printf("OK, received '<null><null>*#'!\n");
-					fResult = m_ptUartDev->SendBlankLineAndDiscardResponse();
-					if( fResult==true )
-					{
-						tCmdSet = ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1;
-					}
+					fprintf(stderr, "Failed to receive the size information after the stream packet start!\n");
 				}
 				else
 				{
-					printf("received strange response after the star: 0x%02x\n", aucData[0]);
+					if( aucData[0]=='*' && aucData[1]=='#' )
+					{
+						printf("OK, received '*#'!\n");
+						fResult = m_ptUartDev->SendBlankLineAndDiscardResponse();
+						if( fResult==true )
+						{
+							tCmdSet = ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1;
+						}
+					}
+					else if( aucData[0]==0x00 && aucData[1]==0x00 )
+					{
+						sizTransfered = m_ptUartDev->RecvRaw(aucData+2, 2, 500);
+						if( sizTransfered!=2 )
+						{
+							fprintf(stderr, "Failed to receive the rest of the knock response after 0x00 0x00!\n");
+						}
+						else if( aucData[2]=='*' && aucData[3]=='#' )
+						{
+							printf("OK, received '<null><null>*#'!\n");
+							fResult = m_ptUartDev->SendBlankLineAndDiscardResponse();
+							if( fResult==true )
+							{
+								tCmdSet = ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1;
+							}
+						}
+						else
+						{
+							fprintf(stderr, "Received strange response after 0x00 0x00:\n");
+							hexdump(aucData+2, 2);
+						}
+					}
+					else
+					{
+						/* Get the size of the data part. */
+						sizPacket  = ((unsigned long)aucData[0]);
+						sizPacket |= ((unsigned long)aucData[1]) << 8U;
+						
+						/* The size information does not include the CRC. Add the 2 bytes here. */
+						sizPacket += 2;
+						
+						/* Is the size ok? */
+						if( sizPacket<11 )
+						{
+							fprintf(stderr, "The received packet is too small. It must be at least 11 bytes, but it is %d bytes.\n", sizPacket);
+						}
+						else if( sizPacket>(sizeof(aucData)-2) )
+						{
+							fprintf(stderr, "The received packet is too big for a buffer of %d bytes. It has %d bytes.\n", sizeof(aucData)-2, sizPacket);
+						}
+						else
+						{
+							/* Get rest of the response. */
+							sizTransfered = m_ptUartDev->RecvRaw(aucData+2, sizPacket, 500);
+							if( sizTransfered!=sizPacket )
+							{
+								fprintf(stderr, "Failed to receive the rest of the packet after the size information!\n");
+							}
+							else
+							{
+								ucStatus = aucData[2] & MONITOR_STATUS_MSK;
+								if( ucStatus!=MONITOR_STATUS_Ok )
+								{
+									fprintf(stderr, "The status of the response is not OK but 0x%02x.\n", ucStatus);
+								}
+								else if( memcmp(aucData+3, aucMagicMooh, sizeof(aucMagicMooh))!=0 )
+								{
+									fprintf(stderr, "The response packet has no MOOH magic!\n");
+								}
+								else
+								{
+									/* The complete size of the packet includes the 2 bytes of size information. */
+									sizPacket += 2;
+									
+									/* Build the CRC for the packet. */
+									usCrc = 0;
+									for(sizCnt=0; sizCnt<sizPacket; ++sizCnt)
+									{
+										usCrc = crc16(usCrc, aucData[sizCnt]);
+									}
+									if( usCrc!=0 )
+									{
+										fprintf(stderr, "CRC of version packet is invalid!\n");
+										hexdump(aucData, sizPacket);
+									}
+									else
+									{
+										ulMiVersionMin = aucData[7] | (aucData[8]<<8);;
+										ulMiVersionMaj = aucData[9] | (aucData[10]<<8);
+										printf("Found new machine interface V%ld.%ld.\n", ulMiVersionMaj, ulMiVersionMin);
+										
+										if( ulMiVersionMaj==1 )
+										{
+											tCmdSet = ROMLOADER_COMMANDSET_MI1;
+											fResult = true;
+										}
+										else if( ulMiVersionMaj==2 )
+										{
+											tCmdSet = ROMLOADER_COMMANDSET_MI2;
+											fResult = true;
+										}
+										else
+										{
+											fprintf(stderr, "Unknown machine interface version %ld.%ld\n", ulMiVersionMaj, ulMiVersionMin);
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 			else if( aucData[0]=='#' )
@@ -468,18 +518,17 @@ bool romloader_uart::synchronize(void)
 	const unsigned char aucMagicMooh[4] = { 0x4d, 0x4f, 0x4f, 0x48 };
 	UARTSTATUS_T tResult;
 	bool fResult;
-	/* The expected knock response is 17 bytes:
+	/* The expected knock response is 16 bytes:
 	 *    2 size bytes
 	 *    1 status byte
-	 *   12 data bytes (see monitor_commands.h for more information)
+	 *   11 data bytes (see monitor_commands.h for more information)
 	 *    2 bytes CRC
 	 */
-	const size_t sizExpectedResponse = 17;
+	const size_t sizExpectedResponse = 16;
 	unsigned char ucSequence;
 	unsigned long ulMiVersionMin;
 	unsigned long ulMiVersionMaj;
 	ROMLOADER_CHIPTYP tChipType;
-	ROMLOADER_ROMCODE tRomCode;
 	size_t sizMaxPacketSize;
 
 
@@ -517,12 +566,10 @@ bool romloader_uart::synchronize(void)
 		printf("Machine interface V%ld.%ld.\n", ulMiVersionMaj, ulMiVersionMin);
 
 		tChipType = (ROMLOADER_CHIPTYP)(m_aucPacketInputBuffer[0x0b]);
-		tRomCode  = (ROMLOADER_ROMCODE)(m_aucPacketInputBuffer[0x0c]);
 		printf("Chip type : %d\n", tChipType);
-		printf("ROM code : %d\n", tRomCode);
 
-		sizMaxPacketSize =  ((size_t)(m_aucPacketInputBuffer[0x0d])) |
-		                   (((size_t)(m_aucPacketInputBuffer[0x0e]))<<8U);
+		sizMaxPacketSize =  ((size_t)(m_aucPacketInputBuffer[0x0c])) |
+		                   (((size_t)(m_aucPacketInputBuffer[0x0d]))<<8U);
 		printf("Maximum packet size: 0x%04x\n", sizMaxPacketSize);
 		/* Limit the packet size to the buffer size. */
 		if( sizMaxPacketSize>sizMaxPacketSizeHost )
@@ -534,130 +581,9 @@ bool romloader_uart::synchronize(void)
 		/* Set the new values. */
 		m_uiMonitorSequence = ucSequence;
 		m_tChiptyp = tChipType;
-		m_tRomcode = tRomCode;
 		m_sizMaxPacketSizeClient = sizMaxPacketSize;
 		
 		fResult = true;
-	}
-
-	return fResult;
-}
-
-
-
-bool romloader_uart::chip_init(lua_State *ptClientData)
-{
-	bool fResult;
-
-
-	switch( m_tChiptyp )
-	{
-	case ROMLOADER_CHIPTYP_NETX500:
-	case ROMLOADER_CHIPTYP_NETX100:
-		switch( m_tRomcode )
-		{
-		case ROMLOADER_ROMCODE_ABOOT:
-			/* aboot is updated to hboot2 soft. aboot should never arrive here. */
-			fResult = false;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT:
-			/* Unknown combination. */
-			fResult = false;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
-			/* hboot2 software emu needs no special init. */
-			fResult = true;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT2:
-			/* Unknown combination. */
-			fResult = false;
-			break;
-		case ROMLOADER_ROMCODE_UNKNOWN:
-			fResult = false;
-			break;
-		}
-		break;
-
-	case ROMLOADER_CHIPTYP_NETX50:
-		switch( m_tRomcode )
-		{
-		case ROMLOADER_ROMCODE_ABOOT:
-			/* Unknown combination. */
-			fResult = false;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT:
-			/* The ROM code is HBoot, but it is updated to HBoot2_soft.
-			 * HBoot should never arrive here.
-			 */
-			fResult = false;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
-			/* hboot2 soft needs no special init. */
-			fResult = true;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT2:
-			/* Unknown combination. */
-			fResult = false;
-			break;
-		case ROMLOADER_ROMCODE_UNKNOWN:
-			fResult = false;
-			break;
-		}
-		break;
-
-	case ROMLOADER_CHIPTYP_NETX10:
-		switch( m_tRomcode )
-		{
-		case ROMLOADER_ROMCODE_ABOOT:
-			/* This is an unknown combination. */
-			fResult = false;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT:
-			/* This is an unknown combination. */
-			fResult = false;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
-			/* This is the updated device. */
-			fResult = true;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT2:
-			/* This is an unknown combination. */
-			fResult = false;
-			break;
-		case ROMLOADER_ROMCODE_UNKNOWN:
-			fResult = false;
-			break;
-		}
-		break;
-
-	case ROMLOADER_CHIPTYP_NETX56:
-		switch( m_tRomcode )
-		{
-		case ROMLOADER_ROMCODE_ABOOT:
-			/* This is an unknown combination. */
-			fResult = false;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT:
-			/* This is an unknown combination. */
-			fResult = false;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT2_SOFT:
-			/* This is an unknown combination. */
-			fResult = false;
-			break;
-		case ROMLOADER_ROMCODE_HBOOT2:
-			/* hboot2 needs no special init. */
-			fResult = true;
-			break;
-		case ROMLOADER_ROMCODE_UNKNOWN:
-			fResult = false;
-			break;
-		}
-		break;
-
-	case ROMLOADER_CHIPTYP_UNKNOWN:
-		fResult = false;
-		break;
 	}
 
 	return fResult;
@@ -673,7 +599,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 	romloader_uart_read_functinoid_mi1 tFnMi1(m_ptUartDev, m_pcName);
 	bool fResult;
 	ROMLOADER_COMMANDSET_T tCmdSet;
-	ROMLOADER_ROMCODE tNewRomcode;
+	int iResult;
 
 
 	/* Expect error. */
@@ -727,17 +653,11 @@ void romloader_uart::Connect(lua_State *ptClientData)
 					
 					if( fResult==true && ptFn!=NULL )
 					{
-						tNewRomcode = ptFn->update_device(m_tChiptyp);
-						if( tNewRomcode==ROMLOADER_ROMCODE_UNKNOWN )
+						iResult = ptFn->update_device(m_tChiptyp);
+						if( iResult!=0 )
 						{
 							fResult = false;
 							MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to update the device!", m_pcName, this);
-						}
-						else
-						{
-							/* The ROM code was updated. */
-							m_tRomcode = tNewRomcode;
-							fprintf(stderr, "New ROM code: %d %s\n", m_tRomcode, get_romcode_name(m_tRomcode));
 						}
 					}
 					break;
@@ -750,20 +670,14 @@ void romloader_uart::Connect(lua_State *ptClientData)
 					fResult = detect_chiptyp(ptFn);
 					if( fResult==true && ptFn!=NULL )
 					{
-						tNewRomcode = ptFn->update_device(m_tChiptyp);
-						if( tNewRomcode==ROMLOADER_ROMCODE_UNKNOWN )
+						iResult = ptFn->update_device(m_tChiptyp);
+						if( iResult!=0 )
 						{
 							fResult = false;
 							MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to update the device!", m_pcName, this);
 						}
-						else
-						{
-							/* The ROM code was updated. */
-							m_tRomcode = tNewRomcode;
-							fprintf(stderr, "New ROM code: %d %s\n", m_tRomcode, get_romcode_name(m_tRomcode));
-						}
 					}
-					else					
+					else
 					{
 						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chip type!", m_pcName, this);
 					}
@@ -773,27 +687,6 @@ void romloader_uart::Connect(lua_State *ptClientData)
 				case ROMLOADER_COMMANDSET_MI2:
 					fprintf(stderr, "The device does not need an update.\n");
 					fResult = true;
-#if 0
-					/* Get the ROM code version assumed from the knock response. */
-					tNewRomcode = m_tRomcode;
-					fResult = detect_chiptyp(&tFnMi2);
-					if( fResult!=true )
-					{
-						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chip type!", m_pcName, this);
-					}
-					else
-					{
-						/* Is this an updated device?
-						 * In this case the knock response indicates a HBoot2 interface,
-						 * but the detected ROM code is not HBoot2.
-						 */
-						if( tNewRomcode==ROMLOADER_ROMCODE_HBOOT2 && m_tRomcode!=ROMLOADER_ROMCODE_HBOOT2 )
-						{
-							/* This is an updated device. */
-							m_tRomcode = ROMLOADER_ROMCODE_HBOOT2_SOFT;
-						}
-					}
-#endif
 					break;
 				}
 
@@ -808,14 +701,6 @@ void romloader_uart::Connect(lua_State *ptClientData)
 					if( fResult!=true )
 					{
 						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to synchronize with the client!", m_pcName, this);
-					}
-					else
-					{
-						fResult = chip_init(ptClientData);
-						if( fResult!=true )
-						{
-							MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to initialize the chip!", m_pcName, this);
-						}
 					}
 				}
 			}

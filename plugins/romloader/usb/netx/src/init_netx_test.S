@@ -19,6 +19,8 @@
  ***************************************************************************/
 
 
+#include "netx_io_areas.S"
+
 	.section .init_code, "ax"
 	.arm
 
@@ -39,21 +41,17 @@
   .func start_init_s
 
 start:
-	@ Enable SVC mode and disable IRQ and FIQ.
-	msr     cpsr_c, #SR_Irq|SR_Fiq|SR_Mode_SVC
+	mov     r0,     #0
 
-	@ save the working register.
-	stmfd   sp!,    {r4}
-
-	mov     r4,     #0
-
-#if ASIC_TYP==50 || ASIC_TYP==10
+#if ASIC_TYP==10
+	@ netX10 has the TCMs enabled. Code, data and XC buffer must not
+	@ share the same INTRAM segment. This is difficult to handle.
 	@
-	@ This is the arm966e-j init.
+	@ Disable the TCMs here.
 	@
 
 	@ Clear data pipe.
-	mcr     p15,    0, r4, c7, c10, 4
+	mcr     p15,    0, r0, c7, c10, 4
 
 	@ Set the ctrl register to ...
 	@ TBIT enable (#15 = 0)
@@ -62,46 +60,41 @@ start:
 	@ enable buffered writes in bufferable areas (#3 = 1)
 	@ disable DTCM (#2 = 0)
 	@ disable alignment check (#1 = 0)
-	ldr     r4,     =0x0f78
-	mcr     p15,    0, r4, c1, c0, 0
+	ldr     r0,     =0x0f78
+	mcr     p15,    0, r0, c1, c0, 0
+#elif ASIC_TYP==50
+	@ SDRAM fix
+	@ Setup the DMA controller to stop the fake transfer at 0x800DEAD0.
+	ldr     r0,     =HOSTADDR(dmac_ch0)
+	ldr     r1,     =HOSTADDR(dmac_reg)
+
+	ldr     r2,     =0x00000001
+	str     r2,     [r1, #0x30]    /* Enable DMA controller generally */
+
+	ldr     r2,     =0xBFFFFFFC
+	str     r2,     [r0, #0x04]    /* DMA Target address = physical end of SDRAM area */
+
+	ldr     r2,     =0x00480001
+	str     r2,     [r0, #0x0C]    /* Setup DMA transfer (memory cycle) */
+
+	ldr     r2,     =0x00000001
+	str     r2,     [r0, #0x10]    /* Start DMA transfer*/
+
+	ldr     r2,     =0x00000000
+	str     r2,     [r0, #0x0C]    /* Stop and disable DMA */
+	str     r2,     [r0, #0x10]
+	str     r2,     [r1, #0x30]    /* Disable DMA controller */
+
+
+#elif ASIC_TYP==56
+	@ netX56 needs no special init.
 #elif ASIC_TYP==500 || ASIC_TYP==100
-	@
-	@ This is the arm926ej-s init.
-	@
-
-	@ Invalidate instruction and data caches.
-	mcr     p15,    0, r4, c7, c7, 0
-	@ Clear data pipe.
-	mcr     p15,    0, r4, c7, c10, 4
-	@ Clear instruction and data translation buffers.
-	mcr     p15,    0, r4, c8, c7, 0
-
-	@ Get the ctrl register.
-	mrc     p15,    0, r4, c1, c0, 0
-	@ Disable mmu, alignment check and data cache.
-	bic     r4,     r4, #0x0007
-	@ Disable system protection and instruction cache.
-	bic     r4,     r4, #0x1100
-	@ Write back ctrl register.
-	mcr     p15,    0, r4, c1, c0, 0
+	@ netX500 and netX100 need no special init.
 #else
 #	error "Unknown ASIC_TYP"
 #endif
 
-	@ Remember romcode stack position.
-	mov     r1, sp
-	@ Get working register.
-	ldmfd   sp!, {r2}
-
-	@ Set own stack position.
-	ldr     r0, =stack_top
-	mov     sp, r0
-
-	@ Save the romcode stack position, the working register and the
-	@ return address.
-	stmfd   sp!, {r1, r2, lr}
-
-#if ASIC_TYP==10
+#if ASIC_TYP==56 || ASIC_TYP==10
 	@ Copy the data section.
 	ldr     r0, =__copy_src_start__
 	ldr     r1, =__copy_dst_start__

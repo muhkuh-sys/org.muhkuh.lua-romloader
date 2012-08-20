@@ -55,7 +55,8 @@ SECTIONS
 	.code ORIGIN(INTRAM) :
 	{
 		load_address = .;
-		*(.header)
+
+		KEEP(*(.header))
 		*(.init_code)
 		*(.text)
 	} >INTRAM

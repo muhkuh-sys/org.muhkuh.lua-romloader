@@ -26,11 +26,13 @@ INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 # Compile the netX USB firmware.
 #
 
-SET(USB_FIRMWARE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.c
-                         ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.c)
+SET(USB_FIRMWARE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10.c
+                         ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx56.c
+                         ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500.c)
 
-SET(USB_FIRMWARE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10_intram.h
-                         ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500_intram.h)
+SET(USB_FIRMWARE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10.h
+                         ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx56.h
+                         ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500.h)
 
 
 #----------------------------------------------------------------------------

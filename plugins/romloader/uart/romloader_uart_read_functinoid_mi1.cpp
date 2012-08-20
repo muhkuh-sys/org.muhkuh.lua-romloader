@@ -19,11 +19,55 @@
  ***************************************************************************/
 
 
+#include <stdio.h>
+
 #include "romloader_uart_read_functinoid_mi1.h"
+
+/* Load- and entry points for the monitor firmware. */
+#include "netx/targets/uartmon_netx56_monitor_run.h"
+
+/* Data of the monitor firmware. */
+#include "netx/targets/uartmon_netx56_monitor.h"
 
 
 #define UART_BASE_TIMEOUT_MS 500
 #define UART_CHAR_TIMEOUT_MS 50
+
+
+#define MI1_MONITOR_COMMAND_MSK     0x0fU
+#define MI1_MONITOR_COMMAND_SRT     0U
+#define MI1_MONITOR_ACCESSSIZE_MSK  0x30U
+#define MI1_MONITOR_ACCESSSIZE_SRT  4U
+#define MI1_MONITOR_STATUS_MSK      0x3fU
+#define MI1_MONITOR_STATUS_SRT      0U
+#define MI1_MONITOR_SEQUENCE_MSK    0xc0U
+#define MI1_MONITOR_SEQUENCE_SRT    6U
+
+typedef enum
+{
+	MI1_MONITOR_COMMAND_Read                    = 0x00,
+	MI1_MONITOR_COMMAND_Write                   = 0x01,
+	MI1_MONITOR_COMMAND_Execute                 = 0x02,
+	MI1_MONITOR_COMMAND_Magic                   = 0xff
+} MI1_MONITOR_COMMAND_T;
+
+typedef enum
+{
+	MI1_MONITOR_STATUS_Ok                        = 0x00,
+	MI1_MONITOR_STATUS_CallMessage               = 0x01,
+	MI1_MONITOR_STATUS_CallFinished              = 0x02,
+	MI1_MONITOR_STATUS_InvalidCommand            = 0x03,
+	MI1_MONITOR_STATUS_InvalidPacketSize         = 0x04,
+	MI1_MONITOR_STATUS_InvalidSizeParameter      = 0x05
+} MI1_MONITOR_STATUS_T;
+
+typedef enum
+{
+	MI1_MONITOR_ACCESSSIZE_Byte                  = 0,
+	MI1_MONITOR_ACCESSSIZE_Word                  = 1,
+	MI1_MONITOR_ACCESSSIZE_Long                  = 2
+} MI1_MONITOR_ACCESSSIZE_T;
+
 
 
 romloader_uart_read_functinoid_mi1::romloader_uart_read_functinoid_mi1(romloader_uart_device *ptDevice, char *pcPortName)
@@ -49,7 +93,7 @@ unsigned long romloader_uart_read_functinoid_mi1::read_data32(unsigned long ulNe
 
 	ulValue = 0;
 
-	aucCommand[0] = MONITOR_COMMAND_Read | (MONITOR_ACCESSSIZE_Long<<6);
+	aucCommand[0] = MI1_MONITOR_COMMAND_Read | (MI1_MONITOR_ACCESSSIZE_Long<<6);
 	aucCommand[1] = 4;
 	aucCommand[2] =  ulNetxAddress      & 0xffU;
 	aucCommand[3] = (ulNetxAddress>>8 ) & 0xffU;
@@ -73,10 +117,149 @@ unsigned long romloader_uart_read_functinoid_mi1::read_data32(unsigned long ulNe
 
 
 
-ROMLOADER_ROMCODE romloader_uart_read_functinoid_mi1::update_device(ROMLOADER_CHIPTYP tChiptyp)
+bool romloader_uart_read_functinoid_mi1::write_image(unsigned long ulNetxAddress, const unsigned char *pucBUFFER_IN, size_t sizBUFFER_IN)
 {
-	fprintf(stderr, "%s(%p): No strategy to update chip type %d!\n", m_pcPortName, this, tChiptyp);
-	return ROMLOADER_ROMCODE_UNKNOWN;
+	bool fOk;
+	size_t sizChunk;
+	UARTSTATUS_T tResult;
+	const size_t sizMaxPacketSizeClient = 256;
+	unsigned char aucCommand[sizMaxPacketSizeClient];
+	long lBytesProcessed;
+
+
+	/* Be optimistic. */
+	fOk = true;
+
+	lBytesProcessed = 0;
+	do
+	{
+		sizChunk = sizBUFFER_IN;
+		if( sizChunk>sizMaxPacketSizeClient-11 )
+		{
+			sizChunk = sizMaxPacketSizeClient-11;
+		}
+
+		aucCommand[0] = MI1_MONITOR_COMMAND_Write |
+				(MI1_MONITOR_ACCESSSIZE_Byte<<MI1_MONITOR_ACCESSSIZE_SRT);
+		aucCommand[1] = sizChunk;
+		aucCommand[2] = (unsigned char)( ulNetxAddress       & 0xffU);
+		aucCommand[3] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+		aucCommand[4] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+		aucCommand[5] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		memcpy(aucCommand+6, pucBUFFER_IN, sizChunk);
+		tResult = execute_command(aucCommand, sizChunk+6);
+		if( tResult!=UARTSTATUS_OK )
+		{
+			fprintf(stderr, "failed to execute command!\n");
+			fOk = false;
+			break;
+		}
+		else
+		{
+			if( m_sizPacketInputBuffer!=4+1 )
+			{
+				fprintf(stderr, "answer to write_data08 has wrong packet size of %d!\n", m_sizPacketInputBuffer);
+				fOk = false;
+				break;
+			}
+			else
+			{
+				pucBUFFER_IN += sizChunk;
+				sizBUFFER_IN -= sizChunk;
+				ulNetxAddress += sizChunk;
+				lBytesProcessed += sizChunk;
+			}
+		}
+	} while( sizBUFFER_IN!=0 );
+	
+	return fOk;
+}
+
+
+
+bool romloader_uart_read_functinoid_mi1::call(unsigned long ulNetxAddress, unsigned long ulParameterR0)
+{
+	bool fOk;
+	UARTSTATUS_T tResult;
+	unsigned char aucCommand[9];
+	unsigned char ucStatus;
+
+
+	/* Construct the command packet. */
+	aucCommand[0x00] = MI1_MONITOR_COMMAND_Execute;
+	aucCommand[0x01] = (unsigned char)( ulNetxAddress      & 0xffU);
+	aucCommand[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
+	aucCommand[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
+	aucCommand[0x04] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
+	aucCommand[0x05] = (unsigned char)( ulParameterR0      & 0xffU);
+	aucCommand[0x06] = (unsigned char)((ulParameterR0>>8 ) & 0xffU);
+	aucCommand[0x07] = (unsigned char)((ulParameterR0>>16) & 0xffU);
+	aucCommand[0x08] = (unsigned char)((ulParameterR0>>24) & 0xffU);
+
+	printf("Executing call command:\n");
+	hexdump(aucCommand, 9);
+	tResult = execute_command(aucCommand, 9);
+	if( tResult!=UARTSTATUS_OK )
+	{
+		fprintf(stderr, "failed to execute command!");
+		fOk = false;
+	}
+	else
+	{
+		if( m_sizPacketInputBuffer!=4+1 )
+		{
+			fprintf(stderr, "answer to call command has wrong packet size of %d!", m_sizPacketInputBuffer);
+			fOk = false;
+		}
+		else
+		{
+			fOk = true;
+		}
+	}
+	
+	return fOk;
+}
+
+
+
+int romloader_uart_read_functinoid_mi1::update_device(ROMLOADER_CHIPTYP tChiptyp)
+{
+	int iResult;
+	bool fOk;
+	
+	
+	/* Expect failure. */
+	iResult = -1;
+
+	switch(tChiptyp)
+	{
+	case ROMLOADER_CHIPTYP_NETX56:
+		fprintf(stderr, "update netx56.\n");
+
+		fOk = write_image(MONITOR_DATA_START_NETX56, auc_uartmon_netx56_monitor, sizeof(auc_uartmon_netx56_monitor));
+		{
+			fOk = call(MONITOR_EXEC_NETX56, 0);
+			printf("start: %d\n", fOk);
+			if( fOk==true )
+			{
+				/* The ROM code was updated. */
+				iResult = 0;
+			}
+		}
+		break;
+
+
+	case ROMLOADER_CHIPTYP_NETX10:
+	case ROMLOADER_CHIPTYP_NETX50:
+	case ROMLOADER_CHIPTYP_NETX500:
+	case ROMLOADER_CHIPTYP_NETX100:
+	default:
+		/* No idea how to update this one! */
+		fprintf(stderr, "%s(%p): No strategy to update chip type %d!\n", m_pcPortName, this, tChiptyp);
+		break;
+	}
+	
+	return iResult;
 }
 
 

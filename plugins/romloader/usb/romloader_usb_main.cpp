@@ -345,14 +345,13 @@ bool romloader_usb::synchronize(void)
 	size_t sizInBuf;
 	/* The expected knock response is 13 bytes:
 	 *    1 status byte
-	 *   12 data bytes (see monitor_commands.h for more information)
+	 *   11 data bytes (see monitor_commands.h for more information)
 	 */
-	const size_t sizExpectedResponse = 13;
+	const size_t sizExpectedResponse = 12;
 	unsigned char ucSequence;
 	unsigned long ulMiVersionMin;
 	unsigned long ulMiVersionMaj;
 	ROMLOADER_CHIPTYP tChipType;
-	ROMLOADER_ROMCODE tRomCode;
 	size_t sizMaxPacketSize;
 
 
@@ -402,12 +401,10 @@ bool romloader_usb::synchronize(void)
 			printf("Machine interface V%ld.%ld.\n", ulMiVersionMaj, ulMiVersionMin);
 
 			tChipType = (ROMLOADER_CHIPTYP)(aucInBuf[0x09]);
-			tRomCode  = (ROMLOADER_ROMCODE)(aucInBuf[0x0a]);
 			printf("Chip type : %d\n", tChipType);
-			printf("ROM code : %d\n", tRomCode);
 
-			sizMaxPacketSize =  ((size_t)(aucInBuf[0x0b])) |
-			                   (((size_t)(aucInBuf[0x0c]))<<8U);
+			sizMaxPacketSize =  ((size_t)(aucInBuf[0x0a])) |
+			                   (((size_t)(aucInBuf[0x0b]))<<8U);
 			printf("Maximum packet size: 0x%04x\n", sizMaxPacketSize);
 			/* Limit the packet size to the buffer size. */
 			if( sizMaxPacketSize>m_sizMaxPacketSizeHost )
@@ -419,7 +416,6 @@ bool romloader_usb::synchronize(void)
 			/* Set the new values. */
 			m_uiMonitorSequence = ucSequence;
 			m_tChiptyp = tChipType;
-			m_tRomcode = tRomCode;
 			m_sizMaxPacketSizeClient = sizMaxPacketSize;
 
 			fResult = true;

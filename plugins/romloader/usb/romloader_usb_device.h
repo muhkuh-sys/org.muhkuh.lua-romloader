@@ -25,20 +25,6 @@
 #include "../romloader.h"
 
 
-typedef struct
-{
-	const char *pcName;
-	unsigned short usVendorId;
-	unsigned short usDeviceId;
-	unsigned short usBcdDevice;
-	ROMLOADER_CHIPTYP tChiptyp;
-	ROMLOADER_ROMCODE tRomcode;
-	unsigned char ucConfiguration;
-	unsigned char ucInterface;
-	unsigned char ucEndpoint_In;
-	unsigned char ucEndpoint_Out;
-} NETX_USB_DEVICE_T;
-
 
 class romloader_usb_device
 {
@@ -47,10 +33,31 @@ public:
 	~romloader_usb_device(void);
 
 protected:
+	typedef enum ROMLOADER_COMMANDSET_ENUM
+	{
+		ROMLOADER_COMMANDSET_UNKNOWN          = 0,
+		ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1  = 1,
+		ROMLOADER_COMMANDSET_MI1              = 2,
+		ROMLOADER_COMMANDSET_MI2              = 3
+	} ROMLOADER_COMMANDSET_T;
+
+	typedef struct
+	{
+		const char *pcName;
+		unsigned short usVendorId;
+		unsigned short usDeviceId;
+		unsigned short usBcdDevice;
+		ROMLOADER_CHIPTYP tChiptyp;
+		ROMLOADER_COMMANDSET_T tCommandSet;
+		unsigned char ucConfiguration;
+		unsigned char ucInterface;
+		unsigned char ucEndpoint_In;
+		unsigned char ucEndpoint_Out;
+	} NETX_USB_DEVICE_T;
+
 	char *m_pcPluginId;
 
-
-	static const NETX_USB_DEVICE_T atNetxUsbDevices[6];
+	static const NETX_USB_DEVICE_T atNetxUsbDevices[8];
 
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);
 

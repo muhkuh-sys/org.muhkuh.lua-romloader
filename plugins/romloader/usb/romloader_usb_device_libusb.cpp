@@ -40,8 +40,9 @@
 #include "romloader_usb_main.h"
 #include "../uuencoder.h"
 
-#include "netx/targets/usbmon_netx10_intram.h"
-#include "netx/targets/usbmon_netx500_intram.h"
+#include "netx/targets/usbmon_netx10.h"
+#include "netx/targets/usbmon_netx56.h"
+#include "netx/targets/usbmon_netx500.h"
 
 
 #if defined(WIN32)
@@ -765,16 +766,21 @@ int romloader_usb_device_libusb::Connect(unsigned int uiBusNr, unsigned int uiDe
 
 		if( iResult==LIBUSB_SUCCESS )
 		{
+			/* NOTE: hier sollte eine generelle Entscheidung rein, ob das Gerät geupdated werden soll. */
+			
+			
+			
 			/* Does this device need an update? */
 			iResult = LIBUSB_ERROR_OTHER;
-			switch(m_tDeviceId.tRomcode)
+			switch(m_tDeviceId.tCommandSet)
 			{
-			case ROMLOADER_ROMCODE_UNKNOWN:
+			case ROMLOADER_COMMANDSET_UNKNOWN:
+				/* No update plan for an unknown device. */
 				iResult = LIBUSB_ERROR_OTHER;
 				break;
 
-			case ROMLOADER_ROMCODE_ABOOT:
-			case ROMLOADER_ROMCODE_HBOOT:
+			case ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1:
+			case ROMLOADER_COMMANDSET_MI1:
 				iResult = update_old_netx_device(ptUsbDevice, &ptUpdatedNetxDevice);
 				if( iResult==LIBUSB_SUCCESS )
 				{
@@ -783,9 +789,8 @@ int romloader_usb_device_libusb::Connect(unsigned int uiBusNr, unsigned int uiDe
 				}
 				break;
 
-			case ROMLOADER_ROMCODE_HBOOT2_SOFT:
-			case ROMLOADER_ROMCODE_HBOOT2:
-				/* The device uses the hboot v2 protocol. */
+			case ROMLOADER_COMMANDSET_MI2:
+				/* The device uses the hboot v3 protocol. */
 				iResult = LIBUSB_SUCCESS;
 				break;
 			}
@@ -853,7 +858,7 @@ void romloader_usb_device_libusb::Disconnect(void)
 }
 
 
-const NETX_USB_DEVICE_T *romloader_usb_device_libusb::identifyDevice(libusb_device *ptDevice) const
+const romloader_usb_device::NETX_USB_DEVICE_T *romloader_usb_device_libusb::identifyDevice(libusb_device *ptDevice) const
 {
 	const NETX_USB_DEVICE_T *ptDevHit;
 	int iResult;
@@ -1042,10 +1047,10 @@ int romloader_usb_device_libusb::netx500_load_code(libusb_device_handle *ptDevHa
 	else
 	{
 		/* Get the load address. */
-		ulLoadAddress  = pucNetxCode[0x04];
-		ulLoadAddress |= pucNetxCode[0x05]<<8;
-		ulLoadAddress |= pucNetxCode[0x06]<<16;
-		ulLoadAddress |= pucNetxCode[0x07]<<24;
+		ulLoadAddress  =  (unsigned long)(pucNetxCode[0x04]);
+		ulLoadAddress |= ((unsigned long)(pucNetxCode[0x05])) <<  8U;
+		ulLoadAddress |= ((unsigned long)(pucNetxCode[0x06])) << 16U;
+		ulLoadAddress |= ((unsigned long)(pucNetxCode[0x07])) << 24U;
 
 //		printf("Load 0x%08x bytes to 0x%08x.\n", sizNetxCode, ulLoadAddress);
 
@@ -1120,10 +1125,10 @@ int romloader_usb_device_libusb::netx10_load_code(libusb_device_handle* ptDevHan
 	else
 	{
 		/* Construct the command. */
-		ulLoadAddress  = pucNetxCode[0x04];
-		ulLoadAddress |= pucNetxCode[0x05]<<8U;
-		ulLoadAddress |= pucNetxCode[0x06]<<16U;
-		ulLoadAddress |= pucNetxCode[0x07]<<24U;
+		ulLoadAddress  =  (unsigned long)(pucNetxCode[0x04]);
+		ulLoadAddress |= ((unsigned long)(pucNetxCode[0x05])) <<  8U;
+		ulLoadAddress |= ((unsigned long)(pucNetxCode[0x06])) << 16U;
+		ulLoadAddress |= ((unsigned long)(pucNetxCode[0x07])) << 24U;
 		sizLine = snprintf((char*)aucBuffer, sizeof(aucBuffer), "l %lx\n", ulLoadAddress);
 		iResult = libusb_bulk_transfer(ptDevHandle, m_tDeviceId.ucEndpoint_Out, aucBuffer, sizLine, &iProcessed, uiTimeoutMs);
 		if( iResult!=0 )
@@ -1179,6 +1184,125 @@ int romloader_usb_device_libusb::netx10_load_code(libusb_device_handle* ptDevHan
 }
 
 
+int romloader_usb_device_libusb::netx56_execute_command(libusb_device_handle *ptDevHandle, const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned char *aucInBuf, size_t *psizInBuf)
+{
+	int iResult;
+	size_t sizProcessed;
+	int iProcessed;
+	unsigned int uiTimeoutMs;
+	const unsigned char ucEndpoint_In = 0x85;
+	const unsigned char ucEndpoint_Out = 0x04;
+
+
+	uiTimeoutMs = 500; // 100
+
+	iResult = libusb_bulk_transfer(ptDevHandle, ucEndpoint_Out, (unsigned char*)aucOutBuf, sizOutBuf, &iProcessed, uiTimeoutMs);
+	if( iResult!=0 )
+	{
+		fprintf(stderr, "%s(%p): Failed to send data: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
+	}
+	else if( sizOutBuf!=iProcessed )
+	{
+		fprintf(stderr, "%s(%p): Requested to send %d bytes, but only %d were processed!\n", m_pcPluginId, this, sizOutBuf, iProcessed);
+		iResult = 1;
+	}
+	else
+	{
+		iResult = libusb_bulk_transfer(ptDevHandle, ucEndpoint_In, aucInBuf, 64, &iProcessed, uiTimeoutMs);
+		if( iResult==0 )
+		{
+			if( iProcessed==0 )
+			{
+				fprintf(stderr, "%s(%p): Received empty packet!\n", m_pcPluginId, this);
+				iResult = 1;
+			}
+			else
+			{
+				*psizInBuf = iProcessed;
+			}
+		}
+	}
+
+	return iResult;
+}
+
+
+int romloader_usb_device_libusb::netx56_load_code(libusb_device_handle* ptDevHandle, const unsigned char* pucNetxCode, size_t sizNetxCode)
+{
+	size_t sizChunk;
+	int iResult;
+	size_t sizInBuf;
+	unsigned char ucCommand;
+	unsigned char ucStatus;
+	bool fIsRunning;
+	long lBytesProcessed;
+	unsigned char aucTxBuf[64];
+	unsigned char aucRxBuf[64];
+	unsigned long ulNetxAddress;
+
+
+//	fprintf(stderr, "+netx56_load_code(): ptDevHandle=%p, pucNetxCode=%p, sizNetxCode=%d\n", ptDevHandle, pucNetxCode, sizNetxCode);
+
+	/* Be optimistic. */
+	iResult = 0;
+
+	if( pucNetxCode[0x00]!='m' || pucNetxCode[0x01]!='o' || pucNetxCode[0x02]!='o' || pucNetxCode[0x03]!='h' )
+	{
+		fprintf(stderr, "%s(%p): Invalid netx code, header missing.\n", m_pcPluginId, this);
+		iResult = -1;
+	}
+	else
+	{
+		/* Construct the command. */
+		ulNetxAddress  =  (unsigned long)(pucNetxCode[0x04]);
+		ulNetxAddress |= ((unsigned long)(pucNetxCode[0x05])) <<  8U;
+		ulNetxAddress |= ((unsigned long)(pucNetxCode[0x06])) << 16U;
+		ulNetxAddress |= ((unsigned long)(pucNetxCode[0x07])) << 24U;
+
+		do
+		{
+			sizChunk = sizNetxCode;
+			if( sizChunk>58 )
+			{
+				sizChunk = 58;
+			}
+
+			/* Construct the command packet. */
+			aucTxBuf[0x00] = MONITOR_COMMAND_Write |
+			                 (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT);
+			aucTxBuf[0x01] = (unsigned char)sizChunk;
+			aucTxBuf[0x02] = (unsigned char)( ulNetxAddress       & 0xffU);
+			aucTxBuf[0x03] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+			aucTxBuf[0x04] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+			aucTxBuf[0x05] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+			memcpy(aucTxBuf+6, pucNetxCode, sizChunk);
+
+			iResult = netx56_execute_command(ptDevHandle, aucTxBuf, sizChunk+6, aucRxBuf, &sizInBuf);
+			if( iResult!=0 )
+			{
+				break;
+			}
+			else if( sizInBuf!=1 )
+			{
+				hexdump(aucRxBuf, sizInBuf);
+				iResult = -1;
+				break;
+			}
+			else
+			{
+				pucNetxCode += sizChunk;
+				sizNetxCode -= sizChunk;
+				ulNetxAddress += sizChunk;
+			}
+		} while( sizNetxCode!=0 );
+	}
+
+	return iResult;
+}
+
+
+
+
 int romloader_usb_device_libusb::netx500_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode)
 {
 	int iResult;
@@ -1188,10 +1312,10 @@ int romloader_usb_device_libusb::netx500_start_code(libusb_device_handle *ptDevH
 	unsigned char aucInBuffer[64] = {0};
 
 
-	ulExecAddress  = pucNetxCode[0x08];
-	ulExecAddress |= pucNetxCode[0x09]<<8U;
-	ulExecAddress |= pucNetxCode[0x0a]<<16U;
-	ulExecAddress |= pucNetxCode[0x0b]<<24U;
+	ulExecAddress  =  (unsigned long)(pucNetxCode[0x08]);
+	ulExecAddress |= ((unsigned long)(pucNetxCode[0x09])) <<  8U;
+	ulExecAddress |= ((unsigned long)(pucNetxCode[0x0a])) << 16U;
+	ulExecAddress |= ((unsigned long)(pucNetxCode[0x0b])) << 24U;
 
 	/* Generate call command. */
 	sizLine = snprintf((char*)(aucOutBuffer+1), sizeof(aucOutBuffer), "call %lx 0\n", ulExecAddress);
@@ -1224,10 +1348,10 @@ int romloader_usb_device_libusb::netx10_start_code(libusb_device_handle *ptDevHa
 
 
 	/* Construct the command. */
-	ulExecAddress  = pucNetxCode[0x08];
-	ulExecAddress |= pucNetxCode[0x09]<<8;
-	ulExecAddress |= pucNetxCode[0x0a]<<16;
-	ulExecAddress |= pucNetxCode[0x0b]<<24;
+	ulExecAddress  =  (unsigned long)(pucNetxCode[0x08]);
+	ulExecAddress |= ((unsigned long)(pucNetxCode[0x09])) <<  8U;
+	ulExecAddress |= ((unsigned long)(pucNetxCode[0x0a])) << 16U;
+	ulExecAddress |= ((unsigned long)(pucNetxCode[0x0b])) << 24U;
 
 	/* Construct the command. */
 	sizBlock = sprintf((char*)aucBuffer, "g %lx 0\n", ulExecAddress);
@@ -1253,6 +1377,57 @@ int romloader_usb_device_libusb::netx10_start_code(libusb_device_handle *ptDevHa
 
 	return iResult;
 }
+
+
+
+int romloader_usb_device_libusb::netx56_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode)
+{
+	int iResult;
+	int iProcessed;
+	unsigned int uiTimeoutMs;
+	unsigned long ulExecAddress;
+	unsigned char aucTxBuf[64];
+	unsigned char aucRxBuf[64];
+	size_t sizRxBuf;
+
+
+	/* Construct the command. */
+	ulExecAddress  =  (unsigned long)(pucNetxCode[0x08]);
+	ulExecAddress |= ((unsigned long)(pucNetxCode[0x09])) <<  8U;
+	ulExecAddress |= ((unsigned long)(pucNetxCode[0x0a])) << 16U;
+	ulExecAddress |= ((unsigned long)(pucNetxCode[0x0b])) << 24U;
+
+	/* Construct the command packet. */
+	aucTxBuf[0x00] = MONITOR_COMMAND_Execute;
+	aucTxBuf[0x01] = (unsigned char)( ulExecAddress       & 0xffU);
+	aucTxBuf[0x02] = (unsigned char)((ulExecAddress>> 8U) & 0xffU);
+	aucTxBuf[0x03] = (unsigned char)((ulExecAddress>>16U) & 0xffU);
+	aucTxBuf[0x04] = (unsigned char)((ulExecAddress>>24U) & 0xffU);
+	aucTxBuf[0x05] = 0x00U;
+	aucTxBuf[0x06] = 0x00U;
+	aucTxBuf[0x07] = 0x00U;
+	aucTxBuf[0x08] = 0x00U;
+
+	iResult = netx56_execute_command(ptDevHandle, aucTxBuf, 9, aucRxBuf, &sizRxBuf);
+	if( iResult!=0 )
+	{
+		iResult = -1;
+	}
+	else if( sizRxBuf!=1 )
+	{
+		fprintf(stderr, "call answer has invalid size: %d\n", sizRxBuf);
+		hexdump(aucRxBuf, sizRxBuf);
+		iResult = -1;
+	}
+	else if( aucRxBuf[0]!=0x00 )
+	{
+		fprintf(stderr, "call answer status is not OK: 0x%02x\n", aucRxBuf[0]);
+		iResult = -1;
+	}
+
+	return iResult;
+}
+
 
 
 int romloader_usb_device_libusb::netx10_upgrade_romcode(libusb_device *ptDevice, libusb_device **pptUpdatedNetxDevice)
@@ -1291,13 +1466,15 @@ int romloader_usb_device_libusb::netx10_upgrade_romcode(libusb_device *ptDevice,
 				netx10_discard_until_timeout(ptDevHandle);
 
 				/* Load data. */
-				netx10_load_code(ptDevHandle, auc_usbmon_netx10_intram, sizeof(auc_usbmon_netx10_intram));
+				netx10_load_code(ptDevHandle, auc_usbmon_netx10, sizeof(auc_usbmon_netx10));
 
 				/* Start the code. */
-				netx10_start_code(ptDevHandle, auc_usbmon_netx10_intram);
+				netx10_start_code(ptDevHandle, auc_usbmon_netx10);
 
 				libusb_release_interface(ptDevHandle, m_tDeviceId.ucInterface);
 				libusb_close(ptDevHandle);
+
+				SLEEP_MS(100);
 
 				*pptUpdatedNetxDevice = ptDevice;
 
@@ -1309,7 +1486,7 @@ int romloader_usb_device_libusb::netx10_upgrade_romcode(libusb_device *ptDevice,
 	return iResult;
 }
 
-
+#if 0 
 libusb_device *romloader_usb_device_libusb::find_usb_device_by_location(unsigned char ucLocation_Bus, unsigned char ucLocation_Port)
 {
 	libusb_device *ptFound;
@@ -1348,6 +1525,7 @@ libusb_device *romloader_usb_device_libusb::find_usb_device_by_location(unsigned
 
 	return ptFound;
 }
+#endif
 
 
 int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice, libusb_device **pptUpdatedNetxDevice)
@@ -1389,12 +1567,12 @@ int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice
 				netx500_discard_until_timeout(ptDevHandle);
 
 				/* Load data. */
-				netx500_load_code(ptDevHandle, auc_usbmon_netx500_intram, sizeof(auc_usbmon_netx500_intram));
+				netx500_load_code(ptDevHandle, auc_usbmon_netx500, sizeof(auc_usbmon_netx500));
 				/* Discard load response. */
 				netx500_discard_until_timeout(ptDevHandle);
 
 				/* Start the code parameter. */
-				netx500_start_code(ptDevHandle, auc_usbmon_netx500_intram);
+				netx500_start_code(ptDevHandle, auc_usbmon_netx500);
 
 				/* Release the interface. */
 				libusb_release_interface(ptDevHandle, m_tDeviceId.ucInterface);
@@ -1406,6 +1584,49 @@ int romloader_usb_device_libusb::netx500_upgrade_romcode(libusb_device *ptDevice
 				*pptUpdatedNetxDevice = ptDevice;
 				iResult = 0;
 			}
+		}
+	}
+
+	return iResult;
+}
+
+
+int romloader_usb_device_libusb::netx56_upgrade_romcode(libusb_device *ptDevice, libusb_device **pptUpdatedNetxDevice)
+{
+	int iResult;
+	libusb_device_handle *ptDevHandle;
+
+
+	iResult = libusb_open(ptDevice, &ptDevHandle);
+	if( iResult!=0 )
+	{
+		fprintf(stderr, "%s(%p): Failed to open the device: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
+	}
+	else
+	{
+		iResult = libusb_claim_interface(ptDevHandle, 1);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "%s(%p): Failed to claim interface 1: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
+
+			libusb_close(ptDevHandle);
+		}
+		else
+		{
+			/* Load data. */
+			netx56_load_code(ptDevHandle, auc_usbmon_netx56, sizeof(auc_usbmon_netx56));
+
+			/* Start the code. */
+			netx56_start_code(ptDevHandle, auc_usbmon_netx56);
+
+			libusb_release_interface(ptDevHandle, m_tDeviceId.ucInterface);
+			libusb_close(ptDevHandle);
+
+			SLEEP_MS(100);
+
+			*pptUpdatedNetxDevice = ptDevice;
+
+			iResult = 0;
 		}
 	}
 
@@ -1528,8 +1749,7 @@ int romloader_usb_device_libusb::update_old_netx_device(libusb_device *ptNetxDev
 		break;
 
 	case ROMLOADER_CHIPTYP_NETX56:
-		/* No need to update netX56! */
-		iResult = LIBUSB_ERROR_OTHER;
+		iResult = netx56_upgrade_romcode(ptNetxDevice, &ptUpdatedDevice);
 		break;
 	}
 

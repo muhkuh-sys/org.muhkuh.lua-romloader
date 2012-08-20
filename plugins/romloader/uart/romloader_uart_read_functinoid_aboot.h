@@ -32,7 +32,7 @@ class romloader_uart_read_functinoid_aboot : public romloader_uart_read_functino
 public:
 	romloader_uart_read_functinoid_aboot(romloader_uart_device *ptDevice, char *pcPortName);
 	unsigned long read_data32(unsigned long ulAddress);
-	ROMLOADER_ROMCODE update_device(ROMLOADER_CHIPTYP tChiptyp);
+	int update_device(ROMLOADER_CHIPTYP tChiptyp);
 
 private:
 	bool legacy_read_v1(unsigned long ulAddress, unsigned long *pulValue);

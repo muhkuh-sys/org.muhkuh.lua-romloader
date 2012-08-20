@@ -29,11 +29,11 @@
 
 
 #ifdef _WIN32
-	#include "romloader_uart_device_win.h"
-	#define romloader_uart_device_platform romloader_uart_device_win
+#       include "romloader_uart_device_win.h"
+#       define romloader_uart_device_platform romloader_uart_device_win
 #else
-	#include "romloader_uart_device_linux.h"
-	#define romloader_uart_device_platform romloader_uart_device_linux
+#       include "romloader_uart_device_linux.h"
+#       define romloader_uart_device_platform romloader_uart_device_linux
 #endif
 
 
@@ -106,7 +106,6 @@ private:
 
 	bool identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet);
 	bool synchronize(void);
-	bool chip_init(lua_State *ptClientData);
 
 	romloader_uart_device_platform *m_ptUartDev;
 

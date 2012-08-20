@@ -29,6 +29,10 @@
 #include "serial_vectors.h"
 #include "uart.h"
 
+#if ASIC_TYP==56
+#       include "netx56/netx56_usb_uart.h"
+#endif
+
 /*-----------------------------------*/
 
 #if ASIC_TYP==100 || ASIC_TYP==500
@@ -36,15 +40,18 @@
 	{
 		.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
 	};
-#elif ASIC_TYP==10
-	static const UART_CONFIGURATION_T tUartCfg =
+#elif ASIC_TYP==56
+	typedef enum
 	{
-		.uc_rx_mmio = 20U,
-		.uc_tx_mmio = 21U,
-		.uc_rts_mmio = 0xffU,
-		.uc_cts_mmio = 0xffU,
-		.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
-	};
+		CONSOLE_DEVICE_NONE             = 0,
+		CONSOLE_DEVICE_UART0            = 1,
+		CONSOLE_DEVICE_UART1            = 2,
+		CONSOLE_DEVICE_USB              = 3,
+		CONSOLE_DEVICE_DCC              = 4,
+		CONSOLE_DEVICE_SIMU             = 5
+	} CONSOLE_DEVICE_T;
+
+	extern const unsigned long aulConsoleDevices[2];
 #endif
 
 
@@ -80,22 +87,37 @@ static unsigned int netx50_usb_peek(void)
 
 void uart_monitor(void)
 {
+#if ASIC_TYP==56
+	UART_CONFIGURATION_T tUartCfg;
+	unsigned long ulConsoleDevice;
+#elif ASIC_TYP==10
+	UART_CONFIGURATION_T tUartCfg;
+#endif
+
+
 	systime_init();
 
-#if ASIC_TYP==500 || ASIC_TYP==100 || ASIC_TYP==10
-	/* All ASICs in this group can not use the ROM routines for UART
+#if ASIC_TYP==500 || ASIC_TYP==100
+	/* Both ASICs in this group can not use the ROM routines for UART
 	 * communication.
 	 * 
 	 * The netX500 and netX100 ROM code UART put routine converts LF (0x0a)
 	 * to CR LF (0x0d 0x0a). It is not possible to send binary data with
 	 * it. Replace the vectors with custom routines.
-	 * 
-	 * The netX10 ROM code uses areas in bank0 around offset 0x8180. This
-	 * is outside the RAM area reserved for the monitor code.
 	 */
 
 	/* Initialize the UART. */
-	uart_init(0, &tUartCfg);
+	uart_init(&tUartCfg);
+
+	/* Set the new vectors. */
+	tSerialV1Vectors.fn.fnGet   = uart_get;
+	tSerialV1Vectors.fn.fnPut   = uart_put;
+	tSerialV1Vectors.fn.fnPeek  = uart_peek;
+	tSerialV1Vectors.fn.fnFlush = uart_flush;
+#elif ASIC_TYP==10
+	/* The netX10 ROM code uses areas in bank0 around offset 0x8180. This
+	 * is outside the RAM area reserved for the monitor code.
+	 */
 
 	/* Set the new vectors. */
 	tSerialV1Vectors.fn.fnGet   = uart_get;
@@ -111,6 +133,32 @@ void uart_monitor(void)
 	{
 		tSerialV1Vectors.fn.fnPeek = netx50_usb_peek;
 	}
+#elif ASIC_TYP==56
+	ulConsoleDevice = aulConsoleDevices[0];
+	if( ulConsoleDevice==((unsigned long)CONSOLE_DEVICE_USB) )
+	{
+		netx56_usb_uart_init();
+		
+		/* Copy the netX56 USB vectors to the V1 vectors. */
+		tSerialV1Vectors.fn.fnGet   = netx56_usb_uart_get;
+		tSerialV1Vectors.fn.fnPut   = netx56_usb_uart_put;
+		tSerialV1Vectors.fn.fnPeek  = netx56_usb_uart_peek;
+		tSerialV1Vectors.fn.fnFlush = netx56_usb_uart_flush;
+	}
+	else if( ulConsoleDevice==((unsigned long)CONSOLE_DEVICE_UART0) )
+	{
+		/* Copy the netX56 USB vectors to the V1 vectors. */
+		tSerialV1Vectors.fn.fnGet   = uart_get;
+		tSerialV1Vectors.fn.fnPut   = uart_put;
+		tSerialV1Vectors.fn.fnPeek  = uart_peek;
+		tSerialV1Vectors.fn.fnFlush = uart_flush;
+	}
+	else
+	{
+		while(1) {};
+	}
+#else
+#       error "Unknown ASIC_TYP!"
 #endif
 
 	transport_init();

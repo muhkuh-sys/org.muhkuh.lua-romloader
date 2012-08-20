@@ -112,6 +112,7 @@ void usb_init(void)
 	HOSTDEF(ptUsbDevFifoCtrlArea);
 	unsigned long ulValue;
 
+
 #if 0
 	/* Reset the USB core. */
 	ptUsbDevCtrlArea->ulUsb_dev_cfg = HOSTMSK(usb_dev_cfg_usb_dev_reset);
@@ -120,6 +121,9 @@ void usb_init(void)
 #endif
 	/* Set IRQ mask to 0. */
 	ptUsbDevCtrlArea->ulUsb_dev_irq_mask = 0;
+
+	/* ACK all IRQs. */
+	ptUsbDevCtrlArea->ulUsb_dev_irq_raw = 0xffffffffU;
 
 	/* Reset all FIFOs. */
 	usb_reset_fifo();
@@ -176,11 +180,11 @@ void usb_loop(void)
 
 	/* Wait for a new packet. */
 	ulValue  = ptUsbDevCtrlArea->ulUsb_dev_irq_raw;
-	ulValue &= HOSTMSK(usb_dev_irq_raw_jtag_rx_packet_received);
+	ulValue &= HOSTMSK(usb_dev_irq_raw_uart_rx_packet_received);
 	if( ulValue!=0 )
 	{
 		/* Acknowledge the IRQ. */
-		ptUsbDevCtrlArea->ulUsb_dev_irq_raw = HOSTMSK(usb_dev_irq_raw_jtag_rx_packet_received);
+		ptUsbDevCtrlArea->ulUsb_dev_irq_raw = HOSTMSK(usb_dev_irq_raw_uart_rx_packet_received);
 
 		/* Get the UART RX input fill level. */
 		ulFillLevel = usb_get_rx_fill_level();

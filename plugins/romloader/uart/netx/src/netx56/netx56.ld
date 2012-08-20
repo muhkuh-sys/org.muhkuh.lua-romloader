@@ -22,10 +22,10 @@ ENTRY(start)
 
 MEMORY
 {
-	ASSERT_EMPTY(rwx)  : ORIGIN = 0x00000000, LENGTH = 0
+	ASSERT_EMPTY(rwx):  ORIGIN = 0x00000000,  LENGTH = 0
 
-	IOVECTORS(rx)      : ORIGIN = 0x08000100, LENGTH = 0x00000010
-	INTRAM(rwx)        : ORIGIN = 0x08004000, LENGTH = 0x0003c000
+	INTRAM_MON(rwx):    ORIGIN = 0x08000100,  LENGTH = 0x00003f00
+	INTRAM_OPT(rx):     ORIGIN = 0x08090594,  LENGTH = 0x00000008
 }
 
 
@@ -41,52 +41,51 @@ SECTIONS
 		 */
 		*(.data)
 		*(.glue*)
+		*(.igot.plt)
+		*(.iplt)
 		*(.vfp11_veneer)
 		*(.v4_bx)
 	} >ASSERT_EMPTY
 
 
-	.serial_vectors ORIGIN(IOVECTORS) :
+	.serial_vectors ORIGIN(INTRAM_MON) :
 	{
-		tSerialVectors = . ;
+		tSerialV2Vectors = . ;
 		. = . + 0x10;
-	} >IOVECTORS
+	} >INTRAM_MON
 
 
-	.code ORIGIN(INTRAM) :
+	.code :
 	{
 		load_address = . ;
 
-		KEEP(*(.header))
+		*(.header)
 		*(.init_code)
-		*(.text)
+		*(.text*)
 		*(.rodata*)
-	} >INTRAM
-
-
-	.parameter :
-	{
-		parameter_start_address = . ;
-		. = . + 0x0100;
-		parameter_end_address = . ;
-	} >INTRAM
-
+	} >INTRAM_MON
+	end_address = LOADADDR(.code) + SIZEOF(.code);
 
 	.bss :
 	{
 		/* zero-initialized data */
-
 		__bss_start__ = . ;
 
 		*(.bss)
 		*(COMMON)
 
 		__bss_end__ = . ;
-	} >INTRAM
+	} >INTRAM_MON
+
+	/* Set the top of the stack to the start of the code. */
+	stack_top = ORIGIN(INTRAM_MON) + LENGTH(INTRAM_MON);
 
 
-	/* set the top of the stack to the end of INTRAM */
-	stack_top = ORIGIN(INTRAM) + LENGTH(INTRAM) ;
+	.opt ORIGIN(INTRAM_OPT):
+	{
+		PROVIDE( aulConsoleDevices = . );
+		. = . + 8;
+	} >INTRAM_OPT
 
 
 	/* Stabs debugging sections.  */

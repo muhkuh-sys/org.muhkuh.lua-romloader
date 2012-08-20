@@ -26,7 +26,7 @@
 #
 Import('env_default', 'env_netx500_default',  'env_netx56_default', 'env_netx50_default', 'env_netx10_default')
 Import('platform_lib_netx500', 'platform_lib_netx56', 'platform_lib_netx50', 'platform_lib_netx10')
-Import('libmi_netx500', 'libmi_netx50', 'libmi_netx10')
+Import('libmi_netx500', 'libmi_netx56', 'libmi_netx50', 'libmi_netx10')
 
 
 #----------------------------------------------------------------------------
@@ -36,7 +36,6 @@ sources_common = """
 	src/header.S
 	src/init_netx_test.S
 	src/main.c
-	src/options.c
 """
 
 
@@ -52,10 +51,17 @@ sources_custom_netx500 = """
 
 
 sources_custom_netx10 = """
+	src/options.c
 	src/usb_hsoc_v1/transport.c
 	src/usb_hsoc_v1/usb.c
 """
 
+
+sources_custom_netx56 = """
+	src/options.c
+	src/usb_hsoc_v2/transport.c
+	src/usb_hsoc_v2/usb.c
+"""
 
 #----------------------------------------------------------------------------
 #
@@ -63,11 +69,24 @@ sources_custom_netx10 = """
 #
 env_netx500 = env_netx500_default.Clone()
 env_netx500.Append(CPPPATH = ['src', 'src/usb_emsys', '../../machine_interface/netx/src', '#platform/src', '#platform/src/lib'])
-env_netx500.Replace(LDFILE = File('src/netx500/netx500_intram.ld'))
-src_netx500 = env_netx500.SetBuildPath('targets/netx500_intram', 'src', sources_common + sources_custom_netx500)
-elf_netx500 = env_netx500.Elf('targets/usbmon_netx500_intram', src_netx500 + platform_lib_netx500 + libmi_netx500)
-bin_netx500 = env_netx500.ObjCopy('targets/usbmon_netx500_intram', elf_netx500)
-arr_netx500 = env_netx500.DataArray('targets/usbmon_netx500_intram.c', bin_netx500, DATAARRAY_NAME='auc_usbmon_netx500_intram')
+env_netx500.Replace(LDFILE = File('src/netx500/netx500.ld'))
+src_netx500 = env_netx500.SetBuildPath('targets/netx500', 'src', sources_common + sources_custom_netx500)
+elf_netx500 = env_netx500.Elf('targets/usbmon_netx500.elf', src_netx500 + platform_lib_netx500 + libmi_netx500)
+bin_netx500 = env_netx500.ObjCopy('targets/usbmon_netx500.bin', elf_netx500)
+arr_netx500 = env_netx500.DataArray('targets/usbmon_netx500.c', bin_netx500, DATAARRAY_NAME='auc_usbmon_netx500')
+
+
+#----------------------------------------------------------------------------
+#
+# Build the netX56 files.
+#
+env_netx56 = env_netx56_default.Clone()
+env_netx56.Append(CPPPATH = ['src', 'src/usb_hsoc_v2', '../../machine_interface/netx/src', '#platform/src', '#platform/src/lib'])
+env_netx56.Replace(LDFILE = File('src/netx56/netx56.ld'))
+src_netx56 = env_netx56.SetBuildPath('targets/netx56', 'src', sources_common + sources_custom_netx56)
+elf_netx56 = env_netx56.Elf('targets/usbmon_netx56.elf', src_netx56 + platform_lib_netx56 + libmi_netx56)
+bin_netx56 = env_netx56.ObjCopy('targets/usbmon_netx56.bin', elf_netx56)
+arr_netx56 = env_netx56.DataArray('targets/usbmon_netx56.c', bin_netx56, DATAARRAY_NAME='auc_usbmon_netx56')
 
 
 #----------------------------------------------------------------------------
@@ -76,11 +95,11 @@ arr_netx500 = env_netx500.DataArray('targets/usbmon_netx500_intram.c', bin_netx5
 #
 env_netx10 = env_netx10_default.Clone()
 env_netx10.Append(CPPPATH = ['src', 'src/usb_hsoc_v1', '../../machine_interface/netx/src', '#platform/src', '#platform/src/lib'])
-env_netx10.Replace(LDFILE = File('src/netx10/netx10_intram.ld'))
-src_netx10 = env_netx10.SetBuildPath('targets/netx10_intram', 'src', sources_common + sources_custom_netx10)
-elf_netx10 = env_netx10.Elf('targets/usbmon_netx10_intram', src_netx10 + platform_lib_netx10 + libmi_netx10)
-bin_netx10 = env_netx10.ObjCopy('targets/usbmon_netx10_intram', elf_netx10)
-arr_netx10 = env_netx10.DataArray('targets/usbmon_netx10_intram.c', bin_netx10, DATAARRAY_NAME='auc_usbmon_netx10_intram')
+env_netx10.Replace(LDFILE = File('src/netx10/netx10.ld'))
+src_netx10 = env_netx10.SetBuildPath('targets/netx10', 'src', sources_common + sources_custom_netx10)
+elf_netx10 = env_netx10.Elf('targets/usbmon_netx10', src_netx10 + platform_lib_netx10 + libmi_netx10)
+bin_netx10 = env_netx10.ObjCopy('targets/usbmon_netx10', elf_netx10)
+arr_netx10 = env_netx10.DataArray('targets/usbmon_netx10.c', bin_netx10, DATAARRAY_NAME='auc_usbmon_netx10')
 
 
 #----------------------------------------------------------------------------
