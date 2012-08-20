@@ -41,19 +41,17 @@
 		.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
 	};
 #elif ASIC_TYP==56
-	typedef struct
+	typedef enum
 	{
-		unsigned char uc_rx_mmio;
-		unsigned char uc_tx_mmio;
-		unsigned char uc_rts_mmio;
-		unsigned char uc_cts_mmio;
-		unsigned char uc_mode;
-		unsigned short us_baud_div;
-		unsigned char uc_connect1;
-		unsigned char uc_connect2;
-	} HBOOT_UART_CONFIGURATION_T;
-	
-	extern const HBOOT_UART_CONFIGURATION_T atUartCfg[2];
+		CONSOLE_DEVICE_NONE             = 0,
+		CONSOLE_DEVICE_UART0            = 1,
+		CONSOLE_DEVICE_UART1            = 2,
+		CONSOLE_DEVICE_USB              = 3,
+		CONSOLE_DEVICE_DCC              = 4,
+		CONSOLE_DEVICE_SIMU             = 5
+	} CONSOLE_DEVICE_T;
+
+	extern const unsigned long aulConsoleDevices[2];
 #elif ASIC_TYP==10
 	typedef struct
 	{
@@ -74,29 +72,7 @@
 SERIAL_V1_COMM_UI_FN_T tSerialV1Vectors;
 
 
-#if ASIC_TYP==56
-static const SERIAL_V1_COMM_UI_FN_T tSerialNetx56UsbCdcVectors =
-{
-	.aul =
-	{
-		0x080f4b41U,
-		0x080f4cadU,
-		0x080f4b45U,
-		0x080f4c89U
-	}
-};
-
-static const SERIAL_V1_COMM_UI_FN_T tSerialNetx56UartVectors =
-{
-	.aul =
-	{
-		0x080f2521U,
-		0x080f2549U,
-		0x080f2559U,
-		0x080f2581U
-	}
-};
-#elif ASIC_TYP==50
+#if ASIC_TYP==50
 static const SERIAL_V1_COMM_UI_FN_T tSerialNetx50UsbVectors =
 {
 	.aul =
@@ -125,7 +101,10 @@ static unsigned int netx50_usb_peek(void)
 
 void uart_monitor(void)
 {
-#if ASIC_TYP==56 || ASIC_TYP==10
+#if ASIC_TYP==56
+	UART_CONFIGURATION_T tUartCfg;
+	unsigned long ulConsoleDevice;
+#elif ASIC_TYP==10
 	UART_CONFIGURATION_T tUartCfg;
 #endif
 
@@ -177,7 +156,8 @@ void uart_monitor(void)
 		tSerialV1Vectors.fn.fnPeek = netx50_usb_peek;
 	}
 #elif ASIC_TYP==56
-	if( memcmp(&tSerialV1Vectors, &tSerialNetx56UsbCdcVectors, sizeof(SERIAL_V1_COMM_UI_FN_T))==0 )
+	ulConsoleDevice = aulConsoleDevices[0];
+	if( ulConsoleDevice==((unsigned long)CONSOLE_DEVICE_USB) )
 	{
 		netx56_usb_uart_init();
 		
@@ -187,21 +167,13 @@ void uart_monitor(void)
 		tSerialV1Vectors.fn.fnPeek  = netx56_usb_uart_peek;
 		tSerialV1Vectors.fn.fnFlush = netx56_usb_uart_flush;
 	}
-	else if( memcmp(&tSerialV2Vectors, &tSerialNetx56UartVectors, sizeof(SERIAL_V1_COMM_UI_FN_T))==0 )
+	else if( ulConsoleDevice==((unsigned long)CONSOLE_DEVICE_UART0) )
 	{
-		/* Initialize the UART. */
-		tUartCfg.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200);
-		tUartCfg.uc_rx_mmio = atUartCfg[0].uc_rx_mmio;
-		tUartCfg.uc_tx_mmio = atUartCfg[0].uc_rx_mmio;
-		tUartCfg.uc_rts_mmio = atUartCfg[0].uc_rts_mmio;
-		tUartCfg.uc_cts_mmio = atUartCfg[0].uc_cts_mmio;
-		uart_init(&tUartCfg);
-		
 		/* Copy the netX56 USB vectors to the V1 vectors. */
-		tSerialV1Vectors.fn.fnGet   = netx56_usb_uart_get;
-		tSerialV1Vectors.fn.fnPut   = netx56_usb_uart_put;
-		tSerialV1Vectors.fn.fnPeek  = netx56_usb_uart_peek;
-		tSerialV1Vectors.fn.fnFlush = netx56_usb_uart_flush;
+		tSerialV1Vectors.fn.fnGet   = uart_get;
+		tSerialV1Vectors.fn.fnPut   = uart_put;
+		tSerialV1Vectors.fn.fnPeek  = uart_peek;
+		tSerialV1Vectors.fn.fnFlush = uart_flush;
 	}
 	else
 	{

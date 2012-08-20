@@ -25,7 +25,7 @@ MEMORY
 	ASSERT_EMPTY(rwx):  ORIGIN = 0x00000000,  LENGTH = 0
 
 	INTRAM_MON(rwx):    ORIGIN = 0x08000100,  LENGTH = 0x00003f00
-	INTRAM_OPT(rx):     ORIGIN = 0x080912dc,  LENGTH = 0x0000000a
+	INTRAM_OPT(rx):     ORIGIN = 0x08090594,  LENGTH = 0x00000008
 }
 
 
@@ -83,8 +83,8 @@ SECTIONS
 
 	.opt ORIGIN(INTRAM_OPT):
 	{
-		PROVIDE( atUartCfg = . );
-		. = . + 10;
+		PROVIDE( aulConsoleDevices = . );
+		. = . + 8;
 	} >INTRAM_OPT
 
 
