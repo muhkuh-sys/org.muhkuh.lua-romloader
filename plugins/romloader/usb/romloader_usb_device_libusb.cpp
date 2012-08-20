@@ -54,7 +54,7 @@
 
 
 
-#if defined(WIN32)
+#if 0 /* defined(WIN32) */
 
 /*-------------------------------------
   All calls to libusb functions (usb_*) are re-routed via pointers (pfn_usb_*) 
