@@ -48,10 +48,10 @@ ELSE(UNIX)
 		# Use libusb-0 on Windows to get a proper reset.
 		# NOTE: The current version of libusb-1.0 on windows uses the driver winusb.
 		#       It does not allow a complete device reset.
-		SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=0)
-		INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/include/)
-		# LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/lib/msvc)
-		# SET(USB_LIBRARIES libusb setupapi)
+		SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=1)
+		INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/include/libusbx-1.0/)
+		LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/lib/MinGW32/static/)
+		SET(USB_LIBRARIES usb-1.0)
 	ENDIF(WIN32)
 ENDIF(UNIX)
 
