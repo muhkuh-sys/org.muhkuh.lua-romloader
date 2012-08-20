@@ -41,16 +41,33 @@
 		.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
 	};
 #elif ASIC_TYP==56
-#elif ASIC_TYP==10
-	/* TODO: get the MMIO configuration from the ROM code options. */
-	static const UART_CONFIGURATION_T tUartCfg =
+	typedef struct
 	{
-		.uc_rx_mmio = 20U,
-		.uc_tx_mmio = 21U,
-		.uc_rts_mmio = 0xffU,
-		.uc_cts_mmio = 0xffU,
-		.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
-	};
+		unsigned char uc_rx_mmio;
+		unsigned char uc_tx_mmio;
+		unsigned char uc_rts_mmio;
+		unsigned char uc_cts_mmio;
+		unsigned char uc_mode;
+		unsigned short us_baud_div;
+		unsigned char uc_connect1;
+		unsigned char uc_connect2;
+	} HBOOT_UART_CONFIGURATION_T;
+	
+	extern const HBOOT_UART_CONFIGURATION_T atUartCfg[2];
+#elif ASIC_TYP==10
+	typedef struct
+	{
+		unsigned char uc_rx_mmio;
+		unsigned char uc_tx_mmio;
+		unsigned char uc_rts_mmio;
+		unsigned char uc_cts_mmio;
+		unsigned char uc_mode;
+		unsigned short us_baud_div;
+		unsigned char uc_connect1;
+		unsigned char uc_connect2;
+	} HBOOT_UART_CONFIGURATION_T;
+	
+	extern const HBOOT_UART_CONFIGURATION_T atUartCfg[2];
 #endif
 
 
@@ -69,6 +86,16 @@ static const SERIAL_V1_COMM_UI_FN_T tSerialNetx56UsbCdcVectors =
 	}
 };
 
+static const SERIAL_V1_COMM_UI_FN_T tSerialNetx56UartVectors =
+{
+	.aul =
+	{
+		0x080f2521U,
+		0x080f2549U,
+		0x080f2559U,
+		0x080f2581U
+	}
+};
 #elif ASIC_TYP==50
 static const SERIAL_V1_COMM_UI_FN_T tSerialNetx50UsbVectors =
 {
@@ -98,22 +125,42 @@ static unsigned int netx50_usb_peek(void)
 
 void uart_monitor(void)
 {
+#if ASIC_TYP==56 || ASIC_TYP==10
+	UART_CONFIGURATION_T tUartCfg;
+#endif
+
+
 	systime_init();
 
-#if ASIC_TYP==500 || ASIC_TYP==100 || ASIC_TYP==10
-	/* All ASICs in this group can not use the ROM routines for UART
+#if ASIC_TYP==500 || ASIC_TYP==100
+	/* Both ASICs in this group can not use the ROM routines for UART
 	 * communication.
 	 * 
 	 * The netX500 and netX100 ROM code UART put routine converts LF (0x0a)
 	 * to CR LF (0x0d 0x0a). It is not possible to send binary data with
 	 * it. Replace the vectors with custom routines.
-	 * 
-	 * The netX10 ROM code uses areas in bank0 around offset 0x8180. This
+	 */
+
+	/* Initialize the UART. */
+	uart_init(&tUartCfg);
+
+	/* Set the new vectors. */
+	tSerialV1Vectors.fn.fnGet   = uart_get;
+	tSerialV1Vectors.fn.fnPut   = uart_put;
+	tSerialV1Vectors.fn.fnPeek  = uart_peek;
+	tSerialV1Vectors.fn.fnFlush = uart_flush;
+#elif ASIC_TYP==10
+	/* The netX10 ROM code uses areas in bank0 around offset 0x8180. This
 	 * is outside the RAM area reserved for the monitor code.
 	 */
 
 	/* Initialize the UART. */
-	uart_init(0, &tUartCfg);
+	tUartCfg.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200);
+	tUartCfg.uc_rx_mmio = atUartCfg[0].uc_rx_mmio;
+	tUartCfg.uc_tx_mmio = atUartCfg[0].uc_rx_mmio;
+	tUartCfg.uc_rts_mmio = atUartCfg[0].uc_rts_mmio;
+	tUartCfg.uc_cts_mmio = atUartCfg[0].uc_cts_mmio;
+	uart_init(&tUartCfg);
 
 	/* Set the new vectors. */
 	tSerialV1Vectors.fn.fnGet   = uart_get;
@@ -133,6 +180,22 @@ void uart_monitor(void)
 	if( memcmp(&tSerialV1Vectors, &tSerialNetx56UsbCdcVectors, sizeof(SERIAL_V1_COMM_UI_FN_T))==0 )
 	{
 		netx56_usb_uart_init();
+		
+		/* Copy the netX56 USB vectors to the V1 vectors. */
+		tSerialV1Vectors.fn.fnGet   = netx56_usb_uart_get;
+		tSerialV1Vectors.fn.fnPut   = netx56_usb_uart_put;
+		tSerialV1Vectors.fn.fnPeek  = netx56_usb_uart_peek;
+		tSerialV1Vectors.fn.fnFlush = netx56_usb_uart_flush;
+	}
+	else if( memcmp(&tSerialV2Vectors, &tSerialNetx56UartVectors, sizeof(SERIAL_V1_COMM_UI_FN_T))==0 )
+	{
+		/* Initialize the UART. */
+		tUartCfg.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200);
+		tUartCfg.uc_rx_mmio = atUartCfg[0].uc_rx_mmio;
+		tUartCfg.uc_tx_mmio = atUartCfg[0].uc_rx_mmio;
+		tUartCfg.uc_rts_mmio = atUartCfg[0].uc_rts_mmio;
+		tUartCfg.uc_cts_mmio = atUartCfg[0].uc_cts_mmio;
+		uart_init(&tUartCfg);
 		
 		/* Copy the netX56 USB vectors to the V1 vectors. */
 		tSerialV1Vectors.fn.fnGet   = netx56_usb_uart_get;
