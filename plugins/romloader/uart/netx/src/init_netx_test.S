@@ -54,8 +54,7 @@ clear_bss:
 	strlo   r0, [r1], #4
 	blo     clear_bss
 
-	ldr     r0, =uart_monitor
-	bx      r0
+	b       uart_monitor
 
   .endfunc
 
