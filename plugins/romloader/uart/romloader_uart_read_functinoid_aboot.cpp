@@ -35,6 +35,10 @@
 #include "netx/targets/uartmon_netx500_monitor.h"
 
 
+#ifdef _MSC_VER
+#       define snprintf _snprintf
+#endif
+
 
 romloader_uart_read_functinoid_aboot::romloader_uart_read_functinoid_aboot(romloader_uart_device *ptDevice, char *pcPortName)
 {

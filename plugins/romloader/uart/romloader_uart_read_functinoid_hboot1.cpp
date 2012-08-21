@@ -33,6 +33,10 @@
 #include "netx/targets/uartmon_netx10_monitor.h"
 
 
+#ifdef _MSC_VER
+#       define snprintf _snprintf
+#endif
+
 
 romloader_uart_read_functinoid_hboot1::romloader_uart_read_functinoid_hboot1(romloader_uart_device *ptDevice, char *pcPortName)
 {
