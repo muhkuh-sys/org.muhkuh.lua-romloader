@@ -1581,7 +1581,7 @@ void romloader_uart::write_image(unsigned long ulNetxAddress, const char *pcBUFF
 	bool fOk;
 	size_t sizChunk;
 	UARTSTATUS_T tResult;
-	unsigned char aucCommand[m_sizMaxPacketSizeClient];
+	unsigned char aucCommand[sizMaxPacketSizeHost];
 	bool fIsRunning;
 	long lBytesProcessed;
 
