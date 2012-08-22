@@ -446,10 +446,15 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 	uiLoopCounter = uiLoopCounter + 1
 end
 
+print("")
+print(" #######  ##    ## ")
+print("##     ## ##   ##  ")
+print("##     ## ##  ##   ")
+print("##     ## #####    ")
+print("##     ## ##  ##   ")
+print("##     ## ##   ##  ")
+print(" #######  ##    ## ")
+print("")
 
 -- disconnect the plugin
 tPlugin:Disconnect()
--- check if the plugin is disconnected
-print( tPlugin:IsConnected() )
--- free the plugin
-tPlugin = nil
