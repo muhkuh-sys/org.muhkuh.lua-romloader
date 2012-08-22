@@ -33,7 +33,7 @@
 #define UART_BUFFER_NO_TIMEOUT 0
 #define UART_BUFFER_TIMEOUT 1
 
-#define MONITOR_MAX_PACKET_SIZE_UART 256
+#define MONITOR_MAX_PACKET_SIZE_UART 2048
 
 
 unsigned char aucStreamBuffer[MONITOR_MAX_PACKET_SIZE_UART];
@@ -47,6 +47,7 @@ size_t sizPacketOutputFill;
 size_t sizPacketOutputFillLast;
 
 
+/* This is a very nice routine for the CITT XModem CRC from http://www.eagleairaust.com.au/code/crc16.htm. */
 static unsigned short crc16(unsigned short usCrc, unsigned char ucData)
 {
 	unsigned int uiCrc;
@@ -60,7 +61,6 @@ static unsigned short crc16(unsigned short usCrc, unsigned char ucData)
 
 	return (unsigned short)uiCrc;
 }
-
 
 
 void transport_init(void)
@@ -200,6 +200,18 @@ static unsigned char uart_buffer_peek(size_t sizOffset)
 }
 
 
+static void uart_buffer_skip(size_t sizSkip)
+{
+	sizStreamBufferHead += sizSkip;
+	if( sizStreamBufferHead>=MONITOR_MAX_PACKET_SIZE_UART )
+	{
+		sizStreamBufferHead -= MONITOR_MAX_PACKET_SIZE_UART;
+	}
+
+	sizStreamBufferFill -= sizSkip;
+}
+
+
 void transport_loop(void)
 {
 	unsigned char ucByte;
@@ -207,6 +219,7 @@ void transport_loop(void)
 	unsigned short usCrc16;
 	size_t sizCrcPosition;
 	int iResult;
+	unsigned char *pucBuffer;
 
 
 	/* Collect a complete packet. */
@@ -254,11 +267,15 @@ void transport_loop(void)
 		{
 			/* Loop over all bytes and build the CRC16 checksum. */
 			/* NOTE: the size is just for the user data, but the CRC16 includes the size. */
-			usCrc16 = 0;
-			sizCrcPosition = 0;
+			usCrc16 = crc16(0, uart_buffer_peek(0));
+			usCrc16 = crc16(usCrc16, uart_buffer_peek(1));
+			pucBuffer = aucPacketInputBuffer;
+			sizCrcPosition = 2;
 			while( sizCrcPosition<sizPacket+4 )
 			{
-				usCrc16 = crc16(usCrc16, uart_buffer_peek(sizCrcPosition));
+				ucByte = uart_buffer_peek(sizCrcPosition);
+				*(pucBuffer++) = ucByte;
+				usCrc16 = crc16(usCrc16, ucByte);
 				++sizCrcPosition;
 			}
 
@@ -268,18 +285,11 @@ void transport_loop(void)
 
 				/* TODO: process the packet. */
 
-				/* Discard the size information. We already have this. */
-				uart_buffer_get();
-				uart_buffer_get();
+				/* Skip over the complete packet. It is already copied. */
+				uart_buffer_skip(sizPacket+4);
 
 //				uprintf("Received packet (%d bytes): ", sizPacket);
 
-				sizCrcPosition = 0;
-				while( sizCrcPosition<sizPacket )
-				{
-					aucPacketInputBuffer[sizCrcPosition] = uart_buffer_get();
-					++sizCrcPosition;
-				}
 
 				monitor_process_packet(aucPacketInputBuffer, sizPacket, MONITOR_MAX_PACKET_SIZE_UART-5U);
 			}
