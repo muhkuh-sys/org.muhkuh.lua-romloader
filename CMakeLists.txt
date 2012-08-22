@@ -112,6 +112,16 @@ ELSE(USE_SYSTEM_LUA)
 ENDIF(USE_SYSTEM_LUA)
 
 
+
+ADD_CUSTOM_TARGET(Firmware
+	ALL
+	COMMAND "${PYTHON_EXECUTABLE}" mbs/setup.py
+	WORKING_DIRECTORY ${CMAKE_HOME_DIRECTORY}
+	COMMENT "Build the swig lua runtime header."
+	VERBATIM
+)
+
+
 #----------------------------------------------------------------------------
 #
 # Add a custom command and a custom target for the swig runtime includes.
