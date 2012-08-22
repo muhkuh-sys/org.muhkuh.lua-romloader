@@ -269,10 +269,13 @@ void transport_loop(void)
 			/* NOTE: the size is just for the user data, but the CRC16 includes the size. */
 			usCrc16 = crc16(0, uart_buffer_peek(0));
 			usCrc16 = crc16(usCrc16, uart_buffer_peek(1));
+			pucBuffer = aucPacketInputBuffer;
 			sizCrcPosition = 2;
 			while( sizCrcPosition<sizPacket+4 )
 			{
-				usCrc16 = crc16(usCrc16, uart_buffer_peek(sizCrcPosition));
+				ucByte = uart_buffer_peek(sizCrcPosition);
+				*(pucBuffer++) = ucByte;
+				usCrc16 = crc16(usCrc16, ucByte);
 				++sizCrcPosition;
 			}
 
@@ -282,20 +285,11 @@ void transport_loop(void)
 
 				/* TODO: process the packet. */
 
-				/* Discard the size information. We already have this. */
-				uart_buffer_skip(2);
+				/* Skip over the complete packet. It is already copied. */
+				uart_buffer_skip(sizPacket+4);
 
 //				uprintf("Received packet (%d bytes): ", sizPacket);
 
-				sizCrcPosition = 0;
-				while( sizCrcPosition<sizPacket )
-				{
-					aucPacketInputBuffer[sizCrcPosition] = uart_buffer_get();
-					++sizCrcPosition;
-				}
-
-				/* Discard the CRC. */
-				uart_buffer_skip(2);
 
 				monitor_process_packet(aucPacketInputBuffer, sizPacket, MONITOR_MAX_PACKET_SIZE_UART-5U);
 			}
