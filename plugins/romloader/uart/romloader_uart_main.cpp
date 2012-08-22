@@ -1114,7 +1114,7 @@ romloader_uart::UARTSTATUS_T romloader_uart::execute_command(const unsigned char
 
 unsigned char romloader_uart::read_data08(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
-	unsigned char aucCommand[6];
+	unsigned char aucCommand[7];
 	UARTSTATUS_T tResult;
 	unsigned char ucValue;
 	bool fOk;
@@ -1138,11 +1138,12 @@ unsigned char romloader_uart::read_data08(lua_State *ptClientData, unsigned long
 		                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
 		                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		aucCommand[1] = 1;
-		aucCommand[2] = (unsigned char)( ulNetxAddress       & 0xffU);
-		aucCommand[3] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[4] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[5] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
-		tResult = execute_command(aucCommand, 6);
+		aucCommand[2] = 0;
+		aucCommand[3] = (unsigned char)( ulNetxAddress       & 0xffU);
+		aucCommand[4] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+		aucCommand[5] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+		aucCommand[6] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		tResult = execute_command(aucCommand, 7);
 		if( tResult!=UARTSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
@@ -1173,7 +1174,7 @@ unsigned char romloader_uart::read_data08(lua_State *ptClientData, unsigned long
 
 unsigned short romloader_uart::read_data16(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
-	unsigned char aucCommand[6];
+	unsigned char aucCommand[7];
 	UARTSTATUS_T tResult;
 	unsigned short usValue;
 	bool fOk;
@@ -1197,11 +1198,12 @@ unsigned short romloader_uart::read_data16(lua_State *ptClientData, unsigned lon
 		                (MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT) |
 		                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		aucCommand[1] = 2;
-		aucCommand[2] = (unsigned char)( ulNetxAddress       & 0xffU);
-		aucCommand[3] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[4] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[5] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
-		tResult = execute_command(aucCommand, 6);
+		aucCommand[2] = 0;
+		aucCommand[3] = (unsigned char)( ulNetxAddress       & 0xffU);
+		aucCommand[4] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+		aucCommand[5] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+		aucCommand[6] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		tResult = execute_command(aucCommand, 7);
 		if( tResult!=UARTSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
@@ -1233,7 +1235,7 @@ unsigned short romloader_uart::read_data16(lua_State *ptClientData, unsigned lon
 
 unsigned long romloader_uart::read_data32(lua_State *ptClientData, unsigned long ulNetxAddress)
 {
-	unsigned char aucCommand[6];
+	unsigned char aucCommand[7];
 	UARTSTATUS_T tResult;
 	unsigned long ulValue;
 	bool fOk;
@@ -1257,11 +1259,12 @@ unsigned long romloader_uart::read_data32(lua_State *ptClientData, unsigned long
 		                (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT) |
 		                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		aucCommand[1] = 4;
-		aucCommand[2] = (unsigned char)( ulNetxAddress       & 0xffU);
-		aucCommand[3] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[4] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[5] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
-		tResult = execute_command(aucCommand, 6);
+		aucCommand[2] = 0;
+		aucCommand[3] = (unsigned char)( ulNetxAddress       & 0xffU);
+		aucCommand[4] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+		aucCommand[5] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+		aucCommand[6] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		tResult = execute_command(aucCommand, 7);
 		if( tResult!=UARTSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
@@ -1346,13 +1349,14 @@ void romloader_uart::read_image(unsigned long ulNetxAddress, unsigned long ulSiz
 				aucCommand[0] = MONITOR_COMMAND_Read |
 				                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
 				                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-				aucCommand[1] = (unsigned char)sizChunk;
-				aucCommand[2] = (unsigned char)( ulNetxAddress       & 0xffU);
-				aucCommand[3] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-				aucCommand[4] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-				aucCommand[5] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+				aucCommand[1] = (unsigned char)( sizChunk       & 0xffU);
+				aucCommand[2] = (unsigned char)((sizChunk>> 8U) & 0xffU);
+				aucCommand[3] = (unsigned char)( ulNetxAddress       & 0xffU);
+				aucCommand[4] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+				aucCommand[5] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+				aucCommand[6] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
 
-				tResult = execute_command(aucCommand, 6);
+				tResult = execute_command(aucCommand, 7);
 				if( tResult!=UARTSTATUS_OK )
 				{
 					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
@@ -1404,7 +1408,7 @@ void romloader_uart::read_image(unsigned long ulNetxAddress, unsigned long ulSiz
 
 void romloader_uart::write_data08(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned char ucData)
 {
-	unsigned char aucCommand[7];
+	unsigned char aucCommand[8];
 	UARTSTATUS_T tResult;
 	unsigned long ulValue;
 	bool fOk;
@@ -1428,12 +1432,13 @@ void romloader_uart::write_data08(lua_State *ptClientData, unsigned long ulNetxA
 		                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
 		                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		aucCommand[1] = 1;
-		aucCommand[2] = (unsigned char)( ulNetxAddress       & 0xffU);
-		aucCommand[3] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[4] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[5] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
-		aucCommand[6] = ucData;
-		tResult = execute_command(aucCommand, 7);
+		aucCommand[2] = 0;
+		aucCommand[3] = (unsigned char)( ulNetxAddress       & 0xffU);
+		aucCommand[4] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+		aucCommand[5] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+		aucCommand[6] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		aucCommand[7] = ucData;
+		tResult = execute_command(aucCommand, 8);
 		if( tResult!=UARTSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
@@ -1460,7 +1465,7 @@ void romloader_uart::write_data08(lua_State *ptClientData, unsigned long ulNetxA
 
 void romloader_uart::write_data16(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned short usData)
 {
-	unsigned char aucCommand[8];
+	unsigned char aucCommand[9];
 	UARTSTATUS_T tResult;
 	unsigned long ulValue;
 	bool fOk;
@@ -1484,13 +1489,14 @@ void romloader_uart::write_data16(lua_State *ptClientData, unsigned long ulNetxA
 		                (MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT) |
 		                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		aucCommand[1] = 2;
-		aucCommand[2] = (unsigned char)( ulNetxAddress       & 0xffU);
-		aucCommand[3] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[4] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[5] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
-		aucCommand[6] = (unsigned char)( usData     & 0xffU);
-		aucCommand[7] = (unsigned char)((usData>>8U)& 0xffU);
-		tResult = execute_command(aucCommand, 8);
+		aucCommand[2] = 0;
+		aucCommand[3] = (unsigned char)( ulNetxAddress       & 0xffU);
+		aucCommand[4] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+		aucCommand[5] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+		aucCommand[6] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		aucCommand[7] = (unsigned char)( usData     & 0xffU);
+		aucCommand[8] = (unsigned char)((usData>>8U)& 0xffU);
+		tResult = execute_command(aucCommand, 9);
 		if( tResult!=UARTSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
@@ -1518,7 +1524,7 @@ void romloader_uart::write_data16(lua_State *ptClientData, unsigned long ulNetxA
 
 void romloader_uart::write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData)
 {
-	unsigned char aucCommand[10];
+	unsigned char aucCommand[11];
 	UARTSTATUS_T tResult;
 	unsigned long ulValue;
 	bool fOk;
@@ -1538,18 +1544,19 @@ void romloader_uart::write_data32(lua_State *ptClientData, unsigned long ulNetxA
 		/* Get the next sequence number. */
 		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
 
-		aucCommand[0] = MONITOR_COMMAND_Write |
-		                (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT) |
-		                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-		aucCommand[1] = 4;
-		aucCommand[2] = (unsigned char)( ulNetxAddress       & 0xffU);
-		aucCommand[3] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[4] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[5] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
-		aucCommand[6] = (unsigned char)( ulData       & 0xffU);
-		aucCommand[7] = (unsigned char)((ulData>> 8U) & 0xffU);
-		aucCommand[8] = (unsigned char)((ulData>>16U) & 0xffU);
-		aucCommand[9] = (unsigned char)((ulData>>24U) & 0xffU);
+		aucCommand[0]  = MONITOR_COMMAND_Write |
+		                 (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT) |
+		                 (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+		aucCommand[1]  = 4;
+		aucCommand[2]  = 0;
+		aucCommand[3]  = (unsigned char)( ulNetxAddress       & 0xffU);
+		aucCommand[4]  = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+		aucCommand[5]  = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+		aucCommand[6]  = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		aucCommand[7]  = (unsigned char)( ulData       & 0xffU);
+		aucCommand[8]  = (unsigned char)((ulData>> 8U) & 0xffU);
+		aucCommand[9]  = (unsigned char)((ulData>>16U) & 0xffU);
+		aucCommand[10] = (unsigned char)((ulData>>24U) & 0xffU);
 		tResult = execute_command(aucCommand, 10);
 		if( tResult!=UARTSTATUS_OK )
 		{
@@ -1600,9 +1607,9 @@ void romloader_uart::write_image(unsigned long ulNetxAddress, const char *pcBUFF
 		do
 		{
 			sizChunk = sizBUFFER_IN;
-			if( sizChunk>m_sizMaxPacketSizeClient-11 )
+			if( sizChunk>m_sizMaxPacketSizeClient-12 )
 			{
-				sizChunk = m_sizMaxPacketSizeClient-11;
+				sizChunk = m_sizMaxPacketSizeClient-12;
 			}
 
 			/* Get the next sequence number. */
@@ -1611,13 +1618,14 @@ void romloader_uart::write_image(unsigned long ulNetxAddress, const char *pcBUFF
 			aucCommand[0] = MONITOR_COMMAND_Write |
 			                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
 			                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-			aucCommand[1] = sizChunk;
-			aucCommand[2] = (unsigned char)( ulNetxAddress       & 0xffU);
-			aucCommand[3] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-			aucCommand[4] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-			aucCommand[5] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
-			memcpy(aucCommand+6, pcBUFFER_IN, sizChunk);
-			tResult = execute_command(aucCommand, sizChunk+6);
+			aucCommand[1] = (unsigned char)( sizChunk       & 0xffU);
+			aucCommand[2] = (unsigned char)((sizChunk>> 8U) & 0xffU);
+			aucCommand[3] = (unsigned char)( ulNetxAddress       & 0xffU);
+			aucCommand[4] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+			aucCommand[5] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+			aucCommand[6] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+			memcpy(aucCommand+7, pcBUFFER_IN, sizChunk);
+			tResult = execute_command(aucCommand, sizChunk+7);
 			if( tResult!=UARTSTATUS_OK )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
