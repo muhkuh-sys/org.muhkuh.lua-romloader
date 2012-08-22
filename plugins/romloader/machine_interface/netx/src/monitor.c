@@ -295,7 +295,8 @@ void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPack
 		tCmd = (MONITOR_COMMAND_T)((ucCommand&MONITOR_COMMAND_MSK)>>MONITOR_COMMAND_SRT);
 		tAccessSize = (MONITOR_ACCESSSIZE_T)((ucCommand&MONITOR_ACCESSSIZE_MSK)>>MONITOR_ACCESSSIZE_SRT);
 		ucSequence = (ucCommand&MONITOR_SEQUENCE_MSK)>>MONITOR_SEQUENCE_SRT;
-		ulDataSize = pucPacket[1];
+		ulDataSize  = ((unsigned long)pucPacket[1]);
+		ulDataSize |= ((unsigned long)pucPacket[2]) << 8U;
 
 
 		if( ucSequence==ucSequenceCurrent )
@@ -318,9 +319,9 @@ void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPack
 			else if( tCmd==MONITOR_COMMAND_Read )
 			{
 				/* Get the address. */
-				ulAddress = get_unaligned_dword(pucPacket + 2);
+				ulAddress = get_unaligned_dword(pucPacket + 3U);
 
-				if( ulPacketSize!=6 )
+				if( ulPacketSize!=7 )
 				{
 					send_status(MONITOR_STATUS_InvalidPacketSize);
 				}
@@ -336,15 +337,15 @@ void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPack
 			else if( tCmd==MONITOR_COMMAND_Write )
 			{
 				/* Get the address. */
-				ulAddress = get_unaligned_dword(pucPacket + 2U);
+				ulAddress = get_unaligned_dword(pucPacket + 3U);
 
-				if( ulPacketSize!=(6U+ulDataSize) )
+				if( ulPacketSize!=(7U+ulDataSize) )
 				{
 					send_status(MONITOR_STATUS_InvalidPacketSize);
 				}
 				else
 				{
-					command_write_memory(pucPacket+6U, ulAddress, ulDataSize, tAccessSize);
+					command_write_memory(pucPacket+7U, ulAddress, ulDataSize, tAccessSize);
 				}
 			}
 			else
