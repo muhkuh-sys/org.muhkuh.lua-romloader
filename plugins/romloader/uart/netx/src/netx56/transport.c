@@ -25,7 +25,6 @@
 
 #include "monitor.h"
 #include "monitor_commands.h"
-#include "serial_vectors.h"
 #include "systime.h"
 
 
@@ -436,9 +435,6 @@ void transport_send_packet(void)
 	ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned long)ucData;
 	ucData = (unsigned char)(usCrc&0xffU);
 	ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned long)ucData;
-
-	/* Flush the buffer. */
-//	SERIAL_V1_FLUSH();
 
 	/* Remember the packet size for resends. */
 	sizPacketOutputFillLast = sizPacketOutputFill;
