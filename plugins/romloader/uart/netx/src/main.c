@@ -88,10 +88,7 @@ static unsigned int netx50_usb_peek(void)
 void uart_monitor(void)
 {
 #if ASIC_TYP==56
-	UART_CONFIGURATION_T tUartCfg;
 	unsigned long ulConsoleDevice;
-#elif ASIC_TYP==10
-	UART_CONFIGURATION_T tUartCfg;
 #endif
 
 
