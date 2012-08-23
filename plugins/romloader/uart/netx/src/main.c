@@ -30,7 +30,7 @@
 #include "uart.h"
 
 #if ASIC_TYP==56
-#       include "netx56/netx56_usb_uart.h"
+void transport_set_vectors(unsigned long ulDevice);
 #endif
 
 /*-----------------------------------*/
@@ -132,28 +132,11 @@ void uart_monitor(void)
 	}
 #elif ASIC_TYP==56
 	ulConsoleDevice = aulConsoleDevices[0];
-	if( ulConsoleDevice==((unsigned long)CONSOLE_DEVICE_USB) )
-	{
-		netx56_usb_uart_init();
-		
-		/* Copy the netX56 USB vectors to the V1 vectors. */
-		tSerialV1Vectors.fn.fnGet   = netx56_usb_uart_get;
-		tSerialV1Vectors.fn.fnPut   = netx56_usb_uart_put;
-		tSerialV1Vectors.fn.fnPeek  = netx56_usb_uart_peek;
-		tSerialV1Vectors.fn.fnFlush = netx56_usb_uart_flush;
-	}
-	else if( ulConsoleDevice==((unsigned long)CONSOLE_DEVICE_UART0) )
-	{
-		/* Copy the netX56 USB vectors to the V1 vectors. */
-		tSerialV1Vectors.fn.fnGet   = uart_get;
-		tSerialV1Vectors.fn.fnPut   = uart_put;
-		tSerialV1Vectors.fn.fnPeek  = uart_peek;
-		tSerialV1Vectors.fn.fnFlush = uart_flush;
-	}
-	else
+	if( ulConsoleDevice!=((unsigned long)CONSOLE_DEVICE_USB) && ulConsoleDevice!=((unsigned long)CONSOLE_DEVICE_UART0) )
 	{
 		while(1) {};
 	}
+	transport_set_vectors(ulConsoleDevice);
 #else
 #       error "Unknown ASIC_TYP!"
 #endif
