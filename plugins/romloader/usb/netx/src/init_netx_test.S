@@ -106,6 +106,10 @@ copy_data:
 	blo     copy_data
 #endif
 
+	@ Set own stack position.
+	ldr     r0, =stack_top
+	mov     sp, r0
+
 	@ Clear .bss section (zero init).
 	mov     r0, #0
 	ldr     r1, =__bss_start__
