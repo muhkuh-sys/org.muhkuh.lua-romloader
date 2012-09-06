@@ -1,3 +1,76 @@
+-----------------------------------------------------------------------------
+--   Copyright (C) 2012 by Christoph Thelen                                --
+--   doc_bacardi@users.sourceforge.net                                     --
+--                                                                         --
+--   This program is free software; you can redistribute it and/or modify  --
+--   it under the terms of the GNU General Public License as published by  --
+--   the Free Software Foundation; either version 2 of the License, or     --
+--   (at your option) any later version.                                   --
+--                                                                         --
+--   This program is distributed in the hope that it will be useful,       --
+--   but WITHOUT ANY WARRANTY; without even the implied warranty of        --
+--   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         --
+--   GNU General Public License for more details.                          --
+--                                                                         --
+--   You should have received a copy of the GNU General Public License     --
+--   along with this program; if not, write to the                         --
+--   Free Software Foundation, Inc.,                                       --
+--   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             --
+-----------------------------------------------------------------------------
+-- 
+-- Description:
+--   test_romloader.lua   Test plugin functions
+--
+--   - write random data with write_data8/16/32 and check with read_image
+--   - write random data with write_image and check with read_data8/16/32
+--   - call binary and check its output
+--
+--  Changes:
+--    Date      Author   Description
+--  28 aug 12    SL      set test areas to the usable range after MI 2.0 has been installed
+--               SL      added output checking
+-----------------------------------------------------------------------------
+
+
+-- The usable intram when MI 2.0 is running
+atTestAreas = {
+	[romloader.ROMLOADER_CHIPTYP_NETX500] = {ulTestAreaStart = 0x00004000, ulTestAreaSize  = 0x0001c000},
+	[romloader.ROMLOADER_CHIPTYP_NETX100] = {ulTestAreaStart = 0x00004000, ulTestAreaSize  = 0x0001c000},
+	[romloader.ROMLOADER_CHIPTYP_NETX56]  = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0009c000},
+	[romloader.ROMLOADER_CHIPTYP_NETX50]  = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x00014000},
+	[romloader.ROMLOADER_CHIPTYP_NETX10]  = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0002c000},
+}
+
+-- print date/time in every line, useful when it stops in the middle of the night
+local orig_print = print
+function print(...)
+	io.write(os.date(), " ")
+	orig_print(...)
+end
+
+-- convert input parameter to boolean
+function tobool(x, fDefault)
+	if type(x)=="boolean" then
+		return x
+	elseif type(x)=="string" then
+		return x=="true" or x=="TRUE"
+	else
+		return fDefault
+	end
+end
+
+-- get the test parameters
+local ulTestSize           = tonumber(__MUHKUH_TEST_PARAMETER.testsize)             -- size of the memory area to test
+local uiParameterLoops     = tonumber(__MUHKUH_TEST_PARAMETER.loops)                -- 0 = endless
+local fCheckExpectedOutput = tobool(  __MUHKUH_TEST_PARAMETER.checkoutput, true)    -- enable output checking
+local fCheckOutputEnd      = tobool(  __MUHKUH_TEST_PARAMETER.checkoutputend, true) -- enable checking of the output at the return from a acall
+                                    
+local function printf(...) print(string.format(...)) end
+printf("ulTestSize           0x%08x", ulTestSize)
+printf("uiParameterLoops     %d",     uiParameterLoops)
+printf("fCheckExpectedOutput %s",     tostring(fCheckExpectedOutput))
+printf("fCheckOutputEnd      %s",     tostring(fCheckOutputEnd))
+
 
 local function get_rnd_data(len)
 	local data = ""
@@ -48,8 +121,9 @@ end
 
 
 --------------------------------------------------------------------------
--- execute binary, checking output in message callback
+-- execute binary, check output in message callback against expected output
 --------------------------------------------------------------------------
+
 -- [netX 0] . *** test skeleton start ***
 -- 
 -- [netX 0] . Parameter Address: 0x08018880
@@ -97,6 +171,7 @@ function addExpectedOutputLoop(n, iMsDelay)
 	end
 end
 
+-- Construct the expected output
 strNetxCR = "\r\n"
 addExpectedOutput(". *** test skeleton start ***" .. strNetxCR)
 --addExpectedOutput(". Parameter Address: 0x08018880" .. strNetxCR)
@@ -108,7 +183,7 @@ addExpectedOutputLoop(100, 0)
 addExpectedOutputLoop(8, 500)
 addExpectedOutputLoop(4, 1000)
 addExpectedOutputLoop(2, 2000)
-addExpectedOutput("ok" .. strNetxCR)
+--addExpectedOutput("ok" .. strNetxCR)
 
 
 
@@ -122,6 +197,7 @@ addExpectedOutput("ok" .. strNetxCR)
 USB_BLOCK_SIZE = 63
 function getExpectedOutput()
 	local strLine = astrExpectedOutput[iExpectedOutputLine]
+	assert(strLine, "Expected output exhausted")
 	local strExpected
 	
 	if tPlugin:GetTyp()=="romloader_usb" then
@@ -141,15 +217,19 @@ function getExpectedOutput()
 		return strExpected
 end
 
+function isOutputComplete()
+	--return true 
+	return iExpectedOutputLine == #astrExpectedOutput + 1
+end
+
+fOutputMissing = false
 
 function fnCallbackCheckOutput(a,b)
 	print(string.format("[netX %d] %s", b, a))
 	
 	-- error if a is not a string
 	if type(a)~="string" then
-		print("Message callback called with non-string")
-		print(type(a))
-		error("Message callback called with non-string")
+		print("Message callback called with non-string:", type(a))
 		
 	-- allow a to be an empty string (due to timeout?)
 	elseif a == "" then
@@ -170,13 +250,14 @@ function fnCallbackCheckOutput(a,b)
 				print(string.format("%d bytes", a:len()))
 				tester.hexdump(a,16)
 			end
-			error("Unexpected output")
+			fOutputMissing = true
+			if fCheckExpectedOutput then
+				error("Unexpected output")
 			end
+		end
 	end
 	return true
 end
-
-
 
 
 function mbin_simple_run(tParentWindow, tPlugin, strFilename, aParameter)
@@ -188,11 +269,20 @@ function mbin_simple_run(tParentWindow, tPlugin, strFilename, aParameter)
 	-- function mbin_execute(tParentWindow, tPlugin, aAttr, fnCallback, ulUserData)
 	iExpectedOutputLine = 1
 	iLinePos = 1
-	return tester.mbin_execute(tParentWindow, tPlugin, aAttr, fnCallbackCheckOutput, 0)
+	local result = tester.mbin_execute(tParentWindow, tPlugin, aAttr, fnCallbackCheckOutput, 0)
+	if fCheckOutputEnd and not isOutputComplete() then
+		error("did not receive all expected output")
+	end
+	
+	if fOutputMissing then
+		print("** Missing output **")
+	end
+	
+	return result
 end
 
 --------------------------------------------------------------------------
---  
+--  test main
 --------------------------------------------------------------------------
 
 
@@ -205,35 +295,25 @@ tPlugin:Connect()
 
 
 -- Get the maximum test area for the current chip.
-ulTestAreaStart = nil
-ulTestAreaSize  = nil
-
 local tAsicTyp = tPlugin:GetChiptyp()
-if tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX500 or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX100 then
-	ulTestAreaStart = 0x00008000
-	ulTestAreaSize  = 0x00018000
-elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX56 then
-	ulTestAreaStart = 0x08008000
-	ulTestAreaSize  = 0x000a0000
-elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX50 then
-	ulTestAreaStart = 0x08008000
-	ulTestAreaSize  = 0x00010000
-elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX10 then
-	ulTestAreaStart = 0x08008000
-	ulTestAreaSize  = 0x00028000
+local tTestArea = atTestAreas[tAsicTyp]
+if tTestArea then
+	ulTestAreaStart = tTestArea.ulTestAreaStart
+	ulTestAreaSize  = tTestArea.ulTestAreaSize
 else
 	error("Unknown chiptyp! " .. tostring(tAsicTyp))
 end
-
-
--- get the test parameters
-local ulTestSize = tonumber(__MUHKUH_TEST_PARAMETER["testsize"])
-local uiParameterLoops = tonumber(__MUHKUH_TEST_PARAMETER["loops"])
+ 
 
 -- Limit the test size to the size of the test area.
 if ulTestSize>ulTestAreaSize then
 	ulTestSize = ulTestAreaSize
 end
+
+
+
+
+
 
 local uiLoopCounter = 0
 -- If the "loops" parameter is 0, loop forever (or until an error occurs).
@@ -274,6 +354,7 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 	print(" ")
 
 	print("---------------------------------------")
+	print(string.format("** Loop %d **", uiLoopCounter))
 	print(" range test, write32")
 	data = get_rnd_data(ulTestSize)
 	print("Writing data in 32 bit chunks:")
@@ -296,6 +377,7 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 	print(" ")
 
 	print("---------------------------------------")
+	print(string.format("** Loop %d **", uiLoopCounter))
 	print(" range test, write16")
 	data = get_rnd_data(ulTestSize)
 	print("Writing data in 16 bit chunks:")
@@ -318,6 +400,7 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 	print(" ")
 
 	print("---------------------------------------")
+	print(string.format("** Loop %d **", uiLoopCounter))
 	print(" range test, write08")
 	data = get_rnd_data(ulTestSize)
 	print("Writing data in 8 bit chunks:")
@@ -340,6 +423,7 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 	print(" ")
 
 	print("---------------------------------------")
+	print(string.format("** Loop %d **", uiLoopCounter))
 	print(" range test, read32")
 	data = get_rnd_data(ulTestSize)
 	print("Writing image:")
@@ -366,6 +450,7 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 	print(" ")
 
 	print("---------------------------------------")
+	print(string.format("** Loop %d **", uiLoopCounter))
 	print(" range test, read16")
 	data = get_rnd_data(ulTestSize)
 	print("Writing image:")
@@ -390,6 +475,7 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 	print(" ")
 
 	print("---------------------------------------")
+	print(string.format("** Loop %d **", uiLoopCounter))
 	print(" range test, read08")
 	data = get_rnd_data(ulTestSize)
 	print("Writing image:")
@@ -414,6 +500,7 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 
 
 	print("---------------------------------------")
+	print(string.format("** Loop %d **", uiLoopCounter))
 	print(" call test")
 	-- Get the chiptyp.
 	local tAsicTyp = tPlugin:GetChiptyp()
