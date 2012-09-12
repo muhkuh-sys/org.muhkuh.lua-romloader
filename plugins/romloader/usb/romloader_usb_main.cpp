@@ -366,7 +366,7 @@ bool romloader_usb::synchronize(void)
 	else
 	{
 		ucData = 0xffU;
-		iResult = m_ptUsbDevice->execute_command(&ucData, 1, aucInBuf, &sizInBuf);
+		iResult = m_ptUsbDevice->execute_command(&ucData, 1, aucInBuf, sizeof(aucInBuf), &sizInBuf);
 		if( iResult!=0 )
 		{
 			fprintf(stderr, "%s(%p): synchronize: failed to transfer command!\n", m_pcName, this);
@@ -439,12 +439,12 @@ romloader_usb::USBSTATUS_T romloader_usb::execute_command(const unsigned char *a
 	size_t sizPacketInputBuffer;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("-romloader_usb::execute_command(): aucCommand=%p, sizCommand=%d, psizReceivePacket=%p\n", aucCommand, sizCommand, psizReceivePacket));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::execute_command(): aucCommand=%p, sizCommand=%d, psizReceivePacket=%p\n", aucCommand, sizCommand, psizReceivePacket));
 
 	uiRetryCnt = 10;
 	do
 	{
-		iResult = m_ptUsbDevice->execute_command(aucCommand, sizCommand, m_aucPacketInputBuffer, &sizPacketInputBuffer);
+		iResult = m_ptUsbDevice->execute_command(aucCommand, sizCommand, m_aucPacketInputBuffer, m_sizMaxPacketSizeClient, &sizPacketInputBuffer);
 		if( iResult!=0 )
 		{
 			fprintf(stderr, "%s(%p): Failed to exchange data.\n", m_pcName, this);
@@ -566,12 +566,13 @@ unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long 
 		                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
 		                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned char);
-		m_aucPacketOutputBuffer[0x02] = (unsigned char)( ulNetxAddress       & 0xffU);
-		m_aucPacketOutputBuffer[0x03] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		m_aucPacketOutputBuffer[0x02] = 0x00;
+		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
+		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+		m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
 
-		tResult = execute_command(m_aucPacketOutputBuffer, 6, &sizInBuf);
+		tResult = execute_command(m_aucPacketOutputBuffer, 7, &sizInBuf);
 		if( tResult!=USBSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
@@ -634,12 +635,13 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 		                                (MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT) |
 		                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned short);
-		m_aucPacketOutputBuffer[0x02] = (unsigned char)( ulNetxAddress       & 0xffU);
-		m_aucPacketOutputBuffer[0x03] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		m_aucPacketOutputBuffer[0x02] = 0;
+		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
+		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+		m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
 
-		tResult = execute_command(m_aucPacketOutputBuffer, 6, &sizInBuf);
+		tResult = execute_command(m_aucPacketOutputBuffer, 7, &sizInBuf);
 		if( tResult!=USBSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
@@ -703,12 +705,13 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 		                                (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT) |
 		                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned long);
-		m_aucPacketOutputBuffer[0x02] = (unsigned char)( ulNetxAddress       & 0xffU);
-		m_aucPacketOutputBuffer[0x03] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		m_aucPacketOutputBuffer[0x02] = 0;
+		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
+		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+		m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
 
-		tResult = execute_command(m_aucPacketOutputBuffer, 6, &sizInBuf);
+		tResult = execute_command(m_aucPacketOutputBuffer, 7, &sizInBuf);
 		if( tResult!=USBSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
@@ -806,13 +809,14 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 				m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Read |
 				                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
 				                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-				m_aucPacketOutputBuffer[0x01] = (unsigned char)sizChunk;
-				m_aucPacketOutputBuffer[0x02] = (unsigned char)( ulNetxAddress       & 0xffU);
-				m_aucPacketOutputBuffer[0x03] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-				m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-				m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+				m_aucPacketOutputBuffer[0x01] = (unsigned char)( sizChunk       & 0xffU);
+				m_aucPacketOutputBuffer[0x02] = (unsigned char)((sizChunk>> 8U) & 0xffU);
+				m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
+				m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+				m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+				m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
 
-				tResult = execute_command(m_aucPacketOutputBuffer, 6, &sizInBuf);
+				tResult = execute_command(m_aucPacketOutputBuffer, 7, &sizInBuf);
 				if( tResult!=USBSTATUS_OK )
 				{
 					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
@@ -896,13 +900,14 @@ void romloader_usb::write_data08(lua_State *ptClientData, unsigned long ulNetxAd
 		                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
 		                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned char);
-		m_aucPacketOutputBuffer[0x02] = (unsigned char)( ulNetxAddress       & 0xffU);
-		m_aucPacketOutputBuffer[0x03] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
-		m_aucPacketOutputBuffer[0x06] = ucData;
+		m_aucPacketOutputBuffer[0x02] = 0;
+		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
+		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+		m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		m_aucPacketOutputBuffer[0x07] = ucData;
 
-		tResult = execute_command(m_aucPacketOutputBuffer, 7, &sizInBuf);
+		tResult = execute_command(m_aucPacketOutputBuffer, 8, &sizInBuf);
 		if( tResult!=USBSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
@@ -958,14 +963,15 @@ void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 		                                (MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT) |
 		                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned short);
-		m_aucPacketOutputBuffer[0x02] = (unsigned char)( ulNetxAddress       & 0xffU);
-		m_aucPacketOutputBuffer[0x03] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
-		m_aucPacketOutputBuffer[0x06] = (unsigned char)( usData      & 0xffU);
-		m_aucPacketOutputBuffer[0x07] = (unsigned char)((usData>>8U) & 0xffU);
+		m_aucPacketOutputBuffer[0x02] = 0;
+		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
+		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+		m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		m_aucPacketOutputBuffer[0x07] = (unsigned char)( usData      & 0xffU);
+		m_aucPacketOutputBuffer[0x08] = (unsigned char)((usData>>8U) & 0xffU);
 
-		tResult = execute_command(m_aucPacketOutputBuffer, 8, &sizInBuf);
+		tResult = execute_command(m_aucPacketOutputBuffer, 9, &sizInBuf);
 		if( tResult!=USBSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
@@ -1021,16 +1027,17 @@ void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 		                                (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT) |
 		                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned long);
-		m_aucPacketOutputBuffer[0x02] = (unsigned char)( ulNetxAddress       & 0xffU);
-		m_aucPacketOutputBuffer[0x03] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>24u) & 0xffU);
-		m_aucPacketOutputBuffer[0x06] = (unsigned char)( ulData       & 0xffU);
-		m_aucPacketOutputBuffer[0x07] = (unsigned char)((ulData>> 8U) & 0xffU);
-		m_aucPacketOutputBuffer[0x08] = (unsigned char)((ulData>>16U) & 0xffU);
-		m_aucPacketOutputBuffer[0x09] = (unsigned char)((ulData>>24U) & 0xffU);
+		m_aucPacketOutputBuffer[0x02] = 0;
+		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
+		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+		m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulNetxAddress>>24u) & 0xffU);
+		m_aucPacketOutputBuffer[0x07] = (unsigned char)( ulData       & 0xffU);
+		m_aucPacketOutputBuffer[0x08] = (unsigned char)((ulData>> 8U) & 0xffU);
+		m_aucPacketOutputBuffer[0x09] = (unsigned char)((ulData>>16U) & 0xffU);
+		m_aucPacketOutputBuffer[0x0a] = (unsigned char)((ulData>>24U) & 0xffU);
 
-		tResult = execute_command(m_aucPacketOutputBuffer, 10, &sizInBuf);
+		tResult = execute_command(m_aucPacketOutputBuffer, 11, &sizInBuf);
 		if( tResult!=USBSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
@@ -1088,9 +1095,9 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 		do
 		{
 			sizChunk = sizBUFFER_IN;
-			if( sizChunk>58 )
+			if( sizChunk>(m_sizMaxPacketSizeClient-7) )
 			{
-				sizChunk = 58;
+				sizChunk = m_sizMaxPacketSizeClient - 7;
 			}
 
 			/* Get the next sequence number. */
@@ -1100,14 +1107,15 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 			m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Write |
 			                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
 			                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-			m_aucPacketOutputBuffer[0x01] = (unsigned char)sizChunk;
-			m_aucPacketOutputBuffer[0x02] = (unsigned char)( ulNetxAddress       & 0xffU);
-			m_aucPacketOutputBuffer[0x03] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-			m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-			m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
-			memcpy(m_aucPacketOutputBuffer+6, pcBUFFER_IN, sizChunk);
+			m_aucPacketOutputBuffer[0x01] = (unsigned char)( sizChunk       & 0xffU);
+			m_aucPacketOutputBuffer[0x02] = (unsigned char)((sizChunk>> 8U) & 0xffU);
+			m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
+			m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
+			m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
+			m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+			memcpy(m_aucPacketOutputBuffer+7, pcBUFFER_IN, sizChunk);
 
-			tResult = execute_command(m_aucPacketOutputBuffer, sizChunk+6, &sizInBuf);
+			tResult = execute_command(m_aucPacketOutputBuffer, sizChunk+7, &sizInBuf);
 			if( tResult!=USBSTATUS_OK )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
@@ -1207,7 +1215,7 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 				pcProgressData = NULL;
 				sizProgressData = 0;
 
-				iResult = m_ptUsbDevice->receive_packet(m_aucPacketInputBuffer, &sizInBuf, 500);
+				iResult = m_ptUsbDevice->receive_packet(m_aucPacketInputBuffer, 64, &sizInBuf, 500);
 				if( iResult==LIBUSB_ERROR_TIMEOUT )
 				{ // should we print anything if a timeout occurs?
 				}

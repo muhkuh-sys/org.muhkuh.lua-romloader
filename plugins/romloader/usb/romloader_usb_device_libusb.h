@@ -100,8 +100,8 @@ public:
 	void Disconnect(void);
 
 	int send_packet(const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned int uiTimeoutMs);
-	int receive_packet(unsigned char *aucInBuf, size_t *psizInBuf, unsigned int uiTimeoutMs);
-	int execute_command(const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned char *aucInBuf, size_t *psizInBuf);
+	int receive_packet(unsigned char *aucInBuf, size_t sizInBuf, size_t *psizInBuf, unsigned int uiTimeoutMs);
+	int execute_command(const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned char *aucInBuf, size_t sizInBufMax, size_t *psizInBuf);
 
 protected:
 	NETX_USB_DEVICE_T m_tDeviceId;

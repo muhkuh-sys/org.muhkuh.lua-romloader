@@ -28,13 +28,17 @@
 
 /*-----------------------------------*/
 
+#if ASIC_TYP==56
+#      define USB_FIFO_DEPTH_JTag_TX 64
+#endif
+
 
 #define true (1==1)
 #define false (1==0)
 
 #define ARRAYSIZE(a) (sizeof(a)/sizeof((a)[0]))
 
-static unsigned char aucPacketRx[MONITOR_USB_MAX_PACKET_SIZE];
+static unsigned char aucPacketRx[MONITOR_USB_MAX_PACKET_SIZE+1];
 
 /*-----------------------------------*/
 
@@ -128,7 +132,7 @@ void usb_reset_fifo(void)
 	ulValue |= USB_FIFO_MODE_StreamZLP   << HOSTSRT(usb_dev_fifo_ctrl_conf_mode_uart_rx);
 	ulValue |= USB_FIFO_MODE_StreamZLP   << HOSTSRT(usb_dev_fifo_ctrl_conf_mode_uart_tx);
 	ulValue |= USB_FIFO_MODE_Packet      << HOSTSRT(usb_dev_fifo_ctrl_conf_mode_jtag_rx);
-	ulValue |= USB_FIFO_MODE_Packet      << HOSTSRT(usb_dev_fifo_ctrl_conf_mode_jtag_tx);
+	ulValue |= USB_FIFO_MODE_Transaction << HOSTSRT(usb_dev_fifo_ctrl_conf_mode_jtag_tx);
 	ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_conf = ulValue;
 }
 
@@ -137,43 +141,85 @@ void usb_reset_fifo(void)
 void usb_loop(void)
 {
 	HOSTDEF(ptUsbDevCtrlArea);
+	HOSTDEF(ptUsbDevFifoArea);
+	HOSTDEF(ptUsbDevFifoCtrlArea);
 	unsigned long ulValue;
 	unsigned long ulFillLevel;
+	unsigned long ulTransactionSize;
 	unsigned char *pucCnt;
 	unsigned char *pucEnd;
+	int iTransactionFinished;
 
 
-	/* Wait for a new packet. */
-	ulValue  = ptUsbDevCtrlArea->ulUsb_dev_irq_raw;
-	ulValue &= HOSTMSK(usb_dev_irq_raw_jtag_rx_packet_received);
-	if( ulValue!=0 )
+	/* Receive a new transaction. */
+	ulTransactionSize = 0;
+	iTransactionFinished = 0;
+	pucCnt = aucPacketRx;
+	
+	do
 	{
-		/* Acknowledge the IRQ. */
-		ptUsbDevCtrlArea->ulUsb_dev_irq_raw = HOSTMSK(usb_dev_irq_raw_jtag_rx_packet_received);
-
-		/* Get the UART RX input fill level. */
-		ulFillLevel = usb_get_rx_fill_level();
-		if( ulFillLevel>0 )
+		/* Wait for a new packet. */
+		ulValue = ptUsbDevCtrlArea->ulUsb_dev_irq_raw;
+		if( (ulValue&HOSTMSK(usb_dev_irq_raw_jtag_rx_packet_received))!=0 )
 		{
-			/* Is the fill level valid? */
-			if( ulFillLevel>MONITOR_USB_MAX_PACKET_SIZE )
-			{
-				/* Reset the FIFO. */
-				usb_reset_fifo();
-			}
-			else
-			{
-				/* Copy the complete packet to the buffer. */
-				pucCnt = aucPacketRx;
-				pucEnd = aucPacketRx + ulFillLevel;
-				do
-				{
-					*(pucCnt++) = usb_get_byte();
-				} while( pucCnt<pucEnd );
+			/* Acknowledge the IRQ. */
+			ptUsbDevCtrlArea->ulUsb_dev_irq_raw = HOSTMSK(usb_dev_irq_raw_jtag_rx_packet_received);
 
-				monitor_process_packet(aucPacketRx, ulFillLevel, MONITOR_USB_MAX_PACKET_SIZE);
+			/* Get the RX input fill level. */
+			ulFillLevel   = ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_jtag_ep_rx_len;
+			ulFillLevel  &= HOSTMSK(usb_dev_fifo_ctrl_jtag_ep_rx_len_packet_len);
+			ulFillLevel >>= HOSTSRT(usb_dev_fifo_ctrl_jtag_ep_rx_len_packet_len);
+			if( ulFillLevel>0 )
+			{
+				/* Get the new size of the transaction. */
+				ulTransactionSize += ulFillLevel;
+				
+				/* Is the updated size of the transaction still smaller than the buffer size? */
+				if( ulTransactionSize>=(MONITOR_USB_MAX_PACKET_SIZE+1) )
+				{
+					/* No, the transaction overflows the buffer. */
+					
+					/* Get the packet out of the buffer. */
+					do
+					{
+						ptUsbDevFifoArea->ulUsb_dev_jtag_rx_data;
+						--ulFillLevel;
+					} while( ulFillLevel>0 );
+					
+					/* Acknowledge the IRQ. */
+					ptUsbDevCtrlArea->ulUsb_dev_irq_raw = HOSTMSK(usb_dev_irq_raw_jtag_rx_packet_received);
+					
+					break;
+				}
+				else
+				{
+					/* Copy the complete packet to the buffer. */
+					pucEnd = pucCnt + ulFillLevel;
+					do
+					{
+						*(pucCnt++) = (unsigned char)(ptUsbDevFifoArea->ulUsb_dev_jtag_rx_data);
+					} while( pucCnt<pucEnd );
+				}
+				
+				/* The transaction is finished if the received packet is smaller than 64 bytes. */
+				if( ulFillLevel<64 )
+				{
+					iTransactionFinished = 1;
+				}
 			}
 		}
+		
+		/* TODO: check for a timeout of about 1 second. */
+	} while( iTransactionFinished==0 );
+	
+	if( iTransactionFinished==0 )
+	{
+		/* Discard the transaction. */
+		while(1) {};
+	}
+	else
+	{
+		monitor_process_packet(aucPacketRx, ulTransactionSize, MONITOR_USB_MAX_PACKET_SIZE);
 	}
 }
 
@@ -181,48 +227,55 @@ void usb_loop(void)
 
 void usb_send_packet(const unsigned char *pucPacket, size_t sizPacket)
 {
-	HOSTDEF(ptUsbDevCtrlArea);
 	HOSTDEF(ptUsbDevFifoArea);
 	HOSTDEF(ptUsbDevFifoCtrlArea);
 	const unsigned char *pucCnt;
 	const unsigned char *pucEnd;
 	unsigned long ulValue;
-
-
+	size_t sizLeft;
+	size_t sizChunk;
+	
+	
 	if( sizPacket>0 )
 	{
-		/* Wait until any running transfers are finished. */
+		/* Set the packet length. */
+		ulValue  = sizPacket << HOSTSRT(usb_dev_fifo_ctrl_jtag_ep_tx_len_transaction_len);
+		ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_jtag_ep_tx_len = ulValue;
+
+		sizLeft = sizPacket;
+		pucCnt = pucPacket;
+		while( sizLeft!=0 )
+		{
+			/* Wait for free bytes in the FIFO. */
+			do
+			{
+				ulValue   = ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_jtag_ep_tx_stat;
+				ulValue  &= HOSTMSK(usb_dev_fifo_ctrl_jtag_ep_tx_stat_fill_level);
+				ulValue >>= HOSTSRT(usb_dev_fifo_ctrl_jtag_ep_tx_stat_fill_level);
+				sizChunk = (size_t)(USB_FIFO_DEPTH_JTag_TX-ulValue);
+			} while( sizChunk==0 );
+
+			if( sizChunk>sizLeft )
+			{
+				sizChunk = sizLeft;
+			}
+
+			/* Write data to the FIFO. */
+			pucEnd = pucCnt + sizChunk;
+			do
+			{
+				ptUsbDevFifoArea->ulUsb_dev_jtag_tx_data = *(pucCnt++);
+			} while( pucCnt<pucEnd );
+
+			sizLeft -= sizChunk;
+		}
+
+		/* Wait until the transaction is finished. */
 		do
 		{
 			ulValue  = ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_jtag_ep_tx_stat;
 			ulValue &= HOSTMSK(usb_dev_fifo_ctrl_jtag_ep_tx_stat_transaction_active);
 		} while( ulValue!=0 );
-
-		/* Fill the FIFO with the packet data. */
-		pucCnt = pucPacket;
-		pucEnd = pucCnt + sizPacket;
-		while( pucCnt<pucEnd )
-		{
-			ptUsbDevFifoArea->ulUsb_dev_jtag_tx_data = *(pucCnt++);
-		}
-
-		/*
-		 * Start a new transfer.
-		 */
-		/* Set the packet length. */
-		ulValue  = sizPacket << HOSTSRT(usb_dev_fifo_ctrl_jtag_ep_tx_len_transaction_len);
-		/* Do not send ZLPs. This connection is using a custom driver. */
-		ulValue |= HOSTMSK(usb_dev_fifo_ctrl_jtag_ep_tx_len_transaction_no_zlp);
-		ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_jtag_ep_tx_len = ulValue;
-
-		/* Wait until the packet is sent. */
-		do
-		{
-			ulValue  = ptUsbDevCtrlArea->ulUsb_dev_irq_raw;
-			ulValue &= HOSTMSK(usb_dev_irq_raw_jtag_tx_packet_sent);
-		} while( ulValue==0 );
-		/* Acknowledge the IRQ. */
-		ptUsbDevCtrlArea->ulUsb_dev_irq_raw = HOSTMSK(usb_dev_irq_raw_jtag_tx_packet_sent);
 	}
 }
 

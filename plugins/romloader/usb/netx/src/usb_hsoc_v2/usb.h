@@ -15,7 +15,7 @@
 #include <stddef.h>
 
 
-#define MONITOR_USB_MAX_PACKET_SIZE 64
+#define MONITOR_USB_MAX_PACKET_SIZE 2048
 
 void usb_deinit(void);
 void usb_init(void);
