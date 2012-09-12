@@ -42,6 +42,7 @@ unsigned char aucStreamBuffer[MONITOR_MAX_PACKET_SIZE_UART];
 size_t sizStreamBufferHead;
 size_t sizStreamBufferFill;
 
+/* FIXME: remove this buffer and get the data with some functions. */
 unsigned char aucPacketInputBuffer[MONITOR_MAX_PACKET_SIZE_UART];
 
 unsigned char aucPacketOutputBuffer[MONITOR_MAX_PACKET_SIZE_UART];
