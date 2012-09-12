@@ -36,7 +36,23 @@ env_netx500_default = env_default.CreateCompilerEnv('500', ['cpu=arm926ej-s'])
 env_netx56_default = env_default.CreateCompilerEnv('56', ['cpu=arm966e-s'])
 env_netx50_default = env_default.CreateCompilerEnv('50', ['cpu=arm966e-s'])
 env_netx10_default = env_default.CreateCompilerEnv('10', ['cpu=arm966e-s'])
+
+#env_netx500_default = env_default.CreateCompilerEnv('500', ['arch=armv5te'])
+#env_netx56_default = env_default.CreateCompilerEnv('56', ['arch=armv5te'])
+#env_netx50_default = env_default.CreateCompilerEnv('50', ['arch=armv5te'])
+#env_netx10_default = env_default.CreateCompilerEnv('10', ['arch=armv5te'])
 Export('env_netx500_default', 'env_netx56_default', 'env_netx50_default', 'env_netx10_default')
+
+env_netx500_thumb_default = env_default.CreateCompilerEnv('500', ['cpu=arm926ej-s', 'thumb'])
+env_netx56_thumb_default = env_default.CreateCompilerEnv('56', ['cpu=arm966e-s', 'thumb'])
+env_netx50_thumb_default = env_default.CreateCompilerEnv('50', ['cpu=arm966e-s', 'thumb'])
+env_netx10_thumb_default = env_default.CreateCompilerEnv('10', ['cpu=arm966e-s', 'thumb'])
+
+#env_netx500_thumb_default = env_default.CreateCompilerEnv('500', ['arch=armv5te', 'thumb'])
+#env_netx56_thumb_default = env_default.CreateCompilerEnv('56', ['arch=armv5te', 'thumb'])
+#env_netx50_thumb_default = env_default.CreateCompilerEnv('50', ['arch=armv5te', 'thumb'])
+#env_netx10_thumb_default = env_default.CreateCompilerEnv('10', ['arch=armv5te', 'thumb'])
+Export('env_netx500_thumb_default', 'env_netx56_thumb_default', 'env_netx50_thumb_default', 'env_netx10_thumb_default')
 
 
 #----------------------------------------------------------------------------
