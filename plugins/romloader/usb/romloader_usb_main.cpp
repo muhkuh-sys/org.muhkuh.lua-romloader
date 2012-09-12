@@ -444,7 +444,7 @@ romloader_usb::USBSTATUS_T romloader_usb::execute_command(const unsigned char *a
 	uiRetryCnt = 10;
 	do
 	{
-		iResult = m_ptUsbDevice->execute_command(aucCommand, sizCommand, m_aucPacketInputBuffer, m_sizMaxPacketSizeClient, &sizPacketInputBuffer);
+		iResult = m_ptUsbDevice->execute_command(aucCommand, sizCommand, m_aucPacketInputBuffer, m_sizMaxPacketSizeHost, &sizPacketInputBuffer);
 		if( iResult!=0 )
 		{
 			fprintf(stderr, "%s(%p): Failed to exchange data.\n", m_pcName, this);

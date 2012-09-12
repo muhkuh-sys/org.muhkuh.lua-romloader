@@ -1639,10 +1639,7 @@ int romloader_usb_device_libusb::send_packet(const unsigned char *aucOutBuf, siz
 {
 	int iResult;
 	int iProcessed;
-	unsigned char aucDummy[1] = { 0x00U };
 
-
-	fprintf(stderr, "send_packet: %p, %d, %d\n", aucOutBuf, sizOutBuf, uiTimeoutMs);
 
 	iResult = libusb_bulk_transfer(m_ptDevHandle, m_tDeviceId.ucEndpoint_Out, (unsigned char*)aucOutBuf, sizOutBuf, &iProcessed, uiTimeoutMs);
 	if( iResult!=0 )
@@ -1658,12 +1655,11 @@ int romloader_usb_device_libusb::send_packet(const unsigned char *aucOutBuf, siz
 	 * Does the transfer fill the last packet completely? */
 	else if( (sizOutBuf&0x3f)==0 )
 	{
-		fprintf(stderr, "%s(%p): Terminating packet.\n", m_pcPluginId, this);
-		/* Yes -> terminate the transaction with a dummy packet. */
-		iResult = libusb_bulk_transfer(m_ptDevHandle, m_tDeviceId.ucEndpoint_Out, aucDummy, 1, &iProcessed, uiTimeoutMs);
+		/* Yes -> terminate the transaction with an empty packet. */
+		iResult = libusb_bulk_transfer(m_ptDevHandle, m_tDeviceId.ucEndpoint_Out, (unsigned char*)aucOutBuf, 0, &iProcessed, uiTimeoutMs);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "%s(%p): Failed to send the terminating dummy packet: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
+			fprintf(stderr, "%s(%p): Failed to send the terminating empty packet: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
 		}
 	}
 
@@ -1681,15 +1677,12 @@ int romloader_usb_device_libusb::receive_packet(unsigned char *aucInBuf, size_t 
 	size_t sizChunk;
 
 
-	fprintf(stderr, "Receiving max %d bytes\n", sizInBuf);
-	
 	/* Receive the data. */
 	pucBuffer = aucInBuf;
 	sizTotal = 0;
 	do
 	{
 		iResult = libusb_bulk_transfer(m_ptDevHandle, m_tDeviceId.ucEndpoint_In, pucBuffer, 64, &iProcessed, uiTimeoutMs);
-		fprintf(stderr, "libusb_bulk_transfer %d %d\n", iResult, iProcessed);
 		if( iResult==0 )
 		{
 			if( iProcessed<0 )
@@ -1719,6 +1712,7 @@ int romloader_usb_device_libusb::receive_packet(unsigned char *aucInBuf, size_t 
 				if( (sizTotal+64)>sizInBuf )
 				{
 					/* No -> do not continue! */
+					fprintf(stderr, "Too much data, not enough space for another packet after 0x%08x bytes.\n", sizTotal);
 					iResult = -1;
 				}
 			}

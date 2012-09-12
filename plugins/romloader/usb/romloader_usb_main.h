@@ -92,7 +92,7 @@ private:
 		USBSTATUS_SEQUENCE_MISMATCH         = 9
 	} USBSTATUS_T;
 
-	static const size_t m_sizMaxPacketSizeHost = 4096;
+	static const size_t m_sizMaxPacketSizeHost = 8192+64;
 	size_t m_sizMaxPacketSizeClient;
 	unsigned char m_aucPacketOutputBuffer[m_sizMaxPacketSizeHost];
 	unsigned char m_aucPacketInputBuffer[m_sizMaxPacketSizeHost];

@@ -38,7 +38,7 @@
 
 #define ARRAYSIZE(a) (sizeof(a)/sizeof((a)[0]))
 
-static unsigned char aucPacketRx[MONITOR_USB_MAX_PACKET_SIZE+1];
+static unsigned char aucPacketRx[MONITOR_USB_MAX_PACKET_SIZE];
 
 /*-----------------------------------*/
 
@@ -131,7 +131,7 @@ void usb_reset_fifo(void)
 	ulValue  = USB_FIFO_MODE_Transaction << HOSTSRT(usb_dev_fifo_ctrl_conf_mode_interrupt);
 	ulValue |= USB_FIFO_MODE_StreamZLP   << HOSTSRT(usb_dev_fifo_ctrl_conf_mode_uart_rx);
 	ulValue |= USB_FIFO_MODE_StreamZLP   << HOSTSRT(usb_dev_fifo_ctrl_conf_mode_uart_tx);
-	ulValue |= USB_FIFO_MODE_Packet      << HOSTSRT(usb_dev_fifo_ctrl_conf_mode_jtag_rx);
+	ulValue |= USB_FIFO_MODE_Transaction << HOSTSRT(usb_dev_fifo_ctrl_conf_mode_jtag_rx);
 	ulValue |= USB_FIFO_MODE_Transaction << HOSTSRT(usb_dev_fifo_ctrl_conf_mode_jtag_tx);
 	ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_conf = ulValue;
 }
@@ -145,76 +145,60 @@ void usb_loop(void)
 	HOSTDEF(ptUsbDevFifoCtrlArea);
 	unsigned long ulValue;
 	unsigned long ulFillLevel;
-	unsigned long ulTransactionSize;
+	unsigned long ulReceivedData;
 	unsigned char *pucCnt;
 	unsigned char *pucEnd;
-	int iTransactionFinished;
+	unsigned long ulTransactionSize;
 
 
 	/* Receive a new transaction. */
-	ulTransactionSize = 0;
-	iTransactionFinished = 0;
+	ulReceivedData = 0;
 	pucCnt = aucPacketRx;
-	
+
+	/* Expect the maximum transaction size. */
+	ulTransactionSize = 0x2000;
+
 	do
 	{
-		/* Wait for a new packet. */
-		ulValue = ptUsbDevCtrlArea->ulUsb_dev_irq_raw;
-		if( (ulValue&HOSTMSK(usb_dev_irq_raw_jtag_rx_packet_received))!=0 )
+		/* Get the RX input fill level. */
+		ulFillLevel   = ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_jtag_ep_rx_stat;
+		ulFillLevel  &= HOSTMSK(usb_dev_fifo_ctrl_jtag_ep_rx_stat_fill_level);
+		ulFillLevel >>= HOSTSRT(usb_dev_fifo_ctrl_jtag_ep_rx_stat_fill_level);
+		if( ulFillLevel>0 )
 		{
-			/* Acknowledge the IRQ. */
-			ptUsbDevCtrlArea->ulUsb_dev_irq_raw = HOSTMSK(usb_dev_irq_raw_jtag_rx_packet_received);
+			/* Get the new size of the transaction. */
+			ulReceivedData += ulFillLevel;
 
-			/* Get the RX input fill level. */
-			ulFillLevel   = ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_jtag_ep_rx_len;
-			ulFillLevel  &= HOSTMSK(usb_dev_fifo_ctrl_jtag_ep_rx_len_packet_len);
-			ulFillLevel >>= HOSTSRT(usb_dev_fifo_ctrl_jtag_ep_rx_len_packet_len);
-			if( ulFillLevel>0 )
+			/* Is the updated size of the transaction still smaller than the buffer size? */
+			if( ulReceivedData>=(MONITOR_USB_MAX_PACKET_SIZE+1) )
 			{
-				/* Get the new size of the transaction. */
-				ulTransactionSize += ulFillLevel;
-				
-				/* Is the updated size of the transaction still smaller than the buffer size? */
-				if( ulTransactionSize>=(MONITOR_USB_MAX_PACKET_SIZE+1) )
+				/* No, the transaction overflows the buffer. */
+				break;
+			}
+			else
+			{
+				/* Copy the complete packet to the buffer. */
+				pucEnd = pucCnt + ulFillLevel;
+				do
 				{
-					/* No, the transaction overflows the buffer. */
-					
-					/* Get the packet out of the buffer. */
-					do
-					{
-						ptUsbDevFifoArea->ulUsb_dev_jtag_rx_data;
-						--ulFillLevel;
-					} while( ulFillLevel>0 );
-					
-					/* Acknowledge the IRQ. */
-					ptUsbDevCtrlArea->ulUsb_dev_irq_raw = HOSTMSK(usb_dev_irq_raw_jtag_rx_packet_received);
-					
-					break;
-				}
-				else
-				{
-					/* Copy the complete packet to the buffer. */
-					pucEnd = pucCnt + ulFillLevel;
-					do
-					{
-						*(pucCnt++) = (unsigned char)(ptUsbDevFifoArea->ulUsb_dev_jtag_rx_data);
-					} while( pucCnt<pucEnd );
-				}
-				
-				/* The transaction is finished if the received packet is smaller than 64 bytes. */
-				if( ulFillLevel<64 )
-				{
-					iTransactionFinished = 1;
-				}
+					*(pucCnt++) = (unsigned char)(ptUsbDevFifoArea->ulUsb_dev_jtag_rx_data);
+				} while( pucCnt<pucEnd );
 			}
 		}
-		
-		/* TODO: check for a timeout of about 1 second. */
-	} while( iTransactionFinished==0 );
-	
-	if( iTransactionFinished==0 )
+
+		/* Is the transaction finished? */
+		ulValue   = ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_jtag_ep_rx_len;
+		ulValue  &= HOSTMSK(usb_dev_fifo_ctrl_jtag_ep_rx_len_transaction_len);
+		ulValue >>= HOSTSRT(usb_dev_fifo_ctrl_jtag_ep_rx_len_transaction_len);
+		if( ulValue!=0 )
+		{
+			ulTransactionSize = ulValue;
+		}
+	} while( ulReceivedData<ulTransactionSize );
+
+	if( ulReceivedData<ulTransactionSize )
 	{
-		/* Discard the transaction. */
+		/* TODO: Discard the transaction. */
 		while(1) {};
 	}
 	else
