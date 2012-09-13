@@ -40,7 +40,8 @@ const romloader_usb_device::NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDev
 		1,
 		0,
 		0x81,
-		0x01
+		0x01,
+		true
 	},
 	{
 		"netX500 HBoot Emulation",
@@ -52,7 +53,8 @@ const romloader_usb_device::NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDev
 		1,
 		0,
 		0x81,
-		0x01
+		0x01,
+		true
 	},
 	{
 		"netX10 V1",
@@ -64,7 +66,8 @@ const romloader_usb_device::NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDev
 		1,
 		0,
 		0x83,
-		0x04
+		0x04,
+		false
 	},
 	{
 		"netX10 HBoot Emulation",
@@ -76,7 +79,8 @@ const romloader_usb_device::NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDev
 		1,
 		0,
 		0x83,
-		0x04
+		0x04,
+		false
 	},
 	{
 		"netX51",
@@ -88,7 +92,8 @@ const romloader_usb_device::NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDev
 		0,
 		1,
 		0x85,
-		0x04
+		0x04,
+		true
 	},
 	{
 		"netX51 HBoot Emulation",
@@ -100,7 +105,8 @@ const romloader_usb_device::NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDev
 		0,
 		1,
 		0x85,
-		0x04
+		0x04,
+		true
 	},
 	{
 		"netX52",
@@ -112,7 +118,8 @@ const romloader_usb_device::NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDev
 		0,
 		1,
 		0x85,
-		0x04
+		0x04,
+		true
 	},
 	{
 		"netX52 HBoot Emulation",
@@ -124,7 +131,8 @@ const romloader_usb_device::NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDev
 		0,
 		1,
 		0x85,
-		0x04
+		0x04,
+		true
 	}
 };
 

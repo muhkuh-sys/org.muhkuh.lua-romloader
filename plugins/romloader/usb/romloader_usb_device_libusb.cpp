@@ -1653,7 +1653,7 @@ int romloader_usb_device_libusb::send_packet(const unsigned char *aucOutBuf, siz
 	}
 	/* The commands are transfered as transactions. This means data is grouped by packets smaller than 64 bytes.
 	 * Does the transfer fill the last packet completely? */
-	else if( (sizOutBuf&0x3f)==0 )
+	else if( m_tDeviceId.fDeviceSupportsTransactions==true && (sizOutBuf&0x3f)==0 )
 	{
 		/* Yes -> terminate the transaction with an empty packet. */
 		iResult = libusb_bulk_transfer(m_ptDevHandle, m_tDeviceId.ucEndpoint_Out, (unsigned char*)aucOutBuf, 0, &iProcessed, uiTimeoutMs);
@@ -1703,17 +1703,24 @@ int romloader_usb_device_libusb::receive_packet(unsigned char *aucInBuf, size_t 
 				sizTotal += sizChunk;
 				pucBuffer += sizChunk;
 				
-				if( sizChunk<64 )
+				if( m_tDeviceId.fDeviceSupportsTransactions==true )
+				{
+					if( sizChunk<64 )
+					{
+						break;
+					}
+
+					/* Is enough space for one more packet left? */
+					if( (sizTotal+64)>sizInBuf )
+					{
+						/* No -> do not continue! */
+						fprintf(stderr, "Too much data, not enough space for another packet after 0x%08x bytes.\n", sizTotal);
+						iResult = -1;
+					}
+				}
+				else
 				{
 					break;
-				}
-
-				/* Is enough space for one more packet left? */
-				if( (sizTotal+64)>sizInBuf )
-				{
-					/* No -> do not continue! */
-					fprintf(stderr, "Too much data, not enough space for another packet after 0x%08x bytes.\n", sizTotal);
-					iResult = -1;
 				}
 			}
 		}

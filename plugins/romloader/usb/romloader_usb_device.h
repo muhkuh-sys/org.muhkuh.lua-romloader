@@ -53,6 +53,7 @@ protected:
 		unsigned char ucInterface;
 		unsigned char ucEndpoint_In;
 		unsigned char ucEndpoint_Out;
+		bool fDeviceSupportsTransactions;
 	} NETX_USB_DEVICE_T;
 
 	char *m_pcPluginId;
