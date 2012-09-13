@@ -140,7 +140,6 @@ void usb_reset_fifo(void)
 
 void usb_loop(void)
 {
-	HOSTDEF(ptUsbDevCtrlArea);
 	HOSTDEF(ptUsbDevFifoArea);
 	HOSTDEF(ptUsbDevFifoCtrlArea);
 	unsigned long ulValue;
@@ -170,7 +169,7 @@ void usb_loop(void)
 			ulReceivedData += ulFillLevel;
 
 			/* Is the updated size of the transaction still smaller than the buffer size? */
-			if( ulReceivedData>=(MONITOR_USB_MAX_PACKET_SIZE+1) )
+			if( ulReceivedData>MONITOR_USB_MAX_PACKET_SIZE )
 			{
 				/* No, the transaction overflows the buffer. */
 				break;
