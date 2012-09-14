@@ -28,6 +28,10 @@
 
 /*-------------------------------------------------------------------------*/
 
+static unsigned char aucPacketBufferRx[MONITOR_USB_MAX_PACKET_SIZE];
+size_t sizPacketBufferRxFilled;
+
+
 
 void usb_activateInputPipe(void)
 {
@@ -185,12 +189,31 @@ void usb_pingpong(void)
 				ulPacketSize = Usb_Ep2_PacketSize - ulValue;
 				if( ulPacketSize<=Usb_Ep2_PacketSize )
 				{
-					usb_io_read_fifo((Usb_Ep2_Buffer>>2), ulPacketSize, receiveBuffer);
+					/* Is enough space left in the buffer? */
+					if( (sizPacketBufferRxFilled+ulPacketSize)>MONITOR_USB_MAX_PACKET_SIZE )
+					{
+						/* No.
+						 * TODO: discard the packet.
+						 */
+						while(1){};
+					}
+					else
+					{
+						if( ulPacketSize>0 )
+						{
+							usb_io_read_fifo((Usb_Ep2_Buffer>>2), ulPacketSize, aucPacketBufferRx+sizPacketBufferRxFilled);
+							sizPacketBufferRxFilled += ulPacketSize;
+						}
 
-					monitor_process_packet(receiveBuffer, ulPacketSize, MONITOR_USB_MAX_PACKET_SIZE);
+						if( ulPacketSize<64 )
+						{
+							monitor_process_packet(aucPacketBufferRx, sizPacketBufferRxFilled, MONITOR_USB_MAX_PACKET_SIZE);
+							sizPacketBufferRxFilled = 0;
+						}
 
-					/* Ready for new commands. Reactivate the input pipe. */
-					usb_activateInputPipe();
+						/* Ready for new commands. Reactivate the input pipe. */
+						usb_activateInputPipe();
+					}
 				}
 			}
 		}

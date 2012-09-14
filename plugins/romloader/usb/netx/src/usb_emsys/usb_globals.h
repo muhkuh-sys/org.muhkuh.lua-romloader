@@ -18,6 +18,9 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+
+#include <stddef.h>
+
 #include "netx_io_areas.h"
 #include "usb_requests_common.h"
 
@@ -111,6 +114,8 @@ extern USB_SendEndpoint_t tSendEpState;
 
 // new address for pending address change
 extern unsigned int uiNewAddress;
+
+extern size_t sizPacketBufferRxFilled;
 
 //-------------------------------------
 

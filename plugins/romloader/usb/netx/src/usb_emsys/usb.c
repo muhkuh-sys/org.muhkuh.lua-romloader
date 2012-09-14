@@ -89,6 +89,9 @@ void usb_init(void)
 
 	usb_descriptors_init();
 	usb_activateInputPipe();
+
+	/* Reset the fill level for the receive buffer. */
+	sizPacketBufferRxFilled = 0;
 }
 
 
@@ -118,12 +121,25 @@ void usb_loop(void)
 }
 
 
-
+/* This function sends a chunk of data from the netX to the host.
+ * The emSys USB core has a big buffer of 0x1000 bytes in total. It buffers
+ * all received packets. A chunk of data which should be send, is first
+ * copied to this buffer. The core is clever enough to split a big chunk
+ * into 64 byte packets.
+ *
+ * This means this routine can just copy the data in one piece into the FIFO
+ * and then trigger the send operation.
+ */
 void usb_send_packet(const unsigned char *pucPacket, size_t sizPacket)
 {
 	HOSTDEF(ptUsbCoreArea);
 	unsigned long ulPipeEvent;
 
+
+	/* FIXME: Check the size of the packet against the maximum available
+	 * size in the FIFO. For now this routine relies on the maximum of
+	 * 2048 bytes.
+	 */
 
 	/* Write the packet data to the FIFO. */
 	usb_io_write_fifo(Usb_Ep1_Buffer>>2, sizPacket, pucPacket);
@@ -138,9 +154,9 @@ void usb_send_packet(const unsigned char *pucPacket, size_t sizPacket)
 
 	/* Clear the event. */
 	ptUsbCoreArea->ulPIPE_EV = (1<<1);
-#if 0
+
 	/* Was the last packet a complete packet? */
-	if( sizSendData==Usb_Ep1_PacketSize )
+	if( (sizPacket&0x3f)==0 )
 	{
 		/* Yes -> send a 0 byte packet. */
 		usb_io_sendDataPacket(1, 0);
@@ -154,7 +170,6 @@ void usb_send_packet(const unsigned char *pucPacket, size_t sizPacket)
 		/* Clear the event. */
 		ptUsbCoreArea->ulPIPE_EV = (1<<1);
 	}
-#endif
 }
 
 

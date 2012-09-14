@@ -41,7 +41,7 @@ const romloader_usb_device::NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDev
 		0,
 		0x81,
 		0x01,
-		false
+		true
 	},
 	{
 		"netX500 HBoot Emulation",
@@ -54,7 +54,7 @@ const romloader_usb_device::NETX_USB_DEVICE_T romloader_usb_device::atNetxUsbDev
 		0,
 		0x81,
 		0x01,
-		false
+		true
 	},
 	{
 		"netX10 V1",
