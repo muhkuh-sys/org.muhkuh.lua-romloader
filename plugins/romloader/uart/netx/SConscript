@@ -56,7 +56,7 @@ sources_monitor_netx56 = """
 """
 
 sources_monitor_netx50 = """
-	src/transport.c
+	src/netx50/transport.c
 """
 
 sources_monitor_netx10 = """
