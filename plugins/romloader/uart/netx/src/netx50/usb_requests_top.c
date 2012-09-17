@@ -23,16 +23,16 @@ static unsigned char abLineCoding[7];
 void usb_requests_handle_request_top(setupPacket_t *ptSetupPkt)
 {
 	HOSTDEF(ptUsbCoreArea);
-        packet_handler_stall_req_t tSendStall;
-        setup_cdc_requestId_t tCdcReqId;
-        unsigned int uiIdx;
+	packet_handler_stall_req_t tSendStall;
+	setup_cdc_requestId_t tCdcReqId;
+	unsigned int uiIdx;
 
 
 	tSendStall = PKT_HANDLER_Send_Stall;
 
-        // distinguish the type
-        if( ptSetupPkt->tHeader.reqType==SETUP_REQTYPE_Standard )
-        {
+	// distinguish the type
+	if( ptSetupPkt->tHeader.reqType==SETUP_REQTYPE_Standard )
+	{
 		switch(ptSetupPkt->tHeader.reqId)
 		{
 		case SETUP_STD_REQID_Set_Address:
@@ -134,47 +134,47 @@ void usb_requests_handle_request_top(setupPacket_t *ptSetupPkt)
 				tSendStall = PKT_HANDLER_Send_Zero;
 			}
 			break;
-	        }
+		}
 	}
-        else if( ptSetupPkt->tHeader.reqType==SETUP_REQTYPE_Class )
-        {
-        	tCdcReqId = (setup_cdc_requestId_t)ptSetupPkt->tHeader.reqId;
-        	switch( tCdcReqId )
-        	{
-        	case SETUP_CDC_REQID_Set_Line_Coding:
+	else if( ptSetupPkt->tHeader.reqType==SETUP_REQTYPE_Class )
+	{
+		tCdcReqId = (setup_cdc_requestId_t)ptSetupPkt->tHeader.reqId;
+		switch( tCdcReqId )
+		{
+		case SETUP_CDC_REQID_Set_Line_Coding:
 			uiIdx = 8;
 			do
 			{
 				--uiIdx;
 				abLineCoding[uiIdx] = ptSetupPkt->abData[uiIdx];
 			} while( uiIdx!=0 );
-	        	tSendStall = PKT_HANDLER_Send_Zero;
-	        	break;
+			tSendStall = PKT_HANDLER_Send_Zero;
+			break;
 
-        	case SETUP_CDC_REQID_Get_Line_Coding:
-		        sendDescriptor(ptSetupPkt->tHeader.wLength, 7, abLineCoding);
-        		tSendStall = PKT_HANDLER_Send_Nothing;
-	        	break;
+		case SETUP_CDC_REQID_Get_Line_Coding:
+			sendDescriptor(ptSetupPkt->tHeader.wLength, 7, abLineCoding);
+			tSendStall = PKT_HANDLER_Send_Nothing;
+			break;
 
-        	case SETUP_CDC_REQID_Set_Control_Line_State:
+		case SETUP_CDC_REQID_Set_Control_Line_State:
 			// eval DTR (bit 0) and RTS (bit 1) to enable or disable send and receive part
 			tCdcConnectionState = (USB_CDC_ConnectionState_t)(ptSetupPkt->tHeader.wValue & 1);
-        		// send confirmation
-        		tSendStall = PKT_HANDLER_Send_Zero;
-	        	break;
-	        }
+			// send confirmation
+			tSendStall = PKT_HANDLER_Send_Zero;
+			break;
+		}
 	}
 
 
-        // send stall on request
-        if( tSendStall==PKT_HANDLER_Send_Stall )
-        {
+	// send stall on request
+	if( tSendStall==PKT_HANDLER_Send_Stall )
+	{
 		ptUsbCoreArea->ulPIPE_CFG |= MSK_USB_PIPE_CFG_STALL;
-        }
-        else if( tSendStall==PKT_HANDLER_Send_Zero )
-        {
-        	usb_io_sendDataPacket(0, 0);
-        }
+	}
+	else if( tSendStall==PKT_HANDLER_Send_Zero )
+	{
+		usb_io_sendDataPacket(0, 0);
+	}
 }
 
 
