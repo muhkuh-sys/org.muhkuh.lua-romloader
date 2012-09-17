@@ -8,8 +8,10 @@
 ---------------------------------------------------------------------------*/
 
 
-#ifndef __descriptors__
-#define __descriptors__
+#include "usb_requests_common.h"
+
+#ifndef __USB_DESCRIPTORS_H__
+#define __USB_DESCRIPTORS_H__
 
 //---------------------------------------------------------------------------
 
@@ -20,5 +22,5 @@ void sendStringDescriptor(unsigned int languageId, unsigned int stringIdx, unsig
 //---------------------------------------------------------------------------
 
 
-#endif  // __descriptors__
+#endif  /* __USB_DESCRIPTORS_H__ */
 

@@ -8,11 +8,10 @@
 ---------------------------------------------------------------------------*/
 
 
-#include "usb_io.h"
-#include "usb_requests_common.h"
-#include "usb_globals.h"
-#include "usb_requests_common.h"
 #include "usb_descriptors.h"
+
+#include "usb_io.h"
+#include "usb_globals.h"
 
 
 //---------------------------------------------------------------------------

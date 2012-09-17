@@ -7,10 +7,13 @@
            agreement from the Hilscher GmbH is forbidden
 ---------------------------------------------------------------------------*/
 
-#ifndef __usb_requests_top_h__
-#define __usb_requests_top_h__
+
+#include "usb_requests_common.h"
+
+#ifndef __USB_REQUESTS_TOP_H__
+#define __USB_REQUESTS_TOP_H__
 
 void usb_requests_handle_request_top(setupPacket_t *ptSetupPkt);
 
-#endif  // __usb_requests_top_h__
+#endif  /* __USB_REQUESTS_TOP_H__ */
 

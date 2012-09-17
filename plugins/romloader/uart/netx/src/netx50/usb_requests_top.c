@@ -7,13 +7,13 @@
            agreement from the Hilscher GmbH is forbidden
 ---------------------------------------------------------------------------*/
 
-#include "usb_io.h"
-#include "usb_requests_common.h"
 #include "usb_requests_top.h"
-#include "usb_requests_std.h"
-#include "usb_requests_cdc.h"
-#include "usb_globals.h"
+
+
 #include "usb_descriptors.h"
+#include "usb_globals.h"
+#include "usb_io.h"
+#include "usb_requests_std.h"
 
 
 // line coding
@@ -31,8 +31,10 @@ void usb_requests_handle_request_top(setupPacket_t *ptSetupPkt)
 	tSendStall = PKT_HANDLER_Send_Stall;
 
         // distinguish the type
-        if( ptSetupPkt->tHeader.reqType==SETUP_REQTYPE_Standard ) {
-		switch(ptSetupPkt->tHeader.reqId) {
+        if( ptSetupPkt->tHeader.reqType==SETUP_REQTYPE_Standard )
+        {
+		switch(ptSetupPkt->tHeader.reqId)
+		{
 		case SETUP_STD_REQID_Set_Address:
 			if(
 				// this request is only allowed for the device
@@ -91,7 +93,8 @@ void usb_requests_handle_request_top(setupPacket_t *ptSetupPkt)
 			{
 				uiIdx  = (ptSetupPkt->tHeader.wValue & 0xff);
 
-				if( uiIdx<2 ) {
+				if( uiIdx<2 )
+				{
 					// set current config
 					currentConfig = uiIdx;
 					globalState = uiIdx + USB_State_Address;
@@ -110,7 +113,8 @@ void usb_requests_handle_request_top(setupPacket_t *ptSetupPkt)
 			  )
 			{
 				uiIdx = ptSetupPkt->tHeader.wIndex;
-				if( uiIdx<2 ) {
+				if( uiIdx<2 )
+				{
 					sendDescriptor(ptSetupPkt->tHeader.wLength, 1, (unsigned char*)&uiIdx);                                
 					tSendStall = PKT_HANDLER_Send_Nothing;
 				}
@@ -131,12 +135,16 @@ void usb_requests_handle_request_top(setupPacket_t *ptSetupPkt)
 			}
 			break;
 	        }
-	} else if( ptSetupPkt->tHeader.reqType==SETUP_REQTYPE_Class ) {
+	}
+        else if( ptSetupPkt->tHeader.reqType==SETUP_REQTYPE_Class )
+        {
         	tCdcReqId = (setup_cdc_requestId_t)ptSetupPkt->tHeader.reqId;
-        	switch( tCdcReqId ) {
+        	switch( tCdcReqId )
+        	{
         	case SETUP_CDC_REQID_Set_Line_Coding:
 			uiIdx = 8;
-			do {
+			do
+			{
 				--uiIdx;
 				abLineCoding[uiIdx] = ptSetupPkt->abData[uiIdx];
 			} while( uiIdx!=0 );
