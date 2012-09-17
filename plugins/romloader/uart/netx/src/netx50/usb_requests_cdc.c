@@ -13,8 +13,6 @@
 #include "usb_globals.h"
 #include "usb_io.h"
 
-#include "regdef.h"
-
 //-------------------------------------
 
 #define USB_CDC_BUF_REC_LEN 256
@@ -81,7 +79,7 @@ void usb_cdc_buf_send_put(unsigned int uiValue)
         }
 
         // put one char in the buffer
-        usb_cdc_buf_send[usb_cdc_buf_send_wpos] = uiValue;
+        usb_cdc_buf_send[usb_cdc_buf_send_wpos] = (unsigned char)uiValue;
         // advance wait position
         ++usb_cdc_buf_send_wpos;
         // wrap position?

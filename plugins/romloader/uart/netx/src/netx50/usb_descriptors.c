@@ -129,7 +129,6 @@ void sendDescriptor(unsigned int reqiredLength, unsigned int descriptorLength, c
                 sendLength = descriptorLength;
         }
 
-//        usb_io_sendDataPacket(sendLength, descriptor);
 	usb_io_write_fifo(0x00, sendLength, descriptor);
 	usb_io_sendDataPacket(0, sendLength);
 }

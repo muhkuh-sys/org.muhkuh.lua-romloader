@@ -7,10 +7,7 @@
            agreement from the Hilscher GmbH is forbidden
 ---------------------------------------------------------------------------*/
 
-#include "regdef.h"
-
-#include "uart.h"
-#include "uprintf.h"
+#include "netx_io_areas.h"
 
 #include "usb.h"
 #include "usb_io.h"
@@ -23,6 +20,7 @@ void usb_handleReset(void);
 
 void usb_init(void)
 {
+	HOSTDEF(ptUsbCoreArea);
         globalState = USB_State_Powered;
 
         // no configuration set
@@ -44,50 +42,57 @@ void usb_init(void)
 	tCdcConnectionState = USB_CDC_ConnectionState_Idle;
 
 	// soft reset
-	ptNetXUsbArea->ulUsb_core_ctrl = 1;
+	ptUsbCoreArea->ulUsb_core_ctrl = 1;
 	// release reset and set ID Func
-	ptNetXUsbArea->ulUsb_core_ctrl = 8;
+	ptUsbCoreArea->ulUsb_core_ctrl = 8;
 
 	// set ID pullup and read connector ID value
-	ptNetXUsbArea->ulPORT_CTRL = MSK_USB_PORT_CTRL_ID_PU;
-	ptNetXUsbArea->ulPORT_CTRL = 0;
+	ptUsbCoreArea->ulPORT_CTRL = MSK_USB_PORT_CTRL_ID_PU;
+	ptUsbCoreArea->ulPORT_CTRL = 0;
 }
 
 
 void usb_deinit(void)
 {
-        unsigned long ulCnt;
+	HOSTDEF(ptUsbCoreArea);
+	unsigned long ulCnt;
 
 
-        for(ulCnt=0; ulCnt<4; ++ulCnt) {
+        for(ulCnt=0; ulCnt<4; ++ulCnt)
+        {
                 // select pipe
-                ptNetXUsbArea->ulPIPE_SEL = ulCnt;
+        	ptUsbCoreArea->ulPIPE_SEL = ulCnt;
                 // deactivate pipe
-                ptNetXUsbArea->ulPIPE_CTRL = 0;
+        	ptUsbCoreArea->ulPIPE_CTRL = 0;
                 // data buffer invalid
-                ptNetXUsbArea->ulPIPE_DATA_TBYTES = 0;
+        	ptUsbCoreArea->ulPIPE_DATA_TBYTES = 0;
         }
 
 	// clear termination
-	ptNetXUsbArea->ulUsb_core_ctrl = 0;
+        ptUsbCoreArea->ulUsb_core_ctrl = 0;
 }
 
 
 USB_CDC_ConnectionState_t usb_pollConnection(void)
 {
+	HOSTDEF(ptUsbCoreArea);
         unsigned long ulPortEvent;
 
 
-        if( globalState==USB_State_Powered ) {
+        if( globalState==USB_State_Powered )
+        {
 		// set termination
-		ptNetXUsbArea->ulPORT_CTRL = 0x180;
+        	ptUsbCoreArea->ulPORT_CTRL = 0x180;
 		// wait for reset event
-		ulPortEvent = ptNetXUsbArea->ulMAIN_EV;
-		if( (ulPortEvent&MSK_USB_MAIN_EV_GPORT_EV)!=0 ) {
+		ulPortEvent = ptUsbCoreArea->ulMAIN_EV;
+		if( (ulPortEvent&MSK_USB_MAIN_EV_GPORT_EV)!=0 )
+		{
 			usb_handleReset();
 		}
 		return USB_CDC_ConnectionState_Idle;
-	} else {
+	}
+        else
+        {
         	// handle enumeration
         	usb_pingpong();
         	// get the connect flag
@@ -101,37 +106,42 @@ USB_CDC_ConnectionState_t usb_pollConnection(void)
 
 void usb_pingpong(void)
 {
+	HOSTDEF(ptUsbCoreArea);
         unsigned int event1;
         unsigned int event2;
         unsigned int packetSize;
         tUsbCdc_BufferState tBufState;
 
 
-        event1 = ptNetXUsbArea->ulMAIN_EV;
-        if( (event1&MSK_USB_MAIN_EV_GPORT_EV)!=0 ) {
+        event1 = ptUsbCoreArea->ulMAIN_EV;
+        if( (event1&MSK_USB_MAIN_EV_GPORT_EV)!=0 )
+        {
                 usb_handleReset();
         }
 
         // is it a pipe event?
-        if( (event1&MSK_USB_MAIN_EV_GPIPE_EV)!=0 ) {
+        if( (event1&MSK_USB_MAIN_EV_GPIPE_EV)!=0 )
+        {
                 // yes -> test all relevant bits (0-2) of the pipe_ev register
-                event2 = ptNetXUsbArea->ulPIPE_EV;
+                event2 = ptUsbCoreArea->ulPIPE_EV;
 
                 // test for pipe0 event
-                if (event2 & 1) {
+                if (event2 & 1)
+                {
                         // clear event
-                        ptNetXUsbArea->ulPIPE_EV = 1;
+                	ptUsbCoreArea->ulPIPE_EV = 1;
 
                         // select pipe 0
-                        ptNetXUsbArea->ulPIPE_SEL = 0;
+                	ptUsbCoreArea->ulPIPE_SEL = 0;
 
-                        switch ( ptNetXUsbArea->ulPIPE_CTRL & MSK_USB_PIPE_CTRL_TPID ) {
+                        switch ( ptUsbCoreArea->ulPIPE_CTRL & MSK_USB_PIPE_CTRL_TPID )
+                        {
                         case DEF_USB_PIPE_CTRL_TPID_SETUP:
                                 // Pipe Event detected: SETUP
                                 // read Request
 
                                 // get packetsize (in dwords) and convert to bytes
-                                packetSize = ptNetXUsbArea->ulPIPE_DATA_PTR << 2;
+                                packetSize = ptUsbCoreArea->ulPIPE_DATA_PTR << 2;
                                 // datasize must be at least standard header
                                 if( packetSize==0x08 ) {
                                         usb_io_read_fifo(Usb_Ep0_Buffer>>2, packetSize, setupBuffer);
@@ -141,17 +151,20 @@ void usb_pingpong(void)
         				tSetupPkt.tHeader.reqType	= (setup_requestType_t)((setupBuffer[0]&0x60)>>5);
         				tSetupPkt.tHeader.reqRec	= (setup_RequestRec_t)(setupBuffer[0]&0x1f);
         				tSetupPkt.tHeader.reqId		= setupBuffer[1];
-        				tSetupPkt.tHeader.wValue	= setupBuffer[2] | (setupBuffer[3]<<8);
-        				tSetupPkt.tHeader.wIndex	= setupBuffer[4] | (setupBuffer[5]<<8);
-        				tSetupPkt.tHeader.wLength	= setupBuffer[6] | (setupBuffer[7]<<8);
+        				tSetupPkt.tHeader.wValue	= ((unsigned int)(setupBuffer[2])) | (((unsigned int)(setupBuffer[3]))<<8U);
+        				tSetupPkt.tHeader.wIndex	= ((unsigned int)(setupBuffer[4])) | (((unsigned int)(setupBuffer[5]))<<8U);
+        				tSetupPkt.tHeader.wLength	= ((unsigned int)(setupBuffer[6])) | (((unsigned int)(setupBuffer[7]))<<8U);
 
         				// does the request have an out transaction?
-        				if( tSetupPkt.tHeader.reqDir==SETUP_REQDIR_HostToDevice && tSetupPkt.tHeader.wLength!=0 ) {
-                				ptNetXUsbArea->ulPIPE_CTRL = MSK_USB_PIPE_CTRL_ACT|DEF_USB_PIPE_CTRL_TPID_OUT;
-                				ptNetXUsbArea->ulPIPE_DATA_PTR = Usb_Ep0_Buffer>>2;
-                				ptNetXUsbArea->ulPIPE_DATA_TBYTES = Usb_Ep0_PacketSize|MSK_USB_PIPE_DATA_TBYTES_DBV;
+        				if( tSetupPkt.tHeader.reqDir==SETUP_REQDIR_HostToDevice && tSetupPkt.tHeader.wLength!=0 )
+        				{
+        					ptUsbCoreArea->ulPIPE_CTRL = MSK_USB_PIPE_CTRL_ACT|DEF_USB_PIPE_CTRL_TPID_OUT;
+        					ptUsbCoreArea->ulPIPE_DATA_PTR = Usb_Ep0_Buffer>>2;
+        					ptUsbCoreArea->ulPIPE_DATA_TBYTES = Usb_Ep0_PacketSize|MSK_USB_PIPE_DATA_TBYTES_DBV;
                 				tOutTransactionNeeded = USB_SetupTransaction_OutTransaction;
-        				} else {
+        				}
+        				else
+        				{
                 				tOutTransactionNeeded = USB_SetupTransaction_NoOutTransaction;
                 				usb_requests_handle_request_top(&tSetupPkt);
         				}
@@ -164,14 +177,15 @@ void usb_pingpong(void)
                                 // just make data buffer again valid to enable USB Status stage
 
                                 // address change pending?
-                                if( globalState==USB_State_AddressChangePending ) {
+                                if( globalState==USB_State_AddressChangePending )
+                                {
                                         // set new address
-                                        ptNetXUsbArea->ulPIPE_ADDR = uiNewAddress;
+                                	ptUsbCoreArea->ulPIPE_ADDR = uiNewAddress;
                                         // address set
                                         globalState = USB_State_Address;
                                 }
 
-                                ptNetXUsbArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV|Usb_Ep0_PacketSize;	
+                                ptUsbCoreArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV|Usb_Ep0_PacketSize;
 
                                 tOutTransactionNeeded = USB_SetupTransaction_NoOutTransaction;
 
@@ -181,14 +195,15 @@ void usb_pingpong(void)
                                 // pipe out event
 
                                 // data wanted?
-                                if( tOutTransactionNeeded==USB_SetupTransaction_OutTransaction ) {
+                                if( tOutTransactionNeeded==USB_SetupTransaction_OutTransaction )
+                                {
                                         // get packetsize in bytes
-                                        packetSize = Usb_Ep2_PacketSize - (ptNetXUsbArea->ulPIPE_DATA_TBYTES&(~MSK_USB_PIPE_DATA_TBYTES_DBV));
+                                        packetSize = Usb_Ep2_PacketSize - (ptUsbCoreArea->ulPIPE_DATA_TBYTES&(~MSK_USB_PIPE_DATA_TBYTES_DBV));
                                         if( packetSize<=Usb_Ep0_PacketSize ) {
                                                 tSetupPkt.uiDataLen = packetSize;
                                                 usb_io_read_fifo(Usb_Ep0_Buffer>>2, packetSize, tSetupPkt.abData);
                                                 // correct data toggle
-                                                ptNetXUsbArea->ulPIPE_STAT ^= MSK_USB_PIPE_STAT_DT;
+                                                ptUsbCoreArea->ulPIPE_STAT ^= MSK_USB_PIPE_STAT_DT;
                                                 usb_requests_handle_request_top(&tSetupPkt);
                                         }
                                 }
@@ -200,14 +215,14 @@ void usb_pingpong(void)
                 // test for pipe 2 event (data from host arrived?)
                 if( (event2&4)!=0 ) {
                         // clear event
-                        ptNetXUsbArea->ulPIPE_EV = 4;
+                	ptUsbCoreArea->ulPIPE_EV = 4;
 
                         // select pipe 2
-                        ptNetXUsbArea->ulPIPE_SEL = 2;
+                	ptUsbCoreArea->ulPIPE_SEL = 2;
 
-                        if( (ptNetXUsbArea->ulPIPE_CTRL & MSK_USB_PIPE_CTRL_TPID)==DEF_USB_PIPE_CTRL_TPID_OUT ) {
+                        if( (ptUsbCoreArea->ulPIPE_CTRL & MSK_USB_PIPE_CTRL_TPID)==DEF_USB_PIPE_CTRL_TPID_OUT ) {
                                 // get packetsize in bytes
-                                packetSize = Usb_Ep2_PacketSize - (ptNetXUsbArea->ulPIPE_DATA_TBYTES&(~MSK_USB_PIPE_DATA_TBYTES_DBV));
+                                packetSize = Usb_Ep2_PacketSize - (ptUsbCoreArea->ulPIPE_DATA_TBYTES&(~MSK_USB_PIPE_DATA_TBYTES_DBV));
                                 if( packetSize<=Usb_Ep2_PacketSize ) {
                                         usb_io_read_fifo((Usb_Ep2_Buffer>>2), packetSize, receiveBuffer);
 
@@ -236,12 +251,12 @@ void usb_pingpong(void)
                 // test for pipe 3 event (data to host has been sent?)
                 if( (event2&8)!=0 ) {
                         // clear event
-                        ptNetXUsbArea->ulPIPE_EV = 8;
+                	ptUsbCoreArea->ulPIPE_EV = 8;
 
                         // select pipe 3
-                        ptNetXUsbArea->ulPIPE_SEL = 3;
+                	ptUsbCoreArea->ulPIPE_SEL = 3;
 
-                        if( (ptNetXUsbArea->ulPIPE_CTRL & MSK_USB_PIPE_CTRL_TPID)==DEF_USB_PIPE_CTRL_TPID_IN) {
+                        if( (ptUsbCoreArea->ulPIPE_CTRL & MSK_USB_PIPE_CTRL_TPID)==DEF_USB_PIPE_CTRL_TPID_IN) {
                                 // is more data waiting?
                                 usb_sendPendingPacket();
                         }
@@ -273,75 +288,80 @@ void usb_sendPendingPacket(void)
 
 void usb_activateInputPipe(void)
 {
-        // select pipe 2
-        ptNetXUsbArea->ulPIPE_SEL = 0x02;
+	HOSTDEF(ptUsbCoreArea);
+
+
+	// select pipe 2
+	ptUsbCoreArea->ulPIPE_SEL = 0x02;
         // set data pointer to Usb_Ep2_Buffer
-        ptNetXUsbArea->ulPIPE_DATA_PTR = Usb_Ep2_Buffer>>2;
+	ptUsbCoreArea->ulPIPE_DATA_PTR = Usb_Ep2_Buffer>>2;
         // enable pipe 2
-        ptNetXUsbArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV | Usb_Ep2_PacketSize;
+	ptUsbCoreArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV | Usb_Ep2_PacketSize;
 }
 
 
 void usb_handleReset(void)
 {
-        unsigned int event;
+	HOSTDEF(ptUsbCoreArea);
+	unsigned int event;
 
 
-        // get the pending port events
-        event  = ptNetXUsbArea->ulPSC_EV;
-        event &= MSK_USB_PSC_EV_URES_EV;
+	// get the pending port events
+	event  = ptUsbCoreArea->ulPSC_EV;
+	event &= MSK_USB_PSC_EV_URES_EV;
 
-        // check for USB Reset event
-        if( event!=0 ) {
-                // clear the reset event
-                ptNetXUsbArea->ulPSC_EV = event;
+	// check for USB Reset event
+	if( event!=0 )
+	{
+		// clear the reset event
+		ptUsbCoreArea->ulPSC_EV = event;
 
-                // set endpoint 0 packet size
-                ptNetXUsbArea->ulPIPE_CFG = Usb_Ep0_PacketSize;
+		// set endpoint 0 packet size
+		ptUsbCoreArea->ulPIPE_CFG = Usb_Ep0_PacketSize;
 
-                // go to default state
-                globalState = USB_State_Default;
+		// go to default state
+		globalState = USB_State_Default;
 
-                // reset current config (as if we had more than one)
-                currentConfig = 0;
+		// reset current config (as if we had more than one)
+		currentConfig = 0;
 
-                tOutTransactionNeeded = USB_SetupTransaction_NoOutTransaction;
-                tReceiveEpState = USB_ReceiveEndpoint_Running;
-                tSendEpState = USB_SendEndpoint_Idle;
+		tOutTransactionNeeded = USB_SetupTransaction_NoOutTransaction;
+		tReceiveEpState = USB_ReceiveEndpoint_Running;
+		tSendEpState = USB_SendEndpoint_Idle;
 
-                // configure the pipes
+		// configure the pipes
 
 		// select pipe #1
-		ptNetXUsbArea->ulPIPE_SEL = 1;
+		ptUsbCoreArea->ulPIPE_SEL = 1;
 		// set endpoint number
-		ptNetXUsbArea->ulPIPE_ADDR = 1;
+		ptUsbCoreArea->ulPIPE_ADDR = 1;
 		// set max packet size
-		ptNetXUsbArea->ulPIPE_CFG = Usb_Ep1_PacketSize;
+		ptUsbCoreArea->ulPIPE_CFG = Usb_Ep1_PacketSize;
 		// activate pipe and set direction to 'input'
-		ptNetXUsbArea->ulPIPE_CTRL = (1<<2)|1;
+		ptUsbCoreArea->ulPIPE_CTRL = (1<<2)|1;
 
-	        // select pipe #2
-	        ptNetXUsbArea->ulPIPE_SEL = 2;
-	        // set endpoint number
-	        ptNetXUsbArea->ulPIPE_ADDR = 2;
-	        // set max packet size
-	        ptNetXUsbArea->ulPIPE_CFG = Usb_Ep2_PacketSize;
-	        // set data pointer to Usb_Ep2_Buffer
-	        ptNetXUsbArea->ulPIPE_DATA_PTR = Usb_Ep2_Buffer>>2;
-	        // data buffer valid, ready to receive bytes
-	        ptNetXUsbArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV | Usb_Ep2_PacketSize;
-	        // activate pipe and set direction to 'output'
-	        ptNetXUsbArea->ulPIPE_CTRL = (1<<2)|0;
+		// select pipe #2
+		ptUsbCoreArea->ulPIPE_SEL = 2;
+		// set endpoint number
+		ptUsbCoreArea->ulPIPE_ADDR = 2;
+		// set max packet size
+		ptUsbCoreArea->ulPIPE_CFG = Usb_Ep2_PacketSize;
+		// set data pointer to Usb_Ep2_Buffer
+		ptUsbCoreArea->ulPIPE_DATA_PTR = Usb_Ep2_Buffer>>2;
+		// data buffer valid, ready to receive bytes
+		ptUsbCoreArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV | Usb_Ep2_PacketSize;
+		// activate pipe and set direction to 'output'
+		ptUsbCoreArea->ulPIPE_CTRL = (1<<2)|0;
 
-	        // select pipe #3
-	        ptNetXUsbArea->ulPIPE_SEL = 3;
-	        // set endpoint number
-	        ptNetXUsbArea->ulPIPE_ADDR = 3;
-	        // set max packet size
-	        ptNetXUsbArea->ulPIPE_CFG = Usb_Ep3_PacketSize;
-	        // activate pipe and set direction to 'input'
-	        ptNetXUsbArea->ulPIPE_CTRL = (1<<2)|1;
-        }
+		// select pipe #3
+		ptUsbCoreArea->ulPIPE_SEL = 3;
+		// set endpoint number
+		ptUsbCoreArea->ulPIPE_ADDR = 3;
+		// set max packet size
+		ptUsbCoreArea->ulPIPE_CFG = Usb_Ep3_PacketSize;
+		// activate pipe and set direction to 'input'
+		ptUsbCoreArea->ulPIPE_CTRL = (1<<2)|1;
+	}
 }
 
 //-------------------------------------

@@ -7,7 +7,6 @@
            agreement from the Hilscher GmbH is forbidden
 ---------------------------------------------------------------------------*/
 
-#include "regdef.h"
 #include "usb_requests_common.h"
 #include "usb_globals.h"
 

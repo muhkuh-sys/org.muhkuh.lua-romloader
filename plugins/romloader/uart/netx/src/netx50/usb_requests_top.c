@@ -7,8 +7,6 @@
            agreement from the Hilscher GmbH is forbidden
 ---------------------------------------------------------------------------*/
 
-#include "regdef.h"
-
 #include "usb_io.h"
 #include "usb_requests_common.h"
 #include "usb_requests_top.h"
@@ -24,6 +22,7 @@ static unsigned char abLineCoding[7];
 
 void usb_requests_handle_request_top(setupPacket_t *ptSetupPkt)
 {
+	HOSTDEF(ptUsbCoreArea);
         packet_handler_stall_req_t tSendStall;
         setup_cdc_requestId_t tCdcReqId;
         unsigned int uiIdx;
@@ -160,9 +159,12 @@ void usb_requests_handle_request_top(setupPacket_t *ptSetupPkt)
 
 
         // send stall on request
-        if( tSendStall==PKT_HANDLER_Send_Stall ) {
-		ptNetXUsbArea->ulPIPE_CFG |= MSK_USB_PIPE_CFG_STALL;
-        } else if( tSendStall==PKT_HANDLER_Send_Zero ) {
+        if( tSendStall==PKT_HANDLER_Send_Stall )
+        {
+		ptUsbCoreArea->ulPIPE_CFG |= MSK_USB_PIPE_CFG_STALL;
+        }
+        else if( tSendStall==PKT_HANDLER_Send_Zero )
+        {
         	usb_io_sendDataPacket(0, 0);
         }
 }
