@@ -1557,7 +1557,7 @@ void romloader_uart::write_data32(lua_State *ptClientData, unsigned long ulNetxA
 		aucCommand[8]  = (unsigned char)((ulData>> 8U) & 0xffU);
 		aucCommand[9]  = (unsigned char)((ulData>>16U) & 0xffU);
 		aucCommand[10] = (unsigned char)((ulData>>24U) & 0xffU);
-		tResult = execute_command(aucCommand, 10);
+		tResult = execute_command(aucCommand, 11);
 		if( tResult!=UARTSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
