@@ -25,7 +25,8 @@ MEMORY
 	ASSERT_EMPTY(rwx):  ORIGIN = 0x00000000,  LENGTH = 0
 
 	INTRAM_MON(rwx):    ORIGIN = 0x08000100,  LENGTH = 0x00003f00
-	INTRAM_OPT(rx):     ORIGIN = 0x08090594,  LENGTH = 0x00000008
+	INTRAM_ROMDATA(rx): ORIGIN = 0x08090000,  LENGTH = 0x00010000
+	INTRAM_ROMCODE(rx): ORIGIN = 0x080f0000,  LENGTH = 0x00010000
 }
 
 
@@ -81,11 +82,23 @@ SECTIONS
 	stack_top = ORIGIN(INTRAM_MON) + LENGTH(INTRAM_MON);
 
 
-	.opt ORIGIN(INTRAM_OPT):
+	.opt_netx56 ORIGIN(INTRAM_ROMDATA)+0x0594:
 	{
-		PROVIDE( aulConsoleDevices = . );
+		PROVIDE( aulConsoleDevices_netx56 = . );
 		. = . + 8;
-	} >INTRAM_OPT
+	} >INTRAM_ROMDATA
+
+	.opt_netx56b ORIGIN(INTRAM_ROMDATA)+0x15a0:
+	{
+		PROVIDE( aulConsoleDevices_netx56b = . );
+		. = . + 8;
+	} >INTRAM_ROMDATA
+
+	.romcode ORIGIN(INTRAM_ROMCODE):
+	{
+		PROVIDE( aulRomId = . );
+		. = . + 12;
+	} >INTRAM_ROMCODE
 
 
 	/* Stabs debugging sections.  */

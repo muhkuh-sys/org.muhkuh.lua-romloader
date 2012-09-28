@@ -32,7 +32,8 @@ typedef enum
 	ROMLOADER_CHIPTYP_NETX50        = 3,
 	ROMLOADER_CHIPTYP_NETX5         = 4,
 	ROMLOADER_CHIPTYP_NETX10        = 5,
-	ROMLOADER_CHIPTYP_NETX56        = 6
+	ROMLOADER_CHIPTYP_NETX56        = 6,
+	ROMLOADER_CHIPTYP_NETX56B       = 7
 } ROMLOADER_CHIPTYP;
 
 /*-----------------------------------*/

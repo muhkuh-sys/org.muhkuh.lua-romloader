@@ -51,7 +51,12 @@ void transport_set_vectors(unsigned long ulDevice);
 		CONSOLE_DEVICE_SIMU             = 5
 	} CONSOLE_DEVICE_T;
 
-	extern const unsigned long aulConsoleDevices[2];
+	extern const unsigned long aulConsoleDevices_netx56[2];
+	extern const unsigned long aulConsoleDevices_netx56b[2];
+	extern const unsigned long aulRomId[3];
+
+#       define ROM_CODE_ID_NETX56  0x00006003
+#       define ROM_CODE_ID_NETX56B 0x00106003
 #endif
 
 
@@ -88,6 +93,7 @@ static unsigned int netx50_usb_peek(void)
 void uart_monitor(void)
 {
 #if ASIC_TYP==56
+	unsigned long ulRomId;
 	unsigned long ulConsoleDevice;
 #endif
 
@@ -131,7 +137,15 @@ void uart_monitor(void)
 		tSerialV1Vectors.fn.fnPeek = netx50_usb_peek;
 	}
 #elif ASIC_TYP==56
-	ulConsoleDevice = aulConsoleDevices[0];
+	ulRomId = aulRomId[2];
+	if( ulRomId==ROM_CODE_ID_NETX56 )
+	{
+		ulConsoleDevice = aulConsoleDevices_netx56[0];
+	}
+	else if( ulRomId==ROM_CODE_ID_NETX56B )
+	{
+		ulConsoleDevice = aulConsoleDevices_netx56b[0];
+	}
 	if( ulConsoleDevice!=((unsigned long)CONSOLE_DEVICE_USB) && ulConsoleDevice!=((unsigned long)CONSOLE_DEVICE_UART0) )
 	{
 		while(1) {};

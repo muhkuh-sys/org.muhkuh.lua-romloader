@@ -234,7 +234,8 @@ int romloader_uart_read_functinoid_mi1::update_device(ROMLOADER_CHIPTYP tChiptyp
 	switch(tChiptyp)
 	{
 	case ROMLOADER_CHIPTYP_NETX56:
-		fprintf(stderr, "update netx56.\n");
+	case ROMLOADER_CHIPTYP_NETX56B:
+		fprintf(stderr, "update netx56/netx56b.\n");
 
 		fOk = write_image(MONITOR_DATA_START_NETX56, auc_uartmon_netx56_monitor, sizeof(auc_uartmon_netx56_monitor));
 		{

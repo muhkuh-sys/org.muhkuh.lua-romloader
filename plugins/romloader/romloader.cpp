@@ -85,7 +85,7 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 	unsigned long ulVersion;
 	bool fResult;
 	ROMLOADER_CHIPTYP tChiptyp;
-	const char *pcChiptypName;
+	//const char *pcChiptypName;
 
 
 	tChiptyp = ROMLOADER_CHIPTYP_UNKNOWN;
@@ -110,6 +110,7 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 			{
 				// found chip!
 				tChiptyp = ptRstCnt->tChiptyp;
+				printf("%s(%p): found chip %s.\n", m_pcName, this, ptRstCnt->pcChiptypName);
 				break;
 			}
 		}
@@ -123,16 +124,16 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 	{
 		/* Accept new chiptype and romcode. */
 		m_tChiptyp = tChiptyp;
-
-		pcChiptypName = GetChiptypName(tChiptyp);
-		printf("%s(%p): found chip %s.\n", m_pcName, this, pcChiptypName);
+//
+//		pcChiptypName = GetChiptypName(tChiptyp);
+//		printf("%s(%p): found chip %s.\n", m_pcName, this, pcChiptypName);
 	}
 
 	return fResult;
 }
 
 
-const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[5] =
+const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[6] =
 {
 	{
 		0xea080001,
@@ -172,6 +173,14 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[5] =
 		0x00006003,
 		ROMLOADER_CHIPTYP_NETX56,
 		"netX56"
+	},
+
+	{
+		0xeafbfffa,
+		0x080f0008,
+		0x00106003,
+		ROMLOADER_CHIPTYP_NETX56B,
+		"netX56B"
 	}
 };
 
