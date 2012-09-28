@@ -20,6 +20,7 @@
 
 
 #include "transport.h"
+#include "transport_extension.h"
 
 #include <stddef.h>
 
@@ -631,11 +632,6 @@ void transport_call_console_flush(void)
 	transport_send_byte(MONITOR_STATUS_CallMessage);
 }
 
-
-/* NOTE: This is a special function for the netX56 transport layer.
- * The header does not provide the prototype.
- */
-void transport_set_vectors(unsigned long ulDevice);
 
 void transport_set_vectors(unsigned long ulDevice)
 {

@@ -30,7 +30,7 @@
 #include "uart.h"
 
 #if ASIC_TYP==56
-void transport_set_vectors(unsigned long ulDevice);
+#       include "netx56/transport_extension.h"
 #endif
 
 /*-----------------------------------*/
