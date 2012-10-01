@@ -42,12 +42,12 @@ function hexdump(strData, uiBytesPerRow)
 end
 
 
-local function callback_progress(a,b)
+function callback_progress(a,b)
 	print(string.format("%d%% (%d/%d)", a*100/b, a, b))
 	return true
 end
 
-local function callback(a,b)
+function callback(a,b)
 	print(string.format("[netX %d] %s", b, a))
 	return true
 end
