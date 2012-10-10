@@ -94,7 +94,9 @@ function closeCommonPlugin()
 		end
 
 		-- Free the plugin.
-		m_commonPlugin:delete()
+		if m_commonPlugin.delete~=nil then
+			m_commonPlugin:delete()
+		end
 		m_commonPlugin = nil
 	end
 end
