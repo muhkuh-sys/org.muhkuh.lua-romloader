@@ -25,14 +25,6 @@ unsigned int usb_cdc_buf_send_rpos;             // read position
 unsigned int usb_cdc_buf_send_wpos;             // write position
 unsigned int usb_cdc_buf_send_fill;             // fill level
 
-
-#define MONITOR_MAX_PACKET_SIZE_UART 256
-
-extern unsigned char aucStreamBuffer[MONITOR_MAX_PACKET_SIZE_UART];
-extern size_t sizStreamBufferHead;
-extern size_t sizStreamBufferFill;
-
-
 //-------------------------------------
 
 // Buffer handling, User level functions
