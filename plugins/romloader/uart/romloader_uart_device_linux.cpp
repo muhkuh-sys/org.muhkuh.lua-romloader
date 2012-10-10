@@ -50,8 +50,8 @@ void *romloader_uart_rx_thread(void *pvParameter)
 
 	/* Get the parameter. */
 	ptPData = (RXTHREAD_PDATA_T*)pvParameter;
-	printf("romloader_uart_rx_thread: hPort=%d\n", ptPData->hPort);
-	printf("romloader_uart_rx_thread: ptParent=%p\n", ptPData->ptParent);
+//	printf("romloader_uart_rx_thread: hPort=%d\n", ptPData->hPort);
+//	printf("romloader_uart_rx_thread: ptParent=%p\n", ptPData->ptParent);
 
 	/* Allow to cancel this thread. */
 	iResult = pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &iOldState);
@@ -127,10 +127,10 @@ romloader_uart_device_linux::romloader_uart_device_linux(const char *pcPortName)
 		{
 			fprintf(stderr, "romloader_uart_device_linux(%p),'%s': failed to init the mutex: %d\n", this, m_pcPortName, iResult);
 		}
-		else
-		{
-			printf("romloader_uart_device_linux(%p),'%s': created\n", this, m_pcPortName);
-		}
+//		else
+//		{
+//			printf("romloader_uart_device_linux(%p),'%s': created\n", this, m_pcPortName);
+//		}
 	}
 }
 
@@ -197,23 +197,39 @@ bool romloader_uart_device_linux::Open(void)
 		tNewAttribs.c_cflag &= ~CRTSCTS;
 
 		iResult = cfsetispeed(&tNewAttribs, B115200);
-		fprintf(stderr, "cfsetispeed: %d\n", iResult);
-		iResult = cfsetospeed(&tNewAttribs, B115200);
-		fprintf(stderr, "cfsetospeed: %d\n", iResult);
-
-		iResult = tcsetattr(m_hPort, TCSAFLUSH, &tNewAttribs);
-		fprintf(stderr, "tcsetattr: %d\n", iResult);
-
-		/*
-		 * Create a new receive thread.
-		 */
-		m_tRxPData.hPort = m_hPort;
-		m_tRxPData.ptParent = this;
-		iResult = pthread_create(&m_tRxThread, NULL, romloader_uart_rx_thread, (void*)(&m_tRxPData));
-		if( iResult==0 )
+		if( iResult!=0 )
 		{
-			m_fRxThreadIsRunning = true;
-			fResult = true;
+			fprintf(stderr, "Failed to set input speed of '%s' to 115200: %d\n", acDeviceFile, iResult);
+		}
+		else
+		{
+			iResult = cfsetospeed(&tNewAttribs, B115200);
+			if( iResult!=0 )
+			{
+				fprintf(stderr, "Failed to set output speed of '%s' to 115200: %d\n", acDeviceFile, iResult);
+			}
+			else
+			{
+				iResult = tcsetattr(m_hPort, TCSAFLUSH, &tNewAttribs);
+				if( iResult!=0 )
+				{
+					fprintf(stderr, "Failed to apply new parameters to '%s': %d\n", acDeviceFile, iResult);
+				}
+				else
+				{
+					/*
+					 * Create a new receive thread.
+					 */
+					m_tRxPData.hPort = m_hPort;
+					m_tRxPData.ptParent = this;
+					iResult = pthread_create(&m_tRxThread, NULL, romloader_uart_rx_thread, (void*)(&m_tRxPData));
+					if( iResult==0 )
+					{
+						m_fRxThreadIsRunning = true;
+						fResult = true;
+					}
+				}
+			}
 		}
 	}
 
@@ -239,17 +255,17 @@ void romloader_uart_device_linux::Close(void)
 	fprintf(stderr, "Close: m_fRxThreadIsRunning=%d\n", m_fRxThreadIsRunning);
 	if( m_fRxThreadIsRunning==true )
 	{
-		fprintf(stderr, "pthread_cancel\n");
+//		fprintf(stderr, "pthread_cancel\n");
 		pthread_cancel(m_tRxThread);
-		fprintf(stderr, "pthread_join\n");
+//		fprintf(stderr, "pthread_join\n");
 		pthread_join(m_tRxThread, &pvStatus);
-		printf("rxthread returned status %p.\n", pvStatus);
+//		printf("rxthread returned status %p.\n", pvStatus);
 
 		m_fRxThreadIsRunning = false;
 	}
 
 	/* Delete the cards. */
-	fprintf(stderr, "deleteCards\n");
+//	fprintf(stderr, "deleteCards\n");
 	deleteCards();
 }
 

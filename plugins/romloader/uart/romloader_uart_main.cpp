@@ -1701,8 +1701,8 @@ void romloader_uart::call(unsigned long ulNetxAddress, unsigned long ulParameter
 		aucCommand[0x07] = (unsigned char)((ulParameterR0>>16) & 0xffU);
 		aucCommand[0x08] = (unsigned char)((ulParameterR0>>24) & 0xffU);
 
-		printf("Executing call command:\n");
-		hexdump(aucCommand, 9);
+//		printf("Executing call command:\n");
+//		hexdump(aucCommand, 9);
 		tResult = execute_command(aucCommand, 9);
 		if( tResult!=UARTSTATUS_OK )
 		{
