@@ -29,8 +29,12 @@
 #include "serial_vectors.h"
 #include "uart.h"
 
-#if ASIC_TYP==56
-#       include "netx56/transport_extension.h"
+#if ASIC_TYP==50 || ASIC_TYP==56
+#       include "transport_extension.h"
+#endif
+
+#if ASIC_TYP==50
+#       include "netx50/usb.h"
 #endif
 
 /*-----------------------------------*/
@@ -75,18 +79,11 @@ static const SERIAL_V1_COMM_UI_FN_T tSerialNetx50UsbVectors =
 	}
 };
 
-
-static unsigned int netx50_usb_peek(void)
+typedef enum
 {
-	/* This is the routine for USB communication. Call this on a regular
-	 * basis to get new USB packets.
-	 */
-	typedef void (*PFN_SERIAL_V1_CYCLIC_T)(void);
-
-
-	((PFN_SERIAL_V1_CYCLIC_T)(0x08201ff8U|1))();
-	return ((PFN_SERIAL_V1_PEEK_T)(0x08202355U|1))();
-}
+	CONSOLE_DEVICE_UART             = 0,
+	CONSOLE_DEVICE_USB              = 1
+} CONSOLE_DEVICE_T;
 #endif
 
 
@@ -94,6 +91,8 @@ void uart_monitor(void)
 {
 #if ASIC_TYP==56
 	unsigned long ulRomId;
+#endif
+#if ASIC_TYP==50 || ASIC_TYP==56
 	unsigned long ulConsoleDevice;
 #endif
 
@@ -128,14 +127,22 @@ void uart_monitor(void)
 	tSerialV1Vectors.fn.fnPeek  = uart_peek;
 	tSerialV1Vectors.fn.fnFlush = uart_flush;
 #elif ASIC_TYP==50
-	/* Copy the ROM code vectors to an internal buffer. */
-	memcpy(&tSerialV1Vectors, &tSerialV2Vectors, sizeof(SERIAL_V2_COMM_FN_T));
-
 	/* Compare vectors to netx50 USB. This one needs special treatment. */
-	if( memcmp(&tSerialV1Vectors, &tSerialNetx50UsbVectors, sizeof(SERIAL_V1_COMM_UI_FN_T))==0 )
+	if( memcmp(&tSerialV2Vectors, &tSerialNetx50UsbVectors, sizeof(SERIAL_V2_COMM_FN_T))==0 )
 	{
-		tSerialV1Vectors.fn.fnPeek = netx50_usb_peek;
+		/* USB CDC */
+		usb_init();
+		ulConsoleDevice = (unsigned long)CONSOLE_DEVICE_USB;
 	}
+	else
+	{
+		/* UART */
+
+		/* Copy the ROM code vectors to an internal buffer. */
+		memcpy(&tSerialV1Vectors, &tSerialV2Vectors, sizeof(SERIAL_V2_COMM_FN_T));
+		ulConsoleDevice = (unsigned long)CONSOLE_DEVICE_UART;
+	}
+	transport_set_vectors(ulConsoleDevice);
 #elif ASIC_TYP==56
 	ulRomId = aulRomId[2];
 	if( ulRomId==ROM_CODE_ID_NETX56 )

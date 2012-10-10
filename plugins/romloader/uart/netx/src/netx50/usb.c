@@ -20,18 +20,20 @@ void usb_handleReset(void);
 
 void usb_init(void)
 {
-	HOSTDEF(ptUsbCoreArea);
-        globalState = USB_State_Powered;
+//	HOSTDEF(ptUsbCoreArea);
+//        globalState = USB_State_Powered;
+        globalState = USB_State_Configured;
 
         // no configuration set
-        currentConfig = 0;
+//        currentConfig = 0;
+        currentConfig = 1;
 
         // init cdc layer
 
-        // init receive buffer
-        usb_cdc_buf_rec_rpos = 0;
-        usb_cdc_buf_rec_wpos = 0;
-        usb_cdc_buf_rec_fill = 0;
+//        // init receive buffer
+//        usb_cdc_buf_rec_rpos = 0;
+//        usb_cdc_buf_rec_wpos = 0;
+//        usb_cdc_buf_rec_fill = 0;
 
         // init send buffer
         usb_cdc_buf_send_rpos = 0;
@@ -39,8 +41,9 @@ void usb_init(void)
         usb_cdc_buf_send_fill = 0;
 
 	// no connection
-	tCdcConnectionState = USB_CDC_ConnectionState_Idle;
-
+//	tCdcConnectionState = USB_CDC_ConnectionState_Idle;
+	tCdcConnectionState = USB_CDC_ConnectionState_Connected;
+/*
 	// soft reset
 	ptUsbCoreArea->ulUsb_core_ctrl = 1;
 	// release reset and set ID Func
@@ -49,6 +52,7 @@ void usb_init(void)
 	// set ID pullup and read connector ID value
 	ptUsbCoreArea->ulPORT_CTRL = MSK_USB_PORT_CTRL_ID_PU;
 	ptUsbCoreArea->ulPORT_CTRL = 0;
+*/
 }
 
 
