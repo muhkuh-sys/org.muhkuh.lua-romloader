@@ -35,7 +35,7 @@
 #define UART_BUFFER_NO_TIMEOUT 0
 #define UART_BUFFER_TIMEOUT 1
 
-#define MONITOR_MAX_PACKET_SIZE_UART 256
+#define MONITOR_MAX_PACKET_SIZE_UART 2048
 
 typedef int (*PFN_TRANSPORT_FILL_BUFFER_T)(size_t sizRequestedFillLevel, unsigned int uiTimeoutFlag);
 typedef void (*PFN_TRANSPORT_SEND_PACKET_T)(void);
@@ -195,6 +195,7 @@ static unsigned char uart_buffer_get(void)
 
 	--sizStreamBufferFill;
 
+	/* FIXME: do not execute this on UART connections. */
 	// need to reactivate the endpoint?
 	if( tReceiveEpState==USB_ReceiveEndpoint_Blocked && (MONITOR_MAX_PACKET_SIZE_UART-sizStreamBufferFill)>=Usb_Ep2_PacketSize )
 	{
@@ -233,6 +234,7 @@ static void uart_buffer_skip(size_t sizSkip)
 
 	sizStreamBufferFill -= sizSkip;
 
+	/* FIXME: do not execute this on UART connections. */
 	// need to reactivate the endpoint?
 	if( tReceiveEpState==USB_ReceiveEndpoint_Blocked && (MONITOR_MAX_PACKET_SIZE_UART-sizStreamBufferFill)>=Usb_Ep2_PacketSize )
 	{
