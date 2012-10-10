@@ -283,8 +283,6 @@ void transport_loop(void)
 			{
 				/* OK, the CRC matches! */
 
-				/* TODO: process the packet. */
-
 				/* Skip over the complete packet. It is already copied. */
 				uart_buffer_skip(sizPacket+4);
 
