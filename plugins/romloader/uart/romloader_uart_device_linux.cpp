@@ -228,6 +228,10 @@ bool romloader_uart_device_linux::Open(void)
 						m_fRxThreadIsRunning = true;
 						fResult = true;
 					}
+					else
+					{
+						fprintf(stderr, "Failed to create receive thread: %d\n", iResult);
+					}
 				}
 			}
 		}
