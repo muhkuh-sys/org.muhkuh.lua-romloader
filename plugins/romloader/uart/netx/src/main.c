@@ -153,6 +153,10 @@ void uart_monitor(void)
 	{
 		ulConsoleDevice = aulConsoleDevices_netx56b[0];
 	}
+	else
+	{
+		ulConsoleDevice = (unsigned long)CONSOLE_DEVICE_NONE;
+	}
 	if( ulConsoleDevice!=((unsigned long)CONSOLE_DEVICE_USB) && ulConsoleDevice!=((unsigned long)CONSOLE_DEVICE_UART0) )
 	{
 		while(1) {};
