@@ -192,7 +192,10 @@ function mbin_execute(tParentWindow, tPlugin, aAttr, fnCallback, ulUserData)
 		ulUserData = 0
 	end
 
+	print("__/Output/____________________________________________________________________")
 	tPlugin:call(aAttr.ulExecAddress, aAttr.ulParameterStartAddress, fnCallback, ulUserData)
+	print("")
+	print("______________________________________________________________________________")
 	return tPlugin:read_data32(aAttr.ulParameterStartAddress)
 end
 
