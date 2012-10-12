@@ -117,7 +117,7 @@ ADD_CUSTOM_TARGET(Firmware
 	ALL
 	COMMAND "${PYTHON_EXECUTABLE}" mbs/mbs
 	WORKING_DIRECTORY ${CMAKE_HOME_DIRECTORY}
-	COMMENT "Build the swig lua runtime header."
+	COMMENT "Build the netX firmware."
 	VERBATIM
 )
 
