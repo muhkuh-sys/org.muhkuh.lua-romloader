@@ -1215,7 +1215,7 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 				pcProgressData = NULL;
 				sizProgressData = 0;
 
-				iResult = m_ptUsbDevice->receive_packet(m_aucPacketInputBuffer, 64, &sizInBuf, 500);
+				iResult = m_ptUsbDevice->receive_packet(m_aucPacketInputBuffer, m_sizMaxPacketSizeClient, &sizInBuf, 500);
 				if( iResult==LIBUSB_ERROR_TIMEOUT )
 				{ // should we print anything if a timeout occurs?
 				}
