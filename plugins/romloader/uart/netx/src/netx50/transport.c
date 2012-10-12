@@ -222,8 +222,7 @@ static unsigned char uart_buffer_get(void)
 
 	--sizStreamBufferFill;
 
-	/* FIXME: do not execute this on UART connections. */
-	// need to reactivate the endpoint?
+	/* need to reactivate the endpoint? */
 	if( tReceiveEpState==USB_ReceiveEndpoint_Blocked && (MONITOR_MAX_PACKET_SIZE_UART-sizStreamBufferFill)>=Usb_Ep2_PacketSize )
 	{
 		usb_activateInputPipe();
@@ -261,7 +260,6 @@ static void uart_buffer_skip(size_t sizSkip)
 
 	sizStreamBufferFill -= sizSkip;
 
-	/* FIXME: do not execute this on UART connections. */
 	// need to reactivate the endpoint?
 	if( tReceiveEpState==USB_ReceiveEndpoint_Blocked && (MONITOR_MAX_PACKET_SIZE_UART-sizStreamBufferFill)>=Usb_Ep2_PacketSize )
 	{

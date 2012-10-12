@@ -138,6 +138,10 @@ void uart_monitor(void)
 	{
 		/* UART */
 
+		/* The USB endpoints are not configured. */
+		tReceiveEpState = USB_EndpointState_Unconfigured;
+		tSendEpState = USB_EndpointState_Unconfigured;
+
 		/* Copy the ROM code vectors to an internal buffer. */
 		memcpy(&tSerialV1Vectors, &tSerialV2Vectors, sizeof(SERIAL_V2_COMM_FN_T));
 		ulConsoleDevice = (unsigned long)CONSOLE_DEVICE_UART;

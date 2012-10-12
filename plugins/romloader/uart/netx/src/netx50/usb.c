@@ -53,6 +53,9 @@ void usb_init(void)
 	ptUsbCoreArea->ulPORT_CTRL = MSK_USB_PORT_CTRL_ID_PU;
 	ptUsbCoreArea->ulPORT_CTRL = 0;
 */
+
+	tReceiveEpState = USB_EndpointState_Running;
+	tSendEpState = USB_EndpointState_Running;
 }
 
 
