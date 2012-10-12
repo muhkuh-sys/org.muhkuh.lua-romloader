@@ -88,14 +88,41 @@ void transport_init(void)
 
 static int transport_buffer_fill_usb_cdc(size_t sizRequestedFillLevel, unsigned int uiTimeoutFlag)
 {
-	/* Fill-up the buffer to the requested level. */
-	while( sizStreamBufferFill<sizRequestedFillLevel )
+	int iResult;
+	unsigned long ulTimeout;
+
+
+	iResult = 0;
+
+	if( uiTimeoutFlag==UART_BUFFER_NO_TIMEOUT )
 	{
-		/* Process incoming packets and send waiting data. */
-		usb_pingpong();
+		/* Fill-up the buffer to the requested level. */
+		while( sizStreamBufferFill<sizRequestedFillLevel )
+		{
+			/* Process incoming packets and send waiting data. */
+			usb_pingpong();
+		}
+	}
+	else
+	{
+		ulTimeout = systime_get_ms();
+
+		/* Fill-up the buffer to the requested level. */
+		while( sizStreamBufferFill<sizRequestedFillLevel )
+		{
+			/* Wait for new data. */
+			if( systime_elapsed(ulTimeout, 500)!=0 )
+			{
+				iResult = -1;
+				break;
+			}
+
+			/* Process incoming packets and send waiting data. */
+			usb_pingpong();
+		}
 	}
 
-	return 0;
+	return iResult;
 }
 
 
