@@ -55,22 +55,22 @@ wxThread::ExitCode muhkuh_copy_process::Entry(void)
 	size_t sizFileEnd;
 
 
-	/* A fresh start -> clear all TODO lists. */
+	/* A fresh start -> clear all copy lists. */
 	m_astrTodoProcessFolders.Empty();
 	m_astrVisitedFolders.Empty();
 	m_astrTodoCopyFiles.Empty();
 
 	/* Loop over the complete remote directory structure and collect all files and folders. */
 
-	/* Add the base folder of the test to the copy TODO list. */
+	/* Add the base folder of the test to the copy list. */
 	m_astrTodoProcessFolders.Add(m_strRemoteBase);
 
-	/* Process all entries in the copy TODO list. */
+	/* Process all entries in the copy list. */
 	m_tState = MUHKUH_COPY_PROCESS_STATE_Scanning;
 	fResult = true;
 	while( m_astrTodoProcessFolders.IsEmpty()==false )
 	{
-		/* Get the first entry from the TODO list. */
+		/* Get the first entry from the copy list. */
 		strCurrentItem = m_astrTodoProcessFolders.Item(0);
 		/* Remove it from the list so it will not be processed again. */
 		m_astrTodoProcessFolders.RemoveAt(0,1);
@@ -114,7 +114,7 @@ wxThread::ExitCode muhkuh_copy_process::Entry(void)
 			break;
 		}
 
-		/* Now add all subfolders to the TODO list. */
+		/* Now add all subfolders to the copy list. */
 		strFileUrl = tFileSystemRemote.FindFirst("*", wxDIR);
 		while( strFileUrl.IsEmpty()==false )
 		{
@@ -166,7 +166,7 @@ wxThread::ExitCode muhkuh_copy_process::Entry(void)
 				break;
 			}
 
-			/* Get the first entry from the TODO list. */
+			/* Get the first entry from the copy list. */
 			strCurrentItem = m_astrTodoCopyFiles.Item(m_sizCurrentFileIdx);
 			wxLogDebug("Processing file '%s'", strCurrentItem);
 
