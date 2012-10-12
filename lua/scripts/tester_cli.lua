@@ -48,7 +48,8 @@ function callback_progress(a,b)
 end
 
 function callback(a,b)
-	print(string.format("[netX %d] %s", b, a))
+--	print(string.format("[netX %d] %s", b, a))
+	io.write(a)
 	return true
 end
 
@@ -63,7 +64,10 @@ function stdWrite(tParentWindow, tPlugin, ulAddress, strData)
 end
 
 function stdCall(tParentWindow, tPlugin, ulAddress, ulParameter)
+	print("__/Output/____________________________________________________________________")
 	tPlugin:call(ulAddress, ulParameter, callback, 0)
+	print("")
+	print("______________________________________________________________________________")
 end
 
 
