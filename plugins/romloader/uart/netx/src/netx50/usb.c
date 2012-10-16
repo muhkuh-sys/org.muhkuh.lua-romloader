@@ -55,7 +55,7 @@ void usb_init(void)
 */
 
 	tReceiveEpState = USB_ReceiveEndpoint_Running;
-	tSendEpState = USB_SendEndpoint_Running;
+	tSendEpState = USB_SendEndpoint_Idle;
 }
 
 
