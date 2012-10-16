@@ -82,12 +82,6 @@ FIND_PACKAGE(SWIG REQUIRED)
 # The python interpreter is required to build the netx firmware. (See plugins/romloader/usb/netx)
 FIND_PACKAGE(PythonInterp)
 
-# This is the list of the wxwidgets modules required for the application.
-# Use static linking.
-SET(wxWidgets_STATIC ON)
-SET(wxWidgets_USE_STATIC ON)
-FIND_PACKAGE(wxWidgets 2.9 REQUIRED html adv aui net xml core base)
-
 # TODO: Show a summary with FeatureSummary .
 
 

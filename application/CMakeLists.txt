@@ -5,6 +5,11 @@ PROJECT("muhkuh")
 FIND_PACKAGE(SWIG REQUIRED)
 INCLUDE(${SWIG_USE_FILE})
 
+# This is the list of the wxwidgets modules required for the application.
+# Use static linking.
+SET(wxWidgets_STATIC ON)
+SET(wxWidgets_USE_STATIC ON)
+FIND_PACKAGE(wxWidgets 2.9 REQUIRED html adv aui net xml core base)
 INCLUDE(${wxWidgets_USE_FILE})
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
