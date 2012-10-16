@@ -130,12 +130,21 @@ void uart_put(unsigned char ucChar)
 	unsigned long ulVal;
 
 
+#if ASIC_TYP==50
+	/* Wait until the FIFO is empty. */
+	do
+	{
+		ulVal  = ptUart0Area->ulUartfr;
+		ulVal &= HOSTMSK(uartfr_TXFE);
+	} while( ulVal==0 );
+#else
 	/* Wait until there is space in the FIFO */
 	do
 	{
 		ulVal  = ptUart0Area->ulUartfr;
 		ulVal &= HOSTMSK(uartfr_TXFF);
 	} while( ulVal!=0 );
+#endif
 
 	ptUart0Area->ulUartdr = ucChar;
 }

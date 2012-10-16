@@ -91,8 +91,9 @@ void uart_monitor(void)
 {
 #if ASIC_TYP==56
 	unsigned long ulRomId;
+	unsigned long ulConsoleDevice;
 #endif
-#if ASIC_TYP==50 || ASIC_TYP==56
+#if ASIC_TYP==50
 	unsigned long ulConsoleDevice;
 #endif
 
@@ -138,7 +139,7 @@ void uart_monitor(void)
 	{
 		/* UART */
 
-		/* The USB endpoints are not configured. */
+		/* In this mode the USB endpoints are in the state "not configured". */
 		tReceiveEpState = USB_EndpointState_Unconfigured;
 		tSendEpState = USB_EndpointState_Unconfigured;
 

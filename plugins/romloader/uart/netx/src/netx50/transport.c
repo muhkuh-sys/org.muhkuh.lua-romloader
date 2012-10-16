@@ -129,10 +129,10 @@ static int transport_buffer_fill_usb_cdc(size_t sizRequestedFillLevel, unsigned 
 
 static int transport_buffer_fill_uart(size_t sizRequestedFillLevel, unsigned int uiTimeoutFlag)
 {
+	HOSTDEF(ptUart0Area);
 	size_t sizWritePosition;
 	int iResult;
 	unsigned long ulTimeout;
-	HOSTDEF(ptUart0Area);
 	unsigned long ulValue;
 
 
@@ -418,8 +418,8 @@ static void transport_send_packet_uart(void)
 	do
 	{
 		ulValue  = ptUart0Area->ulUartfr;
-		ulValue &= HOSTMSK(uartfr_TXFF);
-	} while( ulValue!=0 );
+		ulValue &= HOSTMSK(uartfr_TXFE);
+	} while( ulValue==0 );
 	ptUart0Area->ulUartdr = MONITOR_STREAM_PACKET_START;
 
 	/* Send the size. */
@@ -427,16 +427,16 @@ static void transport_send_packet_uart(void)
 	do
 	{
 		ulValue  = ptUart0Area->ulUartfr;
-		ulValue &= HOSTMSK(uartfr_TXFF);
-	} while( ulValue!=0 );
+		ulValue &= HOSTMSK(uartfr_TXFE);
+	} while( ulValue==0 );
 	ptUart0Area->ulUartdr = (unsigned long)ucData;
 	usCrc = crc16(0, ucData);
 	ucData = (unsigned char)((sizPacketOutputFill >> 8U) & 0xffU);
 	do
 	{
 		ulValue  = ptUart0Area->ulUartfr;
-		ulValue &= HOSTMSK(uartfr_TXFF);
-	} while( ulValue!=0 );
+		ulValue &= HOSTMSK(uartfr_TXFE);
+	} while( ulValue==0 );
 	ptUart0Area->ulUartdr = (unsigned long)ucData;
 	usCrc = crc16(usCrc, ucData);
 
@@ -449,8 +449,8 @@ static void transport_send_packet_uart(void)
 		do
 		{
 			ulValue  = ptUart0Area->ulUartfr;
-			ulValue &= HOSTMSK(uartfr_TXFF);
-		} while( ulValue!=0 );
+			ulValue &= HOSTMSK(uartfr_TXFE);
+		} while( ulValue==0 );
 
 		ucData = *(pucCnt++);
 		ptUart0Area->ulUartdr = (unsigned long)ucData;
@@ -462,15 +462,15 @@ static void transport_send_packet_uart(void)
 	do
 	{
 		ulValue  = ptUart0Area->ulUartfr;
-		ulValue &= HOSTMSK(uartfr_TXFF);
-	} while( ulValue!=0 );
+		ulValue &= HOSTMSK(uartfr_TXFE);
+	} while( ulValue==0 );
 	ptUart0Area->ulUartdr = (unsigned long)ucData;
 	ucData = (unsigned char)(usCrc&0xffU);
 	do
 	{
 		ulValue  = ptUart0Area->ulUartfr;
-		ulValue &= HOSTMSK(uartfr_TXFF);
-	} while( ulValue!=0 );
+		ulValue &= HOSTMSK(uartfr_TXFE);
+	} while( ulValue==0 );
 	ptUart0Area->ulUartdr = (unsigned long)ucData;
 
 	/* Remember the packet size for resends. */
