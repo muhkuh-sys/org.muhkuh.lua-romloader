@@ -82,24 +82,9 @@ typedef enum {
 
 //-------------------------------------
 
-extern unsigned int usb_cdc_buf_rec_rpos;              // read position
-extern unsigned int usb_cdc_buf_rec_wpos;              // write position
-extern unsigned int usb_cdc_buf_rec_fill;              // fill level
-
-extern unsigned int usb_cdc_buf_send_rpos;             // read position
-extern unsigned int usb_cdc_buf_send_wpos;             // write position
-extern unsigned int usb_cdc_buf_send_fill;             // fill level
+tUsbCdc_BufferState usb_cdc_buf_rec_put(unsigned char *pucBuffer, unsigned int uiBufferLen, unsigned int uiMaxPacketSize);
 
 //-------------------------------------
 
-unsigned int usb_cdc_buf_rec_peek(void);
-unsigned char usb_cdc_buf_rec_get(void);
-tUsbCdc_BufferState usb_cdc_buf_rec_put(unsigned char *pbBuffer, unsigned int uiBufferLen, unsigned int uiMaxPacketSize);
 
-unsigned int usb_cdc_buf_send_get(unsigned char *pbBuffer, unsigned int uiMaxPacketSize);
-void usb_cdc_buf_send_put(unsigned int uiValue);
-void usb_cdc_buf_send_flush(void);
-
-//-------------------------------------
-
-#endif  // __usb_requests_cdc_h__
+#endif  /* __usb_requests_cdc_h__ */

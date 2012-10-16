@@ -33,7 +33,6 @@
 #define Usb_Ep0_Buffer          0x0000
 #define Usb_Ep1_Buffer          0x0080
 #define Usb_Ep2_Buffer          0x0100
-#define Usb_Ep3_Buffer          0x0180
 
 //-------------------------------------
 
@@ -79,12 +78,6 @@ typedef enum
 
 typedef enum
 {
-        USB_SendEndpoint_Idle				= 0,
-        USB_SendEndpoint_Running			= 1
-} USB_SendEndpoint_t;
-
-typedef enum
-{
 	USB_CDC_ConnectionState_Idle			= 0,
 	USB_CDC_ConnectionState_Connected		= 1
 } USB_CDC_ConnectionState_t;
@@ -98,7 +91,6 @@ extern unsigned int currentConfig;
 // buffer for setup packets
 extern unsigned char setupBuffer[Usb_Ep0_PacketSize];
 extern unsigned char receiveBuffer[Usb_Ep2_PacketSize];
-extern unsigned char sendBuffer[Usb_Ep3_PacketSize];
 
 // decoded packet
 extern setupPacket_t tSetupPkt;
@@ -106,8 +98,6 @@ extern setupPacket_t tSetupPkt;
 extern USB_SetupTransaction_t tOutTransactionNeeded;
 
 extern USB_ReceiveEndpoint_t tReceiveEpState;
-extern USB_SendEndpoint_t tSendEpState;
-extern unsigned int uiLastPacketSize;
 
 // new address for pending address change
 extern unsigned int uiNewAddress;
@@ -118,7 +108,6 @@ extern USB_CDC_ConnectionState_t tCdcConnectionState;
 //-------------------------------------
 
 void usb_pingpong(void);
-void usb_sendPendingPacket(void);
 void usb_activateInputPipe(void);
 
 //-------------------------------------

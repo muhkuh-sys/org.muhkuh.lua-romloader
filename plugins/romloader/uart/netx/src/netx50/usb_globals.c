@@ -19,7 +19,6 @@ unsigned int currentConfig;
 // buffer for setup and data packets
 unsigned char setupBuffer[Usb_Ep0_PacketSize];
 unsigned char receiveBuffer[Usb_Ep2_PacketSize];
-unsigned char sendBuffer[Usb_Ep3_PacketSize];
 
 // decoded packet
 setupPacket_t tSetupPkt;
@@ -27,8 +26,6 @@ setupPacket_t tSetupPkt;
 USB_SetupTransaction_t tOutTransactionNeeded;
 
 USB_ReceiveEndpoint_t tReceiveEpState;
-USB_SendEndpoint_t tSendEpState;
-unsigned int uiLastPacketSize;
 
 // new address for pending address change
 unsigned int uiNewAddress;

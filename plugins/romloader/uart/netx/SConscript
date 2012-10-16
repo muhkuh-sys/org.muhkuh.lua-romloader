@@ -61,7 +61,6 @@ sources_monitor_netx50 = """
 	src/netx50/usb_descriptors.c
 	src/netx50/usb_globals.c
 	src/netx50/usb_io.c
-	src/netx50/usb_requests_cdc.c
 	src/netx50/usb_requests_top.c
 """
 

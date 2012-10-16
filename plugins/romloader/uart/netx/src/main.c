@@ -141,7 +141,6 @@ void uart_monitor(void)
 
 		/* In this mode the USB endpoints are in the state "not configured". */
 		tReceiveEpState = USB_EndpointState_Unconfigured;
-		tSendEpState = USB_EndpointState_Unconfigured;
 
 		/* Copy the ROM code vectors to an internal buffer. */
 		memcpy(&tSerialV1Vectors, &tSerialV2Vectors, sizeof(SERIAL_V2_COMM_FN_T));

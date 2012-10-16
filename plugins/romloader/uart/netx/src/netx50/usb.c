@@ -35,10 +35,10 @@ void usb_init(void)
 //        usb_cdc_buf_rec_wpos = 0;
 //        usb_cdc_buf_rec_fill = 0;
 
-        // init send buffer
-        usb_cdc_buf_send_rpos = 0;
-        usb_cdc_buf_send_wpos = 0;
-        usb_cdc_buf_send_fill = 0;
+//        // init send buffer
+//        usb_cdc_buf_send_rpos = 0;
+//        usb_cdc_buf_send_wpos = 0;
+//        usb_cdc_buf_send_fill = 0;
 
 	// no connection
 //	tCdcConnectionState = USB_CDC_ConnectionState_Idle;
@@ -55,7 +55,6 @@ void usb_init(void)
 */
 
 	tReceiveEpState = USB_ReceiveEndpoint_Running;
-	tSendEpState = USB_SendEndpoint_Idle;
 }
 
 
@@ -254,43 +253,9 @@ void usb_pingpong(void)
                                 }
                         }
                 }
-
-                // test for pipe 3 event (data to host has been sent?)
-                if( (event2&8)!=0 ) {
-                        // clear event
-                	ptUsbCoreArea->ulPIPE_EV = 8;
-
-                        // select pipe 3
-                	ptUsbCoreArea->ulPIPE_SEL = 3;
-
-                        if( (ptUsbCoreArea->ulPIPE_CTRL & MSK_USB_PIPE_CTRL_TPID)==DEF_USB_PIPE_CTRL_TPID_IN) {
-                                // is more data waiting?
-                                usb_sendPendingPacket();
-                        }
-                }
         }
 }
 
-
-void usb_sendPendingPacket(void)
-{
-        unsigned int uiPacketSize;
-
-
-        uiPacketSize = usb_cdc_buf_send_get(sendBuffer, Usb_Ep3_PacketSize);
-        if( uiPacketSize!=0 ) {
-		usb_io_write_fifo(Usb_Ep3_Buffer>>2, uiPacketSize, sendBuffer);
-		usb_io_sendDataPacket(3, uiPacketSize);
-		uiLastPacketSize = uiPacketSize;
-		tSendEpState = USB_SendEndpoint_Running;
-        } else {
-                // no more data waiting and last packet was full? -> send 0 packet
-                if( tSendEpState==USB_SendEndpoint_Running && uiLastPacketSize==Usb_Ep3_PacketSize ) {
-			usb_io_sendDataPacket(3, 0);
-                }
-                tSendEpState = USB_SendEndpoint_Idle;
-        }
-}
 
 
 void usb_activateInputPipe(void)
@@ -334,7 +299,6 @@ void usb_handleReset(void)
 
 		tOutTransactionNeeded = USB_SetupTransaction_NoOutTransaction;
 		tReceiveEpState = USB_ReceiveEndpoint_Running;
-		tSendEpState = USB_SendEndpoint_Idle;
 
 		// configure the pipes
 
