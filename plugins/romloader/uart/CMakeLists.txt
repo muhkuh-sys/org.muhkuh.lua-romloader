@@ -6,7 +6,6 @@ PROJECT("romloader_uart")
 SET(romloader_uart_VERSION 0.0.1)
 
 
-FIND_PACKAGE(SWIG REQUIRED)
 INCLUDE(${SWIG_USE_FILE})
 
 if(${PYTHONLIBS_FOUND})
@@ -63,7 +62,7 @@ ELSE(UNIX)
 	IF(WIN32)
 		SET(romloader_uart_platform_SOURCES romloader_uart_device_win.cpp)
 		SET(romloader_uart_platform_HEADERS romloader_uart_device_win.h)
-		SET(romloader_uart_platform_LIBS Setupapi.lib)
+		SET(romloader_uart_platform_LIBS setupapi.lib)
 	ENDIF(WIN32)
 ENDIF(UNIX)
 
