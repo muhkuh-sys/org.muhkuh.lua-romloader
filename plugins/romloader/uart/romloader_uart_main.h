@@ -123,6 +123,7 @@ private:
 	UARTSTATUS_T packet_ringbuffer_fill(size_t sizRequestedFillLevel);
 	unsigned char packet_ringbuffer_get(void);
 	int packet_ringbuffer_peek(size_t sizOffset);
+	void packet_ringbuffer_discard(void);
 
 	UARTSTATUS_T send_sync_command(void);
 	UARTSTATUS_T send_packet(const unsigned char *pucData, size_t sizData);

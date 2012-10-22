@@ -829,6 +829,17 @@ int romloader_uart::packet_ringbuffer_peek(size_t sizOffset)
 
 
 
+void romloader_uart::packet_ringbuffer_discard(void)
+{
+	if( m_sizPacketRingBufferFill>0 )
+	{
+		printf("Warning: discarding %d bytes in ringbuffer!\n", m_sizPacketRingBufferFill);
+	}
+	packet_ringbuffer_init();
+}
+
+
+
 romloader_uart::UARTSTATUS_T romloader_uart::send_packet(const unsigned char *pucData, size_t sizData)
 {
 	UARTSTATUS_T tResult;
@@ -1015,6 +1026,10 @@ romloader_uart::UARTSTATUS_T romloader_uart::execute_command(const unsigned char
 	uiRetryCnt = 10;
 	do
 	{
+		/* Discard all old data in the ring buffer. */
+		packet_ringbuffer_discard();
+		m_ptUartDev->discardCards();
+
 		tResult = send_packet(aucCommand, sizCommand);
 		if( tResult!=UARTSTATUS_OK )
 		{

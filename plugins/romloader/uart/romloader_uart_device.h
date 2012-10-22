@@ -67,28 +67,29 @@ public:
 	static const size_t mc_sizCardSize = 16384;
 	struct sBufferCard;
 
-	typedef struct sBufferCard
+	typedef struct STRUCT_BUFFER_CARD
 	{
 		unsigned char *pucEnd;
 		unsigned char *pucRead;
 		unsigned char *pucWrite;
-		sBufferCard *ptNext;
+		STRUCT_BUFFER_CARD *ptNext;
 		unsigned char aucData[mc_sizCardSize];
-	} tBufferCard;
+	} BUFFER_CARD_T;
 
 
 	void initCards(void);
 	void deleteCards(void);
 	void writeCards(const unsigned char *pucBuffer, size_t sizBufferSize);
 	size_t readCards(unsigned char *pucBuffer, size_t sizBufferSize);
+	void discardCards(void);
 	size_t getCardSize(void) const;
 
 
 protected:
 	char *m_pcPortName;
 
-	tBufferCard *m_ptFirstCard;
-	tBufferCard *m_ptLastCard;
+	BUFFER_CARD_T * volatile m_ptFirstCard;
+	BUFFER_CARD_T * volatile m_ptLastCard;
 #if MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_MSVC
 	CRITICAL_SECTION m_csCardLock;
 #elif MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_PTHREAD

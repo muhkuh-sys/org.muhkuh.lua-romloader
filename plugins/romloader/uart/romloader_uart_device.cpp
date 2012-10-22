@@ -81,7 +81,7 @@ romloader_uart_device::~romloader_uart_device(void)
 
 void romloader_uart_device::initCards(void)
 {
-	tBufferCard *ptCard;
+	BUFFER_CARD_T *ptCard;
 
 
 	if( m_ptFirstCard!=NULL )
@@ -89,7 +89,7 @@ void romloader_uart_device::initCards(void)
 		deleteCards();
 	}
 
-	ptCard = new tBufferCard;
+	ptCard = new BUFFER_CARD_T;
 	ptCard->pucEnd = ptCard->aucData + mc_sizCardSize;
 	ptCard->pucRead = ptCard->aucData;
 	ptCard->pucWrite = ptCard->aucData;
@@ -102,8 +102,8 @@ void romloader_uart_device::initCards(void)
 
 void romloader_uart_device::deleteCards(void)
 {
-	tBufferCard *ptCard;
-	tBufferCard *ptNextCard;
+	BUFFER_CARD_T *ptCard;
+	BUFFER_CARD_T *ptNextCard;
 
 
 	CRITICAL_SECTION_ENTER(m_csCardLock);
@@ -126,7 +126,7 @@ void romloader_uart_device::writeCards(const unsigned char *pucBuffer, size_t si
 {
 	size_t sizLeft;
 	size_t sizChunk;
-	tBufferCard *ptCard;
+	BUFFER_CARD_T *ptCard;
 
 
 	CRITICAL_SECTION_ENTER(m_csCardLock);
@@ -139,7 +139,7 @@ void romloader_uart_device::writeCards(const unsigned char *pucBuffer, size_t si
 		// no more space -> create a new card
 		if( sizChunk==0 )
 		{
-			ptCard = new tBufferCard;
+			ptCard = new BUFFER_CARD_T;
 			ptCard->pucEnd = ptCard->aucData + mc_sizCardSize;
 			ptCard->pucRead = ptCard->aucData;
 			ptCard->pucWrite = ptCard->aucData;
@@ -185,8 +185,8 @@ size_t romloader_uart_device::readCards(unsigned char *pucBuffer, size_t sizBuff
 {
 	size_t sizLeft;
 	size_t sizRead;
-	tBufferCard *ptOldCard;
-	tBufferCard *ptNewCard;
+	BUFFER_CARD_T *ptOldCard;
+	BUFFER_CARD_T *ptNewCard;
 
 
 	sizLeft = sizBuffer;
@@ -251,6 +251,9 @@ size_t romloader_uart_device::readCards(unsigned char *pucBuffer, size_t sizBuff
 			if( m_ptFirstCard->pucRead>=m_ptFirstCard->pucEnd )
 			{
 				// card is empty, move on to next card
+
+				CRITICAL_SECTION_ENTER(m_csCardLock);
+
 				ptNewCard = m_ptFirstCard->ptNext;
 				if( ptNewCard!=NULL )
 				{
@@ -261,6 +264,8 @@ size_t romloader_uart_device::readCards(unsigned char *pucBuffer, size_t sizBuff
 					// delete the empty card
 					delete ptOldCard;
 				}
+
+				CRITICAL_SECTION_LEAVE(m_csCardLock);
 			}
 		}
 
@@ -272,10 +277,44 @@ size_t romloader_uart_device::readCards(unsigned char *pucBuffer, size_t sizBuff
 }
 
 
+
+void romloader_uart_device::discardCards(void)
+{
+	BUFFER_CARD_T *ptCard;
+	BUFFER_CARD_T *ptNextCard;
+
+
+	/* All cards are modified -> lock the cards. */
+	CRITICAL_SECTION_ENTER(m_csCardLock);
+
+	ptCard = m_ptFirstCard;
+	if( ptCard!=NULL )
+	{
+		/* Delete all cards except the last one. */
+		while( ptCard->ptNext!=NULL )
+		{
+			ptNextCard = ptCard->ptNext;
+			delete ptCard;
+			ptCard = ptNextCard;
+		}
+
+		/* Clear all data in the last card. */
+		m_ptFirstCard = ptCard;
+		ptCard->pucEnd = ptCard->aucData + mc_sizCardSize;
+		ptCard->pucRead = ptCard->aucData;
+		ptCard->pucWrite = ptCard->aucData;
+		ptCard->ptNext = NULL;
+	}
+
+	CRITICAL_SECTION_LEAVE(m_csCardLock);
+}
+
+
+
 size_t romloader_uart_device::getCardSize(void) const
 {
 	size_t sizData;
-	tBufferCard *ptCard;
+	BUFFER_CARD_T *ptCard;
 
 
 	sizData = 0;
