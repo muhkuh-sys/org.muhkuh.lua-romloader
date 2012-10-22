@@ -28,7 +28,7 @@
 #include <tchar.h>
 
 // Includes for port enumeration.
-#include <Setupapi.h>
+#include <setupapi.h>
 #include <devguid.h>
 
 // defines for port enumeration

@@ -6,7 +6,6 @@ PROJECT("romloader_eth")
 SET(romloader_eth_VERSION 0.0.1)
 
 
-FIND_PACKAGE(SWIG REQUIRED)
 INCLUDE(${SWIG_USE_FILE})
 
 if(${PYTHONLIBS_FOUND})
@@ -34,7 +33,7 @@ ELSE(UNIX)
 	IF(WIN32)
 		SET(romloader_eth_platform_SOURCES romloader_eth_device_win.cpp)
 		SET(romloader_eth_platform_HEADERS romloader_eth_device_win.h)
-		SET(romloader_eth_platform_LIBS Ws2_32)
+		SET(romloader_eth_platform_LIBS ws2_32)
 	ENDIF(WIN32)
 ENDIF(UNIX)
 
