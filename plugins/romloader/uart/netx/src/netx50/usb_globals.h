@@ -90,7 +90,6 @@ extern unsigned int currentConfig;
 
 // buffer for setup packets
 extern unsigned char setupBuffer[Usb_Ep0_PacketSize];
-extern unsigned char receiveBuffer[Usb_Ep2_PacketSize];
 
 // decoded packet
 extern setupPacket_t tSetupPkt;

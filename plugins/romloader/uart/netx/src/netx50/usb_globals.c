@@ -18,7 +18,6 @@ unsigned int currentConfig;
 
 // buffer for setup and data packets
 unsigned char setupBuffer[Usb_Ep0_PacketSize];
-unsigned char receiveBuffer[Usb_Ep2_PacketSize];
 
 // decoded packet
 setupPacket_t tSetupPkt;

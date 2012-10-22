@@ -117,6 +117,7 @@ void usb_pingpong(void)
         unsigned int event2;
         unsigned int packetSize;
         tUsbCdc_BufferState tBufState;
+        unsigned char *pucBuffer;
 
 
         event1 = ptUsbCoreArea->ulMAIN_EV;
@@ -229,11 +230,10 @@ void usb_pingpong(void)
                         if( (ptUsbCoreArea->ulPIPE_CTRL & MSK_USB_PIPE_CTRL_TPID)==DEF_USB_PIPE_CTRL_TPID_OUT ) {
                                 // get packetsize in bytes
                                 packetSize = Usb_Ep2_PacketSize - (ptUsbCoreArea->ulPIPE_DATA_TBYTES&(~MSK_USB_PIPE_DATA_TBYTES_DBV));
-                                if( packetSize<=Usb_Ep2_PacketSize ) {
-                                        usb_io_read_fifo((Usb_Ep2_Buffer>>2), packetSize, receiveBuffer);
-
-                                        // fill bytes into buffer
-                                        tBufState = usb_cdc_buf_rec_put(receiveBuffer, packetSize, Usb_Ep2_PacketSize);
+                                if( packetSize<=Usb_Ep2_PacketSize )
+                                {
+                                	pucBuffer = (unsigned char*)(HOSTADR(USB_FIFO_BASE)+Usb_Ep2_Buffer);
+                                        tBufState = usb_cdc_buf_rec_put(pucBuffer, packetSize, Usb_Ep2_PacketSize);
 
                                         switch( tBufState ) {
                                         case tUsbCdc_BufferState_Ok:
