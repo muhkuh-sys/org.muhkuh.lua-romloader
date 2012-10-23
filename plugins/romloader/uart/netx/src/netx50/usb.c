@@ -113,27 +113,27 @@ USB_CDC_ConnectionState_t usb_pollConnection(void)
 void usb_pingpong(void)
 {
 	HOSTDEF(ptUsbCoreArea);
-        unsigned int event1;
-        unsigned int event2;
+        unsigned long ulMainEvent;
+        unsigned long ulPipeEvent;
         unsigned int packetSize;
         tUsbCdc_BufferState tBufState;
         unsigned char *pucBuffer;
 
 
-        event1 = ptUsbCoreArea->ulMAIN_EV;
-        if( (event1&MSK_USB_MAIN_EV_GPORT_EV)!=0 )
+        ulMainEvent = ptUsbCoreArea->ulMAIN_EV;
+        if( (ulMainEvent&MSK_USB_MAIN_EV_GPORT_EV)!=0 )
         {
                 usb_handleReset();
         }
 
         // is it a pipe event?
-        if( (event1&MSK_USB_MAIN_EV_GPIPE_EV)!=0 )
+        if( (ulMainEvent&MSK_USB_MAIN_EV_GPIPE_EV)!=0 )
         {
                 // yes -> test all relevant bits (0-2) of the pipe_ev register
-                event2 = ptUsbCoreArea->ulPIPE_EV;
+        	ulPipeEvent = ptUsbCoreArea->ulPIPE_EV;
 
                 // test for pipe0 event
-                if (event2 & 1)
+                if( (ulPipeEvent&1)!=0 )
                 {
                         // clear event
                 	ptUsbCoreArea->ulPIPE_EV = 1;
@@ -220,14 +220,16 @@ void usb_pingpong(void)
                 }
 
                 // test for pipe 2 event (data from host arrived?)
-                if( (event2&4)!=0 ) {
+                if( (ulPipeEvent&4)!=0 )
+                {
                         // clear event
                 	ptUsbCoreArea->ulPIPE_EV = 4;
 
                         // select pipe 2
                 	ptUsbCoreArea->ulPIPE_SEL = 2;
 
-                        if( (ptUsbCoreArea->ulPIPE_CTRL & MSK_USB_PIPE_CTRL_TPID)==DEF_USB_PIPE_CTRL_TPID_OUT ) {
+                        if( (ptUsbCoreArea->ulPIPE_CTRL & MSK_USB_PIPE_CTRL_TPID)==DEF_USB_PIPE_CTRL_TPID_OUT )
+                        {
                                 // get packetsize in bytes
                                 packetSize = Usb_Ep2_PacketSize - (ptUsbCoreArea->ulPIPE_DATA_TBYTES&(~MSK_USB_PIPE_DATA_TBYTES_DBV));
                                 if( packetSize<=Usb_Ep2_PacketSize )
@@ -235,7 +237,8 @@ void usb_pingpong(void)
                                 	pucBuffer = (unsigned char*)(HOSTADR(USB_FIFO_BASE)+Usb_Ep2_Buffer);
                                         tBufState = usb_cdc_buf_rec_put(pucBuffer, packetSize, Usb_Ep2_PacketSize);
 
-                                        switch( tBufState ) {
+                                        switch( tBufState )
+                                        {
                                         case tUsbCdc_BufferState_Ok:
                                                 // reenable data buffer
                                                 usb_activateInputPipe();
