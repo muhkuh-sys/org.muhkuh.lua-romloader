@@ -172,7 +172,7 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[6] =
 		0x080f0008,
 		0x00006003,
 		ROMLOADER_CHIPTYP_NETX56,
-		"netX56"
+		"netX51/52 Step A"
 	},
 
 	{
@@ -180,7 +180,7 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[6] =
 		0x080f0008,
 		0x00106003,
 		ROMLOADER_CHIPTYP_NETX56B,
-		"netX56B"
+		"netX51/52 Step B"
 	}
 };
 
