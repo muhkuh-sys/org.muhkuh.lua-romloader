@@ -23,7 +23,8 @@ clear_bss:
 
 	bl      netx_consoleapp_init
 
-	ldmfd   sp!, {r0, r1, r2, r3, pc}
+	ldmfd   sp!, {r0, r1, r2, r3, lr}
+	bx      lr
 
   .endfunc
 
