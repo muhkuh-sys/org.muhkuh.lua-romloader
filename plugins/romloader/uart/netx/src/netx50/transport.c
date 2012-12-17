@@ -368,6 +368,7 @@ static void transport_send_packet_usb_cdc(void)
 	unsigned long ulValue;
 	unsigned int uiBitPos;
 	unsigned long *pulUsbFifo;
+	size_t sizUsbTransferLength;
 
 
 	/* Write the complete packet in DWORD chunks to the USB FIFO.
@@ -418,13 +419,14 @@ static void transport_send_packet_usb_cdc(void)
 	ucData = (unsigned char)(usCrc&0xffU);
 	ulValue |= ((unsigned long)ucData) << uiBitPos;
 	*(pulUsbFifo++) = ulValue;
+	sizUsbTransferLength = sizPacketOutputFill + 5;
 
 
 	/* Send the packet in the FIFO. */
 	ptUsbCoreArea->ulPIPE_SEL = 3;
 	ptUsbCoreArea->ulPIPE_CTRL = MSK_USB_PIPE_CTRL_ACT | DEF_USB_PIPE_CTRL_TPID_IN;
 	ptUsbCoreArea->ulPIPE_DATA_PTR = 0x0800 / sizeof(unsigned long);
-	ptUsbCoreArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV|(sizPacketOutputFill+5);
+	ptUsbCoreArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV|(sizUsbTransferLength);
 
 	/* Wait until the packet is sent. */
 	do
@@ -434,7 +436,7 @@ static void transport_send_packet_usb_cdc(void)
 	} while( ulValue!=0 );
 
 	/* Need a ZLP? */
-	if( (sizPacketOutputFill&0x3fU)==0U )
+	if( (sizUsbTransferLength&0x3fU)==0U )
 	{
 		ptUsbCoreArea->ulPIPE_CTRL = MSK_USB_PIPE_CTRL_ACT | DEF_USB_PIPE_CTRL_TPID_IN;
 		ptUsbCoreArea->ulPIPE_DATA_PTR = 0x0800 / sizeof(unsigned long);
