@@ -451,7 +451,7 @@ int romloader_uart_read_functinoid_aboot::update_device(ROMLOADER_CHIPTYP tChipt
 			fOk = netx50_start_code();
 			if( fOk==true )
 			{
-				if( m_ptDevice->SendRaw(auc_uartmon_netx50_monitor, sizeof(auc_uartmon_netx50_monitor), 500)!=sizeof(auc_uartmon_netx50_monitor) )
+				if( m_ptDevice->SendRaw(auc_uartmon_netx50_monitor, sizeof(auc_uartmon_netx50_monitor), 1000)!=sizeof(auc_uartmon_netx50_monitor) )
 				{
 					fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
 				}
