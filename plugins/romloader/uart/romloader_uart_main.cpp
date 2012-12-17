@@ -568,6 +568,7 @@ bool romloader_uart::synchronize(void)
 		tChipType = (ROMLOADER_CHIPTYP)(m_aucPacketInputBuffer[0x0b]);
 		printf("Chip type : %d\n", tChipType);
 
+		/* sizMaxPacketSizeClient = min(max. packet size from response, sizMaxPacketSizeHost) */
 		sizMaxPacketSize =  ((size_t)(m_aucPacketInputBuffer[0x0c])) |
 		                   (((size_t)(m_aucPacketInputBuffer[0x0d]))<<8U);
 		printf("Maximum packet size: 0x%04x\n", sizMaxPacketSize);
@@ -1353,7 +1354,7 @@ void romloader_uart::read_image(unsigned long ulNetxAddress, unsigned long ulSiz
 			do
 			{
 				sizChunk = ulSize;
-				if( sizChunk>m_sizMaxPacketSizeClient-6 )
+				if( sizChunk>m_sizMaxPacketSizeClient-6)
 				{
 					sizChunk = m_sizMaxPacketSizeClient-6;
 				}
