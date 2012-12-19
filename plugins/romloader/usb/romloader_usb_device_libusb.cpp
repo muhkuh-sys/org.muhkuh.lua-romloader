@@ -871,12 +871,8 @@ const romloader_usb_device::NETX_USB_DEVICE_T *romloader_usb_device_libusb::iden
 	ptDevHit = NULL;
 	if( ptDevice!=NULL )
 	{
-		/* Try to open the device. */
-		iResult = libusb_open(ptDevice, &ptDevHandle);
-		if( iResult==LIBUSB_SUCCESS )
-		{
-			iResult = libusb_get_descriptor(ptDevHandle, LIBUSB_DT_DEVICE, 0, (unsigned char*)&sDevDesc, sizeof(struct libusb_device_descriptor));
-			if( iResult==sizeof(struct libusb_device_descriptor) )
+			iResult = libusb_get_device_descriptor(ptDevice, &sDevDesc);
+			if( iResult==LIBUSB_SUCCESS )
 			{
 				ptDevCnt = atNetxUsbDevices;
 				ptDevEnd = atNetxUsbDevices + (sizeof(atNetxUsbDevices)/sizeof(atNetxUsbDevices[0]));
@@ -889,8 +885,19 @@ const romloader_usb_device::NETX_USB_DEVICE_T *romloader_usb_device_libusb::iden
 					)
 					{
 						/* Found a matching device. */
-						printf("identifyDevice: Found device %04x:%04x:%04x\n", sDevDesc.idVendor, sDevDesc.idProduct, sDevDesc.bcdDevice);
-						ptDevHit = ptDevCnt;
+						printf("identifyDevice: Found device %s (%04x:%04x:%04x)\n", ptDevCnt->pcName, sDevDesc.idVendor, sDevDesc.idProduct, sDevDesc.bcdDevice);
+						/* Try to open the device. */
+						iResult = libusb_open(ptDevice, &ptDevHandle);
+						if( iResult==LIBUSB_SUCCESS )
+						{
+							libusb_close(ptDevHandle);
+							printf("identifyDevice: Successfully opened.\n");
+							ptDevHit = ptDevCnt;
+						}
+						else
+						{
+							fprintf(stderr, "identifyDevice: Failed to open device: error %d.\n", iResult);
+						}
 						break;
 					}
 					else
@@ -898,11 +905,8 @@ const romloader_usb_device::NETX_USB_DEVICE_T *romloader_usb_device_libusb::iden
 						++ptDevCnt;
 					}
 				}
-			}
-			libusb_close(ptDevHandle);
 		}
 	}
-
 	return ptDevHit;
 }
 
