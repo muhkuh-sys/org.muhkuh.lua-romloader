@@ -358,65 +358,17 @@ void transport_send_byte(unsigned char ucData)
 
 
 
-
-typedef struct
-{
-	unsigned long* pulUsbFifo;       /* next dword position in FIFO */
-	unsigned long ulFifoEntry;       /* buffer for dword */
-	unsigned long ulFifoEntryBitPos; /* next bit position: 0/8/16/24 */
-	size_t sizUsbTransferLength;     /* number of bytes held in FIFO + the dword buffer */
-} SEND_PACKET_STATE_T;
-
-/* init FIFO pointer and dword buffer */
-static void transport_send_packet_usb_cdc_init(SEND_PACKET_STATE_T* ptState)
-{
-	ptState->pulUsbFifo = (unsigned long*)(HOSTADR(USB_FIFO_BASE) + 0x800U);
-	ptState->ulFifoEntry = 0U;
-	ptState->ulFifoEntryBitPos = 0U;
-	ptState->sizUsbTransferLength = 0U;
-}
-
-/* add byte to dword buffer; when a dword is complete, push it into the FIFO */
-static void transport_send_packet_usb_cdc_byte(SEND_PACKET_STATE_T* ptState, unsigned char ucChar)
-{
-	unsigned long ulChar = ((unsigned long) ucChar) << ptState->ulFifoEntryBitPos;
-	ptState->ulFifoEntry |= ulChar;
-	ptState->ulFifoEntryBitPos += 8U;
-	ptState->sizUsbTransferLength++;
-
-	if (ptState->ulFifoEntryBitPos == 32U)
-	{
-		*(ptState->pulUsbFifo++) = ptState->ulFifoEntry;
-		ptState->ulFifoEntry = 0U;
-		ptState->ulFifoEntryBitPos = 0U;
-	}
-}
-
-/* Send the packet in the FIFO. */
-/* Wait until the packet is sent. */
-static void transport_send_packet_usb_cdc_send(SEND_PACKET_STATE_T* ptState)
-{
-	HOSTDEF(ptUsbCoreArea);
-	*(ptState->pulUsbFifo++) = ptState->ulFifoEntry;
-	unsigned long ulValue;
-	ptUsbCoreArea->ulPIPE_SEL = 3U;
-	ptUsbCoreArea->ulPIPE_CTRL = MSK_USB_PIPE_CTRL_ACT | DEF_USB_PIPE_CTRL_TPID_IN;
-	ptUsbCoreArea->ulPIPE_DATA_PTR = 0x0800 / sizeof(unsigned long);
-	ptUsbCoreArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV|(ptState->sizUsbTransferLength);
-	do
-	{
-		ulValue  = ptUsbCoreArea->ulPIPE_DATA_TBYTES;
-		ulValue &= MSK_USB_PIPE_DATA_TBYTES_DBV;
-	} while( ulValue!=0 );
-}
-
 static void transport_send_packet_usb_cdc(void)
 {
+	HOSTDEF(ptUsbCoreArea);
 	const unsigned char *pucCnt;
 	const unsigned char *pucEnd;
 	unsigned char ucData;
 	unsigned short usCrc;
-	SEND_PACKET_STATE_T tState;
+	unsigned long ulValue;
+	unsigned int uiBitPos;
+	unsigned long *pulUsbFifo;
+	size_t sizUsbTransferLength;
 
 
 	/* Write the complete packet in DWORD chunks to the USB FIFO.
@@ -424,42 +376,79 @@ static void transport_send_packet_usb_cdc(void)
 	 * All other bytes in the DWORD would get the same value.
 	 */
 
-	transport_send_packet_usb_cdc_init(&tState);
-
 	/* Send the start character. */
-	transport_send_packet_usb_cdc_byte(&tState, MONITOR_STREAM_PACKET_START);
-
+	ulValue  = MONITOR_STREAM_PACKET_START;
 	/* Send the size. */
 	ucData = (unsigned char)( sizPacketOutputFill        & 0xffU);
-	transport_send_packet_usb_cdc_byte(&tState, ucData);
+	ulValue |= ((unsigned long)ucData) << 8U;
 	usCrc = crc16(0, ucData);
 	ucData = (unsigned char)((sizPacketOutputFill >> 8U) & 0xffU);
-	transport_send_packet_usb_cdc_byte(&tState, ucData);
+	ulValue |= ((unsigned long)ucData) << 16U;
 	usCrc = crc16(usCrc, ucData);
+
 
 	/* Send the packet and build the CRC16. */
 	pucCnt = aucPacketOutputBuffer;
 	pucEnd = aucPacketOutputBuffer + sizPacketOutputFill;
+	uiBitPos = 24U;
+	pulUsbFifo = (unsigned long*)(HOSTADR(USB_FIFO_BASE) + 0x800U);
 	while( pucCnt<pucEnd )
 	{
 		ucData = *(pucCnt++);
-		transport_send_packet_usb_cdc_byte(&tState, ucData);
+		ulValue |= ((unsigned long)ucData) << uiBitPos;
 		usCrc = crc16(usCrc, ucData);
+		uiBitPos += 8U;
+		if( uiBitPos>24U )
+		{
+			*(pulUsbFifo++) = ulValue;
+			uiBitPos = 0;
+			ulValue = 0;
+		}
 	}
 
 	/* Send the CRC16. */
-	transport_send_packet_usb_cdc_byte(&tState, (unsigned char)(usCrc >> 8U));
-	transport_send_packet_usb_cdc_byte(&tState, (unsigned char)(usCrc & 0xffU));
+	ucData = (unsigned char)(usCrc>>8U);
+	ulValue |= ((unsigned long)ucData) << uiBitPos;
+	uiBitPos += 8U;
+	if( uiBitPos>24U )
+	{
+		*(pulUsbFifo++) = ulValue;
+		uiBitPos = 0;
+		ulValue = 0;
+	}
+	ucData = (unsigned char)(usCrc&0xffU);
+	ulValue |= ((unsigned long)ucData) << uiBitPos;
+	*(pulUsbFifo++) = ulValue;
+	sizUsbTransferLength = sizPacketOutputFill + 5;
+
 
 	/* Send the packet in the FIFO. */
-	transport_send_packet_usb_cdc_send(&tState);
+	ptUsbCoreArea->ulPIPE_SEL = 3;
+	ptUsbCoreArea->ulPIPE_CTRL = MSK_USB_PIPE_CTRL_ACT | DEF_USB_PIPE_CTRL_TPID_IN;
+	ptUsbCoreArea->ulPIPE_DATA_PTR = 0x0800 / sizeof(unsigned long);
+	ptUsbCoreArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV|(sizUsbTransferLength);
+
+	/* Wait until the packet is sent. */
+	do
+	{
+		ulValue  = ptUsbCoreArea->ulPIPE_DATA_TBYTES;
+		ulValue &= MSK_USB_PIPE_DATA_TBYTES_DBV;
+	} while( ulValue!=0 );
 
 	/* Need a ZLP? */
-	if( (tState.sizUsbTransferLength&0x3fU)==0U )
+	if( (sizUsbTransferLength&0x3fU)==0U )
 	{
-		transport_send_packet_usb_cdc_init(&tState);
-		transport_send_packet_usb_cdc_send(&tState);
+		ptUsbCoreArea->ulPIPE_CTRL = MSK_USB_PIPE_CTRL_ACT | DEF_USB_PIPE_CTRL_TPID_IN;
+		ptUsbCoreArea->ulPIPE_DATA_PTR = 0x0800 / sizeof(unsigned long);
+		ptUsbCoreArea->ulPIPE_DATA_TBYTES = MSK_USB_PIPE_DATA_TBYTES_DBV;
 	}
+
+	/* Wait until the packet is sent. */
+	do
+	{
+		ulValue  = ptUsbCoreArea->ulPIPE_DATA_TBYTES;
+		ulValue &= MSK_USB_PIPE_DATA_TBYTES_DBV;
+	} while( ulValue!=0 );
 
 	/* Remember the packet size for resends. */
 	sizPacketOutputFillLast = sizPacketOutputFill;
