@@ -48,7 +48,7 @@ typedef void (*PFN_MONITOR_CALL_T)(unsigned long ulR0);
 /*-----------------------------------*/
 
 
-static const unsigned char aucMagic[9] =
+static const unsigned char aucMagic[8] =
 {
 	/* Magic */
 	'M', 'O', 'O', 'H',
@@ -57,28 +57,15 @@ static const unsigned char aucMagic[9] =
 	MONITOR_VERSION_MINOR & 0xff,
 	MONITOR_VERSION_MINOR >> 8,
 	MONITOR_VERSION_MAJOR & 0xff,
-	MONITOR_VERSION_MAJOR >> 8,
+	MONITOR_VERSION_MAJOR >> 8
 
+	/* NOTE: The next 3 bytes define the chip type and the maximum packet size. */
 	/* Chip type */
-#if ASIC_TYP==500
-	ROMLOADER_CHIPTYP_NETX500,
-#elif ASIC_TYP==100
-	ROMLOADER_CHIPTYP_NETX100,
-#elif ASIC_TYP==50
-	ROMLOADER_CHIPTYP_NETX50,
-#elif ASIC_TYP==10
-	ROMLOADER_CHIPTYP_NETX10,
-#elif ASIC_TYP==56
-	ROMLOADER_CHIPTYP_NETX56,
-#else
-#       error "Unknown ASIC type!"
-#endif
-
-	/* NOTE: Next 2 bytes define the maximum packet size. */
 	/* MaxPacketSize 0..7 */
 	/* MaxPacketSize 8..15 */
 };
 
+static unsigned char ucChiptype;
 
 static unsigned char ucSequenceCurrent;
 static unsigned char ucSequenceLast;
@@ -262,14 +249,43 @@ static const SERIAL_V2_COMM_UI_FN_T tCallConsole =
 };
 
 
+#define ADR_NETX_VERSION_56 0x080f0008
+#define VAL_NETX_VERSION_56A 0x00006003
+#define VAL_NETX_VERSION_56B 0x00106003
+
 void monitor_init(void)
 {
+	unsigned long ulNetxVersion;
+
 	/* Set the vectors. */
 	memcpy(&tSerialV2Vectors, &tCallConsole, sizeof(SERIAL_V2_COMM_UI_FN_T));
 
 	/* Initialize the sequence numbers. */
 	ucSequenceCurrent = 0x00U;
 	ucSequenceLast = 0xffU;
+
+	/* Set the chip type */
+#if ASIC_TYP==500
+	ucChiptype = ROMLOADER_CHIPTYP_NETX500;
+#elif ASIC_TYP==100
+	ucChiptype = ROMLOADER_CHIPTYP_NETX100;
+#elif ASIC_TYP==50
+	ucChiptype = ROMLOADER_CHIPTYP_NETX50;
+#elif ASIC_TYP==10
+	ucChiptype = ROMLOADER_CHIPTYP_NETX10;
+#elif ASIC_TYP==56
+	ulNetxVersion = *((unsigned long*)ADR_NETX_VERSION_56);
+	if (ulNetxVersion == VAL_NETX_VERSION_56A)
+	{
+		ucChiptype = ROMLOADER_CHIPTYP_NETX56;
+	}
+	else if (ulNetxVersion == VAL_NETX_VERSION_56B)
+	{
+		ucChiptype = ROMLOADER_CHIPTYP_NETX56B;
+	}
+#else
+#       error "Unknown ASIC type!"
+#endif
 }
 
 
@@ -387,6 +403,9 @@ void monitor_send_magic(unsigned short usMaxpacketSize)
 	{
 		transport_send_byte(aucMagic[sizCnt]);
 	}
+
+	/* Add the chip type */
+	transport_send_byte(ucChiptype);
 
 	/* Add the maximum packet size. */
 	transport_send_byte((unsigned char)( usMaxpacketSize     &0xffU));
