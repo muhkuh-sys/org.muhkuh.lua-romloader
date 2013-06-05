@@ -56,7 +56,7 @@ end
 function include(strFileName)
 	-- Get the file data as text.
 	local strData = load_from_working_folder(strFileName, true)
-	assert(strData)()
+	assert(loadstring(strData))()
 end
 
 
