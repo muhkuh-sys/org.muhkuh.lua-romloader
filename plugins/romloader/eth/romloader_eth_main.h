@@ -55,6 +55,8 @@ public:
 	romloader_eth(const char *pcName, const char *pcTyp, romloader_eth_provider *ptProvider, const char *pcServerName);
 	~romloader_eth(void);
 
+	void set_serial_vectors(lua_State *ptClientData);
+
 // *** lua interface start ***
 	// open the connection to the device
 	virtual void Connect(lua_State *ptClientData);

@@ -264,6 +264,27 @@ void romloader_eth::hexdump(const unsigned char *pucData, unsigned long ulSize)
 	}
 }
 
+/* The ethernet monitor on netX56 sets the serial vectors at the "old" location 0x0809fff0.
+   If the chip is a netX56, set the appropriate serial vectors at 0x08000100. */
+void romloader_eth::set_serial_vectors(lua_State *ptClientData)
+{
+	if (m_tChiptyp == ROMLOADER_CHIPTYP_NETX56)
+	{
+		write_data32(ptClientData, 0x08000100UL, 0x080f4639UL);
+		write_data32(ptClientData, 0x08000104UL, 0x080f4805UL);
+		write_data32(ptClientData, 0x08000108UL, 0x080f4605UL);
+		write_data32(ptClientData, 0x0800010cUL, 0x080f47bdUL);
+	}
+	else if (m_tChiptyp == ROMLOADER_CHIPTYP_NETX56B)
+	{
+		write_data32(ptClientData, 0x08000100UL, 0x080f4cf9UL);
+		write_data32(ptClientData, 0x08000104UL, 0x080f4ec9UL);
+		write_data32(ptClientData, 0x08000108UL, 0x080f4cc5UL);
+		write_data32(ptClientData, 0x0800010cUL, 0x080f4e81UL);
+	}
+}
+
+
 
 void romloader_eth::Connect(lua_State *ptClientData)
 {
@@ -289,6 +310,7 @@ void romloader_eth::Connect(lua_State *ptClientData)
 		else
 		{
 			m_fIsConnected = true;
+			set_serial_vectors(ptClientData);
 			iResult = 0;
 		}
 
