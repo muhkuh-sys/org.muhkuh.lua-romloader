@@ -140,19 +140,28 @@ ADD_CUSTOM_TARGET(swigluarun DEPENDS ${SWIG_RUNTIME_OUTPUT_PATH}/swigluarun.h)
 
 #----------------------------------------------------------------------------
 #
-# Set custom definitions for microsoft compiler.
+# Set custom definitions for several compiler.
 #
 
+# Microsoft: Do not show msvs security warnings about unsafe functions.
 if(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv|nmake)")
-	# Do not show msvs security warnings about unsafe functions.
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 	add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
 ENDIF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv|nmake)")
 
+
+# Microsoft: Set warning level to 2.
 if(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv)")
-	# Set warning level to 2.
 	add_definitions(/W2)
 ENDIF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv)")
+
+
+# minGW: link compiler libs static.
+IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+	set(CMAKE_EXE_LINKER_FLAGS    ${CMAKE_EXE_LINKER_FLAGS}    "-static-libgcc -static-libstdc++")
+	set(CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS} "-static-libgcc -static-libstdc++")
+	set(CMAKE_MODULE_LINKER_FLAGS ${CMAKE_MODULE_LINKER_FLAGS} "-static-libgcc -static-libstdc++")
+ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 
 
 #----------------------------------------------------------------------------
