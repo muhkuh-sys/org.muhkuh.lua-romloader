@@ -32,6 +32,14 @@ romloader::romloader(const char *pcName, const char *pcTyp, muhkuh_plugin_provid
 }
 
 
+romloader::romloader(const char *pcName, const char *pcTyp, const char *pcLocation, muhkuh_plugin_provider *ptProvider)
+ : muhkuh_plugin(pcName, pcTyp, pcLocation, ptProvider)
+ , m_tChiptyp(ROMLOADER_CHIPTYP_UNKNOWN)
+{
+/*	printf("%s(%p): created in romloader\n", m_pcName, this); */
+}
+
+
 romloader::~romloader(void)
 {
 /*	printf("%s(%p): deleted in romloader\n", m_pcName, this); */

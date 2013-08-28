@@ -493,6 +493,15 @@ int romloader_usb_device_libusb::detect_interfaces(romloader_usb_reference ***pp
 	romloader_usb_reference **pptRefNew;
 	const NETX_USB_DEVICE_T *ptId;
 
+	const unsigned char ucPathMax = 32;
+	unsigned char aucPath[ucPathMax];
+	/* bus number as a digit plus path elements as single digits */
+	/* This is the Location ID format used by USBView, but is this sufficient? */
+	char acPathString[ucPathMax * 2 + 2] = {0};
+
+	int iPathStringPos;
+	int iCnt;
+
 
 	/* Expect success. */
 	iResult = 0;
@@ -532,6 +541,23 @@ int romloader_usb_device_libusb::detect_interfaces(romloader_usb_reference ***pp
 					uiBusNr = libusb_get_bus_number(ptDev);
 					uiDevAdr = libusb_get_device_address(ptDev);
 					snprintf(acName, sizMaxName-1, m_pcPluginNamePattern, uiBusNr, uiDevAdr);
+
+					/* Get the location. */
+					iResult = libusb_get_port_path(m_ptLibUsbContext, ptDev, aucPath, ucPathMax);
+					if( iResult>0 )
+					{
+						/* Build the path string. */
+						sprintf(acPathString, "%02x", uiBusNr);
+						iPathStringPos = 2;
+						for(iCnt=0; iCnt<iResult; ++iCnt)
+						{
+							sprintf(acPathString+iPathStringPos, "%02x", aucPath[iCnt]);
+							iPathStringPos += 2;
+						}
+						acPathString[iPathStringPos] = 0;
+						fprintf(stderr, "Path: %s\n", acPathString);
+					}
+					
 /* TODO: replace this with setup_device?
  * It is the same open/set_config/claim, except that here no error is printed if BUSY.
  */
@@ -566,7 +592,7 @@ int romloader_usb_device_libusb::detect_interfaces(romloader_usb_reference ***pp
 						}
 
 						/* create the new instance */
-						ptRef = new romloader_usb_reference(acName, m_pcPluginId, fDeviceIsBusy, ptProvider);
+						ptRef = new romloader_usb_reference(acName, m_pcPluginId, acPathString, fDeviceIsBusy, ptProvider);
 						/* Is enough space in the array for one more entry? */
 						if( sizRefCnt>=sizRefMax )
 						{

@@ -79,6 +79,7 @@ class MUHKUH_EXPORT muhkuh_plugin
 {
 public:
 	muhkuh_plugin(const char *pcName, const char *pcTyp, muhkuh_plugin_provider *ptProvider);
+	muhkuh_plugin(const char *pcName, const char *pcTyp, const char *pcLocation, muhkuh_plugin_provider *ptProvider);
 	~muhkuh_plugin(void);
 
 	// open the connection to the device
@@ -92,6 +93,8 @@ public:
 	virtual const char *GetName(void) const;
 	// returns the device typ
 	virtual const char *GetTyp(void) const;
+	// returns the location ID (currently only for USB)
+	virtual const char *GetLocation(void) const;
 
 	// wrapper functions for compatibility with old function names
 	virtual void connect(lua_State *ptClientData);
@@ -107,6 +110,7 @@ protected:
 
 	char *m_pcName;
 	char *m_pcTyp;
+	char *m_pcLocation;
 
 	muhkuh_plugin_provider *m_ptProvider;
 
@@ -153,11 +157,14 @@ class MUHKUH_EXPORT muhkuh_plugin_reference
 public:
 	muhkuh_plugin_reference(void);
 	muhkuh_plugin_reference(const char *pcName, const char *pcTyp, bool fIsUsed, muhkuh_plugin_provider *ptProvider);
+	muhkuh_plugin_reference(const char *pcName, const char *pcTyp, const char *pcLocation, bool fIsUsed, muhkuh_plugin_provider *ptProvider);
 	muhkuh_plugin_reference(const muhkuh_plugin_reference *ptCloneMe);
+	~muhkuh_plugin_reference(void);
 
 	bool IsValid(void) const;
 	const char *GetName(void) const;
 	const char *GetTyp(void) const;
+	const char *GetLocation(void) const;
 	bool IsUsed(void) const;
 
 	muhkuh_plugin *Create(void) const;
@@ -167,6 +174,7 @@ protected:
 	bool m_fIsValid;
 	char *m_pcName;
 	char *m_pcTyp;
+	char *m_pcLocation;
 	muhkuh_plugin_provider *m_ptProvider;
 	bool m_fIsUsed;
 

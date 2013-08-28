@@ -33,6 +33,7 @@
 muhkuh_plugin::muhkuh_plugin(const char *pcName, const char *pcTyp, muhkuh_plugin_provider *ptProvider)
  : m_pcName(NULL)
  , m_pcTyp(NULL)
+ , m_pcLocation(NULL)
  , m_ptProvider(ptProvider)
  , m_fIsConnected(false)
 {
@@ -40,6 +41,22 @@ muhkuh_plugin::muhkuh_plugin(const char *pcName, const char *pcTyp, muhkuh_plugi
 	m_pcName = clone_string(pcName, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 	m_pcTyp = clone_string(pcTyp, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 
+	printf("%s(%p): created\n", m_pcName, this);
+}
+
+
+muhkuh_plugin::muhkuh_plugin(const char *pcName, const char *pcTyp, const char *pcLocation, muhkuh_plugin_provider *ptProvider)
+ : m_pcName(NULL)
+ , m_pcTyp(NULL)
+ , m_pcLocation(NULL)
+ , m_ptProvider(ptProvider)
+ , m_fIsConnected(false)
+{
+	/* Clone name, typ and location. */
+	m_pcName = clone_string(pcName, SIZ_MAX_MUHKUH_PLUGIN_STRING);
+	m_pcTyp = clone_string(pcTyp, SIZ_MAX_MUHKUH_PLUGIN_STRING);
+	m_pcLocation = clone_string(pcLocation, SIZ_MAX_MUHKUH_PLUGIN_STRING);
+	
 	printf("%s(%p): created\n", m_pcName, this);
 }
 
@@ -68,6 +85,7 @@ muhkuh_plugin::~muhkuh_plugin(void)
 	{
 		delete[] m_pcTyp;
 	}
+	delete[] m_pcLocation;
 }
 
 
@@ -91,6 +109,13 @@ const char *muhkuh_plugin::GetName(void) const
 const char *muhkuh_plugin::GetTyp(void) const
 {
 	return m_pcTyp;
+}
+
+
+/* Returns the USB Location ID (only WinUSB). */
+const char *muhkuh_plugin::GetLocation(void) const
+{
+	return m_pcLocation;
 }
 
 
@@ -133,9 +158,24 @@ muhkuh_plugin_reference::muhkuh_plugin_reference(void)
  : m_fIsValid(false)
  , m_pcName(NULL)
  , m_pcTyp(NULL)
+ , m_pcLocation(NULL)
  , m_ptProvider(NULL)
  , m_fIsUsed(false)
 {
+}
+
+
+muhkuh_plugin_reference::muhkuh_plugin_reference(const char *pcName, const char *pcTyp, const char *pcLocation, bool fIsUsed, muhkuh_plugin_provider *ptProvider)
+ : m_fIsValid(true)
+ , m_pcName(NULL)
+ , m_pcTyp(NULL)
+ , m_pcLocation(NULL)
+ , m_ptProvider(ptProvider)
+ , m_fIsUsed(fIsUsed)
+{
+	m_pcName = clone_string(pcName, SIZ_MAX_MUHKUH_PLUGIN_STRING);
+	m_pcTyp = clone_string(pcTyp, SIZ_MAX_MUHKUH_PLUGIN_STRING);
+	m_pcLocation = clone_string(pcLocation, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 }
 
 
@@ -163,6 +203,14 @@ muhkuh_plugin_reference::muhkuh_plugin_reference(const muhkuh_plugin_reference *
 }
 
 
+muhkuh_plugin_reference::~muhkuh_plugin_reference(void)
+{
+	delete[] m_pcName;
+	delete[] m_pcTyp;
+	delete[] m_pcLocation;
+}
+
+
 bool muhkuh_plugin_reference::IsValid(void) const
 {
 	return m_fIsValid;
@@ -178,6 +226,12 @@ const char *muhkuh_plugin_reference::GetName(void) const
 const char *muhkuh_plugin_reference::GetTyp(void) const
 {
 	return m_pcTyp;
+}
+
+
+const char *muhkuh_plugin_reference::GetLocation(void) const
+{
+	return m_pcLocation;
 }
 
 

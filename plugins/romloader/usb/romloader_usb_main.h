@@ -38,6 +38,7 @@ class romloader_usb : public romloader
 {
 public:
 	romloader_usb(const char *pcName, const char *pcTyp, romloader_usb_provider *ptProvider, unsigned int uiBusNr, unsigned int uiDeviceAdr);
+	romloader_usb(const char *pcName, const char *pcTyp, const char *pcLocation, romloader_usb_provider *ptProvider, unsigned int uiBusNr, unsigned int uiDeviceAdr);
 	~romloader_usb(void);
 
 // *** lua interface start ***
@@ -137,6 +138,7 @@ class romloader_usb_reference : public muhkuh_plugin_reference
 public:
 	romloader_usb_reference(void);
 	romloader_usb_reference(const char *pcName, const char *pcTyp, bool fIsUsed, romloader_usb_provider *ptProvider);
+	romloader_usb_reference(const char *pcName, const char *pcTyp, const char *pcLocation, bool fIsUsed, romloader_usb_provider *ptProvider);
 	romloader_usb_reference(const romloader_usb_reference *ptCloneMe);
 };
 

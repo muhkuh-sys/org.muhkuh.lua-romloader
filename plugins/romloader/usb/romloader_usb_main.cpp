@@ -253,6 +253,22 @@ romloader_usb::romloader_usb(const char *pcName, const char *pcTyp, romloader_us
 }
 
 
+romloader_usb::romloader_usb(const char *pcName, const char *pcTyp, const char *pcLocation, romloader_usb_provider *ptProvider, unsigned int uiBusNr, unsigned int uiDeviceAdr)
+ : romloader(pcName, pcTyp, pcLocation, ptProvider)
+ , m_ptUsbProvider(ptProvider)
+ , m_uiBusNr(uiBusNr)
+ , m_uiDeviceAdr(uiDeviceAdr)
+ , m_ptUsbDevice(NULL)
+{
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_usb::romloader_usb(): pcName='%s', pcTyp='%s', ptProvider=%p, uiBusNr=%d, uiDeviceAdr=%d\n", pcName, pcTyp, ptProvider, uiBusNr, uiDeviceAdr));
+	
+	/* create a new libusb context */
+	m_ptUsbDevice = new romloader_usb_device_libusb(m_pcName);
+	
+	DEBUGMSG(ZONE_FUNCTION, ("-romloader_usb::romloader_usb()\n"));
+}
+
+
 romloader_usb::~romloader_usb(void)
 {
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_usb::~romloader_usb()\n"));
@@ -1329,6 +1345,12 @@ romloader_usb_reference::romloader_usb_reference(void)
 
 romloader_usb_reference::romloader_usb_reference(const char *pcName, const char *pcTyp, bool fIsUsed, romloader_usb_provider *ptProvider)
  : muhkuh_plugin_reference(pcName, pcTyp, fIsUsed, ptProvider)
+{
+}
+
+
+romloader_usb_reference::romloader_usb_reference(const char *pcName, const char *pcTyp, const char *pcLocation, bool fIsUsed, romloader_usb_provider *ptProvider)
+ : muhkuh_plugin_reference(pcName, pcTyp, pcLocation, fIsUsed, ptProvider)
 {
 }
 
