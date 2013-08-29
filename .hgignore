@@ -9,6 +9,10 @@ syntax: regexp
 
 # Ignore all files in the targets folder.
 ^build/
+^build_linux32/
+^build_linux64/
+^build_windows32/
+^build_windows64/
 ^compile/
 ^plugins/romloader/_test/testcode/targets/
 ^plugins/romloader/machine_interface/netx/targets/
