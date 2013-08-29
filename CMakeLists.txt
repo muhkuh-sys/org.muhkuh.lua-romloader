@@ -156,14 +156,6 @@ if(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv)")
 ENDIF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv)")
 
 
-# minGW: link compiler libs static.
-IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
-	set(CMAKE_EXE_LINKER_FLAGS    ${CMAKE_EXE_LINKER_FLAGS}    "-static-libgcc -static-libstdc++")
-	set(CMAKE_SHARED_LINKER_FLAGS ${CMAKE_SHARED_LINKER_FLAGS} "-static-libgcc -static-libstdc++")
-	set(CMAKE_MODULE_LINKER_FLAGS ${CMAKE_MODULE_LINKER_FLAGS} "-static-libgcc -static-libstdc++")
-ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
-
-
 #----------------------------------------------------------------------------
 #
 # Include the projects in the subdirectories.

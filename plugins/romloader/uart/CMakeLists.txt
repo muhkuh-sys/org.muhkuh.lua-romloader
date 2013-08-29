@@ -92,11 +92,11 @@ SET(romloader_uart_HEADERS
 )
 
 
-add_library(romloader_uart_lib STATIC ${romloader_uart_SOURCES})
-target_link_libraries(romloader_uart_lib ${romloader_uart_platform_LIBS})
+add_library(TARGET_romloader_uart_lib STATIC ${romloader_uart_SOURCES})
+target_link_libraries(TARGET_romloader_uart_lib ${romloader_uart_platform_LIBS})
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-	SET_TARGET_PROPERTIES(romloader_uart_lib PROPERTIES COMPILE_FLAGS -fPIC)
+	SET_TARGET_PROPERTIES(TARGET_romloader_uart_lib PROPERTIES COMPILE_FLAGS -fPIC)
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
 
@@ -107,15 +107,20 @@ ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STR
 
 IF(${LUA51_FOUND})
 	# Build the Lua module.
-	SWIG_ADD_MODULE(plugins_romloader_romloader_uart_LUA lua romloader_uart.i)
-	SWIG_LINK_LIBRARIES(plugins_romloader_romloader_uart_LUA romloader_uart_lib ${LUA_LIBRARIES} plugins_romloader_LIB)
+	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_uart_LUA lua romloader_uart.i)
+	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_uart_LUA TARGET_romloader_uart_lib ${LUA_LIBRARIES} TARGET_plugins_romloader_LIB)
 
 	# Rename the output file to "romloader_uart".
-	SET_PROPERTY(TARGET plugins_romloader_romloader_uart_LUA PROPERTY PREFIX "")
-	SET_PROPERTY(TARGET plugins_romloader_romloader_uart_LUA PROPERTY OUTPUT_NAME "romloader_uart")
+	SET_PROPERTY(TARGET TARGET_plugins_romloader_romloader_uart_LUA PROPERTY PREFIX "")
+	SET_PROPERTY(TARGET TARGET_plugins_romloader_romloader_uart_LUA PROPERTY OUTPUT_NAME "romloader_uart")
+
+	# On mingw link all compiler libraries static.
+	IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+		set_property(TARGET TARGET_plugins_romloader_romloader_uart_LUA PROPERTY LINK_FLAGS "-static-libgcc -static-libstdc++")
+	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 
 	# Install the lua module.
-	INSTALL(TARGETS plugins_romloader_romloader_uart_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
+	INSTALL(TARGETS TARGET_plugins_romloader_romloader_uart_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
 ENDIF(${LUA51_FOUND})
 
 

@@ -55,10 +55,10 @@ SET(romloader_eth_HEADERS
 )
 
 
-add_library(romloader_eth_lib STATIC ${romloader_eth_SOURCES})
+add_library(TARGET_romloader_eth_lib STATIC ${romloader_eth_SOURCES})
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-	SET_TARGET_PROPERTIES(romloader_eth_lib PROPERTIES COMPILE_FLAGS -fPIC)
+	SET_TARGET_PROPERTIES(TARGET_romloader_eth_lib PROPERTIES COMPILE_FLAGS -fPIC)
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
 SET_SOURCE_FILES_PROPERTIES(${ETH_FIRMWARE_SOURCES} ${ETH_FIRMWARE_HEADERS}
@@ -72,14 +72,19 @@ SET_SOURCE_FILES_PROPERTIES(${ETH_FIRMWARE_SOURCES} ${ETH_FIRMWARE_HEADERS}
 
 if(${LUA51_FOUND})
 	# Build the Lua module.
-	SWIG_ADD_MODULE(plugins_romloader_romloader_eth_LUA lua romloader_eth.i)
-	SWIG_LINK_LIBRARIES(plugins_romloader_romloader_eth_LUA romloader_eth_lib ${LUA_LIBRARIES} ${romloader_eth_platform_LIBS} plugins_romloader_LIB)
+	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_eth_LUA lua romloader_eth.i)
+	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_eth_LUA TARGET_romloader_eth_lib ${LUA_LIBRARIES} ${romloader_eth_platform_LIBS} TARGET_plugins_romloader_LIB)
 
 	# Rename the output file to "romloader_usb".
-	SET_PROPERTY(TARGET plugins_romloader_romloader_eth_LUA PROPERTY PREFIX "")
-	SET_PROPERTY(TARGET plugins_romloader_romloader_eth_LUA PROPERTY OUTPUT_NAME "romloader_eth")
+	SET_PROPERTY(TARGET TARGET_plugins_romloader_romloader_eth_LUA PROPERTY PREFIX "")
+	SET_PROPERTY(TARGET TARGET_plugins_romloader_romloader_eth_LUA PROPERTY OUTPUT_NAME "romloader_eth")
+
+	# On mingw link all compiler libraries static.
+	IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+		set_property(TARGET TARGET_plugins_romloader_romloader_eth_LUA PROPERTY LINK_FLAGS "-static-libgcc -static-libstdc++")
+	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 
 	# Install the lua module.
-	INSTALL(TARGETS plugins_romloader_romloader_eth_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
+	INSTALL(TARGETS TARGET_plugins_romloader_romloader_eth_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
 endif(${LUA51_FOUND})
 

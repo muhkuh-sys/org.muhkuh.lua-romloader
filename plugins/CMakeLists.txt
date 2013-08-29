@@ -22,9 +22,17 @@ SET(muhkuh_plugin_interface_HEADERS
 	muhkuh_plugin_interface.h
 )
 
-ADD_LIBRARY(muhkuh_plugin_interface SHARED ${muhkuh_plugin_interface_SOURCES})
-ADD_DEPENDENCIES(muhkuh_plugin_interface swigluarun)
-TARGET_LINK_LIBRARIES(muhkuh_plugin_interface ${LUA_LIBRARIES})
+ADD_LIBRARY(TARGET_muhkuh_plugin_interface STATIC ${muhkuh_plugin_interface_SOURCES})
+ADD_DEPENDENCIES(TARGET_muhkuh_plugin_interface swigluarun)
+TARGET_LINK_LIBRARIES(TARGET_muhkuh_plugin_interface ${LUA_LIBRARIES})
+
+# Set the name of the output file to "muhkuh_plugin_interface".
+SET_PROPERTY(TARGET TARGET_muhkuh_plugin_interface PROPERTY OUTPUT_NAME "muhkuh_plugin_interface")
+
+# On mingw link all compiler libraries static.
+IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+        set_property(TARGET TARGET_muhkuh_plugin_interface PROPERTY LINK_FLAGS "-static-libgcc -static-libstdc++")
+ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 
 # Install the targets.
-INSTALL(TARGETS muhkuh_plugin_interface DESTINATION ${INSTALL_DIR_SHARED_OBJECTS})
+#INSTALL(TARGETS TARGET_muhkuh_plugin_interface DESTINATION ${INSTALL_DIR_SHARED_OBJECTS})

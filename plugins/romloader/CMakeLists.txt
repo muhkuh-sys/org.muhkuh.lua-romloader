@@ -41,26 +41,31 @@ SET(plugins_romloader_lib_HEADERS
 	uuencoder.h
 )
 
-ADD_LIBRARY(plugins_romloader_LIB STATIC ${plugins_romloader_lib_SOURCES})
-TARGET_LINK_LIBRARIES(plugins_romloader_LIB muhkuh_plugin_interface)
+ADD_LIBRARY(TARGET_plugins_romloader_LIB STATIC ${plugins_romloader_lib_SOURCES})
+TARGET_LINK_LIBRARIES(TARGET_plugins_romloader_LIB TARGET_muhkuh_plugin_interface)
 
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-	SET_TARGET_PROPERTIES(plugins_romloader_LIB PROPERTIES COMPILE_FLAGS -fPIC)
+	SET_TARGET_PROPERTIES(TARGET_plugins_romloader_LIB PROPERTIES COMPILE_FLAGS -fPIC)
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
 
 IF(${LUA51_FOUND})
 	# Build the Lua module.
-	SWIG_ADD_MODULE(plugins_romloader_LUA lua romloader.i)
-	SWIG_LINK_LIBRARIES(plugins_romloader_LUA plugins_romloader_LIB ${LUA_LIBRARIES})
+	SWIG_ADD_MODULE(TARGET_plugins_romloader_LUA lua romloader.i)
+	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_LUA TARGET_plugins_romloader_LIB ${LUA_LIBRARIES})
 
 	# Rename the output file to "romloader".
-	SET_PROPERTY(TARGET plugins_romloader_LUA PROPERTY PREFIX "")
-	SET_PROPERTY(TARGET plugins_romloader_LUA PROPERTY OUTPUT_NAME "romloader")
+	SET_PROPERTY(TARGET TARGET_plugins_romloader_LUA PROPERTY PREFIX "")
+	SET_PROPERTY(TARGET TARGET_plugins_romloader_LUA PROPERTY OUTPUT_NAME "romloader")
+
+	# On mingw link all compiler libraries static.
+	IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+		set_property(TARGET TARGET_plugins_romloader_LUA PROPERTY LINK_FLAGS "-static-libgcc -static-libstdc++")
+	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 
 	# Install the lua module.
-	INSTALL(TARGETS plugins_romloader_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
+	INSTALL(TARGETS TARGET_plugins_romloader_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
 ENDIF(${LUA51_FOUND})
 
 
