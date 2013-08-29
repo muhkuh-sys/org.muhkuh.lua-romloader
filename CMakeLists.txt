@@ -88,9 +88,6 @@ EXECUTE_PROCESS(COMMAND "${PYTHON_EXECUTABLE}" -c "import datetime; print dateti
 # Swig is required to generate the bindings.
 FIND_PACKAGE(SWIG REQUIRED)
 
-# The python interpreter is required to build the netx firmware. (See plugins/romloader/usb/netx)
-FIND_PACKAGE(PythonInterp)
-
 # TODO: Show a summary with FeatureSummary .
 
 
@@ -113,16 +110,6 @@ ELSE(USE_SYSTEM_LUA)
 	SET(LUA_LIBRARIES lualib)
 	SET(LUA_INCLUDE_DIR ${CMAKE_HOME_DIRECTORY}/lua/lib/lua-5.1.4/src/)
 ENDIF(USE_SYSTEM_LUA)
-
-
-
-ADD_CUSTOM_TARGET(Firmware
-	ALL
-	COMMAND "${PYTHON_EXECUTABLE}" mbs/mbs
-	WORKING_DIRECTORY ${CMAKE_HOME_DIRECTORY}
-	COMMENT "Build the netX firmware."
-	VERBATIM
-)
 
 
 #----------------------------------------------------------------------------
