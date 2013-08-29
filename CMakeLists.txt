@@ -30,20 +30,29 @@ ELSE(EXISTS ${MUHKUH_VERSION_FILE})
 	SET(MUHKUH_VERSION_MAJ 1)
 	SET(MUHKUH_VERSION_MIN 0)
 
-	FIND_PACKAGE(Subversion)
-	IF(EXISTS "${CMAKE_HOME_DIRECTORY}/.svn" AND ${Subversion_FOUND})
-		MESSAGE("Subversion data found, generating version info from revision number.")
-		Subversion_WC_INFO(${CMAKE_CURRENT_SOURCE_DIR} MUHKUH_SVN)
-		MESSAGE("Current revision is ${MUHKUH_SVN_WC_REVISION}")
-		SET(MUHKUH_VERSION_SUB ${MUHKUH_SVN_WC_REVISION})
-	ELSE(EXISTS "${CMAKE_HOME_DIRECTORY}/.svn" AND ${Subversion_FOUND})
-		MESSAGE(WARNING "No file ${MUHKUH_VERSION_FILE} and no subversion data found, using a fixed version.")
+	FIND_PACKAGE(Hg)
+	IF(EXISTS "${CMAKE_HOME_DIRECTORY}/.hg" AND HG_FOUND)
+		MESSAGE("Mercurial data found, generating version info from revision number.")
+		EXECUTE_PROCESS(COMMAND ${HG_EXECUTABLE} id -i ${CMAKE_CURRENT_SOURCE_DIR}
+		                OUTPUT_VARIABLE MUHKUH_HG_WC_REVISION
+		                ERROR_QUIET
+		                OUTPUT_STRIP_TRAILING_WHITESPACE)
+		MESSAGE("Current revision is ${MUHKUH_HG_WC_REVISION}")
+		SET(MUHKUH_VERSION_SUB ${MUHKUH_HG_WC_REVISION})
+	ELSE(EXISTS "${CMAKE_HOME_DIRECTORY}/.hg" AND HG_FOUND)
+		MESSAGE(WARNING "No file ${MUHKUH_VERSION_FILE} and no mercurial data found, using a fixed version.")
 		SET(MUHKUH_VERSION_SUB 0)
-	ENDIF(EXISTS "${CMAKE_HOME_DIRECTORY}/.svn" AND ${Subversion_FOUND})
+	ENDIF(EXISTS "${CMAKE_HOME_DIRECTORY}/.hg" AND HG_FOUND)
 ENDIF(EXISTS ${MUHKUH_VERSION_FILE})
 
-# TODO: Generate this, but how? There is no cmake function which returns the date.
-SET(MUHKUH_VERSION_YEAR 2011)
+# Get the current year.
+# There seems to be no built-in way in cmake to get the current year.
+# But we have python for the MBS build system anyway so we can use it.
+FIND_PACKAGE(PythonInterp REQUIRED)
+EXECUTE_PROCESS(COMMAND "${PYTHON_EXECUTABLE}" -c "import datetime; print datetime.date.today().year"
+                OUTPUT_VARIABLE MUHKUH_VERSION_YEAR
+                ERROR_QUIET
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 
 #----------------------------------------------------------------------------
