@@ -569,12 +569,13 @@ int romloader_usb_device_libusb::detect_interfaces(romloader_usb_reference ***pp
 					}
 					else
 					{
-						if( iResult!=LIBUSB_SUCCESS )
+						if( iResult!=LIBUSB_SUCCESS ) /* iResult == LIBUSB_ERROR_BUSY */
 						{
 							/* the interface is busy! */
 							fDeviceIsBusy = true;
+							iResult = LIBUSB_SUCCESS;
 						}
-						else
+						else /* iResult == LIBUSB_SUCCESS */
 						{
 							/* ok, claimed the interface -> the device is not busy */
 							fDeviceIsBusy = false;
