@@ -52,12 +52,24 @@ ELSE(UNIX)
 		#       It does not allow a complete device reset.
 		SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=1)
 		INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/include/libusbx-1.0/)
+		
+		# Add the static library. This depends on the compiler.
 		IF(MSVC)
 			LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/lib/MS32/static/)
 			SET(USB_LIBRARIES libusb-1.0)
 		ELSE(MSVC)
-			LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/lib/MinGW32/static/)
 			SET(USB_LIBRARIES usb-1.0)
+			# Is this minGW?
+			IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+				# Is this 32 or 64 bit?
+				IF(CMAKE_SIZEOF_VOID_P MATCHES "8")
+					# This is minGW64.
+					LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/lib/MinGW64/static/)
+				ELSE(CMAKE_SIZEOF_VOID_P MATCHES "8")
+					# This is minGW32
+					LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/lib/MinGW32/static/)
+				ENDIF(CMAKE_SIZEOF_VOID_P MATCHES "8")
+			ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 		ENDIF(MSVC)
 	ENDIF(WIN32)
 ENDIF(UNIX)
