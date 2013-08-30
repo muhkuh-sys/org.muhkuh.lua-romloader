@@ -29,19 +29,28 @@ IF(EXISTS ${MUHKUH_VERSION_FILE})
 ELSE(EXISTS ${MUHKUH_VERSION_FILE})
 	SET(MUHKUH_VERSION_MAJ 1)
 	SET(MUHKUH_VERSION_MIN 0)
+	SET(MUHKUH_VERSION_SUB 0)
 
-	FIND_PACKAGE(Hg)
-	IF(EXISTS "${CMAKE_HOME_DIRECTORY}/.hg" AND HG_FOUND)
-		MESSAGE("Mercurial data found, generating version info from revision number.")
-		EXECUTE_PROCESS(COMMAND ${HG_EXECUTABLE} id -i ${CMAKE_CURRENT_SOURCE_DIR}
-		                OUTPUT_VARIABLE MUHKUH_VERSION_SUB
-		                ERROR_QUIET
-		                OUTPUT_STRIP_TRAILING_WHITESPACE)
-		MESSAGE("Current revision is ${MUHKUH_VERSION_SUB}")
-	ELSE(EXISTS "${CMAKE_HOME_DIRECTORY}/.hg" AND HG_FOUND)
+	IF(EXISTS "${CMAKE_HOME_DIRECTORY}/.hg")
+		FIND_PROGRAM(HG_EXECUTABLE
+		             NAMES hg
+		             PATH_SUFFIXES Mercurial
+		             DOC "hg command line client"
+		)
+
+		IF(HG_EXECUTABLE)
+			MESSAGE("Mercurial data and client found, generating version info from revision number.")
+			EXECUTE_PROCESS(COMMAND ${HG_EXECUTABLE} id -i ${CMAKE_CURRENT_SOURCE_DIR}
+			                OUTPUT_VARIABLE MUHKUH_VERSION_SUB
+			                ERROR_QUIET
+			                OUTPUT_STRIP_TRAILING_WHITESPACE)
+			MESSAGE("Current revision is ${MUHKUH_VERSION_SUB}")
+		ELSE(HG_EXECUTABLE)
+			MESSAGE(WARNING "No Mercurial client found, using a fixed version.")
+		ENDIF(HG_EXECUTABLE)
+	ELSE(EXISTS "${CMAKE_HOME_DIRECTORY}/.hg")
 		MESSAGE(WARNING "No file ${MUHKUH_VERSION_FILE} and no mercurial data found, using a fixed version.")
-		SET(MUHKUH_VERSION_SUB 0)
-	ENDIF(EXISTS "${CMAKE_HOME_DIRECTORY}/.hg" AND HG_FOUND)
+	ENDIF(EXISTS "${CMAKE_HOME_DIRECTORY}/.hg")
 ENDIF(EXISTS ${MUHKUH_VERSION_FILE})
 
 # Get the current year.
