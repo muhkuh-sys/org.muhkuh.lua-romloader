@@ -40,10 +40,20 @@ IF(UNIX)
 	#     cd build
 	#     ../configure --prefix=`pwd`/install
 	#     make install
+	IF(CMAKE_SIZEOF_VOID_P MATCHES "8")
+		# This is 64 bit.
+		SET(CONFIGURE_CFLAGS "-m64")
+		SET(CONFIGURE_OPTIONS "--host=x86_64-pc-linux")
+	ELSE(CMAKE_SIZEOF_VOID_P MATCHES "8")
+		# This is 32 bit.
+		SET(CONFIGURE_CFLAGS "-m32")
+		SET(CONFIGURE_OPTIONS "--host=i686-pc-linux")
+	ENDIF(CMAKE_SIZEOF_VOID_P MATCHES "8")
+	
 	ExternalProject_Add(TARGET_libusbx
 	                    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16
 	                    DOWNLOAD_COMMAND tar --extract --bzip2 --directory ${CMAKE_CURRENT_BINARY_DIR} --file ${CMAKE_CURRENT_SOURCE_DIR}/libusbx-1.0.16.tar.bz2
-	                    CONFIGURE_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16 && ./configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16/install
+	                    CONFIGURE_COMMAND export CFLAGS=${CONFIGURE_CFLAGS} && cd ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16 && ./configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16/install ${CONFIGURE_OPTIONS}
 	                    BUILD_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16 && make all
 	                    INSTALL_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16 && make install
 	)
