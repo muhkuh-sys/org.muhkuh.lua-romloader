@@ -1,5 +1,13 @@
 cmake_minimum_required(VERSION 2.8)
 
+ADD_SUBDIRECTORY(libusbx)
+
+MESSAGE("LIBUSBX_LIBRARIES: ${LIBUSBX_LIBRARIES}")
+MESSAGE("LIBUSBX_DEFINES: ${LIBUSBX_DEFINES}")
+MESSAGE("LIBUSBX_INCLUDE_DIRECTORIES: ${LIBUSBX_INCLUDE_DIRECTORIES}")
+MESSAGE("LIBUSBX_LIBRARY_DIRECTORY: ${LIBUSBX_LIBRARY_DIRECTORY}")
+MESSAGE("LIBUSBX_LINKER_FLAGS: ${LIBUSBX_LINKER_FLAGS}")
+
 
 PROJECT("romloader_usb")
 
@@ -23,14 +31,14 @@ INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 
 #----------------------------------------------------------------------------
 #
-# Compile the netX USB firmware.
+# Get the netX USB firmware binaries (in form of C data arrays) and headers.
 #
 
-SET(USB_FIRMWARE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10.c
+SET(NETX_USB_FIRMWARE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10.c
                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx56.c
                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500.c)
 
-SET(USB_FIRMWARE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10.h
+SET(NETX_USB_FIRMWARE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10.h
                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx56.h
                          ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx500.h)
 
@@ -40,65 +48,43 @@ SET(USB_FIRMWARE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_netx10.
 # Set the platform specific parts.
 #
 
-IF(UNIX)
-	# Use libusb-0
-	SET(USB_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/linux/lib/libusb-1.0.a -pthread -lrt)
-	SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=1)
-	INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/linux/include/)
-ELSE(UNIX)
-	IF(WIN32)
-		# Use libusb-0 on Windows to get a proper reset.
-		# NOTE: The current version of libusb-1.0 on windows uses the driver winusb.
-		#       It does not allow a complete device reset.
-		SET(USB_DEFINES -DROMLOADER_USB_LIBUSB_VERSION=1)
-		INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/include/libusbx-1.0/)
-		
-		# Add the static library. This depends on the compiler.
-		IF(MSVC)
-			LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/lib/MS32/static/)
-			SET(USB_LIBRARIES libusb-1.0)
-		ELSE(MSVC)
-			SET(USB_LIBRARIES usb-1.0)
-			# Is this minGW?
-			IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
-				# Is this 32 or 64 bit?
-				IF(CMAKE_SIZEOF_VOID_P MATCHES "8")
-					# This is minGW64.
-					LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/lib/MinGW64/static/)
-				ELSE(CMAKE_SIZEOF_VOID_P MATCHES "8")
-					# This is minGW32
-					LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/win/lib/MinGW32/static/)
-				ENDIF(CMAKE_SIZEOF_VOID_P MATCHES "8")
-			ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
-		ENDIF(MSVC)
-	ENDIF(WIN32)
-ENDIF(UNIX)
+# Append the include directories for libusbx.
+INCLUDE_DIRECTORIES(${LIBUSBX_INCLUDE_DIRECTORIES})
+
+# Append the linker directory for libusbx.
+LINK_DIRECTORIES(${LIBUSBX_LIBRARY_DIRECTORY})
+
+# Append the libusbx defines.
+ADD_DEFINITIONS(${LIBUSBX_DEFINES})
 
 
 SET_SOURCE_FILES_PROPERTIES(romloader_usb.i PROPERTIES CPLUSPLUS ON)
-SET_PROPERTY(SOURCE romloader_usb.i PROPERTY SWIG_FLAGS ${USB_DEFINES} -I${CMAKE_HOME_DIRECTORY}/modules/typemaps)
+SET_PROPERTY(SOURCE romloader_usb.i PROPERTY SWIG_FLAGS ${LIBUSBX_DEFINES} -I${CMAKE_HOME_DIRECTORY}/modules/typemaps)
 
 
 SET(romloader_usb_SOURCES
 	romloader_usb_device.cpp
 	romloader_usb_device_libusb.cpp
 	romloader_usb_main.cpp
-	${USB_FIRMWARE_SOURCES}
+	${NETX_USB_FIRMWARE_SOURCES}
 )
 
 SET(romloader_usb_HEADERS
 	romloader_usb_device_libusb.h
 	romloader_usb_main.h
-	${USB_FIRMWARE_HEADERS}
+	${NETX_USB_FIRMWARE_HEADERS}
 )
 
-ADD_DEFINITIONS(${USB_DEFINES})
 
 ADD_LIBRARY(TARGET_romloader_usb_lib STATIC ${romloader_usb_SOURCES})
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 	SET_TARGET_PROPERTIES(TARGET_romloader_usb_lib PROPERTIES COMPILE_FLAGS -fPIC)
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+
+# The library depends on the libusbx header.
+ADD_DEPENDENCIES(TARGET_romloader_usb_lib TARGET_libusbx)
+
 
 
 #----------------------------------------------------------------------------
@@ -109,17 +95,22 @@ ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STR
 IF(${LUA51_FOUND})
 	# Build the Lua module.
 	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_usb_LUA lua romloader_usb.i)
-	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_usb_LUA TARGET_romloader_usb_lib ${LUA_LIBRARIES} ${USB_LIBRARIES} TARGET_plugins_romloader_LIB)
+	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_usb_LUA TARGET_romloader_usb_lib ${LUA_LIBRARIES} ${LIBUSBX_LIBRARIES} TARGET_plugins_romloader_LIB)
 
 	# Rename the output file to "romloader_usb".
 	SET_PROPERTY(TARGET TARGET_plugins_romloader_romloader_usb_LUA PROPERTY PREFIX "")
 	SET_PROPERTY(TARGET TARGET_plugins_romloader_romloader_usb_LUA PROPERTY OUTPUT_NAME "romloader_usb")
 
-	# On mingw link all compiler libraries static.
 	IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
-		set_property(TARGET TARGET_plugins_romloader_romloader_usb_LUA PROPERTY LINK_FLAGS "-static-libgcc -static-libstdc++")
+		# On minGW link all compiler libraries static.
+		set_property(TARGET TARGET_plugins_romloader_romloader_usb_LUA PROPERTY LINK_FLAGS "${LIBUSBX_LINKER_FLAGS} -static-libgcc -static-libstdc++")
+	ELSE((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+		set_property(TARGET TARGET_plugins_romloader_romloader_usb_LUA PROPERTY LINK_FLAGS "${LIBUSBX_LINKER_FLAGS}")
 	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 
+	# The module depends on the libusbx libraries.
+	ADD_DEPENDENCIES(TARGET_plugins_romloader_romloader_usb_LUA TARGET_libusbx)
+	
 	# Install the lua module.
 	INSTALL(TARGETS TARGET_plugins_romloader_romloader_usb_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
 ENDIF(${LUA51_FOUND})
