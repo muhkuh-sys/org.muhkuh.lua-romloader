@@ -59,18 +59,24 @@ ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	#
 	# 1) Depack the archive.
 	#7z x -olibusbx-1.0.16-win libusbx-1.0.16-win.7z
+	FIND_PROGRAM(SEVENZIP_EXECUTABLE
+	             NAMES 7z
+	             PATH_SUFFIXES 7zip
+	             DOC "7zip command line client"
+	)
+	
 	ExternalProject_Add(TARGET_libusbx
-	                    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16
-	                    DOWNLOAD_COMMAND 7z x tar --extract --bzip2 --directory ${CMAKE_CURRENT_BINARY_DIR} --file ${CMAKE_CURRENT_SOURCE_DIR}/libusbx-1.0.16.tar.bz2
+	                    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16-win
+	                    DOWNLOAD_COMMAND ${SEVENZIP_EXECUTABLE} x -o${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16-win ${CMAKE_CURRENT_SOURCE_DIR}/libusbx-1.0.16-win.7z
 	                    CONFIGURE_COMMAND ""
 	                    BUILD_COMMAND ""
 	                    INSTALL_COMMAND ""
 	)
-
+	
 	
 	SET(LIBRARIES -lusb-1.0)
 	SET(DEFINES -DROMLOADER_USB_LIBUSB_VERSION=1)
-	SET(INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/libusbx-1.0.16-win/include)
+	SET(INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16-win/include/libusbx-1.0)
 	
 	# Add the static library. This depends on the compiler.
 	IF(MSVC)
@@ -81,9 +87,9 @@ ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 		
 		# Is this 32 or 64 bit?
 		IF(CMAKE_SIZEOF_VOID_P MATCHES "8")
-			SET(LIBRARY_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libusbx-1.0.16-win/MS64/static)
+			SET(LIBRARY_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16-win/MS64/static)
 		ELSE(CMAKE_SIZEOF_VOID_P MATCHES "8")
-			SET(LIBRARY_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libusbx-1.0.16-win/MS32/static)
+			SET(LIBRARY_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16-win/MS32/static)
 		ENDIF(CMAKE_SIZEOF_VOID_P MATCHES "8")
 	ELSEIF(${CMAKE_COMPILER_IS_GNUCC})
 		# This is GCC on Windows. It must be minGW.
@@ -96,7 +102,7 @@ ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 			# so that '_vsnprintf' becomes '__ms_vsnprintf'.
 			SET(LINKER_FLAGS "-Xlinker --defsym=__ms_vsnprintf=_vsnprintf")
 			
-			SET(LIBRARY_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libusbx-1.0.16-win/MinGW64/static)
+			SET(LIBRARY_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16-win/MinGW64/static)
 		ELSE(CMAKE_SIZEOF_VOID_P MATCHES "8")
 			# This is minGW32
 			
@@ -104,7 +110,7 @@ ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 			# so that '__vsnprintf' becomes '___ms_vsnprintf'.
 			SET(LINKER_FLAGS "-Xlinker --defsym=___ms_vsnprintf=__vsnprintf")
 			
-			SET(LIBRARY_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libusbx-1.0.16-win/MinGW32/static)
+			SET(LIBRARY_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16-win/MinGW32/static)
 		ENDIF(CMAKE_SIZEOF_VOID_P MATCHES "8")
 	ENDIF(MSVC)
 ENDIF(UNIX)
