@@ -64,8 +64,8 @@
 		LIBUSB_ERROR_OTHER = -99
 	};
 #else
-/* #	include <libusb-1.0/libusb.h> */
-#       include <libusb.h>
+/* NOTE: the header is in 'libusb-1.0' for linux and 'libusbx-1.0' for windows. */
+#	include <libusb.h>
 #endif
 
 bool libusb_load();
