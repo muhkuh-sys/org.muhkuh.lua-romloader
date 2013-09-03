@@ -183,6 +183,7 @@ muhkuh_plugin_reference::muhkuh_plugin_reference(const char *pcName, const char 
  : m_fIsValid(true)
  , m_pcName(NULL)
  , m_pcTyp(NULL)
+ , m_pcLocation(NULL)
  , m_ptProvider(ptProvider)
  , m_fIsUsed(fIsUsed)
 {
@@ -195,11 +196,13 @@ muhkuh_plugin_reference::muhkuh_plugin_reference(const muhkuh_plugin_reference *
  : m_fIsValid(true)
  , m_pcName(NULL)
  , m_pcTyp(NULL)
+ , m_pcLocation(NULL)
  , m_ptProvider(ptCloneMe->m_ptProvider)
  , m_fIsUsed(ptCloneMe->m_fIsUsed)
 {
 	m_pcName = clone_string(ptCloneMe->m_pcName, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 	m_pcTyp = clone_string(ptCloneMe->m_pcTyp, SIZ_MAX_MUHKUH_PLUGIN_STRING);
+	m_pcLocation = clone_string(ptCloneMe->m_pcLocation, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 }
 
 
