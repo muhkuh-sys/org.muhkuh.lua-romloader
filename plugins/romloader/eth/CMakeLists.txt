@@ -75,9 +75,8 @@ if(${LUA51_FOUND})
 	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_eth_LUA lua romloader_eth.i)
 	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_eth_LUA TARGET_romloader_eth_lib ${LUA_LIBRARIES} ${romloader_eth_platform_LIBS} TARGET_plugins_romloader_LIB)
 
-	# Rename the output file to "romloader_usb".
-	SET_PROPERTY(TARGET TARGET_plugins_romloader_romloader_eth_LUA PROPERTY PREFIX "")
-	SET_PROPERTY(TARGET TARGET_plugins_romloader_romloader_eth_LUA PROPERTY OUTPUT_NAME "romloader_eth")
+	# Set the name of the output file to "romloader_eth".
+	SET_TARGET_PROPERTIES(TARGET_plugins_romloader_romloader_eth_LUA PROPERTIES PREFIX "" OUTPUT_NAME "romloader_eth")
 
 	# On mingw link all compiler libraries static.
 	IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))

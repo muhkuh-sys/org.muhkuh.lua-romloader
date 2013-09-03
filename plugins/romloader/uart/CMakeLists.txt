@@ -110,9 +110,8 @@ IF(${LUA51_FOUND})
 	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_uart_LUA lua romloader_uart.i)
 	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_uart_LUA TARGET_romloader_uart_lib ${LUA_LIBRARIES} TARGET_plugins_romloader_LIB)
 
-	# Rename the output file to "romloader_uart".
-	SET_PROPERTY(TARGET TARGET_plugins_romloader_romloader_uart_LUA PROPERTY PREFIX "")
-	SET_PROPERTY(TARGET TARGET_plugins_romloader_romloader_uart_LUA PROPERTY OUTPUT_NAME "romloader_uart")
+	# Set the name of the output file to "romloader_uart".
+	SET_TARGET_PROPERTIES(TARGET_plugins_romloader_romloader_uart_LUA PROPERTIES PREFIX "" OUTPUT_NAME "romloader_uart")
 
 	# On mingw link all compiler libraries static.
 	IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))

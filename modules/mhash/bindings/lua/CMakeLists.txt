@@ -13,9 +13,8 @@ SET_SOURCE_FILES_PROPERTIES(../mhash.i PROPERTIES SWIG_FLAGS "-I${CMAKE_HOME_DIR
 SWIG_ADD_MODULE(TARGET_module_mhash_lua lua ../mhash.i)
 SWIG_LINK_LIBRARIES(TARGET_module_mhash_lua module_mhash_lib ${LUA_LIBRARIES})
 
-# Rename the output file to "mhash".
-SET_PROPERTY(TARGET TARGET_module_mhash_lua PROPERTY PREFIX "")
-SET_PROPERTY(TARGET TARGET_module_mhash_lua PROPERTY OUTPUT_NAME "mhash")
+# Set the name of the output file to "mhash".
+SET_TARGET_PROPERTIES(TARGET_module_mhash_lua PROPERTIES PREFIX "" OUTPUT_NAME "mhash")
 
 # On mingw link all compiler libraries static.
 IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))

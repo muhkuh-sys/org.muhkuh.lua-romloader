@@ -18,10 +18,7 @@ SWIG_ADD_MODULE(TARGET_bit lua bit.i bit.c)
 SWIG_LINK_LIBRARIES(TARGET_bit ${LUA_LIBRARIES})
 
 # Set the name of the output file to "bit".
-SET_PROPERTY(TARGET TARGET_bit PROPERTY OUTPUT_NAME "bit")
-
-# Do not prepend something like "lib" to the name of the output file.
-SET_PROPERTY(TARGET TARGET_bit PROPERTY PREFIX "")
+SET_TARGET_PROPERTIES(TARGET_bit PROPERTIES PREFIX "" OUTPUT_NAME "bit")
 
 # On mingw link all compiler libraries static.
 IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
