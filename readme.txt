@@ -24,6 +24,19 @@ The version under development is available from SVN. Please check this page for 
 http://sourceforge.net/svn/?group_id=207719
 
 
+Firmware patch files
+--------------------
+
+ python mbs/mbs
+ ls plugins/romloader/uart/netx/targets/uartmon_firmware.diff
+ ls plugins/romloader/usb/netx/targets/usbmon_firmware.diff
+
+
+Source distribution
+-------------------
+
+ hg archive --prefix muhkuh-1.1.0 --type tbz2 --subrepos muhkuh-1.1.0-source.tar.bz2
+
 
 How to build muhkuh:
 --------------------
