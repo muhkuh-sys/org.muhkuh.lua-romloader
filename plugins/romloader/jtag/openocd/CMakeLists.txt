@@ -20,10 +20,6 @@ cmake_minimum_required(VERSION 2.8)
 #  OPENOCD_INCLUDE_DIRECTORIES : The include folders for the library headers.
 #                                The list must be separated with whitespace.
 #
-#  OPENOCD_LIBRARY_DIRECTORIES : The folders containing the static openocd
-#                                libraries. The list must be separated with
-#                                whitespace.
-#
 
 PROJECT("openocd")
 
@@ -59,10 +55,9 @@ IF(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
 	)
 	
 	# 3) Provide all variables for the build.
-	SET(LIBRARIES "-lopenocd -ljim -lusb-1.0 -ldl")
+	SET(LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.7.0/install/lib/libopenocd.a ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.7.0/jimtcl/libjim.a -lusb-1.0 -ldl)
 	SET(DEFINES "")
 	SET(INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.7.0)
-	SET(LIBRARY_DIRECTORIES "${CMAKE_CURRENT_BINARY_DIR}/openocd-0.7.0/install/lib ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.7.0/jimtcl")
 	SET(LINKER_FLAGS "")
 ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	MESSAGE(FATAL "Building openocd on windows is not supported yet!")
@@ -71,5 +66,4 @@ ENDIF(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
 SET(OPENOCD_LIBRARIES            ${LIBRARIES}            PARENT_SCOPE)
 SET(OPENICD_DEFINES              ${DEFINES}              PARENT_SCOPE)
 SET(OPENOCD_INCLUDE_DIRECTORIES  ${INCLUDE_DIRECTORIES}  PARENT_SCOPE)
-SET(OPENOCD_LIBRARY_DIRECTORIES  ${LIBRARY_DIRECTORIES}  PARENT_SCOPE)
 SET(OPENOCD_LINKER_FLAGS         ${LINKER_FLAGS}         PARENT_SCOPE)
