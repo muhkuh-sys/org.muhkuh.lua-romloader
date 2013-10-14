@@ -142,7 +142,7 @@ void usb_requests_handle_request_top(setupPacket_t *ptSetupPkt)
 		switch( tCdcReqId )
 		{
 		case SETUP_CDC_REQID_Set_Line_Coding:
-			uiIdx = 8;
+			uiIdx = 7;
 			do
 			{
 				--uiIdx;
