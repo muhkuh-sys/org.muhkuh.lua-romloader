@@ -71,7 +71,7 @@ ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	#7z x -olibusbx-1.0.16-win libusbx-1.0.16-win.7z
 	FIND_PROGRAM(SEVENZIP_EXECUTABLE
 	             NAMES 7z
-	             PATH_SUFFIXES 7zip
+	             PATH_SUFFIXES 7-Zip 7zip 
 	             DOC "7zip command line client"
 	)
 	
@@ -119,9 +119,9 @@ ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 			
 			# This version of libusbx was compiled with a mingw version adding '___ms' to some symbols
 			# so that '__vsnprintf' becomes '___ms_vsnprintf'.
-			SET(LINKER_FLAGS "-Xlinker --defsym=___ms_vsnprintf=__vsnprintf")
+			SET(LINKER_FLAGS "-Xlinker --defsym=___ms_vsnprintf=_vsnprintf")
 			
-			SET(LIBRARY_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16-win/MinGW32/static)
+			SET(LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16-win/MinGW32/static/libusb-1.0.a)
 		ENDIF(CMAKE_SIZEOF_VOID_P MATCHES "8")
 	ENDIF(MSVC)
 ENDIF(UNIX)
