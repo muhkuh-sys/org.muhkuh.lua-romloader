@@ -151,7 +151,7 @@ sym_netx10_bootstrap = env_netx10_bootstrap.GccSymbolTemplate('targets/uartmon_n
 #
 # Build the diff and the zip distribution.
 #
-env_default.Diff('targets/uartmon_firmware.diff', arr_netx500_monitor + arr_netx56_monitor + arr_netx50_monitor + arr_netx10_monitor, DIFF_PATCHED_FOLDER='plugins/romloader/uart/netx')
+env_default.Diff('targets/uartmon_firmware.diff', arr_netx500_monitor + arr_netx56_monitor + arr_netx50_monitor + arr_netx10_monitor, DIFF_PATCHED_FOLDER='')
 
 
 tRelease = env_default.ArchiveList('zip')

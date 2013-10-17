@@ -106,7 +106,7 @@ arr_netx10 = env_netx10.DataArray('targets/usbmon_netx10.c', bin_netx10, DATAARR
 #
 # Build the diff and the zip distribution.
 #
-env_default.Diff('targets/usbmon_firmware.diff', arr_netx500 + arr_netx10, DIFF_PATCHED_FOLDER='plugins/romloader/usb/netx')
+env_default.Diff('targets/usbmon_firmware.diff', arr_netx500 + arr_netx10, DIFF_PATCHED_FOLDER='')
 
 
 aTranslate = dict({
