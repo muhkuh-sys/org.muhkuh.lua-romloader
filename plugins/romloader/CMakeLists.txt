@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 
 # The ethernet driver is not ported to windows yet.
 add_subdirectory(eth)
-add_subdirectory(jtag)
+#add_subdirectory(jtag)
 add_subdirectory(usb)
 add_subdirectory(uart)
 
