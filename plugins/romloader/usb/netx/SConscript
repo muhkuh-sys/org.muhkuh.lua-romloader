@@ -106,13 +106,14 @@ arr_netx10 = env_netx10.DataArray('targets/usbmon_netx10.c', bin_netx10, DATAARR
 #
 # Build the diff and the zip distribution.
 #
-env_default.Diff('targets/usbmon_firmware.diff', arr_netx500 + arr_netx56 + arr_netx10, DIFF_PATCHED_FOLDER='')
+env_default.Diff('targets/usbmon_firmware.diff', arr_netx500 +
+                                                 arr_netx56 +
+                                                 arr_netx10,
+                                                 DIFF_PATCHED_FOLDER='')
 
+tRelease = env_default.ArchiveList('zip')
+tRelease.AddFiles('plugins/romloader/uart/netx/targets/', arr_netx500 +
+                                                          arr_netx56 +
+                                                          arr_netx10)
+tArc = env_default.Archive('targets/usbmon_firmware.zip', None, ARCHIVE_CONTENTS=tRelease)
 
-aTranslate = dict({
-	arr_netx500[0]: 'plugins/romloader/usb/netx/targets/',
-	arr_netx500[1]: 'plugins/romloader/usb/netx/targets/',
-	arr_netx10[0]:  'plugins/romloader/usb/netx/targets/',
-	arr_netx10[1]:  'plugins/romloader/usb/netx/targets/'
-})
-env_default.FlexZip('targets/usbmon_firmware.zip', arr_netx500 + arr_netx10, ZIP_PATH_TRANSLATE=aTranslate)

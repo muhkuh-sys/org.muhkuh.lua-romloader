@@ -151,21 +151,35 @@ sym_netx10_bootstrap = env_netx10_bootstrap.GccSymbolTemplate('targets/uartmon_n
 #
 # Build the diff and the zip distribution.
 #
-env_default.Diff('targets/uartmon_firmware.diff', arr_netx500_monitor + arr_netx56_monitor + arr_netx50_monitor + arr_netx10_monitor, DIFF_PATCHED_FOLDER='')
+env_default.Diff('targets/uartmon_firmware.diff', arr_netx500_monitor +
+                                                  sym_netx500_monitor +
+                                                  arr_netx500_bootstrap +
+                                                  sym_netx500_bootstrap +
+                                                  arr_netx56_monitor +
+                                                  sym_netx56_monitor +
+                                                  arr_netx50_monitor +
+                                                  sym_netx50_monitor +
+                                                  arr_netx50_bootstrap +
+                                                  sym_netx50_bootstrap +
+                                                  arr_netx10_monitor +
+                                                  sym_netx10_monitor +
+                                                  arr_netx10_bootstrap +
+                                                  sym_netx10_bootstrap,
+                                                  DIFF_PATCHED_FOLDER='')
 
 
 tRelease = env_default.ArchiveList('zip')
 tRelease.AddFiles('plugins/romloader/uart/netx/targets/',  arr_netx500_monitor,
                                                            sym_netx500_monitor,
                                                            arr_netx500_bootstrap,
-                                                           sym_netx500_bootstrap)
-tRelease.AddFiles('plugins/romloader/uart/netx/targets/',  arr_netx56_monitor,
-                                                           sym_netx56_monitor)
-tRelease.AddFiles('plugins/romloader/uart/netx/targets/',  arr_netx50_monitor,
+                                                           sym_netx500_bootstrap,
+                                                           arr_netx56_monitor,
+                                                           sym_netx56_monitor,
+                                                           arr_netx50_monitor,
                                                            sym_netx50_monitor,
                                                            arr_netx50_bootstrap,
-                                                           sym_netx50_bootstrap)
-tRelease.AddFiles('plugins/romloader/uart/netx/targets/',  arr_netx10_monitor,
+                                                           sym_netx50_bootstrap,
+                                                           arr_netx10_monitor,
                                                            sym_netx10_monitor,
                                                            arr_netx10_bootstrap,
                                                            sym_netx10_bootstrap)
