@@ -26,23 +26,29 @@ ENDIF(UNIX AND NOT WIN32 AND NOT APPLE)
 
 INCLUDE(CPack)
 
-# This is the new dir structure, use it for packaging.
-#IF(UNIX AND NOT WIN32 AND NOT APPLE)
-#	SET(INSTALL_DIR_EXECUTABLES "bin")
-#	SET(INSTALL_DIR_LUA_MODULES "lib/lua/5.1")
-#	IF(CMAKE_SIZEOF_VOID_P MATCHES "8")
-#		SET(INSTALL_DIR_SHARED_OBJECTS "lib64")
-#	ELSE(CMAKE_SIZEOF_VOID_P MATCHES "8")
-#		SET(INSTALL_DIR_SHARED_OBJECTS "lib")
-#	ENDIF(CMAKE_SIZEOF_VOID_P MATCHES "8")
-#	SET(INSTALL_DIR_LUA_SCRIPTS "lib/lua/5.1")
-#ELSE(UNIX AND NOT WIN32 AND NOT APPLE)
-	# Install everything in one folder on Win.
-	SET(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/muhkuh_${POM_ID_VERSION})
-	SET(INSTALL_DIR_EXECUTABLES "bin")
-	SET(INSTALL_DIR_LUA_MODULES "lua_plugins")
-	SET(INSTALL_DIR_PYTHON_MODULES "python_plugins")
-	SET(INSTALL_DIR_SHARED_OBJECTS "bin")
-	SET(INSTALL_DIR_LUA_SCRIPTS "lua")
-#ENDIF(UNIX AND NOT WIN32 AND NOT APPLE)
+# This is the directory structure used for packaging with 'make package'.
+SET(DEFAULT_INSTALL_DIR_EXECUTABLES "bin")
+SET(DEFAULT_INSTALL_DIR_LUA_MODULES "lua_plugins")
+SET(DEFAULT_INSTALL_DIR_LUA_SCRIPTS "lua")
+SET(DEFAULT_INSTALL_DIR_SHARED_OBJECTS "bin")
+
+#-----------------------------------------------------------------------------
+#
+# Allow the user to override the installation folders.
+#
+OPTION(INSTALL_DIR_EXECUTABLES
+       "Install the compiled executables in this path."
+       ${DEFAULT_INSTALL_DIR_EXECUTABLES})
+
+OPTION(INSTALL_DIR_LUA_MODULES
+       "Install the compiled LUA modules in this path."
+       ${DEFAULT_INSTALL_DIR_LUA_MODULES})
+
+OPTION(INSTALL_DIR_LUA_SCRIPTS
+       "Install the LUA scripts in this path."
+       ${DEFAULT_INSTALL_DIR_LUA_SCRIPTS})
+
+OPTION(INSTALL_DIR_SHARED_OBJECTS
+       "Install the shared objects in this path."
+       ${DEFAULT_INSTALL_DIR_SHARED_OBJECTS})
 
