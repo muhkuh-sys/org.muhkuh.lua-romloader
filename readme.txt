@@ -35,7 +35,7 @@ Firmware patch files
 Source distribution
 -------------------
 
- hg archive --prefix muhkuh-HG%h --type tgz --subrepos muhkuh-HG%h-source.tar.gz
+ hg archive --prefix muhkuh-1.0.%h --type tgz --subrepos muhkuh-1.0.%h.tar.gz
 
 
 How to build muhkuh:
