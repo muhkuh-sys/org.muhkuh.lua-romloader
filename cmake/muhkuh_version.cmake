@@ -6,14 +6,14 @@
 # Set the filename for the muhkuh version file.
 SET(MUHKUH_VERSION_FILE "${CMAKE_HOME_DIRECTORY}/muhkuh_version.txt")
 IF(EXISTS ${MUHKUH_VERSION_FILE})
-	# Set the regular expression for the muhkuh version. It is a sequence of 3 numbers separated by dots.
-	SET(MUHKUH_VERSION_REXEX "([0-9]+)\\.([0-9]+)\\.([0-9]+)")
+	# Set the regular expression for the muhkuh version. It is a sequence of 2 numbers and a hash separated by dots.
+	SET(MUHKUH_VERSION_REXEX "([0-9]+)\\.([0-9]+)\\.([0-9a-fA-F]+)")
 	# Read the contents of the muhkuh version file. Accept only data matching the version regex.
 	FILE(STRINGS ${MUHKUH_VERSION_FILE} MUHKUH_VERSION_ALL REGEX ${MUHKUH_VERSION_REXEX})
 	# Check if a valid version number was found.
 	IF("${MUHKUH_VERSION_ALL}" STREQUAL "")
 		# No valid version number found. The file contains garbage, which is a fatal error!
-		MESSAGE(FATAL_ERROR "The file ${MUHKUH_VERSION_FILE} contains no valid version in the form number.number.number .")
+		MESSAGE(FATAL_ERROR "The file ${MUHKUH_VERSION_FILE} contains no valid version in the form number.number.hash .")
 	ELSE("${MUHKUH_VERSION_ALL}" STREQUAL "")
 		STRING(REGEX MATCH "${MUHKUH_VERSION_REXEX}" MUHKUH_VERSION_ALL ${MUHKUH_VERSION_ALL})
 		SET(MUHKUH_VERSION_MAJ ${CMAKE_MATCH_1})
