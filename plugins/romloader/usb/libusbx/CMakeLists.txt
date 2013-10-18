@@ -50,7 +50,7 @@ IF(UNIX)
 	ExternalProject_Add(TARGET_libusbx
 	                    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16
 	                    DOWNLOAD_COMMAND tar --extract --bzip2 --directory ${CMAKE_CURRENT_BINARY_DIR} --file ${CMAKE_CURRENT_SOURCE_DIR}/libusbx-1.0.16.tar.bz2
-	                    CONFIGURE_COMMAND export CFLAGS=${CONFIGURE_CFLAGS} && cd ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16 && ./configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16/install ${CONFIGURE_OPTIONS}
+	                    CONFIGURE_COMMAND export CFLAGS=${CONFIGURE_CFLAGS} && cd ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16 && ./configure --with-pic --prefix=${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16/install ${CONFIGURE_OPTIONS}
 	                    BUILD_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16 && make all
 	                    INSTALL_COMMAND cd ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16 && make install
 	)
