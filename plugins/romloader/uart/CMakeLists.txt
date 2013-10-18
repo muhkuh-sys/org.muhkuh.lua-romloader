@@ -57,7 +57,7 @@ SET(UART_FIRMWARE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/uartmon_netx1
 IF(UNIX)
 	SET(romloader_uart_platform_SOURCES romloader_uart_device_linux.cpp)
 	SET(romloader_uart_platform_HEADERS romloader_uart_device_linux.h)
-	SET(romloader_uart_platform_LIBS rt)
+	SET(romloader_uart_platform_LIBS rt pthread)
 ELSE(UNIX)
 	IF(WIN32)
 		SET(romloader_uart_platform_SOURCES romloader_uart_device_win.cpp)
