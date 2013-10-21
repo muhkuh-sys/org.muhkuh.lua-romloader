@@ -64,7 +64,10 @@ char **capture_std::get_strings_from_table(int iIndex, lua_State *ptLuaState) co
 	iResult = 0;
 
 	/* get the size of the table */
-	sizTable = lua_objlen(ptLuaState, iIndex);
+	/* NOTE: lua_rawlen is new in LUA5.2, but swig provides a
+	 * compatibility wrapper in swigluarun.h .
+	 */
+	sizTable = lua_rawlen(ptLuaState, iIndex);
 	printf("The table has %d elements.\n", sizTable);
 
 	/* Allocate the array for the strings and one terminating NULL. */

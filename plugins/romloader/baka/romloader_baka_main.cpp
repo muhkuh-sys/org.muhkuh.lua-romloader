@@ -98,7 +98,10 @@ int romloader_baka_provider::DetectInterfaces(lua_State *ptLuaStateForTableAcces
 	acName[sizMaxName-1] = 0;
 
 	// get the size of the table
-	sizTable = lua_objlen(ptLuaStateForTableAccess, 2);
+	/* NOTE: lua_rawlen is new in LUA5.2, but swig provides a
+	 * compatibility wrapper in swigluarun.h .
+	 */
+	sizTable = lua_rawlen(ptLuaStateForTableAccess, 2);
 
 	// detect all interfaces
 	for(iInterfaceCnt=0; iInterfaceCnt<m_cfg_iInstances; ++iInterfaceCnt)

@@ -385,7 +385,10 @@ void muhkuh_plugin_provider::add_reference_to_table(lua_State *ptLuaState, muhku
 
 
 	/* get the size of the table */
-	sizTable = lua_objlen(ptLuaState, 2);
+	/* NOTE: lua_rawlen is new in LUA5.2, but swig provides a
+	 * compatibility wrapper in swigluarun.h .
+	 */
+	sizTable = lua_rawlen(ptLuaState, 2);
 	/* create a new pointer object with the special type */
 	SWIG_NewPointerObj(ptLuaState, ptReference, m_ptReferenceTypeInfo, 1);
 	/* add the pointer object to the table */
