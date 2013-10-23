@@ -22,7 +22,8 @@ FIRMWARE_UART=`sed -n -e 's/^\+\+\+ \(.*\)$/\1/p' plugins/romloader/uart/netx/ta
 FIRMWARE_USB=`sed -n -e 's/^\+\+\+ \(.*\)$/\1/p' plugins/romloader/usb/netx/targets/usbmon_firmware.diff`
 
 # Add the firmware files to the archive.
-tar --append --file ${MUHKUH_PREFIX}.tar ${FIRMWARE_UART} ${FIRMWARE_USB}
+FILENAME_TRANSFORM=s,^,${MUHKUH_PREFIX}/,
+tar --append --transform ${FILENAME_TRANSFORM} --file ${MUHKUH_PREFIX}.tar ${FIRMWARE_UART} ${FIRMWARE_USB}
 
 # Pack the source.
 gzip --best ${MUHKUH_PREFIX}.tar
