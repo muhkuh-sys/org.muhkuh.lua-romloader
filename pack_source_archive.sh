@@ -17,5 +17,12 @@ MUHKUH_PREFIX=muhkuh-${MUHKUH_VERSION_MAJ}.${MUHKUH_VERSION_MIN}.${MUHKUH_VERSIO
 # Create the archive. Use the uncompressed tar format. Compressed formats can not be updated.
 hg archive --prefix ${MUHKUH_PREFIX} --type tar --subrepos ${MUHKUH_PREFIX}.tar
 
-# Add the firmware patch files to the archive.
-tar --append --gzip --file ${MUHKUH_PREFIX}.tar plugins/romloader/uart/netx/targets/uartmon_firmware.diff plugins/romloader/usb/netx/targets/usbmon_firmware.diff
+# Get all firmware names from the patch files.
+FIRMWARE_UART=`sed -n -e 's/^\+\+\+ \(.*\)$/\1/p' plugins/romloader/uart/netx/targets/uartmon_firmware.diff`
+FIRMWARE_USB=`sed -n -e 's/^\+\+\+ \(.*\)$/\1/p' plugins/romloader/usb/netx/targets/usbmon_firmware.diff`
+
+# Add the firmware files to the archive.
+tar --append --file ${MUHKUH_PREFIX}.tar ${FIRMWARE_UART} ${FIRMWARE_USB}
+
+# Pack the source.
+gzip --best ${MUHKUH_PREFIX}.tar
