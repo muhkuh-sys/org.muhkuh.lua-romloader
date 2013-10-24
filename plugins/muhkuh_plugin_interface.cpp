@@ -30,6 +30,17 @@
 #define SIZ_MAX_MUHKUH_PLUGIN_STRING 256
 
 
+
+#if !defined(LUA_VERSION_NUM) || LUA_VERSION_NUM < 501
+#       define WRAPPER_LUA_RAWLEN lua_strlen
+#elif LUA_VERSION_NUM == 501
+#       define WRAPPER_LUA_RAWLEN lua_objlen
+#elif LUA_VERSION_NUM == 502
+#       define WRAPPER_LUA_RAWLEN lua_rawlen
+#endif
+
+
+
 muhkuh_plugin::muhkuh_plugin(const char *pcName, const char *pcTyp, muhkuh_plugin_provider *ptProvider)
  : m_pcName(NULL)
  , m_pcTyp(NULL)
@@ -388,7 +399,7 @@ void muhkuh_plugin_provider::add_reference_to_table(lua_State *ptLuaState, muhku
 	/* NOTE: lua_rawlen is new in LUA5.2, but swig provides a
 	 * compatibility wrapper in swigluarun.h .
 	 */
-	sizTable = lua_rawlen(ptLuaState, 2);
+	sizTable = WRAPPER_LUA_RAWLEN(ptLuaState, 2);
 	/* create a new pointer object with the special type */
 	SWIG_NewPointerObj(ptLuaState, ptReference, m_ptReferenceTypeInfo, 1);
 	/* add the pointer object to the table */

@@ -27,6 +27,16 @@
 #       define snprintf _snprintf
 #endif
 
+
+#if !defined(LUA_VERSION_NUM) || LUA_VERSION_NUM < 501
+#       define WRAPPER_LUA_RAWLEN lua_strlen
+#elif LUA_VERSION_NUM == 501
+#       define WRAPPER_LUA_RAWLEN lua_objlen
+#elif LUA_VERSION_NUM == 502
+#       define WRAPPER_LUA_RAWLEN lua_rawlen
+#endif
+
+
 const char *romloader_baka_provider::m_pcPluginNamePattern = "baka_%d";
 
 
@@ -101,7 +111,7 @@ int romloader_baka_provider::DetectInterfaces(lua_State *ptLuaStateForTableAcces
 	/* NOTE: lua_rawlen is new in LUA5.2, but swig provides a
 	 * compatibility wrapper in swigluarun.h .
 	 */
-	sizTable = lua_rawlen(ptLuaStateForTableAccess, 2);
+	sizTable = WRAPPER_LUA_RAWLEN(ptLuaStateForTableAccess, 2);
 
 	// detect all interfaces
 	for(iInterfaceCnt=0; iInterfaceCnt<m_cfg_iInstances; ++iInterfaceCnt)

@@ -32,6 +32,16 @@
 
 
 
+#if !defined(LUA_VERSION_NUM) || LUA_VERSION_NUM < 501
+#       define WRAPPER_LUA_RAWLEN lua_strlen
+#elif LUA_VERSION_NUM == 501
+#       define WRAPPER_LUA_RAWLEN lua_objlen
+#elif LUA_VERSION_NUM == 502
+#       define WRAPPER_LUA_RAWLEN lua_rawlen
+#endif
+
+
+
 capture_std::capture_std(long lMyId, long lEvtHandlerId)
  : m_lMyId(lMyId)
  , m_lEvtHandlerId(lEvtHandlerId)
@@ -67,7 +77,7 @@ char **capture_std::get_strings_from_table(int iIndex, lua_State *ptLuaState) co
 	/* NOTE: lua_rawlen is new in LUA5.2, but swig provides a
 	 * compatibility wrapper in swigluarun.h .
 	 */
-	sizTable = lua_rawlen(ptLuaState, iIndex);
+	sizTable = WRAPPER_LUA_RAWLEN(ptLuaState, iIndex);
 	printf("The table has %d elements.\n", sizTable);
 
 	/* Allocate the array for the strings and one terminating NULL. */
