@@ -12,7 +12,7 @@ MUHKUH_VERSION_MIN=`awk -F \. {'print $2'} muhkuh_version.txt`
 MUHKUH_VERSION_SUB=`awk -F \. {'print $3'} muhkuh_version.txt`
 
 # Get the prefix. It is used as the prefix for the archive name and the first folder inside the archive.
-MUHKUH_PREFIX=muhkuh-${MUHKUH_VERSION_MAJ}.${MUHKUH_VERSION_MIN}.${MUHKUH_VERSION_SUB}-${HG_ID}
+MUHKUH_PREFIX=muhkuh-${MUHKUH_VERSION_MAJ}.${MUHKUH_VERSION_MIN}.${MUHKUH_VERSION_SUB}.${HG_ID}
 
 # Create the archive. Use the uncompressed tar format. Compressed formats can not be updated.
 hg archive --prefix ${MUHKUH_PREFIX} --type tar --subrepos ${MUHKUH_PREFIX}.tar
