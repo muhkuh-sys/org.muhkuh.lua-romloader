@@ -36,11 +36,13 @@ ADD_DEFINITIONS(${OPENOCD_DEFINES})
 
 
 SET(romloader_jtag_SOURCES
-        romloader_jtag_main.cpp
+	romloader_jtag_main.cpp
+	romloader_jtag_openocd.c
 )
 
 SET(romloader_jtag_HEADERS
-        romloader_jtag_main.h
+	romloader_jtag_main.h
+	romloader_jtag_openocd.h
 )
 
 
