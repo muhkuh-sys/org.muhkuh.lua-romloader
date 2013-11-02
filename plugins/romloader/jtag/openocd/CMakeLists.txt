@@ -10,9 +10,9 @@ cmake_minimum_required(VERSION 2.8)
 #
 # The provided variables are:
 #
-#  OPENOCD_LIBRARIES : The openocd libraries without path and all required
-#                      system libraries. The list must be separated with
-#                      whitespace.
+#  OPENOCD_LIBRARIES : The openocd libraries with the complete path and all
+#                      required system libraries. The list must be separated
+#                      with whitespace.
 #
 #  OPENOCD_DEFINES : All defines for the openocd library. This should be a
 #                    list of entries starting with "-D".
@@ -56,14 +56,12 @@ IF(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
 	
 	# 3) Provide all variables for the build.
 	SET(LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.7.0/install/lib/libopenocd.a ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.7.0/jimtcl/libjim.a -lusb-1.0 -ldl)
-	SET(DEFINES "")
-	SET(INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.7.0)
-	SET(LINKER_FLAGS "")
+	SET(DEFINES "-DHAVE_CONFIG_H -std=gnu99")
+	SET(INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.7.0 ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.7.0/src ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.7.0/src/helper ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.7.0/jimtcl)
 ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	MESSAGE(FATAL "Building openocd on windows is not supported yet!")
 ENDIF(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Linux")
 
 SET(OPENOCD_LIBRARIES            ${LIBRARIES}            PARENT_SCOPE)
-SET(OPENICD_DEFINES              ${DEFINES}              PARENT_SCOPE)
+SET(OPENOCD_DEFINES              ${DEFINES}              PARENT_SCOPE)
 SET(OPENOCD_INCLUDE_DIRECTORIES  ${INCLUDE_DIRECTORIES}  PARENT_SCOPE)
-SET(OPENOCD_LINKER_FLAGS         ${LINKER_FLAGS}         PARENT_SCOPE)
