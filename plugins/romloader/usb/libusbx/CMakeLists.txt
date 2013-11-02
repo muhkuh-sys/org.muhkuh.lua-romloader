@@ -10,9 +10,9 @@ cmake_minimum_required(VERSION 2.8)
 #
 # The provided variables are:
 #
-#  LIBUSBX_LIBRARIES : The libusbx library without path and all required
-#                      system libraries. The list must be separated with
-#                      whitespace.
+#  LIBUSBX_LIBRARIES : The libusbx library with the complete path and all
+#                      required system libraries. The list must be separated
+#                      with whitespace.
 #
 #  LIBUSBX_DEFINES : All defines for the libusbx library. This should be a
 #                    list of entries starting with "-D".
