@@ -56,7 +56,7 @@ IF(UNIX)
 	)
 	
 	# 3) Provide all variables for the build.
-	SET(LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16/install/lib/libusb-1.0.a -pthread -lrt)
+	SET(LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16/install/lib/libusb-1.0.a -pthread -lrt -ludev)
 	SET(DEFINES -DROMLOADER_USB_LIBUSB_VERSION=1)
 	SET(INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16/install/include/libusb-1.0)
 	SET(LINKER_FLAGS "")
