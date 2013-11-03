@@ -423,7 +423,6 @@ romloader_usb_device_libusb::romloader_usb_device_libusb(const char *pcPluginId)
  , m_ptLibUsbContext(NULL)
  , m_ptDevHandle(NULL)
 {
-	printf("romloader_usb_device_libusb\n");
 	memset(&m_tDeviceId, 0, sizeof(NETX_USB_DEVICE_T));
 
 	libusb_init(&m_ptLibUsbContext);
