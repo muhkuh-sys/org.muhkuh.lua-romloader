@@ -104,8 +104,8 @@ ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 			# This is minGW64.
 			
 			# This version of libusbx was compiled with a mingw version adding '__ms' to some symbols
-			# so that '_vsnprintf' becomes '__ms_vsnprintf'.
-			SET(LINKER_FLAGS "-Xlinker --defsym=__ms_vsnprintf=_vsnprintf")
+			# so that '__vsnprintf' becomes '__ms_vsnprintf'.
+			SET(LINKER_FLAGS "-Xlinker --defsym=__ms_vsnprintf=__vsnprintf")
 			
 			SET(LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16-win/MinGW64/static/libusb-1.0.a)
 		ELSE(CMAKE_SIZEOF_VOID_P MATCHES "8")
@@ -113,7 +113,7 @@ ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 			
 			# This version of libusbx was compiled with a mingw version adding '___ms' to some symbols
 			# so that '__vsnprintf' becomes '___ms_vsnprintf'.
-			SET(LINKER_FLAGS "-Xlinker --defsym=___ms_vsnprintf=_vsnprintf")
+			SET(LINKER_FLAGS "-Xlinker --defsym=___ms_vsnprintf=__vsnprintf")
 			
 			SET(LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16-win/MinGW32/static/libusb-1.0.a)
 		ENDIF(CMAKE_SIZEOF_VOID_P MATCHES "8")
