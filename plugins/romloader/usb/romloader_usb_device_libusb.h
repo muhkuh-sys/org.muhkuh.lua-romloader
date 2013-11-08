@@ -65,7 +65,12 @@
 	};
 #else
 /* NOTE: the header is in 'libusb-1.0' for linux and 'libusbx-1.0' for windows. */
-#	include <libusb.h>
+#       include <libusb.h>
+
+#       if (!defined(LIBUSBX_API_VERSION)) || (defined(LIBUSBX_API_VERSION) && LIBUSBX_API_VERSION<0x01000102)
+#               error "This plugin needs at least libusbx 1.0.16."
+#       endif
+
 #endif
 
 bool libusb_load();
