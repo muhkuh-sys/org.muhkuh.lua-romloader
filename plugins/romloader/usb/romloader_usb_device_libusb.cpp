@@ -492,11 +492,11 @@ int romloader_usb_device_libusb::detect_interfaces(romloader_usb_reference ***pp
 	romloader_usb_reference **pptRefNew;
 	const NETX_USB_DEVICE_T *ptId;
 
-	const unsigned char ucPathMax = 32;
-	unsigned char aucPath[ucPathMax];
+	const int iPathMax = 32;
+	unsigned char aucPath[iPathMax];
 	/* bus number as a digit plus path elements as single digits */
 	/* This is the Location ID format used by USBView, but is this sufficient? */
-	char acPathString[ucPathMax * 2 + 2] = {0};
+	char acPathString[iPathMax * 2 + 2] = {0};
 
 	int iPathStringPos;
 	int iCnt;
@@ -542,7 +542,7 @@ int romloader_usb_device_libusb::detect_interfaces(romloader_usb_reference ***pp
 					snprintf(acName, sizMaxName-1, m_pcPluginNamePattern, uiBusNr, uiDevAdr);
 
 					/* Get the location. */
-					iResult = libusb_get_port_path(m_ptLibUsbContext, ptDev, aucPath, ucPathMax);
+					iResult = libusb_get_port_numbers(ptDev, aucPath, iPathMax);
 					if( iResult>0 )
 					{
 						/* Build the path string. */
@@ -556,7 +556,10 @@ int romloader_usb_device_libusb::detect_interfaces(romloader_usb_reference ***pp
 						acPathString[iPathStringPos] = 0;
 						fprintf(stderr, "Path: %s\n", acPathString);
 					}
-					
+					else
+					{
+						fprintf(stderr, "Failed to get the port numbers: %d\n", iResult);
+					}
 /* TODO: replace this with setup_device?
  * It is the same open/set_config/claim, except that here no error is printed if BUSY.
  */
