@@ -64,5 +64,16 @@ MESSAGE("Version info: ${MUHKUH_VERSION_MAJ}.${MUHKUH_VERSION_MIN}.${MUHKUH_VERS
 
 
 # Get the current year.
-STRING(TIMESTAMP MUHKUH_VERSION_YEAR "%Y")
-
+# There was no no built-in way in cmake to get the current year before
+# version 2.8.11.
+IF(${CMAKE_VERSION} VERSION_LESS "2.8.11")
+	# This is a CMake below 2.8.11. Use python for this task.
+	FIND_PACKAGE(PythonInterp REQUIRED)
+	EXECUTE_PROCESS(COMMAND "${PYTHON_EXECUTABLE}" -c "import datetime; print datetime.date.today().year"
+	                OUTPUT_VARIABLE MUHKUH_VERSION_YEAR
+	                ERROR_QUIET
+	                OUTPUT_STRIP_TRAILING_WHITESPACE)
+ELSE(${CMAKE_VERSION} VERSION_LESS "2.8.11")
+	# This is CMake 2.8.11 or later.
+	STRING(TIMESTAMP MUHKUH_VERSION_YEAR "%Y")
+ENDIF(${CMAKE_VERSION} VERSION_LESS "2.8.11")
