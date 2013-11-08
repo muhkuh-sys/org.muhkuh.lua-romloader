@@ -64,12 +64,5 @@ MESSAGE("Version info: ${MUHKUH_VERSION_MAJ}.${MUHKUH_VERSION_MIN}.${MUHKUH_VERS
 
 
 # Get the current year.
-# There seems to be no built-in way in cmake to get the current year.
-# But we have python for the MBS build system anyway so we can use it.
-FIND_PACKAGE(PythonInterp REQUIRED)
-EXECUTE_PROCESS(COMMAND "${PYTHON_EXECUTABLE}" -c "import datetime; print datetime.date.today().year"
-                OUTPUT_VARIABLE MUHKUH_VERSION_YEAR
-                ERROR_QUIET
-                OUTPUT_STRIP_TRAILING_WHITESPACE)
-
+STRING(TIMESTAMP MUHKUH_VERSION_YEAR "%Y")
 
