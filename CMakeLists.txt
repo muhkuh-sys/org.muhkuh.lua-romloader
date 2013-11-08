@@ -49,7 +49,10 @@ ENDIF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv)")
 #----------------------------------------------------------------------------
 #
 # Include the projects in the subdirectories.
+# NOTE: build the external components first. Many parts depend on them.
 #
+
+add_subdirectory(external)
 
 #add_subdirectory(application)
 add_subdirectory(lua)

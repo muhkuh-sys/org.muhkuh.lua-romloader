@@ -59,10 +59,7 @@ IF(UNIX)
 	SET(LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16/install/lib/libusb-1.0.a -pthread -lrt -ludev)
 	SET(DEFINES -DROMLOADER_USB_LIBUSB_VERSION=1)
 	SET(INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16/install/include/libusb-1.0)
-	SET(LINKER_FLAGS "")
 ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-
-	
 	IF(MSVC)
 		# The Microsoft Visual C version is distributed in
 		# pre-compiled form.
@@ -91,7 +88,6 @@ ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 		ENDIF(CMAKE_SIZEOF_VOID_P MATCHES "8")
 		SET(DEFINES -DROMLOADER_USB_LIBUSB_VERSION=1)
 		SET(INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16-win/install/include/libusb-1.0)
-		SET(LINKER_FLAGS "")
 	ELSEIF(${CMAKE_COMPILER_IS_GNUCC})
 		# This is GCC on Windows. It must be minGW.
 		
@@ -121,11 +117,9 @@ ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 		SET(LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16/install/lib/libusb-1.0.a)
 		SET(DEFINES -DROMLOADER_USB_LIBUSB_VERSION=1)
 		SET(INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.16/install/include/libusb-1.0)
-		SET(LINKER_FLAGS "")
 	ENDIF(MSVC)
 ENDIF(UNIX)
 
-SET(LIBUSBX_LIBRARIES            ${LIBRARIES}            PARENT_SCOPE)
-SET(LIBUSBX_DEFINES              ${DEFINES}              PARENT_SCOPE)
-SET(LIBUSBX_INCLUDE_DIRECTORIES  ${INCLUDE_DIRECTORIES}  PARENT_SCOPE)
-SET(LIBUSBX_LINKER_FLAGS         ${LINKER_FLAGS}         PARENT_SCOPE)
+SET(LIBUSBX_LIBRARIES            ${LIBRARIES}            CACHE STRING "The libusbx library with the complete path and all required system libraries. The list must be separated with whitespace.")
+SET(LIBUSBX_DEFINES              ${DEFINES}              CACHE STRING "All defines for the libusbx library. This should be a list of entries starting with -D.")
+SET(LIBUSBX_INCLUDE_DIRECTORIES  ${INCLUDE_DIRECTORIES}  CACHE PATH   "The include folders for the library headers. The list must be separated with whitespace.")
