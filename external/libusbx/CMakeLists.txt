@@ -45,8 +45,6 @@ SET(LDFLAGS -pthread -lrt -ludev)
 SET(DEFINES -DROMLOADER_USB_LIBUSB_VERSION=1)
 SET(INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.17/install/include/libusb-1.0)
 
-MESSAGE("INCLUDE_DIRECTORIES: ${INCLUDE_DIRECTORIES}")
-
 #----------------------------------------------------------------------------
 #
 # Store all information about the library in the cache.
