@@ -65,7 +65,7 @@ IF(${CMAKE_COMPILER_IS_GNUCC})
 	SET(STDC_HEADERS 1)
 ENDIF(${CMAKE_COMPILER_IS_GNUCC})
 
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/templates/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config/config.h)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config/config.h)
 
 
 #----------------------------------------------------------------------------
@@ -92,4 +92,16 @@ ENDIF(UNIX)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/libusb ${CMAKE_CURRENT_BINARY_DIR}/config)
 
 ADD_LIBRARY(TARGET_libusbx STATIC ${SOURCES_libusbx})
+
+# This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
+IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+	SET_TARGET_PROPERTIES(TARGET_libusbx PROPERTIES COMPILE_FLAGS -fPIC)
+ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+
+# Set the name of the output file to "romloader_uart".
+SET_TARGET_PROPERTIES(TARGET_libusbx PROPERTIES OUTPUT_NAME "usbx")
+
+SET(CMAKE_INSTALL_PREFIX /install)
+INSTALL(TARGETS TARGET_libusbx DESTINATION lib)
+INSTALL(FILES libusb/libusb.h DESTINATION include/libusb-1.0)
 
