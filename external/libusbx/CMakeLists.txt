@@ -34,6 +34,11 @@ ExternalProject_Add(TARGET_libusbx_depack
                     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.17
                     URL ${CMAKE_CURRENT_SOURCE_DIR}/libusbx-1.0.17.tar.bz2
                     PATCH_COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/templates ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.17/src/TARGET_libusbx_depack
+                    CMAKE_ARGS -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
+                               -DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}
+                               -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+                               -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+                               -DCMAKE_RC_COMPILER=${CMAKE_RC_COMPILER}
                     INSTALL_COMMAND make install DESTDIR=${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.17
 )
 
