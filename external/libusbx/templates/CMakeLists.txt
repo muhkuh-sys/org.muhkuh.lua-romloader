@@ -57,6 +57,8 @@ IF(UNIX)
 	SET(POLL_NFDS_TYPE nfds_t)
 ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	SET(OS_WINDOWS 1)
+	
+	SET(POLL_NFDS_TYPE "unsigned int")
 ENDIF(UNIX)
 
 IF(${CMAKE_COMPILER_IS_GNUCC})
@@ -84,6 +86,19 @@ IF(UNIX)
 	                    libusb/os/linux_usbfs.c
 	                    libusb/os/poll_posix.c
 	                    libusb/os/linux_udev.c
+	)
+	
+	add_definitions(-DHAVE_CONFIG_H)
+ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+	SET(SOURCES_libusbx libusb/core.c
+	                    libusb/descriptor.c
+	                    libusb/io.c
+	                    libusb/strerror.c
+	                    libusb/sync.c
+	                    libusb/hotplug.c
+	                    libusb/os/threads_windows.c
+	                    libusb/os/poll_windows.c
+	                    libusb/os/windows_usb.c
 	)
 	
 	add_definitions(-DHAVE_CONFIG_H)
