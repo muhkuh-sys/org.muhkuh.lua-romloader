@@ -84,16 +84,14 @@ ADD_DEPENDENCIES(TARGET_romloader_usb_lib TARGET_libusbx)
 IF(${LUA51_FOUND})
 	# Build the Lua module.
 	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_usb_LUA lua romloader_usb.i)
-	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_usb_LUA TARGET_romloader_usb_lib ${LUA_LIBRARIES} ${LIBUSBX_LIBRARY} TARGET_plugins_romloader_LIB)
+	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_usb_LUA TARGET_romloader_usb_lib ${LUA_LIBRARIES} ${LIBUSBX_LIBRARY} TARGET_plugins_romloader_LIB ${LIBUSBX_LDFLAGS})
 
 	# Set the name of the output file to "romloader_usb".
 	SET_TARGET_PROPERTIES(TARGET_plugins_romloader_romloader_usb_LUA PROPERTIES PREFIX "" OUTPUT_NAME "romloader_usb")
 
 	IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 		# On minGW link all compiler libraries static.
-		set_property(TARGET TARGET_plugins_romloader_romloader_usb_LUA PROPERTY LINK_FLAGS "${LIBUSBX_LDFLAGS} -static-libgcc -static-libstdc++")
-	ELSE((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
-		set_property(TARGET TARGET_plugins_romloader_romloader_usb_LUA PROPERTY LINK_FLAGS "${LIBUSBX_LDFLAGS}")
+		set_property(TARGET TARGET_plugins_romloader_romloader_usb_LUA PROPERTY LINK_FLAGS "-static-libgcc -static-libstdc++")
 	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 
 	# The module depends on the libusbx libraries.
