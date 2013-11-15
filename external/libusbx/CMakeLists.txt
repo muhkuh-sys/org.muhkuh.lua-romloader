@@ -41,7 +41,11 @@ ExternalProject_Add(TARGET_libusbx_depack
 
 # 3) Provide all variables for the build.
 SET(LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.17/install/lib/libusbx.a)
-SET(LDFLAGS -pthread -lrt -ludev)
+
+IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+	SET(LDFLAGS "-pthread -lrt -ludev")
+ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+
 SET(DEFINES -DROMLOADER_USB_LIBUSB_VERSION=1)
 SET(INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.17/install/include/libusb-1.0)
 
@@ -49,7 +53,7 @@ SET(INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.17/install/inclu
 #
 # Store all information about the library in the cache.
 #
-SET(LIBUSBX_LIBRARY              ${LIBRARY}              CACHE STRING "The libusbx library with the complete path.")
-SET(LIBUSBX_LDFLAGS              ${LIBRARY}              CACHE STRING "All linker flags required to link the library. The list must be separated with whitespace.")
-SET(LIBUSBX_DEFINES              ${DEFINES}              CACHE STRING "All defines for the libusbx library. This should be a list of entries starting with -D.")
-SET(LIBUSBX_INCLUDE_DIRECTORIES  ${INCLUDE_DIRECTORIES}  CACHE PATH   "The include folders for the library headers. The list must be separated with whitespace.")
+SET(LIBUSBX_LIBRARY              ${LIBRARY}              CACHE INTERNAL "The libusbx library with the complete path.")
+SET(LIBUSBX_LDFLAGS              ${LDFLAGS}              CACHE INTERNAL "All linker flags required to link the library. The list must be separated with whitespace.")
+SET(LIBUSBX_DEFINES              ${DEFINES}              CACHE INTERNAL "All defines for the libusbx library. This should be a list of entries starting with -D.")
+SET(LIBUSBX_INCLUDE_DIRECTORIES  ${INCLUDE_DIRECTORIES}  CACHE INTERNAL "The include folders for the library headers. The list must be separated with whitespace.")
