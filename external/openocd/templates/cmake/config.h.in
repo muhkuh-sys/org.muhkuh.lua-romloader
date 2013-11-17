@@ -8,34 +8,34 @@
 #cmakedefine BUILD_AICE 1
 
 /* 0 if you don't want the Amontec JTAG-Accelerator driver. */
-#cmakedefine BUILD_AMTJTAGACCEL 0
+#cmakedefine01 BUILD_AMTJTAGACCEL
 
 /* 0 if you do not want the Olimex ARM-JTAG-EW Programmer. */
-#cmakedefine BUILD_ARMJTAGEW */
+#cmakedefine BUILD_ARMJTAGEW
 
 /* 0 if you don't want at91rm9200. */
-#cmakedefine BUILD_AT91RM9200 0
+#cmakedefine01 BUILD_AT91RM9200
 
 /* 0 if you don't want bcm2835gpio. */
-#cmakedefine BUILD_BCM2835GPIO 0
+#cmakedefine01 BUILD_BCM2835GPIO
 
 /* 0 if you don't want a bitbang interface. */
-#cmakedefine BUILD_BITBANG 0
+#cmakedefine01 BUILD_BITBANG
 
 /* 0 if you don't want a bitq interface. */
-#cmakedefine BUILD_BITQ 0
+#cmakedefine01 BUILD_BITQ
 
 /* 0 if you don't want the Buspirate JTAG driver. */
-#cmakedefine BUILD_BUSPIRATE 0
+#cmakedefine01 BUILD_BUSPIRATE
 
 /* 0 if you don't want dummy driver. */
-#cmakedefine BUILD_DUMMY 0
+#cmakedefine01 BUILD_DUMMY
 
 /* 0 if you don't want ep93xx. */
-#cmakedefine BUILD_EP93XX 0
+#cmakedefine01 BUILD_EP93XX
 
 /* 0 if you don't want ftd2xx ft2232. */
-#cmakedefine BUILD_FT2232_FTD2XX 0
+#cmakedefine01 BUILD_FT2232_FTD2XX
 
 /* Support FT2232H/FT4232HS with FTD2XX or libftdi. */
 #cmakedefine BUILD_FT2232_HIGHSPEED 1
