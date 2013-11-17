@@ -30,10 +30,10 @@ INCLUDE(ExternalProject)
 #
 # Build the project.
 #
-ExternalProject_Add(TARGET_libusbx_depack
+ExternalProject_Add(TARGET_libusbx
                     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.17
                     URL ${CMAKE_CURRENT_SOURCE_DIR}/libusbx-1.0.17.tar.bz2
-                    PATCH_COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/templates ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.17/src/TARGET_libusbx_depack
+                    PATCH_COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/templates ${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.17/src/TARGET_libusbx
                     CMAKE_ARGS -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
                                -DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}
                                -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
