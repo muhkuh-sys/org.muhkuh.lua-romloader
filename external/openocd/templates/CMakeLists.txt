@@ -13,9 +13,6 @@ INCLUDE(CheckTypeSize)
 #
 # Get all defines for config.h.in .
 #
-
-
-
 SET(BUILD_AICE 1)
 SET(BUILD_FTDI 1)
 SET(BUILD_HLADAPTER 1)
