@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 
+ADD_SUBDIRECTORY(jimtcl)
+
+
 PROJECT("openocd")
 
 INCLUDE(CheckIncludeFiles)
@@ -108,6 +111,14 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.h.in ${CMAKE_CURRENT_BIN
 # Build libopenocd.
 #
 
+#
+# cat helper/startup.tcl jtag/startup.tcl target/startup.tcl flash/startup.tcl server/startup.tcl > startup.tcl
+
+# Copy the 
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/src/jtag/drivers/minidriver_imp.h
+     DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/src/jtag)
+
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
 
 SET(SOURCES_openocd
 	src/hello.c
@@ -187,7 +198,11 @@ ADD_LIBRARY(LIBRARY_libflash STATIC ${SOURCES_libflash})
 TARGET_INCLUDE_DIRECTORIES(LIBRARY_libflash
                            PRIVATE src
                                    src/helper
-                                   jimtcl)
+                                   jimtcl
+                                   ${CMAKE_CURRENT_BINARY_DIR}/config
+                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
+TARGET_COMPILE_DEFINITIONS(LIBRARY_libflash
+                           PRIVATE HAVE_CONFIG_H)
 
 
 SET(SOURCES_libhelper
@@ -208,5 +223,99 @@ SET(SOURCES_libhelper
 ADD_LIBRARY(LIBRARY_libhelper STATIC ${SOURCES_libhelper})
 TARGET_INCLUDE_DIRECTORIES(LIBRARY_libhelper
                            PRIVATE src
+                                   src/helper
+                                   jimtcl
+                                   ${CMAKE_CURRENT_BINARY_DIR}/config
+                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
+TARGET_COMPILE_DEFINITIONS(LIBRARY_libhelper
+                           PRIVATE HAVE_CONFIG_H
+                                   PKGDATADIR="/usr/local/share/openocd")
+
+
+
+SET(SOURCES_libjtag
+	src/jtag/adapter.c
+	src/jtag/commands.c
+	src/jtag/core.c
+	src/jtag/interface.c
+	src/jtag/interfaces.c
+	src/jtag/tcl.c
+	src/jtag/aice/aice_interface.c
+	src/jtag/aice/aice_pipe.c
+	src/jtag/aice/aice_port.c
+	src/jtag/aice/aice_transport.c
+	src/jtag/aice/aice_usb.c
+	src/jtag/drivers/driver.c
+	src/jtag/drivers/ftdi.c
+	src/jtag/drivers/jlink.c
+	src/jtag/drivers/libusb1_common.c
+	src/jtag/drivers/mpsse.c
+	src/jtag/drivers/opendous.c
+	src/jtag/drivers/osbdm.c
+	src/jtag/drivers/stlink_usb.c
+	src/jtag/drivers/ti_icdi_usb.c
+	src/jtag/drivers/ulink.c
+	src/jtag/hla/hla_interface.c
+	src/jtag/hla/hla_layout.c
+	src/jtag/hla/hla_tcl.c
+	src/jtag/hla/hla_transport.c
 )
 
+ADD_LIBRARY(LIBRARY_libjtag STATIC ${SOURCES_libjtag})
+TARGET_INCLUDE_DIRECTORIES(LIBRARY_libjtag
+                           PRIVATE src
+                                   src/helper
+                                   src/jtag/drivers
+                                   jimtcl
+                                   ${CMAKE_CURRENT_BINARY_DIR}/config
+                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
+TARGET_COMPILE_DEFINITIONS(LIBRARY_libjtag
+                           PRIVATE HAVE_CONFIG_H
+                                   PKGDATADIR="/usr/local/share/openocd")
+
+
+
+SET(SOURCES_libpld
+	src/pld/pld.c
+	src/pld/virtex2.c
+	src/pld/xilinx_bit.c
+)
+
+ADD_LIBRARY(LIBRARY_libpld STATIC ${SOURCES_libpld})
+TARGET_INCLUDE_DIRECTORIES(LIBRARY_libpld
+                           PRIVATE src
+                                   src/helper
+                                   jimtcl
+                                   ${CMAKE_CURRENT_BINARY_DIR}/config
+                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
+TARGET_COMPILE_DEFINITIONS(LIBRARY_libpld
+                           PRIVATE HAVE_CONFIG_H
+                                   PKGDATADIR="/usr/local/share/openocd")
+
+
+
+SET(SOURCES_librtos
+	src/rtos/
+	src/rtos/ChibiOS.c
+	src/rtos/eCos.c
+	src/rtos/embKernel.c
+	src/rtos/FreeRTOS.c
+	src/rtos/linux.c
+	src/rtos/rtos.c
+	src/rtos/rtos_chibios_stackings.c
+	src/rtos/rtos_ecos_stackings.c
+	src/rtos/rtos_embkernel_stackings.c
+	src/rtos/rtos_standard_stackings.c
+	src/rtos/ThreadX.c
+)
+
+ADD_LIBRARY(LIBRARY_librtos STATIC ${SOURCES_librtos})
+TARGET_INCLUDE_DIRECTORIES(LIBRARY_librtos
+                           PRIVATE src
+                                   src/helper
+                                   jimtcl
+                                   ${CMAKE_CURRENT_BINARY_DIR}/config
+                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
+TARGET_COMPILE_DEFINITIONS(LIBRARY_librtos
+                           PRIVATE HAVE_CONFIG_H
+                                   PKGDATADIR="/usr/local/share/openocd")
