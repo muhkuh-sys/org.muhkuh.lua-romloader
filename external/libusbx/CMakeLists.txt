@@ -38,7 +38,6 @@ ExternalProject_Add(TARGET_libusbx
                                -DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}
                                -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
                                -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-                               -DCMAKE_RC_COMPILER=${CMAKE_RC_COMPILER}
                     INSTALL_COMMAND make install DESTDIR=${CMAKE_CURRENT_BINARY_DIR}/libusbx-1.0.17
 )
 
