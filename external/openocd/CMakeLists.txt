@@ -18,9 +18,13 @@ ExternalProject_Add(TARGET_openocd
                                -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
                                -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
                                -DCMAKE_RC_COMPILER=${CMAKE_RC_COMPILER}
+                               -DLIBUSBX_LIBRARY=${LIBUSBX_LIBRARY}
+                               -DLIBUSBX_LDFLAGS=${LIBUSBX_LDFLAGS}
+                               -DLIBUSBX_DEFINES=${LIBUSBX_DEFINES}
+                               -DLIBUSBX_INCLUDE_DIRECTORIES=${LIBUSBX_INCLUDE_DIRECTORIES}
                     INSTALL_COMMAND make install DESTDIR=${CMAKE_CURRENT_BINARY_DIR}/openocd-0.8.0-dev
 )
-
+ADD_DEPENDENCIES(TARGET_openocd TARGET_libusbx)
 
 
 # 3) Provide all variables for the build.
