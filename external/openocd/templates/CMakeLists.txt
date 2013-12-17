@@ -260,7 +260,7 @@ SET(SOURCES_libjtag
 	src/jtag/hla/hla_tcl.c
 	src/jtag/hla/hla_transport.c
 )
-
+MESSAGE("LALALALALALALA ${LIBUSBX_INCLUDE_DIRECTORIES}")
 ADD_LIBRARY(LIBRARY_libjtag STATIC ${SOURCES_libjtag})
 TARGET_INCLUDE_DIRECTORIES(LIBRARY_libjtag
                            PRIVATE src
@@ -268,7 +268,8 @@ TARGET_INCLUDE_DIRECTORIES(LIBRARY_libjtag
                                    src/jtag/drivers
                                    jimtcl
                                    ${CMAKE_CURRENT_BINARY_DIR}/config
-                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
+                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config
+                                   ${LIBUSBX_INCLUDE_DIRECTORIES})
 TARGET_COMPILE_DEFINITIONS(LIBRARY_libjtag
                            PRIVATE HAVE_CONFIG_H
                                    PKGDATADIR="/usr/local/share/openocd")
@@ -317,5 +318,164 @@ TARGET_INCLUDE_DIRECTORIES(LIBRARY_librtos
                                    ${CMAKE_CURRENT_BINARY_DIR}/config
                                    ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
 TARGET_COMPILE_DEFINITIONS(LIBRARY_librtos
+                           PRIVATE HAVE_CONFIG_H
+                                   PKGDATADIR="/usr/local/share/openocd")
+
+
+
+SET(SOURCES_libserver
+	src/server/gdb_server.c
+	src/server/server.c
+	src/server/server_stubs.c
+	src/server/tcl_server.c
+	src/server/telnet_server.c
+)
+
+ADD_LIBRARY(LIBRARY_libserver STATIC ${SOURCES_libserver})
+TARGET_INCLUDE_DIRECTORIES(LIBRARY_libserver
+                           PRIVATE src
+                                   src/helper
+                                   jimtcl
+                                   ${CMAKE_CURRENT_BINARY_DIR}/config
+                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
+TARGET_COMPILE_DEFINITIONS(LIBRARY_libserver
+                           PRIVATE HAVE_CONFIG_H
+                                   PKGDATADIR="/usr/local/share/openocd")
+
+
+
+SET(SOURCES_libsvf
+	src/svf/svf.c
+)
+
+ADD_LIBRARY(LIBRARY_libsvf STATIC ${SOURCES_libsvf})
+TARGET_INCLUDE_DIRECTORIES(LIBRARY_libsvf
+                           PRIVATE src
+                                   src/helper
+                                   jimtcl
+                                   ${CMAKE_CURRENT_BINARY_DIR}/config
+                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
+TARGET_COMPILE_DEFINITIONS(LIBRARY_libsvf
+                           PRIVATE HAVE_CONFIG_H
+                                   PKGDATADIR="/usr/local/share/openocd")
+
+
+
+SET(SOURCES_libtarget
+	src/target/adi_v5_jtag.c
+	src/target/adi_v5_swd.c
+	src/target/algorithm.c
+	src/target/arm11.c
+	src/target/arm11_dbgtap.c
+	src/target/arm720t.c
+	src/target/arm7_9_common.c
+	src/target/arm7tdmi.c
+	src/target/arm920t.c
+	src/target/arm926ejs.c
+	src/target/arm946e.c
+	src/target/arm966e.c
+	src/target/arm9tdmi.c
+	src/target/arm_adi_v5.c
+	src/target/arm_disassembler.c
+	src/target/arm_dpm.c
+	src/target/arm_jtag.c
+	src/target/arm_semihosting.c
+	src/target/arm_simulator.c
+	src/target/armv4_5.c
+	src/target/armv4_5_cache.c
+	src/target/armv4_5_mmu.c
+	src/target/armv7a.c
+	src/target/armv7m.c
+	src/target/avr32_ap7k.c
+	src/target/avr32_jtag.c
+	src/target/avr32_mem.c
+	src/target/avr32_regs.c
+	src/target/avrt.c
+	src/target/breakpoints.c
+	src/target/cortex_a.c
+	src/target/cortex_m.c
+	src/target/dsp563xx.c
+	src/target/dsp563xx_once.c
+	src/target/dsp5680xx.c
+	src/target/embeddedice.c
+	src/target/etb.c
+	src/target/etm.c
+	src/target/etm_dummy.c
+	src/target/fa526.c
+	src/target/feroceon.c
+	src/target/hla_target.c
+	src/target/image.c
+	src/target/mips32.c
+	src/target/mips32_dmaacc.c
+	src/target/mips32_pracc.c
+	src/target/mips_ejtag.c
+	src/target/mips_m4k.c
+	src/target/nds32_aice.c
+	src/target/nds32.c
+	src/target/nds32_cmd.c
+	src/target/nds32_disassembler.c
+	src/target/nds32_reg.c
+	src/target/nds32_tlb.c
+	src/target/nds32_v2.c
+	src/target/nds32_v3.c
+	src/target/nds32_v3_common.c
+	src/target/nds32_v3m.c
+	src/target/oocd_trace.c
+	src/target/register.c
+	src/target/smp.c
+	src/target/target.c
+	src/target/target_request.c
+	src/target/testee.c
+	src/target/trace.c
+	src/target/xscale.c
+	src/target/openrisc/or1k.c
+	src/target/openrisc/or1k_du_adv.c
+	src/target/openrisc/or1k_tap_mohor.c
+	src/target/openrisc/or1k_tap_vjtag.c
+)
+
+# Hier fehlt noch xscale_debug.h, das ist irgendwie generiert.
+#ADD_LIBRARY(LIBRARY_libtarget STATIC ${SOURCES_libtarget})
+#TARGET_INCLUDE_DIRECTORIES(LIBRARY_libtarget
+#                           PRIVATE src
+#                                   src/helper
+#                                   jimtcl
+#                                   ${CMAKE_CURRENT_BINARY_DIR}/config
+#                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
+#TARGET_COMPILE_DEFINITIONS(LIBRARY_libtarget
+#                           PRIVATE HAVE_CONFIG_H
+#                                   PKGDATADIR="/usr/local/share/openocd")
+
+
+
+SET(SOURCES_libtransport
+	src/transport/transport.c
+)
+
+ADD_LIBRARY(LIBRARY_libtransport STATIC ${SOURCES_libtransport})
+TARGET_INCLUDE_DIRECTORIES(LIBRARY_libtransport
+                           PRIVATE src
+                                   src/helper
+                                   jimtcl
+                                   ${CMAKE_CURRENT_BINARY_DIR}/config
+                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
+TARGET_COMPILE_DEFINITIONS(LIBRARY_libtransport
+                           PRIVATE HAVE_CONFIG_H
+                                   PKGDATADIR="/usr/local/share/openocd")
+
+
+
+SET(SOURCES_libxsvf
+	src/xsvf/xsvf.c
+)
+
+ADD_LIBRARY(LIBRARY_libxsvf STATIC ${SOURCES_libxsvf})
+TARGET_INCLUDE_DIRECTORIES(LIBRARY_libxsvf
+                           PRIVATE src
+                                   src/helper
+                                   jimtcl
+                                   ${CMAKE_CURRENT_BINARY_DIR}/config
+                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
+TARGET_COMPILE_DEFINITIONS(LIBRARY_libxsvf
                            PRIVATE HAVE_CONFIG_H
                                    PKGDATADIR="/usr/local/share/openocd")
