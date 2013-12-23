@@ -251,16 +251,6 @@ SET(SOURCES_libflash
 	src/flash/nor/virtual.c
 )
 
-ADD_LIBRARY(LIBRARY_libflash STATIC ${SOURCES_libflash})
-TARGET_INCLUDE_DIRECTORIES(LIBRARY_libflash
-                           PRIVATE src
-                                   src/helper
-                                   jimtcl
-                                   ${CMAKE_CURRENT_BINARY_DIR}/config
-                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
-TARGET_COMPILE_DEFINITIONS(LIBRARY_libflash
-                           PRIVATE HAVE_CONFIG_H)
-
 
 SET(SOURCES_libhelper
 	src/helper/binarybuffer.c
@@ -276,18 +266,6 @@ SET(SOURCES_libhelper
 	src/helper/time_support_common.c
 	src/helper/util.c
 )
-
-ADD_LIBRARY(LIBRARY_libhelper STATIC ${SOURCES_libhelper})
-TARGET_INCLUDE_DIRECTORIES(LIBRARY_libhelper
-                           PRIVATE src
-                                   src/helper
-                                   jimtcl
-                                   ${CMAKE_CURRENT_BINARY_DIR}/config
-                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
-TARGET_COMPILE_DEFINITIONS(LIBRARY_libhelper
-                           PRIVATE HAVE_CONFIG_H
-                                   PKGDATADIR="/usr/local/share/openocd")
-
 
 
 SET(SOURCES_libjtag
@@ -318,38 +296,12 @@ SET(SOURCES_libjtag
 	src/jtag/hla/hla_transport.c
 )
 
-ADD_LIBRARY(LIBRARY_libjtag STATIC ${SOURCES_libjtag})
-TARGET_INCLUDE_DIRECTORIES(LIBRARY_libjtag
-                           PRIVATE src
-                                   src/helper
-                                   src/jtag/drivers
-                                   jimtcl
-                                   ${CMAKE_CURRENT_BINARY_DIR}/config
-                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config
-                                   ${LIBUSBX_INCLUDE_DIRECTORIES})
-TARGET_COMPILE_DEFINITIONS(LIBRARY_libjtag
-                           PRIVATE HAVE_CONFIG_H
-                                   PKGDATADIR="/usr/local/share/openocd")
-
-
 
 SET(SOURCES_libpld
 	src/pld/pld.c
 	src/pld/virtex2.c
 	src/pld/xilinx_bit.c
 )
-
-ADD_LIBRARY(LIBRARY_libpld STATIC ${SOURCES_libpld})
-TARGET_INCLUDE_DIRECTORIES(LIBRARY_libpld
-                           PRIVATE src
-                                   src/helper
-                                   jimtcl
-                                   ${CMAKE_CURRENT_BINARY_DIR}/config
-                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
-TARGET_COMPILE_DEFINITIONS(LIBRARY_libpld
-                           PRIVATE HAVE_CONFIG_H
-                                   PKGDATADIR="/usr/local/share/openocd")
-
 
 
 SET(SOURCES_librtos
@@ -367,18 +319,6 @@ SET(SOURCES_librtos
 	src/rtos/ThreadX.c
 )
 
-ADD_LIBRARY(LIBRARY_librtos STATIC ${SOURCES_librtos})
-TARGET_INCLUDE_DIRECTORIES(LIBRARY_librtos
-                           PRIVATE src
-                                   src/helper
-                                   jimtcl
-                                   ${CMAKE_CURRENT_BINARY_DIR}/config
-                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
-TARGET_COMPILE_DEFINITIONS(LIBRARY_librtos
-                           PRIVATE HAVE_CONFIG_H
-                                   PKGDATADIR="/usr/local/share/openocd")
-
-
 
 SET(SOURCES_libserver
 	src/server/gdb_server.c
@@ -388,34 +328,10 @@ SET(SOURCES_libserver
 	src/server/telnet_server.c
 )
 
-ADD_LIBRARY(LIBRARY_libserver STATIC ${SOURCES_libserver})
-TARGET_INCLUDE_DIRECTORIES(LIBRARY_libserver
-                           PRIVATE src
-                                   src/helper
-                                   jimtcl
-                                   ${CMAKE_CURRENT_BINARY_DIR}/config
-                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
-TARGET_COMPILE_DEFINITIONS(LIBRARY_libserver
-                           PRIVATE HAVE_CONFIG_H
-                                   PKGDATADIR="/usr/local/share/openocd")
-
-
 
 SET(SOURCES_libsvf
 	src/svf/svf.c
 )
-
-ADD_LIBRARY(LIBRARY_libsvf STATIC ${SOURCES_libsvf})
-TARGET_INCLUDE_DIRECTORIES(LIBRARY_libsvf
-                           PRIVATE src
-                                   src/helper
-                                   jimtcl
-                                   ${CMAKE_CURRENT_BINARY_DIR}/config
-                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
-TARGET_COMPILE_DEFINITIONS(LIBRARY_libsvf
-                           PRIVATE HAVE_CONFIG_H
-                                   PKGDATADIR="/usr/local/share/openocd")
-
 
 
 SET(SOURCES_libtarget
@@ -491,51 +407,37 @@ SET(SOURCES_libtarget
 	src/target/openrisc/or1k_tap_vjtag.c
 )
 
-ADD_LIBRARY(LIBRARY_libtarget STATIC ${SOURCES_libtarget})
-TARGET_INCLUDE_DIRECTORIES(LIBRARY_libtarget
-                           PRIVATE src
-                                   src/helper
-                                   jimtcl
-                                   ${CMAKE_CURRENT_BINARY_DIR}/config
-                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
-TARGET_COMPILE_DEFINITIONS(LIBRARY_libtarget
-                           PRIVATE HAVE_CONFIG_H
-                                   PKGDATADIR="/usr/local/share/openocd")
-
-
 
 SET(SOURCES_libtransport
 	src/transport/transport.c
 )
-
-ADD_LIBRARY(LIBRARY_libtransport STATIC ${SOURCES_libtransport})
-TARGET_INCLUDE_DIRECTORIES(LIBRARY_libtransport
-                           PRIVATE src
-                                   src/helper
-                                   jimtcl
-                                   ${CMAKE_CURRENT_BINARY_DIR}/config
-                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
-TARGET_COMPILE_DEFINITIONS(LIBRARY_libtransport
-                           PRIVATE HAVE_CONFIG_H
-                                   PKGDATADIR="/usr/local/share/openocd")
-
 
 
 SET(SOURCES_libxsvf
 	src/xsvf/xsvf.c
 )
 
-ADD_LIBRARY(LIBRARY_libxsvf STATIC ${SOURCES_libxsvf})
-TARGET_INCLUDE_DIRECTORIES(LIBRARY_libxsvf
+
+ADD_LIBRARY(LIBRARY_libopenocd STATIC ${SOURCES_libflash}
+                                      ${SOURCES_libhelper}
+                                      ${SOURCES_libjtag}
+                                      ${SOURCES_libpld}
+                                      ${SOURCES_librtos}
+                                      ${SOURCES_libserver}
+                                      ${SOURCES_libsvf}
+                                      ${SOURCES_libtarget}
+                                      ${SOURCES_libtransport}
+                                      ${SOURCES_libxsvf})
+TARGET_INCLUDE_DIRECTORIES(LIBRARY_libopenocd
                            PRIVATE src
                                    src/helper
-                                   jimtcl
+                                   src/jtag/drivers
+                                   ${LIBJIM_INCLUDE_DIRECTORIES}
                                    ${CMAKE_CURRENT_BINARY_DIR}/config
-                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
-TARGET_COMPILE_DEFINITIONS(LIBRARY_libxsvf
+                                   ${LIBUSBX_INCLUDE_DIRECTORIES})
+TARGET_COMPILE_DEFINITIONS(LIBRARY_libopenocd
                            PRIVATE HAVE_CONFIG_H
                                    PKGDATADIR="/usr/local/share/openocd")
-
 
 
 SET(SOURCES_openocd
@@ -546,24 +448,16 @@ SET(SOURCES_openocd
 )
 
 ADD_EXECUTABLE(TARGET_openocd ${SOURCES_openocd})
-TARGET_LINK_LIBRARIES(TARGET_openocd LIBRARY_libflash
-                                     LIBRARY_libhelper
-                                     LIBRARY_libjtag
-                                     LIBRARY_libpld
-                                     LIBRARY_librtos
-                                     LIBRARY_libserver
-                                     LIBRARY_libsvf
-                                     LIBRARY_libtarget
-                                     LIBRARY_libtransport
-                                     LIBRARY_libxsvf
+TARGET_LINK_LIBRARIES(TARGET_openocd LIBRARY_libopenocd
                                      LIBRARY_jim
-                                     "${LIBUSBX_LIBRARY}")
+                                     ${LIBUSBX_LIBRARY}
+                                     "${LIBJIM_LDFLAGS}"
+                                     "${LIBUSBX_LDFLAGS}")
 TARGET_INCLUDE_DIRECTORIES(TARGET_openocd
                            PRIVATE src
                                    src/helper
-                                   jimtcl
                                    ${CMAKE_CURRENT_BINARY_DIR}/config
-                                   ${CMAKE_CURRENT_BINARY_DIR}/jimtcl/config)
+                                   ${LIBJIM_INCLUDE_DIRECTORIES})
 TARGET_COMPILE_DEFINITIONS(TARGET_openocd
                            PRIVATE HAVE_CONFIG_H
                                    PKGDATADIR="/usr/local/share/openocd"
