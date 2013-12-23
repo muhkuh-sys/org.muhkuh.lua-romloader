@@ -256,7 +256,6 @@ LIST(APPEND EXTENSIONS_INIT "tclprefix")
 LIST(APPEND EXTENSIONS_INIT "binary")
 LIST(APPEND EXTENSIONS_INIT "glob")
 LIST(APPEND EXTENSIONS_INIT "tree")
-#FOREACH(SOURCE stdlib aio array clock eventloop exec file history load namespace nshelper oo pack package posix readdir regexp signal syslog tclcompat tclprefix binary glob tree)
 
 SET(SRC "${CMAKE_CURRENT_BINARY_DIR}/generated/_load-static-exts.c")
 FILE(WRITE  ${SRC} "\n")
@@ -281,4 +280,15 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 ADD_LIBRARY(LIBRARY_jim STATIC ${SOURCES_libjim})
 TARGET_INCLUDE_DIRECTORIES(LIBRARY_jim
                            PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config)
+
+SET(LDFLAGS "-ldl -lm")
+SET(DEFINES "")
+SET(INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/config")
+
+#-----------------------------------------------------------------------------
+
+#SET(LIBJIM_LIBRARY              ${LIBRARY}              CACHE INTERNAL "The libusbx library with the complete path.")
+SET(LIBJIM_LDFLAGS              ${LDFLAGS}              CACHE INTERNAL "All linker flags required to link the library. The list must be separated with whitespace.")
+SET(LIBJIM_DEFINES              ${DEFINES}              CACHE INTERNAL "All defines for the libusbx library. This should be a list of entries starting with -D.")
+SET(LIBJIM_INCLUDE_DIRECTORIES  ${INCLUDE_DIRECTORIES}  CACHE INTERNAL "The include folders for the library headers. The list must be separated with whitespace.")
 
