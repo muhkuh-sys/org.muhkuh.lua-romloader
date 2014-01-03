@@ -24,6 +24,41 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/jim-config.h.in ${CMAKE_CURRENT
 # Get all defines for jimautoconf.h.in .
 #
 
+IF(MSVC)
+	SET(TCL_PLATFORM_OS "windows")
+	SET(TCL_PLATFORM_PLATFORM "windows")
+	SET(TCL_PLATFORM_PATH_SEPARATOR ";")
+	SET(HAVE_MKDIR_ONE_ARG 1)
+	SET(HAVE_SYSTEM 1)
+	SET(HAVE_WINDOWS 1)
+	SET(LDFLAGS "-lm")
+
+# A GNU compiler on windows must be mingw.
+ELSEIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+	# GNU compiler on windows - this must be minGW.
+	SET(TCL_PLATFORM_OS "mingw")
+	SET(TCL_PLATFORM_PLATFORM "windows")
+	SET(TCL_PLATFORM_PATH_SEPARATOR ";")
+	SET(HAVE_MKDIR_ONE_ARG 1)
+	SET(HAVE_SYSTEM 1)
+	SET(HAVE_DLOPEN_COMPAT 1)
+	SET(HAVE_WINDOWS 1)
+	SET(HAVE_WINCONSOLE 1)
+	ADD_DEFINITIONS(-D_GNU_SOURCE)
+	SET(LDFLAGS "-lm")
+
+ELSE(MSVC)
+	# Default to GNU compiler on unix.
+	SET(TCL_PLATFORM_OS "linux")
+	SET(TCL_PLATFORM_PLATFORM "unix")
+	SET(TCL_PLATFORM_PATH_SEPARATOR ":")
+	SET(HAVE_SYSTEM 1)
+	ADD_DEFINITIONS(-D_GNU_SOURCE)
+	SET(LDFLAGS "-ldl -lm")
+
+ENDIF(MSVC)
+
+
 CHECK_INCLUDE_FILES(arpa/inet.h HAVE_ARPA_INET_H)
 CHECK_FUNCTION_EXISTS(backtrace HAVE_BACKTRACE)
 CHECK_INCLUDE_FILES(dirent.h HAVE_DIRENT_H)
@@ -102,9 +137,9 @@ ELSE(${SIZEOF_OFF_T_1} EQUAL 8)
 ENDIF(${SIZEOF_OFF_T_1} EQUAL 8)
 
 
-IF(HAVE_TERMIOS_H AND HAVE_ISATTY)
+IF((HAVE_TERMIOS_H AND HAVE_ISATTY) OR HAVE_WINCONSOLE)
 	SET(USE_LINENOISE 1)
-ENDIF(HAVE_TERMIOS_H AND HAVE_ISATTY)
+ENDIF((HAVE_TERMIOS_H AND HAVE_ISATTY) OR HAVE_WINCONSOLE)
 
 
 IF(${CMAKE_COMPILER_IS_GNUCC})
@@ -112,47 +147,19 @@ IF(${CMAKE_COMPILER_IS_GNUCC})
 ENDIF(${CMAKE_COMPILER_IS_GNUCC})
 
 
-IF(MSVC)
-	SET(TCL_PLATFORM_OS "windows")
-	SET(TCL_PLATFORM_PLATFORM "windows")
-	SET(TCL_PLATFORM_PATH_SEPARATOR ";")
-	SET(HAVE_MKDIR_ONE_ARG 1)
-	SET(HAVE_SYSTEM 1)
-
-# A GNU compiler on windows must be mingw.
-ELIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
-	# GNU compiler on windows - this must be minGW.
-	SET(TCL_PLATFORM_OS "mingw")
-	SET(TCL_PLATFORM_PLATFORM "windows")
-	SET(TCL_PLATFORM_PATH_SEPARATOR ";")
-	SET(HAVE_MKDIR_ONE_ARG 1)
-	SET(HAVE_SYSTEM 1)
-ELSE(MSVC)
-	# Default to GNU compiler on unix.
-	SET(TCL_PLATFORM_OS "linux")
-	SET(TCL_PLATFORM_PLATFORM "unix")
-	SET(TCL_PLATFORM_PATH_SEPARATOR ":")
-	SET(HAVE_SYSTEM 1)
-ENDIF(MSVC)
-
-
 SET(JIM_REFERENCES 1)
 SET(JIM_REGEXP 1)
 SET(JIM_STATICLIB 1)
 
-SET(jim_ext_bootstrap 1)
 SET(jim_ext_aio 1)
-SET(jim_ext_readdir 1)
-SET(jim_ext_glob 1)
-SET(jim_ext_regexp 1)
-SET(jim_ext_file 1)
-SET(jim_ext_exec 1)
-SET(jim_ext_clock 1)
 SET(jim_ext_array 1)
-SET(jim_ext_stdlib 1)
-SET(jim_ext_tclcompat 1)
 SET(jim_ext_binary 1)
+SET(jim_ext_bootstrap 1)
+SET(jim_ext_clock 1)
 SET(jim_ext_eventloop 1)
+SET(jim_ext_exec 1)
+SET(jim_ext_file 1)
+SET(jim_ext_glob 1)
 SET(jim_ext_history 1)
 SET(jim_ext_load 1)
 SET(jim_ext_namespace 1)
@@ -160,12 +167,23 @@ SET(jim_ext_nshelper 1)
 SET(jim_ext_oo 1)
 SET(jim_ext_pack 1)
 SET(jim_ext_package 1)
-SET(jim_ext_posix 1)
-SET(jim_ext_signal 1)
-SET(jim_ext_syslog 1)
+SET(jim_ext_readdir 1)
+SET(jim_ext_regexp 1)
+SET(jim_ext_stdlib 1)
+SET(jim_ext_tclcompat 1)
 SET(jim_ext_tclprefix 1)
 SET(jim_ext_tree 1)
 
+IF(HAVE_WINDOWS)
+	# These modules do not work with windows.
+	SET(jim_ext_posix 0)
+	SET(jim_ext_signal 0)
+	SET(jim_ext_syslog 0)
+ELSEIF(HAVE_WINDOWS)
+	SET(jim_ext_posix 1)
+	SET(jim_ext_signal 1)
+	SET(jim_ext_syslog 1)
+ENDIF(HAVE_WINDOWS)
 
 SET(TCL_LIBRARY ${CMAKE_INSTALL_PREFIX}/lib/jim)
 
@@ -181,32 +199,134 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/jimautoconf.h.in ${CMAKE_CURREN
 SET(SOURCES_libjim jim-subcmd.c
                    jim-interactive.c
                    jim-format.c
+                   jim-win32compat.c
                    jim.c
                    utf8.c
                    jimregexp.c
                    linenoise.c
-                   jim-aio.c
-                   jim-array.c
-                   jim-clock.c
-                   jim-eventloop.c
-                   jim-exec.c
-                   jim-file.c
-                   jim-history.c
-                   jim-load.c
-                   jim-namespace.c
-                   jim-pack.c
-                   jim-package.c
-                   jim-posix.c
-                   jim-readdir.c
-                   jim-regexp.c
-                   jim-signal.c
-                   jim-syslog.c
-                   jim-tclprefix.c
 )
 
 
+SET(C_EXTENSIONS_INIT "")
+LIST(APPEND C_EXTENSIONS_INIT "stdlib")
 
-FOREACH(SOURCE binary glob initjimsh nshelper oo stdlib tclcompat tree)
+
+# NOTE: The order of the extensions is important!
+IF(jim_ext_aio)
+	LIST(APPEND C_EXTENSIONS_INIT "aio")
+	LIST(APPEND SOURCES_libjim jim-aio.c)
+ENDIF(jim_ext_aio)
+IF(jim_ext_array)
+	LIST(APPEND C_EXTENSIONS_INIT "array")
+	LIST(APPEND SOURCES_libjim jim-array.c)
+ENDIF(jim_ext_array)
+IF(jim_ext_clock)
+	LIST(APPEND C_EXTENSIONS_INIT "clock")
+	LIST(APPEND SOURCES_libjim jim-clock.c)
+ENDIF(jim_ext_clock)
+IF(jim_ext_eventloop)
+	LIST(APPEND C_EXTENSIONS_INIT "eventloop")
+	LIST(APPEND SOURCES_libjim jim-eventloop.c)
+ENDIF(jim_ext_eventloop)
+IF(jim_ext_exec)
+	LIST(APPEND C_EXTENSIONS_INIT "exec")
+	LIST(APPEND SOURCES_libjim jim-exec.c)
+ENDIF(jim_ext_exec)
+IF(jim_ext_file)
+	LIST(APPEND C_EXTENSIONS_INIT "file")
+	LIST(APPEND SOURCES_libjim jim-file.c)
+ENDIF(jim_ext_file)
+IF(jim_ext_history)
+	LIST(APPEND C_EXTENSIONS_INIT "history")
+	LIST(APPEND SOURCES_libjim jim-history.c)
+ENDIF(jim_ext_history)
+IF(jim_ext_load)
+	LIST(APPEND C_EXTENSIONS_INIT "load")
+	LIST(APPEND SOURCES_libjim jim-load.c)
+ENDIF(jim_ext_load)
+IF(jim_ext_namespace)
+	LIST(APPEND C_EXTENSIONS_INIT "namespace")
+	LIST(APPEND SOURCES_libjim jim-namespace.c)
+ENDIF(jim_ext_namespace)
+IF(jim_ext_nshelper)
+	LIST(APPEND C_EXTENSIONS_INIT "nshelper")
+ENDIF(jim_ext_nshelper)
+IF(jim_ext_oo)
+	LIST(APPEND C_EXTENSIONS_INIT "oo")
+ENDIF(jim_ext_oo)
+IF(jim_ext_pack)
+	LIST(APPEND C_EXTENSIONS_INIT "pack")
+	LIST(APPEND SOURCES_libjim jim-pack.c)
+ENDIF(jim_ext_pack)
+IF(jim_ext_package)
+	LIST(APPEND C_EXTENSIONS_INIT "package")
+	LIST(APPEND SOURCES_libjim jim-package.c)
+ENDIF(jim_ext_package)
+IF(jim_ext_posix)
+	LIST(APPEND C_EXTENSIONS_INIT "posix")
+	LIST(APPEND SOURCES_libjim jim-posix.c)
+ENDIF(jim_ext_posix)
+IF(jim_ext_readdir)
+	LIST(APPEND C_EXTENSIONS_INIT "readdir")
+	LIST(APPEND SOURCES_libjim jim-readdir.c)
+ENDIF(jim_ext_readdir)
+IF(jim_ext_regexp)
+	LIST(APPEND C_EXTENSIONS_INIT "regexp")
+	LIST(APPEND SOURCES_libjim jim-regexp.c)
+ENDIF(jim_ext_regexp)
+IF(jim_ext_signal)
+	LIST(APPEND C_EXTENSIONS_INIT "signal")
+	LIST(APPEND SOURCES_libjim jim-signal.c)
+ENDIF(jim_ext_signal)
+IF(jim_ext_syslog)
+	LIST(APPEND C_EXTENSIONS_INIT "syslog")
+	LIST(APPEND SOURCES_libjim jim-syslog.c)
+ENDIF(jim_ext_syslog)
+IF(jim_ext_tclcompat)
+	LIST(APPEND C_EXTENSIONS_INIT "tclcompat")
+ENDIF(jim_ext_tclcompat)
+IF(jim_ext_tclprefix)
+	LIST(APPEND C_EXTENSIONS_INIT "tclprefix")
+	LIST(APPEND SOURCES_libjim jim-tclprefix.c)
+ENDIF(jim_ext_tclprefix)
+IF(jim_ext_binary)
+	LIST(APPEND C_EXTENSIONS_INIT "binary")
+ENDIF(jim_ext_binary)
+IF(jim_ext_glob)
+	LIST(APPEND C_EXTENSIONS_INIT "glob")
+ENDIF(jim_ext_glob)
+IF(jim_ext_tree)
+	LIST(APPEND C_EXTENSIONS_INIT "tree")
+ENDIF(jim_ext_tree)
+
+
+
+SET(TCL_EXTENSIONS_INIT "")
+IF(jim_ext_binary)
+	LIST(APPEND TCL_EXTENSIONS_INIT "binary")
+ENDIF(jim_ext_binary)
+IF(jim_ext_glob)
+	LIST(APPEND TCL_EXTENSIONS_INIT "glob")
+ENDIF(jim_ext_glob)
+LIST(APPEND TCL_EXTENSIONS_INIT "initjimsh")
+IF(jim_ext_nshelper)
+	LIST(APPEND TCL_EXTENSIONS_INIT "nshelper")
+ENDIF(jim_ext_nshelper)
+IF(jim_ext_oo)
+	LIST(APPEND TCL_EXTENSIONS_INIT "oo")
+ENDIF(jim_ext_oo)
+IF(jim_ext_stdlib)
+	LIST(APPEND TCL_EXTENSIONS_INIT "stdlib")
+ENDIF(jim_ext_stdlib)
+IF(jim_ext_tclcompat)
+	LIST(APPEND TCL_EXTENSIONS_INIT "tclcompat")
+ENDIF(jim_ext_tclcompat)
+IF(jim_ext_tree)
+	LIST(APPEND TCL_EXTENSIONS_INIT "tree")
+ENDIF(jim_ext_tree)
+
+
+FOREACH(SOURCE IN LISTS TCL_EXTENSIONS_INIT)
 	SET(SRC "${CMAKE_CURRENT_BINARY_DIR}/generated/_${SOURCE}.c")
 	FILE(WRITE  ${SRC} "/* autogenerated - do not edit */\n")
 	FILE(APPEND ${SRC} "#include <jim.h>\n")
@@ -231,33 +351,6 @@ FOREACH(SOURCE binary glob initjimsh nshelper oo stdlib tclcompat tree)
 ENDFOREACH(SOURCE)
 
 
-# NOTE: The order of the extensions is important!
-SET(EXTENSIONS_INIT "")
-LIST(APPEND EXTENSIONS_INIT "stdlib")
-LIST(APPEND EXTENSIONS_INIT "aio")
-LIST(APPEND EXTENSIONS_INIT "array")
-LIST(APPEND EXTENSIONS_INIT "clock")
-LIST(APPEND EXTENSIONS_INIT "eventloop")
-LIST(APPEND EXTENSIONS_INIT "exec")
-LIST(APPEND EXTENSIONS_INIT "file")
-LIST(APPEND EXTENSIONS_INIT "history")
-LIST(APPEND EXTENSIONS_INIT "load")
-LIST(APPEND EXTENSIONS_INIT "namespace")
-LIST(APPEND EXTENSIONS_INIT "nshelper")
-LIST(APPEND EXTENSIONS_INIT "oo")
-LIST(APPEND EXTENSIONS_INIT "pack")
-LIST(APPEND EXTENSIONS_INIT "package")
-LIST(APPEND EXTENSIONS_INIT "posix")
-LIST(APPEND EXTENSIONS_INIT "readdir")
-LIST(APPEND EXTENSIONS_INIT "regexp")
-LIST(APPEND EXTENSIONS_INIT "signal")
-LIST(APPEND EXTENSIONS_INIT "syslog")
-LIST(APPEND EXTENSIONS_INIT "tclcompat")
-LIST(APPEND EXTENSIONS_INIT "tclprefix")
-LIST(APPEND EXTENSIONS_INIT "binary")
-LIST(APPEND EXTENSIONS_INIT "glob")
-LIST(APPEND EXTENSIONS_INIT "tree")
-
 SET(SRC "${CMAKE_CURRENT_BINARY_DIR}/generated/_load-static-exts.c")
 FILE(WRITE  ${SRC} "\n")
 FILE(APPEND ${SRC} "/* autogenerated - do not edit */\n")
@@ -266,10 +359,10 @@ FILE(APPEND ${SRC} "#include \"jimautoconf.h\"\n")
 FILE(APPEND ${SRC} "int Jim_InitStaticExtensions(Jim_Interp *interp)\n")
 FILE(APPEND ${SRC} "\n")
 FILE(APPEND ${SRC} "{\n")
-FOREACH(SOURCE IN LISTS EXTENSIONS_INIT)
+FOREACH(SOURCE IN LISTS C_EXTENSIONS_INIT)
 	FILE(APPEND ${SRC} "\textern int Jim_${SOURCE}Init(Jim_Interp *);\n")
 ENDFOREACH(SOURCE)
-FOREACH(SOURCE IN LISTS EXTENSIONS_INIT)
+FOREACH(SOURCE IN LISTS C_EXTENSIONS_INIT)
 	FILE(APPEND ${SRC} "\tJim_${SOURCE}Init(interp);\n")
 ENDFOREACH(SOURCE)
 FILE(APPEND ${SRC} "\treturn JIM_OK;\n")
@@ -281,9 +374,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 ADD_LIBRARY(LIBRARY_jim STATIC ${SOURCES_libjim})
 TARGET_INCLUDE_DIRECTORIES(LIBRARY_jim
                            PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config)
-ADD_DEFINITIONS(-D_GNU_SOURCE)
-
-SET(LDFLAGS "-ldl -lm")
 SET(DEFINES "")
 SET(INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/config")
 
