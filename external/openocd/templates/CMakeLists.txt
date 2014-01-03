@@ -80,7 +80,7 @@ IF(WIN32)
 ENDIF(WIN32)
 
 SET(LT_OBJDIR ".libs/")
-SET(PARPORT_USE_PPDEV 1)
+SET(PARPORT_USE_PPDEV 0)
 
 SET(PACKAGE "openocd")
 SET(PACKAGE_BUGREPORT "OpenOCD Mailing List <openocd-devel@lists.sourceforge.net>")
@@ -189,7 +189,6 @@ SET(SOURCES_libflash
 	src/flash/
 	src/flash/common.c
 	src/flash/mflash.c
-	
 	src/flash/nand/arm_io.c
 	src/flash/nand/at91sam9.c
 	src/flash/nand/core.c
@@ -212,7 +211,6 @@ SET(SOURCES_libflash
 	src/flash/nand/s3c24xx.c
 	src/flash/nand/s3c6400.c
 	src/flash/nand/tcl.c
-	
 	src/flash/nor/aduc702x.c
 	src/flash/nor/at91sam3.c
 	src/flash/nor/at91sam4.c
@@ -393,7 +391,6 @@ SET(SOURCES_libtarget
 	src/target/nds32_v3.c
 	src/target/nds32_v3_common.c
 	src/target/nds32_v3m.c
-	src/target/oocd_trace.c
 	src/target/register.c
 	src/target/smp.c
 	src/target/target.c
@@ -406,6 +403,9 @@ SET(SOURCES_libtarget
 	src/target/openrisc/or1k_tap_mohor.c
 	src/target/openrisc/or1k_tap_vjtag.c
 )
+IF(BUILD_OOCD_TRACE)
+	LIST(APPEND SOURCES_libtarget src/target/oocd_trace.c)
+ENDIF(BUILD_OOCD_TRACE)
 
 
 SET(SOURCES_libtransport
@@ -435,10 +435,72 @@ TARGET_INCLUDE_DIRECTORIES(LIBRARY_libopenocd
                                    ${LIBJIM_INCLUDE_DIRECTORIES}
                                    ${CMAKE_CURRENT_BINARY_DIR}/config
                                    ${LIBUSBX_INCLUDE_DIRECTORIES})
-TARGET_COMPILE_DEFINITIONS(LIBRARY_libopenocd
-                           PRIVATE HAVE_CONFIG_H
-                                   PKGDATADIR="/usr/local/share/openocd")
 
+SET(LIBRARY_libopenocd_defines "")
+LIST(APPEND LIBRARY_libopenocd_defines "HAVE_CONFIG_H")
+LIST(APPEND LIBRARY_libopenocd_defines "PKGDATADIR=\"/usr/local/share/openocd\"")
+LIST(APPEND LIBRARY_libopenocd_defines "RELSTR=\"-local\"")
+LIST(APPEND LIBRARY_libopenocd_defines "GITVERSION=\"0\"")
+LIST(APPEND LIBRARY_libopenocd_defines "PKGBLDDATE=\"2013-12-22-15:10\"")
+IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+	LIST(APPEND LIBRARY_libopenocd_defines "__USE_MINGW_ANSI_STDIO")
+ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+
+TARGET_COMPILE_DEFINITIONS(LIBRARY_libopenocd
+                           PRIVATE ${LIBRARY_libopenocd_defines})
+
+IF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+	SET(LIBOPENOCD_LDFLAGS -lws2_32)
+ELSE(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+	SET(LIBOPENOCD_LDFLAGS "")
+ENDIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+
+
+
+#-----------------------------------------------------------------------------
+#
+# Install all components of the library.
+# This is the library itself and the public headers.
+#
+
+SET(CMAKE_INSTALL_PREFIX /install)
+
+INSTALL(TARGETS LIBRARY_libopenocd DESTINATION lib)
+
+INSTALL(FILES src/jtag/driver.h
+              src/jtag/jtag.h
+        DESTINATION include/jtag)
+
+INSTALL(FILES src/transport/transport.h
+        DESTINATION include/transport)
+
+INSTALL(FILES src/helper/ioutil.h
+              src/helper/util.h
+              src/helper/configuration.h
+        DESTINATION include/helper)
+
+INSTALL(FILES src/flash/nor/core.h
+        DESTINATION include/flash/nor)
+
+INSTALL(FILES src/flash/nand/core.h
+        DESTINATION include/flash/nand)
+
+INSTALL(FILES src/flash/mflash.h
+        DESTINATION include/flash)
+
+INSTALL(FILES src/pld/pld.h
+        DESTINATION include/pld)
+
+INSTALL(FILES src/server/server.h
+              src/server/gdb_server.h
+        DESTINATION include/server)
+
+
+
+#-----------------------------------------------------------------------------
+#
+# This is just a test for the library.
+#
 
 SET(SOURCES_openocd
 	src/hello.c
@@ -449,6 +511,7 @@ SET(SOURCES_openocd
 
 ADD_EXECUTABLE(TARGET_openocd ${SOURCES_openocd})
 TARGET_LINK_LIBRARIES(TARGET_openocd LIBRARY_libopenocd
+                                     ${LIBOPENOCD_LDFLAGS}
                                      LIBRARY_jim
                                      ${LIBUSBX_LIBRARY}
                                      "${LIBJIM_LDFLAGS}"
@@ -459,8 +522,5 @@ TARGET_INCLUDE_DIRECTORIES(TARGET_openocd
                                    ${CMAKE_CURRENT_BINARY_DIR}/config
                                    ${LIBJIM_INCLUDE_DIRECTORIES})
 TARGET_COMPILE_DEFINITIONS(TARGET_openocd
-                           PRIVATE HAVE_CONFIG_H
-                                   PKGDATADIR="/usr/local/share/openocd"
-                                   RELSTR="-local"
-                                   GITVERSION="0"
-                                   PKGBLDDATE="2013-12-22-15:10")
+                           PRIVATE ${LIBRARY_libopenocd_defines})
+
