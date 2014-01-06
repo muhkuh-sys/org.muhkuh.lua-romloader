@@ -1,0 +1,35 @@
+diff -uNr org/src/transport/transport.c new/src/transport/transport.c
+--- org/src/transport/transport.c	2013-11-11 20:37:38.000000000 +0100
++++ new/src/transport/transport.c	2014-01-06 17:04:50.000000000 +0100
+@@ -266,6 +266,17 @@
+ 	return ERROR_OK;
+ }
+ 
++COMMAND_HANDLER(handle_transport_clear)
++{
++	if (CMD_ARGC != 0)
++		return ERROR_COMMAND_SYNTAX_ERROR;
++
++	allowed_transports = NULL;
++	session = NULL;
++
++	return ERROR_OK;
++}
++
+ /**
+  * Implements the Tcl "transport select" command, choosing the
+  * transport to be used in this debug session from among the
+@@ -337,6 +348,13 @@
+ 		.usage = ""
+ 	},
+ 	{
++		.name = "clear",
++		.handler = handle_transport_clear,
++		.mode = COMMAND_CONFIG,
++		.help = "clear transports",
++		.usage = ""
++	},
++	{
+ 		.name = "select",
+ 		.jim_handler = jim_transport_select,
+ 		.mode = COMMAND_ANY,

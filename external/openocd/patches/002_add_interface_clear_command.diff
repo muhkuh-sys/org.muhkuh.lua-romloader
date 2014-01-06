@@ -1,0 +1,34 @@
+diff -uNr org/src/jtag/adapter.c new/src/jtag/adapter.c
+--- org/src/jtag/adapter.c	2013-11-11 20:37:38.000000000 +0100
++++ new/src/jtag/adapter.c	2014-01-06 16:40:16.000000000 +0100
+@@ -185,6 +185,16 @@
+ 	return ERROR_JTAG_INVALID_INTERFACE;
+ }
+ 
++COMMAND_HANDLER(handle_interface_clear_command)
++{
++	/* this command has no arguments */
++	if (CMD_ARGC != 0)
++		return ERROR_COMMAND_SYNTAX_ERROR;
++	
++	jtag_interface = NULL;
++	return ERROR_OK;
++}
++
+ COMMAND_HANDLER(handle_reset_config_command)
+ {
+ 	int new_cfg = 0;
+@@ -498,6 +508,13 @@
+ 		.usage = "driver_name",
+ 	},
+ 	{
++		.name = "interface_clear",
++		.handler = handle_interface_clear_command,
++		.mode = COMMAND_CONFIG,
++		.help = "Deselect a previously selected debug adapter interface (driver)",
++		.usage = "",
++	},
++	{
+ 		.name = "interface_transports",
+ 		.handler = interface_transport_command,
+ 		.mode = COMMAND_CONFIG,
