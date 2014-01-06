@@ -1,0 +1,74 @@
+diff -uNr org/src/jtag/core.c new/src/jtag/core.c
+--- org/src/jtag/core.c	2013-11-11 20:37:38.000000000 +0100
++++ new/src/jtag/core.c	2014-01-05 13:04:24.685586059 +0100
+@@ -1334,6 +1334,23 @@
+ 	free(tap);
+ }
+ 
++void jtag_tap_free_all(void)
++{
++	struct jtag_tap *tap;
++	struct jtag_tap *next;
++	
++	tap = __jtag_all_taps;
++	while( tap!=NULL )
++	{
++		next = tap->next_tap;
++		jtag_tap_free(tap);
++		tap = next;
++	}
++	
++	__jtag_all_taps = NULL;
++	jtag_num_taps = 0;
++}
++
+ /**
+  * Do low-level setup like initializing registers, output signals,
+  * and clocking.
+diff -uNr org/src/jtag/jtag.h new/src/jtag/jtag.h
+--- org/src/jtag/jtag.h	2013-11-11 20:37:38.000000000 +0100
++++ new/src/jtag/jtag.h	2014-01-05 12:44:03.087528482 +0100
+@@ -163,6 +163,7 @@
+ 
+ void jtag_tap_init(struct jtag_tap *tap);
+ void jtag_tap_free(struct jtag_tap *tap);
++void jtag_tap_free_all();
+ 
+ struct jtag_tap *jtag_all_taps(void);
+ const char *jtag_tap_name(const struct jtag_tap *tap);
+diff -uNr org/src/jtag/tcl.c new/src/jtag/tcl.c
+--- org/src/jtag/tcl.c	2013-11-11 20:37:38.000000000 +0100
++++ new/src/jtag/tcl.c	2014-01-05 12:32:22.112052532 +0100
+@@ -701,6 +701,18 @@
+ 	return jim_newtap_cmd(&goi);
+ }
+ 
++static int jim_jtag_cleartaps(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
++{
++	Jim_GetOptInfo goi;
++	Jim_GetOpt_Setup(&goi, interp, argc-1, argv + 1);
++	if (goi.argc != 0) {
++		Jim_WrongNumArgs(goi.interp, 1, goi.argv-1, "(no params)");
++		return JIM_ERR;
++	}
++	jtag_tap_free_all();
++	return JIM_OK;
++}
++
+ static bool jtag_tap_enable(struct jtag_tap *t)
+ {
+ 	if (t->enabled)
+@@ -865,6 +877,13 @@
+ 			"['-mask' number] ",
+ 	},
+ 	{
++		.name = "cleartaps",
++		.mode = COMMAND_CONFIG,
++		.jim_handler = jim_jtag_cleartaps,
++		.help = "Clear all defined TAP instances.",
++		.usage = ""
++	},
++	{
+ 		.name = "tapisenabled",
+ 		.mode = COMMAND_EXEC,
+ 		.jim_handler = jim_jtag_tap_enabler,
