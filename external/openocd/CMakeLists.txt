@@ -9,6 +9,18 @@ INCLUDE(ExternalProject)
 #
 # Build the project.
 #
+
+# FIXME: The patches are stored in the 'patches' subfolder. These files are
+# not used because I have not found a portable way to apply them. I do not
+# want to rely on extra tools like GNU patch. While it is quite common on
+# linux platforms, it is very special on windows.
+# A nice way is the 'google-diff-match-patch' package here:
+#   http://code.google.com/p/google-diff-match-patch/
+# Looks like I can simulate a GNU patch with 'patch_fromText' and
+# 'patch_apply', but this is a bit more work. So for now the already patched
+# files are stored in the templates folder. They are simply copied over the
+# original files.
+
 SET(OPENOCD_CMAKE_ARGS "")
 LIST(APPEND OPENOCD_CMAKE_ARGS "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
 LIST(APPEND OPENOCD_CMAKE_ARGS "-DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
