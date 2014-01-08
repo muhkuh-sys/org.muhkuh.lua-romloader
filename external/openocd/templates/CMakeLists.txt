@@ -467,17 +467,10 @@ SET(CMAKE_INSTALL_PREFIX /install)
 
 INSTALL(TARGETS LIBRARY_libopenocd DESTINATION lib)
 
-INSTALL(FILES src/jtag/driver.h
-              src/jtag/jtag.h
-        DESTINATION include/jtag)
-
-INSTALL(FILES src/transport/transport.h
-        DESTINATION include/transport)
-
-INSTALL(FILES src/helper/ioutil.h
-              src/helper/util.h
-              src/helper/configuration.h
-        DESTINATION include/helper)
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/config/config.h
+              ${CMAKE_CURRENT_BINARY_DIR}/config/startup_tcl.c
+              src/helper/jim-nvp.h
+        DESTINATION include)
 
 INSTALL(FILES src/flash/nor/core.h
         DESTINATION include/flash/nor)
@@ -485,8 +478,28 @@ INSTALL(FILES src/flash/nor/core.h
 INSTALL(FILES src/flash/nand/core.h
         DESTINATION include/flash/nand)
 
-INSTALL(FILES src/flash/mflash.h
+INSTALL(FILES src/flash/common.h
+              src/flash/mflash.h
         DESTINATION include/flash)
+
+INSTALL(FILES src/helper/binarybuffer.h
+              src/helper/command.h
+              src/helper/ioutil.h
+              src/helper/list.h
+              src/helper/log.h
+              src/helper/replacements.h
+              src/helper/system.h
+              src/helper/types.h
+              src/helper/util.h
+              src/helper/configuration.h
+        DESTINATION include/helper)
+
+INSTALL(FILES src/jtag/commands.h
+              src/jtag/driver.h
+              src/jtag/jtag.h
+              src/jtag/minidriver.h
+              src/jtag/minidriver_imp.h
+        DESTINATION include/jtag)
 
 INSTALL(FILES src/pld/pld.h
         DESTINATION include/pld)
@@ -495,6 +508,12 @@ INSTALL(FILES src/server/server.h
               src/server/gdb_server.h
         DESTINATION include/server)
 
+INSTALL(FILES src/target/target.h
+              src/server/gdb_server.h
+        DESTINATION include/target)
+
+INSTALL(FILES src/transport/transport.h
+        DESTINATION include/transport)
 
 
 #-----------------------------------------------------------------------------
