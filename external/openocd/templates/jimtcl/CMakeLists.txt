@@ -377,6 +377,13 @@ TARGET_INCLUDE_DIRECTORIES(LIBRARY_jim
 SET(DEFINES "")
 SET(INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/config")
 
+
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/config/jim-config.h
+              jim.h
+              jim-win32compat.h
+        DESTINATION include)
+
+
 #-----------------------------------------------------------------------------
 
 #SET(LIBJIM_LIBRARY              ${LIBRARY}              CACHE INTERNAL "The libusbx library with the complete path.")
