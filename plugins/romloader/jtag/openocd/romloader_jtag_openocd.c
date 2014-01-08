@@ -267,7 +267,18 @@ int romloader_jtag_openocd_init(ROMLOADER_JTAG_DEVICE_T *ptJtagDevice)
 			iResult = ioutil_init(ptCmdCtx);
 			if( iResult==ERROR_OK )
 			{
+			  command_context_mode(ptCmdCtx, COMMAND_CONFIG);
+			  command_set_output_handler(ptCmdCtx, configuration_output_handler, NULL);
+
+
 				ptJtagDevice->pvOpenocdContext = ptCmdCtx;
+
+				/* This is a small test. */
+				iResult = command_run_line(ptCmdCtx, "version");
+				if( iResult==ERROR_OK )
+				{
+				  printf("Version command finished!\n");
+				}
 			}
 		}
 	}
