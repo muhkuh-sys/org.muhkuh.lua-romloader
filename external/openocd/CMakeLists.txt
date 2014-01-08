@@ -67,3 +67,6 @@ SET(OPENOCD_LIBRARY              ${LIBRARY}              CACHE INTERNAL "The sta
 SET(OPENOCD_LDFLAGS              ${LDFLAGS}              CACHE INTERNAL "All linker flags required to link the library. The list must be separated with whitespace.")
 SET(OPENOCD_DEFINES              ${DEFINES}              CACHE INTERNAL "All defines for the libusbx library. This should be a list of entries starting with -D.")
 SET(OPENOCD_INCLUDE_DIRECTORIES  ${INCLUDE_DIRECTORIES}  CACHE INTERNAL "The include folders for the library headers. The list must be separated with whitespace.")
+
+SET(JIMTCL_LIBRARY
+    ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.8.0-dev/install/lib/libjim.a              CACHE INTERNAL "The static jimtcl library with the complete path.")
