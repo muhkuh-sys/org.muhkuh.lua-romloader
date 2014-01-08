@@ -418,6 +418,11 @@ SET(SOURCES_libxsvf
 )
 
 
+# The hello command handler is used in some sources.
+SET(SOURCES_misc
+	src/hello.c
+)
+
 ADD_LIBRARY(LIBRARY_libopenocd STATIC ${SOURCES_libflash}
                                       ${SOURCES_libhelper}
                                       ${SOURCES_libjtag}
@@ -427,7 +432,8 @@ ADD_LIBRARY(LIBRARY_libopenocd STATIC ${SOURCES_libflash}
                                       ${SOURCES_libsvf}
                                       ${SOURCES_libtarget}
                                       ${SOURCES_libtransport}
-                                      ${SOURCES_libxsvf})
+                                      ${SOURCES_libxsvf}
+                                      ${SOURCES_misc})
 TARGET_INCLUDE_DIRECTORIES(LIBRARY_libopenocd
                            PRIVATE src
                                    src/helper
@@ -448,6 +454,9 @@ ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC})
 
 TARGET_COMPILE_DEFINITIONS(LIBRARY_libopenocd
                            PRIVATE ${LIBRARY_libopenocd_defines})
+
+# Set the name of the output file to "openocd".
+SET_TARGET_PROPERTIES(LIBRARY_libopenocd PROPERTIES OUTPUT_NAME "openocd")
 
 IF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	SET(LIBOPENOCD_LDFLAGS -lws2_32)
@@ -522,7 +531,6 @@ INSTALL(FILES src/transport/transport.h
 #
 
 SET(SOURCES_openocd
-	src/hello.c
 	src/main.c
 	src/openocd.c
 	${CMAKE_CURRENT_BINARY_DIR}/config/startup_tcl.c
