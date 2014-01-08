@@ -48,18 +48,22 @@ ADD_DEPENDENCIES(TARGET_openocd TARGET_libusbx)
 # 3) Provide all variables for the build.
 SET(LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.8.0-dev/install/lib/libopenocd.a)
 
-IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-	SET(LDFLAGS "-pthread -lrt -ludev")
-ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+#IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+#	SET(LDFLAGS "-pthread -lrt -ludev")
+#ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+SET(LDFLAGS "")
 
-SET(DEFINES "")
+IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+	SET(DEFINES "-std=c99")
+ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+
 SET(INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.8.0-dev/install/include)
 
 #----------------------------------------------------------------------------
 #
 # Store all information about the library in the cache.
 #
-#SET(LIBUSBX_LIBRARY              ${LIBRARY}              CACHE INTERNAL "The libusbx library with the complete path.")
-#SET(LIBUSBX_LDFLAGS              ${LDFLAGS}              CACHE INTERNAL "All linker flags required to link the library. The list must be separated with whitespace.")
-#SET(LIBUSBX_DEFINES              ${DEFINES}              CACHE INTERNAL "All defines for the libusbx library. This should be a list of entries starting with -D.")
-#SET(LIBUSBX_INCLUDE_DIRECTORIES  ${INCLUDE_DIRECTORIES}  CACHE INTERNAL "The include folders for the library headers. The list must be separated with whitespace.")
+SET(OPENOCD_LIBRARY              ${LIBRARY}              CACHE INTERNAL "The static openocd library with the complete path.")
+SET(OPENOCD_LDFLAGS              ${LDFLAGS}              CACHE INTERNAL "All linker flags required to link the library. The list must be separated with whitespace.")
+SET(OPENOCD_DEFINES              ${DEFINES}              CACHE INTERNAL "All defines for the libusbx library. This should be a list of entries starting with -D.")
+SET(OPENOCD_INCLUDE_DIRECTORIES  ${INCLUDE_DIRECTORIES}  CACHE INTERNAL "The include folders for the library headers. The list must be separated with whitespace.")
