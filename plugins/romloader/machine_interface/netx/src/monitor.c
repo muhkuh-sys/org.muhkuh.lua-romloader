@@ -249,13 +249,20 @@ static const SERIAL_V2_COMM_UI_FN_T tCallConsole =
 };
 
 
-#define ADR_NETX_VERSION_56 0x080f0008
-#define VAL_NETX_VERSION_56A 0x00006003
-#define VAL_NETX_VERSION_56B 0x00106003
+#define ADR_NETX_VERSION_56       0x080f0008
+#define VAL_NETX_VERSION_56A      0x00006003
+#define VAL_NETX_VERSION_56B      0x00106003
+
+#define ADR_NETX_VERSION_500_100  0x00200008
+#define VAL_NETX_VERSION_500      0x00001000
+#define VAL_NETX_VERSION_100      0x00003002
 
 void monitor_init(void)
 {
+#if ASIC_TYP==500 || ASIC_TYP==56
 	unsigned long ulNetxVersion;
+#endif
+
 
 	/* Set the vectors. */
 	memcpy(&tSerialV2Vectors, &tCallConsole, sizeof(SERIAL_V2_COMM_UI_FN_T));
@@ -266,9 +273,15 @@ void monitor_init(void)
 
 	/* Set the chip type */
 #if ASIC_TYP==500
-	ucChiptype = ROMLOADER_CHIPTYP_NETX500;
-#elif ASIC_TYP==100
-	ucChiptype = ROMLOADER_CHIPTYP_NETX100;
+	ulNetxVersion = *((unsigned long*)ADR_NETX_VERSION_500_100);
+	if (ulNetxVersion == VAL_NETX_VERSION_500)
+	{
+		ucChiptype = ROMLOADER_CHIPTYP_NETX500;
+	}
+	else if (ulNetxVersion == VAL_NETX_VERSION_100)
+	{
+		ucChiptype = ROMLOADER_CHIPTYP_NETX100;
+	}
 #elif ASIC_TYP==50
 	ucChiptype = ROMLOADER_CHIPTYP_NETX50;
 #elif ASIC_TYP==10
