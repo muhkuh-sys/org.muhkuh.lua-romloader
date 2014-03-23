@@ -258,6 +258,8 @@ int romloader_jtag_openocd_init(ROMLOADER_JTAG_DEVICE_T *ptJtagDevice)
 	int iResult;
 
 
+	ptJtagDevice->pvOpenocdContext = NULL;
+
 	ptCmdCtx = setup_command_handler(NULL);
 	if( ptCmdCtx!=NULL )
 	{
@@ -277,13 +279,6 @@ int romloader_jtag_openocd_init(ROMLOADER_JTAG_DEVICE_T *ptJtagDevice)
 					if( iResult==ERROR_OK )
 					{
 						ptJtagDevice->pvOpenocdContext = ptCmdCtx;
-
-						/* This is a small test. */
-						iResult = command_run_line(ptCmdCtx, "version");
-						if( iResult==ERROR_OK )
-						{
-							printf("Version command finished!\n");
-						}
 					}
 				}
 			}
@@ -292,6 +287,118 @@ int romloader_jtag_openocd_init(ROMLOADER_JTAG_DEVICE_T *ptJtagDevice)
 
 	return iResult;
 }
+
+
+static const char *apcIfCfg[2] =
+{
+  "# This interface allows only one transport: jtag.\n"
+  "interface ftdi\n"
+  "ftdi_device_desc \"Amontec JTAGkey\"\n"
+  "ftdi_vid_pid 0x0403 0xcff8\n"
+  "# Use a ridiculously low speed to ensure that the connection is working in absolutely all circumstances (even with Enricos flying wires ;) ).\n"
+  "adapter_khz 100\n"
+  "\n"
+  "ftdi_layout_init 0x0c08 0x0f1b\n"
+  "ftdi_layout_signal nTRST -data 0x0100 -noe 0x0400\n"
+  "ftdi_layout_signal nSRST -data 0x0200 -noe 0x0800\n"
+  "set IF_CFG_RESULT [ catch {jtag init} ]\n",
+
+  "interface ftdi\n"
+  "ftdi_device_desc \"NXHX50-RE\"\n"
+  "ftdi_vid_pid 0x0640 0x0028\n"
+  "# Use a ridiculously low speed to ensure that the connection is working in absolutely all circumstances (even with Enricos flying wires ;) ).\n"
+  "adapter_khz 100\n"
+  "\n"
+  "ftdi_layout_init 0x0308 0x030b\n"
+  "ftdi_layout_signal nTRST -data 0x0100\n"
+  "ftdi_layout_signal nSRST -data 0x0200\n"
+  "set IF_CFG_RESULT [ catch {jtag init} ]\n"
+};
+
+static const char *pcIfCleanup = "interface_clear\ntransport clear\n";
+
+
+int get_result(struct command_context *ptCmdCtx, char *pcBuffer, size_t sizBufferMax)
+{
+  Jim_Interp *ptInterp;
+  Jim_Obj *ptResultObj;
+  const char *pcResult;
+  int iResLen;
+  int iResult;
+
+
+  /* Be pessimistic. */
+  iResult = -1;
+
+  ptInterp = ptCmdCtx->interp;
+
+  ptResultObj = Jim_GetResult(ptInterp);
+  if( ptResultObj!=NULL )
+  {
+    iResLen = 0;
+    pcResult = Jim_GetString(ptResultObj, &iResLen);
+    fprintf(stderr, "Jim_GetString: %p %d\n", pcResult, iResLen);
+
+    /* Does the result still exist? */
+    if( pcResult!=NULL && iResLen>0 )
+    {
+      /* The size of the result must be smaller and not equal because it must be terminated with a 0 byte. */
+      if( iResLen<sizBufferMax )
+      {
+	strncpy(pcBuffer, pcResult, iResLen);
+	pcBuffer[iResLen] = '\0';
+	iResult = 0;
+      }
+    }
+  }
+
+  return iResult;
+}
+
+
+
+int romloader_jtag_openocd_detect(ROMLOADER_JTAG_DEVICE_T *ptJtagDevice)
+{
+	struct command_context *ptCmdCtx;
+	const char **ppcIfCfgCnt;
+	const char **ppcIfCfgEnd;
+	int iResult;
+	int sizResult;
+	char strResult[256];
+	int iTclResult;
+
+
+	ptCmdCtx = (struct command_context *)(ptJtagDevice->pvOpenocdContext);
+	if( ptCmdCtx!=NULL )
+	{
+		/* Try to run all command chunks to see which interfaces are present. */
+		ppcIfCfgCnt = apcIfCfg;
+		ppcIfCfgEnd = apcIfCfg + (sizeof(apcIfCfg)/sizeof(apcIfCfg[0]));
+		while( ppcIfCfgCnt<ppcIfCfgEnd )
+		{
+			fprintf(stderr, "Running command ***%s***\n", *ppcIfCfgCnt);
+			iResult = command_run_line(ptCmdCtx, *ppcIfCfgCnt);
+			fprintf(stderr, "If Cfg Result: %d\n", iResult);
+			
+			iResult = get_result(ptCmdCtx, strResult, sizeof(strResult));
+			fprintf(stderr, "IF_CFG_RESULT: '%s'\n", strResult);
+			iResult = sscanf(strResult, "%d", &iTclResult);
+			if( iResult==1 && iTclResult==0 )
+			{
+			}
+			
+			/* Detection finished, clean up. */
+			iResult = command_run_line(ptCmdCtx, pcIfCleanup);
+			fprintf(stderr, "If Cleanup Result: %d\n", iResult);
+			
+			/* Move to the next configuration. */
+			++ppcIfCfgCnt;
+		}
+	}
+	
+	return 0;
+}
+
 
 
 void romloader_jtag_openocd_uninit(ROMLOADER_JTAG_DEVICE_T *ptJtagDevice)

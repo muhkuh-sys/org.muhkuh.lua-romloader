@@ -9,6 +9,9 @@ typedef struct ROMLOADER_JTAG_DEVICE_STRUCT
 
 
 int romloader_jtag_openocd_init(ROMLOADER_JTAG_DEVICE_T *ptJtagDevice);
+
+int romloader_jtag_openocd_detect(ROMLOADER_JTAG_DEVICE_T *ptJtagDevice);
+
 void romloader_jtag_openocd_uninit(ROMLOADER_JTAG_DEVICE_T *ptJtagDevice);
 
 #endif  /* __ROMLOADER_JTAG_OPENOCD_H__ */

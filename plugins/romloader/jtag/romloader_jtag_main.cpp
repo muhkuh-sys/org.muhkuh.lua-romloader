@@ -24,7 +24,6 @@
 
 #include "romloader_jtag_main.h"
 
-
 /*-------------------------------------*/
 
 #if CFG_DEBUGMSG!=0
@@ -59,11 +58,20 @@ const char *romloader_jtag_provider::m_pcPluginNamePattern = "romloader_jtag_%02
 romloader_jtag_provider::romloader_jtag_provider(swig_type_info *p_romloader_jtag, swig_type_info *p_romloader_jtag_reference)
  : muhkuh_plugin_provider("romloader_jtag")
 {
+	int iResult;
+
+
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag_provider::romloader_jtag_provider(): p_romloader_jtag=%p, p_romloader_jtag_reference=%p\n", p_romloader_jtag, p_romloader_jtag_reference));
 
 	/* Get the romloader_jtag LUA type. */
 	m_ptPluginTypeInfo = p_romloader_jtag;
 	m_ptReferenceTypeInfo = p_romloader_jtag_reference;
+
+	iResult = romloader_jtag_openocd_init(&m_tJtagDevice);
+	printf("iResult: %d\n", iResult);
+
+	iResult = romloader_jtag_openocd_detect(&m_tJtagDevice);
+	printf("iResult: %d\n", iResult);
 
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag_provider::romloader_jtag_provider()\n"));
 }

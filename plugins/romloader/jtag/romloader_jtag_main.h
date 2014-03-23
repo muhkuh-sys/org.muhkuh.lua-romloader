@@ -24,6 +24,12 @@
 #ifndef __ROMLOADER_JTAG_MAIN_H__
 #define __ROMLOADER_JTAG_MAIN_H__
 
+
+extern "C" {
+#       include "openocd/romloader_jtag_openocd.h"
+}
+
+
 /*-----------------------------------*/
 
 class romloader_jtag_provider;
@@ -97,6 +103,7 @@ public:
 	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin);
 
 private:
+	ROMLOADER_JTAG_DEVICE_T m_tJtagDevice;
 	static const char *m_pcPluginNamePattern;
 };
 
