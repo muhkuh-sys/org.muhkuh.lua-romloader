@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-PROJECT("libusbx")
+PROJECT("libusb")
 
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckFunctionExists)
@@ -36,15 +36,15 @@ CHECK_INCLUDE_FILES(sys/timerfd.h USBI_TIMERFD_AVAILABLE)
 
 SET(LT_OBJDIR ".libs/")
 
-SET(PACKAGE "libusbx")
-SET(PACKAGE_BUGREPORT "libusbx-devel@lists.sourceforge.net")
-SET(PACKAGE_NAME "libusbx")
-SET(PACKAGE_STRING "libusbx 1.0.17")
-SET(PACKAGE_TARNAME "libusbx")
-SET(PACKAGE_URL "http://libusbx.org")
-SET(PACKAGE_VERSION "1.0.17")
+SET(PACKAGE "libusb")
+SET(PACKAGE_BUGREPORT "libusb-devel@lists.sourceforge.net")
+SET(PACKAGE_NAME "libusb")
+SET(PACKAGE_STRING "libusb 1.0.18")
+SET(PACKAGE_TARNAME "libusb")
+SET(PACKAGE_URL "http://libusb.info")
+SET(PACKAGE_VERSION "1.0.18")
 
-SET(VERSION "1.0.17")
+SET(VERSION "1.0.18")
 
 IF(UNIX)
 	SET(OS_LINUX 1)
@@ -76,29 +76,29 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.h.in ${CMAKE_CURRENT_BIN
 #
 
 IF(UNIX)
-	SET(SOURCES_libusbx libusb/core.c
-	                    libusb/descriptor.c
-	                    libusb/io.c
-	                    libusb/strerror.c
-	                    libusb/sync.c
-	                    libusb/hotplug.c
-	                    libusb/os/threads_posix.c
-	                    libusb/os/linux_usbfs.c
-	                    libusb/os/poll_posix.c
-	                    libusb/os/linux_udev.c
+	SET(SOURCES_libusb libusb/core.c
+	                   libusb/descriptor.c
+	                   libusb/io.c
+	                   libusb/strerror.c
+	                   libusb/sync.c
+	                   libusb/hotplug.c
+	                   libusb/os/threads_posix.c
+	                   libusb/os/linux_usbfs.c
+	                   libusb/os/poll_posix.c
+	                   libusb/os/linux_udev.c
 	)
 	
 	add_definitions(-DHAVE_CONFIG_H)
 ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-	SET(SOURCES_libusbx libusb/core.c
-	                    libusb/descriptor.c
-	                    libusb/io.c
-	                    libusb/strerror.c
-	                    libusb/sync.c
-	                    libusb/hotplug.c
-	                    libusb/os/threads_windows.c
-	                    libusb/os/poll_windows.c
-	                    libusb/os/windows_usb.c
+	SET(SOURCES_libusb libusb/core.c
+	                   libusb/descriptor.c
+	                   libusb/io.c
+	                   libusb/strerror.c
+	                   libusb/sync.c
+	                   libusb/hotplug.c
+	                   libusb/os/threads_windows.c
+	                   libusb/os/poll_windows.c
+	                   libusb/os/windows_usb.c
 	)
 	
 	add_definitions(-DHAVE_CONFIG_H)
@@ -106,17 +106,17 @@ ENDIF(UNIX)
 
 INCLUDE_DIRECTORIES(libusb ${CMAKE_CURRENT_BINARY_DIR}/config)
 
-ADD_LIBRARY(TARGET_libusbx STATIC ${SOURCES_libusbx})
+ADD_LIBRARY(TARGET_libusb STATIC ${SOURCES_libusb})
 
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-	SET_TARGET_PROPERTIES(TARGET_libusbx PROPERTIES COMPILE_FLAGS -fPIC)
+	SET_TARGET_PROPERTIES(TARGET_libusb PROPERTIES COMPILE_FLAGS -fPIC)
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
-# Set the name of the output file to "usbx".
-SET_TARGET_PROPERTIES(TARGET_libusbx PROPERTIES OUTPUT_NAME "usbx")
+# Set the name of the output file to "usb".
+SET_TARGET_PROPERTIES(TARGET_libusb PROPERTIES OUTPUT_NAME "usb")
 
 SET(CMAKE_INSTALL_PREFIX /install)
-INSTALL(TARGETS TARGET_libusbx DESTINATION lib)
+INSTALL(TARGETS TARGET_libusb DESTINATION lib)
 INSTALL(FILES libusb/libusb.h DESTINATION include/libusb-1.0)
 

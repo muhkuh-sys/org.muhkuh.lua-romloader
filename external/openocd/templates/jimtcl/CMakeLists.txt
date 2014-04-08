@@ -395,8 +395,8 @@ INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/config/jim-config.h
 
 #-----------------------------------------------------------------------------
 
-#SET(LIBJIM_LIBRARY              ${LIBRARY}              CACHE INTERNAL "The libusbx library with the complete path.")
+#SET(LIBJIM_LIBRARY              ${LIBRARY}              CACHE INTERNAL "The jimtcl library with the complete path.")
 SET(LIBJIM_LDFLAGS              ${LDFLAGS}              CACHE INTERNAL "All linker flags required to link the library. The list must be separated with whitespace.")
-SET(LIBJIM_DEFINES              ${DEFINES}              CACHE INTERNAL "All defines for the libusbx library. This should be a list of entries starting with -D.")
+SET(LIBJIM_DEFINES              ${DEFINES}              CACHE INTERNAL "All defines for the jimtcl library. This should be a list of entries starting with -D.")
 SET(LIBJIM_INCLUDE_DIRECTORIES  ${INCLUDE_DIRECTORIES}  CACHE INTERNAL "The include folders for the library headers. The list must be separated with whitespace.")
 

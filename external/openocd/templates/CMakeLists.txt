@@ -36,7 +36,7 @@ CHECK_INCLUDE_FILES(ifaddrs.h HAVE_IFADDRS_H)
 CHECK_INCLUDE_FILES(inttypes.h HAVE_INTTYPES_H)
 CHECK_INCLUDE_FILES(jtag_minidriver.h HAVE_JTAG_MINIDRIVER_H)
 
-# We definitely have libusbx-1.x with libusb_error_name() .
+# We definitely have libusb-1.x with libusb_error_name() .
 SET(HAVE_LIBUSB1 1)
 SET(HAVE_LIBUSB_ERROR_NAME 1)
 
@@ -440,7 +440,7 @@ TARGET_INCLUDE_DIRECTORIES(LIBRARY_libopenocd
                                    src/jtag/drivers
                                    ${LIBJIM_INCLUDE_DIRECTORIES}
                                    ${CMAKE_CURRENT_BINARY_DIR}/config
-                                   ${LIBUSBX_INCLUDE_DIRECTORIES})
+                                   ${LIBUSB_INCLUDE_DIRECTORIES})
 
 SET(LIBRARY_libopenocd_defines "")
 LIST(APPEND LIBRARY_libopenocd_defines "HAVE_CONFIG_H")
@@ -540,9 +540,9 @@ ADD_EXECUTABLE(TARGET_openocd ${SOURCES_openocd})
 TARGET_LINK_LIBRARIES(TARGET_openocd LIBRARY_libopenocd
                                      ${LIBOPENOCD_LDFLAGS}
                                      LIBRARY_jim
-                                     ${LIBUSBX_LIBRARY}
+                                     ${LIBUSB_LIBRARY}
                                      "${LIBJIM_LDFLAGS}"
-                                     "${LIBUSBX_LDFLAGS}")
+                                     "${LIBUSB_LDFLAGS}")
 TARGET_INCLUDE_DIRECTORIES(TARGET_openocd
                            PRIVATE src
                                    src/helper

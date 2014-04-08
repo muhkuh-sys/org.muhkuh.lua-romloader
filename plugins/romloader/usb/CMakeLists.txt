@@ -40,15 +40,15 @@ SET(NETX_USB_FIRMWARE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_ne
 # Set the platform specific parts.
 #
 
-# Append the include directories for libusbx.
-INCLUDE_DIRECTORIES(${LIBUSBX_INCLUDE_DIRECTORIES})
+# Append the include directories for libusb.
+INCLUDE_DIRECTORIES(${LIBUSB_INCLUDE_DIRECTORIES})
 
-# Append the libusbx defines.
-ADD_DEFINITIONS(${LIBUSBX_DEFINES})
+# Append the libusb defines.
+ADD_DEFINITIONS(${LIBUSB_DEFINES})
 
 
 SET_SOURCE_FILES_PROPERTIES(romloader_usb.i PROPERTIES CPLUSPLUS ON)
-SET_PROPERTY(SOURCE romloader_usb.i PROPERTY SWIG_FLAGS ${LIBUSBX_DEFINES} -I${CMAKE_HOME_DIRECTORY}/modules/typemaps)
+SET_PROPERTY(SOURCE romloader_usb.i PROPERTY SWIG_FLAGS ${LIBUSB_DEFINES} -I${CMAKE_HOME_DIRECTORY}/modules/typemaps)
 
 
 SET(romloader_usb_SOURCES
@@ -71,8 +71,8 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQU
 	SET_TARGET_PROPERTIES(TARGET_romloader_usb_lib PROPERTIES COMPILE_FLAGS -fPIC)
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
-# The library depends on the libusbx header.
-ADD_DEPENDENCIES(TARGET_romloader_usb_lib TARGET_libusbx)
+# The library depends on the libusb header.
+ADD_DEPENDENCIES(TARGET_romloader_usb_lib TARGET_libusb)
 
 
 
@@ -84,7 +84,7 @@ ADD_DEPENDENCIES(TARGET_romloader_usb_lib TARGET_libusbx)
 IF(${LUA51_FOUND})
 	# Build the Lua module.
 	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_usb_LUA lua romloader_usb.i)
-	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_usb_LUA TARGET_romloader_usb_lib ${LUA_LIBRARIES} ${LIBUSBX_LIBRARY} TARGET_plugins_romloader_LIB ${LIBUSBX_LDFLAGS})
+	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_usb_LUA TARGET_romloader_usb_lib ${LUA_LIBRARIES} ${LIBUSB_LIBRARY} TARGET_plugins_romloader_LIB ${LIBUSB_LDFLAGS})
 
 	# Set the name of the output file to "romloader_usb".
 	SET_TARGET_PROPERTIES(TARGET_plugins_romloader_romloader_usb_LUA PROPERTIES PREFIX "" OUTPUT_NAME "romloader_usb")
@@ -94,8 +94,8 @@ IF(${LUA51_FOUND})
 		set_property(TARGET TARGET_plugins_romloader_romloader_usb_LUA PROPERTY LINK_FLAGS "-static-libgcc -static-libstdc++")
 	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 
-	# The module depends on the libusbx libraries.
-	ADD_DEPENDENCIES(TARGET_plugins_romloader_romloader_usb_LUA TARGET_libusbx)
+	# The module depends on the libusb libraries.
+	ADD_DEPENDENCIES(TARGET_plugins_romloader_romloader_usb_LUA TARGET_libusb)
 	
 	# Install the lua module.
 	INSTALL(TARGETS TARGET_plugins_romloader_romloader_usb_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})

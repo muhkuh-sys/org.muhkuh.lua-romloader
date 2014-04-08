@@ -63,7 +63,7 @@ SET_PROPERTY(SOURCE romloader_jtag.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTOR
 IF(${LUA51_FOUND})
 	# Build the Lua module.
 	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_jtag_LUA lua romloader_jtag.i)
-	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_jtag_LUA TARGET_romloader_jtag_lib TARGET_romloader_jtag_openocd_lib ${LUA_LIBRARIES} ${OPENOCD_LIBRARY} ${JIMTCL_LIBRARY} ${LIBUSBX_LIBRARY} TARGET_plugins_romloader_LIB ${LIBUSBX_LDFLAGS})
+	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_jtag_LUA TARGET_romloader_jtag_lib TARGET_romloader_jtag_openocd_lib ${LUA_LIBRARIES} ${OPENOCD_LIBRARY} ${JIMTCL_LIBRARY} ${LIBUSB_LIBRARY} TARGET_plugins_romloader_LIB ${LIBUSB_LDFLAGS})
 	
 	# Set the name of the output file to "romloader_jtag".
 	SET_TARGET_PROPERTIES(TARGET_plugins_romloader_romloader_jtag_LUA PROPERTIES PREFIX "" OUTPUT_NAME "romloader_jtag")

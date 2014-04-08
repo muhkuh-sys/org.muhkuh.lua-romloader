@@ -64,11 +64,11 @@
 		LIBUSB_ERROR_OTHER = -99
 	};
 #else
-/* NOTE: the header is in 'libusb-1.0' for linux and 'libusbx-1.0' for windows. */
+/* NOTE: the header is in 'libusb-1.0' for linux and 'libusb-1.0' for windows. */
 #       include <libusb.h>
 
-#       if (!defined(LIBUSBX_API_VERSION)) || (defined(LIBUSBX_API_VERSION) && LIBUSBX_API_VERSION<0x01000102)
-#               error "This plugin needs at least libusbx 1.0.16."
+#       if (!defined(LIBUSB_API_VERSION)) || (defined(LIBUSB_API_VERSION) && LIBUSB_API_VERSION<0x01000102)
+#               error "This plugin needs at least libusb 1.0.16."
 #       endif
 
 #endif

@@ -30,10 +30,10 @@ IF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	LIST(APPEND OPENOCD_CMAKE_ARGS "-DCMAKE_RC_COMPILER=${CMAKE_RC_COMPILER}")
 ENDIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
-LIST(APPEND OPENOCD_CMAKE_ARGS "-DLIBUSBX_LIBRARY=${LIBUSBX_LIBRARY}")
-LIST(APPEND OPENOCD_CMAKE_ARGS "-DLIBUSBX_LDFLAGS=${LIBUSBX_LDFLAGS}")
-LIST(APPEND OPENOCD_CMAKE_ARGS "-DLIBUSBX_DEFINES=${LIBUSBX_DEFINES}")
-LIST(APPEND OPENOCD_CMAKE_ARGS "-DLIBUSBX_INCLUDE_DIRECTORIES=${LIBUSBX_INCLUDE_DIRECTORIES}")
+LIST(APPEND OPENOCD_CMAKE_ARGS "-DLIBUSB_LIBRARY=${LIBUSB_LIBRARY}")
+LIST(APPEND OPENOCD_CMAKE_ARGS "-DLIBUSB_LDFLAGS=${LIBUSB_LDFLAGS}")
+LIST(APPEND OPENOCD_CMAKE_ARGS "-DLIBUSB_DEFINES=${LIBUSB_DEFINES}")
+LIST(APPEND OPENOCD_CMAKE_ARGS "-DLIBUSB_INCLUDE_DIRECTORIES=${LIBUSB_INCLUDE_DIRECTORIES}")
 
 ExternalProject_Add(TARGET_openocd
                     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.8.0-dev
@@ -42,7 +42,7 @@ ExternalProject_Add(TARGET_openocd
                     CMAKE_ARGS ${OPENOCD_CMAKE_ARGS}
                     INSTALL_COMMAND make install DESTDIR=${CMAKE_CURRENT_BINARY_DIR}/openocd-0.8.0-dev
 )
-ADD_DEPENDENCIES(TARGET_openocd TARGET_libusbx)
+ADD_DEPENDENCIES(TARGET_openocd TARGET_libusb)
 
 
 # 3) Provide all variables for the build.
@@ -65,7 +65,7 @@ SET(INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.8.0-dev/install/in
 #
 SET(OPENOCD_LIBRARY              ${LIBRARY}              CACHE INTERNAL "The static openocd library with the complete path.")
 SET(OPENOCD_LDFLAGS              ${LDFLAGS}              CACHE INTERNAL "All linker flags required to link the library. The list must be separated with whitespace.")
-SET(OPENOCD_DEFINES              ${DEFINES}              CACHE INTERNAL "All defines for the libusbx library. This should be a list of entries starting with -D.")
+SET(OPENOCD_DEFINES              ${DEFINES}              CACHE INTERNAL "All defines for the openocd library. This should be a list of entries starting with -D.")
 SET(OPENOCD_INCLUDE_DIRECTORIES  ${INCLUDE_DIRECTORIES}  CACHE INTERNAL "The include folders for the library headers. The list must be separated with whitespace.")
 
 SET(JIMTCL_LIBRARY
