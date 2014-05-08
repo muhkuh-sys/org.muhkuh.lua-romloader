@@ -101,7 +101,10 @@ private:
 	unsigned int m_uiMonitorSequence;
 
 	bool synchronize(void);
-	USBSTATUS_T execute_command(const unsigned char *aucCommand, size_t sizCommand, size_t *psizReceivePacket);
+	void next_sequence_number();
+	void packet_update_sequence_number(unsigned char *aucCommand);
+
+	USBSTATUS_T execute_command(unsigned char *aucCommand, size_t sizCommand, size_t *psizReceivePacket);
 
 	romloader_usb_provider *m_ptUsbProvider;
 

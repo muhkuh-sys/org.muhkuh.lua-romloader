@@ -434,6 +434,7 @@ bool romloader_usb::synchronize(void)
 			m_tChiptyp = tChipType;
 			m_sizMaxPacketSizeClient = sizMaxPacketSize;
 
+			next_sequence_number();
 			fResult = true;
 		}
 	}
@@ -444,8 +445,29 @@ bool romloader_usb::synchronize(void)
 }
 
 
+/* 
+Increment the sequence number
+Call when a packet has been received from the netX (the sequence number is incremented on the netX side, too).
+- after synchronize()
+- after receiving a response packet
+Do not increment if the packet send/receive operation failed or no response was received.
+If the netX did not receive the packet, it is still assuming the current sequence number.
+*/
+void romloader_usb::next_sequence_number()
+{
+	m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
+}
 
-romloader_usb::USBSTATUS_T romloader_usb::execute_command(const unsigned char *aucCommand, size_t sizCommand, size_t *psizReceivePacket)
+
+/* Update the sequence number in the packet */
+void romloader_usb::packet_update_sequence_number(unsigned char *aucCommand)
+{
+	aucCommand[0] &= ((unsigned char) ~MONITOR_SEQUENCE_MSK);
+	aucCommand[0] |= (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+}
+
+
+romloader_usb::USBSTATUS_T romloader_usb::execute_command(unsigned char *aucCommand, size_t sizCommand, size_t *psizReceivePacket)
 {
 	int iResult;
 	USBSTATUS_T tResult;
@@ -460,6 +482,7 @@ romloader_usb::USBSTATUS_T romloader_usb::execute_command(const unsigned char *a
 	uiRetryCnt = 10;
 	do
 	{
+		packet_update_sequence_number(aucCommand);
 		iResult = m_ptUsbDevice->execute_command(aucCommand, sizCommand, m_aucPacketInputBuffer, m_sizMaxPacketSizeHost, &sizPacketInputBuffer);
 		if( iResult!=0 )
 		{
@@ -480,6 +503,7 @@ romloader_usb::USBSTATUS_T romloader_usb::execute_command(const unsigned char *a
 			uiSequence = (m_aucPacketInputBuffer[0] & MONITOR_SEQUENCE_MSK) >> MONITOR_SEQUENCE_SRT;
 			if( ucStatus!=0 )
 			{
+				/* got a response from netX with an error code */
 				fprintf(stderr, "! execute_command: status is not OK: 0x%02x\n", ucStatus);
 				switch( ((MONITOR_STATUS_T)ucStatus) )
 				{
@@ -510,19 +534,30 @@ romloader_usb::USBSTATUS_T romloader_usb::execute_command(const unsigned char *a
 				{
 					synchronize();
 				}
+				else
+				{
+					/* got response from netx -> increment sequence number */
+					next_sequence_number();
+				}
 
 				tResult = USBSTATUS_COMMAND_EXECUTION_FAILED;
 			}
 			else if( uiSequence!=m_uiMonitorSequence )
 			{
+				/* got a response from netX with status OK but incorrect sequence number -> synchronize */
 				fprintf(stderr, "! execute_command: the sequence does not match: %d / %d\n", uiSequence, m_uiMonitorSequence);
 				synchronize();
+
 				tResult = USBSTATUS_SEQUENCE_MISMATCH;
 			}
 			else
 			{
+				/* got a response from netX with status OK -> success */
 				*psizReceivePacket = sizPacketInputBuffer;
 				tResult = USBSTATUS_OK;
+
+				/* got response from netx -> increment sequence number */
+				next_sequence_number();
 			}
 		}
 
@@ -574,13 +609,9 @@ unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long 
 	}
 	else
 	{
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
 		/* Construct the command packet. */
 		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Read |
-		                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
-		                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+		                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT);
 		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned char);
 		m_aucPacketOutputBuffer[0x02] = 0x00;
 		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
@@ -643,13 +674,9 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 	}
 	else
 	{
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
 		/* Construct the command packet. */
 		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Read |
-		                                (MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT) |
-		                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+		                                (MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT);
 		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned short);
 		m_aucPacketOutputBuffer[0x02] = 0;
 		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
@@ -713,13 +740,9 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 	}
 	else
 	{
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
 		/* Construct the command packet. */
 		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Read |
-		                                (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT) |
-		                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+		                                (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT);
 		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned long);
 		m_aucPacketOutputBuffer[0x02] = 0;
 		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
@@ -818,13 +841,9 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 					sizChunk = m_sizMaxPacketSizeClient - 1;
 				}
 
-				/* Get the next sequence number. */
-				m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
 				/* Construct the command packet. */
 				m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Read |
-				                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
-				                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+				                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT);
 				m_aucPacketOutputBuffer[0x01] = (unsigned char)( sizChunk       & 0xffU);
 				m_aucPacketOutputBuffer[0x02] = (unsigned char)((sizChunk>> 8U) & 0xffU);
 				m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
@@ -908,13 +927,9 @@ void romloader_usb::write_data08(lua_State *ptClientData, unsigned long ulNetxAd
 	}
 	else
 	{
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
 		/* Construct the command packet. */
 		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Write |
-		                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
-		                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+		                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT);
 		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned char);
 		m_aucPacketOutputBuffer[0x02] = 0;
 		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
@@ -971,13 +986,9 @@ void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 	}
 	else
 	{
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
 		/* Construct the command packet. */
 		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Write |
-		                                (MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT) |
-		                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+		                                (MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT);
 		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned short);
 		m_aucPacketOutputBuffer[0x02] = 0;
 		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
@@ -1035,13 +1046,9 @@ void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 	}
 	else
 	{
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
 		/* Construct the command packet. */
 		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Write |
-		                                (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT) |
-		                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+		                                (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT);
 		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned long);
 		m_aucPacketOutputBuffer[0x02] = 0;
 		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
@@ -1116,13 +1123,9 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 				sizChunk = m_sizMaxPacketSizeClient - 7;
 			}
 
-			/* Get the next sequence number. */
-			m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
 			/* Construct the command packet. */
 			m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Write |
-			                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
-			                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+			                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT);
 			m_aucPacketOutputBuffer[0x01] = (unsigned char)( sizChunk       & 0xffU);
 			m_aucPacketOutputBuffer[0x02] = (unsigned char)((sizChunk>> 8U) & 0xffU);
 			m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
@@ -1196,12 +1199,8 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 	}
 	else
 	{
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
 		/* Construct the command packet. */
-		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Execute |
-		                                (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Execute;
 		m_aucPacketOutputBuffer[0x01] = (unsigned char)( ulNetxAddress      & 0xff);
 		m_aucPacketOutputBuffer[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xff);
 		m_aucPacketOutputBuffer[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xff);
