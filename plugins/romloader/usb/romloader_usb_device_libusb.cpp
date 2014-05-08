@@ -695,12 +695,12 @@ int romloader_usb_device_libusb::setup_netx_device(libusb_device *ptNetxDevice, 
 	int iResult;
 
 
-	printf("romloader_usb_device_libusb::setup_netx_device(): ptNetxDevice=%p, ptId=%p", ptNetxDevice, ptId);
+	printf("romloader_usb_device_libusb::setup_netx_device(): ptNetxDevice=%p, ptId=%p\n", ptNetxDevice, ptId);
 
 	iResult = libusb_open(ptNetxDevice, &m_ptDevHandle);
 	if( iResult!=LIBUSB_SUCCESS )
 	{
-		fprintf(stderr, "%s(%p): failed to open the device: %d:%s", m_pcPluginId, this, iResult, libusb_strerror(iResult));
+		fprintf(stderr, "%s(%p): failed to open the device: %d:%s\n", m_pcPluginId, this, iResult, libusb_strerror(iResult));
 	}
 	else
 	{
@@ -1673,7 +1673,7 @@ int romloader_usb_device_libusb::send_packet(const unsigned char *aucOutBuf, siz
 	iResult = libusb_bulk_transfer(m_ptDevHandle, m_tDeviceId.ucEndpoint_Out, (unsigned char*)aucOutBuf, sizOutBuf, &iProcessed, uiTimeoutMs);
 	if( iResult!=0 )
 	{
-		fprintf(stderr, "%s(%p): Failed to send data: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
+		fprintf(stderr, "%s(%p): Failed to send data: %s  iProcessed == %d \n", m_pcPluginId, this, libusb_strerror(iResult), iProcessed);
 	}
 	else if( sizOutBuf!=iProcessed )
 	{
