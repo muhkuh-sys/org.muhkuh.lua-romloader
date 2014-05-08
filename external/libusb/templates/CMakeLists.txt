@@ -102,6 +102,9 @@ ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	)
 	
 	add_definitions(-DHAVE_CONFIG_H)
+	IF(MSVC)
+		INCLUDE_DIRECTORIES(msvc) # use only with Visual C++, not with MSYS
+	ENDIF(MSVC)
 ENDIF(UNIX)
 
 INCLUDE_DIRECTORIES(libusb ${CMAKE_CURRENT_BINARY_DIR}/config)
