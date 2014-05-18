@@ -5,6 +5,7 @@ project("lua_scripts")
 if(${LUA51_FOUND})
 	set(lua_scripts_install_files
 		muhkuh.lua
+		muhkuh_cli_init.lua
 		muhkuh_system.lua
 		select_plugin_cli.lua
 		select_plugin_gui.lua
