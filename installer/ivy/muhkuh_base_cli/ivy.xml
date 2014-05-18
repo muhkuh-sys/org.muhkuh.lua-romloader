@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ivy-module version="2.0">
+	<info organisation="org.muhkuh.tools" module="muhkuh_base_cli" revision="${VERSION_FULL}"/>
+	<publications/>
+	<dependencies>
+		<dependency org="org.muhkuh.tools" name="lua"                  rev="${VERSION_FULL}"/>
+		<dependency org="org.muhkuh.tools" name="lua_plugin_bit"       rev="${VERSION_FULL}"/>
+		<dependency org="org.muhkuh.tools" name="lua_plugin_mhash"     rev="${VERSION_FULL}"/>
+		<dependency org="org.muhkuh.tools" name="lua_plugin_romloader" rev="${VERSION_FULL}"/>
+		<dependency org="org.muhkuh.tools" name="muhkuh_tester_cli"    rev="${VERSION_FULL}"/>
+	</dependencies>
+</ivy-module>

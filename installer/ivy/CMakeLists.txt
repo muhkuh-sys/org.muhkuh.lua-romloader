@@ -1,0 +1,65 @@
+cmake_minimum_required(VERSION 2.8)
+
+PROJECT("muhkuh")
+
+INCLUDE(ExternalProject)
+
+# Generate a version number from a file or VCS.
+#INCLUDE(cmake/muhkuh_version.cmake)
+
+
+GET_FILENAME_COMPONENT(MUHKUH_WIN32_INSTALL "../../build_windows32/install/usr/local/OFF" ABSOLUTE)
+GET_FILENAME_COMPONENT(MUHKUH_WIN64_INSTALL "../../build_windows64/install/usr/local/OFF" ABSOLUTE)
+
+SET(CPACK_PACKAGE_VERSION_MAJOR "2")
+SET(CPACK_PACKAGE_VERSION_MINOR "1")
+SET(CPACK_PACKAGE_VERSION_PATCH "0")
+SET(VERSION_FULL ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH})
+
+
+SET(PACKAGE_CMAKE_ARGS "")
+LIST(APPEND PACKAGE_CMAKE_ARGS "-DMUHKUH_WIN32_INSTALL=${MUHKUH_WIN32_INSTALL}")
+LIST(APPEND PACKAGE_CMAKE_ARGS "-DMUHKUH_WIN64_INSTALL=${MUHKUH_WIN64_INSTALL}")
+LIST(APPEND PACKAGE_CMAKE_ARGS "-DCPACK_PACKAGE_VERSION_MAJOR=${CPACK_PACKAGE_VERSION_MAJOR}")
+LIST(APPEND PACKAGE_CMAKE_ARGS "-DCPACK_PACKAGE_VERSION_MINOR=${CPACK_PACKAGE_VERSION_MINOR}")
+LIST(APPEND PACKAGE_CMAKE_ARGS "-DCPACK_PACKAGE_VERSION_PATCH=${CPACK_PACKAGE_VERSION_PATCH}")
+LIST(APPEND PACKAGE_CMAKE_ARGS "-DVERSION_FULL=${VERSION_FULL}")
+
+ExternalProject_Add(TARGET_lua
+                    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lua
+                    CMAKE_ARGS ${PACKAGE_CMAKE_ARGS}
+                    INSTALL_COMMAND make package
+)
+
+ExternalProject_Add(TARGET_lua_plugin_bit
+                    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lua_plugin_bit
+                    CMAKE_ARGS ${PACKAGE_CMAKE_ARGS}
+                    INSTALL_COMMAND make package
+)
+
+ExternalProject_Add(TARGET_lua_plugin_mhash
+                    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lua_plugin_mhash
+                    CMAKE_ARGS ${PACKAGE_CMAKE_ARGS}
+                    INSTALL_COMMAND make package
+)
+
+ExternalProject_Add(TARGET_lua_plugin_romloader
+                    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lua_plugin_romloader
+                    CMAKE_ARGS ${PACKAGE_CMAKE_ARGS}
+                    INSTALL_COMMAND make package
+)
+
+ExternalProject_Add(TARGET_muhkuh_base_cli
+                    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/muhkuh_base_cli
+                    CMAKE_ARGS ${PACKAGE_CMAKE_ARGS}
+                    INSTALL_COMMAND make
+)
+
+ExternalProject_Add(TARGET_muhkuh_tester_cli
+                    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/muhkuh_tester_cli
+                    CMAKE_ARGS ${PACKAGE_CMAKE_ARGS}
+                    INSTALL_COMMAND make package
+)
+
+#----------------------------------------------------------------------------
+

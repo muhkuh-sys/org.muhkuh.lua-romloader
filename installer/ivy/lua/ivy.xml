@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ivy-module version="2.0">
+	<info organisation="org.muhkuh.tools" module="lua" revision="${VERSION_FULL}"/>
+	<publications>
+		<artifact ext="zip" type="zip" packaging="zip" />
+	</publications>
+	<dependencies/>
+</ivy-module>

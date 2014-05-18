@@ -1,0 +1,23 @@
+<project xmlns:ivy="antlib:org.apache.ivy.ant" xmlns:if="ant:if" name="lua" default="install_lua">
+	<target name="install_lua" description="install all components">
+		<sequential if:true="${install.os_arch.linux_i386}">
+			<copy file="linux_i386/lua"           todir="${install.executable}" />
+			<copy file="linux_i386/lua.so"        todir="${install.sharedobject}" />
+		</sequential>
+		
+		<sequential if:true="${install.os_arch.linux_x86_64}">
+			<copy file="linux_x86_64/lua"         todir="${install.executable}" />
+			<copy file="linux_x86_64/lua.so"      todir="${install.sharedobject}" />
+		</sequential>
+		
+		<sequential if:true="${install.os_arch.windows_x86}">
+			<copy file="windows_x86/lua.exe"      todir="${install.executable}" />
+			<copy file="windows_x86/liblua.dll"   todir="${install.sharedobject}" />
+		</sequential>
+		
+		<sequential if:true="${install.os_arch.windows_amd64}">
+			<copy file="windows_amd64/lua.exe"      todir="${install.executable}" />
+			<copy file="windows_amd64/liblua.dll"   todir="${install.sharedobject}" />
+		</sequential>
+	</target>
+</project>

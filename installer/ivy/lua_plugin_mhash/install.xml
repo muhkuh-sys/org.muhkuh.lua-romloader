@@ -1,0 +1,23 @@
+<project xmlns:ivy="antlib:org.apache.ivy.ant" xmlns:if="ant:if" name="lua_plugin_mhash" default="install_lua_plugin_mhash">
+	<target name="install_lua_plugin_mhash" description="install all components">
+		<sequential if:true="${install.os_arch.linux_i386}">
+		</sequential>
+		
+		<sequential if:true="${install.os_arch.linux_x86_64}">
+		</sequential>
+		
+		<sequential if:true="${install.os_arch.windows_x86}">
+			<copy todir="${install.luaplugin}" includeEmptyDirs="true">
+				<fileset dir="windows_x86" />
+				<globmapper from="windows_x86/*" to="*" />
+			</copy>
+		</sequential>
+		
+		<sequential if:true="${install.os_arch.windows_amd64}">
+			<copy todir="${install.luaplugin}" includeEmptyDirs="true">
+				<fileset dir="windows_amd64" />
+				<globmapper from="windows_amd64/*" to="*" />
+			</copy>
+		</sequential>
+	</target>
+</project>

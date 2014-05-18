@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 2.8)
+
+SET(CPACK_INCLUDE_TOPLEVEL_DIRECTORY FALSE)
+SET(CPACK_PACKAGE_FILE_NAME lua-${VERSION_FULL})
+
+SET(CPACK_GENERATOR "ZIP")
+INCLUDE(CPack)
+
+# Build the ivy file.
+CONFIGURE_FILE(ivy.xml ivy-${VERSION_FULL}.xml)
+
+INSTALL(FILES ${MUHKUH_WIN32_INSTALL}/lua.exe ${MUHKUH_WIN32_INSTALL}/liblua.dll
+        DESTINATION windows_x86
+)
+
+INSTALL(FILES ${MUHKUH_WIN64_INSTALL}/lua.exe ${MUHKUH_WIN64_INSTALL}/liblua.dll
+        DESTINATION windows_amd64
+)
+
+INSTALL(FILES install.xml
+        DESTINATION .)
+
