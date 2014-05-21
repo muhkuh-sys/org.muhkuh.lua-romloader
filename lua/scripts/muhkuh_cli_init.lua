@@ -16,4 +16,4 @@ require("select_plugin_cli")
 require("tester_cli")
 
 -- This string is appended to all paths in the function "load_from_working_folder".
-__MUHKUH_WORKING_FOLDER = ""
+_G.__MUHKUH_WORKING_FOLDER = ""
