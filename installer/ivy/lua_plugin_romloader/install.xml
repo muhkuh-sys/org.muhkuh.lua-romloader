@@ -9,14 +9,12 @@
 		<sequential if:true="${install.os_arch.windows_x86}">
 			<copy todir="${install.luaplugin}" includeEmptyDirs="true">
 				<fileset dir="windows_x86" />
-				<globmapper from="windows_x86/*" to="*" />
 			</copy>
 		</sequential>
 		
 		<sequential if:true="${install.os_arch.windows_amd64}">
 			<copy todir="${install.luaplugin}" includeEmptyDirs="true">
 				<fileset dir="windows_amd64" />
-				<globmapper from="windows_amd64/*" to="*" />
 			</copy>
 		</sequential>
 	</target>
