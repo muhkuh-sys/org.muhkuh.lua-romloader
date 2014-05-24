@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 2.8)
 PROJECT("muhkuh")
 
 
+# Enable tests (see here for details: http://www.vtk.org/Wiki/CMake/Testing_With_CTest)
+ENABLE_TESTING()
+
 # Generate a version number from a file or VCS.
 INCLUDE(cmake/muhkuh_version.cmake)
 
@@ -17,6 +20,9 @@ INCLUDE(cmake/muhkuh_installation_folders.cmake)
 
 # Swig is required to generate the bindings.
 FIND_PACKAGE(SWIG REQUIRED)
+
+# Python is used for some test scripts.
+FIND_PACKAGE(PythonInterp REQUIRED)
 
 # TODO: Show a summary with FeatureSummary .
 

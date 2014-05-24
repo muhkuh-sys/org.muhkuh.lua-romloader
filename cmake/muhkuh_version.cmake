@@ -68,7 +68,6 @@ MESSAGE("Version info: ${MUHKUH_VERSION_MAJ}.${MUHKUH_VERSION_MIN}.${MUHKUH_VERS
 # version 2.8.11.
 IF(${CMAKE_VERSION} VERSION_LESS "2.8.11")
 	# This is a CMake below 2.8.11. Use python for this task.
-	FIND_PACKAGE(PythonInterp REQUIRED)
 	EXECUTE_PROCESS(COMMAND "${PYTHON_EXECUTABLE}" -c "import datetime; print datetime.date.today().year"
 	                OUTPUT_VARIABLE MUHKUH_VERSION_YEAR
 	                ERROR_QUIET

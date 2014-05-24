@@ -28,3 +28,11 @@ ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC})
 
 # Install the lua module.
 INSTALL(TARGETS TARGET_bit DESTINATION ${INSTALL_DIR_LUA_MODULES})
+
+
+# Add tests for this module.
+IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+	# Here are the MinGW specific tests.
+	ADD_TEST(NAME bit_MinGW_DLL_dependencies
+	         COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tests/mingw_dll_dependencies.py -u liblua $<TARGET_FILE:TARGET_bit>)
+ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))

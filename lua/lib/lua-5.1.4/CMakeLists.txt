@@ -86,3 +86,12 @@ set_target_properties(luaexe PROPERTIES OUTPUT_NAME lua)
 
 INSTALL(TARGETS luaexe DESTINATION ${INSTALL_DIR_EXECUTABLES})
 INSTALL(TARGETS lualib DESTINATION ${INSTALL_DIR_SHARED_OBJECTS})
+
+
+# Add tests for this module.
+IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+	# Here are the MinGW specific tests.
+	ADD_TEST(NAME lua_MinGW_DLL_dependencies
+	         COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tests/mingw_dll_dependencies.py -u liblua $<TARGET_FILE:luaexe> $<TARGET_FILE:lualib>)
+ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+

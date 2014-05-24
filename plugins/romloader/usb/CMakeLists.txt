@@ -91,7 +91,7 @@ IF(${LUA51_FOUND})
 
 	IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 		# On minGW link all compiler libraries static.
-		set_property(TARGET TARGET_plugins_romloader_romloader_usb_LUA PROPERTY LINK_FLAGS "-static-libgcc -static-libstdc++")
+		set_property(TARGET TARGET_plugins_romloader_romloader_usb_LUA PROPERTY LINK_FLAGS "-static -static-libgcc -static-libstdc++")
 	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 
 	# The module depends on the libusb libraries.
@@ -99,6 +99,13 @@ IF(${LUA51_FOUND})
 	
 	# Install the lua module.
 	INSTALL(TARGETS TARGET_plugins_romloader_romloader_usb_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
+
+	# Add tests for this module.
+	IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+		# Here are the MinGW specific tests.
+		ADD_TEST(NAME romloader_usb_MinGW_DLL_dependencies
+		         COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tests/mingw_dll_dependencies.py -u liblua $<TARGET_FILE:TARGET_plugins_romloader_romloader_usb_LUA>)
+	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 ENDIF(${LUA51_FOUND})
 
 
