@@ -9,13 +9,13 @@ INCLUDE(CPack)
 # Build the ivy file.
 CONFIGURE_FILE(ivy.xml ivy-${VERSION_FULL}.xml)
 
-INSTALL(FILES ${MUHKUH_WIN32_INSTALL}/select_plugin_cli.lua
-              ${MUHKUH_WIN32_INSTALL}/tester_cli.lua
-              ${MUHKUH_WIN32_INSTALL}/muhkuh.lua
+INSTALL(FILES ${MUHKUH_WIN32_INSTALL}/lua/select_plugin_cli.lua
+              ${MUHKUH_WIN32_INSTALL}/lua/tester_cli.lua
+              ${MUHKUH_WIN32_INSTALL}/lua/muhkuh.lua
         DESTINATION lua
 )
 
-INSTALL(FILES ${MUHKUH_WIN32_INSTALL}/muhkuh_cli_init.lua
+INSTALL(FILES ${MUHKUH_WIN32_INSTALL}/lua/muhkuh_cli_init.lua
         DESTINATION .
 )
 

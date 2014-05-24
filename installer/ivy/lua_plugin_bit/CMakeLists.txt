@@ -9,11 +9,11 @@ INCLUDE(CPack)
 # Build the ivy file.
 CONFIGURE_FILE(ivy.xml ivy-${VERSION_FULL}.xml)
 
-INSTALL(FILES ${MUHKUH_WIN32_INSTALL}/bit.dll
+INSTALL(FILES ${MUHKUH_WIN32_INSTALL}/lua_plugins/bit.dll
         DESTINATION windows_x86
 )
 
-INSTALL(FILES ${MUHKUH_WIN64_INSTALL}/bit.dll
+INSTALL(FILES ${MUHKUH_WIN64_INSTALL}/lua_plugins/bit.dll
         DESTINATION windows_amd64
 )
 

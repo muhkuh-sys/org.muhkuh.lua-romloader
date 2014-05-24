@@ -9,11 +9,11 @@ INCLUDE(CPack)
 # Build the ivy file.
 CONFIGURE_FILE(ivy.xml ivy-${VERSION_FULL}.xml)
 
-INSTALL(FILES ${MUHKUH_WIN32_INSTALL}/lua.exe ${MUHKUH_WIN32_INSTALL}/liblua.dll
+INSTALL(FILES ${MUHKUH_WIN32_INSTALL}/bin/lua.exe ${MUHKUH_WIN32_INSTALL}/bin/liblua.dll
         DESTINATION windows_x86
 )
 
-INSTALL(FILES ${MUHKUH_WIN64_INSTALL}/lua.exe ${MUHKUH_WIN64_INSTALL}/liblua.dll
+INSTALL(FILES ${MUHKUH_WIN64_INSTALL}/bin/lua.exe ${MUHKUH_WIN64_INSTALL}/bin/liblua.dll
         DESTINATION windows_amd64
 )
 
