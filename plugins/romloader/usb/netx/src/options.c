@@ -47,17 +47,17 @@ static const OPTIONS_T t_default_options =
 		(USB_PRODUCT_ID&0xffU), ((USB_PRODUCT_ID>>8U)&0xffU),             /* product id */
 		(USB_RELEASE_ID&0xffU), ((USB_RELEASE_ID>>8U)&0xffU),             /* device release number */
 		/* config descriptor */
-		0x00, 0x00,             /* conf. characteristics, max. power consumption */
+		0xC0, 0x00,             /* conf. characteristics, max. power consumption */
 
 		/* manufacturer string  */
-		34, 0x03,
-		'H', 'i', 'l', 's', 'c', 'h', 'e', 'r', 
-		' ', 'G', 'm', 'b', 'H', ' ', ' ', ' ',
+		28, 0x03,
+		'H', 'i', 'l', 's', 'c', 'h', 'e', 'r',
+		' ', 'G', 'm', 'b', 'H',   0,   0,   0,
 
 		/* device string */
-		34, 0x03,
-		'H', 'B', 'o', 'o', 't', ' ', 'm', 'o', 
-		'n', 'i', 't', 'o', 'r', ' ', ' ', ' ',
+		28, 0x03,
+		'H', 'B', 'o', 'o', 't', ' ', 'm', 'o',
+		'n', 'i', 't', 'o', 'r',   0,   0,   0,
 
 		/* S/N string */
 		34, 0x03,
