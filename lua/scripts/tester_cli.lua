@@ -113,12 +113,35 @@ function getPanel()
 end
 
 
-function mbin_open(strFilename)
+function mbin_open(strFilename, tPlugin)
 	local strData
 	local strMsg
 	local aAttr
 
 
+	-- Replace the ASIC_TYPE magic.
+	if string.find(strFilename, "${ASIC_TYPE}")~=nil then
+		-- Get the chip type.
+		local tAsicTyp = tPlugin:GetChiptyp()
+		local strAsic
+		
+		
+		-- Get the binary for the ASIC.
+		if tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX100 or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX500 then
+			strAsic = "500"
+		elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX50 then
+			strAsic = "50"
+		elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX10 then
+			strAsic = "10"
+		elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX56 or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX56B then
+			strAsic = "56"
+		else
+			error("Unknown chiptyp!")
+		end
+		
+		strFilename = string.gsub(strFilename, "${ASIC_TYPE}", strAsic)
+	end
+	
 	-- Try to load the binary.
 	strData, strMsg = muhkuh.load(strFilename)
 	if not strData then
@@ -202,7 +225,7 @@ end
 
 function mbin_simple_run(tParentWindow, tPlugin, strFilename, aParameter)
 	local aAttr
-	aAttr = mbin_open(strFilename)
+	aAttr = mbin_open(strFilename, tPlugin)
 	mbin_debug(aAttr)
 	mbin_write(tParentWindow, tPlugin, aAttr)
 	mbin_set_parameter(tPlugin, aAttr, aParameter)
