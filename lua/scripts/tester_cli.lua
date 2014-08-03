@@ -197,7 +197,18 @@ function mbin_set_parameter(tPlugin, aAttr, aParameter)
 	if type(aParameter)=="table" then
 		tPlugin:write_data32(aAttr.ulParameterStartAddress+0x04, aAttr.ulParameterStartAddress+0x0c)  -- Address of test parameters.
 
-		for iIdx,ulValue in ipairs(aParameter) do
+		for iIdx,tValue in ipairs(aParameter) do
+			if type(tValue)=="string" and tValue=="OUTPUT" then
+				-- Initialize output variables with 0.
+				ulValue = 0
+			else
+				ulValue = tonumber(tValue)
+				if ulValue==nil then
+					error(string.format("The parameter %s is no valid number.", tostring(tValue)))
+				elseif ulValue<0 or ulValue>0xffffffff then
+					error(string.format("The parameter %s exceeds the range of an unsigned 32bit integer number.", tostring(tValue)))
+				end
+			end
 			tPlugin:write_data32(aAttr.ulParameterStartAddress+0x0c+((iIdx-1)*4), ulValue)
 		end
 	else
@@ -207,7 +218,7 @@ function mbin_set_parameter(tPlugin, aAttr, aParameter)
 end
 
 
-function mbin_execute(tParentWindow, tPlugin, aAttr, fnCallback, ulUserData)
+function mbin_execute(tParentWindow, tPlugin, aAttr, aParameter, fnCallback, ulUserData)
 	if not fnCallback then
 		fnCallback = callback
 	end
@@ -219,7 +230,22 @@ function mbin_execute(tParentWindow, tPlugin, aAttr, fnCallback, ulUserData)
 	tPlugin:call(aAttr.ulExecAddress, aAttr.ulParameterStartAddress, fnCallback, ulUserData)
 	print("")
 	print("______________________________________________________________________________")
-	return tPlugin:read_data32(aAttr.ulParameterStartAddress)
+	
+	-- Read the result status.
+	local ulResult = tPlugin:read_data32(aAttr.ulParameterStartAddress)
+	if ulResult==0 then
+		if type(aParameter)=="table" then
+			-- Search the parameter for "OUTPUT" elements.
+			for iIdx,tValue in ipairs(aParameter) do
+				if type(tValue)=="string" and tValue=="OUTPUT" then
+					-- This is an output element. Read the value from the netX memory.
+					aParameter[iIdx] = tPlugin:read_data32(aAttr.ulParameterStartAddress+0x0c+((iIdx-1)*4))
+				end
+			end
+		end
+	end
+	
+	return ulResult
 end
 
 
@@ -229,6 +255,6 @@ function mbin_simple_run(tParentWindow, tPlugin, strFilename, aParameter)
 	mbin_debug(aAttr)
 	mbin_write(tParentWindow, tPlugin, aAttr)
 	mbin_set_parameter(tPlugin, aAttr, aParameter)
-	return mbin_execute(tParentWindow, tPlugin, aAttr)
+	return mbin_execute(tParentWindow, tPlugin, aAttr, aParameter)
 end
 
