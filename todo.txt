@@ -19,3 +19,11 @@
 * Support for MinGW32/64.
   Here is a very good overview of all identification macros:
     http://sourceforge.net/apps/mediawiki/predef/index.php?title=Compilers
+
+* JTAG plugin: after successful probe the target must be removed
+
+* Currently patches to the external projects are applied by copying modified files over the depacked archive. This is done to prevent
+  dependencies to one more external tool - in this case patch.
+  There is a pure python solution: https://code.google.com/p/python-patch/wiki/README
+  It works only with unified diffs, but this should be no problem.
+   
