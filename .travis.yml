@@ -7,10 +7,9 @@ env:
 # g++-mingw-w64-i686 g++-mingw-w64-x86-64 gcc-mingw-w64 gcc-mingw-w64-i686 gcc-mingw-w64-x86-64
 before_install:
   - sudo apt-get update -qq
-  - export DEBIAN_FRONTEND=noninteractive
-  - sudo apt-get --quiet --assume-yes install lua5.1 liblua5.1-dev
-  - sudo apt-get --quiet --assume-yes install mingw-w64 g++-mingw-w64
-  - sudo apt-get --quiet --assume-yes install gcc-multilib g++-multilib make cmake libudev-dev libreadline6-dev
+  - sudo apt-get --assume-yes install lua5.1 liblua5.1-dev
+  - sudo apt-get --assume-yes --fix-broken install mingw-w64 g++-mingw-w64
+  - sudo apt-get --assume-yes install gcc-multilib g++-multilib make cmake libudev-dev libreadline6-dev
 
 # Install swig3.0 from source until there is a package somewhere.
 install:
