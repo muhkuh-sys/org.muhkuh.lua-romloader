@@ -1,0 +1,20 @@
+language: c
+
+env:
+  - secure: "CQaqQBrFIEVHPO+J8gWRCV0eQ2bdwdZG3T8t/DBj7hGTOXqaB1YHSWpSt+xbht/B2pelSz2XOWNhvF8Q9PFqW+nMFANkqz0W24BtBrVhLh6hUh+DLAW9rvctNeKU03Eqke+g7YAex6cLdVqk2HTyUBmMxe/rOGROGj2Sd+auhdc="
+
+
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -y lua5.1 liblua5.1-dev
+
+# Install swig3.0 from source until there is a package somewhere.
+install:
+  - wget http://downloads.sourceforge.net/project/swig/swig/swig-3.0.2/swig-3.0.2.tar.gz -O /tmp/swig.tar.gz
+  - tar --directory /tmp --extract --gzip --file /tmp/swig.tar.gz
+  - cd /tmp/swig-3.0.2 && ./configure --prefix=/usr && make && sudo make install
+
+# This is the command to build the whole project and pack the results in a distributable form.
+script:
+  - ./build_artifacts.sh
+
