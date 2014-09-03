@@ -59,7 +59,8 @@ Export('env_netx500_thumb_default', 'env_netx56_thumb_default', 'env_netx50_thum
 #
 # Build the platform libraries.
 #
-SConscript('platform/SConscript')
+PLATFORM_LIB_CFG_BUILDS = [500, 56, 50, 10]
+SConscript('platform/SConscript', exports='PLATFORM_LIB_CFG_BUILDS')
 
 
 #----------------------------------------------------------------------------
