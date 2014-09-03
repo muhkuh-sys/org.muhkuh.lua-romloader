@@ -14,8 +14,12 @@ before_install:
 install:
   - wget http://downloads.sourceforge.net/project/swig/swig/swig-3.0.2/swig-3.0.2.tar.gz -O /tmp/swig.tar.gz
   - tar --directory /tmp --extract --gzip --file /tmp/swig.tar.gz
-  - cd /tmp/swig-3.0.2 && ./configure --prefix=/usr && make && sudo make install
-  - cd
+  - pushd ${CWD}
+  - cd /tmp/swig-3.0.2
+  - ./configure --prefix=/usr
+  - make
+  - sudo make install
+  - popd
 
 # This is the command to build the whole project and pack the results in a distributable form.
 script:
