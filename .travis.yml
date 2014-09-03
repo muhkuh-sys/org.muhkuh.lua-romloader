@@ -5,21 +5,24 @@ env:
 
 
 before_install:
+  - curl http://download.opensuse.org/repositories/home:/doc_bacardi/xUbuntu_12.04/Release.key | sudo apt-key add -
+  - echo "deb http://download.opensuse.org/repositories/home:/doc_bacardi/xUbuntu_12.04 ./" | sudo tee -a /etc/apt/sources.list
   - sudo apt-get update -qq
   - sudo apt-get --assume-yes install lua5.1 liblua5.1-dev
   - sudo apt-get --assume-yes install mingw-w64 g++-mingw-w64 g++-mingw-w64-i686 g++-mingw-w64-x86-64 gcc-mingw-w64 gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 binutils-mingw-w64-i686 binutils-mingw-w64-x86-64
   - sudo apt-get --assume-yes install gcc-multilib g++-multilib make cmake libudev-dev libreadline6-dev
+  - sudo apt-get --assume-yes install swig3.0
 
-# Install swig3.0 from source until there is a package somewhere.
-install:
-  - wget http://downloads.sourceforge.net/project/swig/swig/swig-3.0.2/swig-3.0.2.tar.gz -O /tmp/swig.tar.gz
-  - tar --directory /tmp --extract --gzip --file /tmp/swig.tar.gz
-  - pushd `pwd`
-  - cd /tmp/swig-3.0.2
-  - ./configure --prefix=/usr
-  - make
-  - sudo make install
-  - popd
+## Install swig3.0 from source until there is a package somewhere.
+#install:
+#  - wget http://downloads.sourceforge.net/project/swig/swig/swig-3.0.2/swig-3.0.2.tar.gz -O /tmp/swig.tar.gz
+#  - tar --directory /tmp --extract --gzip --file /tmp/swig.tar.gz
+#  - pushd `pwd`
+#  - cd /tmp/swig-3.0.2
+#  - ./configure --prefix=/usr
+#  - make
+#  - sudo make install
+#  - popd
 
 # This is the command to build the whole project and pack the results in a distributable form.
 script:
