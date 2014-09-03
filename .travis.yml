@@ -14,7 +14,7 @@ before_install:
 install:
   - wget http://downloads.sourceforge.net/project/swig/swig/swig-3.0.2/swig-3.0.2.tar.gz -O /tmp/swig.tar.gz
   - tar --directory /tmp --extract --gzip --file /tmp/swig.tar.gz
-  - pushd ${CWD}
+  - pushd `pwd`
   - cd /tmp/swig-3.0.2
   - ./configure --prefix=/usr
   - make
