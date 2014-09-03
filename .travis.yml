@@ -18,5 +18,5 @@ install:
 
 # This is the command to build the whole project and pack the results in a distributable form.
 script:
-  - ./build_artifacts.sh
+  - ./.travis.sh
 

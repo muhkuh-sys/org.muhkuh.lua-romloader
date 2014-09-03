@@ -1,6 +1,4 @@
 #! /bin/sh
-# sudo apt-get --quiet --assume-yes install mingw-w64 g++-mingw-w64 gcc-multilib g++-multilib make cmake swig zip libudev-dev libreadline6-dev
-
 
 #-----------------------------------------------------------------------------
 #
