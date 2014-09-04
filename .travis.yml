@@ -14,6 +14,8 @@ before_install:
   - sudo apt-get --assume-yes install mingw-w64 g++-mingw-w64 g++-mingw-w64-i686 g++-mingw-w64-x86-64 gcc-mingw-w64 gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 binutils-mingw-w64-i686 binutils-mingw-w64-x86-64
   - sudo apt-get --assume-yes install gcc-multilib g++-multilib make libudev-dev libreadline6-dev
   - sudo apt-get --assume-yes install swig3.0 cmake3
+  - sudo apt-get --assume-yes install python-pip
+  - pip install -q requests
 
 
 # This is the command to build the whole project and pack the results in a distributable form.
