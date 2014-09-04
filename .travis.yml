@@ -14,7 +14,9 @@ before_install:
   - sudo apt-get --assume-yes install mingw-w64 g++-mingw-w64 g++-mingw-w64-i686 g++-mingw-w64-x86-64 gcc-mingw-w64 gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 binutils-mingw-w64-i686 binutils-mingw-w64-x86-64
   - sudo apt-get --assume-yes install gcc-multilib g++-multilib make libudev-dev libreadline6-dev
   - sudo apt-get --assume-yes install swig3.0 cmake3
-  - sudo apt-get --assume-yes install python-pip
+  - sudo apt-get --assume-yes install python-pip python-virtualenv
+  - virtualenv ~/virtualenv/python2.7
+  - source ~/virtualenv/python2.7/bin/activate
   - pip install -q requests
 
 
