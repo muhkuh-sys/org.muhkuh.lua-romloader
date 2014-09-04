@@ -6,7 +6,7 @@ env:
 
 
 before_install:
-  - sudo dpkg purge cmake
+  - sudo dpkg --purge cmake
   - curl http://download.opensuse.org/repositories/home:/doc_bacardi/xUbuntu_12.04/Release.key | sudo apt-key add -
   - echo "deb http://download.opensuse.org/repositories/home:/doc_bacardi/xUbuntu_12.04 ./" | sudo tee -a /etc/apt/sources.list
   - sudo apt-get update -qq
