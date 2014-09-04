@@ -76,3 +76,13 @@ if [ $STATUS -ne 0 ]; then
 	exit 1
 fi
 
+cd ..
+
+
+#-----------------------------------------------------------------------------
+#
+# Deploy the artifacts.
+#
+python installer/ivy/deploy.py
+
+
