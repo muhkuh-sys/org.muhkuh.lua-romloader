@@ -2,7 +2,7 @@ language: c
 
 
 env:
-  - secure: "CQaqQBrFIEVHPO+J8gWRCV0eQ2bdwdZG3T8t/DBj7hGTOXqaB1YHSWpSt+xbht/B2pelSz2XOWNhvF8Q9PFqW+nMFANkqz0W24BtBrVhLh6hUh+DLAW9rvctNeKU03Eqke+g7YAex6cLdVqk2HTyUBmMxe/rOGROGj2Sd+auhdc="
+  - secure: "LuzdXXY9Q1fU4HxqwcG4vO5QLb2c3FVKe4L8yCZ24hJLIuB+ClRlQYHQeH9CPZiYR72Q2rNGuBlFoSRgPxvQ6bC4QdevdWVVWUdEkyfpOza7Scu2OTtChhDbMmLAeDEmU4ef2IwZz1FvKUuuDDwdF+EpFZyd0yyGXGt1RuBvw6w="
 
 
 before_install:
@@ -13,7 +13,7 @@ before_install:
   - sudo apt-get --assume-yes install lua5.1 liblua5.1-dev
   - sudo apt-get --assume-yes install mingw-w64 g++-mingw-w64 g++-mingw-w64-i686 g++-mingw-w64-x86-64 gcc-mingw-w64 gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 binutils-mingw-w64-i686 binutils-mingw-w64-x86-64
   - sudo apt-get --assume-yes install gcc-multilib g++-multilib make libudev-dev libreadline6-dev
-  - sudo apt-get --assume-yes install swig3.0 cmake3
+  - sudo apt-get --assume-yes install swig3 cmake3
   - sudo apt-get --assume-yes install python-pip python-virtualenv
   - virtualenv ~/virtualenv/python2.7
   - source ~/virtualenv/python2.7/bin/activate

@@ -116,6 +116,16 @@ tBinTray.content_upload(strPackage, strVersion, 'tools.muhkuh.org', 'build/TARGE
 tBinTray.content_upload(strPackage, strVersion, 'tools.muhkuh.org', 'build/TARGET_lua_plugin_romloader-prefix/src/TARGET_lua_plugin_romloader-build/ivy-2.1.0.xml', 'ivy-2.1.0.xml')
 
 
+strPackage = 'muhkuh_base_cli'
+strVersion = 'SNAPSHOT'
+fResult = tBinTray.version_exist(strPackage, strVersion)
+if fResult==True:
+	print '%s %s exisis already. Delete it.' % (strPackage,strVersion)
+	tBinTray.version_delete(strPackage, strVersion)
+tBinTray.version_create(strPackage, strVersion, 'Build results from travis-ci.', '1234')
+tBinTray.content_upload(strPackage, strVersion, 'tools.muhkuh.org', 'build/TARGET_muhkuh_base_cli-prefix/src/TARGET_muhkuh_base_cli-build/ivy-2.1.0.xml', 'ivy-2.1.0.xml')
+
+
 strPackage = 'muhkuh_tester_cli'
 strVersion = 'SNAPSHOT'
 fResult = tBinTray.version_exist(strPackage, strVersion)
