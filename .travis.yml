@@ -23,4 +23,5 @@ before_install:
 # This is the command to build the whole project and pack the results in a distributable form.
 script:
   - ./.travis.sh
+  - python installer/ivy/deploy.py
 
