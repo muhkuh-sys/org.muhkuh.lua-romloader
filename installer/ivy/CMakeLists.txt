@@ -57,11 +57,5 @@ ExternalProject_Add(TARGET_muhkuh_base_cli
                     INSTALL_COMMAND make
 )
 
-ExternalProject_Add(TARGET_muhkuh_tester_cli
-                    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/muhkuh_tester_cli
-                    CMAKE_ARGS ${PACKAGE_CMAKE_ARGS}
-                    INSTALL_COMMAND make package
-)
-
 #----------------------------------------------------------------------------
 

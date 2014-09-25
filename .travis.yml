@@ -28,4 +28,3 @@ script:
   - python installer/ivy/deploy.py build/artifacts/artifacts_lua_plugin_romloader.xml
   - python installer/ivy/deploy.py build/artifacts/artifacts_lua.xml
   - python installer/ivy/deploy.py build/artifacts/artifacts_muhkuh_base_cli.xml
-  - python installer/ivy/deploy.py build/artifacts/artifacts_muhkuh_tester_cli.xml

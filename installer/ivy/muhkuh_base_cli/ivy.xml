@@ -2,7 +2,9 @@
 
 <ivy-module version="2.0">
 	<info organisation="org.muhkuh.tools" module="muhkuh_base_cli" revision="${VERSION_FULL}"/>
-	<publications/>
+	<publications>
+		<artifact ext="zip" type="zip" packaging="zip" />
+	</publications>
 	<dependencies>
 		<dependency org="org.muhkuh.tools" name="lua"                  rev="${VERSION_FULL}"/>
 		<dependency org="org.muhkuh.tools" name="lua_plugin_bit"       rev="${VERSION_FULL}"/>
