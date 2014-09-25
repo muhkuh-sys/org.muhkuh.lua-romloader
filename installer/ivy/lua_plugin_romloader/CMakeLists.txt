@@ -26,3 +26,10 @@ INSTALL(FILES ${MUHKUH_WIN64_INSTALL}/lua_plugins/romloader.dll
 INSTALL(FILES install.xml
 	DESTINATION .)
 
+# Filter the target.xml file.
+SET(ARTIFACT_DIRECTORY    "${CMAKE_CURRENT_BINARY_DIR}")
+SET(ARTIFACT_ARTIFACT_ID  "lua_plugin_romloader")
+SET(ARTIFACT_GROUP_ID     "tools.muhkuh.org")
+SET(ARTIFACT_VERSION      "${VERSION_FULL}")
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/../artifacts.xml ${ARTIFACT_LISTS_OUTPUT}/artifacts_lua_plugin_romloader.xml)
+

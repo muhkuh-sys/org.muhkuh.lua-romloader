@@ -22,3 +22,10 @@ INSTALL(FILES ${MUHKUH_WIN32_INSTALL}/lua/muhkuh_cli_init.lua
 INSTALL(FILES install.xml
         DESTINATION .)
 
+# Filter the target.xml file.
+SET(ARTIFACT_DIRECTORY    "${CMAKE_CURRENT_BINARY_DIR}")
+SET(ARTIFACT_ARTIFACT_ID  "muhkuh_tester_cli")
+SET(ARTIFACT_GROUP_ID     "tools.muhkuh.org")
+SET(ARTIFACT_VERSION      "${VERSION_FULL}")
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/../artifacts.xml ${ARTIFACT_LISTS_OUTPUT}/artifacts_muhkuh_tester_cli.xml)
+

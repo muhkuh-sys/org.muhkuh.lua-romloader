@@ -23,5 +23,9 @@ before_install:
 # This is the command to build the whole project and pack the results in a distributable form.
 script:
   - ./.travis.sh
-  - python installer/ivy/deploy.py
-
+  - python installer/ivy/deploy.py build/artifacts/artifacts_lua_plugin_bit.xml
+  - python installer/ivy/deploy.py build/artifacts/artifacts_lua_plugin_mhash.xml
+  - python installer/ivy/deploy.py build/artifacts/artifacts_lua_plugin_romloader.xml
+  - python installer/ivy/deploy.py build/artifacts/artifacts_lua.xml
+  - python installer/ivy/deploy.py build/artifacts/artifacts_muhkuh_base_cli.xml
+  - python installer/ivy/deploy.py build/artifacts/artifacts_muhkuh_tester_cli.xml

@@ -1,9 +1,10 @@
+import argparse
 import json
 import os
 import os.path
 import requests
 import string
-
+import xml.etree.ElementTree
 
 
 class BinTray:
@@ -67,72 +68,53 @@ class BinTray:
 		if tRequest.status_code!=201:
 			raise Exception('Failed to create the content: %d', tRequest.status_code)
 
+
+tParser = argparse.ArgumentParser(description='Deploy some artifacts.')
+tParser.add_argument('strArtifactsFilename', metavar='FILE', help='Read the artifact list from FILE.')
+aOptions = tParser.parse_args()
+
 strAuth = os.environ['BINTRAY_APITOKEN']
 strUser,strApiToken = string.split(strAuth, ':')
 
+# Open the XML file.
+tXmlArtifacts = xml.etree.ElementTree.parse(aOptions.strArtifactsFilename)
+tNodeRoot = tXmlArtifacts.getroot()
+
+
 tBinTray = BinTray(strUser, strApiToken, 'muhkuh', 'Muhkuh')
 
-strPackage = 'lua'
-strVersion = 'SNAPSHOT'
-fResult = tBinTray.version_exist(strPackage, strVersion)
-if fResult==True:
-	print '%s %s exisis already. Delete it.' % (strPackage,strVersion)
-	tBinTray.version_delete(strPackage, strVersion)
-tBinTray.version_create(strPackage, strVersion, 'Build results from travis-ci.', '1234')
-tBinTray.content_upload(strPackage, strVersion, 'tools.muhkuh.org', 'build/TARGET_lua-prefix/src/TARGET_lua-build/lua-2.1.0.zip', 'lua-2.1.0.zip')
-tBinTray.content_upload(strPackage, strVersion, 'tools.muhkuh.org', 'build/TARGET_lua-prefix/src/TARGET_lua-build/ivy-2.1.0.xml', 'ivy-2.1.0.xml')
+# Loop over all targets and find all package/version combinations without duplicates.
+aPackageVersions = set()
+for tNodeTarget in tNodeRoot.findall('Project/Server/Target'):
+	strPackage = tNodeTarget.find('ArtifactID').text
+	strVersion = tNodeTarget.find('Version').text
+	
+	aPackageVersions.add((strPackage, strVersion))
 
 
-strPackage = 'lua_plugin_bit'
-strVersion = 'SNAPSHOT'
-fResult = tBinTray.version_exist(strPackage, strVersion)
-if fResult==True:
-	print '%s %s exisis already. Delete it.' % (strPackage,strVersion)
-	tBinTray.version_delete(strPackage, strVersion)
-tBinTray.version_create(strPackage, strVersion, 'Build results from travis-ci.', '1234')
-tBinTray.content_upload(strPackage, strVersion, 'tools.muhkuh.org', 'build/TARGET_lua_plugin_bit-prefix/src/TARGET_lua_plugin_bit-build/lua_plugin_bit-2.1.0.zip', 'lua_plugin_bit-2.1.0.zip')
-tBinTray.content_upload(strPackage, strVersion, 'tools.muhkuh.org', 'build/TARGET_lua_plugin_bit-prefix/src/TARGET_lua_plugin_bit-build/ivy-2.1.0.xml', 'ivy-2.1.0.xml')
+# Loop over all package/version combinations. Delete existing version on the server. Create all versions on the server.
+for strPackageVersion in aPackageVersions:
+	strPackage = strPackageVersion[0]
+	strVersion = strPackageVersion[1]
+	
+	print 'Checking if package %s, version %s exists.' % (strPackage,strVersion)
+	fResult = tBinTray.version_exist(strPackage, strVersion)
+	if fResult==True:
+		print 'Package %s: version %s exisis already. Delete it.' % (strPackage,strVersion)
+		tBinTray.version_delete(strPackage, strVersion)
+	
+	print 'Package %s: create version %s.' % (strPackage,strVersion)
+	tBinTray.version_create(strPackage, strVersion, 'Build results from travis-ci.', '1234')
 
 
-strPackage = 'lua_plugin_mhash'
-strVersion = 'SNAPSHOT'
-fResult = tBinTray.version_exist(strPackage, strVersion)
-if fResult==True:
-	print '%s %s exisis already. Delete it.' % (strPackage,strVersion)
-	tBinTray.version_delete(strPackage, strVersion)
-tBinTray.version_create(strPackage, strVersion, 'Build results from travis-ci.', '1234')
-tBinTray.content_upload(strPackage, strVersion, 'tools.muhkuh.org', 'build/TARGET_lua_plugin_mhash-prefix/src/TARGET_lua_plugin_mhash-build/lua_plugin_mhash-2.1.0.zip', 'lua_plugin_mhash-2.1.0.zip')
-tBinTray.content_upload(strPackage, strVersion, 'tools.muhkuh.org', 'build/TARGET_lua_plugin_mhash-prefix/src/TARGET_lua_plugin_mhash-build/ivy-2.1.0.xml', 'ivy-2.1.0.xml')
-
-
-strPackage = 'lua_plugin_romloader'
-strVersion = 'SNAPSHOT'
-fResult = tBinTray.version_exist(strPackage, strVersion)
-if fResult==True:
-	print '%s %s exisis already. Delete it.' % (strPackage,strVersion)
-	tBinTray.version_delete(strPackage, strVersion)
-tBinTray.version_create(strPackage, strVersion, 'Build results from travis-ci.', '1234')
-tBinTray.content_upload(strPackage, strVersion, 'tools.muhkuh.org', 'build/TARGET_lua_plugin_romloader-prefix/src/TARGET_lua_plugin_romloader-build/lua_plugin_romloader-2.1.0.zip', 'lua_plugin_romloader-2.1.0.zip')
-tBinTray.content_upload(strPackage, strVersion, 'tools.muhkuh.org', 'build/TARGET_lua_plugin_romloader-prefix/src/TARGET_lua_plugin_romloader-build/ivy-2.1.0.xml', 'ivy-2.1.0.xml')
-
-
-strPackage = 'muhkuh_base_cli'
-strVersion = 'SNAPSHOT'
-fResult = tBinTray.version_exist(strPackage, strVersion)
-if fResult==True:
-	print '%s %s exisis already. Delete it.' % (strPackage,strVersion)
-	tBinTray.version_delete(strPackage, strVersion)
-tBinTray.version_create(strPackage, strVersion, 'Build results from travis-ci.', '1234')
-tBinTray.content_upload(strPackage, strVersion, 'tools.muhkuh.org', 'build/TARGET_muhkuh_base_cli-prefix/src/TARGET_muhkuh_base_cli-build/ivy-2.1.0.xml', 'ivy-2.1.0.xml')
-
-
-strPackage = 'muhkuh_tester_cli'
-strVersion = 'SNAPSHOT'
-fResult = tBinTray.version_exist(strPackage, strVersion)
-if fResult==True:
-	print '%s %s exisis already. Delete it.' % (strPackage,strVersion)
-	tBinTray.version_delete(strPackage, strVersion)
-tBinTray.version_create(strPackage, strVersion, 'Build results from travis-ci.', '1234')
-tBinTray.content_upload(strPackage, strVersion, 'tools.muhkuh.org', 'build/TARGET_muhkuh_tester_cli-prefix/src/TARGET_muhkuh_tester_cli-build/muhkuh_tester_cli-2.1.0.zip', 'muhkuh_tester_cli-2.1.0.zip')
-tBinTray.content_upload(strPackage, strVersion, 'tools.muhkuh.org', 'build/TARGET_muhkuh_tester_cli-prefix/src/TARGET_muhkuh_tester_cli-build/ivy-2.1.0.xml', 'ivy-2.1.0.xml')
+# Loop over all targets and upload the files.
+for tNodeTarget in tNodeRoot.findall('Project/Server/Target'):
+	strPackage   = tNodeTarget.find('ArtifactID').text
+	strVersion   = tNodeTarget.find('Version').text
+	strFile      = tNodeTarget.get('file')
+	strGroup     = tNodeTarget.find('GroupID').text
+	strPackaging = tNodeTarget.find('Packaging').text
+	
+	print 'Uploading %s.' % strFile
+	tBinTray.content_upload(strPackage, strVersion, strGroup, strFile, '%s-%s.%s' % (strPackage,strVersion,strPackaging))
 
