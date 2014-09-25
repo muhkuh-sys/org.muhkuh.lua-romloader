@@ -54,7 +54,7 @@ ExternalProject_Add(TARGET_lua_plugin_romloader
 ExternalProject_Add(TARGET_muhkuh_base_cli
                     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/muhkuh_base_cli
                     CMAKE_ARGS ${PACKAGE_CMAKE_ARGS}
-                    INSTALL_COMMAND make
+                    INSTALL_COMMAND make package
 )
 
 #----------------------------------------------------------------------------
