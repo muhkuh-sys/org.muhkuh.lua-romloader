@@ -1,5 +1,7 @@
-<project xmlns:ivy="antlib:org.apache.ivy.ant" xmlns:if="ant:if" name="lua_plugin_mhash" default="install_lua_plugin_mhash">
-	<target name="install_lua_plugin_mhash" description="install all components">
+<project xmlns:ivy="antlib:org.apache.ivy.ant" xmlns:if="ant:if" name="lua_plugin_mhash" default="install">
+	<target name="install" description="install all components">
+		<echo>org.muhkuh.tools.lua_plugin_mhash</echo>
+		
 		<sequential if:true="${install.os_arch.linux_i386}">
 		</sequential>
 		

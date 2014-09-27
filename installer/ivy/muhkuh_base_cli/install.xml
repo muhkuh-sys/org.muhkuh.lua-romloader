@@ -1,5 +1,7 @@
-<project xmlns:ivy="antlib:org.apache.ivy.ant" xmlns:if="ant:if" name="muhkuh_tester_cli" default="install_muhkuh_tester_cli">
-	<target name="install_muhkuh_tester_cli" description="install all components">
+<project xmlns:ivy="antlib:org.apache.ivy.ant" xmlns:if="ant:if" name="muhkuh_tester_cli" default="install">
+	<target name="install" description="install all components">
+		<echo>org.muhkuh.tools.muhkuh_tester_cli</echo>
+		
 		<copy todir="${install.lua}" includeEmptyDirs="true">
 			<fileset dir="lua" />
 		</copy>
