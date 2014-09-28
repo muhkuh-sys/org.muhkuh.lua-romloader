@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <ivy-module version="2.0">
-	<info organisation="org.muhkuh.tools" module="lua_plugin_romloader" revision="${VERSION_FULL}"/>
+	<info organisation="org.muhkuh.tools" module="lua_plugin_romloader" revision="${VERSION_FULL}">
+		<license name="GPL-2.0"/>
+		<ivyauthor name="Muhkuh team" url="https://github.com/muhkuh-sys" />
+		<description>
+			This module provides the romloader plugins for the LUA interpreter. The plugins provide communication with netX based hardware.
+		</description>
+	</info>
 	<publications>
 		<artifact ext="zip" type="zip" packaging="zip" />
 	</publications>

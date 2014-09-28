@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <ivy-module version="2.0">
-	<info organisation="org.muhkuh.tools" module="lua_plugin_mhash" revision="${VERSION_FULL}"/>
+	<info organisation="org.muhkuh.tools" module="lua_plugin_mhash" revision="${VERSION_FULL}">
+		<license name="GPL-2.0"/>
+		<ivyauthor name="Muhkuh team" url="https://github.com/muhkuh-sys" />
+		<description>
+			This module provides the mhash plugin for the LUA interpreter. It provides checksum and hash functions.
+		</description>
+	</info>
 	<publications>
 		<artifact ext="zip" type="zip" packaging="zip" />
 	</publications>
