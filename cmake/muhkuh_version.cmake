@@ -4,7 +4,8 @@
 #
 
 # Set the filename for the muhkuh version file.
-SET(MUHKUH_VERSION_FILE "${CMAKE_HOME_DIRECTORY}/muhkuh_version.txt")
+# NOTE: this file is included from 2 cmake projects with different home dirs. Use the current path as a base to get to muhkuh_version.txt .
+SET(MUHKUH_VERSION_FILE "${CMAKE_CURRENT_LIST_DIR}/../muhkuh_version.txt")
 
 # Set the regular expression for the muhkuh version. It is a sequence of 3 numbers separated by dots.
 SET(MUHKUH_VERSION_REGEX "([0-9]+)\\.([0-9]+)\\.([0-9]+)")
