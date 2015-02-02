@@ -13,6 +13,7 @@ if(${LUA51_FOUND})
 		system_cli.lua
 		system_gui.lua
 		tester_cli.lua
+		utils.lua
 	)
 
 	# Install the scripts.
