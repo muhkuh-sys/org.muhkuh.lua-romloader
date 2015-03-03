@@ -101,7 +101,7 @@ private:
 
 	bool callback_common(SWIGLUA_REF *ptLuaFn, long lCallbackUserData, int iOldTopOfStack);
 
-	static const ROMLOADER_RESET_ID_T atResIds[6];
+	static const ROMLOADER_RESET_ID_T atResIds[7];
 };
 
 /*-----------------------------------*/

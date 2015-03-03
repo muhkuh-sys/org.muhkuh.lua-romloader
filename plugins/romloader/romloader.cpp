@@ -141,7 +141,7 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 }
 
 
-const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[6] =
+const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[7] =
 {
 	{
 		0xea080001,
@@ -189,6 +189,14 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[6] =
 		0x00106003,
 		ROMLOADER_CHIPTYP_NETX56B,
 		"netX51/52 Step B"
+	},
+
+	{
+		0xe59ff00c,
+		0x04100020,
+		0x00108004,
+		ROMLOADER_CHIPTYP_NETX4000,
+		"netX4000"
 	}
 };
 
