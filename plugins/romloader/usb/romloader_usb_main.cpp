@@ -353,20 +353,20 @@ void romloader_usb::Disconnect(lua_State *ptClientData)
 
 bool romloader_usb::synchronize(void)
 {
-	const unsigned char aucMagicMooh[4] = { 0x4d, 0x4f, 0x4f, 0x48 };
+	const uint8_t aucMagicMooh[4] = { 0x4d, 0x4f, 0x4f, 0x48 };
 	bool fResult;
 	int iResult;
-	unsigned char ucData;
-	unsigned char aucInBuf[64];
+	uint8_t ucData;
+	uint8_t aucInBuf[64];
 	size_t sizInBuf;
 	/* The expected knock response is 13 bytes:
 	 *    1 status byte
 	 *   11 data bytes (see monitor_commands.h for more information)
 	 */
 	const size_t sizExpectedResponse = 12;
-	unsigned char ucSequence;
-	unsigned long ulMiVersionMin;
-	unsigned long ulMiVersionMaj;
+	uint8_t ucSequence;
+	uint32_t ulMiVersionMin;
+	uint32_t ulMiVersionMaj;
 	ROMLOADER_CHIPTYP tChipType;
 	size_t sizMaxPacketSize;
 
@@ -393,7 +393,7 @@ bool romloader_usb::synchronize(void)
 		}
 		else if( sizInBuf!=sizExpectedResponse )
 		{
-			fprintf(stderr, "synchronize: Received knock sequence with invalid size of %d. Expected: %d.\n", sizInBuf, sizExpectedResponse);
+			fprintf(stderr, "synchronize: Received knock sequence with invalid size of %ld. Expected: %ld.\n", sizInBuf, sizExpectedResponse);
 			hexdump(aucInBuf, sizInBuf, 0);
 		}
 		else if( memcmp(aucInBuf+1, aucMagicMooh, sizeof(aucMagicMooh))!=0 )
@@ -410,23 +410,23 @@ bool romloader_usb::synchronize(void)
 			ucSequence = (aucInBuf[0x00] & MONITOR_SEQUENCE_MSK) >> MONITOR_SEQUENCE_SRT;
 			fprintf(stderr, "Sequence number: 0x%02x\n", ucSequence);
 
-			ulMiVersionMin =  ((unsigned long)(aucInBuf[0x05])) |
-			                 (((unsigned long)(aucInBuf[0x06]))<<8U);
-			ulMiVersionMaj =  ((unsigned long)(aucInBuf[0x07])) |
-			                 (((unsigned long)(aucInBuf[0x08]))<<8U);
-			printf("Machine interface V%ld.%ld.\n", ulMiVersionMaj, ulMiVersionMin);
+			ulMiVersionMin =  ((uint32_t)(aucInBuf[0x05])) |
+			                 (((uint32_t)(aucInBuf[0x06]))<<8U);
+			ulMiVersionMaj =  ((uint32_t)(aucInBuf[0x07])) |
+			                 (((uint32_t)(aucInBuf[0x08]))<<8U);
+			printf("Machine interface V%d.%d.\n", ulMiVersionMaj, ulMiVersionMin);
 
 			tChipType = (ROMLOADER_CHIPTYP)(aucInBuf[0x09]);
 			printf("Chip type : %d\n", tChipType);
 
 			sizMaxPacketSize =  ((size_t)(aucInBuf[0x0a])) |
 			                   (((size_t)(aucInBuf[0x0b]))<<8U);
-			printf("Maximum packet size: 0x%04x\n", sizMaxPacketSize);
+			printf("Maximum packet size: 0x%04lx\n", sizMaxPacketSize);
 			/* Limit the packet size to the buffer size. */
 			if( sizMaxPacketSize>m_sizMaxPacketSizeHost )
 			{
 				sizMaxPacketSize = m_sizMaxPacketSizeHost;
-				printf("Limit maximum packet size to 0x%04x\n", sizMaxPacketSize);
+				printf("Limit maximum packet size to 0x%04lx\n", sizMaxPacketSize);
 			}
 
 			/* Set the new values. */
@@ -460,18 +460,18 @@ void romloader_usb::next_sequence_number()
 
 
 /* Update the sequence number in the packet */
-void romloader_usb::packet_update_sequence_number(unsigned char *aucCommand)
+void romloader_usb::packet_update_sequence_number(uint8_t *aucCommand)
 {
-	aucCommand[0] &= ((unsigned char) ~MONITOR_SEQUENCE_MSK);
-	aucCommand[0] |= (unsigned char)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+	aucCommand[0] &= ((uint8_t) ~MONITOR_SEQUENCE_MSK);
+	aucCommand[0] |= (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 }
 
 
-romloader_usb::USBSTATUS_T romloader_usb::execute_command(unsigned char *aucCommand, size_t sizCommand, size_t *psizReceivePacket)
+romloader_usb::USBSTATUS_T romloader_usb::execute_command(uint8_t *aucCommand, size_t sizCommand, size_t *psizReceivePacket)
 {
 	int iResult;
 	USBSTATUS_T tResult;
-	unsigned char ucStatus;
+	uint8_t ucStatus;
 	unsigned int uiSequence;
 	unsigned int uiRetryCnt;
 	size_t sizPacketInputBuffer;
@@ -494,7 +494,7 @@ romloader_usb::USBSTATUS_T romloader_usb::execute_command(unsigned char *aucComm
 		 */
 		else if( sizPacketInputBuffer<1 )
 		{
-			fprintf(stderr, "! execute_command: packet size too small: %d. It has no user data!\n", sizPacketInputBuffer);
+			fprintf(stderr, "! execute_command: packet size too small: %ld. It has no user data!\n", sizPacketInputBuffer);
 			tResult = USBSTATUS_MISSING_USERDATA;
 		}
 		else
@@ -589,14 +589,14 @@ romloader_usb::USBSTATUS_T romloader_usb::execute_command(unsigned char *aucComm
 
 
 /* read a byte (8bit) from the netx to the pc */
-unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long ulNetxAddress)
+uint8_t romloader_usb::read_data08(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
-	unsigned char ucData;
+	uint8_t ucData;
 	bool fOk;
 	int iResult;
 	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
+	uint8_t ucCommand;
+	uint8_t ucStatus;
 	USBSTATUS_T tResult;
 
 
@@ -612,12 +612,12 @@ unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long 
 		/* Construct the command packet. */
 		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Read |
 		                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT);
-		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned char);
+		m_aucPacketOutputBuffer[0x01] = 1;  /* Read 8 bit -> 1 byte. */
 		m_aucPacketOutputBuffer[0x02] = 0x00;
-		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
-		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		m_aucPacketOutputBuffer[0x03] = (uint8_t)( ulNetxAddress       & 0xffU);
+		m_aucPacketOutputBuffer[0x04] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
+		m_aucPacketOutputBuffer[0x05] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
+		m_aucPacketOutputBuffer[0x06] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
 
 		tResult = execute_command(m_aucPacketOutputBuffer, 7, &sizInBuf);
 		if( tResult!=USBSTATUS_OK )
@@ -654,14 +654,14 @@ unsigned char romloader_usb::read_data08(lua_State *ptClientData, unsigned long 
 
 
 /* read a word (16bit) from the netx to the pc */
-unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long ulNetxAddress)
+uint16_t romloader_usb::read_data16(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
-	unsigned short usData;
+	uint16_t usData;
 	bool fOk;
 	int iResult;
 	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
+	uint8_t ucCommand;
+	uint8_t ucStatus;
 	USBSTATUS_T tResult;
 
 
@@ -677,12 +677,12 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 		/* Construct the command packet. */
 		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Read |
 		                                (MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT);
-		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned short);
+		m_aucPacketOutputBuffer[0x01] = 2;  /* Read 16 bits -> 2 bytes. */
 		m_aucPacketOutputBuffer[0x02] = 0;
-		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
-		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		m_aucPacketOutputBuffer[0x03] = (uint8_t)( ulNetxAddress       & 0xffU);
+		m_aucPacketOutputBuffer[0x04] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
+		m_aucPacketOutputBuffer[0x05] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
+		m_aucPacketOutputBuffer[0x06] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
 
 		tResult = execute_command(m_aucPacketOutputBuffer, 7, &sizInBuf);
 		if( tResult!=USBSTATUS_OK )
@@ -700,8 +700,8 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 			}
 			else
 			{
-				usData =  ((unsigned short)(m_aucPacketInputBuffer[1])) |
-				         (((unsigned short)(m_aucPacketInputBuffer[2]))<<8U);
+				usData =  ((uint16_t)(m_aucPacketInputBuffer[1])) |
+				         (((uint16_t)(m_aucPacketInputBuffer[2]))<<8U);
 				fOk = true;
 			}
 		}
@@ -720,14 +720,14 @@ unsigned short romloader_usb::read_data16(lua_State *ptClientData, unsigned long
 
 
 /* read a long (32bit) from the netx to the pc */
-unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long ulNetxAddress)
+uint32_t romloader_usb::read_data32(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
-	unsigned long ulData;
+	uint32_t ulData;
 	bool fOk;
 	int iResult;
 	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
+	uint8_t ucCommand;
+	uint8_t ucStatus;
 	USBSTATUS_T tResult;
 
 
@@ -743,12 +743,12 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 		/* Construct the command packet. */
 		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Read |
 		                                (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT);
-		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned long);
+		m_aucPacketOutputBuffer[0x01] = 4;  /* Read 32 bits -> 4 bytes. */
 		m_aucPacketOutputBuffer[0x02] = 0;
-		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
-		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		m_aucPacketOutputBuffer[0x03] = (uint8_t)( ulNetxAddress       & 0xffU);
+		m_aucPacketOutputBuffer[0x04] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
+		m_aucPacketOutputBuffer[0x05] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
+		m_aucPacketOutputBuffer[0x06] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
 
 		tResult = execute_command(m_aucPacketOutputBuffer, 7, &sizInBuf);
 		if( tResult!=USBSTATUS_OK )
@@ -766,10 +766,10 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 			}
 			else
 			{
-				ulData =  ((unsigned long)m_aucPacketInputBuffer[1]) |
-				         (((unsigned long)m_aucPacketInputBuffer[2]) <<  8U) |
-				         (((unsigned long)m_aucPacketInputBuffer[3]) << 16U) |
-				         (((unsigned long)m_aucPacketInputBuffer[4]) << 24U);
+				ulData =  ((uint32_t)m_aucPacketInputBuffer[1]) |
+				         (((uint32_t)m_aucPacketInputBuffer[2]) <<  8U) |
+				         (((uint32_t)m_aucPacketInputBuffer[3]) << 16U) |
+				         (((uint32_t)m_aucPacketInputBuffer[4]) << 24U);
 				fOk = true;
 			}
 		}
@@ -789,7 +789,7 @@ unsigned long romloader_usb::read_data32(lua_State *ptClientData, unsigned long 
 
 
 /* read a byte array from the netx to the pc  */
-void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader_usb::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	char *pcBufferStart;
 	char *pcBuffer;
@@ -798,8 +798,8 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 	int iResult;
 	size_t sizChunk;
 	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
+	uint8_t ucCommand;
+	uint8_t ucStatus;
 	bool fIsRunning;
 	long lBytesProcessed;
 	USBSTATUS_T tResult;
@@ -844,12 +844,12 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 				/* Construct the command packet. */
 				m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Read |
 				                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT);
-				m_aucPacketOutputBuffer[0x01] = (unsigned char)( sizChunk       & 0xffU);
-				m_aucPacketOutputBuffer[0x02] = (unsigned char)((sizChunk>> 8U) & 0xffU);
-				m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
-				m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-				m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-				m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+				m_aucPacketOutputBuffer[0x01] = (uint8_t)( sizChunk       & 0xffU);
+				m_aucPacketOutputBuffer[0x02] = (uint8_t)((sizChunk>> 8U) & 0xffU);
+				m_aucPacketOutputBuffer[0x03] = (uint8_t)( ulNetxAddress       & 0xffU);
+				m_aucPacketOutputBuffer[0x04] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
+				m_aucPacketOutputBuffer[0x05] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
+				m_aucPacketOutputBuffer[0x06] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
 
 				tResult = execute_command(m_aucPacketOutputBuffer, 7, &sizInBuf);
 				if( tResult!=USBSTATUS_OK )
@@ -908,13 +908,11 @@ void romloader_usb::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 
 
 /* write a byte (8bit) from the pc to the netx */
-void romloader_usb::write_data08(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned char ucData)
+void romloader_usb::write_data08(lua_State *ptClientData, uint32_t ulNetxAddress, uint8_t ucData)
 {
 	bool fOk;
 	int iResult;
 	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
 	USBSTATUS_T tResult;
 
 
@@ -930,12 +928,12 @@ void romloader_usb::write_data08(lua_State *ptClientData, unsigned long ulNetxAd
 		/* Construct the command packet. */
 		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Write |
 		                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT);
-		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned char);
+		m_aucPacketOutputBuffer[0x01] = 1;  /* Write 8 bit -> 1 byte. */
 		m_aucPacketOutputBuffer[0x02] = 0;
-		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
-		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		m_aucPacketOutputBuffer[0x03] = (uint8_t)( ulNetxAddress       & 0xffU);
+		m_aucPacketOutputBuffer[0x04] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
+		m_aucPacketOutputBuffer[0x05] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
+		m_aucPacketOutputBuffer[0x06] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
 		m_aucPacketOutputBuffer[0x07] = ucData;
 
 		tResult = execute_command(m_aucPacketOutputBuffer, 8, &sizInBuf);
@@ -967,13 +965,11 @@ void romloader_usb::write_data08(lua_State *ptClientData, unsigned long ulNetxAd
 
 
 /* write a word (16bit) from the pc to the netx */
-void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned short usData)
+void romloader_usb::write_data16(lua_State *ptClientData, uint32_t ulNetxAddress, uint16_t usData)
 {
 	bool fOk;
 	int iResult;
 	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
 	USBSTATUS_T tResult;
 
 
@@ -989,14 +985,14 @@ void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 		/* Construct the command packet. */
 		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Write |
 		                                (MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT);
-		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned short);
+		m_aucPacketOutputBuffer[0x01] = 2;  /* Write 16 bit -> 2 bytes. */
 		m_aucPacketOutputBuffer[0x02] = 0;
-		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
-		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
-		m_aucPacketOutputBuffer[0x07] = (unsigned char)( usData      & 0xffU);
-		m_aucPacketOutputBuffer[0x08] = (unsigned char)((usData>>8U) & 0xffU);
+		m_aucPacketOutputBuffer[0x03] = (uint8_t)( ulNetxAddress       & 0xffU);
+		m_aucPacketOutputBuffer[0x04] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
+		m_aucPacketOutputBuffer[0x05] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
+		m_aucPacketOutputBuffer[0x06] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
+		m_aucPacketOutputBuffer[0x07] = (uint8_t)( usData      & 0xffU);
+		m_aucPacketOutputBuffer[0x08] = (uint8_t)((usData>>8U) & 0xffU);
 
 		tResult = execute_command(m_aucPacketOutputBuffer, 9, &sizInBuf);
 		if( tResult!=USBSTATUS_OK )
@@ -1027,13 +1023,11 @@ void romloader_usb::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 
 
 /* write a long (32bit) from the pc to the netx */
-void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData)
+void romloader_usb::write_data32(lua_State *ptClientData, uint32_t ulNetxAddress, uint32_t ulData)
 {
 	bool fOk;
 	int iResult;
 	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
 	USBSTATUS_T tResult;
 
 
@@ -1049,16 +1043,16 @@ void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 		/* Construct the command packet. */
 		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Write |
 		                                (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT);
-		m_aucPacketOutputBuffer[0x01] = sizeof(unsigned long);
+		m_aucPacketOutputBuffer[0x01] = 4;  /* Write 32 bit -> 4 bytes. */
 		m_aucPacketOutputBuffer[0x02] = 0;
-		m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
-		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulNetxAddress>>24u) & 0xffU);
-		m_aucPacketOutputBuffer[0x07] = (unsigned char)( ulData       & 0xffU);
-		m_aucPacketOutputBuffer[0x08] = (unsigned char)((ulData>> 8U) & 0xffU);
-		m_aucPacketOutputBuffer[0x09] = (unsigned char)((ulData>>16U) & 0xffU);
-		m_aucPacketOutputBuffer[0x0a] = (unsigned char)((ulData>>24U) & 0xffU);
+		m_aucPacketOutputBuffer[0x03] = (uint8_t)( ulNetxAddress       & 0xffU);
+		m_aucPacketOutputBuffer[0x04] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
+		m_aucPacketOutputBuffer[0x05] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
+		m_aucPacketOutputBuffer[0x06] = (uint8_t)((ulNetxAddress>>24u) & 0xffU);
+		m_aucPacketOutputBuffer[0x07] = (uint8_t)( ulData       & 0xffU);
+		m_aucPacketOutputBuffer[0x08] = (uint8_t)((ulData>> 8U) & 0xffU);
+		m_aucPacketOutputBuffer[0x09] = (uint8_t)((ulData>>16U) & 0xffU);
+		m_aucPacketOutputBuffer[0x0a] = (uint8_t)((ulData>>24U) & 0xffU);
 
 		tResult = execute_command(m_aucPacketOutputBuffer, 11, &sizInBuf);
 		if( tResult!=USBSTATUS_OK )
@@ -1089,14 +1083,12 @@ void romloader_usb::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 
 
 /* write a byte array from the pc to the netx */
-void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader_usb::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	bool fOk;
 	size_t sizChunk;
 	int iResult;
 	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
 	bool fIsRunning;
 	long lBytesProcessed;
 	USBSTATUS_T tResult;
@@ -1126,12 +1118,12 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 			/* Construct the command packet. */
 			m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Write |
 			                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT);
-			m_aucPacketOutputBuffer[0x01] = (unsigned char)( sizChunk       & 0xffU);
-			m_aucPacketOutputBuffer[0x02] = (unsigned char)((sizChunk>> 8U) & 0xffU);
-			m_aucPacketOutputBuffer[0x03] = (unsigned char)( ulNetxAddress       & 0xffU);
-			m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-			m_aucPacketOutputBuffer[0x05] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-			m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+			m_aucPacketOutputBuffer[0x01] = (uint8_t)( sizChunk       & 0xffU);
+			m_aucPacketOutputBuffer[0x02] = (uint8_t)((sizChunk>> 8U) & 0xffU);
+			m_aucPacketOutputBuffer[0x03] = (uint8_t)( ulNetxAddress       & 0xffU);
+			m_aucPacketOutputBuffer[0x04] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
+			m_aucPacketOutputBuffer[0x05] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
+			m_aucPacketOutputBuffer[0x06] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
 			memcpy(m_aucPacketOutputBuffer+7, pcBUFFER_IN, sizChunk);
 
 			tResult = execute_command(m_aucPacketOutputBuffer, sizChunk+7, &sizInBuf);
@@ -1177,13 +1169,12 @@ void romloader_usb::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 
 
 /* call routine */
-void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader_usb::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	bool fOk;
 	int iResult;
 	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
+	uint8_t ucStatus;
 	bool fIsRunning;
 	char *pcProgressData;
 	size_t sizProgressData;
@@ -1201,14 +1192,14 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 	{
 		/* Construct the command packet. */
 		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Execute;
-		m_aucPacketOutputBuffer[0x01] = (unsigned char)( ulNetxAddress      & 0xff);
-		m_aucPacketOutputBuffer[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xff);
-		m_aucPacketOutputBuffer[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xff);
-		m_aucPacketOutputBuffer[0x04] = (unsigned char)((ulNetxAddress>>24) & 0xff);
-		m_aucPacketOutputBuffer[0x05] = (unsigned char)( ulParameterR0      & 0xff);
-		m_aucPacketOutputBuffer[0x06] = (unsigned char)((ulParameterR0>>8 ) & 0xff);
-		m_aucPacketOutputBuffer[0x07] = (unsigned char)((ulParameterR0>>16) & 0xff);
-		m_aucPacketOutputBuffer[0x08] = (unsigned char)((ulParameterR0>>24) & 0xff);
+		m_aucPacketOutputBuffer[0x01] = (uint8_t)( ulNetxAddress      & 0xff);
+		m_aucPacketOutputBuffer[0x02] = (uint8_t)((ulNetxAddress>>8 ) & 0xff);
+		m_aucPacketOutputBuffer[0x03] = (uint8_t)((ulNetxAddress>>16) & 0xff);
+		m_aucPacketOutputBuffer[0x04] = (uint8_t)((ulNetxAddress>>24) & 0xff);
+		m_aucPacketOutputBuffer[0x05] = (uint8_t)( ulParameterR0      & 0xff);
+		m_aucPacketOutputBuffer[0x06] = (uint8_t)((ulParameterR0>>8 ) & 0xff);
+		m_aucPacketOutputBuffer[0x07] = (uint8_t)((ulParameterR0>>16) & 0xff);
+		m_aucPacketOutputBuffer[0x08] = (uint8_t)((ulParameterR0>>24) & 0xff);
 
 		tResult = execute_command(m_aucPacketOutputBuffer, 9, &sizInBuf);
 		if( tResult!=USBSTATUS_OK )
@@ -1294,10 +1285,10 @@ void romloader_usb::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 }
 
 
-void romloader_usb::hexdump(const unsigned char *pucData, unsigned long ulSize, unsigned long ulNetxAddress)
+void romloader_usb::hexdump(const uint8_t *pucData, uint32_t ulSize, uint32_t ulNetxAddress)
 {
-	const unsigned char *pucDumpCnt, *pucDumpEnd;
-	unsigned long ulAddressCnt;
+	const uint8_t *pucDumpCnt, *pucDumpEnd;
+	uint32_t ulAddressCnt;
 	size_t sizBytesLeft;
 	size_t sizChunkSize;
 	size_t sizChunkCnt;
@@ -1318,7 +1309,7 @@ void romloader_usb::hexdump(const unsigned char *pucData, unsigned long ulSize, 
 		}
 
 		// start a line in the dump with the address
-		printf("%08lX: ", ulAddressCnt);
+		printf("%08X: ", ulAddressCnt);
 		// append the data bytes
 		sizChunkCnt = sizChunkSize;
 		while( sizChunkCnt!=0 )

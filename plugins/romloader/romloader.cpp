@@ -87,10 +87,10 @@ const char        *romloader::get_romcode_name(unsigned int tRomcode) const     
 
 bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 {
-	unsigned long ulResetVector;
+	uint32_t ulResetVector;
 	const ROMLOADER_RESET_ID_T *ptRstCnt, *ptRstEnd;
-	unsigned long ulVersionAddr;
-	unsigned long ulVersion;
+	uint32_t ulVersionAddr;
+	uint32_t ulVersion;
 	bool fResult;
 	ROMLOADER_CHIPTYP tChiptyp;
 	//const char *pcChiptypName;
@@ -100,7 +100,7 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 
 	// read the reset vector at 0x00000000
 	ulResetVector = ptFn->read_data32(0);
-	printf("%s(%p): reset vector: 0x%08lX\n", m_pcName, this, ulResetVector);
+	printf("%s(%p): reset vector: 0x%08X\n", m_pcName, this, ulResetVector);
 
 	// match the reset vector to all known chipfamilies
 	ptRstCnt = atResIds;
@@ -113,7 +113,7 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 			ulVersionAddr = ptRstCnt->ulVersionAddress;
 			// read version address
 			ulVersion = ptFn->read_data32(ulVersionAddr);
-			printf("%s(%p): version value: 0x%08lX\n", m_pcName, this, ulVersion);
+			printf("%s(%p): version value: 0x%08X\n", m_pcName, this, ulVersion);
 			if( ptRstCnt->ulVersionValue==ulVersion )
 			{
 				// found chip!
@@ -201,7 +201,7 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[7] =
 };
 
 
-unsigned int romloader::crc16(unsigned short usCrc, unsigned char ucData)
+unsigned int romloader::crc16(uint16_t usCrc, uint8_t ucData)
 {
 	usCrc  = (usCrc >> 8) | ((usCrc & 0xff) << 8);
 	usCrc ^= ucData;

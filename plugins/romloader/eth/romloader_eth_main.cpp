@@ -41,9 +41,9 @@ public:
 		m_ptClientData = ptClientData;
 	}
 
-	unsigned long read_data32(unsigned long ulAddress)
+	uint32_t read_data32(uint32_t ulAddress)
 	{
-		unsigned long ulValue;
+		uint32_t ulValue;
 
 
 		ulValue = m_ptDevice->read_data32(m_ptClientData, ulAddress);
@@ -93,7 +93,7 @@ int romloader_eth_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 
 	/* detect all interfaces */
 	sizDeviceNames = romloader_eth_device_platform::ScanForServers(&ppcDeviceNames);
-	printf("found %d devs, %p\n", sizDeviceNames, ppcDeviceNames);
+	printf("found %ld devs, %p\n", sizDeviceNames, ppcDeviceNames);
 
 	if( ppcDeviceNames!=NULL )
 	{
@@ -226,10 +226,10 @@ romloader_eth::~romloader_eth(void)
 }
 
 
-void romloader_eth::hexdump(const unsigned char *pucData, unsigned long ulSize)
+void romloader_eth::hexdump(const uint8_t *pucData, uint32_t ulSize)
 {
-	const unsigned char *pucDumpCnt, *pucDumpEnd;
-	unsigned long ulAddressCnt;
+	const uint8_t *pucDumpCnt, *pucDumpEnd;
+	uint32_t ulAddressCnt;
 	size_t sizBytesLeft;
 	size_t sizChunkSize;
 	size_t sizChunkCnt;
@@ -250,7 +250,7 @@ void romloader_eth::hexdump(const unsigned char *pucData, unsigned long ulSize)
 		}
 
 		// start a line in the dump with the address
-		printf("%08lX: ", ulAddressCnt);
+		printf("%08X: ", ulAddressCnt);
 		// append the data bytes
 		sizChunkCnt = sizChunkSize;
 		while( sizChunkCnt!=0 )
@@ -336,11 +336,11 @@ void romloader_eth::Disconnect(lua_State *ptClientData)
 }
 
 
-unsigned char romloader_eth::read_data08(lua_State *ptClientData, unsigned long ulNetxAddress)
+uint8_t romloader_eth::read_data08(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
-	unsigned char aucCommand[7];
+	uint8_t aucCommand[7];
 	int iResult;
-	unsigned char ucValue;
+	uint8_t ucValue;
 	bool fOk;
 	size_t sizResponse;
 
@@ -353,10 +353,10 @@ unsigned char romloader_eth::read_data08(lua_State *ptClientData, unsigned long 
 	aucCommand[0] = MI_COMMAND_Read | (MI_ACCESSSIZE_Byte<<6);
 	aucCommand[1] = 1;
 	aucCommand[2] = 0;
-	aucCommand[3] = (unsigned char)( ulNetxAddress      & 0xffU);
-	aucCommand[4] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
-	aucCommand[5] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
-	aucCommand[6] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
+	aucCommand[3] = (uint8_t)( ulNetxAddress      & 0xffU);
+	aucCommand[4] = (uint8_t)((ulNetxAddress>>8 ) & 0xffU);
+	aucCommand[5] = (uint8_t)((ulNetxAddress>>16) & 0xffU);
+	aucCommand[6] = (uint8_t)((ulNetxAddress>>24) & 0xffU);
 	iResult = m_ptEthDev->ExecuteCommand(aucCommand, 7, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
 	if( iResult!=0 )
 	{
@@ -384,11 +384,11 @@ unsigned char romloader_eth::read_data08(lua_State *ptClientData, unsigned long 
 }
 
 
-unsigned short romloader_eth::read_data16(lua_State *ptClientData, unsigned long ulNetxAddress)
+uint16_t romloader_eth::read_data16(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
-	unsigned char aucCommand[7];
+	uint8_t aucCommand[7];
 	int iResult;
-	unsigned short usValue;
+	uint16_t usValue;
 	bool fOk;
 	size_t sizResponse;
 
@@ -401,10 +401,10 @@ unsigned short romloader_eth::read_data16(lua_State *ptClientData, unsigned long
 	aucCommand[0] = MI_COMMAND_Read | (MI_ACCESSSIZE_Word<<6);
 	aucCommand[1] = 2;
 	aucCommand[2] = 0;
-	aucCommand[3] = (unsigned char)( ulNetxAddress      & 0xffU);
-	aucCommand[4] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
-	aucCommand[5] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
-	aucCommand[6] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
+	aucCommand[3] = (uint8_t)( ulNetxAddress      & 0xffU);
+	aucCommand[4] = (uint8_t)((ulNetxAddress>>8 ) & 0xffU);
+	aucCommand[5] = (uint8_t)((ulNetxAddress>>16) & 0xffU);
+	aucCommand[6] = (uint8_t)((ulNetxAddress>>24) & 0xffU);
 	iResult = m_ptEthDev->ExecuteCommand(aucCommand, 7, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
 	if( iResult!=0 )
 	{
@@ -433,11 +433,11 @@ unsigned short romloader_eth::read_data16(lua_State *ptClientData, unsigned long
 }
 
 
-unsigned long romloader_eth::read_data32(lua_State *ptClientData, unsigned long ulNetxAddress)
+uint32_t romloader_eth::read_data32(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
-	unsigned char aucCommand[7];
+	uint8_t aucCommand[7];
 	int iResult;
-	unsigned long ulValue;
+	uint32_t ulValue;
 	bool fOk;
 	size_t sizResponse;
 
@@ -450,10 +450,10 @@ unsigned long romloader_eth::read_data32(lua_State *ptClientData, unsigned long 
 	aucCommand[0] = MI_COMMAND_Read | (MI_ACCESSSIZE_Long<<6);
 	aucCommand[1] = 4;
 	aucCommand[2] = 0;
-	aucCommand[3] = (unsigned char)( ulNetxAddress      & 0xffU);
-	aucCommand[4] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
-	aucCommand[5] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
-	aucCommand[6] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
+	aucCommand[3] = (uint8_t)( ulNetxAddress      & 0xffU);
+	aucCommand[4] = (uint8_t)((ulNetxAddress>>8 ) & 0xffU);
+	aucCommand[5] = (uint8_t)((ulNetxAddress>>16) & 0xffU);
+	aucCommand[6] = (uint8_t)((ulNetxAddress>>24) & 0xffU);
 	iResult = m_ptEthDev->ExecuteCommand(aucCommand, 7, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
 	if( iResult!=0 )
 	{
@@ -484,13 +484,13 @@ unsigned long romloader_eth::read_data32(lua_State *ptClientData, unsigned long 
 }
 
 
-void romloader_eth::read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader_eth::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	char *pcBuffer;
 	size_t sizBuffer;
 	bool fOk;
 	size_t sizChunk;
-	unsigned char aucCommand[7];
+	uint8_t aucCommand[7];
 	bool fIsRunning;
 	long lBytesProcessed;
 	size_t sizResponse;
@@ -534,12 +534,12 @@ void romloader_eth::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 				}
 
 				aucCommand[0] = MI_COMMAND_Read | (MI_ACCESSSIZE_Byte<<6);
-				aucCommand[1] = (unsigned char)(sizChunk&0xffU);
-				aucCommand[2] = (unsigned char)((sizChunk>>8U)&0xffU);
-				aucCommand[3] = (unsigned char)( ulNetxAddress      & 0xffU);
-				aucCommand[4] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
-				aucCommand[5] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
-				aucCommand[6] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
+				aucCommand[1] = (uint8_t)(sizChunk&0xffU);
+				aucCommand[2] = (uint8_t)((sizChunk>>8U)&0xffU);
+				aucCommand[3] = (uint8_t)( ulNetxAddress      & 0xffU);
+				aucCommand[4] = (uint8_t)((ulNetxAddress>>8 ) & 0xffU);
+				aucCommand[5] = (uint8_t)((ulNetxAddress>>16) & 0xffU);
+				aucCommand[6] = (uint8_t)((ulNetxAddress>>24) & 0xffU);
 				
 				iResult = m_ptEthDev->ExecuteCommand(aucCommand, 7, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
 				if( iResult!=0 )
@@ -582,10 +582,10 @@ void romloader_eth::read_image(unsigned long ulNetxAddress, unsigned long ulSize
 }
 
 
-void romloader_eth::write_data08(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned char ucData)
+void romloader_eth::write_data08(lua_State *ptClientData, uint32_t ulNetxAddress, uint8_t ucData)
 {
-	unsigned char aucCommand[8];
-	unsigned long ulValue;
+	uint8_t aucCommand[8];
+	uint32_t ulValue;
 	bool fOk;
 	size_t sizResponse;
 	int iResult;
@@ -599,10 +599,10 @@ void romloader_eth::write_data08(lua_State *ptClientData, unsigned long ulNetxAd
 	aucCommand[0] = MI_COMMAND_Write | (MI_ACCESSSIZE_Byte<<6);
 	aucCommand[1] = 1;
 	aucCommand[2] = 0;
-	aucCommand[3] = (unsigned char)( ulNetxAddress      & 0xffU);
-	aucCommand[4] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
-	aucCommand[5] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
-	aucCommand[6] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
+	aucCommand[3] = (uint8_t)( ulNetxAddress      & 0xffU);
+	aucCommand[4] = (uint8_t)((ulNetxAddress>>8 ) & 0xffU);
+	aucCommand[5] = (uint8_t)((ulNetxAddress>>16) & 0xffU);
+	aucCommand[6] = (uint8_t)((ulNetxAddress>>24) & 0xffU);
 	aucCommand[7] = ucData;
 	iResult = m_ptEthDev->ExecuteCommand(aucCommand, 8, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
 	if( iResult!=0 )
@@ -628,10 +628,9 @@ void romloader_eth::write_data08(lua_State *ptClientData, unsigned long ulNetxAd
 }
 
 
-void romloader_eth::write_data16(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned short usData)
+void romloader_eth::write_data16(lua_State *ptClientData, uint32_t ulNetxAddress, uint16_t usData)
 {
-	unsigned char aucCommand[9];
-	unsigned long ulValue;
+	uint8_t aucCommand[9];
 	bool fOk;
 	size_t sizResponse;
 	int iResult;
@@ -640,17 +639,15 @@ void romloader_eth::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 	/* Expect error. */
 	fOk = false;
 
-	ulValue = 0;
-
 	aucCommand[0] = MI_COMMAND_Write | (MI_ACCESSSIZE_Word<<6);
 	aucCommand[1] = 2;
 	aucCommand[2] = 0;
-	aucCommand[3] = (unsigned char)( ulNetxAddress      & 0xffU);
-	aucCommand[4] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
-	aucCommand[5] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
-	aucCommand[6] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
-	aucCommand[7] = (unsigned char)( usData    & 0xffU);
-	aucCommand[8] = (unsigned char)((usData>>8)& 0xffU);
+	aucCommand[3] = (uint8_t)( ulNetxAddress      & 0xffU);
+	aucCommand[4] = (uint8_t)((ulNetxAddress>>8 ) & 0xffU);
+	aucCommand[5] = (uint8_t)((ulNetxAddress>>16) & 0xffU);
+	aucCommand[6] = (uint8_t)((ulNetxAddress>>24) & 0xffU);
+	aucCommand[7] = (uint8_t)( usData    & 0xffU);
+	aucCommand[8] = (uint8_t)((usData>>8)& 0xffU);
 	iResult = m_ptEthDev->ExecuteCommand(aucCommand, 9, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
 	if( iResult!=0 )
 	{
@@ -675,10 +672,10 @@ void romloader_eth::write_data16(lua_State *ptClientData, unsigned long ulNetxAd
 }
 
 
-void romloader_eth::write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData)
+void romloader_eth::write_data32(lua_State *ptClientData, uint32_t ulNetxAddress, uint32_t ulData)
 {
-	unsigned char aucCommand[11];
-	unsigned long ulValue;
+	uint8_t aucCommand[11];
+	uint32_t ulValue;
 	bool fOk;
 	size_t sizResponse;
 	int iResult;
@@ -692,14 +689,14 @@ void romloader_eth::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 	aucCommand[ 0] = MI_COMMAND_Write | (MI_ACCESSSIZE_Long<<6);
 	aucCommand[ 1] = 4;
 	aucCommand[ 2] = 0;
-	aucCommand[ 3] = (unsigned char)( ulNetxAddress      & 0xffU);
-	aucCommand[ 4] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
-	aucCommand[ 5] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
-	aucCommand[ 6] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
-	aucCommand[ 7] = (unsigned char)( ulData     & 0xffU);
-	aucCommand[ 8] = (unsigned char)((ulData>> 8)& 0xffU);
-	aucCommand[ 9] = (unsigned char)((ulData>>16)& 0xffU);
-	aucCommand[10] = (unsigned char)((ulData>>24)& 0xffU);
+	aucCommand[ 3] = (uint8_t)( ulNetxAddress      & 0xffU);
+	aucCommand[ 4] = (uint8_t)((ulNetxAddress>>8 ) & 0xffU);
+	aucCommand[ 5] = (uint8_t)((ulNetxAddress>>16) & 0xffU);
+	aucCommand[ 6] = (uint8_t)((ulNetxAddress>>24) & 0xffU);
+	aucCommand[ 7] = (uint8_t)( ulData     & 0xffU);
+	aucCommand[ 8] = (uint8_t)((ulData>> 8)& 0xffU);
+	aucCommand[ 9] = (uint8_t)((ulData>>16)& 0xffU);
+	aucCommand[10] = (uint8_t)((ulData>>24)& 0xffU);
 	iResult = m_ptEthDev->ExecuteCommand(aucCommand, 11, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
 	if( iResult!=0 )
 	{
@@ -724,15 +721,13 @@ void romloader_eth::write_data32(lua_State *ptClientData, unsigned long ulNetxAd
 }
 
 
-void romloader_eth::write_image(unsigned long ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader_eth::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	bool fOk;
 	size_t sizChunk;
-	unsigned char aucCommand[MI_ETH_MAX_PACKET_SIZE];
+	uint8_t aucCommand[MI_ETH_MAX_PACKET_SIZE];
 	size_t sizOutBuf;
 	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
 	bool fIsRunning;
 	long lBytesProcessed;
 	size_t sizResponse;
@@ -759,12 +754,12 @@ void romloader_eth::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 			}
 
 			aucCommand[0] = MI_COMMAND_Write | (MI_ACCESSSIZE_Byte<<6);
-			aucCommand[1] = (unsigned char)(sizChunk&0xffU);
-			aucCommand[2] = (unsigned char)((sizChunk>>8U)&0xffU);
-			aucCommand[3] = (unsigned char)( ulNetxAddress      & 0xffU);
-			aucCommand[4] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
-			aucCommand[5] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
-			aucCommand[6] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
+			aucCommand[1] = (uint8_t)(sizChunk&0xffU);
+			aucCommand[2] = (uint8_t)((sizChunk>>8U)&0xffU);
+			aucCommand[3] = (uint8_t)( ulNetxAddress      & 0xffU);
+			aucCommand[4] = (uint8_t)((ulNetxAddress>>8 ) & 0xffU);
+			aucCommand[5] = (uint8_t)((ulNetxAddress>>16) & 0xffU);
+			aucCommand[6] = (uint8_t)((ulNetxAddress>>24) & 0xffU);
 			memcpy(aucCommand+7, pcBUFFER_IN, sizChunk);
 			
 			iResult = m_ptEthDev->ExecuteCommand(aucCommand, sizChunk+7, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
@@ -806,13 +801,13 @@ void romloader_eth::write_image(unsigned long ulNetxAddress, const char *pcBUFFE
 }
 
 
-void romloader_eth::call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader_eth::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	bool fOk;
-	unsigned char aucCommand[9];
-	unsigned char aucMessageBuffer[ETH_MAX_PACKET_SIZE];
-	const unsigned char aucCancelBuf[1] = { 0x2b };
-	unsigned char ucStatus;
+	uint8_t aucCommand[9];
+	uint8_t aucMessageBuffer[ETH_MAX_PACKET_SIZE];
+	const uint8_t aucCancelBuf[1] = { 0x2b };
+	uint8_t ucStatus;
 	bool fIsRunning;
 	char *pcProgressData;
 	size_t sizProgressData;
@@ -829,14 +824,14 @@ void romloader_eth::call(unsigned long ulNetxAddress, unsigned long ulParameterR
 	{
 		/* Construct the command packet. */
 		aucCommand[0x00] = MI_COMMAND_Execute;
-		aucCommand[0x01] = (unsigned char)( ulNetxAddress      & 0xffU);
-		aucCommand[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
-		aucCommand[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
-		aucCommand[0x04] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
-		aucCommand[0x05] = (unsigned char)( ulParameterR0      & 0xffU);
-		aucCommand[0x06] = (unsigned char)((ulParameterR0>>8 ) & 0xffU);
-		aucCommand[0x07] = (unsigned char)((ulParameterR0>>16) & 0xffU);
-		aucCommand[0x08] = (unsigned char)((ulParameterR0>>24) & 0xffU);
+		aucCommand[0x01] = (uint8_t)( ulNetxAddress      & 0xffU);
+		aucCommand[0x02] = (uint8_t)((ulNetxAddress>>8 ) & 0xffU);
+		aucCommand[0x03] = (uint8_t)((ulNetxAddress>>16) & 0xffU);
+		aucCommand[0x04] = (uint8_t)((ulNetxAddress>>24) & 0xffU);
+		aucCommand[0x05] = (uint8_t)( ulParameterR0      & 0xffU);
+		aucCommand[0x06] = (uint8_t)((ulParameterR0>>8 ) & 0xffU);
+		aucCommand[0x07] = (uint8_t)((ulParameterR0>>16) & 0xffU);
+		aucCommand[0x08] = (uint8_t)((ulParameterR0>>24) & 0xffU);
 
 		iResult = m_ptEthDev->ExecuteCommand(aucCommand, 9, aucRxBuffer, sizeof(aucRxBuffer), &sizResponse);
 		if( iResult!=0 )

@@ -245,7 +245,7 @@ size_t romloader_uart_device::readCards(unsigned char *pucBuffer, size_t sizBuff
 			}
 			else
 			{
-				fprintf(stderr, "WARNING: no remaining data: %d\n", sizRead);
+				fprintf(stderr, "WARNING: no remaining data: %ld\n", sizRead);
 			}
 			// reached the end of the buffer?
 			if( m_ptFirstCard->pucRead>=m_ptFirstCard->pucEnd )

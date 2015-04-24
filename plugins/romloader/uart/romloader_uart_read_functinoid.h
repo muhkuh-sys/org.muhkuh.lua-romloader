@@ -13,11 +13,11 @@ class romloader_uart_read_functinoid : public romloader_read_functinoid
 public:
 	romloader_uart_read_functinoid(void) {}
 
-	virtual unsigned long read_data32(unsigned long ulAddress) = 0;
+	virtual uint32_t read_data32(uint32_t ulAddress) = 0;
 	virtual int update_device(ROMLOADER_CHIPTYP tChiptyp) = 0;
 
 protected:
-	unsigned int crc16(unsigned short usCrc, unsigned char ucData)
+	unsigned int crc16(uint16_t usCrc, uint8_t ucData)
 	{
 		usCrc  = (usCrc >> 8) | ((usCrc & 0xff) << 8);
 		usCrc ^= ucData;

@@ -18,6 +18,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include <stdint.h>
 
 #include "../muhkuh_plugin_interface.h"
 #include "romloader_def.h"
@@ -33,7 +34,7 @@ class MUHKUH_EXPORT romloader_read_functinoid
 public:
 	romloader_read_functinoid(void) {}
 
-	virtual unsigned long read_data32(unsigned long ulAddress) = 0;
+	virtual uint32_t read_data32(uint32_t ulAddress) = 0;
 };
 
 
@@ -47,25 +48,25 @@ protected:
 public:
 // *** lua interface start ***
 	// read a byte (8bit) from the netx to the pc
-	virtual unsigned char read_data08(lua_State *ptClientData, unsigned long ulNetxAddress) = 0;
+	virtual uint8_t read_data08(lua_State *ptClientData, uint32_t ulNetxAddress) = 0;
 	// read a word (16bit) from the netx to the pc
-	virtual unsigned short read_data16(lua_State *ptClientData, unsigned long ulNetxAddress) = 0;
+	virtual uint16_t read_data16(lua_State *ptClientData, uint32_t ulNetxAddress) = 0;
 	// read a long (32bit) from the netx to the pc
-	virtual unsigned long read_data32(lua_State *ptClientData, unsigned long ulNetxAddress) = 0;
+	virtual uint32_t read_data32(lua_State *ptClientData, uint32_t ulNetxAddress) = 0;
 	// read a byte array from the netx to the pc
-	virtual void read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData) = 0;
+	virtual void read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData) = 0;
 
 	// write a byte (8bit) from the pc to the netx
-	virtual void write_data08(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned char ucData) = 0;
+	virtual void write_data08(lua_State *ptClientData, uint32_t ulNetxAddress, uint8_t ucData) = 0;
 	// write a word (16bit) from the pc to the netx
-	virtual void write_data16(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned short usData) = 0;
+	virtual void write_data16(lua_State *ptClientData, uint32_t ulNetxAddress, uint16_t usData) = 0;
 	// write a long (32bit) from the pc to the netx
-	virtual void write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData) = 0;
+	virtual void write_data32(lua_State *ptClientData, uint32_t ulNetxAddress, uint32_t ulData) = 0;
 	// write a byte array from the pc to the netx
-	virtual void write_image(unsigned long ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData) = 0;
+	virtual void write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData) = 0;
 
 	// call routine
-	virtual void call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData) = 0;
+	virtual void call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData) = 0;
 
 	// get chiptyp and romcode version
 	virtual ROMLOADER_CHIPTYP GetChiptyp(void) const;
@@ -82,9 +83,9 @@ public:
 protected:
 	typedef struct
 	{
-		unsigned long ulResetVector;
-		unsigned long ulVersionAddress;
-		unsigned long ulVersionValue;
+		uint32_t ulResetVector;
+		uint32_t ulVersionAddress;
+		uint32_t ulVersionValue;
 		ROMLOADER_CHIPTYP tChiptyp;
 		const char *pcChiptypName;
 	} ROMLOADER_RESET_ID_T;

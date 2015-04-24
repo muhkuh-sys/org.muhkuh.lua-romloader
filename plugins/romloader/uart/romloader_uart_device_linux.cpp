@@ -43,7 +43,7 @@ void *romloader_uart_rx_thread(void *pvParameter)
 	size_t sizRead;
 	size_t sizWrite;
 	int iResult;
-	int iExitCode;
+	ptrdiff_t iExitCode;
 	const size_t sizBufSize = 1024;
 	unsigned char aucBuf[sizBufSize];
 
@@ -311,16 +311,16 @@ size_t romloader_uart_device_linux::SendRaw(const unsigned char *pucData, size_t
 			}
 			else
 			{
-				fprintf(stderr, "romloader_uart_device_linux(%p): failed to write %d bytes at offset %d of %d total", this, sizChunk, sizBytesWritten, sizData);
-				fprintf(stderr, "write failed with result: %d, errno: %d, strerror: %s", ssizBytesWritten, iErrno, strerror(iErrno));
+				fprintf(stderr, "romloader_uart_device_linux(%p): failed to write %ld bytes at offset %ld of %ld total", this, sizChunk, sizBytesWritten, sizData);
+				fprintf(stderr, "write failed with result: %ld, errno: %d, strerror: %s", ssizBytesWritten, iErrno, strerror(iErrno));
 				break;
 			}
 		}
 		else if( ssizBytesWritten<0 || ssizBytesWritten>sizChunk )
 		{
 			iErrno = errno;
-			fprintf(stderr, "romloader_uart_device_linux(%p): failed to write %d bytes at offset %d of %d total, result: %d", this, sizChunk, sizBytesWritten, sizData, ssizBytesWritten);
-			fprintf(stderr, "write failed with result: %d, errno: %d, strerror: %s", ssizBytesWritten, iErrno, strerror(iErrno));
+			fprintf(stderr, "romloader_uart_device_linux(%p): failed to write %ld bytes at offset %ld of %ld total, result: %ld", this, sizChunk, sizBytesWritten, sizData, ssizBytesWritten);
+			fprintf(stderr, "write failed with result: %ld, errno: %d, strerror: %s", ssizBytesWritten, iErrno, strerror(iErrno));
 			break;
 		}
 		sizBytesWritten += ssizBytesWritten;

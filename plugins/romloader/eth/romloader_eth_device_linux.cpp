@@ -127,7 +127,7 @@ int romloader_eth_device_linux::SendPacket(const unsigned char *pucData, size_t 
 	}
 	if( ssizResult!=sizData )
 	{
-		fprintf(stderr, "Failed to send packet. %d requested, but only %d sent.\n", sizData, ssizResult);
+		fprintf(stderr, "Failed to send packet. %ld requested, but only %ld sent.\n", sizData, ssizResult);
 		iResult = -1;
 	}
 

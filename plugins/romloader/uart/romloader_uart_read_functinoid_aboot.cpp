@@ -47,10 +47,10 @@ romloader_uart_read_functinoid_aboot::romloader_uart_read_functinoid_aboot(romlo
 }
 
 
-unsigned long romloader_uart_read_functinoid_aboot::read_data32(unsigned long ulAddress)
+uint32_t romloader_uart_read_functinoid_aboot::read_data32(uint32_t ulAddress)
 {
 	bool fOk;
-	unsigned long ulValue;
+	uint32_t ulValue;
 
 
 	fOk = legacy_read_v1(ulAddress, &ulValue);
@@ -62,26 +62,26 @@ unsigned long romloader_uart_read_functinoid_aboot::read_data32(unsigned long ul
 }
 
 
-bool romloader_uart_read_functinoid_aboot::legacy_read_v1(unsigned long ulAddress, unsigned long *pulValue)
+bool romloader_uart_read_functinoid_aboot::legacy_read_v1(uint32_t ulAddress, uint32_t *pulValue)
 {
 	union
 	{
-		unsigned char auc[32];
+		uint8_t auc[32];
 		char ac[32];
 	} uCmd;
 	union
 	{
-		unsigned char *puc;
+		uint8_t *puc;
 		char *pc;
 	} uResponse;
 	size_t sizCmd;
 	bool fOk;
 	int iResult;
-	unsigned long ulReadbackAddress;
-	unsigned long ulValue;
+	uint32_t ulReadbackAddress;
+	uint32_t ulValue;
 
 
-	sizCmd = snprintf(uCmd.ac, 32, "DUMP %lx\n", ulAddress);
+	sizCmd = snprintf(uCmd.ac, 32, "DUMP %x\n", ulAddress);
 	/* Send knock sequence with 500ms second timeout. */
 	if( m_ptDevice->SendRaw(uCmd.auc, sizCmd, 500)!=sizCmd )
 	{
@@ -111,7 +111,7 @@ bool romloader_uart_read_functinoid_aboot::legacy_read_v1(unsigned long ulAddres
 			}
 			else
 			{
-				iResult = sscanf(uResponse.pc, "%08lx: %08lx", &ulReadbackAddress, &ulValue);
+				iResult = sscanf(uResponse.pc, "%08x: %08x", &ulReadbackAddress, &ulValue);
 				if( iResult==2 && ulAddress==ulReadbackAddress )
 				{
 					if( pulValue!=NULL )
@@ -136,10 +136,10 @@ bool romloader_uart_read_functinoid_aboot::legacy_read_v1(unsigned long ulAddres
 
 
 
-void romloader_uart_read_functinoid_aboot::hexdump(const unsigned char *pucData, unsigned long ulSize)
+void romloader_uart_read_functinoid_aboot::hexdump(const uint8_t *pucData, uint32_t ulSize)
 {
-	const unsigned char *pucDumpCnt, *pucDumpEnd;
-	unsigned long ulAddressCnt;
+	const uint8_t *pucDumpCnt, *pucDumpEnd;
+	uint32_t ulAddressCnt;
 	size_t sizBytesLeft;
 	size_t sizChunkSize;
 	size_t sizChunkCnt;
@@ -160,7 +160,7 @@ void romloader_uart_read_functinoid_aboot::hexdump(const unsigned char *pucData,
 		}
 
 		// start a line in the dump with the address
-		printf("%08lX: ", ulAddressCnt);
+		printf("%08X: ", ulAddressCnt);
 		// append the data bytes
 		sizChunkCnt = sizChunkSize;
 		while( sizChunkCnt!=0 )
@@ -176,18 +176,18 @@ void romloader_uart_read_functinoid_aboot::hexdump(const unsigned char *pucData,
 
 
 
-bool romloader_uart_read_functinoid_aboot::netx50_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode)
+bool romloader_uart_read_functinoid_aboot::netx50_load_code(const uint8_t *pucNetxCode, size_t sizNetxCode)
 {
 	size_t sizLine;
-	unsigned long ulLoadAddress;
+	uint32_t ulLoadAddress;
 	union
 	{
-		unsigned char auc[64];
+		uint8_t auc[64];
 		char ac[64];
 	} uBuffer;
 	union
 	{
-		unsigned char *puc;
+		uint8_t *puc;
 		char *pc;
 	} uResponse;
 	unsigned int uiTimeoutMs;
@@ -228,7 +228,7 @@ bool romloader_uart_read_functinoid_aboot::netx50_load_code(const unsigned char 
 			{
 				uiTimeoutMs = 100;
 				tUuencoder.get_progress_info(&tProgressInfo);
-				printf("%05d/%05d (%d%%)\n", tProgressInfo.sizProcessed, tProgressInfo.sizTotal, tProgressInfo.uiPercent);
+				printf("%05ld/%05ld (%d%%)\n", tProgressInfo.sizProcessed, tProgressInfo.sizTotal, tProgressInfo.uiPercent);
 				if( m_ptDevice->SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
 				{
 					fprintf(stderr, "%s(%p): Failed to send uue data!\n", m_pcPortName, this);
@@ -270,19 +270,19 @@ bool romloader_uart_read_functinoid_aboot::netx50_load_code(const unsigned char 
 }
 
 
-bool romloader_uart_read_functinoid_aboot::netx500_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode)
+bool romloader_uart_read_functinoid_aboot::netx500_load_code(const uint8_t *pucNetxCode, size_t sizNetxCode)
 {
-	unsigned short usCrc;
+	uint16_t usCrc;
 	size_t sizCnt;
 	size_t sizLine;
 	union
 	{
-		unsigned char auc[64];
+		uint8_t auc[64];
 		char ac[64];
 	} uBuffer;
 	union
 	{
-		unsigned char *puc;
+		uint8_t *puc;
 		char *pc;
 	} uResponse;
 	unsigned int uiTimeoutMs;
@@ -302,7 +302,7 @@ bool romloader_uart_read_functinoid_aboot::netx500_load_code(const unsigned char
 	}
 
 	/* Construct the command. */
-	sizLine = snprintf(uBuffer.ac, sizeof(uBuffer), "LOAD %lx %x %x 10000\n", BOOTSTRAP_DATA_START_NETX500, sizNetxCode, usCrc);
+	sizLine = snprintf(uBuffer.ac, sizeof(uBuffer), "LOAD %lx %lx %x 10000\n", BOOTSTRAP_DATA_START_NETX500, sizNetxCode, usCrc);
 	printf("Load command:\n");
 	hexdump(uBuffer.auc, sizLine);
 	if( m_ptDevice->SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
@@ -350,17 +350,17 @@ bool romloader_uart_read_functinoid_aboot::netx50_start_code(void)
 {
 	union
 	{
-		unsigned char auc[64];
+		uint8_t auc[64];
 		char ac[64];
 	} uBuffer;
 	union
 	{
-		unsigned char *puc;
+		uint8_t *puc;
 		char *pc;
 	} uResponse;
 	size_t sizLine;
 	bool fOk;
-	unsigned long ulExecAddress;
+	uint32_t ulExecAddress;
 
 
 	/* Construct the command. */
@@ -390,17 +390,17 @@ bool romloader_uart_read_functinoid_aboot::netx500_start_code(void)
 {
 	union
 	{
-		unsigned char auc[64];
+		uint8_t auc[64];
 		char ac[64];
 	} uBuffer;
 	union
 	{
-		unsigned char *puc;
+		uint8_t *puc;
 		char *pc;
 	} uResponse;
 	size_t sizLine;
 	bool fOk;
-	unsigned long ulExecAddress;
+	uint32_t ulExecAddress;
 
 
 	/* Construct the command. */

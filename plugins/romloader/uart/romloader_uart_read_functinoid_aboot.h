@@ -31,15 +31,15 @@ class romloader_uart_read_functinoid_aboot : public romloader_uart_read_functino
 {
 public:
 	romloader_uart_read_functinoid_aboot(romloader_uart_device *ptDevice, char *pcPortName);
-	unsigned long read_data32(unsigned long ulAddress);
+	uint32_t read_data32(uint32_t ulAddress);
 	int update_device(ROMLOADER_CHIPTYP tChiptyp);
 
 private:
-	bool legacy_read_v1(unsigned long ulAddress, unsigned long *pulValue);
-	void hexdump(const unsigned char *pucData, unsigned long ulSize);
+	bool legacy_read_v1(uint32_t ulAddress, uint32_t *pulValue);
+	void hexdump(const uint8_t *pucData, uint32_t ulSize);
 
-	bool netx50_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode);
-	bool netx500_load_code(const unsigned char *pucNetxCode, size_t sizNetxCode);
+	bool netx50_load_code(const uint8_t *pucNetxCode, size_t sizNetxCode);
+	bool netx500_load_code(const uint8_t *pucNetxCode, size_t sizNetxCode);
 	bool netx50_start_code(void);
 	bool netx500_start_code(void);
 

@@ -1,5 +1,7 @@
 %module romloader_eth
 
+%include <stdint.i>
+
 #ifdef SWIGLUA
 %include "lua_fnptr.i"
 #endif

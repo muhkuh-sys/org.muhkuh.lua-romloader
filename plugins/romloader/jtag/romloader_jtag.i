@@ -1,5 +1,7 @@
 %module romloader_jtag
 
+%include <stdint.i>
+
 #ifdef SWIGLUA
 %include "lua_fnptr.i"
 #endif

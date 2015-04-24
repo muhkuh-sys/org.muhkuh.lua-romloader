@@ -80,11 +80,11 @@ romloader_uart_read_functinoid_mi1::romloader_uart_read_functinoid_mi1(romloader
 
 
 
-unsigned long romloader_uart_read_functinoid_mi1::read_data32(unsigned long ulNetxAddress)
+uint32_t romloader_uart_read_functinoid_mi1::read_data32(uint32_t ulNetxAddress)
 {
-	unsigned char aucCommand[6];
+	uint8_t aucCommand[6];
 	UARTSTATUS_T tResult;
-	unsigned long ulValue;
+	uint32_t ulValue;
 	bool fOk;
 
 
@@ -95,19 +95,19 @@ unsigned long romloader_uart_read_functinoid_mi1::read_data32(unsigned long ulNe
 
 	aucCommand[0] = MI1_MONITOR_COMMAND_Read | (MI1_MONITOR_ACCESSSIZE_Long<<6);
 	aucCommand[1] = 4;
-	aucCommand[2] =  ulNetxAddress      & 0xffU;
-	aucCommand[3] = (ulNetxAddress>>8 ) & 0xffU;
-	aucCommand[4] = (ulNetxAddress>>16) & 0xffU;
-	aucCommand[5] = (ulNetxAddress>>24) & 0xffU;
+	aucCommand[2] = (uint8_t)( ulNetxAddress     & 0xffU);
+	aucCommand[3] = (uint8_t)((ulNetxAddress>>8 ) & 0xffU);
+	aucCommand[4] = (uint8_t)((ulNetxAddress>>16) & 0xffU);
+	aucCommand[5] = (uint8_t)((ulNetxAddress>>24) & 0xffU);
 	tResult = execute_command(aucCommand, 6);
 	if( tResult==UARTSTATUS_OK )
 	{
 		if( m_sizPacketInputBuffer==4+5 )
 		{
-			ulValue = m_aucPacketInputBuffer[3] |
-				m_aucPacketInputBuffer[4]<<8 |
-				m_aucPacketInputBuffer[5]<<16 |
-				m_aucPacketInputBuffer[6]<<24;
+			ulValue = ((uint32_t)(m_aucPacketInputBuffer[3]))     |
+			          ((uint32_t)(m_aucPacketInputBuffer[4]))<< 8 |
+			          ((uint32_t)(m_aucPacketInputBuffer[5]))<<16 |
+			          ((uint32_t)(m_aucPacketInputBuffer[6]))<<24;
 			fOk = true;
 		}
 	}
@@ -117,13 +117,13 @@ unsigned long romloader_uart_read_functinoid_mi1::read_data32(unsigned long ulNe
 
 
 
-bool romloader_uart_read_functinoid_mi1::write_image(unsigned long ulNetxAddress, const unsigned char *pucBUFFER_IN, size_t sizBUFFER_IN)
+bool romloader_uart_read_functinoid_mi1::write_image(uint32_t ulNetxAddress, const uint8_t *pucBUFFER_IN, size_t sizBUFFER_IN)
 {
 	bool fOk;
 	size_t sizChunk;
 	UARTSTATUS_T tResult;
 	const size_t sizMaxPacketSizeClient = 256;
-	unsigned char aucCommand[sizMaxPacketSizeClient];
+	uint8_t aucCommand[sizMaxPacketSizeClient];
 	long lBytesProcessed;
 
 
@@ -142,10 +142,10 @@ bool romloader_uart_read_functinoid_mi1::write_image(unsigned long ulNetxAddress
 		aucCommand[0] = MI1_MONITOR_COMMAND_Write |
 				(MI1_MONITOR_ACCESSSIZE_Byte<<MI1_MONITOR_ACCESSSIZE_SRT);
 		aucCommand[1] = sizChunk;
-		aucCommand[2] = (unsigned char)( ulNetxAddress       & 0xffU);
-		aucCommand[3] = (unsigned char)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[4] = (unsigned char)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[5] = (unsigned char)((ulNetxAddress>>24U) & 0xffU);
+		aucCommand[2] = (uint8_t)( ulNetxAddress       & 0xffU);
+		aucCommand[3] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
+		aucCommand[4] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
+		aucCommand[5] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
 		memcpy(aucCommand+6, pucBUFFER_IN, sizChunk);
 		tResult = execute_command(aucCommand, sizChunk+6);
 		if( tResult!=UARTSTATUS_OK )
@@ -158,7 +158,7 @@ bool romloader_uart_read_functinoid_mi1::write_image(unsigned long ulNetxAddress
 		{
 			if( m_sizPacketInputBuffer!=4+1 )
 			{
-				fprintf(stderr, "answer to write_data08 has wrong packet size of %d!\n", m_sizPacketInputBuffer);
+				fprintf(stderr, "answer to write_data08 has wrong packet size of %ld!\n", m_sizPacketInputBuffer);
 				fOk = false;
 				break;
 			}
@@ -177,24 +177,24 @@ bool romloader_uart_read_functinoid_mi1::write_image(unsigned long ulNetxAddress
 
 
 
-bool romloader_uart_read_functinoid_mi1::call(unsigned long ulNetxAddress, unsigned long ulParameterR0)
+bool romloader_uart_read_functinoid_mi1::call(uint32_t ulNetxAddress, uint32_t ulParameterR0)
 {
 	bool fOk;
 	UARTSTATUS_T tResult;
-	unsigned char aucCommand[9];
-	unsigned char ucStatus;
+	uint8_t aucCommand[9];
+	uint8_t ucStatus;
 
 
 	/* Construct the command packet. */
 	aucCommand[0x00] = MI1_MONITOR_COMMAND_Execute;
-	aucCommand[0x01] = (unsigned char)( ulNetxAddress      & 0xffU);
-	aucCommand[0x02] = (unsigned char)((ulNetxAddress>>8 ) & 0xffU);
-	aucCommand[0x03] = (unsigned char)((ulNetxAddress>>16) & 0xffU);
-	aucCommand[0x04] = (unsigned char)((ulNetxAddress>>24) & 0xffU);
-	aucCommand[0x05] = (unsigned char)( ulParameterR0      & 0xffU);
-	aucCommand[0x06] = (unsigned char)((ulParameterR0>>8 ) & 0xffU);
-	aucCommand[0x07] = (unsigned char)((ulParameterR0>>16) & 0xffU);
-	aucCommand[0x08] = (unsigned char)((ulParameterR0>>24) & 0xffU);
+	aucCommand[0x01] = (uint8_t)( ulNetxAddress      & 0xffU);
+	aucCommand[0x02] = (uint8_t)((ulNetxAddress>>8 ) & 0xffU);
+	aucCommand[0x03] = (uint8_t)((ulNetxAddress>>16) & 0xffU);
+	aucCommand[0x04] = (uint8_t)((ulNetxAddress>>24) & 0xffU);
+	aucCommand[0x05] = (uint8_t)( ulParameterR0      & 0xffU);
+	aucCommand[0x06] = (uint8_t)((ulParameterR0>>8 ) & 0xffU);
+	aucCommand[0x07] = (uint8_t)((ulParameterR0>>16) & 0xffU);
+	aucCommand[0x08] = (uint8_t)((ulParameterR0>>24) & 0xffU);
 
 	printf("Executing call command:\n");
 	hexdump(aucCommand, 9);
@@ -208,7 +208,7 @@ bool romloader_uart_read_functinoid_mi1::call(unsigned long ulNetxAddress, unsig
 	{
 		if( m_sizPacketInputBuffer!=4+1 )
 		{
-			fprintf(stderr, "answer to call command has wrong packet size of %d!", m_sizPacketInputBuffer);
+			fprintf(stderr, "answer to call command has wrong packet size of %ld!", m_sizPacketInputBuffer);
 			fOk = false;
 		}
 		else
@@ -265,10 +265,10 @@ int romloader_uart_read_functinoid_mi1::update_device(ROMLOADER_CHIPTYP tChiptyp
 
 
 
-romloader_uart_read_functinoid_mi1::UARTSTATUS_T romloader_uart_read_functinoid_mi1::execute_command(const unsigned char *aucCommand, size_t sizCommand)
+romloader_uart_read_functinoid_mi1::UARTSTATUS_T romloader_uart_read_functinoid_mi1::execute_command(const uint8_t *aucCommand, size_t sizCommand)
 {
 	UARTSTATUS_T tResult;
-	unsigned char ucStatus;
+	uint8_t ucStatus;
 	unsigned int uiRetryCnt;
 
 
@@ -397,7 +397,7 @@ romloader_uart_read_functinoid_mi1::UARTSTATUS_T romloader_uart_read_functinoid_
 
 unsigned char romloader_uart_read_functinoid_mi1::packet_ringbuffer_get(void)
 {
-	unsigned char ucByte;
+	uint8_t ucByte;
 
 
 	ucByte = m_aucPacketRingBuffer[m_sizPacketRingBufferHead];
@@ -429,13 +429,13 @@ int romloader_uart_read_functinoid_mi1::packet_ringbuffer_peek(size_t sizOffset)
 }
 
 
-romloader_uart_read_functinoid_mi1::UARTSTATUS_T romloader_uart_read_functinoid_mi1::send_packet(const unsigned char *pucData, size_t sizData)
+romloader_uart_read_functinoid_mi1::UARTSTATUS_T romloader_uart_read_functinoid_mi1::send_packet(const uint8_t *pucData, size_t sizData)
 {
-	unsigned char aucBuffer[sizMaxPacketSizeMI1];
+	uint8_t aucBuffer[sizMaxPacketSizeMI1];
 	UARTSTATUS_T tResult;
-	unsigned short usCrc;
-	const unsigned char *pucCnt;
-	const unsigned char *pucEnd;
+	uint16_t usCrc;
+	const uint8_t *pucCnt;
+	const uint8_t *pucEnd;
 	size_t sizSend;
 	size_t sizPacket;
 
@@ -446,8 +446,8 @@ romloader_uart_read_functinoid_mi1::UARTSTATUS_T romloader_uart_read_functinoid_
 		/* Set the packet start character. */
 		aucBuffer[0] = MONITOR_STREAM_PACKET_START;
 		/* Set the size of the user data. */
-		aucBuffer[1] = (unsigned char)(sizData & 0xff);
-		aucBuffer[2] = (unsigned char)(sizData >> 8);
+		aucBuffer[1] = (uint8_t)(sizData & 0xff);
+		aucBuffer[2] = (uint8_t)(sizData >> 8);
 
 		/* Copy the user data. */
 		memcpy(aucBuffer+3, pucData, sizData);
@@ -481,7 +481,7 @@ romloader_uart_read_functinoid_mi1::UARTSTATUS_T romloader_uart_read_functinoid_
 	}
 	else
 	{
-		fprintf(stderr, "! send_packet: packet too large: %d bytes!\n", sizData);
+		fprintf(stderr, "! send_packet: packet too large: %ld bytes!\n", sizData);
 		tResult = UARTSTATUS_PACKET_TOO_LARGE;
 	}
 
@@ -492,12 +492,12 @@ romloader_uart_read_functinoid_mi1::UARTSTATUS_T romloader_uart_read_functinoid_
 romloader_uart_read_functinoid_mi1::UARTSTATUS_T romloader_uart_read_functinoid_mi1::receive_packet(void)
 {
 	unsigned int uiRetries;
-	unsigned char ucData;
+	uint8_t ucData;
 	bool fFound;
 	UARTSTATUS_T tResult;
 	size_t sizData;
 	size_t sizPacket;
-	unsigned short usCrc;
+	uint16_t usCrc;
 	size_t sizCnt;
 
 
@@ -570,7 +570,7 @@ romloader_uart_read_functinoid_mi1::UARTSTATUS_T romloader_uart_read_functinoid_
 					fprintf(stderr, "! receive_packet: CRC failed.\n");
 
 					/* Debug: get the complete packet and dump it. */
-					printf("packet size: 0x%08x bytes\n", sizPacket);
+					printf("packet size: 0x%08lx bytes\n", sizPacket);
 					sizCnt = 0;
 					do
 					{
@@ -591,10 +591,10 @@ romloader_uart_read_functinoid_mi1::UARTSTATUS_T romloader_uart_read_functinoid_
 
 
 
-void romloader_uart_read_functinoid_mi1::hexdump(const unsigned char *pucData, unsigned long ulSize)
+void romloader_uart_read_functinoid_mi1::hexdump(const uint8_t *pucData, uint32_t ulSize)
 {
-	const unsigned char *pucDumpCnt, *pucDumpEnd;
-	unsigned long ulAddressCnt;
+	const uint8_t *pucDumpCnt, *pucDumpEnd;
+	uint32_t ulAddressCnt;
 	size_t sizBytesLeft;
 	size_t sizChunkSize;
 	size_t sizChunkCnt;
@@ -615,7 +615,7 @@ void romloader_uart_read_functinoid_mi1::hexdump(const unsigned char *pucData, u
 		}
 
 		// start a line in the dump with the address
-		printf("%08lX: ", ulAddressCnt);
+		printf("%08X: ", ulAddressCnt);
 		// append the data bytes
 		sizChunkCnt = sizChunkSize;
 		while( sizChunkCnt!=0 )

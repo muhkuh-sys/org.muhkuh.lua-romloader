@@ -522,7 +522,7 @@ int romloader_usb_device_libusb::detect_interfaces(romloader_usb_reference ***pp
 		if( ssizDevList<0 )
 		{
 			/* failed to detect devices */
-			fprintf(stderr, "%s(%p): failed to detect usb devices: %d:%s\n", m_pcPluginId, this, ssizDevList, libusb_strerror(ssizDevList));
+			fprintf(stderr, "%s(%p): failed to detect usb devices: %ld:%s\n", m_pcPluginId, this, ssizDevList, libusb_strerror(ssizDevList));
 			iResult = -1;
 		}
 		else
@@ -760,7 +760,7 @@ int romloader_usb_device_libusb::Connect(unsigned int uiBusNr, unsigned int uiDe
 	if( ssizDevList<0 )
 	{
 		/* Failed to detect devices. */
-		fprintf(stderr, "%s(%p): failed to detect usb devices: %d:%s\n", m_pcPluginId, this, ssizDevList, libusb_strerror(ssizDevList));
+		fprintf(stderr, "%s(%p): failed to detect usb devices: %ld:%s\n", m_pcPluginId, this, ssizDevList, libusb_strerror(ssizDevList));
 		iResult = (int)ssizDevList;
 	}
 	else
@@ -1087,7 +1087,7 @@ int romloader_usb_device_libusb::netx500_load_code(libusb_device_handle *ptDevHa
 		usCrc = crc16(pucNetxCode, sizNetxCode);
 
 		/* Generate load command. */
-		sizLine = snprintf((char*)(aucOutBuffer+1), sizeof(aucOutBuffer)-1, "load %lx %x %04X\n", ulLoadAddress, sizNetxCode, usCrc);
+		sizLine = snprintf((char*)(aucOutBuffer+1), sizeof(aucOutBuffer)-1, "load %lx %lx %04X\n", ulLoadAddress, sizNetxCode, usCrc);
 		/* Set the length. */
 		aucOutBuffer[0] = (unsigned char)(sizLine + 1);
 
@@ -1167,7 +1167,7 @@ int romloader_usb_device_libusb::netx10_load_code(libusb_device_handle* ptDevHan
 		}
 		else if( sizLine!=iProcessed )
 		{
-			fprintf(stderr, "%s(%p): Requested to send %d bytes, but only %d were processed!\n", m_pcPluginId, this, sizLine, iProcessed);
+			fprintf(stderr, "%s(%p): Requested to send %ld bytes, but only %d were processed!\n", m_pcPluginId, this, sizLine, iProcessed);
 			iResult = -1;
 		}
 		else
@@ -1193,7 +1193,7 @@ int romloader_usb_device_libusb::netx10_load_code(libusb_device_handle* ptDevHan
 					}
 					else if( sizLine!=iProcessed )
 					{
-						fprintf(stderr, "%s(%p): Requested to send %d bytes, but only %d were processed!\n", m_pcPluginId, this, sizLine, iProcessed);
+						fprintf(stderr, "%s(%p): Requested to send %ld bytes, but only %d were processed!\n", m_pcPluginId, this, sizLine, iProcessed);
 						iResult = -1;
 						break;
 					}
@@ -1232,7 +1232,7 @@ int romloader_usb_device_libusb::netx56_execute_command(libusb_device_handle *pt
 	}
 	else if( sizOutBuf!=iProcessed )
 	{
-		fprintf(stderr, "%s(%p): Requested to send %d bytes, but only %d were processed!\n", m_pcPluginId, this, sizOutBuf, iProcessed);
+		fprintf(stderr, "%s(%p): Requested to send %ld bytes, but only %d were processed!\n", m_pcPluginId, this, sizOutBuf, iProcessed);
 		iResult = 1;
 	}
 	else
@@ -1394,7 +1394,7 @@ int romloader_usb_device_libusb::netx10_start_code(libusb_device_handle *ptDevHa
 	}
 	else if( sizBlock!=iProcessed )
 	{
-		fprintf(stderr, "%s(%p): Requested to send %d bytes, but only %d were processed!\n", m_pcPluginId, this, sizBlock, iProcessed);
+		fprintf(stderr, "%s(%p): Requested to send %ld bytes, but only %d were processed!\n", m_pcPluginId, this, sizBlock, iProcessed);
 		iResult = -1;
 	}
 	else
@@ -1444,7 +1444,7 @@ int romloader_usb_device_libusb::netx56_start_code(libusb_device_handle *ptDevHa
 	}
 	else if( sizRxBuf!=1 )
 	{
-		fprintf(stderr, "call answer has invalid size: %d\n", sizRxBuf);
+		fprintf(stderr, "call answer has invalid size: %ld\n", sizRxBuf);
 		hexdump(aucRxBuf, sizRxBuf);
 		iResult = -1;
 	}
@@ -1677,7 +1677,7 @@ int romloader_usb_device_libusb::send_packet(const unsigned char *aucOutBuf, siz
 	}
 	else if( sizOutBuf!=iProcessed )
 	{
-		fprintf(stderr, "%s(%p): Requested to send %d bytes, but only %d were processed!\n", m_pcPluginId, this, sizOutBuf, iProcessed);
+		fprintf(stderr, "%s(%p): Requested to send %ld bytes, but only %d were processed!\n", m_pcPluginId, this, sizOutBuf, iProcessed);
 		iResult = 1;
 	}
 	/* The commands are transfered as transactions. This means data is grouped by packets smaller than 64 bytes.
@@ -1743,7 +1743,7 @@ int romloader_usb_device_libusb::receive_packet(unsigned char *aucInBuf, size_t 
 					if( (sizTotal+64)>sizInBuf )
 					{
 						/* No -> do not continue! */
-						fprintf(stderr, "Too much data, not enough space for another packet after 0x%08x bytes.\n", sizTotal);
+						fprintf(stderr, "Too much data, not enough space for another packet after 0x%08lx bytes.\n", sizTotal);
 						iResult = -1;
 					}
 				}
