@@ -1,0 +1,43 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+%:
+	dh $@ 
+
+override_dh_auto_clean:
+	rm -rf build
+
+override_dh_auto_configure:
+	# Create the folders for the mbs packages.
+	mkdir -p ~/.mbs/repository/nz/co/methods/asciidoc/8.6.8_3
+	mkdir -p ~/.mbs/repository/org/gnu/gcc/gcc-arm-elf_linux_i386/4.3.3_7
+	mkdir -p ~/.mbs/repository/org/gnu/gcc/gcc-arm-elf_linux_x86_64/4.3.3_7
+	mkdir -p ~/.mbs/repository/org/scons/scons-local/2.3.0_1
+	
+	# Copy the mbs packages.
+	cp /usr/src/packages/SOURCES/asciidoc-8.6.8_3.tar.bz2 ~/.mbs/repository/nz/co/methods/asciidoc/8.6.8_3/
+	cp /usr/src/packages/SOURCES/asciidoc-8.6.8_3.tar.bz2.sha1 ~/.mbs/repository/nz/co/methods/asciidoc/8.6.8_3/
+	cp /usr/src/packages/SOURCES/gcc-arm-elf_linux_i386-4.3.3_7.tar.bz2 ~/.mbs/repository/org/gnu/gcc/gcc-arm-elf_linux_i386/4.3.3_7/
+	cp /usr/src/packages/SOURCES/gcc-arm-elf_linux_i386-4.3.3_7.tar.bz2.sha1 ~/.mbs/repository/org/gnu/gcc/gcc-arm-elf_linux_i386/4.3.3_7/
+	cp /usr/src/packages/SOURCES/gcc-arm-elf_linux_x86_64-4.3.3_7.tar.bz2 ~/.mbs/repository/org/gnu/gcc/gcc-arm-elf_linux_x86_64/4.3.3_7/
+	cp /usr/src/packages/SOURCES/gcc-arm-elf_linux_x86_64-4.3.3_7.tar.bz2.sha1 ~/.mbs/repository/org/gnu/gcc/gcc-arm-elf_linux_x86_64/4.3.3_7/
+	cp /usr/src/packages/SOURCES/scons-local-2.3.0_1.tar.bz2 ~/.mbs/repository/org/scons/scons-local/2.3.0_1/
+	cp /usr/src/packages/SOURCES/scons-local-2.3.0_1.tar.bz2.sha1 ~/.mbs/repository/org/scons/scons-local/2.3.0_1/
+	
+	python mbs/mbs
+	
+	mkdir build
+	cd build && cmake -DCMAKE_INSTALL_PREFIX="/usr" -DINSTALL_DIR_EXECUTABLES=bin -DINSTALL_DIR_LUA_MODULES=lib/lua/5.1 -DINSTALL_DIR_LUA_SCRIPTS=share/lua/5.1 -DINSTALL_DIR_SHARED_OBJECTS=lib ..
+
+override_dh_auto_build:
+	make -C build
+
+override_dh_auto_test:
+	echo "No Tests..."
+
+override_dh_auto_install:
+	make -C build install DESTDIR=/usr/src/packages/BUILD/debian/muhkuh
+

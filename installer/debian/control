@@ -1,0 +1,17 @@
+Source: muhkuh
+Section: Electronics
+Priority: optional
+Maintainer: Christoph Thelen <doc_bacardi@users.sourceforge.net>
+Build-Depends: debhelper (>= 8.0.0), cmake3 (>= 3.0.1), gcc, g++, lua5.1, swig3 (>= 3.0.2), python, libudev-dev, liblua5.1-dev
+Standards-Version: 3.9.4
+Homepage: https://github.com/muhkuh-sys/muhkuh
+Vcs-Git: https://github.com/muhkuh-sys/muhkuh.git
+Vcs-Browser: https://github.com/muhkuh-sys/muhkuh
+
+Package: muhkuh
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: A tool for sripted hardware tests.
+ Muhkuh is a powerful and flexible test tool for hardware designs. Plugins are
+ used to access the device under test or the testing equipment. Testcases are
+ written in Lua and can be easily extended by the plugins.
