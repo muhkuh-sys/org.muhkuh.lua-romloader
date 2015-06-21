@@ -2,7 +2,13 @@ language: c
 
 
 env:
-  - secure: "LuzdXXY9Q1fU4HxqwcG4vO5QLb2c3FVKe4L8yCZ24hJLIuB+ClRlQYHQeH9CPZiYR72Q2rNGuBlFoSRgPxvQ6bC4QdevdWVVWUdEkyfpOza7Scu2OTtChhDbMmLAeDEmU4ef2IwZz1FvKUuuDDwdF+EpFZyd0yyGXGt1RuBvw6w="
+  global:
+    - secure: "LuzdXXY9Q1fU4HxqwcG4vO5QLb2c3FVKe4L8yCZ24hJLIuB+ClRlQYHQeH9CPZiYR72Q2rNGuBlFoSRgPxvQ6bC4QdevdWVVWUdEkyfpOza7Scu2OTtChhDbMmLAeDEmU4ef2IwZz1FvKUuuDDwdF+EpFZyd0yyGXGt1RuBvw6w="
+    - PATH=/opt/mingw-w64-i686/bin:/opt/mingw-w64-x86_64/bin:${PATH}
+    - LUA_LIBRARIES_X86_64=/tmp/lua/windows_amd64/dev/lib/liblua.dll.a
+    - LUA_INCLUDE_DIR_X86_64=/tmp/lua/windows_amd64/dev/include
+    - LUA_LIBRARIES_X86=/tmp/lua/windows_x86/dev/lib/liblua.dll.a
+    - LUA_INCLUDE_DIR_X86=/tmp/lua/windows_x86/dev/include
 
 
 before_install:
@@ -11,10 +17,13 @@ before_install:
   - echo "deb http://download.opensuse.org/repositories/home:/doc_bacardi/xUbuntu_12.04 ./" | sudo tee -a /etc/apt/sources.list
   - sudo apt-get update -qq
   - sudo apt-get --assume-yes install lua5.1 liblua5.1-dev
-  - sudo apt-get --assume-yes install mingw-w64 g++-mingw-w64 g++-mingw-w64-i686 g++-mingw-w64-x86-64 gcc-mingw-w64 gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 binutils-mingw-w64-i686 binutils-mingw-w64-x86-64
+  - sudo apt-get --assume-yes install mingw-w64-mbs
   - sudo apt-get --assume-yes install gcc-multilib g++-multilib make libudev-dev libreadline6-dev
   - sudo apt-get --assume-yes install swig3 cmake3
   - sudo apt-get --assume-yes install python-pip python-virtualenv
+  - wget https://github.com/muhkuh-sys/org.muhkuh.lua-lua/releases/download/v5.1.2/lua51.zip
+  - mkdir /tmp/lua
+  - 7z x -o/tmp/lua lua51.zip
   - virtualenv ~/virtualenv/python2.7
   - source ~/virtualenv/python2.7/bin/activate
   - pip install -q requests
@@ -23,4 +32,7 @@ before_install:
 # This is the command to build the whole project and pack the results in a distributable form.
 script:
   - ./.travis.sh
+
+
+after_success:
   - python installer/ivy/deploy.py build/artifacts/artifacts_lua_plugin_bit.xml build/artifacts/artifacts_lua_plugin_mhash.xml build/artifacts/artifacts_lua_plugin_romloader.xml build/artifacts/artifacts_lua.xml build/artifacts/artifacts_muhkuh_base_cli.xml
