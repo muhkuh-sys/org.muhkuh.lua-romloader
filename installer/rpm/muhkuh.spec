@@ -72,22 +72,6 @@ written in Lua and can be easily extended by the plugins.
 
 #----------------------------------------------------------------------------
 
-%package lua-bit
-Summary:        Bit operations for Lua
-Group:          Productivity/Scientific/Electronics
-Requires:       lua >= %{lua_version}
-
-%description lua-bit
-Muhkuh is a powerful and flexible test tool for hardware designs. Plugins are
-used to access the device under test or the testing equipment. Testcases are
-written in Lua and can be easily extended by the plugins.
-
-%files lua-bit
-%defattr(-,root,root)
-%{_libdir}/lua/5.1/bit.so
-
-#----------------------------------------------------------------------------
-
 %package lua-mhash
 Summary:        MHash binding for Lua
 Group:          Productivity/Scientific/Electronics

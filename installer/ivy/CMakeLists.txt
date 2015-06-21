@@ -33,12 +33,6 @@ ExternalProject_Add(TARGET_lua
                     INSTALL_COMMAND make package
 )
 
-ExternalProject_Add(TARGET_lua_plugin_bit
-                    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lua_plugin_bit
-                    CMAKE_ARGS ${PACKAGE_CMAKE_ARGS}
-                    INSTALL_COMMAND make package
-)
-
 ExternalProject_Add(TARGET_lua_plugin_mhash
                     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lua_plugin_mhash
                     CMAKE_ARGS ${PACKAGE_CMAKE_ARGS}
