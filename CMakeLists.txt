@@ -61,7 +61,6 @@ ENDIF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv)")
 add_subdirectory(external)
 
 add_subdirectory(lua)
-add_subdirectory(modules)
 add_subdirectory(plugins)
 
 
