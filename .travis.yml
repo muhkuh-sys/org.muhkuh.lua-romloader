@@ -20,6 +20,7 @@ before_install:
   - sudo apt-get --assume-yes install mingw-w64-mbs
   - sudo apt-get --assume-yes install gcc-multilib g++-multilib make libudev-dev libreadline6-dev
   - sudo apt-get --assume-yes install swig3 cmake3
+  - sudo apt-get --assume-yes install p7zip-full
   - sudo apt-get --assume-yes install python-pip python-virtualenv
   - wget https://github.com/muhkuh-sys/org.muhkuh.lua-lua/releases/download/v5.1.2/lua51.zip
   - mkdir /tmp/lua
