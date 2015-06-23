@@ -20,6 +20,7 @@
 
 
 #include <stddef.h>
+#include <stdint.h>
 
 
 #ifndef __UUENCODER_H__
@@ -39,7 +40,7 @@ class uuencoder
 public:
 	uuencoder(void);
 
-	void set_data(const unsigned char *pucData, size_t sizData);
+	void set_data(const uint8_t *pucData, size_t sizData);
 	size_t process(char *pcLine, size_t sizMaxLine);
 	void get_progress_info(UUENCODER_PROGRESS_INFO_T *ptProgressInfo);
 	bool isFinished(void) const;
@@ -56,9 +57,9 @@ private:
 	} UUENCODE_STATE_T;
 
 	UUENCODE_STATE_T m_tState;
-	const unsigned char *m_pucStart;
-	const unsigned char *m_pucEnd;
-	const unsigned char *m_pucCnt;
+	const uint8_t *m_pucStart;
+	const uint8_t *m_pucEnd;
+	const uint8_t *m_pucCnt;
 };
 
 

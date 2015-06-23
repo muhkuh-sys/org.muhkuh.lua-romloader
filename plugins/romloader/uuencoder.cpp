@@ -36,7 +36,7 @@ uuencoder::uuencoder(void)
 }
 
 
-void uuencoder::set_data(const unsigned char *pucData, size_t sizData)
+void uuencoder::set_data(const uint8_t *pucData, size_t sizData)
 {
 	m_pucStart = pucData;
 	m_pucCnt   = pucData;
@@ -49,9 +49,9 @@ size_t uuencoder::process(char *pcLine, size_t sizMaxLine)
 {
 	size_t sizLine;
 	size_t sizChunk;
-	const unsigned char *pucInputCnt;
+	const uint8_t *pucInputCnt;
 	char *pcOutputCnt;
-	unsigned long ulUueBuf;
+	uint32_t ulUueBuf;
 	int iCnt;
 
 
@@ -68,7 +68,7 @@ size_t uuencoder::process(char *pcLine, size_t sizMaxLine)
 	case UUENCODE_STATE_Data:
 		/* Get the size of the next chunk in raw bytes. */
 		sizChunk = m_pucEnd - m_pucCnt;
-		/* Limit the chunk size to the maximum line size for uucode. */
+		/* Limit the chunk size to the maximum line size for UUCODE. */
 		if( sizChunk>45 )
 		{
 			sizChunk = 45;
@@ -78,13 +78,13 @@ size_t uuencoder::process(char *pcLine, size_t sizMaxLine)
 		pcOutputCnt = pcLine;
 
 		/* Print the length character for the line. */
-		*(pcOutputCnt++) = (unsigned char)(0x20 + sizChunk);
+		*(pcOutputCnt++) = (char)(0x20 + sizChunk);
 
-		/* Convert the raw bytes to uucode. */
+		/* Convert the raw bytes to UUCODE. */
 		pucInputCnt = m_pucCnt;
 		do
 		{
-			/* Clear uuencode buffer. */
+			/* Clear UUENCODE buffer. */
 			ulUueBuf = 0;
 
 			/* Get max 3 chars into the buffer. */
@@ -105,8 +105,8 @@ size_t uuencoder::process(char *pcLine, size_t sizMaxLine)
 			iCnt = 4;
 			do
 			{
-				*(pcOutputCnt++) = (unsigned char)(0x20 + (ulUueBuf>>26));
-				ulUueBuf <<= 6;
+				*(pcOutputCnt++) = (char)(0x20U + ((ulUueBuf>>26U)&0x3fU));
+				ulUueBuf <<= 6U;
 			} while( --iCnt!=0 );
 		} while( sizChunk!=0 );
 
