@@ -198,6 +198,8 @@ bool romloader_uart_device_linux::Open(void)
 		cfmakeraw(&tNewAttribs);
 		tNewAttribs.c_cflag |= CREAD | CLOCAL;
 		tNewAttribs.c_cflag &= ~CRTSCTS;
+		/* Set 1 stop bit. */
+		tNewAttribs.c_cflag &= ~CSTOPB;
 
 		iResult = cfsetispeed(&tNewAttribs, B115200);
 		if( iResult!=0 )
@@ -213,27 +215,35 @@ bool romloader_uart_device_linux::Open(void)
 			}
 			else
 			{
-				iResult = tcsetattr(m_hPort, TCSAFLUSH, &tNewAttribs);
+				iResult = tcflush(m_hPort, TCIOFLUSH);
 				if( iResult!=0 )
 				{
 					fprintf(stderr, "Failed to apply new parameters to '%s': %d\n", acDeviceFile, iResult);
 				}
 				else
 				{
-					/*
-					 * Create a new receive thread.
-					 */
-					m_tRxPData.hPort = m_hPort;
-					m_tRxPData.ptParent = this;
-					iResult = pthread_create(&m_tRxThread, NULL, romloader_uart_rx_thread, (void*)(&m_tRxPData));
-					if( iResult==0 )
+					iResult = tcsetattr(m_hPort, TCSANOW, &tNewAttribs);
+					if( iResult!=0 )
 					{
-						m_fRxThreadIsRunning = true;
-						fResult = true;
+						fprintf(stderr, "Failed to apply new parameters to '%s': %d\n", acDeviceFile, iResult);
 					}
 					else
 					{
-						fprintf(stderr, "Failed to create receive thread: %d\n", iResult);
+						/*
+						 * Create a new receive thread.
+						 */
+						m_tRxPData.hPort = m_hPort;
+						m_tRxPData.ptParent = this;
+						iResult = pthread_create(&m_tRxThread, NULL, romloader_uart_rx_thread, (void*)(&m_tRxPData));
+						if( iResult==0 )
+						{
+							m_fRxThreadIsRunning = true;
+							fResult = true;
+						}
+						else
+						{
+							fprintf(stderr, "Failed to create receive thread: %d\n", iResult);
+						}
 					}
 				}
 			}
@@ -242,6 +252,7 @@ bool romloader_uart_device_linux::Open(void)
 
 	return fResult;
 }
+
 
 
 void romloader_uart_device_linux::Close(void)
@@ -272,7 +283,6 @@ void romloader_uart_device_linux::Close(void)
 	}
 
 	/* Delete the cards. */
-//	fprintf(stderr, "deleteCards\n");
 	deleteCards();
 }
 
