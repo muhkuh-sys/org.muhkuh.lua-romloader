@@ -184,12 +184,15 @@ bool romloader_uart_device_linux::Open(void)
 	if( m_hPort==-1 )
 	{
 		/* no -> exit with error */
-		fprintf(stderr, "failed to open the com port %s: %s", acDeviceFile, strerror(errno));
+		fprintf(stderr, "failed to open the serial port %s: %s", acDeviceFile, strerror(errno));
 	}
 	else
 	{
-		/* Get current port settings and apply all settings on this base. */
+		/* Remember the current port settings. Use this to restore the settings when the port is closed. */
 		tcgetattr(m_hPort, &m_tOldAttribs);
+
+		/* Get current port settings and apply all settings on this base. */
+		tcgetattr(m_hPort, &tNewAttribs);
 
 		/* Set new port settings for non-blocking input processing. */
 		cfmakeraw(&tNewAttribs);
