@@ -31,4 +31,4 @@ script:
 
 
 after_success:
-  - python installer/ivy/deploy.py build/artifacts/artifacts_lua_plugin_bit.xml build/artifacts/artifacts_lua_plugin_mhash.xml build/artifacts/artifacts_lua_plugin_romloader.xml build/artifacts/artifacts_lua.xml build/artifacts/artifacts_muhkuh_base_cli.xml
+  - python installer/ivy/deploy.py build/artifacts/artifacts_lua_plugin_romloader.xml
