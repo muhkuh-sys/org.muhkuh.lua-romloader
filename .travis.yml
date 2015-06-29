@@ -4,11 +4,7 @@ language: c
 env:
   global:
     - secure: "LuzdXXY9Q1fU4HxqwcG4vO5QLb2c3FVKe4L8yCZ24hJLIuB+ClRlQYHQeH9CPZiYR72Q2rNGuBlFoSRgPxvQ6bC4QdevdWVVWUdEkyfpOza7Scu2OTtChhDbMmLAeDEmU4ef2IwZz1FvKUuuDDwdF+EpFZyd0yyGXGt1RuBvw6w="
-    - PATH=/opt/mingw-w64-i686/bin:/opt/mingw-w64-x86_64/bin:${PATH}
-    - LUA_LIBRARIES_X86_64=/tmp/lua/windows_amd64/dev/lib/liblua.dll.a
-    - LUA_INCLUDE_DIR_X86_64=/tmp/lua/windows_amd64/dev/include
-    - LUA_LIBRARIES_X86=/tmp/lua/windows_x86/dev/lib/liblua.dll.a
-    - LUA_INCLUDE_DIR_X86=/tmp/lua/windows_x86/dev/include
+    - PATH=/opt/mingw-w64-i686/bin:/opt/mingw-w64-x86_64/bin:/tmp/apache-ant-1.9.5/bin:${PATH}
 
 
 before_install:
@@ -22,9 +18,8 @@ before_install:
   - sudo apt-get --assume-yes install swig3 cmake3
   - sudo apt-get --assume-yes install p7zip-full
   - sudo apt-get --assume-yes install python-pip python-virtualenv
-  - wget https://github.com/muhkuh-sys/org.muhkuh.lua-lua/releases/download/v5.1.2/lua51.zip
-  - mkdir /tmp/lua
-  - 7z x -o/tmp/lua lua51.zip
+  - wget ftp://ftp.fu-berlin.de/unix/www/apache/ant/binaries/apache-ant-1.9.5-bin.tar.bz2 -O /tmp/apache-ant-1.9.5-bin.tar.bz2
+  - tar --directory /tmp --extract --bzip2 --file /tmp/apache-ant-1.9.5-bin.tar.bz2
   - virtualenv ~/virtualenv/python2.7
   - source ~/virtualenv/python2.7/bin/activate
   - pip install -q requests

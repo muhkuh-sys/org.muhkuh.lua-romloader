@@ -5,4 +5,4 @@
 #
 
 # Use the system version.
-FIND_PACKAGE(Lua51 REQUIRED)
+FIND_PACKAGE(org.muhkuh.lua-lua51 REQUIRED)

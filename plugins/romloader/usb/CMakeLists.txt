@@ -13,9 +13,9 @@ if(${PYTHONLIBS_FOUND})
 	include_directories(${PYTHON_INCLUDE_DIRS})
 endif(${PYTHONLIBS_FOUND})
 
-if(${LUA51_FOUND})
-	include_directories(${LUA_INCLUDE_DIR})
-endif(${LUA51_FOUND})
+if(${org.muhkuh.lua-lua51_FOUND})
+	include_directories(${org.muhkuh.lua-lua51_INCLUDE_DIR})
+endif(${org.muhkuh.lua-lua51_FOUND})
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
@@ -81,10 +81,10 @@ ADD_DEPENDENCIES(TARGET_romloader_usb_lib TARGET_libusb)
 # Build the lua plugin.
 #
 
-IF(${LUA51_FOUND})
+IF(${org.muhkuh.lua-lua51_FOUND})
 	# Build the Lua module.
 	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_usb_LUA lua romloader_usb.i)
-	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_usb_LUA TARGET_romloader_usb_lib ${LUA_LIBRARIES} ${LIBUSB_LIBRARY} TARGET_plugins_romloader_LIB ${LIBUSB_LDFLAGS})
+	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_usb_LUA TARGET_romloader_usb_lib org.muhkuh.lua-lua51::TARGET_lualib ${LIBUSB_LIBRARY} TARGET_plugins_romloader_LIB ${LIBUSB_LDFLAGS})
 
 	# Set the name of the output file to "romloader_usb".
 	SET_TARGET_PROPERTIES(TARGET_plugins_romloader_romloader_usb_LUA PROPERTIES PREFIX "" OUTPUT_NAME "romloader_usb")
@@ -106,7 +106,7 @@ IF(${LUA51_FOUND})
 		ADD_TEST(NAME romloader_usb_MinGW_DLL_dependencies
 		         COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tests/mingw_dll_dependencies.py -u liblua $<TARGET_FILE:TARGET_plugins_romloader_romloader_usb_LUA>)
 	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
-ENDIF(${LUA51_FOUND})
+ENDIF(${org.muhkuh.lua-lua51_FOUND})
 
 
 #----------------------------------------------------------------------------

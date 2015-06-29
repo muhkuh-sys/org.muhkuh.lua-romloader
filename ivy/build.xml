@@ -1,0 +1,42 @@
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="org.muhkuh.lua-romloader" default="all">
+	<property name="version.required" value="1.9.1" />
+
+
+	<target name="version_check">
+		<antversion property="version.running" />
+		<fail message="FATAL ERROR:  The running Ant version, ${version.running}, is too old.">
+			<condition>
+				<not>
+					<antversion atleast="${version.required}" />
+				</not>
+			</condition>
+		</fail>
+	</target>
+
+
+	<target name="bootstrap_check">
+		<available file="${user.home}/.ant/lib/ivy-2.4.0.jar" property="ivy.present"/>
+	</target>
+	<target name="bootstrap" description="Install the ivy JAR." depends="bootstrap_check" unless="ivy.present">
+		<mkdir dir="${user.home}/.ant/lib"/>
+		<get dest="${user.home}/.ant/lib/ivy-2.4.0.jar" src="http://search.maven.org/remotecontent?filepath=org/apache/ivy/ivy/2.4.0/ivy-2.4.0.jar"/>
+	</target>
+
+
+	<!-- Download all required artifacts to the local 'lib' folder. -->
+	<target name="collect" description="Collect all dependencies in the lib subfolder.">
+		<ivy:settings id="ivy.muhkuh.settings" file="ivysettings.xml" />
+		<ivy:retrieve settingsRef="ivy.muhkuh.settings" pattern="lib/[orgPath]/[artifact]-[revision]" sync="true" />
+		<ivy:artifactproperty name="path.[organisation].[artifact]" value="lib/[orgPath]/[artifact]-[revision]" />
+	</target>
+
+	<!-- This target creates a cmake include file with the ... 
+	
+	TODO: loop over all requirements and add the path + 'windows_amd64' or 'windows_x86' + 'cmake' 
+	
+	-->
+
+	<target name="all" depends="version_check">
+		<ant target="collect" />
+	</target>
+</project>

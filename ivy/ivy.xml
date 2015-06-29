@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- NOTE: This ivy file is only used to retrieve the dependencies of the
+           module. The version number is a dummy here.
+-->
+<ivy-module version="2.0" xmlns:e="http://ant.apache.org/ivy/extra">
+	<info organisation="org.muhkuh.lua"
+	      module="bit"
+	      revision="1" />
+	
+	<publications>
+		<artifact name="bit" ext="zip" type="zip" packaging="zip" />
+	</publications>
+	
+	<dependencies>
+		<dependency org="org.muhkuh.lua" name="lua51" rev="5.1.2"/>
+	</dependencies>
+</ivy-module>
+
