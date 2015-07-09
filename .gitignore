@@ -16,6 +16,9 @@
 /plugins/romloader/uart/netx/targets/
 /plugins/romloader/usb/netx/targets/
 
+# Ignore the Ivy library.
+/ivy/lib/
+
 # Ignore all compiled python modules.
 *.pyc
 
