@@ -21,6 +21,10 @@ IF(${PYTHONLIBS_FOUND})
 	INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIRS})
 ENDIF(${PYTHONLIBS_FOUND})
 
+IF(${LUA51_FOUND})
+	include_directories(${LUA_INCLUDE_DIR})
+ENDIF(${LUA51_FOUND})
+
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
@@ -47,10 +51,10 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQU
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
 
-IF(${org.muhkuh.lua-lua51_FOUND})
+IF(${LUA51_FOUND})
 	# Build the Lua module.
 	SWIG_ADD_MODULE(TARGET_plugins_romloader_LUA lua romloader.i)
-	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_LUA TARGET_plugins_romloader_LIB org.muhkuh.lua-lua51::TARGET_lualib)
+	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_LUA TARGET_plugins_romloader_LIB ${LUA_LIBRARIES})
 
 	# Set the name of the output file to "romloader".
 	SET_TARGET_PROPERTIES(TARGET_plugins_romloader_LUA PROPERTIES PREFIX "" OUTPUT_NAME "romloader")
@@ -69,7 +73,7 @@ IF(${org.muhkuh.lua-lua51_FOUND})
 		ADD_TEST(NAME romloader_MinGW_DLL_dependencies
 		         COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tests/mingw_dll_dependencies.py -u liblua $<TARGET_FILE:TARGET_plugins_romloader_LUA>)
 	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
-ENDIF(${org.muhkuh.lua-lua51_FOUND})
+ENDIF(${LUA51_FOUND})
 
 
 #IF(${PYTHONLIBS_FOUND})

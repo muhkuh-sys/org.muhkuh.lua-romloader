@@ -24,7 +24,7 @@ SET(muhkuh_plugin_interface_HEADERS
 
 ADD_LIBRARY(TARGET_muhkuh_plugin_interface STATIC ${muhkuh_plugin_interface_SOURCES})
 ADD_DEPENDENCIES(TARGET_muhkuh_plugin_interface swigluarun)
-TARGET_LINK_LIBRARIES(TARGET_muhkuh_plugin_interface org.muhkuh.lua-lua51::TARGET_lualib)
+TARGET_LINK_LIBRARIES(TARGET_muhkuh_plugin_interface ${LUA_LIBRARIES})
 
 # Set the name of the output file to "muhkuh_plugin_interface".
 SET_PROPERTY(TARGET TARGET_muhkuh_plugin_interface PROPERTY OUTPUT_NAME "muhkuh_plugin_interface")

@@ -20,9 +20,9 @@ INCLUDE(${SWIG_USE_FILE})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 
-if(${org.muhkuh.lua-lua51_FOUND})
-	include_directories(${org.muhkuh.lua-lua51_INCLUDE_DIR})
-endif(${org.muhkuh.lua-lua51_FOUND})
+if(${LUA51_FOUND})
+	include_directories(${LUA_INCLUDE_DIR})
+endif(${LUA51_FOUND})
 
 
 #-----------------------------------------------------------------------------
@@ -60,10 +60,10 @@ SET_SOURCE_FILES_PROPERTIES(romloader_jtag.i PROPERTIES CPLUSPLUS ON)
 SET_PROPERTY(SOURCE romloader_jtag.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/modules/typemaps)
 
 
-IF(${org.muhkuh.lua-lua51_FOUND})
+IF(${LUA51_FOUND})
 	# Build the Lua module.
 	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_jtag_LUA lua romloader_jtag.i)
-	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_jtag_LUA TARGET_romloader_jtag_lib TARGET_romloader_jtag_openocd_lib org.muhkuh.lua-lua51::TARGET_lualib ${OPENOCD_LIBRARY} ${JIMTCL_LIBRARY} ${LIBUSB_LIBRARY} TARGET_plugins_romloader_LIB ${LIBUSB_LDFLAGS})
+	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_jtag_LUA TARGET_romloader_jtag_lib TARGET_romloader_jtag_openocd_lib ${LUA_LIBRARIES} ${OPENOCD_LIBRARY} ${JIMTCL_LIBRARY} ${LIBUSB_LIBRARY} TARGET_plugins_romloader_LIB ${LIBUSB_LDFLAGS})
 	
 	# Set the name of the output file to "romloader_jtag".
 	SET_TARGET_PROPERTIES(TARGET_plugins_romloader_romloader_jtag_LUA PROPERTIES PREFIX "" OUTPUT_NAME "romloader_jtag")
@@ -85,5 +85,5 @@ IF(${org.muhkuh.lua-lua51_FOUND})
 		ADD_TEST(NAME romloader_jtag_MinGW_DLL_dependencies
 		         COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tests/mingw_dll_dependencies.py -u liblua $<TARGET_FILE:TARGET_plugins_romloader_romloader_jtag_LUA>)
 	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
-ENDIF(${org.muhkuh.lua-lua51_FOUND})
+ENDIF(${LUA51_FOUND})
 

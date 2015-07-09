@@ -12,9 +12,9 @@ if(${PYTHONLIBS_FOUND})
 	include_directories(${PYTHON_INCLUDE_DIRS})
 endif(${PYTHONLIBS_FOUND})
 
-if(${org.muhkuh.lua-lua51_FOUND})
-	include_directories(${org.muhkuh.lua-lua51_INCLUDE_DIR})
-endif(${org.muhkuh.lua-lua51_FOUND})
+if(${LUA51_FOUND})
+	include_directories(${LUA_INCLUDE_DIR})
+endif(${LUA51_FOUND})
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
@@ -105,10 +105,10 @@ ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STR
 # Build the lua plugin.
 #
 
-IF(${org.muhkuh.lua-lua51_FOUND})
+IF(${LUA51_FOUND})
 	# Build the Lua module.
 	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_uart_LUA lua romloader_uart.i)
-	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_uart_LUA TARGET_romloader_uart_lib org.muhkuh.lua-lua51::TARGET_lualib TARGET_plugins_romloader_LIB)
+	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_uart_LUA TARGET_romloader_uart_lib ${LUA_LIBRARIES} TARGET_plugins_romloader_LIB)
 
 	# Set the name of the output file to "romloader_uart".
 	SET_TARGET_PROPERTIES(TARGET_plugins_romloader_romloader_uart_LUA PROPERTIES PREFIX "" OUTPUT_NAME "romloader_uart")
@@ -127,7 +127,7 @@ IF(${org.muhkuh.lua-lua51_FOUND})
 		ADD_TEST(NAME romloader_uart_MinGW_DLL_dependencies
 		         COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tests/mingw_dll_dependencies.py -u liblua $<TARGET_FILE:TARGET_plugins_romloader_romloader_uart_LUA>)
 	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
-ENDIF(${org.muhkuh.lua-lua51_FOUND})
+ENDIF(${LUA51_FOUND})
 
 
 #----------------------------------------------------------------------------
