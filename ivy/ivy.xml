@@ -13,7 +13,7 @@
 	</publications>
 	
 	<dependencies>
-		<dependency org="org.muhkuh.lua" name="lua51" rev="5.1.2"/>
+		<dependency org="org.muhkuh.lua" name="lua51" rev="5.1.3"/>
 	</dependencies>
 </ivy-module>
 
