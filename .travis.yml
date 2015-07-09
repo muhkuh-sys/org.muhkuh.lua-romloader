@@ -3,7 +3,7 @@ language: c
 
 env:
   global:
-    - secure: "LuzdXXY9Q1fU4HxqwcG4vO5QLb2c3FVKe4L8yCZ24hJLIuB+ClRlQYHQeH9CPZiYR72Q2rNGuBlFoSRgPxvQ6bC4QdevdWVVWUdEkyfpOza7Scu2OTtChhDbMmLAeDEmU4ef2IwZz1FvKUuuDDwdF+EpFZyd0yyGXGt1RuBvw6w="
+    - secure: "AEeAu1kXvyC+fAubd+4pOaxzku4TA/p3nSl5Y8YB0xlvvwRY1afaeCB3qvgYMz8cH6Ii83KdScRcCDqu/xCiAe+7Li9b/ugvmJ98QN9rug1YEKTl6DDsLUQemB79H+D6PS8/7tDd51S6ffOQoNGfpuZWqu5qnsRtPD7XGGPFbKM="
     - PATH=/opt/mingw-w64-i686/bin:/opt/mingw-w64-x86_64/bin:/tmp/apache-ant-1.9.5/bin:${PATH}
 
 
