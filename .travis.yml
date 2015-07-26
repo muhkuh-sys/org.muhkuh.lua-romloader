@@ -14,7 +14,6 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get --assume-yes install mingw-w64-mbs
   - sudo apt-get --assume-yes install swig3 cmake3
-  - sudo apt-get --assume-yes install p7zip-full
   - sudo apt-get --assume-yes install python-pip python-virtualenv
   - wget ftp://ftp.fu-berlin.de/unix/www/apache/ant/binaries/apache-ant-1.9.5-bin.tar.bz2 -O /tmp/apache-ant-1.9.5-bin.tar.bz2
   - tar --directory /tmp --extract --bzip2 --file /tmp/apache-ant-1.9.5-bin.tar.bz2
@@ -38,8 +37,8 @@ deploy:
   api_key:
     secure: "O5aPC2wB22pQ7dbVdy5dhCpWovCDB6oaat3vZBh7SyPDCSPWx5DO67jBiR/+tAMWODmLt0T4xTLXCaZlNfqUQlCDQTzJv7FvX1pLCq/nhNRhTQ1HVkmWsQY1GTHJ4qHPjhXlvPFDQkQ4uQQMArpde45w+Qi3qfl1N5/IElCrDT8="
   file:
-    -
-    -
+    - build/ivy.xml
+    - build/lua51-romloader.zip
   skip_cleanup: true
   on:
     repo: muhkuh-sys/org.muhkuh.lua-lua51-romloader
