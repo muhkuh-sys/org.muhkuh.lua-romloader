@@ -43,5 +43,4 @@ deploy:
   skip_cleanup: true
   on:
     repo: muhkuh-sys/org.muhkuh.lua-lua51-romloader
-    branch: plugin_interface_v2
     tags: true
