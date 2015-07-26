@@ -29,6 +29,20 @@ script:
   - ./.build.sh
 
 
-# Deploy the artifact to Bintray after success.
 after_success:
   - python installer/ivy/deploy.py build/artifacts/artifacts_lua_plugin_romloader.xml
+
+
+# Deploy the artifacts to GitHub.
+deploy:
+  provider: releases
+  api_key:
+    secure: "O5aPC2wB22pQ7dbVdy5dhCpWovCDB6oaat3vZBh7SyPDCSPWx5DO67jBiR/+tAMWODmLt0T4xTLXCaZlNfqUQlCDQTzJv7FvX1pLCq/nhNRhTQ1HVkmWsQY1GTHJ4qHPjhXlvPFDQkQ4uQQMArpde45w+Qi3qfl1N5/IElCrDT8="
+  file:
+    -
+    -
+  skip_cleanup: true
+  on:
+    repo: muhkuh-sys/org.muhkuh.lua-lua51-romloader
+    branch: plugin_interface_v2
+    tags: true
