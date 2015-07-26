@@ -58,5 +58,6 @@ mkdir build
 pushd build
 cmake ../installer/ivy
 make
+make install
 popd
 
