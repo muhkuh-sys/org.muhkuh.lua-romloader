@@ -3,7 +3,7 @@ language: c
 
 env:
   global:
-    - secure: "AEeAu1kXvyC+fAubd+4pOaxzku4TA/p3nSl5Y8YB0xlvvwRY1afaeCB3qvgYMz8cH6Ii83KdScRcCDqu/xCiAe+7Li9b/ugvmJ98QN9rug1YEKTl6DDsLUQemB79H+D6PS8/7tDd51S6ffOQoNGfpuZWqu5qnsRtPD7XGGPFbKM="
+    - secure: "hfvItzvbB61BCgB+R7pRQVCtufFJHHJaGPrnoj5mSoknYR5JEGLfMRZB9OiKEHqh4i5PUVDdF59sT+vii6L/Eycr/W6kYFhLdoMPTatY2elT5cg97zn1Mt/8N5swfvT7fU2BS2CTk7Gb/dIgH1gNL8ngrxQ4QKBF7xFFv6qnDB8="
     - PATH=/opt/mingw-w64-i686/bin:/opt/mingw-w64-x86_64/bin:/tmp/apache-ant-1.9.5/bin:${PATH}
 
 
@@ -12,7 +12,6 @@ before_install:
   - curl http://download.opensuse.org/repositories/home:/doc_bacardi/xUbuntu_12.04/Release.key | sudo apt-key add -
   - echo "deb http://download.opensuse.org/repositories/home:/doc_bacardi/xUbuntu_12.04 ./" | sudo tee -a /etc/apt/sources.list
   - sudo apt-get update -qq
-  - sudo apt-get --assume-yes install lua5.1 liblua5.1-dev
   - sudo apt-get --assume-yes install mingw-w64-mbs
   - sudo apt-get --assume-yes install gcc-multilib g++-multilib make libudev-dev libreadline6-dev
   - sudo apt-get --assume-yes install swig3 cmake3
@@ -30,5 +29,6 @@ script:
   - ./.build.sh
 
 
+# Deploy the artifact to Bintray after success.
 after_success:
   - python installer/ivy/deploy.py build/artifacts/artifacts_lua_plugin_romloader.xml
