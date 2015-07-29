@@ -40,7 +40,7 @@ ExternalProject_Add(TARGET_openocd
                     URL ${CMAKE_CURRENT_SOURCE_DIR}/openocd-0.8.0-dev.tar.bz2
                     PATCH_COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/templates ${CMAKE_CURRENT_BINARY_DIR}/openocd-0.8.0-dev/src/TARGET_openocd
                     CMAKE_ARGS ${OPENOCD_CMAKE_ARGS}
-                    INSTALL_COMMAND make install DESTDIR=${CMAKE_CURRENT_BINARY_DIR}/openocd-0.8.0-dev
+                    INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install DESTDIR=${CMAKE_CURRENT_BINARY_DIR}/openocd-0.8.0-dev
 )
 ADD_DEPENDENCIES(TARGET_openocd TARGET_libusb)
 

@@ -44,7 +44,7 @@ ExternalProject_Add(TARGET_libusb
                     URL ${CMAKE_CURRENT_SOURCE_DIR}/libusb-1.0.18.tar.bz2
                     PATCH_COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/templates ${CMAKE_CURRENT_BINARY_DIR}/libusb-1.0.18/src/TARGET_libusb
                     CMAKE_ARGS ${LIBUSB_CMAKE_ARGS}
-                    INSTALL_COMMAND make install DESTDIR=${CMAKE_CURRENT_BINARY_DIR}/libusb-1.0.18
+                    INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install DESTDIR=${CMAKE_CURRENT_BINARY_DIR}/libusb-1.0.18
 )
 
 

@@ -30,7 +30,7 @@ LIST(APPEND PACKAGE_CMAKE_ARGS "-DARTIFACT_LISTS_OUTPUT=${CMAKE_CURRENT_BINARY_D
 ExternalProject_Add(TARGET_lua_plugin_romloader
                     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lua_plugin_romloader
                     CMAKE_ARGS ${PACKAGE_CMAKE_ARGS}
-                    INSTALL_COMMAND make package
+                    INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} package
 )
 
 # Create a copy of the artifacts without a version number in the filename.
