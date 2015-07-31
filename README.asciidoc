@@ -1,0 +1,28 @@
+org.muhkuh.lua-lua51-romloader
+==============================
+
+== Status
+
+TravisCI: image:https://travis-ci.org/muhkuh-sys/org.muhkuh.lua-lua51-romloader.svg?branch=master["TravisCI build status", link="https://travis-ci.org/muhkuh-sys/org.muhkuh.lua-lua51-romloader"]
+
+AppVeyor: image:https://ci.appveyor.com/api/projects/status/github/muhkuh-sys/org.muhkuh.lua-lua51-romloader?svg=true["AppVeyor build status", link="https://ci.appveyor.com/project/docbacardi/org-muhkuh-lua-lua51-romloader"]
+
+
+== About
+
+The romloader plugins provide access to netX based hardware to LUA scripts.
+
+== Infrastructure
+
+This chapter describes the current infrastructure of the project.
+
+The source code is hosted on GitHub: https://github.com/muhkuh-sys/org.muhkuh.lua-lua51-romloader
+
+Issues are collected here: https://github.com/muhkuh-sys/org.muhkuh.lua-lua51-romloader/issues
+
+Each push to the GitHub repository triggers a build on TravisCI using a Ubuntu 12.04 64bit VM: https://travis-ci.org/muhkuh-sys/org.muhkuh.lua-lua51-romloader . Another build is triggered on AppVeyor running on 32bit and 64bit Windows: https://ci.appveyor.com/project/docbacardi/org-muhkuh-lua-lua51-romloader .
+
+The build results from TravisCI are copied after auccess to Bintray: https://bintray.com/muhkuh/Muhkuh/lua51-romloader/view
+Please note that this is done for each build, and not only tagged ones.
+
+Build results from a tag are released on GitHub: https://github.com/muhkuh-sys/org.muhkuh.lua-lua51-romloader/releases
