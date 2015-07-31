@@ -84,10 +84,6 @@ start:
 	str     r2,     [r0, #0x0C]    /* Stop and disable DMA */
 	str     r2,     [r0, #0x10]
 	str     r2,     [r1, #0x30]    /* Disable DMA controller */
-
-
-#elif ASIC_TYP==500 || ASIC_TYP==100
-	@ netX500 and netX100 need no special init.
 #else
 #	error "Unknown ASIC_TYP"
 #endif

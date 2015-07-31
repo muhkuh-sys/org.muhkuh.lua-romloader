@@ -24,15 +24,16 @@
 
 /* Load- and entry points for the bootstrap firmware. */
 #include "netx/targets/uartmon_netx50_bootstrap_run.h"
-#include "netx/targets/uartmon_netx500_bootstrap_run.h"
 
 /* Data of the bootstrap firmware. */
 #include "netx/targets/uartmon_netx50_bootstrap.h"
-#include "netx/targets/uartmon_netx500_bootstrap.h"
 
 /* Data of the monitor firmware. */
 #include "netx/targets/uartmon_netx50_monitor.h"
 #include "netx/targets/uartmon_netx500_monitor.h"
+
+/* The load and execute address of the netX500 monitor. */
+#include "netx/targets/uartmon_netx500_monitor_run.h"
 
 
 #ifdef _MSC_VER
@@ -270,7 +271,7 @@ bool romloader_uart_read_functinoid_aboot::netx50_load_code(const uint8_t *pucNe
 }
 
 
-bool romloader_uart_read_functinoid_aboot::netx500_load_code(const uint8_t *pucNetxCode, size_t sizNetxCode)
+bool romloader_uart_read_functinoid_aboot::netx500_load_code(const uint8_t *pucNetxCode, size_t sizNetxCode, uint32_t ulLoadAddress)
 {
 	uint16_t usCrc;
 	size_t sizCnt;
@@ -302,9 +303,8 @@ bool romloader_uart_read_functinoid_aboot::netx500_load_code(const uint8_t *pucN
 	}
 
 	/* Construct the command. */
-	sizLine = snprintf(uBuffer.ac, sizeof(uBuffer), "LOAD %lx %lx %x 10000\n", BOOTSTRAP_DATA_START_NETX500, sizNetxCode, usCrc);
+	sizLine = snprintf(uBuffer.ac, sizeof(uBuffer), "LOAD %x %lx %x 10000\n", ulLoadAddress, sizNetxCode, usCrc);
 	printf("Load command:\n");
-	hexdump(uBuffer.auc, sizLine);
 	if( m_ptDevice->SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
 	{
 		fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
@@ -386,7 +386,7 @@ bool romloader_uart_read_functinoid_aboot::netx50_start_code(void)
 }
 
 
-bool romloader_uart_read_functinoid_aboot::netx500_start_code(void)
+bool romloader_uart_read_functinoid_aboot::netx500_start_code(uint32_t ulExecuteAddress)
 {
 	union
 	{
@@ -402,9 +402,8 @@ bool romloader_uart_read_functinoid_aboot::netx500_start_code(void)
 	bool fOk;
 	uint32_t ulExecAddress;
 
-
 	/* Construct the command. */
-	sizLine = sprintf(uBuffer.ac, "CALL %lx\n", BOOTSTRAP_EXEC_NETX500);
+	sizLine = sprintf(uBuffer.ac, "CALL %x\n", ulExecuteAddress);
 	printf("Load command: '%s'\n", uBuffer.ac);
 
 	if( m_ptDevice->SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
@@ -469,20 +468,14 @@ int romloader_uart_read_functinoid_aboot::update_device(ROMLOADER_CHIPTYP tChipt
 	case ROMLOADER_CHIPTYP_NETX100:
 		fprintf(stderr, "update netx500.\n");
 
-		fOk = netx500_load_code(auc_uartmon_netx500_bootstrap, sizeof(auc_uartmon_netx500_bootstrap));
+		fOk = netx500_load_code(auc_uartmon_netx500_monitor, sizeof(auc_uartmon_netx500_monitor), MONITOR_DATA_START_NETX500);
+		if( fOk==true )
 		{
-			fOk = netx500_start_code();
+			fOk = netx500_start_code(MONITOR_EXEC_NETX500);
 			if( fOk==true )
 			{
-				if( m_ptDevice->SendRaw(auc_uartmon_netx500_monitor, sizeof(auc_uartmon_netx500_monitor), 500)!=sizeof(auc_uartmon_netx500_monitor) )
-				{
-					fprintf(stderr, "%s(%p): Failed to send command!\n", m_pcPortName, this);
-				}
-				else
-				{
-					/* The ROM code is now HBOOT_SOFT */
-					iResult = 0;
-				}
+				/* The ROM code is now HBOOT_SOFT */
+				iResult = 0;
 			}
 		}
 		break;

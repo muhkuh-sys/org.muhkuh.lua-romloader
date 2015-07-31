@@ -39,9 +39,9 @@ private:
 	void hexdump(const uint8_t *pucData, uint32_t ulSize);
 
 	bool netx50_load_code(const uint8_t *pucNetxCode, size_t sizNetxCode);
-	bool netx500_load_code(const uint8_t *pucNetxCode, size_t sizNetxCode);
+	bool netx500_load_code(const uint8_t *pucNetxCode, size_t sizNetxCode, uint32_t ulLoadAddress);
 	bool netx50_start_code(void);
-	bool netx500_start_code(void);
+	bool netx500_start_code(uint32_t ulExecuteAddress);
 
 
 	romloader_uart_device *m_ptDevice;

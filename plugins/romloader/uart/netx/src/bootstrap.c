@@ -22,12 +22,7 @@
 #include <string.h>
 #include "bootstrap_serial_vectors.h"
 
-#if ASIC_TYP==500
-#       include "uartmon_netx500_monitor_run.h"
-#       define MONITOR_DATA_START MONITOR_DATA_START_NETX500
-#       define MONITOR_DATA_END   MONITOR_DATA_END_NETX500
-#       define MONITOR_EXEC       MONITOR_EXEC_NETX500
-#elif ASIC_TYP==50
+#if ASIC_TYP==50
 #       include "uartmon_netx50_monitor_run.h"
 #       define MONITOR_DATA_START MONITOR_DATA_START_NETX50
 #       define MONITOR_DATA_END   MONITOR_DATA_END_NETX50
@@ -50,32 +45,6 @@ void bootstrap(void)
 	unsigned char *pucCnt;
 	unsigned char *pucEnd;
 
-
-#if ASIC_TYP==100 || ASIC_TYP==500
-	typedef void (*PFN_SERIAL_V1_INIT_T)(void);
-
-	/* NOTE: On netX500 and netX100 the ROM code disables the UART before
-	 * the call and re-enables it when the call returns. This means we have
-	 * to initialize the UART here.
-	 */
-
-	/* Re-initialize the ROM code UART routines, they are deactivated right
-	 * before the 'CALL' command enters the user's code.
-	 * 
-	 * NOTE: the routine is thumb-code, bit #0 of the address must be set
-	 * to switch the mode.
-	 */
-	((PFN_SERIAL_V1_INIT_T)(0x002015f4|1))();
-
-	/* Set the vectors to the ROM code.
-	 * NOTE: all routines are thumb-code, bit #0 of the address must be set
-	 * to switch the mode.
-	 */
-	tSerialVectors.fn.fnGet   = (PFN_SERIAL_GET_T)(0x00201664|1);
-	tSerialVectors.fn.fnPut   = (PFN_SERIAL_PUT_T)(0x00201646|1);
-	tSerialVectors.fn.fnPeek  = (PFN_SERIAL_PEEK_T)(0x002016b0|1);
-	tSerialVectors.fn.fnFlush = (PFN_SERIAL_FLUSH_T)(0x002016ba|1);
-#endif
 
 	/* Receive the complete monitor code. */
 	pucCnt = (unsigned char*)MONITOR_DATA_START;
