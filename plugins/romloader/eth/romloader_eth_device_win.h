@@ -27,6 +27,17 @@
 
 #include "romloader_eth_device.h"
 
+typedef struct
+{
+	/* pointer to references array */
+	char **ppcRef;
+
+	/* capacity of the references array*/
+	size_t sizRefMax;
+
+	/* number of used entries */
+	size_t sizRefCnt;
+} ROMLOADER_ETH_REFLIST_T;
 
 class romloader_eth_device_win : public romloader_eth_device
 {
@@ -43,6 +54,7 @@ public:
 	static size_t ScanForServers(char ***pppcPortNames);
 
 private:
+	static void ScanAdapter(ROMLOADER_ETH_REFLIST_T* ptRefList, unsigned long ulInetAddr);
 	bool open_by_addr(unsigned long ulServerIp);
 
 	SOCKET m_tHbootServer_Socket;

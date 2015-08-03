@@ -33,7 +33,7 @@ ELSE(UNIX)
 	IF(WIN32)
 		SET(romloader_eth_platform_SOURCES romloader_eth_device_win.cpp)
 		SET(romloader_eth_platform_HEADERS romloader_eth_device_win.h)
-		SET(romloader_eth_platform_LIBS ws2_32)
+		SET(romloader_eth_platform_LIBS ws2_32 iphlpapi)
 	ENDIF(WIN32)
 ENDIF(UNIX)
 
