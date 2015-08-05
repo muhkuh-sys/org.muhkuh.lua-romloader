@@ -17,7 +17,7 @@ else
 	GCC32_PREFIX=i686-w64-mingw32-
 	GCC64_PREFIX=x86_64-w64-mingw32-
 fi
-exit
+
 #-----------------------------------------------------------------------------
 #
 # Get the build requirements with ivy.
