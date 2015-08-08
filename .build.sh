@@ -1,10 +1,16 @@
 #! /bin/bash
 set -e
 
-# The following tools must be on the path:
-# ant
-# GCC (MinGW/TDM-GCC)
-# SWIG
+# This batch file can run in 2 environments:
+#
+# 1) a linux host with a MinGW crosscompiler
+# 2) a windows host with a MSYS environment and a MinGW compiler.
+#
+# The following tools must be on the path for both environments:
+#
+#  * ant
+#  * MinGW
+#  * SWIG
 
 if [[ "${OSTYPE}" == "msys" ]] ; then
 	echo Configuring for Windows/MSYS/TDM-GCC
@@ -13,7 +19,7 @@ if [[ "${OSTYPE}" == "msys" ]] ; then
 	GCC64_PREFIX=
 else
 	echo Configuring for Linux
-	CMAKE_GEN=MinGW\ Makefiles
+	CMAKE_GEN=Unix\ Makefiles
 	GCC32_PREFIX=i686-w64-mingw32-
 	GCC64_PREFIX=x86_64-w64-mingw32-
 fi
