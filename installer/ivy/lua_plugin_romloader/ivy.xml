@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <ivy-module version="2.0">
-	<info organisation="org.muhkuh.lua" module="lua51-romloader" revision="${VERSION_FULL}">
+	<info organisation="org.muhkuh.lua"
+	      module="lua51-romloader"
+	      revision="${VERSION_FULL}"
+	      e:vcs-id="${PROJECT_VERSION_VCS}">
 		<license name="GPL-2.0"/>
 		<ivyauthor name="Muhkuh team" url="https://github.com/muhkuh-sys" />
 		<description>
