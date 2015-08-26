@@ -15,6 +15,6 @@
 		<artifact ext="zip" type="zip" packaging="zip" />
 	</publications>
 	<dependencies>
-		<dependency org="org.muhkuh.lua" name="lua51" rev="5.1"/>
+		<dependency org="org.muhkuh.lua" name="lua51" rev="5.1.4"/>
 	</dependencies>
 </ivy-module>
