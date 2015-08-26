@@ -1,6 +1,6 @@
-<project xmlns:ivy="antlib:org.apache.ivy.ant" name="org.muhkuh.lua-romloader" default="all">
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="org.muhkuh.lua-lua51-romloader" default="all">
 	<property name="version.required" value="1.9.1" />
-
+	<property name="mbs.settings.path" location="." />
 
 	<target name="version_check">
 		<antversion property="version.running" />
@@ -25,11 +25,20 @@
 
 	<!-- Download all required artifacts to the local 'lib' folder. -->
 	<target name="collect" description="Collect all dependencies in the lib subfolder.">
-		<ivy:settings id="ivy.muhkuh.settings" file="ivysettings.xml" />
-		<ivy:retrieve settingsRef="ivy.muhkuh.settings" pattern="lib/[orgPath]/[artifact]-[revision]" sync="true" />
-		<ivy:artifactproperty name="path.[organisation].[artifact]" value="lib/[orgPath]/[artifact]-[revision]" />
+		<ivy:settings id="ivy.muhkuh.settings" file="${mbs.settings.path}/ivysettings.xml" />
+		<ivy:retrieve settingsRef="ivy.muhkuh.settings" pattern="${mbs.settings.path}/lib/[orgPath]/[artifact]-[revision]" sync="true" />
+		<ivy:artifactproperty name="path.[organisation].[artifact]" value="${mbs.settings.path}/lib/[orgPath]/[artifact]-[revision]" />
 	</target>
 
+	<!-- Create a CMAKE include file with all path properties. -->
+	<target name="cmakeinclude" description="Create a CMAKE include file with all path properties." depends="collect">
+		<!-- Dump all properties in a simple XML file. -->
+		<echoproperties destfile="path.properties" prefix="path." format="xml"/>
+		<!-- Convert the XML property file with XSLT to a CMAKE include file. -->
+		<xslt in="path.properties" out="ant_paths.cmake" style="parameters.xsl"/>
+	</target>
+	
+	
 	<!-- This target creates a cmake include file with the ... 
 	
 	TODO: loop over all requirements and add the path + 'windows_amd64' or 'windows_x86' + 'cmake' 
@@ -37,6 +46,6 @@
 	-->
 
 	<target name="all" depends="version_check">
-		<ant target="collect" />
+		<ant target="cmakeinclude" />
 	</target>
 </project>

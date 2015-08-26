@@ -19,6 +19,10 @@
 # Ignore the Ivy library.
 /ivy/lib/
 
+# Ignore the Ivy path list.
+/ivy/ant_paths.cmake
+/ivy/path.properties
+
 # Ignore all compiled python modules.
 *.pyc
 

@@ -13,6 +13,7 @@ INCLUDE(cmake/muhkuh_version.cmake)
 # Set some installation folders.
 INCLUDE(cmake/muhkuh_installation_folders.cmake)
 
+
 #----------------------------------------------------------------------------
 #
 # Find all packages.
@@ -26,6 +27,9 @@ FIND_PACKAGE(PythonInterp REQUIRED)
 
 # TODO: Show a summary with FeatureSummary .
 
+
+# Include the location of the dependencies.
+INCLUDE(ivy/ant_paths.cmake)
 
 # Select the LUA version.
 INCLUDE(cmake/muhkuh_lua.cmake)
