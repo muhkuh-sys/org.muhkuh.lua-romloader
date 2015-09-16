@@ -40,24 +40,24 @@ IF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 ENDIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
 ExternalProject_Add(TARGET_libusb
-                    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libusb-1.0.18
-                    URL ${CMAKE_CURRENT_SOURCE_DIR}/libusb-1.0.18.tar.bz2
-                    PATCH_COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/templates ${CMAKE_CURRENT_BINARY_DIR}/libusb-1.0.18/src/TARGET_libusb
+                    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libusb-1.0.20
+                    URL ${CMAKE_CURRENT_SOURCE_DIR}/libusb-1.0.20.tar.bz2
+                    PATCH_COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/templates ${CMAKE_CURRENT_BINARY_DIR}/libusb-1.0.20/src/TARGET_libusb
                     CMAKE_ARGS ${LIBUSB_CMAKE_ARGS}
-                    INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install DESTDIR=${CMAKE_CURRENT_BINARY_DIR}/libusb-1.0.18
+                    INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install DESTDIR=${CMAKE_CURRENT_BINARY_DIR}/libusb-1.0.20
 )
 
 
 
 # 3) Provide all variables for the build.
-SET(LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/libusb-1.0.18/install/lib/libusb.a)
+SET(LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/libusb-1.0.20/install/lib/libusb.a)
 
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 	SET(LDFLAGS "-pthread -lrt -ludev")
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
 SET(DEFINES -DROMLOADER_USB_LIBUSB_VERSION=1)
-SET(INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/libusb-1.0.18/install/include/libusb-1.0)
+SET(INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/libusb-1.0.20/install/include/libusb-1.0)
 
 #----------------------------------------------------------------------------
 #
