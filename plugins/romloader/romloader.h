@@ -81,6 +81,8 @@ public:
 // *** lua interface end ***
 
 protected:
+	/* Do not include this into the SWIG bindings. */
+#ifndef SWIG
 	typedef struct
 	{
 		uint32_t ulResetVector;
@@ -89,6 +91,7 @@ protected:
 		ROMLOADER_CHIPTYP tChiptyp;
 		const char *pcChiptypName;
 	} ROMLOADER_RESET_ID_T;
+#endif
 
 
 	bool detect_chiptyp(romloader_read_functinoid *ptFn);
@@ -102,7 +105,10 @@ private:
 
 	bool callback_common(SWIGLUA_REF *ptLuaFn, long lCallbackUserData, int iOldTopOfStack);
 
+	/* Do not include this into the SWIG bindings. */
+#ifndef SWIG
 	static const ROMLOADER_RESET_ID_T atResIds[7];
+#endif
 };
 
 /*-----------------------------------*/
