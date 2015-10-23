@@ -1,0 +1,52 @@
+# -*- coding: utf-8 -*-
+#-------------------------------------------------------------------------#
+#   Copyright (C) 2011 by Christoph Thelen                                #
+#   doc_bacardi@users.sourceforge.net                                     #
+#                                                                         #
+#   This program is free software; you can redistribute it and/or modify  #
+#   it under the terms of the GNU General Public License as published by  #
+#   the Free Software Foundation; either version 2 of the License, or     #
+#   (at your option) any later version.                                   #
+#                                                                         #
+#   This program is distributed in the hope that it will be useful,       #
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
+#   GNU General Public License for more details.                          #
+#                                                                         #
+#   You should have received a copy of the GNU General Public License     #
+#   along with this program; if not, write to the                         #
+#   Free Software Foundation, Inc.,                                       #
+#   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             #
+#-------------------------------------------------------------------------#
+
+
+#----------------------------------------------------------------------------
+#
+# Import the default compiler environments and the platform libraries.
+#
+Import('env_default', 'env_netx500_default',  'env_netx56_default', 'env_netx50_default', 'env_netx10_default')
+Import('env_netx500_thumb_default', 'env_netx56_thumb_default', 'env_netx50_thumb_default', 'env_netx10_thumb_default')
+Import('platform_lib_netx500', 'platform_lib_netx56', 'platform_lib_netx50', 'platform_lib_netx10')
+Import('libmi_netx500', 'libmi_netx56', 'libmi_netx50', 'libmi_netx10')
+
+
+#----------------------------------------------------------------------------
+# This is the list of sources. The elements must be separated with whitespace
+# (i.e. spaces, tabs, newlines). The amount of whitespace does not matter.
+sources_monitor = """
+	src/init_netx_test.S
+	src/main.c
+"""
+
+#----------------------------------------------------------------------------
+#
+# Build the netX56 files.
+#
+env_netx56_monitor = env_netx56_default.Clone()
+env_netx56_monitor.Append(CPPPATH = ['src', '../../machine_interface/netx/src', '#platform/src', '#platform/src/lib'])
+env_netx56_monitor.Replace(LDFILE = File('src/netx56/netx56.ld'))
+src_netx56_monitor = env_netx56_monitor.SetBuildPath('targets/netx56_monitor', 'src', sources_monitor)
+elf_netx56_monitor = env_netx56_monitor.Elf('targets/dpmmon_netx56_monitor.elf', src_netx56_monitor + platform_lib_netx56 + libmi_netx56)
+bin_netx56_monitor = env_netx56_monitor.ObjCopy('targets/dpmmon_netx56_monitor.bin', elf_netx56_monitor)
+arr_netx56_monitor = env_netx56_monitor.DataArray('targets/dpmmon_netx56_monitor.c', bin_netx56_monitor, DATAARRAY_NAME='auc_dpmmon_netx56_monitor')
+sym_netx56_monitor = env_netx56_monitor.GccSymbolTemplate('targets/dpmmon_netx56_monitor_run.h', elf_netx56_monitor, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/dpmmon_netx56_monitor_run.h'))
