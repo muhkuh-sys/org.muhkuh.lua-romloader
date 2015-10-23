@@ -12,6 +12,7 @@
 /build_windows64/
 /compile/
 /plugins/romloader/_test/testcode/targets/
+/plugins/romloader/dpm/netx/targets/
 /plugins/romloader/machine_interface/netx/targets/
 /plugins/romloader/uart/netx/targets/
 /plugins/romloader/usb/netx/targets/
