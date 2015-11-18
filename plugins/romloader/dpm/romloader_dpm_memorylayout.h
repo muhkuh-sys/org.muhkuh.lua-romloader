@@ -13,7 +13,7 @@
 #define NETX56_DPM_NETX_TO_HOST_BUFFERSIZE     0x0200
 #define NETX56_DPM_HOST_TO_NETX_BUFFERSIZE     0x0400
 
-
+#define NETX56_BOOT_ID_ROM                     0x4c42584e
 
 
 typedef struct NX56_DPM_AREA_Ttag

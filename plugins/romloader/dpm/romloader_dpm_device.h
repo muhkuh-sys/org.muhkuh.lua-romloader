@@ -31,6 +31,9 @@ public:
 	romloader_dpm_device(void);
 	virtual ~romloader_dpm_device(void);
 
+	virtual int Open(void) = 0;
+	virtual void Close(void) = 0;
+
 	virtual int dpm_read08(uint32_t ulDpmAddress, uint8_t *pucValue) = 0;
 	virtual int dpm_read16(uint32_t ulDpmAddress, uint16_t *pusValue) = 0;
 	virtual int dpm_read32(uint32_t ulDpmAddress, uint32_t *pulValue) = 0;
@@ -72,7 +75,7 @@ protected:
 
 private:
 	static const DPM_DETECT_ELEMENT_T atDpmDetectElements_netx56[2];
-	static const DPM_DETECT_LIST_T atDpmDetectList[2];
+	static const DPM_DETECT_LIST_T atDpmDetectList[1];
 };
 
 

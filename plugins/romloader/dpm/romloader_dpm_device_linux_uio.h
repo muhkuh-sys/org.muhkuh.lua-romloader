@@ -28,10 +28,11 @@
 #include <stddef.h>
 
 
-class romloader_dpm_device_linux_uio : romloader_dpm_device
+class romloader_dpm_device_linux_uio : public romloader_dpm_device
 {
 public:
 	romloader_dpm_device_linux_uio(unsigned int uiUioDevice);
+	romloader_dpm_device_linux_uio(const char *pcDeviceName);
 	virtual ~romloader_dpm_device_linux_uio(void);
 
 	int Open(void);
@@ -48,6 +49,8 @@ public:
 	virtual int dpm_write_area(uint32_t ulDpmAddress, const uint8_t *pucData, size_t sizData);
 
 	static size_t ScanForDevices(char ***pppcPortNames);
+
+	static int IsMyDeviceName(const char *pcDeviceName);
 
 protected:
 
@@ -85,6 +88,8 @@ private:
 	static size_t scan_devices(char **ppcDevices, size_t sizDevicesMax);
 
 	static const NETX_UIO_TYP_T acKnownNetxUioTypes[1];
+
+	static const char *s_pcDeviceNamePattern;
 };
 
 

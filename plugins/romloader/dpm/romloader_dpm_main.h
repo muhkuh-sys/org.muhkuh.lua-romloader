@@ -22,6 +22,7 @@
 #include "../romloader.h"
 
 #include "../machine_interface/netx/src/monitor_commands.h"
+#include "romloader_dpm_transfer.h"
 
 
 #ifndef __ROMLOADER_DPM_MAIN_H__
@@ -70,6 +71,9 @@ public:
 
 private:
 	size_t m_sizMaxPacketSizeHost;
+
+	char *m_pcDeviceName;
+	romloader_dpm_transfer *m_ptTransfer;
 };
 
 /*-----------------------------------*/

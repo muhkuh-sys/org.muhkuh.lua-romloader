@@ -23,6 +23,7 @@
 
 #include "romloader_dpm_main.h"
 #include "romloader_dpm_device_linux_uio.h"
+#include "romloader_dpm_transfer_netx56.h"
 
 
 /*-------------------------------------*/
@@ -113,13 +114,21 @@ romloader_dpm *romloader_dpm_provider::ClaimInterface(const muhkuh_plugin_refere
 		{
 			fprintf(stderr, "%s(%p): claim_interface(): missing name!\n", m_pcPluginId, this);
 		}
+		/* NOTE: this is just a general test if the device is some kind
+		 *       of DPM thing. A more closer look is done in the
+		 *       romloader_dpm class.
+		 */
 		else if( sscanf(pcName, m_pcPluginNamePattern, acDevice)!=1 )
 		{
 			fprintf(stderr, "%s(%p): claim_interface(): invalid name: %s\n", m_pcPluginId, this, pcName);
 		}
 		else
 		{
-			ptPlugin = new romloader_dpm(pcName, m_pcPluginId, this, acDevice);
+			/* NOTE: pass the complete name (i.e. pass "pcName" and
+			 *       not "acDevice". It is used to distinguish the
+			 *       transport.
+			 */
+			ptPlugin = new romloader_dpm(pcName, m_pcPluginId, this, pcName);
 			printf("%s(%p): claim_interface(): claimed interface %s.\n", m_pcPluginId, this, pcName);
 		}
 	}
@@ -171,40 +180,151 @@ bool romloader_dpm_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 
 romloader_dpm::romloader_dpm(const char *pcName, const char *pcTyp, romloader_dpm_provider *ptProvider, const char *pcDeviceName)
  : romloader(pcName, pcTyp, ptProvider)
+ , m_pcDeviceName(NULL)
+ , m_ptTransfer(NULL)
 {
 	printf("%s(%p): created in romloader_dpm\n", m_pcName, this);
+
+	m_pcDeviceName = strdup(pcDeviceName);
 }
+
 
 
 romloader_dpm::~romloader_dpm(void)
 {
 	printf("%s(%p): deleted in romloader_dpm\n", m_pcName, this);
+
+	if( m_pcDeviceName!=NULL )
+	{
+		free(m_pcDeviceName);
+	}
+
+	if( m_ptTransfer!=NULL )
+	{
+		delete m_ptTransfer;
+	}
 }
 
 
 
 void romloader_dpm::Connect(lua_State *ptClientData)
 {
-	bool fResult;
 	int iResult;
+	romloader_dpm_device *ptDevice;
+	ROMLOADER_CHIPTYP tChipTyp;
+	romloader_dpm_transfer *ptTransfer;
 
 
-	/* Expect error. */
-	fResult = false;
+	/* No device created yet. */
+	ptDevice = NULL;
+	/* No transfer object created yet. */
+	ptTransfer = NULL;
 
 	printf("%s(%p): connect\n", m_pcName, this);
 
 	if( m_fIsConnected==false )
 	{
-		/* TODO: open the UIO driver. */
-		/* TODO: download the monitor if not already running. */
+		/* Is this a UIO device? */
+		iResult = romloader_dpm_device_linux_uio::IsMyDeviceName(m_pcDeviceName);
+		if( iResult==0 )
+		{
+			/* Yes, this is a UIO device. */
+			ptDevice = new romloader_dpm_device_linux_uio(m_pcDeviceName);
+		}
+		/* TODO: Add more devices like the FTDI here. */
 
+		/* Was a device created? */
+		if( ptDevice!=NULL )
+		{
+			/* Yes, we have a device. */
 
-//		if( fResult!=true )
-//		{
+			/* Try to open the device. */
+			iResult = ptDevice->Open();
+			if( iResult==0 )
+			{
+				/* Create a new transfer device. This depends on the chip type. */
+				ptTransfer = NULL;
+				tChipTyp = ptDevice->get_chiptyp();
+				switch(tChipTyp)
+				{
+				case ROMLOADER_CHIPTYP_UNKNOWN:
+					break;
+
+				case ROMLOADER_CHIPTYP_NETX500:
+				case ROMLOADER_CHIPTYP_NETX100:
+					/* Not yet! */
+					printf("netX500/100 is not supported yet.\n");
+					break;
+
+				case ROMLOADER_CHIPTYP_NETX50:
+					/* Not yet! */
+					printf("netX50 is not supported yet.\n");
+					break;
+
+				case ROMLOADER_CHIPTYP_NETX5:
+					/* Not yet! */
+					printf("netX5 is not supported yet.\n");
+					break;
+
+				case ROMLOADER_CHIPTYP_NETX10:
+					/* Not yet! */
+					printf("netX10 is not supported yet.\n");
+					break;
+
+				case ROMLOADER_CHIPTYP_NETX56:
+				case ROMLOADER_CHIPTYP_NETX56B:
+					/* Create a new transfer object. */
+					ptTransfer = new romloader_dpm_transfer_netx56(ptDevice);
+					/* The device is now owned by the transfer object. */
+					ptDevice = NULL;
+					break;
+
+				case ROMLOADER_CHIPTYP_NETX4000:
+					/* Not yet! */
+					printf("netX4000 is not supported yet.\n");
+					break;
+				}
+
+				/* Do we have a transfer object now? */
+				if( ptTransfer!=NULL )
+				{
+					/* Prepare the device so that a monitor is running. */
+					iResult = ptTransfer->prepare_device();
+					if( iResult!=0 )
+					{
+						/* Failed to prepare the device. It can not be used. */
+						delete ptTransfer;
+						ptTransfer = NULL;
+					}
+				}
+			}
+		}
+
+		/* If a device is left here, this is an error. It should be owned by a transfer object. Delete it. */
+		if( ptDevice!=NULL )
+		{
+			delete ptDevice;
+		}
+
+		/* Do we have a transfer object? */
+		if( ptTransfer!=NULL )
+		{
+			m_fIsConnected = true;
+
+			/* Delete any previous transfer object. */
+			if( m_ptTransfer!=NULL )
+			{
+				delete m_ptTransfer;
+			}
+
+			/* Use the current transfer. */
+			m_ptTransfer = ptTransfer;
+		}
+		else
+		{
 			m_fIsConnected = false;
 			MUHKUH_PLUGIN_EXIT_ERROR(ptClientData);
-//		}
+		}
 	}
 }
 
@@ -212,6 +332,13 @@ void romloader_dpm::Connect(lua_State *ptClientData)
 void romloader_dpm::Disconnect(lua_State *ptClientData)
 {
 	printf("%s(%p): disconnect\n", m_pcName, this);
+
+
+	if( m_ptTransfer!=NULL )
+	{
+		delete m_ptTransfer;
+		m_ptTransfer = NULL;
+	}
 
 	m_fIsConnected = false;
 }
@@ -233,6 +360,10 @@ uint8_t romloader_dpm::read_data08(lua_State *ptClientData, uint32_t ulNetxAddre
 	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+	}
+	else if( m_ptTransfer==NULL )
+	{
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): no transfer object!", m_pcName, this);
 	}
 	else
 	{
@@ -295,6 +426,10 @@ uint16_t romloader_dpm::read_data16(lua_State *ptClientData, uint32_t ulNetxAddr
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
 	}
+	else if( m_ptTransfer==NULL )
+	{
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): no transfer object!", m_pcName, this);
+	}
 	else
 	{
 #if 0
@@ -356,6 +491,10 @@ uint32_t romloader_dpm::read_data32(lua_State *ptClientData, uint32_t ulNetxAddr
 	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+	}
+	else if( m_ptTransfer==NULL )
+	{
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): no transfer object!", m_pcName, this);
 	}
 	else
 	{
@@ -427,6 +566,10 @@ void romloader_dpm::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **p
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
 		fOk = false;
+	}
+	else if( m_ptTransfer==NULL )
+	{
+		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): no transfer object!", m_pcName, this);
 	}
 	/* if ulSize == 0, we return with fOk == true, pcBufferStart == NULL and sizBuffer == 0 */
 	else if( ulSize > 0 )
@@ -532,6 +675,10 @@ void romloader_dpm::write_data08(lua_State *ptClientData, uint32_t ulNetxAddress
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
 	}
+	else if( m_ptTransfer==NULL )
+	{
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): no transfer object!", m_pcName, this);
+	}
 	else
 	{
 #if 0
@@ -589,6 +736,10 @@ void romloader_dpm::write_data16(lua_State *ptClientData, uint32_t ulNetxAddress
 	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+	}
+	else if( m_ptTransfer==NULL )
+	{
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): no transfer object!", m_pcName, this);
 	}
 	else
 	{
@@ -649,6 +800,10 @@ void romloader_dpm::write_data32(lua_State *ptClientData, uint32_t ulNetxAddress
 	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+	}
+	else if( m_ptTransfer==NULL )
+	{
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): no transfer object!", m_pcName, this);
 	}
 	else
 	{
@@ -712,6 +867,10 @@ void romloader_dpm::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN,
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
 		fOk = false;
+	}
+	else if( m_ptTransfer==NULL )
+	{
+		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): no transfer object!", m_pcName, this);
 	}
 	else if( sizBUFFER_IN!=0 )
 	{
@@ -796,6 +955,10 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
 		fOk = false;
+	}
+	else if( m_ptTransfer==NULL )
+	{
+		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): no transfer object!", m_pcName, this);
 	}
 	else
 	{

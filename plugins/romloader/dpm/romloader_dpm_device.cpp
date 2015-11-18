@@ -52,7 +52,7 @@ const romloader_dpm_device::DPM_DETECT_ELEMENT_T romloader_dpm_device::atDpmDete
 
 
 
-const romloader_dpm_device::DPM_DETECT_LIST_T romloader_dpm_device::atDpmDetectList[2] =
+const romloader_dpm_device::DPM_DETECT_LIST_T romloader_dpm_device::atDpmDetectList[1] =
 {
 	{
 		.pcName = "netX56",
@@ -143,7 +143,11 @@ int romloader_dpm_device::detect(void)
 			++ptElementCnt;
 		}
 
-		if( iAllMatchesOk!=0 )
+		if( iResult!=0 )
+		{
+			break;
+		}
+		else if( iAllMatchesOk!=0 )
 		{
 			/* Found a match! */
 			tChipTyp = ptListCnt->tChipTyp;
@@ -154,6 +158,17 @@ int romloader_dpm_device::detect(void)
 		++ptListCnt;
 	}
 	printf("_____________________________________________________________________________\n\n");
+
+	/* No chip detected -> error. */
+	if( tChipTyp==ROMLOADER_CHIPTYP_UNKNOWN )
+	{
+		iResult = -1;
+	}
+	/* In case of a general error reset the detected chip type to "unknown". */
+	else if( iResult!=0 )
+	{
+		tChipTyp = ROMLOADER_CHIPTYP_UNKNOWN;
+	}
 
 	m_tChipTyp = tChipTyp;
 

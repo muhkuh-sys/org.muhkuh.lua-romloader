@@ -1,6 +1,9 @@
 #include "romloader_dpm_transfer_netx56.h"
 #include <unistd.h>
 
+#include "netx/targets/dpmmon_netx56_monitor.h"
+#include "netx/targets/dpmmon_netx56_monitor_run.h"
+
 
 #define NETX56_DPM_BOOT_NETX_RECEIVED_CMD      0x01
 #define NETX56_DPM_BOOT_NETX_SEND_CMD          0x02
@@ -19,6 +22,104 @@
 romloader_dpm_transfer_netx56::romloader_dpm_transfer_netx56(romloader_dpm_device *ptDpmDevice)
  : romloader_dpm_transfer(ptDpmDevice)
 {
+}
+
+
+
+romloader_dpm_transfer_netx56::~romloader_dpm_transfer_netx56(void)
+{
+}
+
+
+
+int romloader_dpm_transfer_netx56::prepare_device(void)
+{
+	int iResult;
+	NETX_DEVICE_STATE_T tState;
+
+
+	/* Do we have a device? */
+	if( m_ptDpmDevice==NULL )
+	{
+		iResult = -1;
+	}
+	else
+	{
+		/* Is the monitor already running? */
+		tState = probe_netx_state();
+		switch( tState )
+		{
+		case NETX_DEVICE_STATE_Unknown:
+			/* The device is in an unknown state and can not be changed to something useful. */
+			iResult = -1;
+			break;
+
+		case NETX_DEVICE_STATE_Romloader:
+			/* No, the monitor is not running yet. Download the monitor. */
+			iResult = download_and_run_image(auc_dpmmon_netx56_monitor, sizeof(auc_dpmmon_netx56_monitor));
+			printf("download_and_run_image: %d\n", iResult);
+			if( iResult==0 )
+			{
+				/* Give the software some time to start and setup the DPM. */
+				usleep(500);
+
+				/* Check the netX state again. */
+				tState = probe_netx_state();
+				if( tState!=NETX_DEVICE_STATE_Monitor )
+				{
+					/* Failed to start the monitor. */
+					iResult = -1;
+				}
+				else
+				{
+					/* Now the monitor is running and ready for commands. */
+					iResult = 0;
+				}
+			}
+			break;
+
+		case NETX_DEVICE_STATE_Monitor:
+			/* The monitor is already running. */
+			iResult = 0;
+			break;
+		}
+	}
+
+	return iResult;
+}
+
+
+
+romloader_dpm_transfer_netx56::NETX_DEVICE_STATE_T romloader_dpm_transfer_netx56::probe_netx_state(void)
+{
+	NETX_DEVICE_STATE_T tState;
+	int iResult;
+	uint32_t ulValue;
+
+
+	/* Be pessimistic. */
+	tState = NETX_DEVICE_STATE_Unknown;
+
+	if( m_ptDpmDevice!=NULL )
+	{
+		/* Try to read the ROM boot ID. */
+		iResult = m_ptDpmDevice->dpm_read32(offsetof(DPM_REGISTER_NETX56_T,tHboot)+offsetof(HBOOT_DPM_NETX56_T,ulDpmBootId), &ulValue);
+		if( iResult==0 )
+		{
+			if( ulValue==NETX56_BOOT_ID_ROM )
+			{
+				/* The ROM code is running. */
+				tState = NETX_DEVICE_STATE_Romloader;
+			}
+			else if( ulValue==BOOT_ID_MONITOR )
+			{
+				/* The ROM code is running. */
+				tState = NETX_DEVICE_STATE_Monitor;
+			}
+		}
+	}
+
+	return tState;
 }
 
 
@@ -42,6 +143,9 @@ int romloader_dpm_transfer_netx56::mailbox_purr(uint32_t ulMask, uint32_t *ulRes
 		ulValue  = ulHostPart ^ ulNetxPart;
 		/* Mask */
 		ulValue &= ulMask;
+
+		/* Return the result. */
+		*ulResult = ulValue;
 	}
 
 	return iResult;
@@ -148,40 +252,7 @@ int romloader_dpm_transfer_netx56::mailbox_get_status(uint8_t *pucStatus)
 
 
 
-int romloader_dpm_transfer_netx56::bitflip_boot(const uint8_t *pucData, size_t sizData)
-{
-	int iResult;
-	uint32_t ulValue;
-
-
-	/* Does the image fit into the bit-flip area? */
-	if( sizData>sizeof(((DPM_REGISTER_NETX56_T*)(NULL))->aucBitflipImage) )
-	{
-		printf("The image exceeds the bitflip area!\n");
-		iResult = -1;
-	}
-	else
-	{
-		/* Copy the boot image. */
-		iResult = m_ptDpmDevice->dpm_write_area(offsetof(DPM_REGISTER_NETX56_T,aucBitflipImage), pucData, sizData);
-		if( iResult==0 )
-		{
-			/* Flip the bit. */
-			iResult = m_ptDpmDevice->dpm_read32(offsetof(DPM_REGISTER_NETX56_T,tCtrl)+offsetof(NX56_DPM_AREA_T,ulDpm_sys_sta), &ulValue);
-			if( iResult==0 )
-			{
-				ulValue ^= 0x80;
-				iResult = m_ptDpmDevice->dpm_write32(offsetof(DPM_REGISTER_NETX56_T,tCtrl)+offsetof(NX56_DPM_AREA_T,ulDpm_sys_sta), ulValue);
-			}
-		}
-	}
-
-	return iResult;
-}
-
-
-
-int romloader_dpm_transfer_netx56::mailbox_boot(const uint8_t *pucData, size_t sizData)
+int romloader_dpm_transfer_netx56::download_and_run_image(const uint8_t *pucData, size_t sizData)
 {
 	int iResult;
 	const uint8_t *pucCnt;
@@ -190,7 +261,9 @@ int romloader_dpm_transfer_netx56::mailbox_boot(const uint8_t *pucData, size_t s
 	uint8_t ucStatus;
 
 
-	/* The image must have at least 68 bytes. */
+	/* The image must have at least 68 bytes.
+	 * This is 64 bytes for the header and at least 1 DWORD of data.
+	 */
 	if( sizData<68 )
 	{
 		printf("The image is too small!\n");

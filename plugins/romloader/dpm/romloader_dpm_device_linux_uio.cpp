@@ -51,6 +51,29 @@ romloader_dpm_device_linux_uio::romloader_dpm_device_linux_uio(unsigned int uiUi
 }
 
 
+
+romloader_dpm_device_linux_uio::romloader_dpm_device_linux_uio(const char *pcDeviceName)
+: m_uiUioDevice(0xFFFFFFFF)
+, m_uiUioBar(0)
+, m_pcUioName(NULL)
+, m_ulUioAddress(0)
+, m_sizUioMemory(0)
+{
+	int iScanResult;
+	unsigned int uiUioDevice;
+
+
+	/* Try to parse the device name. */
+	iScanResult = sscanf(pcDeviceName, romloader_dpm_device_linux_uio::s_pcDeviceNamePattern, &uiUioDevice);
+	if( iScanResult==1 )
+	{
+		/* Yes, this matches. */
+		m_uiUioDevice = uiUioDevice;
+	}
+}
+
+
+
 romloader_dpm_device_linux_uio::~romloader_dpm_device_linux_uio(void)
 {
 	/* Close any open connection. */
@@ -83,6 +106,11 @@ int romloader_dpm_device_linux_uio::Open(void)
 				if( iResult==0 )
 				{
 					iResult = uio_map_dpm();
+					if( iResult==0 )
+					{
+						/* Try to identify the netX DPM. */
+						iResult = detect();
+					}
 				}
 			}
 		}
@@ -296,6 +324,13 @@ int romloader_dpm_device_linux_uio::dpm_write_area(uint32_t ulDpmAddress, const 
 
 
 
+/* NOTE: This will not work with the mainline driver "uio-netx.ko".
+ *       Get the driver from https://kb.hilscher.com/pages/viewpage.action?pageId=22808122
+ *
+ * TODO: Is there a way to distinguish the mainline and Hilscher version and print a warning?
+ * /sys/class/uio/uio0/version is always 0.0.1 . :(
+ *
+ */
 const romloader_dpm_device_linux_uio::NETX_UIO_TYP_T romloader_dpm_device_linux_uio::acKnownNetxUioTypes[1] =
 {
 	{
@@ -305,6 +340,8 @@ const romloader_dpm_device_linux_uio::NETX_UIO_TYP_T romloader_dpm_device_linux_
 	}
 };
 
+
+const char *romloader_dpm_device_linux_uio::s_pcDeviceNamePattern = "romloader_dpm_uio%d";
 
 
 /* Replace newlines at end of string with 0 bytes. */
@@ -525,15 +562,6 @@ int romloader_dpm_device_linux_uio::uio_map_dpm(void)
 
 
 
-size_t romloader_dpm_device_linux_uio::scan_devices(char **ppcDevices, size_t sizDevicesMax)
-{
-
-
-
-}
-
-
-
 size_t romloader_dpm_device_linux_uio::ScanForDevices(char ***pppcDeviceNames)
 {
 	DIR *ptDirectory;
@@ -588,56 +616,51 @@ size_t romloader_dpm_device_linux_uio::ScanForDevices(char ***pppcDeviceNames)
 						iResult = ptDpm->Open();
 						if( iResult==0 )
 						{
-							/* Try to identify the netX DPM. */
-							iResult = ptDpm->detect();
-							if( iResult==0 )
+							/* Is enough space in the list? */
+							printf("Detected a netX DPM on UIO%d. Typ=%d\n", uiUioDevice, ptDpm->get_chiptyp());
+
+							/* Create a new entry. */
+							iStringLength = snprintf(strDevicePath, PATH_MAX-1, "romloader_dpm_uio%d", uiUioDevice);
+							if( iStringLength<=0 )
 							{
-								/* Is enough space in the list? */
-								printf("Detected a netX DPM on UIO%d. Typ=%d\n", uiUioDevice, ptDpm->get_chiptyp());
-
-								/* Create a new entry. */
-								iStringLength = snprintf(strDevicePath, PATH_MAX-1, "romloader_dpm_uio%d", uiUioDevice);
-								if( iStringLength<=0 )
-								{
-									iResult = -1;
-									break;
-								}
-
-								/* Is enough space in the array for one more entry? */
-								if( sizRefCnt>=sizRefMax )
-								{
-									/* No -> expand the array. */
-									sizRefMax *= 2;
-									/* Detect overflow or limitation. */
-									if( sizRefMax<=sizRefCnt )
-									{
-										iResult = -1;
-										break;
-									}
-									/* Reallocate the array. */
-									ppcRefNew = (char**)realloc(ppcRef, sizRefMax*sizeof(char*));
-									if( ppcRefNew==NULL )
-									{
-										iResult = -1;
-										break;
-									}
-									ppcRef = ppcRefNew;
-								}
-
-								/* Allocate memory for the new reference. */
-								pcDeviceName = (char*)malloc(iStringLength+1);
-								if( pcDeviceName==NULL )
-								{
-									iResult = -1;
-									break;
-								}
-
-								/* Copy the reference to the string. */
-								memcpy(pcDeviceName, strDevicePath, iStringLength+1);
-
-								/* Append the string to the list. */
-								ppcRef[sizRefCnt++] = pcDeviceName;
+								iResult = -1;
+								break;
 							}
+
+							/* Is enough space in the array for one more entry? */
+							if( sizRefCnt>=sizRefMax )
+							{
+								/* No -> expand the array. */
+								sizRefMax *= 2;
+								/* Detect overflow or limitation. */
+								if( sizRefMax<=sizRefCnt )
+								{
+									iResult = -1;
+									break;
+								}
+								/* Reallocate the array. */
+								ppcRefNew = (char**)realloc(ppcRef, sizRefMax*sizeof(char*));
+								if( ppcRefNew==NULL )
+								{
+									iResult = -1;
+									break;
+								}
+								ppcRef = ppcRefNew;
+							}
+
+							/* Allocate memory for the new reference. */
+							pcDeviceName = (char*)malloc(iStringLength+1);
+							if( pcDeviceName==NULL )
+							{
+								iResult = -1;
+								break;
+							}
+
+							/* Copy the reference to the string. */
+							memcpy(pcDeviceName, strDevicePath, iStringLength+1);
+
+							/* Append the string to the list. */
+							ppcRef[sizRefCnt++] = pcDeviceName;
 						}
 
 						/* Close the UIO device again. */
@@ -659,15 +682,40 @@ size_t romloader_dpm_device_linux_uio::ScanForDevices(char ***pppcDeviceNames)
 			}
 			/* Free the list itself. */
 			free(ppcRef);
+			ppcRef = NULL;
 		}
 	}
 
 	if( iResult!=0 )
 	{
-		sizRefCnt = -1;
+		sizRefCnt = 0;
 	}
 
 	*pppcDeviceNames = ppcRef;
 
 	return sizRefCnt;
 }
+
+
+
+int romloader_dpm_device_linux_uio::IsMyDeviceName(const char *pcDeviceName)
+{
+	int iResult;
+	int iScanResult;
+	unsigned int uiDevice;
+
+
+	/* Be pessimistic. */
+	iResult = -1;
+
+	/* Try to parse the device name. */
+	iScanResult = sscanf(pcDeviceName, romloader_dpm_device_linux_uio::s_pcDeviceNamePattern, &uiDevice);
+	if( iScanResult==1 )
+	{
+		/* Yes, this matches. */
+		iResult = 0;
+	}
+
+	return iResult;
+}
+
