@@ -41,6 +41,7 @@ IF(UNIX)
 	
 	
 	SET(romloader_dpm_SOURCES
+		netx/targets/dpmmon_netx56_monitor.c
 		romloader_dpm_device_linux_uio.cpp
 		romloader_dpm_device.cpp
 		romloader_dpm_main.cpp
