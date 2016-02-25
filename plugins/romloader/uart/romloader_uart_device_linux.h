@@ -53,6 +53,7 @@ public:
 	bool Flush(void);
 	unsigned long Peek(void);
 
+	static int isDeviceRealSerialPort(const char *pcDevicePath);
 	static size_t scanSysFs(char ***pppcPortNames);
 	static size_t ScanForPorts(char ***pppcPortNames);
 

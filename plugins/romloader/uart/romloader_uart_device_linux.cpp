@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <sys/ioctl.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -423,6 +424,44 @@ bool romloader_uart_device_linux::Flush(void)
 }
 
 
+
+/*****************************************************************************/
+/*! Check if a device is a real serial port.
+*    \param pcDevicePath  Pointer to the 0 terminated path of the device.
+*    \return Successflag                                         */
+/*****************************************************************************/
+int romloader_uart_device_linux::isDeviceRealSerialPort(const char *pcDevicePath)
+{
+	int iResult;
+	int iIoctlResult;
+	int iPortFd;
+	int iModemBitsStatus;
+
+
+	/* Be pessimistic. */
+	iResult = -1;
+
+	/* Try to open the device. */
+	iPortFd = open(pcDevicePath, O_RDONLY|O_NONBLOCK|O_NOCTTY);
+	if( iPortFd!=-1 )
+	{
+		/* Try to get the modem bits. */
+		iIoctlResult = ioctl(iPortFd, TIOCMGET, &iModemBitsStatus);
+		if( iIoctlResult==0 )
+		{
+			/* The device supprts modem bits, so there is a good chance that this is a real serial port. */
+			iResult = 0;
+		}
+
+		/* Close the device. */
+		close(iPortFd);
+	}
+
+	return iResult;
+}
+
+
+
 /*****************************************************************************/
 /*! Scan sysfs mount for tty style devices
 *    \param cvList  Reference to vector to place found devices in
@@ -433,7 +472,6 @@ size_t romloader_uart_device_linux::scanSysFs(char ***pppcPortNames)
 	int iResult;
 	int iNonFatalResult;
 	const char *pcClassDir = "/sys/class/tty";
-	const char *pcClassDeviceFolder = "%s/%s/device";
 	const char *pcPluginName = "romloader_uart_%s";
 	struct stat tStatBuf;
 	DIR *ptDir;
@@ -497,14 +535,13 @@ size_t romloader_uart_device_linux::scanSysFs(char ***pppcPortNames)
 							/* Is this not the '.' or '..' entry? */
 							if( strcmp(".", tDirEntry.d_name)!=0 && strcmp("..", tDirEntry.d_name)!=0 )
 							{
-								/* Append the name to the class folder. */
-								snprintf(strDevicePath, PATH_MAX, pcClassDeviceFolder, pcClassDir, tDirEntry.d_name);
-
-								/* Does the device file exist? */
-								iNonFatalResult = stat(strDevicePath, &tStatBuf);
+								/* Construct the full path to the device. */
+								snprintf(strDevicePath, PATH_MAX-1, "/dev/%s", tDirEntry.d_name);
+								/* Is the device a real serial port? */
+								iNonFatalResult = isDeviceRealSerialPort(strDevicePath);
 								if( iNonFatalResult==0 )
 								{
-									/* Yes -> found a tty device. */
+									/* Yes -> this is a real serial port. */
 
 									/* Is enough space in the array for one more entry? */
 									if( sizRefCnt>=sizRefMax )
