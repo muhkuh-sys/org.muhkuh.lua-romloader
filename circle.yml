@@ -5,8 +5,9 @@ machine:
     - curl http://download.opensuse.org/repositories/home:/doc_bacardi/xUbuntu_12.04/Release.key | sudo apt-key add -
     - echo "deb http://download.opensuse.org/repositories/home:/doc_bacardi/xUbuntu_12.04 ./" | sudo tee -a /etc/apt/sources.list
     - sudo apt-get update -qq
-    - sudo apt-get --assume-yes install mingw-w64-mbs
-    - sudo apt-get --assume-yes install cmake3
+    - sudo apt-get --assume-yes install cmake3 mingw-w64-mbs swig3
+    - wget http://downloads.sourceforge.net/project/muhkuh/mbs/org/apache/ant/1.9.6/apache-ant-1.9.6-bin.tar.bz2 -O /tmp/apache-ant-1.9.6-bin.tar.bz2
+    - tar --directory /tmp --extract --bzip2 --file /tmp/apache-ant-1.9.6-bin.tar.bz2
   environment:
     PATH: /opt/mingw-w64-i686/bin:/opt/mingw-w64-x86_64/bin:${PATH}
   python:
