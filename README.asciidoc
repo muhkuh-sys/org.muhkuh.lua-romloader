@@ -7,6 +7,7 @@ TravisCI: image:https://travis-ci.org/muhkuh-sys/org.muhkuh.lua-lua51-romloader.
 
 AppVeyor: image:https://ci.appveyor.com/api/projects/status/github/muhkuh-sys/org.muhkuh.lua-lua51-romloader?svg=true["AppVeyor build status", link="https://ci.appveyor.com/project/docbacardi/org-muhkuh-lua-lua51-romloader"]
 
+circleci: image:https://circleci.com/gh/muhkuh-sys/org.muhkuh.lua-lua51-romloader.svg?style=shield["circleci build status", link="https://circleci.com/gh/muhkuh-sys/org.muhkuh.lua-lua51-romloader"]
 
 == About
 
@@ -20,7 +21,10 @@ The source code is hosted on GitHub: https://github.com/muhkuh-sys/org.muhkuh.lu
 
 Issues are collected here: https://github.com/muhkuh-sys/org.muhkuh.lua-lua51-romloader/issues
 
-Each push to the GitHub repository triggers a build on TravisCI using a Ubuntu 12.04 64bit VM: https://travis-ci.org/muhkuh-sys/org.muhkuh.lua-lua51-romloader . Another build is triggered on AppVeyor running on 32bit and 64bit Windows: https://ci.appveyor.com/project/docbacardi/org-muhkuh-lua-lua51-romloader .
+Each push to the GitHub repository triggers a build on these services:
+ * TravisCI using a Ubuntu 12.04 64bit VM: https://travis-ci.org/muhkuh-sys/org.muhkuh.lua-lua51-romloader
+ * AppVeyor running on 32bit and 64bit Windows: https://ci.appveyor.com/project/docbacardi/org-muhkuh-lua-lua51-romloader
+ * circleci running on Ubuntu 12.04 64bit VM: https://circleci.com/gh/muhkuh-sys/org.muhkuh.lua-lua51-romloader
 
 The build results from TravisCI are copied after auccess to Bintray: https://bintray.com/muhkuh/Muhkuh/lua51-romloader/view
 Please note that this is done for each build, and not only tagged ones.
