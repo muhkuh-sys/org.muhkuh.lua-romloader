@@ -28,3 +28,8 @@ general:
   artifacts:
     - "build/ivy.xml"
     - "build/lua51-romloader.zip"
+
+
+test:
+  override:
+    - ./.build.sh
