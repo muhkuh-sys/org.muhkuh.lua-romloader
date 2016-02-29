@@ -1,7 +1,7 @@
 machine:
   pre:
     - sudo dpkg --purge cmake cmake-data
-    - sudo dpkg --purge ant
+    - sudo dpkg --purge ant ant-optional
     - curl http://download.opensuse.org/repositories/home:/doc_bacardi/xUbuntu_12.04/Release.key | sudo apt-key add -
     - echo "deb http://download.opensuse.org/repositories/home:/doc_bacardi/xUbuntu_12.04 ./" | sudo tee -a /etc/apt/sources.list
     - sudo apt-get update -qq
