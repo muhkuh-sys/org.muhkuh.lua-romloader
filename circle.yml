@@ -7,6 +7,8 @@ machine:
     - sudo apt-get --assume-yes install cmake3 mingw-w64-mbs swig3
     - wget http://downloads.sourceforge.net/project/muhkuh/mbs/org/apache/ant/1.9.6/apache-ant-1.9.6-bin.tar.bz2 -O /tmp/apache-ant-1.9.6-bin.tar.bz2
     - tar --directory /tmp --extract --bzip2 --file /tmp/apache-ant-1.9.6-bin.tar.bz2
+  environment:
+    PATH: /opt/mingw-w64-i686/bin:/opt/mingw-w64-x86_64/bin:/tmp/apache-ant-1.9.6/bin:${PATH}
   python:
     version: 2.7.10
 
@@ -32,5 +34,3 @@ general:
 test:
   override:
     - ./.build.sh
-        environment:
-          PATH: /opt/mingw-w64-i686/bin:/opt/mingw-w64-x86_64/bin:${PATH}
