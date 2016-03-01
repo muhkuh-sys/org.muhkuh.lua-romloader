@@ -3,20 +3,29 @@
 # Read the version file and parse it.
 #
 
-# Set the filename for the muhkuh version file.
-# NOTE: this file is included from 2 cmake projects with different home dirs. Use the current path as a base to get to muhkuh_version.txt .
-SET(MUHKUH_VERSION_FILE "${CMAKE_CURRENT_LIST_DIR}/../muhkuh_version.txt")
+# Python is needed for the MBS setup tool.
+FIND_PACKAGE(PythonInterp REQUIRED)
+
+# Set the filename for the setup.xml file.
+# NOTE: this file is included from 2 cmake projects with different home dirs. Use the current path as a base to get to setup.xml .
+SET(MUHKUH_VERSION_FILE "${CMAKE_CURRENT_LIST_DIR}/../setup.xml")
+
+# This is the path to the helper Python script.
+SET(MUHKUH_SETUP_TOOL "${CMAKE_CURRENT_LIST_DIR}/mbs_setup_tool.py")
 
 # Set the regular expression for the muhkuh version. It is a sequence of 3 numbers separated by dots.
 SET(MUHKUH_VERSION_REGEX "([0-9]+)\\.([0-9]+)\\.([0-9]+)")
 
-# Read the contents of the muhkuh version file. Accept only data matching the version regex.
-FILE(STRINGS ${MUHKUH_VERSION_FILE} MUHKUH_VERSION_ALL REGEX ${MUHKUH_VERSION_REGEX})
+# Run the setup tool and capture the output.
+EXECUTE_PROCESS(COMMAND "${PYTHON_EXECUTABLE}" "${MUHKUH_SETUP_TOOL}" "${MUHKUH_VERSION_FILE}"
+                OUTPUT_VARIABLE MUHKUH_VERSION_ALL
+                ERROR_QUIET
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 # Check if a valid version number was found.
 IF("${MUHKUH_VERSION_ALL}" STREQUAL "")
 	# No valid version number found. The file contains garbage, which is a fatal error!
-	MESSAGE(FATAL_ERROR "The file ${MUHKUH_VERSION_FILE} contains no valid version in the form number.number.hash .")
+	MESSAGE(FATAL_ERROR "Failed to extract the version number from  ${MUHKUH_VERSION_FILE}.")
 ENDIF("${MUHKUH_VERSION_ALL}" STREQUAL "")
 
 STRING(REGEX MATCH ${MUHKUH_VERSION_REGEX} MUHKUH_VERSION_ALL ${MUHKUH_VERSION_ALL})
