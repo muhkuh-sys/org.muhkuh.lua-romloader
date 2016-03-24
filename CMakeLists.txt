@@ -29,7 +29,7 @@ FIND_PACKAGE(PythonInterp REQUIRED)
 
 
 # Include the location of the dependencies.
-INCLUDE(ivy/ant_paths.cmake)
+INCLUDE(ivy/ant_paths.cmake OPTIONAL)
 
 # Select the LUA version.
 INCLUDE(cmake/muhkuh_lua.cmake)
