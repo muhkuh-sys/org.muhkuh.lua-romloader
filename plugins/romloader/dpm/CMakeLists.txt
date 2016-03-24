@@ -37,7 +37,7 @@ INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 # Maybe the future brings support for the NXHX-FTDI and companions which allows easy access on windows too.
 IF(UNIX)
 	SET_SOURCE_FILES_PROPERTIES(romloader_dpm.i PROPERTIES CPLUSPLUS ON)
-	SET_PROPERTY(SOURCE romloader_dpm.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/modules/typemaps)
+	SET_PROPERTY(SOURCE romloader_dpm.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/plugins)
 	
 	
 	SET(romloader_dpm_SOURCES

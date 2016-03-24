@@ -65,7 +65,7 @@ ENDIF(UNIX)
 
 
 set_source_files_properties(romloader_uart.i PROPERTIES CPLUSPLUS ON)
-set_property(SOURCE romloader_uart.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/modules/typemaps)
+set_property(SOURCE romloader_uart.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/plugins)
 
 
 SET(romloader_uart_SOURCES

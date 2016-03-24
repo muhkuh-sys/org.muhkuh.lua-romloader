@@ -30,7 +30,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 
 set_source_files_properties(romloader.i PROPERTIES CPLUSPLUS ON)
-set_property(SOURCE romloader.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/modules/typemaps)
+set_property(SOURCE romloader.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/plugins)
 
 SET(plugins_romloader_lib_SOURCES
 	romloader.cpp
