@@ -9,6 +9,8 @@ INCLUDE(CheckStructHasMember)
 INCLUDE(CheckTypeSize)
 
 
+SET(JIM_VERSION 76)
+
 #----------------------------------------------------------------------------
 #
 # Get all defines for jim-config.h.in .

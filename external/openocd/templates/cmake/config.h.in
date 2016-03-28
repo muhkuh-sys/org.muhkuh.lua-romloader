@@ -28,6 +28,9 @@
 /* 0 if you don't want the Buspirate JTAG driver. */
 #cmakedefine01 BUILD_BUSPIRATE
 
+/* 0 if you do not want the CMSIS-DAP Compliant Debugger. */
+#cmakedefine01 BUILD_CMSIS_DAP
+
 /* 0 if you don't want dummy driver. */
 #cmakedefine01 BUILD_DUMMY
 
@@ -108,6 +111,9 @@
 
 /* 0 if you do not want the USBProg JTAG Programmer. */
 #cmakedefine BUILD_USBPROG 1
+
+/* 0 if you do not want the Altera USB-Blaster II Compatible. */
+#cmakedefine01 BUILD_USB_BLASTER_2
 
 /* 0 if you don't want ftd2xx usb_blaster. */
 #cmakedefine01 BUILD_USB_BLASTER_FTD2XX
@@ -234,6 +240,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H 1
+
+/* Define to 1 if the system has the type 'unsigned long long int'. */
+#cmakedefine HAVE_UNSIGNED_LONG_LONG_INT 1
 
 /* Define to 1 if you have the `usleep' function. */
 #cmakedefine HAVE_USLEEP 1
