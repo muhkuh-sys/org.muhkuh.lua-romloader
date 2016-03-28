@@ -42,6 +42,7 @@ ENDIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 ExternalProject_Add(TARGET_libusb
                     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libusb-1.0.20
                     URL ${CMAKE_CURRENT_SOURCE_DIR}/libusb-1.0.20.tar.bz2
+                    URL_HASH SHA1=9537243f165927bde74ad742e6b3effb0bd50cd2
                     PATCH_COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/templates ${CMAKE_CURRENT_BINARY_DIR}/libusb-1.0.20/src/TARGET_libusb
                     CMAKE_ARGS ${LIBUSB_CMAKE_ARGS}
                     INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install DESTDIR=${CMAKE_CURRENT_BINARY_DIR}/libusb-1.0.20
