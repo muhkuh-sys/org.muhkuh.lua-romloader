@@ -158,7 +158,7 @@ int romloader_eth_device_linux::RecvPacket(unsigned char *pucData, size_t sizDat
 	if( iResult==0 )
 	{
 		/* Timeout and nothing received. */
-		fprintf(stderr, "timeout\n");
+//		fprintf(stderr, "timeout\n");
 	}
 	else if( iResult==1 )
 	{
