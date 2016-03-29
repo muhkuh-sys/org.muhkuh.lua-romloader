@@ -377,6 +377,12 @@ ADD_LIBRARY(LIBRARY_jim STATIC ${SOURCES_libjim})
 TARGET_INCLUDE_DIRECTORIES(LIBRARY_jim
                            PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config)
 
+# This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
+IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+	SET_TARGET_PROPERTIES(LIBRARY_jim PROPERTIES COMPILE_FLAGS -fPIC)
+ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+
+
 # Set the name of the output file to "jim".
 SET_TARGET_PROPERTIES(LIBRARY_jim PROPERTIES OUTPUT_NAME "jim")
 
@@ -385,14 +391,6 @@ SET_TARGET_PROPERTIES(LIBRARY_jim PROPERTIES OUTPUT_NAME "jim")
 
 SET(DEFINES "")
 SET(INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/config")
-
-
-INSTALL(TARGETS LIBRARY_jim DESTINATION lib)
-
-INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/config/jim-config.h
-              jim.h
-              jim-win32compat.h
-        DESTINATION include)
 
 
 #-----------------------------------------------------------------------------
