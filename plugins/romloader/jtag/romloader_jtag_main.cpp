@@ -67,11 +67,12 @@ romloader_jtag_provider::romloader_jtag_provider(swig_type_info *p_romloader_jta
 	m_ptPluginTypeInfo = p_romloader_jtag;
 	m_ptReferenceTypeInfo = p_romloader_jtag_reference;
 
-	iResult = romloader_jtag_openocd_init(&m_tJtagDevice);
-	printf("iResult: %d\n", iResult);
-
-	iResult = romloader_jtag_openocd_detect(&m_tJtagDevice);
-	printf("iResult: %d\n", iResult);
+	iResult = romloader_jtag_openocd_init();
+	if( iResult==0 )
+	{
+		iResult = romloader_jtag_openocd_detect();
+		printf("iResult: %d\n", iResult);
+	}
 
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag_provider::romloader_jtag_provider()\n"));
 }
@@ -314,7 +315,7 @@ void romloader_jtag::Disconnect(lua_State *ptClientData)
 
 
 /* read a byte (8bit) from the netx to the pc */
-unsigned char romloader_jtag::read_data08(lua_State *ptClientData, unsigned long ulNetxAddress)
+uint8_t romloader_jtag::read_data08(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
 	unsigned char ucData;
 	bool fOk;
@@ -350,7 +351,7 @@ unsigned char romloader_jtag::read_data08(lua_State *ptClientData, unsigned long
 
 
 /* read a word (16bit) from the netx to the pc */
-unsigned short romloader_jtag::read_data16(lua_State *ptClientData, unsigned long ulNetxAddress)
+uint16_t romloader_jtag::read_data16(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
 	unsigned short usData;
 	bool fOk;
@@ -386,7 +387,7 @@ unsigned short romloader_jtag::read_data16(lua_State *ptClientData, unsigned lon
 
 
 /* read a long (32bit) from the netx to the pc */
-unsigned long romloader_jtag::read_data32(lua_State *ptClientData, unsigned long ulNetxAddress)
+uint32_t romloader_jtag::read_data32(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
 	unsigned long ulData;
 	bool fOk;
@@ -423,7 +424,7 @@ unsigned long romloader_jtag::read_data32(lua_State *ptClientData, unsigned long
 
 
 /* read a byte array from the netx to the pc  */
-void romloader_jtag::read_image(unsigned long ulNetxAddress, unsigned long ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader_jtag::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	char *pcBufferStart;
 	char *pcBuffer;
@@ -511,7 +512,7 @@ void romloader_jtag::read_image(unsigned long ulNetxAddress, unsigned long ulSiz
 
 
 /* write a byte (8bit) from the pc to the netx */
-void romloader_jtag::write_data08(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned char ucData)
+void romloader_jtag::write_data08(lua_State *ptClientData, uint32_t ulNetxAddress, uint8_t ucData)
 {
 	bool fOk;
 	int iResult;
@@ -543,7 +544,7 @@ void romloader_jtag::write_data08(lua_State *ptClientData, unsigned long ulNetxA
 
 
 /* write a word (16bit) from the pc to the netx */
-void romloader_jtag::write_data16(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned short usData)
+void romloader_jtag::write_data16(lua_State *ptClientData, uint32_t ulNetxAddress, uint16_t usData)
 {
 	bool fOk;
 	int iResult;
@@ -575,7 +576,7 @@ void romloader_jtag::write_data16(lua_State *ptClientData, unsigned long ulNetxA
 
 
 /* write a long (32bit) from the pc to the netx */
-void romloader_jtag::write_data32(lua_State *ptClientData, unsigned long ulNetxAddress, unsigned long ulData)
+void romloader_jtag::write_data32(lua_State *ptClientData, uint32_t ulNetxAddress, uint32_t ulData)
 {
 	bool fOk;
 	int iResult;
@@ -607,7 +608,7 @@ void romloader_jtag::write_data32(lua_State *ptClientData, unsigned long ulNetxA
 
 
 /* write a byte array from the pc to the netx */
-void romloader_jtag::write_image(unsigned long ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader_jtag::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	bool fOk;
 	size_t sizChunk;
@@ -666,7 +667,7 @@ void romloader_jtag::write_image(unsigned long ulNetxAddress, const char *pcBUFF
 
 
 /* call routine */
-void romloader_jtag::call(unsigned long ulNetxAddress, unsigned long ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader_jtag::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	bool fOk;
 	int iResult;
