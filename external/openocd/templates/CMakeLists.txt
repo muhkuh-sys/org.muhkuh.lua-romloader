@@ -433,12 +433,14 @@ SET(SOURCES_libxsvf
 )
 
 
+# muhkuh_openocd contains the wrapper functions.
 # The hello command handler is used in some sources.
 SET(SOURCES_misc
+	src/muhkuh_openocd.c
 	src/hello.c
 )
 
-ADD_LIBRARY(LIBRARY_libopenocd STATIC ${SOURCES_libflash}
+ADD_LIBRARY(LIBRARY_libopenocd SHARED ${SOURCES_libflash}
                                       ${SOURCES_libhelper}
                                       ${SOURCES_libjtag}
                                       ${SOURCES_libpld}
@@ -456,6 +458,8 @@ TARGET_INCLUDE_DIRECTORIES(LIBRARY_libopenocd
                                    ${LIBJIM_INCLUDE_DIRECTORIES}
                                    ${CMAKE_CURRENT_BINARY_DIR}/config
                                    ${LIBUSB_INCLUDE_DIRECTORIES})
+TARGET_LINK_LIBRARIES(LIBRARY_libopenocd
+                      PRIVATE LIBRARY_jim ${LIBUSB_LIBRARY} "${LIBJIM_LDFLAGS}" "${LIBUSB_LDFLAGS}")
 
 SET(LIBRARY_libopenocd_defines "")
 LIST(APPEND LIBRARY_libopenocd_defines "HAVE_CONFIG_H")
@@ -492,52 +496,8 @@ SET(CMAKE_INSTALL_PREFIX /install)
 
 INSTALL(TARGETS LIBRARY_libopenocd DESTINATION lib)
 
-INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/config/config.h
-              src/helper/jim-nvp.h
+INSTALL(FILES src/muhkuh_openocd.h
         DESTINATION include)
-
-INSTALL(FILES src/flash/nor/core.h
-        DESTINATION include/flash/nor)
-
-INSTALL(FILES src/flash/nand/core.h
-        DESTINATION include/flash/nand)
-
-INSTALL(FILES src/flash/common.h
-              src/flash/mflash.h
-        DESTINATION include/flash)
-
-INSTALL(FILES src/helper/binarybuffer.h
-              src/helper/command.h
-              src/helper/ioutil.h
-              src/helper/list.h
-              src/helper/log.h
-              src/helper/replacements.h
-              src/helper/system.h
-              src/helper/types.h
-              src/helper/util.h
-              src/helper/configuration.h
-        DESTINATION include/helper)
-
-INSTALL(FILES src/jtag/commands.h
-              src/jtag/driver.h
-              src/jtag/jtag.h
-              src/jtag/minidriver.h
-              src/jtag/minidriver_imp.h
-        DESTINATION include/jtag)
-
-INSTALL(FILES src/pld/pld.h
-        DESTINATION include/pld)
-
-INSTALL(FILES src/server/server.h
-              src/server/gdb_server.h
-        DESTINATION include/server)
-
-INSTALL(FILES src/target/target.h
-              src/server/gdb_server.h
-        DESTINATION include/target)
-
-INSTALL(FILES src/transport/transport.h
-        DESTINATION include/transport)
 
 
 #-----------------------------------------------------------------------------
@@ -552,11 +512,7 @@ SET(SOURCES_openocd
 
 ADD_EXECUTABLE(TARGET_openocd ${SOURCES_openocd})
 TARGET_LINK_LIBRARIES(TARGET_openocd LIBRARY_libopenocd
-                                     ${LIBOPENOCD_LDFLAGS}
-                                     LIBRARY_jim
-                                     ${LIBUSB_LIBRARY}
-                                     "${LIBJIM_LDFLAGS}"
-                                     "${LIBUSB_LDFLAGS}")
+                                     ${LIBOPENOCD_LDFLAGS})
 TARGET_INCLUDE_DIRECTORIES(TARGET_openocd
                            PRIVATE src
                                    src/helper
