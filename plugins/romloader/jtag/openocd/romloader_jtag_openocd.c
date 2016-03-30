@@ -18,7 +18,7 @@
  * One solution would be the same folder as this LUA plugin. Here is a way to get the full path of something in Windows: https://msdn.microsoft.com/en-us/library/windows/desktop/ms683197.aspx
  * The same is possible for Linux: http://stackoverflow.com/questions/1642128/linux-how-to-get-full-name-of-shared-object-just-loaded-from-the-constructor
  */
-#define OPENOCD_SHARED_LIBRARY_FILENAME "libopenocd.so"
+#define OPENOCD_SHARED_LIBRARY_FILENAME "/tmp/n/libopenocd.so"
 
 
 #endif
@@ -289,6 +289,7 @@ static const TARGET_SETUP_STRUCT_T atTargetCfg[2] =
 		          "\n"
 		          "    if { $SC_CFG_RESULT=={OK} } {\n"
 		          "        target create netX_ARM966.cpu arm966e -endian little -chain-position netX_ARM966.cpu\n"
+		          "        netX_ARM966.cpu configure -event reset-init { halt }\n"
 		          "    }\n"
 		          "\n"
 		          "    return $SC_CFG_RESULT\n"
@@ -303,11 +304,12 @@ static const TARGET_SETUP_STRUCT_T atTargetCfg[2] =
 		          "    set SC_CFG_RESULT 0\n"
 		          "\n"
 		          "    jtag newtap netX_ARM926 cpu -irlen 4 -ircapture 1 -irmask 0xf -expected-id 0x07926021\n"
-		          "    jtag configure netX_ARM926.cpu -event setup { global SC_CFG_RESULT ; set SC_CFG_RESULT {OK} }\n"
+		          "    jtag configure netX_ARM926.cpu -event setup { global SC_CFG_RESULT ; echo {Yay} ; set SC_CFG_RESULT {OK} }\n"
 		          "    jtag init\n"
 		          "\n"
 		          "    if { $SC_CFG_RESULT=={OK} } {\n"
 		          "        target create netX_ARM926.cpu arm926ejs -endian little -chain-position netX_ARM926.cpu\n"
+		          "        netX_ARM926.cpu configure -event reset-init { halt }\n"
 		          "    }\n"
 		          "\n"
 		          "    return $SC_CFG_RESULT\n"
@@ -316,6 +318,14 @@ static const TARGET_SETUP_STRUCT_T atTargetCfg[2] =
 	}
 };
 
+
+
+static const char *pcResetCode = "reset_config trst_and_srst\n"
+                                 "adapter_nsrst_delay 500\n"
+                                 "jtag_ntrst_delay 500\n"
+                                 "\n"
+                                 "init\n"
+                                 "reset init\n";
 
 
 static int romloader_jtag_openocd_setup_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg)
@@ -436,6 +446,21 @@ static int romloader_jtag_openocd_probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice
 				else
 				{
 					fprintf(stderr, "Found target %s!\n", ptTargetCfg->pcID);
+
+
+					/* Now for a demo stop the target and transfer some memory. */
+					fprintf(stderr, "Running reset code.\n");
+					iResult = ptDevice->pfnCommandRunLine(ptDevice->pvOpenocdContext, pcResetCode);
+					if( iResult!=0 )
+					{
+						fprintf(stderr, "Failed to run the reset code: %d\n", iResult);
+						iResult = -1;
+					}
+					else
+					{
+						fprintf(stderr, "*** All OK ***\n");
+
+					}
 				}
 			}
 		}
