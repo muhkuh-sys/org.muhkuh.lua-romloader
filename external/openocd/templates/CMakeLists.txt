@@ -458,8 +458,14 @@ TARGET_INCLUDE_DIRECTORIES(LIBRARY_libopenocd
                                    ${LIBJIM_INCLUDE_DIRECTORIES}
                                    ${CMAKE_CURRENT_BINARY_DIR}/config
                                    ${LIBUSB_INCLUDE_DIRECTORIES})
+
+IF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+	SET(LIBOPENOCD_LDFLAGS -lws2_32)
+ELSE(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+	SET(LIBOPENOCD_LDFLAGS "")
+ENDIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 TARGET_LINK_LIBRARIES(LIBRARY_libopenocd
-                      PRIVATE LIBRARY_jim ${LIBUSB_LIBRARY} "${LIBJIM_LDFLAGS}" "${LIBUSB_LDFLAGS}")
+                      PRIVATE LIBRARY_jim ${LIBUSB_LIBRARY} "${LIBOPENOCD_LDFLAGS}" "${LIBJIM_LDFLAGS}" "${LIBUSB_LDFLAGS}")
 
 SET(LIBRARY_libopenocd_defines "")
 LIST(APPEND LIBRARY_libopenocd_defines "HAVE_CONFIG_H")
@@ -477,13 +483,6 @@ TARGET_COMPILE_DEFINITIONS(LIBRARY_libopenocd
 
 # Set the name of the output file to "openocd".
 SET_TARGET_PROPERTIES(LIBRARY_libopenocd PROPERTIES OUTPUT_NAME "openocd")
-
-IF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-	SET(LIBOPENOCD_LDFLAGS -lws2_32)
-ELSE(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-	SET(LIBOPENOCD_LDFLAGS "")
-ENDIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-
 
 
 #-----------------------------------------------------------------------------
@@ -511,8 +510,7 @@ SET(SOURCES_openocd
 )
 
 ADD_EXECUTABLE(TARGET_openocd ${SOURCES_openocd})
-TARGET_LINK_LIBRARIES(TARGET_openocd LIBRARY_libopenocd
-                                     ${LIBOPENOCD_LDFLAGS})
+TARGET_LINK_LIBRARIES(TARGET_openocd LIBRARY_libopenocd)
 TARGET_INCLUDE_DIRECTORIES(TARGET_openocd
                            PRIVATE src
                                    src/helper
