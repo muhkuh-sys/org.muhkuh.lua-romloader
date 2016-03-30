@@ -208,9 +208,9 @@ static const INTERFACE_SETUP_STRUCT_T atInterfaceCfg[4] =
 		                "ftdi_vid_pid 0x0640 0x0028\n"
 		                "adapter_khz 100\n"
 		                "\n"
-		                "ftdi_layout_init 0x0308 0x030b\n"
-		                "ftdi_layout_signal nTRST -data 0x0100\n"
-		                "ftdi_layout_signal nSRST -data 0x0200\n",
+				"ftdi_layout_init 0x0108 0x010b\n"
+				"ftdi_layout_signal nTRST -data 0x0100\n"
+				"ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
 		.pcCode_Probe = "proc probe {} {\n"
 		                "    set RESULT -1\n"
 		                "\n"
@@ -230,9 +230,9 @@ static const INTERFACE_SETUP_STRUCT_T atInterfaceCfg[4] =
 		                "ftdi_vid_pid 0x0640 0x0028\n"
 		                "adapter_khz 100\n"
 		                "\n"
-		                "ftdi_layout_init 0x0308 0x030b\n"
-		                "ftdi_layout_signal nTRST -data 0x0100\n"
-		                "ftdi_layout_signal nSRST -data 0x0200\n",
+				"ftdi_layout_init 0x0108 0x010b\n"
+				"ftdi_layout_signal nTRST -data 0x0100\n"
+				"ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
 		.pcCode_Probe = "proc probe {} {\n"
 			        "    set RESULT -1\n"
 			        "\n"
@@ -252,9 +252,9 @@ static const INTERFACE_SETUP_STRUCT_T atInterfaceCfg[4] =
 		                "ftdi_vid_pid 0x0640 0x0028\n"
 		                "adapter_khz 100\n"
 		                "\n"
-		                "ftdi_layout_init 0x0308 0x030b\n"
-		                "ftdi_layout_signal nTRST -data 0x0100\n"
-		                "ftdi_layout_signal nSRST -data 0x0200\n",
+				"ftdi_layout_init 0x0108 0x010b\n"
+				"ftdi_layout_signal nTRST -data 0x0100\n"
+				"ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
 		.pcCode_Probe = "proc probe {} {\n"
 			        "    set RESULT -1\n"
 			        "\n"
