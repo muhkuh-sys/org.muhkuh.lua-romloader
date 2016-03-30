@@ -176,9 +176,6 @@ typedef struct INTERFACE_SETUP_STRUCT
  * absolutely all circumstances (even with Enricos flying wires. ;)
  *
  */
-
-
-/* TODO: split this in setup and test code so that a complete setup does not have the auto.tap configured. */
 static const INTERFACE_SETUP_STRUCT_T atInterfaceCfg[4] =
 {
 	{
