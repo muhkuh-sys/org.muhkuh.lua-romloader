@@ -67,17 +67,57 @@ static int openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 					if( pvFn!=NULL )
 					{
 						ptDevice->pfnUninit = pvFn;
+						pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_read_data08");
+						if( pvFn!=NULL )
+						{
+							ptDevice->pfnReadData08 = pvFn;
+							pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_read_data16");
+							if( pvFn!=NULL )
+							{
+								ptDevice->pfnReadData16 = pvFn;
+								pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_read_data32");
+								if( pvFn!=NULL )
+								{
+									ptDevice->pfnReadData32 = pvFn;
+									pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_read_image");
+									if( pvFn!=NULL )
+									{
+										ptDevice->pfnReadImage = pvFn;
+										pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_write_data08");
+										if( pvFn!=NULL )
+										{
+											ptDevice->pfnWriteData08 = pvFn;
+											pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_write_data16");
+											if( pvFn!=NULL )
+											{
+												ptDevice->pfnWriteData16 = pvFn;
+												pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_write_data32");
+												if( pvFn!=NULL )
+												{
+													ptDevice->pfnWriteData32 = pvFn;
+													pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_write_image");
+													if( pvFn!=NULL )
+													{
+														ptDevice->pfnWriteImage = pvFn;
 
-						/* Call the init function. */
-						pvOpenocdContext = ptDevice->pfnInit();
-						if( pvOpenocdContext==NULL )
-						{
-							fprintf(stderr, "Failed to initialize the OpenOCD device context.\n");
-						}
-						else
-						{
-							ptDevice->pvOpenocdContext = pvOpenocdContext;
-							iResult = 0;
+														/* Call the init function. */
+														pvOpenocdContext = ptDevice->pfnInit();
+														if( pvOpenocdContext==NULL )
+														{
+															fprintf(stderr, "Failed to initialize the OpenOCD device context.\n");
+														}
+														else
+														{
+															ptDevice->pvOpenocdContext = pvOpenocdContext;
+															iResult = 0;
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
 						}
 					}
 				}
@@ -458,8 +498,21 @@ static int romloader_jtag_openocd_probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice
 					}
 					else
 					{
-						fprintf(stderr, "*** All OK ***\n");
+						uint32_t ulValue;
 
+						/* Read memory. */
+						iResult = ptDevice->pfnReadData32(ptDevice->pvOpenocdContext, 0, &ulValue);
+						if( iResult!=0 )
+						{
+							fprintf(stderr, "Failed to read address 0: %d\n", iResult);
+							iResult = -1;
+						}
+						else
+						{
+							printf("netX 0x00000000: 0x%08x\n", ulValue);
+
+							fprintf(stderr, "*** All OK ***\n");
+						}
 					}
 				}
 			}
