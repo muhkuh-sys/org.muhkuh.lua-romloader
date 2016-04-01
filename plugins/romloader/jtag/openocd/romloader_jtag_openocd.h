@@ -8,11 +8,6 @@
 /*-------------------------------------------------------------------------*/
 
 
-
-
-/*-------------------------------------------------------------------------*/
-
-
 class romloader_jtag_openocd
 {
 public:
@@ -51,7 +46,7 @@ public:
 	typedef int (*PFN_MUHKUH_OPENOCD_WRITE_DATA08) (void *pvContext, uint32_t ulNetxAddress, uint8_t ucData);
 	typedef int (*PFN_MUHKUH_OPENOCD_WRITE_DATA16) (void *pvContext, uint32_t ulNetxAddress, uint16_t usData);
 	typedef int (*PFN_MUHKUH_OPENOCD_WRITE_DATA32) (void *pvContext, uint32_t ulNetxAddress, uint32_t ulData);
-	typedef int (*PFN_MUHKUH_OPENOCD_WRITE_IMAGE) (void *pvContext, uint32_t ulNetxAddress, uint8_t *pucData, uint32_t ulSize);
+	typedef int (*PFN_MUHKUH_OPENOCD_WRITE_IMAGE) (void *pvContext, uint32_t ulNetxAddress, const uint8_t *pucData, uint32_t ulSize);
 
 
 	typedef struct MUHKUH_OPENOCD_FUNCTION_POINTERS_UNION
@@ -109,7 +104,7 @@ public:
 	/* Read a long (32bit) from the netX. */
 	int read_data32(uint32_t ulNetxAddress, uint32_t *pulData);
 	/* Read a byte array from the netX. */
-	int read_image(uint32_t ulNetxAddress, uint32_t ulSize, uint8_t *pucData);
+	int read_image(uint32_t ulNetxAddress, uint8_t *pucData, uint32_t ulSize);
 
 	/* Write a byte (8bit) to the netX. */
 	int write_data08(uint32_t ulNetxAddress, uint8_t ucData);
@@ -118,11 +113,13 @@ public:
 	/* Write a long (32bit) to the netX. */
 	int write_data32(uint32_t ulNetxAddress, uint32_t ulData);
 	/* Write a byte array to the netX. */
-	int write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN);
+	int write_image(uint32_t ulNetxAddress, const uint8_t *pucData, uint32_t sizData);
 
 	/* Call routine. */
 //	int call(uint32_t ulNetxAddress, uint32_t ulParameterR0);
 
+	/* Get the suggested chunk size for read_image and write_image. */
+	uint32_t get_image_chunk(void);
 
 private:
 	static const OPENOCD_NAME_RESOLVE_T atOpenOcdResolve[12];

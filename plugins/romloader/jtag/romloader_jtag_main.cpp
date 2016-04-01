@@ -532,25 +532,24 @@ uint32_t romloader_jtag::read_data32(lua_State *ptClientData, uint32_t ulNetxAdd
 /* Read a byte array from the netX.  */
 void romloader_jtag::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
-	char *pcBufferStart;
-	char *pcBuffer;
+	uint8_t *pucBufferStart;
+	uint8_t *pucBuffer;
 	size_t sizBuffer;
 	bool fOk;
 	int iResult;
-	size_t sizChunk;
-	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
+	uint32_t ulChunk;
 	bool fIsRunning;
 	long lBytesProcessed;
+	uint32_t ulMaxChunkSize;
+
 
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::read_image(): ulNetxAddress=0x%08x, ulSize=0x%08x, ppcBUFFER_OUT=%p, psizBUFFER_OUT=%p, tLuaFn.L=%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, ulSize, ppcBUFFER_OUT, psizBUFFER_OUT, tLuaFn.L, lCallbackUserData));
-#if 0
+
 	/* Be optimistic. */
 	fOk = true;
 
-	pcBufferStart = NULL;
+	pucBufferStart = NULL;
 	sizBuffer = 0;
 
 	if( m_fIsConnected==false )
@@ -561,8 +560,11 @@ void romloader_jtag::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **
 	/* if ulSize == 0, we return with fOk == true, pcBufferStart == NULL and sizBuffer == 0 */
 	else if ( ulSize>0 )
 	{
-		pcBufferStart = (char*)malloc(ulSize);
-		if( pcBufferStart==NULL )
+		/* Get the suggested chunk size. */
+		ulMaxChunkSize = m_ptJtagDevice->get_image_chunk();
+
+		pucBufferStart = (uint8_t*)malloc(ulSize);
+		if( pucBufferStart==NULL )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): read_image: failed to allocate %d bytes!", m_pcName, this, ulSize);
 			fOk = false;
@@ -571,21 +573,28 @@ void romloader_jtag::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **
 		{
 			sizBuffer = ulSize;
 
-			pcBuffer = pcBufferStart;
+			pucBuffer = pucBufferStart;
 			lBytesProcessed = 0;
 			do
 			{
-				sizChunk = ulSize;
-				if( sizChunk>m_sizMaxPacketSizeClient-1 )
+				ulChunk = ulSize;
+				if( ulChunk>ulMaxChunkSize )
 				{
-					sizChunk = m_sizMaxPacketSizeClient - 1;
+					ulChunk = ulMaxChunkSize;
 				}
 
-//				memcpy(pcBuffer, m_aucPacketInputBuffer+1, sizChunk);
-				pcBuffer += sizChunk;
-				ulSize -= sizChunk;
-				ulNetxAddress += sizChunk;
-				lBytesProcessed += sizChunk;
+				iResult = m_ptJtagDevice->read_image(ulNetxAddress, pucBuffer, ulChunk);
+				if( iResult!=0 )
+				{
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): read_image failed!", m_pcName, this);
+					fOk = false;
+					break;
+				}
+
+				pucBuffer += ulChunk;
+				ulSize -= ulChunk;
+				ulNetxAddress += ulChunk;
+				lBytesProcessed += ulChunk;
 
 				fIsRunning = callback_long(&tLuaFn, lBytesProcessed, lCallbackUserData);
 				if( fIsRunning!=true )
@@ -598,23 +607,22 @@ void romloader_jtag::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **
 		}
 	}
 
-	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::read_image(): fOk=%d, pcBufferStart=%p, sizBuffer=0x%08zx\n", fOk, pcBufferStart, sizBuffer));
+	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::read_image(): fOk=%d, pcBufferStart=%p, sizBuffer=0x%08zx\n", fOk, pucBufferStart, sizBuffer));
 
-	if( fOk == true )
+	if( fOk==true )
 	{
-		*ppcBUFFER_OUT = pcBufferStart;
+		*ppcBUFFER_OUT = (char*)pucBufferStart;
 		*psizBUFFER_OUT = sizBuffer;
 	}
 	else
 	{
-		if ( pcBufferStart!=NULL)
+		if ( pucBufferStart!=NULL)
 		{
-			free(pcBufferStart);
+			free(pucBufferStart);
 		}
 		printf("Exit Error\n");
 		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
 	}
-#endif
 }
 
 
