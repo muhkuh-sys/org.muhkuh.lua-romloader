@@ -97,6 +97,33 @@ public:
 	int detect(ROMLOADER_JTAG_DETECT_ENTRY_T **pptEntries, size_t *psizEntries);
 	void uninit(void);
 
+	/* Open the connection to the device. */
+	int connect(const char *pcInterfaceName, const char *pcTargetName);
+	/* Close the connection to the device. */
+	void disconnect(void);
+
+	/* Read a byte (8bit) from the netX. */
+	int read_data08(uint32_t ulNetxAddress, uint8_t *pucData);
+	/* Read a word (16bit) from the netX. */
+	int read_data16(uint32_t ulNetxAddress, uint16_t *pusData);
+	/* Read a long (32bit) from the netX. */
+	int read_data32(uint32_t ulNetxAddress, uint32_t *pulData);
+	/* Read a byte array from the netX. */
+	int read_image(uint32_t ulNetxAddress, uint32_t ulSize, uint8_t *pucData);
+
+	/* Write a byte (8bit) to the netX. */
+	int write_data08(uint32_t ulNetxAddress, uint8_t ucData);
+	/* Write a word (16bit) to the netX. */
+	int write_data16(uint32_t ulNetxAddress, uint16_t usData);
+	/* Write a long (32bit) to the netX. */
+	int write_data32(uint32_t ulNetxAddress, uint32_t ulData);
+	/* Write a byte array to the netX. */
+	int write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN);
+
+	/* Call routine. */
+//	int call(uint32_t ulNetxAddress, uint32_t ulParameterR0);
+
+
 private:
 	static const OPENOCD_NAME_RESOLVE_T atOpenOcdResolve[12];
 
@@ -107,6 +134,13 @@ private:
 	static const char *pcResetCode;
 
 
+	bool fJtagDeviceIsConnected;
+	ROMLOADER_JTAG_DEVICE_T m_tJtagDevice;
+
+
+	/* This is the list of detected devices as interface/target name pairs.
+	 * The list will be cleared before each new detect.
+	 */
 	ROMLOADER_JTAG_DETECT_ENTRY_T *m_ptDetected;
 	size_t m_sizDetectedCnt;
 	size_t m_sizDetectedMax;
@@ -121,8 +155,10 @@ private:
 
 	int setup_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg);
 	int probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg);
+	const INTERFACE_SETUP_STRUCT_T *find_interface(const char *pcInterfaceName);
 	int probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg, const TARGET_SETUP_STRUCT_T *ptTargetCfg);
 	int detect_target(const INTERFACE_SETUP_STRUCT_T *ptIfCfg);
+	const TARGET_SETUP_STRUCT_T *find_target(const char *pcTargetName);
 };
 
 

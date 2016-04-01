@@ -152,8 +152,14 @@ romloader_jtag *romloader_jtag_provider::ClaimInterface(const muhkuh_plugin_refe
 {
 	romloader_jtag *ptPlugin;
 	const char *pcName;
-	unsigned int uiBusNr;
-	unsigned int uiDevAdr;
+	const char *pcTargetName;
+	size_t sizTargetName;
+	const char *pcInterfaceName;
+	size_t sizInterfaceName;
+	const char *pcNamePrefix = "romloader_jtag_";
+	const size_t sizNamePrefix = 15; /* size of pcNamePrefix without terminating 0. */
+	char acInterface[1024];
+	char acTarget[1024];
 
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag_provider::ClaimInterface(): ptReference=%p\n", ptReference));
@@ -162,7 +168,11 @@ romloader_jtag *romloader_jtag_provider::ClaimInterface(const muhkuh_plugin_refe
 	ptPlugin = NULL;
 
 
-	if( ptReference==NULL )
+	if( m_fIsInitialized!=true || m_ptJtagDevice==NULL )
+	{
+		fprintf(stderr, "%s(%p): claim_interface(): the plugin is not initialized!\n", m_pcPluginId, this);
+	}
+	else if( ptReference==NULL )
 	{
 		fprintf(stderr, "%s(%p): claim_interface(): missing reference!\n", m_pcPluginId, this);
 	}
@@ -173,14 +183,76 @@ romloader_jtag *romloader_jtag_provider::ClaimInterface(const muhkuh_plugin_refe
 		{
 			fprintf(stderr, "%s(%p): claim_interface(): missing name!\n", m_pcPluginId, this);
 		}
-		else if( sscanf(pcName, m_pcPluginNamePattern, &uiBusNr, &uiDevAdr)!=2 )
-		{
-			fprintf(stderr, "%s(%p): claim_interface(): invalid name: %s\n", m_pcPluginId, this, pcName);
-		}
 		else
 		{
-			ptPlugin = new romloader_jtag(pcName, m_pcPluginId, this, uiBusNr, uiDevAdr);
-			printf("%s(%p): claim_interface(): claimed interface %s.\n", m_pcPluginId, this, pcName);
+			/* Cut off the leading "romloader_jtag_". */
+			if( strncmp(pcName, pcNamePrefix, sizNamePrefix)!=0 )
+			{
+				fprintf(stderr, "%s(%p): claim_interface(): the name does not start with \"%s\": %s\n", m_pcPluginId, this, pcNamePrefix, pcName);
+			}
+			else
+			{
+				/* Split the rest by "@". */
+				pcTargetName = pcName + sizNamePrefix;
+				pcInterfaceName = pcTargetName;
+				while( *pcInterfaceName!='@' )
+				{
+					if( *pcInterfaceName=='\0' )
+					{
+						pcInterfaceName = NULL;
+						break;
+					}
+					else
+					{
+						++pcInterfaceName;
+					}
+				}
+
+				if( pcInterfaceName==NULL )
+				{
+					fprintf(stderr, "%s(%p): claim_interface(): the name contains no '@': %s\n", m_pcPluginId, this, pcName);
+				}
+				else
+				{
+					sizTargetName = pcInterfaceName - pcTargetName;
+					if( sizTargetName==0 )
+					{
+						fprintf(stderr, "%s(%p): claim_interface(): no target name before the '@': %s\n", m_pcPluginId, this, pcName);
+					}
+					else
+					{
+						/* pcInterfaceName points to the '@' right now. Move one forward to get to the interface name. */
+						++pcInterfaceName;
+						/* Get the length of the interface name. */
+						sizInterfaceName = strlen(pcName) - (pcInterfaceName - pcName);
+						if( sizInterfaceName==0 )
+						{
+							fprintf(stderr, "%s(%p): claim_interface(): no interface name after the '@': %s\n", m_pcPluginId, this, pcName);
+						}
+						else if( sizTargetName>(sizeof(acTarget)-1) )
+						{
+							fprintf(stderr, "%s(%p): claim_interface(): the target name is too long: %s\n", m_pcPluginId, this, pcName);
+						}
+						else if( sizInterfaceName>(sizeof(acInterface)-1) )
+						{
+							fprintf(stderr, "%s(%p): claim_interface(): the interface name is too long: %s\n", m_pcPluginId, this, pcName);
+						}
+						else
+						{
+							memset(acInterface, 0, sizeof(acInterface));
+							memset(acTarget, 0, sizeof(acTarget));
+							memcpy(acInterface, pcInterfaceName, sizInterfaceName);
+							memcpy(acTarget, pcTargetName, sizTargetName);
+
+							fprintf(stderr, "Interface name: %s\n", acInterface);
+							fprintf(stderr, "Target name: %s\n", acTarget);
+
+							ptPlugin = new romloader_jtag(pcName, m_pcPluginId, this, acInterface, acTarget);
+							printf("%s(%p): claim_interface(): claimed interface %s.\n", m_pcPluginId, this, pcName);
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -194,8 +266,6 @@ bool romloader_jtag_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 {
 	bool fOk;
 	const char *pcName;
-	unsigned int uiBusNr;
-	unsigned int uiDevAdr;
 
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag_provider::ReleaseInterface(): ptPlugin=%p\n", ptPlugin));
@@ -214,10 +284,6 @@ bool romloader_jtag_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 		{
 			fprintf(stderr, "%s(%p): release_interface(): missing name!\n", m_pcPluginId, this);
 		}
-		else if( sscanf(pcName, m_pcPluginNamePattern, &uiBusNr, &uiDevAdr)!=2 )
-		{
-			fprintf(stderr, "%s(%p): release_interface(): invalid name: %s\n", m_pcPluginId, this, pcName);
-		}
 		else
 		{
 			printf("%s(%p): released interface %s.\n", m_pcPluginId, this, pcName);
@@ -233,33 +299,55 @@ bool romloader_jtag_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 
 /*-------------------------------------*/
 
-romloader_jtag::romloader_jtag(const char *pcName, const char *pcTyp, romloader_jtag_provider *ptProvider, unsigned int uiBusNr, unsigned int uiDeviceAdr)
+romloader_jtag::romloader_jtag(const char *pcName, const char *pcTyp, romloader_jtag_provider *ptProvider, const char *pcInterfaceName, const char *pcTargetName)
  : romloader(pcName, pcTyp, ptProvider)
  , m_ptJtagProvider(ptProvider)
- , m_uiBusNr(uiBusNr)
- , m_uiDeviceAdr(uiDeviceAdr)
+ , m_fIsInitialized(false)
+ , m_ptJtagDevice(NULL)
+ , m_pcInterfaceName(NULL)
+ , m_pcTargetName(NULL)
 {
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::romloader_jtag(): pcName='%s', pcTyp='%s', ptProvider=%p, uiBusNr=%d, uiDeviceAdr=%d\n", pcName, pcTyp, ptProvider, uiBusNr, uiDeviceAdr));
+	int iResult;
+
+
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::romloader_jtag(): pcName='%s', pcTyp='%s', ptProvider=%p, pcInterfaceName=%s, pcTargetName=%s\n", pcName, pcTyp, ptProvider, pcInterfaceName, pcTargetName));
+
+	m_ptJtagDevice = new romloader_jtag_openocd();
+	if( m_ptJtagDevice!=NULL )
+	{
+		/* Try to initialize the JTAG driver. */
+		iResult = m_ptJtagDevice->initialize();
+		if( iResult==0 )
+		{
+			/* Create a copy of the interface and target names. */
+			m_pcInterfaceName = clone_string(pcInterfaceName, SIZ_MAX_MUHKUH_PLUGIN_STRING);
+			m_pcTargetName = clone_string(pcTargetName, SIZ_MAX_MUHKUH_PLUGIN_STRING);
+
+			m_fIsInitialized = true;
+		}
+	}
 
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::romloader_jtag()\n"));
 }
 
-
-romloader_jtag::romloader_jtag(const char *pcName, const char *pcTyp, const char *pcLocation, romloader_jtag_provider *ptProvider, unsigned int uiBusNr, unsigned int uiDeviceAdr)
- : romloader(pcName, pcTyp, pcLocation, ptProvider)
- , m_ptJtagProvider(ptProvider)
- , m_uiBusNr(uiBusNr)
- , m_uiDeviceAdr(uiDeviceAdr)
-{
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::romloader_jtag(): pcName='%s', pcTyp='%s', ptProvider=%p, uiBusNr=%d, uiDeviceAdr=%d\n", pcName, pcTyp, ptProvider, uiBusNr, uiDeviceAdr));
-	
-	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::romloader_jtag()\n"));
-}
 
 
 romloader_jtag::~romloader_jtag(void)
 {
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::~romloader_jtag()\n"));
+
+	if( m_pcInterfaceName!=NULL )
+	{
+		delete[] m_pcInterfaceName;
+	}
+	if( m_pcTargetName!=NULL )
+	{
+		delete[] m_pcTargetName;
+	}
+	if( m_ptJtagDevice!=NULL )
+	{
+		delete m_ptJtagDevice;
+	}
 
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::~romloader_jtag()\n"));
 }
@@ -280,9 +368,9 @@ void romloader_jtag::Connect(lua_State *ptClientData)
 	else
 	{
 		/* TODO: add the connect method. */
-#if 0
-		iResult = m_ptJtagDevice->Connect(m_uiBusNr, m_uiDeviceAdr);
-		if( iResult!=LIBUSB_SUCCESS )
+
+		iResult = m_ptJtagDevice->connect(m_pcInterfaceName, m_pcTargetName);
+		if( iResult!=0 )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to connect to device", m_pcName, this);
 		}
@@ -290,28 +378,13 @@ void romloader_jtag::Connect(lua_State *ptClientData)
 		{
 			/* NOTE: set m_fIsConnected to true here or detect_chiptyp and chip_init will fail! */
 			m_fIsConnected = true;
-
-			/* Synchronize with the client to get these settings:
-			 *   chip type
-			 *   sequence number
-			 *   maximum packet size
-			 */
-			if( synchronize()!=true )
-			{
-				fprintf(stderr, "%s(%p): failed to synchronize!", m_pcName, this);
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to synchronize!", m_pcName, this);
-				m_fIsConnected = false;
-				m_ptUsbDevice->Disconnect();
-				iResult = -1;
-			}
 		}
 		DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::Connect(): iResult=%d\n", iResult));
 
-		if( iResult!=LIBUSB_SUCCESS )
+		if( iResult!=0 )
 		{
 			MUHKUH_PLUGIN_EXIT_ERROR(ptClientData);
 		}
-#endif
 	}
 }
 
@@ -323,12 +396,11 @@ void romloader_jtag::Disconnect(lua_State *ptClientData)
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::Disconnect(): ptClientData=%p\n", ptClientData));
 
 	/* NOTE: allow disconnects even if the plugin was already disconnected. */
-#if 0
-	if( m_ptUsbDevice!=NULL )
+	if( m_ptJtagDevice!=NULL )
 	{
-		m_ptUsbDevice->Disconnect();
+		m_ptJtagDevice->disconnect();
 	}
-#endif
+
 	m_fIsConnected = false;
 
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::Disconnect()\n"));
@@ -336,15 +408,12 @@ void romloader_jtag::Disconnect(lua_State *ptClientData)
 
 
 
-/* read a byte (8bit) from the netx to the pc */
+/* Read a byte (8bit) from the netX. */
 uint8_t romloader_jtag::read_data08(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
-	unsigned char ucData;
+	uint8_t ucData;
 	bool fOk;
 	int iResult;
-	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
 
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::read_data08(): ptClientData=%p, ulNetxAddress=0x%08x\n", ptClientData, ulNetxAddress));
@@ -356,8 +425,15 @@ uint8_t romloader_jtag::read_data08(lua_State *ptClientData, uint32_t ulNetxAddr
 	}
 	else
 	{
-		ucData  = 0x12;
-		fOk = true;
+		iResult = m_ptJtagDevice->read_data08(ulNetxAddress, &ucData);
+		if( iResult!=0 )
+		{
+			fOk = false;
+		}
+		else
+		{
+			fOk = true;
+		}
 	}
 
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::read_data08(): fOk=%d, ucData=0x%02x\n", fOk, ucData));
@@ -372,15 +448,12 @@ uint8_t romloader_jtag::read_data08(lua_State *ptClientData, uint32_t ulNetxAddr
 }
 
 
-/* read a word (16bit) from the netx to the pc */
+/* Read a word (16bit) from the netX. */
 uint16_t romloader_jtag::read_data16(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
-	unsigned short usData;
+	uint16_t usData;
 	bool fOk;
 	int iResult;
-	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
 
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::read_data16(): ptClientData=%p, ulNetxAddress=0x%08x\n", ptClientData, ulNetxAddress));
@@ -392,8 +465,15 @@ uint16_t romloader_jtag::read_data16(lua_State *ptClientData, uint32_t ulNetxAdd
 	}
 	else
 	{
-		usData = 0x1234;
-		fOk = true;
+		iResult = m_ptJtagDevice->read_data16(ulNetxAddress, &usData);
+		if( iResult!=0 )
+		{
+			fOk = false;
+		}
+		else
+		{
+			fOk = true;
+		}
 	}
 
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::read_data16(): fOk=%d, usData=0x%04x\n", fOk, usData));
@@ -408,15 +488,12 @@ uint16_t romloader_jtag::read_data16(lua_State *ptClientData, uint32_t ulNetxAdd
 }
 
 
-/* read a long (32bit) from the netx to the pc */
+/* Read a long (32bit) from the netX. */
 uint32_t romloader_jtag::read_data32(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
-	unsigned long ulData;
+	uint32_t ulData;
 	bool fOk;
 	int iResult;
-	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
 
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::read_data32(): ptClientData=%p, ulNetxAddress=0x%08x\n", ptClientData, ulNetxAddress));
@@ -428,12 +505,19 @@ uint32_t romloader_jtag::read_data32(lua_State *ptClientData, uint32_t ulNetxAdd
 	}
 	else
 	{
-		ulData = 0x12345678;
-		fOk = true;
+		iResult = m_ptJtagDevice->read_data32(ulNetxAddress, &ulData);
+		if( iResult!=0 )
+		{
+			fOk = false;
+		}
+		else
+		{
+			fOk = true;
+		}
 	}
 
 	/* Print the function end marker already here as the MUHKUH_PLUGIN_EXIT_ERROR might leave the function. */
-	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::read_data32(): fOk=%d, ulData=0x%08lx\n", fOk, ulData));
+	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::read_data32(): fOk=%d, ulData=0x%08x\n", fOk, ulData));
 
 	if( fOk!=true )
 	{
@@ -445,7 +529,7 @@ uint32_t romloader_jtag::read_data32(lua_State *ptClientData, uint32_t ulNetxAdd
 }
 
 
-/* read a byte array from the netx to the pc  */
+/* Read a byte array from the netX.  */
 void romloader_jtag::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	char *pcBufferStart;
@@ -462,7 +546,7 @@ void romloader_jtag::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **
 
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::read_image(): ulNetxAddress=0x%08x, ulSize=0x%08x, ppcBUFFER_OUT=%p, psizBUFFER_OUT=%p, tLuaFn.L=%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, ulSize, ppcBUFFER_OUT, psizBUFFER_OUT, tLuaFn.L, lCallbackUserData));
-
+#if 0
 	/* Be optimistic. */
 	fOk = true;
 
@@ -530,6 +614,7 @@ void romloader_jtag::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **
 		printf("Exit Error\n");
 		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
 	}
+#endif
 }
 
 
@@ -538,9 +623,6 @@ void romloader_jtag::write_data08(lua_State *ptClientData, uint32_t ulNetxAddres
 {
 	bool fOk;
 	int iResult;
-	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
 
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::write_data08(): ptClientData=%p, ulNetxAddress=0x%08x, ucData=0x%02x\n", ptClientData, ulNetxAddress, ucData));
@@ -552,7 +634,15 @@ void romloader_jtag::write_data08(lua_State *ptClientData, uint32_t ulNetxAddres
 	}
 	else
 	{
-		fOk = true;
+		iResult = m_ptJtagDevice->write_data08(ulNetxAddress, ucData);
+		if( iResult!=0 )
+		{
+			fOk = false;
+		}
+		else
+		{
+			fOk = true;
+		}
 	}
 
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::write_data08(): fOk=%d\n", fOk));
@@ -570,9 +660,6 @@ void romloader_jtag::write_data16(lua_State *ptClientData, uint32_t ulNetxAddres
 {
 	bool fOk;
 	int iResult;
-	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
 
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::write_data16(): ptClientData=%p, ulNetxAddress=0x%08x, usData=0x%04x\n", ptClientData, ulNetxAddress, usData));
@@ -584,7 +671,15 @@ void romloader_jtag::write_data16(lua_State *ptClientData, uint32_t ulNetxAddres
 	}
 	else
 	{
-		fOk = true;
+		iResult = m_ptJtagDevice->write_data16(ulNetxAddress, usData);
+		if( iResult!=0 )
+		{
+			fOk = false;
+		}
+		else
+		{
+			fOk = true;
+		}
 	}
 
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::write_data16(): fOk=%d\n", fOk));
@@ -602,9 +697,6 @@ void romloader_jtag::write_data32(lua_State *ptClientData, uint32_t ulNetxAddres
 {
 	bool fOk;
 	int iResult;
-	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
 
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::write_data32(): ptClientData=%p, ulNetxAddress=0x%08x, ulData=0x%08x\n", ptClientData, ulNetxAddress, ulData));
@@ -616,7 +708,15 @@ void romloader_jtag::write_data32(lua_State *ptClientData, uint32_t ulNetxAddres
 	}
 	else
 	{
-		fOk = true;
+		iResult = m_ptJtagDevice->write_data32(ulNetxAddress, ulData);
+		if( iResult!=0 )
+		{
+			fOk = false;
+		}
+		else
+		{
+			fOk = true;
+		}
 	}
 
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::write_data32(): fOk=%d\n", fOk));
@@ -643,7 +743,7 @@ void romloader_jtag::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN
 
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::write_image(): ulNetxAddress=0x%08x, pcBUFFER_IN=%p, sizBUFFER_IN=0x%08zx, tLuaFn.L=%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, pcBUFFER_IN, sizBUFFER_IN, tLuaFn.L, lCallbackUserData));
-
+#if 0
 	/* Be optimistic. */
 	fOk = true;
 
@@ -685,6 +785,7 @@ void romloader_jtag::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN
 		printf("Exit Error\n");
 		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
 	}
+#endif
 }
 
 

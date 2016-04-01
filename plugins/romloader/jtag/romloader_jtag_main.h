@@ -38,8 +38,7 @@ class romloader_jtag_provider;
 class romloader_jtag : public romloader
 {
 public:
-	romloader_jtag(const char *pcName, const char *pcTyp, romloader_jtag_provider *ptProvider, unsigned int uiBusNr, unsigned int uiDeviceAdr);
-	romloader_jtag(const char *pcName, const char *pcTyp, const char *pcLocation, romloader_jtag_provider *ptProvider, unsigned int uiBusNr, unsigned int uiDeviceAdr);
+	romloader_jtag(const char *pcName, const char *pcTyp, romloader_jtag_provider *ptProvider, const char *pcInterfaceName, const char *pcTargetName);
 	~romloader_jtag(void);
 
 // *** lua interface start ***
@@ -73,18 +72,12 @@ public:
 	static void hexdump(const unsigned char *pucData, unsigned long ulSize, unsigned long ulNetxAddress);
 
 private:
-	/* TODO: remove this. */
-	static const size_t m_sizMaxPacketSizeHost = 8192+64;
-	size_t m_sizMaxPacketSizeClient;
-	unsigned char m_aucPacketOutputBuffer[m_sizMaxPacketSizeHost];
-	unsigned char m_aucPacketInputBuffer[m_sizMaxPacketSizeHost];
-
-	unsigned int m_uiMonitorSequence;
-
+	bool m_fIsInitialized;
 	romloader_jtag_provider *m_ptJtagProvider;
+	romloader_jtag_openocd *m_ptJtagDevice;
 
-	unsigned int m_uiBusNr;
-	unsigned int m_uiDeviceAdr;
+	char *m_pcInterfaceName;
+	char *m_pcTargetName;
 };
 
 /*-----------------------------------*/
@@ -102,7 +95,6 @@ public:
 
 private:
 	bool m_fIsInitialized;
-	//ROMLOADER_JTAG_DEVICE_T m_tJtagDevice;
 	romloader_jtag_openocd *m_ptJtagDevice;
 	static const char *m_pcPluginNamePattern;
 };

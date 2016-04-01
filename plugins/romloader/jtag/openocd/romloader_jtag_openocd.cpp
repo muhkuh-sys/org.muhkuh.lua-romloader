@@ -27,18 +27,18 @@
 
 
 romloader_jtag_openocd::romloader_jtag_openocd(void)
- : m_ptDetected(NULL)
+ : fJtagDeviceIsConnected(false)
+ , m_ptDetected(NULL)
  , m_sizDetectedCnt(0)
  , m_sizDetectedMax(0)
 {
-	fprintf(stderr, "romloader_jtag_openocd\n");
+	memset(&m_tJtagDevice, 0, sizeof(ROMLOADER_JTAG_DEVICE_T));
 }
 
 
 
 romloader_jtag_openocd::~romloader_jtag_openocd(void)
 {
-	fprintf(stderr, "~romloader_jtag_openocd\n");
 	free_detect_entries();
 }
 
@@ -544,6 +544,37 @@ int romloader_jtag_openocd::probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, c
 
 
 
+const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T *romloader_jtag_openocd::find_interface(const char *pcInterfaceName)
+{
+	const INTERFACE_SETUP_STRUCT_T *ptCnt;
+	const INTERFACE_SETUP_STRUCT_T *ptEnd;
+	const INTERFACE_SETUP_STRUCT_T *ptHit;
+	int iCompareResult;
+
+
+	/* No match yet. */
+	ptHit = NULL;
+
+	/* Try to run all command chunks to see which interfaces are present. */
+	ptCnt = atInterfaceCfg;
+	ptEnd = atInterfaceCfg + (sizeof(atInterfaceCfg)/sizeof(atInterfaceCfg[0]));
+	while( ptCnt<ptEnd )
+	{
+		iCompareResult = strcmp(ptCnt->pcID, pcInterfaceName);
+		if( iCompareResult==0 )
+		{
+			ptHit = ptCnt;
+			break;
+		}
+
+		++ptCnt;
+	}
+
+	return ptHit;
+}
+
+
+
 int romloader_jtag_openocd::probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg, const TARGET_SETUP_STRUCT_T *ptTargetCfg)
 {
 	int iResult;
@@ -588,36 +619,6 @@ int romloader_jtag_openocd::probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice, cons
 				else
 				{
 					fprintf(stderr, "Found target %s!\n", ptTargetCfg->pcID);
-
-#if 0
-					/* Now for a demo stop the target and transfer some memory. */
-					fprintf(stderr, "Running reset code.\n");
-					iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, pcResetCode);
-					if( iResult!=0 )
-					{
-						fprintf(stderr, "Failed to run the reset code: %d\n", iResult);
-						iResult = -1;
-					}
-					else
-					{
-						uint32_t ulValue;
-
-						/* Read memory. */
-						iResult = ptDevice->tFunctions.tFn.pfnReadData32(ptDevice->pvOpenocdContext, 0, &ulValue);
-						if( iResult!=0 )
-						{
-							fprintf(stderr, "Failed to read address 0: %d\n", iResult);
-							iResult = -1;
-						}
-						else
-						{
-							printf("netX 0x00000000: 0x%08x\n", ulValue);
-
-							fprintf(stderr, "*** All OK ***\n");
-						}
-					}
-#endif
-					iResult = add_detected_entry(ptIfCfg->pcID, ptTargetCfg->pcID);
 				}
 			}
 		}
@@ -661,6 +662,7 @@ int romloader_jtag_openocd::detect_target(const INTERFACE_SETUP_STRUCT_T *ptIfCf
 		if( iResult==0 )
 		{
 			/* Found an entry! */
+			iResult = add_detected_entry(ptIfCfg->pcID, ptCnt->pcID);
 			break;
 		}
 		else if( iResult<0 )
@@ -674,6 +676,37 @@ int romloader_jtag_openocd::detect_target(const INTERFACE_SETUP_STRUCT_T *ptIfCf
 	}
 
 	return iResult;
+}
+
+
+
+const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T *romloader_jtag_openocd::find_target(const char *pcTargetName)
+{
+	const TARGET_SETUP_STRUCT_T *ptCnt;
+	const TARGET_SETUP_STRUCT_T *ptEnd;
+	const TARGET_SETUP_STRUCT_T *ptHit;
+	int iCompareResult;
+
+
+	/* No match yet. */
+	ptHit = NULL;
+
+	/* Try to run all command chunks to see which interfaces are present. */
+	ptCnt = atTargetCfg;
+	ptEnd = atTargetCfg + (sizeof(atTargetCfg)/sizeof(atTargetCfg[0]));
+	while( ptCnt<ptEnd )
+	{
+		iCompareResult = strcmp(ptCnt->pcID, pcTargetName);
+		if( iCompareResult==0 )
+		{
+			ptHit = ptCnt;
+			break;
+		}
+
+		++ptCnt;
+	}
+
+	return ptHit;
 }
 
 
@@ -762,6 +795,237 @@ int romloader_jtag_openocd::detect(ROMLOADER_JTAG_DETECT_ENTRY_T **pptEntries, s
 	*psizEntries = m_sizDetectedCnt;
 
 	return iResult;
+}
+
+
+
+/* Open the connection to the device. */
+int romloader_jtag_openocd::connect(const char *pcInterfaceName, const char *pcTargetName)
+{
+	int iResult;
+	const INTERFACE_SETUP_STRUCT_T *ptInterface;
+	const TARGET_SETUP_STRUCT_T *ptTarget;
+
+
+	if( fJtagDeviceIsConnected==true )
+	{
+		fprintf(stderr, "romloader_jtag_openocd::connect: Already connected.\n");
+	}
+	else
+	{
+		ptInterface = find_interface(pcInterfaceName);
+		if( ptInterface==NULL )
+		{
+			fprintf(stderr, "Could not find interface %s!\n", pcInterfaceName);
+		}
+		else
+		{
+			ptTarget = find_target(pcTargetName);
+			if( ptTarget==NULL )
+			{
+				fprintf(stderr, "Could not find target %s!\n", pcTargetName);
+			}
+			else
+			{
+				/* Open the shared library. */
+				iResult = openocd_open(&m_tJtagDevice);
+				if( iResult==0 )
+				{
+					iResult = probe_target(&m_tJtagDevice, ptInterface, ptTarget);
+					if( iResult==0 )
+					{
+						/* Stop the target. */
+						fprintf(stderr, "Running reset code.\n");
+						iResult = m_tJtagDevice.tFunctions.tFn.pfnCommandRunLine(m_tJtagDevice.pvOpenocdContext, pcResetCode);
+						if( iResult!=0 )
+						{
+							fprintf(stderr, "Failed to run the reset code: %d\n", iResult);
+							iResult = -1;
+						}
+						else
+						{
+							fJtagDeviceIsConnected = true;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return iResult;
+}
+
+
+
+/* Close the connection to the device. */
+void romloader_jtag_openocd::disconnect(void)
+{
+	openocd_close(&m_tJtagDevice);
+	fJtagDeviceIsConnected = false;
+}
+
+
+
+/* Read a byte (8bit) from the netX. */
+int romloader_jtag_openocd::read_data08(uint32_t ulNetxAddress, uint8_t *pucData)
+{
+	int iResult;
+
+
+	/* Be pessimistic. */
+	iResult = -1;
+
+	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnReadData08!=NULL )
+	{
+		/* Read memory. */
+		iResult = m_tJtagDevice.tFunctions.tFn.pfnReadData08(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, pucData);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "read_data08: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			iResult = -1;
+		}
+	}
+
+	return iResult;
+}
+
+
+
+/* Read a word (16bit) from the netX. */
+int romloader_jtag_openocd::read_data16(uint32_t ulNetxAddress, uint16_t *pusData)
+{
+	int iResult;
+
+
+	/* Be pessimistic. */
+	iResult = -1;
+
+	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnReadData16!=NULL )
+	{
+		/* Read memory. */
+		iResult = m_tJtagDevice.tFunctions.tFn.pfnReadData16(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, pusData);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "read_data16: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			iResult = -1;
+		}
+	}
+
+	return iResult;
+}
+
+
+
+/* Read a long (32bit) from the netX. */
+int romloader_jtag_openocd::read_data32(uint32_t ulNetxAddress, uint32_t *pulData)
+{
+	int iResult;
+
+
+	/* Be pessimistic. */
+	iResult = -1;
+
+	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnReadData32!=NULL )
+	{
+		/* Read memory. */
+		iResult = m_tJtagDevice.tFunctions.tFn.pfnReadData32(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, pulData);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "read_data32: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			iResult = -1;
+		}
+	}
+
+	return iResult;
+}
+
+
+
+/* Read a byte array from the netX. */
+int romloader_jtag_openocd::read_image(uint32_t ulNetxAddress, uint32_t ulSize, uint8_t *pucData)
+{
+}
+
+
+
+/* Write a byte (8bit) to the netX. */
+int romloader_jtag_openocd::write_data08(uint32_t ulNetxAddress, uint8_t ucData)
+{
+	int iResult;
+
+
+	/* Be pessimistic. */
+	iResult = -1;
+
+	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnWriteData08!=NULL )
+	{
+		/* Read memory. */
+		iResult = m_tJtagDevice.tFunctions.tFn.pfnWriteData08(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, ucData);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "read_data32: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			iResult = -1;
+		}
+	}
+
+	return iResult;
+}
+
+
+
+/* Write a word (16bit) to the netX. */
+int romloader_jtag_openocd::write_data16(uint32_t ulNetxAddress, uint16_t usData)
+{
+	int iResult;
+
+
+	/* Be pessimistic. */
+	iResult = -1;
+
+	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnWriteData16!=NULL )
+	{
+		/* Read memory. */
+		iResult = m_tJtagDevice.tFunctions.tFn.pfnWriteData16(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, usData);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "read_data32: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			iResult = -1;
+		}
+	}
+
+	return iResult;
+}
+
+
+
+/* Write a long (32bit) to the netX. */
+int romloader_jtag_openocd::write_data32(uint32_t ulNetxAddress, uint32_t ulData)
+{
+	int iResult;
+
+
+	/* Be pessimistic. */
+	iResult = -1;
+
+	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnWriteData32!=NULL )
+	{
+		/* Read memory. */
+		iResult = m_tJtagDevice.tFunctions.tFn.pfnWriteData32(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, ulData);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "read_data32: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			iResult = -1;
+		}
+	}
+
+	return iResult;
+}
+
+
+
+/* Write a byte array to the netX. */
+int romloader_jtag_openocd::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN)
+{
 }
 
 
