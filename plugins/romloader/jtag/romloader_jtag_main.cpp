@@ -741,17 +741,17 @@ void romloader_jtag::write_data32(lua_State *ptClientData, uint32_t ulNetxAddres
 void romloader_jtag::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	bool fOk;
-	size_t sizChunk;
+	uint32_t ulChunk;
+	uint32_t ulMaxChunkSize;
 	int iResult;
-	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
 	bool fIsRunning;
 	long lBytesProcessed;
+	const uint8_t *pucData;
+	uint32_t ulSizeData;
 
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::write_image(): ulNetxAddress=0x%08x, pcBUFFER_IN=%p, sizBUFFER_IN=0x%08zx, tLuaFn.L=%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, pcBUFFER_IN, sizBUFFER_IN, tLuaFn.L, lCallbackUserData));
-#if 0
+
 	/* Be optimistic. */
 	fOk = true;
 
@@ -762,19 +762,33 @@ void romloader_jtag::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN
 	}
 	else if( sizBUFFER_IN!=0 )
 	{
+		/* Get the suggested chunk size. */
+		ulMaxChunkSize = m_ptJtagDevice->get_image_chunk();
+
+		pucData = (const uint8_t*)pcBUFFER_IN;
+		ulSizeData = sizBUFFER_IN;
+
 		lBytesProcessed = 0;
 		do
 		{
-			sizChunk = sizBUFFER_IN;
-			if( sizChunk>(m_sizMaxPacketSizeClient-7) )
+			ulChunk = ulSizeData;
+			if( ulChunk>ulMaxChunkSize )
 			{
-				sizChunk = m_sizMaxPacketSizeClient - 7;
+				ulChunk = ulMaxChunkSize;
 			}
 
-			pcBUFFER_IN += sizChunk;
-			sizBUFFER_IN -= sizChunk;
-			ulNetxAddress += sizChunk;
-			lBytesProcessed += sizChunk;
+			iResult = m_ptJtagDevice->write_image(ulNetxAddress, pucData, ulChunk);
+			if( iResult!=0 )
+			{
+				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): write_image failed!", m_pcName, this);
+				fOk = false;
+				break;
+			}
+
+			pucData += ulChunk;
+			ulSizeData -= ulChunk;
+			ulNetxAddress += ulChunk;
+			lBytesProcessed += ulChunk;
 
 			fIsRunning = callback_long(&tLuaFn, lBytesProcessed, lCallbackUserData);
 			if( fIsRunning!=true )
@@ -783,7 +797,7 @@ void romloader_jtag::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN
 				fOk = false;
 				break;
 			}
-		} while( sizBUFFER_IN!=0 );
+		} while( ulSizeData!=0 );
 	}
 
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::write_image(): fOk=%d\n", fOk));
@@ -793,7 +807,6 @@ void romloader_jtag::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN
 		printf("Exit Error\n");
 		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
 	}
-#endif
 }
 
 
