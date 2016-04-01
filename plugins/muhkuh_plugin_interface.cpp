@@ -27,9 +27,6 @@
 
 /*-----------------------------------*/
 
-#define SIZ_MAX_MUHKUH_PLUGIN_STRING 256
-
-
 
 #if !defined(LUA_VERSION_NUM) || LUA_VERSION_NUM < 501
 #       define WRAPPER_LUA_RAWLEN lua_strlen
