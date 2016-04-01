@@ -26,6 +26,7 @@
 
 /*-------------------------------------*/
 
+#define CFG_DEBUGMSG 1
 #if CFG_DEBUGMSG!=0
 	/* show all messages by default */
 	static unsigned long s_ulCurSettings = 0xffffffff;
@@ -45,7 +46,7 @@
 	#define ZONE_INIT           DEBUGZONE(DBG_ZONE_INIT)
 	#define ZONE_VERBOSE        DEBUGZONE(DBG_ZONE_VERBOSE)
 
-	#define DEBUGMSG(cond,printf_exp) ((void)((cond)?(uprintf printf_exp),1:0))
+	#define DEBUGMSG(cond,printf_exp) ((void)((cond)?(printf printf_exp),1:0))
 #else  /* CFG_DEBUGMSG!=0 */
 	#define DEBUGMSG(cond,printf_exp) ((void)0)
 #endif /* CFG_DEBUGMSG!=0 */
@@ -53,10 +54,12 @@
 
 /*-------------------------------------*/
 
-const char *romloader_jtag_provider::m_pcPluginNamePattern = "romloader_jtag_%02x_%02x";
+const char *romloader_jtag_provider::m_pcPluginNamePattern = "romloader_jtag_%s@%s";
 
 romloader_jtag_provider::romloader_jtag_provider(swig_type_info *p_romloader_jtag, swig_type_info *p_romloader_jtag_reference)
  : muhkuh_plugin_provider("romloader_jtag")
+ , m_fIsInitialized(false)
+ , m_ptJtagDevice(NULL)
 {
 	int iResult;
 
@@ -67,63 +70,82 @@ romloader_jtag_provider::romloader_jtag_provider(swig_type_info *p_romloader_jta
 	m_ptPluginTypeInfo = p_romloader_jtag;
 	m_ptReferenceTypeInfo = p_romloader_jtag_reference;
 
-	iResult = romloader_jtag_openocd_init();
-	if( iResult==0 )
+	m_ptJtagDevice = new romloader_jtag_openocd();
+	if( m_ptJtagDevice!=NULL )
 	{
-		iResult = romloader_jtag_openocd_detect();
-		printf("iResult: %d\n", iResult);
+		/* Try to initialize the JTAG driver. */
+		iResult = m_ptJtagDevice->initialize();
+		if( iResult==0 )
+		{
+			m_fIsInitialized = true;
+		}
 	}
 
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag_provider::romloader_jtag_provider()\n"));
 }
 
 
+
 romloader_jtag_provider::~romloader_jtag_provider(void)
 {
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag_provider::~romloader_jtag_provider()\n"));
+
+	if( m_ptJtagDevice!=NULL )
+	{
+		delete m_ptJtagDevice;
+	}
 
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag_provider::~romloader_jtag_provider()\n"));
 }
 
 
+
 int romloader_jtag_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess)
 {
 	int iResult;
-	romloader_jtag_reference **pptReferences;
-	romloader_jtag_reference **pptRefCnt;
-	romloader_jtag_reference **pptRefEnd;
+	romloader_jtag_openocd::ROMLOADER_JTAG_DETECT_ENTRY_T *ptEntries;
+	romloader_jtag_openocd::ROMLOADER_JTAG_DETECT_ENTRY_T *ptEntriesCnt;
+	romloader_jtag_openocd::ROMLOADER_JTAG_DETECT_ENTRY_T *ptEntriesEnd;
 	romloader_jtag_reference *ptRef;
-	size_t sizReferences;
+	size_t sizEntries;
+	bool fIsBusy;
+	char strId[1024];
 
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag_provider::DetectInterfaces(): ptLuaStateForTableAccess=%p\n", ptLuaStateForTableAccess));
 
-	sizReferences = 0;
+	sizEntries = 0;
 
-	/* detect devices */
-	pptReferences = NULL;
-	/* TODO: implement detect function. */
-/*	iResult = m_ptUsbDevice->detect_interfaces(&pptReferences, &sizReferences, this); */
-	iResult = -1;
-	if( iResult==0 && pptReferences!=NULL )
+	if( m_fIsInitialized==true && m_ptJtagDevice!=NULL )
 	{
-		pptRefCnt = pptReferences;
-		pptRefEnd = pptReferences + sizReferences;
-		while( pptRefCnt<pptRefEnd )
+		/* detect devices */
+		ptEntries = NULL;
+		iResult = m_ptJtagDevice->detect(&ptEntries, &sizEntries);
+		if( iResult==0 && ptEntries!=NULL )
 		{
-			ptRef = *pptRefCnt;
-			if( ptRef!=NULL )
+			ptEntriesCnt = ptEntries;
+			ptEntriesEnd = ptEntries + sizEntries;
+			while( ptEntriesCnt<ptEntriesEnd )
 			{
-				add_reference_to_table(ptLuaStateForTableAccess, ptRef);
+				/* create the new instance */
+				memset(strId, 0, sizeof(strId));
+				snprintf(strId, sizeof(strId)-1, m_pcPluginNamePattern, ptEntriesCnt->pcTarget, ptEntriesCnt->pcInterface);
+				fIsBusy = false;
+				ptRef = new romloader_jtag_reference(strId, m_pcPluginId, fIsBusy, this);
+				if( ptRef!=NULL )
+				{
+					add_reference_to_table(ptLuaStateForTableAccess, ptRef);
+				}
+				++ptEntriesCnt;
 			}
-			++pptRefCnt;
 		}
 	}
 
-	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag_provider::DetectInterfaces(): sizReferences=%d\n", sizReferences));
+	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag_provider::DetectInterfaces(): sizEntries=%zd\n", sizEntries));
 
-	return sizReferences;
+	return sizEntries;
 }
+
 
 
 romloader_jtag *romloader_jtag_provider::ClaimInterface(const muhkuh_plugin_reference *ptReference)
@@ -325,7 +347,7 @@ uint8_t romloader_jtag::read_data08(lua_State *ptClientData, uint32_t ulNetxAddr
 	unsigned char ucStatus;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::read_data08(): ptClientData=%p, ulNetxAddress=0x%08lx\n", ptClientData, ulNetxAddress));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::read_data08(): ptClientData=%p, ulNetxAddress=0x%08x\n", ptClientData, ulNetxAddress));
 
 	if( m_fIsConnected==false )
 	{
@@ -361,7 +383,7 @@ uint16_t romloader_jtag::read_data16(lua_State *ptClientData, uint32_t ulNetxAdd
 	unsigned char ucStatus;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::read_data16(): ptClientData=%p, ulNetxAddress=0x%08lx\n", ptClientData, ulNetxAddress));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::read_data16(): ptClientData=%p, ulNetxAddress=0x%08x\n", ptClientData, ulNetxAddress));
 
 	if( m_fIsConnected==false )
 	{
@@ -397,7 +419,7 @@ uint32_t romloader_jtag::read_data32(lua_State *ptClientData, uint32_t ulNetxAdd
 	unsigned char ucStatus;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::read_data32(): ptClientData=%p, ulNetxAddress=0x%08lx\n", ptClientData, ulNetxAddress));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::read_data32(): ptClientData=%p, ulNetxAddress=0x%08x\n", ptClientData, ulNetxAddress));
 
 	if( m_fIsConnected==false )
 	{
@@ -439,7 +461,7 @@ void romloader_jtag::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **
 	long lBytesProcessed;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::read_image(): ulNetxAddress=0x%08lx, ulSize=0x%08lx, ppcBUFFER_OUT=%p, psizBUFFER_OUT=%p, tLuaFn.L=%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, ulSize, ppcBUFFER_OUT, psizBUFFER_OUT, tLuaFn.L, lCallbackUserData));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::read_image(): ulNetxAddress=0x%08x, ulSize=0x%08x, ppcBUFFER_OUT=%p, psizBUFFER_OUT=%p, tLuaFn.L=%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, ulSize, ppcBUFFER_OUT, psizBUFFER_OUT, tLuaFn.L, lCallbackUserData));
 
 	/* Be optimistic. */
 	fOk = true;
@@ -492,7 +514,7 @@ void romloader_jtag::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **
 		}
 	}
 
-	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::read_image(): fOk=%d, pcBufferStart=%p, sizBuffer=0x%08x\n", fOk, pcBufferStart, sizBuffer));
+	DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::read_image(): fOk=%d, pcBufferStart=%p, sizBuffer=0x%08zx\n", fOk, pcBufferStart, sizBuffer));
 
 	if( fOk == true )
 	{
@@ -521,7 +543,7 @@ void romloader_jtag::write_data08(lua_State *ptClientData, uint32_t ulNetxAddres
 	unsigned char ucStatus;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::write_data08(): ptClientData=%p, ulNetxAddress=0x08lx, ucData=0x%02lx\n", ptClientData, ulNetxAddress, ucData));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::write_data08(): ptClientData=%p, ulNetxAddress=0x%08x, ucData=0x%02x\n", ptClientData, ulNetxAddress, ucData));
 
 	if( m_fIsConnected==false )
 	{
@@ -553,7 +575,7 @@ void romloader_jtag::write_data16(lua_State *ptClientData, uint32_t ulNetxAddres
 	unsigned char ucStatus;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::write_data16(): ptClientData=%p, ulNetxAddress=0x08lx, usData=0x%04lx\n", ptClientData, ulNetxAddress, usData));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::write_data16(): ptClientData=%p, ulNetxAddress=0x%08x, usData=0x%04x\n", ptClientData, ulNetxAddress, usData));
 
 	if( m_fIsConnected==false )
 	{
@@ -585,7 +607,7 @@ void romloader_jtag::write_data32(lua_State *ptClientData, uint32_t ulNetxAddres
 	unsigned char ucStatus;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::write_data32(): ptClientData=%p, ulNetxAddress=0x08lx, ulData=0x%08lx\n", ptClientData, ulNetxAddress, ulData));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::write_data32(): ptClientData=%p, ulNetxAddress=0x%08x, ulData=0x%08x\n", ptClientData, ulNetxAddress, ulData));
 
 	if( m_fIsConnected==false )
 	{
@@ -620,7 +642,7 @@ void romloader_jtag::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN
 	long lBytesProcessed;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::write_image(): ulNetxAddress=0x%08lx, pcBUFFER_IN=%p, sizBUFFER_IN=0x%08x, tLuaFn.L=%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, pcBUFFER_IN, sizBUFFER_IN, tLuaFn.L, lCallbackUserData));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::write_image(): ulNetxAddress=0x%08x, pcBUFFER_IN=%p, sizBUFFER_IN=0x%08zx, tLuaFn.L=%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, pcBUFFER_IN, sizBUFFER_IN, tLuaFn.L, lCallbackUserData));
 
 	/* Be optimistic. */
 	fOk = true;
@@ -679,7 +701,7 @@ void romloader_jtag::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLU
 	size_t sizProgressData;
 
 
-	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::call(): ulNetxAddress=0x%08lx, ulParameterR0=0x%08lx, tLuaFn.L=%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, ulParameterR0, tLuaFn.L, lCallbackUserData));
+	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::call(): ulNetxAddress=0x%08x, ulParameterR0=0x%08x, tLuaFn.L=%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, ulParameterR0, tLuaFn.L, lCallbackUserData));
 
 	if( m_fIsConnected==false )
 	{

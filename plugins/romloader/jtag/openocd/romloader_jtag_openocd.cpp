@@ -1,6 +1,7 @@
 #include "romloader_jtag_openocd.h"
 
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "shared_library.h"
@@ -25,17 +26,171 @@
 
 
 
-static int openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice)
+romloader_jtag_openocd::romloader_jtag_openocd(void)
+ : m_ptDetected(NULL)
+ , m_sizDetectedCnt(0)
+ , m_sizDetectedMax(0)
+{
+	fprintf(stderr, "romloader_jtag_openocd\n");
+}
+
+
+
+romloader_jtag_openocd::~romloader_jtag_openocd(void)
+{
+	fprintf(stderr, "~romloader_jtag_openocd\n");
+	free_detect_entries();
+}
+
+
+
+const romloader_jtag_openocd::OPENOCD_NAME_RESOLVE_T romloader_jtag_openocd::atOpenOcdResolve[12] =
+{
+	{
+		.pstrSymbolName = "muhkuh_openocd_init",
+		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnInit) / sizeof(void*)
+	},
+	{
+		.pstrSymbolName = "muhkuh_openocd_get_result",
+		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnGetResult) / sizeof(void*)
+	},
+	{
+		.pstrSymbolName = "muhkuh_openocd_command_run_line",
+		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnCommandRunLine) / sizeof(void*)
+	},
+	{
+		.pstrSymbolName = "muhkuh_openocd_uninit",
+		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnUninit) / sizeof(void*)
+	},
+	{
+		.pstrSymbolName = "muhkuh_openocd_read_data08",
+		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnReadData08) / sizeof(void*)
+	},
+	{
+		.pstrSymbolName = "muhkuh_openocd_read_data16",
+		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnReadData16) / sizeof(void*)
+	},
+	{
+		.pstrSymbolName = "muhkuh_openocd_read_data32",
+		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnReadData32) / sizeof(void*)
+	},
+	{
+		.pstrSymbolName = "muhkuh_openocd_read_image",
+		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnReadImage) / sizeof(void*)
+	},
+	{
+		.pstrSymbolName = "muhkuh_openocd_write_data08",
+		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnWriteData08) / sizeof(void*)
+	},
+	{
+		.pstrSymbolName = "muhkuh_openocd_write_data16",
+		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnWriteData16) / sizeof(void*)
+	},
+	{
+		.pstrSymbolName = "muhkuh_openocd_write_data32",
+		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnWriteData32) / sizeof(void*)
+	},
+	{
+		.pstrSymbolName = "muhkuh_openocd_write_image",
+		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnWriteImage) / sizeof(void*)
+	}
+};
+
+
+
+void romloader_jtag_openocd::free_detect_entries(void)
+{
+	ROMLOADER_JTAG_DETECT_ENTRY_T *ptCnt;
+	ROMLOADER_JTAG_DETECT_ENTRY_T *ptEnd;
+
+
+	if( m_ptDetected!=NULL )
+	{
+		/* Loop over all entries in the list. */
+		ptCnt = m_ptDetected;
+		ptEnd = m_ptDetected + m_sizDetectedCnt;
+		while( ptCnt<ptEnd )
+		{
+			if( ptCnt->pcInterface!=NULL )
+			{
+				free(ptCnt->pcInterface);
+			}
+			if( ptCnt->pcTarget!=NULL )
+			{
+				free(ptCnt->pcTarget);
+			}
+
+			++ptCnt;
+		}
+		free(m_ptDetected);
+		m_ptDetected = NULL;
+	}
+	m_sizDetectedCnt = 0;
+	m_sizDetectedMax = 0;
+
+}
+
+
+
+int romloader_jtag_openocd::add_detected_entry(const char *pcInterface, const char *pcTarget)
+{
+	int iResult;
+	ROMLOADER_JTAG_DETECT_ENTRY_T *ptDetectedNew;
+
+
+	/* Be optimistic. */
+	iResult = 0;
+
+	/* Is enough space in the array for one more entry? */
+	if( m_sizDetectedCnt>=m_sizDetectedMax )
+	{
+		/* No -> expand the array. */
+		m_sizDetectedMax *= 2;
+		/* Detect overflow or limitation. */
+		if( m_sizDetectedMax<=m_sizDetectedCnt )
+		{
+			iResult = -1;
+		}
+		else
+		{
+			/* Reallocate the array. */
+			ptDetectedNew = (ROMLOADER_JTAG_DETECT_ENTRY_T*)realloc(m_ptDetected, m_sizDetectedMax*sizeof(ROMLOADER_JTAG_DETECT_ENTRY_T));
+			if( ptDetectedNew==NULL )
+			{
+				iResult = -1;
+			}
+			else
+			{
+				m_ptDetected = ptDetectedNew;
+			}
+		}
+	}
+
+	if( iResult==0 )
+	{
+		m_ptDetected[m_sizDetectedCnt].pcInterface = strdup(pcInterface);
+		m_ptDetected[m_sizDetectedCnt].pcTarget = strdup(pcTarget);
+		++m_sizDetectedCnt;
+	}
+
+	return iResult;
+}
+
+
+
+int romloader_jtag_openocd::openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 {
 	int iResult;
 	void *pvSharedLibraryHandle;
+	const OPENOCD_NAME_RESOLVE_T *ptCnt;
+	const OPENOCD_NAME_RESOLVE_T *ptEnd;
 	void *pvFn;
 	void *pvOpenocdContext;
 	char acError[1024];
 
 
-	/* Be pessimistic... */
-	iResult = -1;
+	/* Be optimistic. */
+	iResult = 0;
 
 	/* Try to open the shared library. */
 	pvSharedLibraryHandle = sharedlib_open(OPENOCD_SHARED_LIBRARY_FILENAME);
@@ -45,82 +200,42 @@ static int openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 		sharedlib_get_error(acError, sizeof(acError));
 		fprintf(stderr, "Failed to open the shared library %s.\n", OPENOCD_SHARED_LIBRARY_FILENAME);
 		fprintf(stderr, "Error: %s\n", acError);
+		iResult = -1;
 	}
 	else
 	{
 		ptDevice->pvSharedLibraryHandle = pvSharedLibraryHandle;
 
 		/* Try to resolve all symbols. */
-		pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_init");
-		if( pvFn!=NULL )
+		ptCnt = atOpenOcdResolve;
+		ptEnd = atOpenOcdResolve + (sizeof(atOpenOcdResolve)/sizeof(atOpenOcdResolve[0]));
+		while( ptCnt<ptEnd )
 		{
-			ptDevice->pfnInit = pvFn;
-			pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_get_result");
-			if( pvFn!=NULL )
+			pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, ptCnt->pstrSymbolName);
+			if( pvFn==NULL )
 			{
-				ptDevice->pfnGetResult = pvFn;
-				pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_command_run_line");
-				if( pvFn!=NULL )
-				{
-					ptDevice->pfnCommandRunLine = pvFn;
-					pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_uninit");
-					if( pvFn!=NULL )
-					{
-						ptDevice->pfnUninit = pvFn;
-						pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_read_data08");
-						if( pvFn!=NULL )
-						{
-							ptDevice->pfnReadData08 = pvFn;
-							pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_read_data16");
-							if( pvFn!=NULL )
-							{
-								ptDevice->pfnReadData16 = pvFn;
-								pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_read_data32");
-								if( pvFn!=NULL )
-								{
-									ptDevice->pfnReadData32 = pvFn;
-									pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_read_image");
-									if( pvFn!=NULL )
-									{
-										ptDevice->pfnReadImage = pvFn;
-										pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_write_data08");
-										if( pvFn!=NULL )
-										{
-											ptDevice->pfnWriteData08 = pvFn;
-											pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_write_data16");
-											if( pvFn!=NULL )
-											{
-												ptDevice->pfnWriteData16 = pvFn;
-												pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_write_data32");
-												if( pvFn!=NULL )
-												{
-													ptDevice->pfnWriteData32 = pvFn;
-													pvFn = sharedlib_resolve_symbol(pvSharedLibraryHandle, "muhkuh_openocd_write_image");
-													if( pvFn!=NULL )
-													{
-														ptDevice->pfnWriteImage = pvFn;
+				iResult = -1;
+				break;
+			}
+			else
+			{
+				ptDevice->tFunctions.pv[ptCnt->sizPointerOffset] = pvFn;
+				++ptCnt;
+			}
+		}
 
-														/* Call the init function. */
-														pvOpenocdContext = ptDevice->pfnInit();
-														if( pvOpenocdContext==NULL )
-														{
-															fprintf(stderr, "Failed to initialize the OpenOCD device context.\n");
-														}
-														else
-														{
-															ptDevice->pvOpenocdContext = pvOpenocdContext;
-															iResult = 0;
-														}
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
+		if( iResult==0 )
+		{
+			/* Call the init function. */
+			pvOpenocdContext = ptDevice->tFunctions.tFn.pfnInit();
+			if( pvOpenocdContext==NULL )
+			{
+				fprintf(stderr, "Failed to initialize the OpenOCD device context.\n");
+				iResult = -1;
+			}
+			else
+			{
+				ptDevice->pvOpenocdContext = pvOpenocdContext;
 			}
 		}
 
@@ -136,13 +251,13 @@ static int openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 
 
 
-static void openocd_close(ROMLOADER_JTAG_DEVICE_T *ptDevice)
+void romloader_jtag_openocd::openocd_close(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 {
 	if( ptDevice->pvSharedLibraryHandle!=NULL )
 	{
 		if( ptDevice->pvOpenocdContext!=NULL )
 		{
-			ptDevice->pfnUninit(ptDevice->pvOpenocdContext);
+			ptDevice->tFunctions.tFn.pfnUninit(ptDevice->pvOpenocdContext);
 		}
 
 		/* Close the shared library. */
@@ -157,7 +272,7 @@ static void openocd_close(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 
    This is a test if the shared library can be used.
 */
-int romloader_jtag_openocd_init(void)
+int romloader_jtag_openocd::initialize(void)
 {
 	int iResult;
 	ROMLOADER_JTAG_DEVICE_T tDevice;
@@ -171,14 +286,14 @@ int romloader_jtag_openocd_init(void)
 	if( iResult==0 )
 	{
 		/* Run the version command. */
-		iResult = tDevice.pfnCommandRunLine(tDevice.pvOpenocdContext, "version\n");
+		iResult = tDevice.tFunctions.tFn.pfnCommandRunLine(tDevice.pvOpenocdContext, "version\n");
 		if( iResult!=0 )
 		{
 			fprintf(stderr, "Failed to run the version command!\n");
 		}
 		else
 		{
-			iResult = tDevice.pfnGetResult(tDevice.pvOpenocdContext, acResult, sizeof(acResult));
+			iResult = tDevice.tFunctions.tFn.pfnGetResult(tDevice.pvOpenocdContext, acResult, sizeof(acResult));
 			if( iResult!=0 )
 			{
 				fprintf(stderr, "Failed to get the result for the version command.\n");
@@ -197,14 +312,6 @@ int romloader_jtag_openocd_init(void)
 
 
 
-typedef struct INTERFACE_SETUP_STRUCT
-{
-	const char *pcID;
-	const char *pcCode_Setup;
-	const char *pcCode_Probe;
-} INTERFACE_SETUP_STRUCT_T;
-
-
 /* This array contains the detection command sequence for all interfaces. All
  * commands for one interface are stored in one string. The commands are
  * separated by newlines.
@@ -216,10 +323,10 @@ typedef struct INTERFACE_SETUP_STRUCT
  * absolutely all circumstances (even with Enricos flying wires. ;)
  *
  */
-static const INTERFACE_SETUP_STRUCT_T atInterfaceCfg[4] =
+const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::atInterfaceCfg[4] =
 {
 	{
-		.pcID = "Amontec JTAGkey",
+		.pcID = "Amontec_JTAGkey",
 		.pcCode_Setup = "interface ftdi\n"
                                 "transport select jtag\n"
 		                "ftdi_device_desc \"Amontec JTAGkey\"\n"
@@ -263,7 +370,7 @@ static const INTERFACE_SETUP_STRUCT_T atInterfaceCfg[4] =
 	},
 
 	{
-		.pcID = "NXHX 51-ETM",
+		.pcID = "NXHX_51-ETM",
 		.pcCode_Setup = "interface ftdi\n"
                                 "transport select jtag\n"
 		                "ftdi_device_desc \"NXHX 51-ETM\"\n"
@@ -285,7 +392,7 @@ static const INTERFACE_SETUP_STRUCT_T atInterfaceCfg[4] =
 	},
 
 	{
-		.pcID = "NXHX 500-ETM",
+		.pcID = "NXHX_500-ETM",
 		.pcCode_Setup = "interface ftdi\n"
                                 "transport select jtag\n"
 		                "ftdi_device_desc \"NXHX 500-ETM\"\n"
@@ -309,13 +416,7 @@ static const INTERFACE_SETUP_STRUCT_T atInterfaceCfg[4] =
 
 
 
-typedef struct TARGET_SETUP_STRUCT
-{
-	const char *pcID;
-	const char *pcCode;
-} TARGET_SETUP_STRUCT_T;
-
-static const TARGET_SETUP_STRUCT_T atTargetCfg[2] =
+const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTargetCfg[2] =
 {
 	{
 		.pcID = "netX_ARM966",
@@ -360,7 +461,7 @@ static const TARGET_SETUP_STRUCT_T atTargetCfg[2] =
 
 
 
-static const char *pcResetCode = "reset_config trst_and_srst\n"
+const char *romloader_jtag_openocd::pcResetCode = "reset_config trst_and_srst\n"
                                  "adapter_nsrst_delay 500\n"
                                  "jtag_ntrst_delay 500\n"
                                  "\n"
@@ -368,14 +469,15 @@ static const char *pcResetCode = "reset_config trst_and_srst\n"
                                  "reset init\n";
 
 
-static int romloader_jtag_openocd_setup_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg)
+
+int romloader_jtag_openocd::setup_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg)
 {
 	int iResult;
 
 
 	/* Run the command chunk. */
 	fprintf(stderr, "Run setup chunk for interface %s.\n", ptIfCfg->pcID);
-	iResult = ptDevice->pfnCommandRunLine(ptDevice->pvOpenocdContext, ptIfCfg->pcCode_Setup);
+	iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, ptIfCfg->pcCode_Setup);
 	if( iResult!=0 )
 	{
 		fprintf(stderr, "Failed to run the chunk: %d\n", iResult);
@@ -386,7 +488,7 @@ static int romloader_jtag_openocd_setup_interface(ROMLOADER_JTAG_DEVICE_T *ptDev
 
 
 
-static int romloader_jtag_openocd_probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg)
+int romloader_jtag_openocd::probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg)
 {
 	int iResult;
 	int sizResult;
@@ -394,7 +496,7 @@ static int romloader_jtag_openocd_probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDev
 
 
 	/* Try to setup the interface. */
-	iResult = romloader_jtag_openocd_setup_interface(ptDevice, ptIfCfg);
+	iResult = setup_interface(ptDevice, ptIfCfg);
 	if( iResult!=0 )
 	{
 		/* This is no fatal error. It just means that this interface can not be used. */
@@ -404,7 +506,7 @@ static int romloader_jtag_openocd_probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDev
 	{
 		/* Run the probe chunk. */
 		fprintf(stderr, "Run probe chunk for interface %s.\n", ptIfCfg->pcID);
-		iResult = ptDevice->pfnCommandRunLine(ptDevice->pvOpenocdContext, ptIfCfg->pcCode_Probe);
+		iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, ptIfCfg->pcCode_Probe);
 		if( iResult!=0 )
 		{
 			/* This is no fatal error. It just means that this interface can not be used. */
@@ -413,7 +515,7 @@ static int romloader_jtag_openocd_probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDev
 		}
 		else
 		{
-			iResult = ptDevice->pfnGetResult(ptDevice->pvOpenocdContext, strResult, sizeof(strResult));
+			iResult = ptDevice->tFunctions.tFn.pfnGetResult(ptDevice->pvOpenocdContext, strResult, sizeof(strResult));
 			if( iResult!=0 )
 			{
 				/* This is a fatal error. */
@@ -442,14 +544,14 @@ static int romloader_jtag_openocd_probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDev
 
 
 
-static int romloader_jtag_openocd_probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg, const TARGET_SETUP_STRUCT_T *ptTargetCfg)
+int romloader_jtag_openocd::probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg, const TARGET_SETUP_STRUCT_T *ptTargetCfg)
 {
 	int iResult;
 	int sizResult;
 	char strResult[256];
 
 
-	iResult = romloader_jtag_openocd_setup_interface(ptDevice, ptIfCfg);
+	iResult = setup_interface(ptDevice, ptIfCfg);
 	if( iResult!=0 )
 	{
 		/* This is always a fatal error here as the interface has been used before. */
@@ -458,7 +560,7 @@ static int romloader_jtag_openocd_probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice
 	else
 	{
 		fprintf(stderr, "Running detect code for target %s!\n", ptTargetCfg->pcID);
-		iResult = ptDevice->pfnCommandRunLine(ptDevice->pvOpenocdContext, ptTargetCfg->pcCode);
+		iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, ptTargetCfg->pcCode);
 		if( iResult!=0 )
 		{
 			/* This is no fatal error. It just means that this CPU is not present. */
@@ -467,7 +569,7 @@ static int romloader_jtag_openocd_probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice
 		}
 		else
 		{
-			iResult = ptDevice->pfnGetResult(ptDevice->pvOpenocdContext, strResult, sizeof(strResult));
+			iResult = ptDevice->tFunctions.tFn.pfnGetResult(ptDevice->pvOpenocdContext, strResult, sizeof(strResult));
 			if( iResult!=0 )
 			{
 				/* This is a fatal error. */
@@ -487,10 +589,10 @@ static int romloader_jtag_openocd_probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice
 				{
 					fprintf(stderr, "Found target %s!\n", ptTargetCfg->pcID);
 
-
+#if 0
 					/* Now for a demo stop the target and transfer some memory. */
 					fprintf(stderr, "Running reset code.\n");
-					iResult = ptDevice->pfnCommandRunLine(ptDevice->pvOpenocdContext, pcResetCode);
+					iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, pcResetCode);
 					if( iResult!=0 )
 					{
 						fprintf(stderr, "Failed to run the reset code: %d\n", iResult);
@@ -501,7 +603,7 @@ static int romloader_jtag_openocd_probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice
 						uint32_t ulValue;
 
 						/* Read memory. */
-						iResult = ptDevice->pfnReadData32(ptDevice->pvOpenocdContext, 0, &ulValue);
+						iResult = ptDevice->tFunctions.tFn.pfnReadData32(ptDevice->pvOpenocdContext, 0, &ulValue);
 						if( iResult!=0 )
 						{
 							fprintf(stderr, "Failed to read address 0: %d\n", iResult);
@@ -514,6 +616,8 @@ static int romloader_jtag_openocd_probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice
 							fprintf(stderr, "*** All OK ***\n");
 						}
 					}
+#endif
+					iResult = add_detected_entry(ptIfCfg->pcID, ptTargetCfg->pcID);
 				}
 			}
 		}
@@ -524,7 +628,7 @@ static int romloader_jtag_openocd_probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice
 
 
 
-static int romloader_jtag_openocd_detect_target(const INTERFACE_SETUP_STRUCT_T *ptIfCfg)
+int romloader_jtag_openocd::detect_target(const INTERFACE_SETUP_STRUCT_T *ptIfCfg)
 {
 	const TARGET_SETUP_STRUCT_T *ptCnt;
 	const TARGET_SETUP_STRUCT_T *ptEnd;
@@ -549,7 +653,7 @@ static int romloader_jtag_openocd_detect_target(const INTERFACE_SETUP_STRUCT_T *
 		else
 		{
 			fprintf(stderr, "Detecting target %s\n", ptCnt->pcID);
-			iResult = romloader_jtag_openocd_probe_target(&tDevice, ptIfCfg, ptCnt);
+			iResult = probe_target(&tDevice, ptIfCfg, ptCnt);
 
 			openocd_close(&tDevice);
 		}
@@ -574,7 +678,7 @@ static int romloader_jtag_openocd_detect_target(const INTERFACE_SETUP_STRUCT_T *
 
 
 
-int romloader_jtag_openocd_detect(void)
+int romloader_jtag_openocd::detect(ROMLOADER_JTAG_DETECT_ENTRY_T **pptEntries, size_t *psizEntries)
 {
 	const INTERFACE_SETUP_STRUCT_T *ptCnt;
 	const INTERFACE_SETUP_STRUCT_T *ptEnd;
@@ -585,48 +689,84 @@ int romloader_jtag_openocd_detect(void)
 	/* Be pessimistic... */
 	iResult = -1;
 
-	/* Try to run all command chunks to see which interfaces are present. */
-	ptCnt = atInterfaceCfg;
-	ptEnd = atInterfaceCfg + (sizeof(atInterfaceCfg)/sizeof(atInterfaceCfg[0]));
-	while( ptCnt<ptEnd )
+	/* Clear any old results. */
+	free_detect_entries();
+
+	/* Initialize the result array. */
+	m_sizDetectedCnt = 0;
+	m_sizDetectedMax = 16;
+	m_ptDetected = (ROMLOADER_JTAG_DETECT_ENTRY_T*)malloc(m_sizDetectedMax*sizeof(ROMLOADER_JTAG_DETECT_ENTRY_T));
+	if( m_ptDetected==NULL )
 	{
-		fprintf(stderr, "Detecting interface %s\n", ptCnt->pcID);
-
-		/* Open the shared library. */
-		iResult = openocd_open(&tDevice);
-		if( iResult!=0 )
+		fprintf(stderr, "Failed to allocate %zd bytes of memory for the detection results!\n", m_sizDetectedMax*sizeof(ROMLOADER_JTAG_DETECT_ENTRY_T));
+	}
+	else
+	{
+		/* Try to run all command chunks to see which interfaces are present. */
+		ptCnt = atInterfaceCfg;
+		ptEnd = atInterfaceCfg + (sizeof(atInterfaceCfg)/sizeof(atInterfaceCfg[0]));
+		while( ptCnt<ptEnd )
 		{
-			/* This is a fatal error. */
-			break;
-		}
-		else
-		{
-			iResult = romloader_jtag_openocd_probe_interface(&tDevice, ptCnt);
+			fprintf(stderr, "Detecting interface %s\n", ptCnt->pcID);
 
-			openocd_close(&tDevice);
-
-			if( iResult==0 )
-			{
-				/* Detect the CPU on this interface. */
-				romloader_jtag_openocd_detect_target(ptCnt);
-			}
-			else if( iResult<0 )
+			/* Open the shared library. */
+			iResult = openocd_open(&tDevice);
+			if( iResult!=0 )
 			{
 				/* This is a fatal error. */
+				iResult = -1;
 				break;
 			}
+			else
+			{
+				/* Detect the interface. */
+				iResult = probe_interface(&tDevice, ptCnt);
+
+				/* Clean up after the detection. */
+				openocd_close(&tDevice);
+
+				if( iResult==0 )
+				{
+					/* Detect the CPU on this interface. */
+					iResult = detect_target(ptCnt);
+				}
+
+				/* Ignore non-fatal errors.
+				 * They indicate that the current interface could not be detected.
+				 */
+				if( iResult>0 )
+				{
+					iResult = 0;
+				}
+				/* Do not continue with other interfaces if a fatal error occurred. */
+				else if( iResult<0 )
+				{
+					/* This is a fatal error. */
+					break;
+				}
+			}
+
+			/* Move to the next configuration. */
+			++ptCnt;
 		}
-		
-		/* Move to the next configuration. */
-		++ptCnt;
 	}
 	
+	/* Discard all results if something really bad happened (like a fatal error). */
+	if( iResult<0 )
+	{
+		free_detect_entries();
+	}
+
+	/* Return the result list. */
+	*pptEntries = m_ptDetected;
+	*psizEntries = m_sizDetectedCnt;
+
 	return iResult;
 }
 
 
 
-void romloader_jtag_openocd_uninit(ROMLOADER_JTAG_DEVICE_T *ptJtagDevice)
+void romloader_jtag_openocd::uninit(void)
 {
 #if 0
 	struct command_context *ptCmdCtx;

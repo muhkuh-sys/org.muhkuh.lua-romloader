@@ -12,8 +12,8 @@ PROJECT("romloader_jtag_openocd")
 #
 
 SET(romloader_jtag_openocd_SOURCES
-	romloader_jtag_openocd.c
-	shared_library.c
+	romloader_jtag_openocd.cpp
+	shared_library.cpp
 )
 
 SET(romloader_jtag_openocd_HEADERS
