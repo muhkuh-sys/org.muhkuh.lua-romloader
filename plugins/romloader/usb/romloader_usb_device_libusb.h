@@ -25,57 +25,12 @@
 
 #include <errno.h>
 
-#if ROMLOADER_USB_LIBUSB_VERSION==0
-#	include <usb.h>
-
-	typedef struct usb_device libusb_device;
-	typedef usb_dev_handle libusb_device_handle;
-	typedef void libusb_context;
-#	ifdef _WIN32
-#		ifdef _WIN64
-			typedef __int64 ssize_t;
-#		else
-			typedef int ssize_t;
-#		endif /* _WIN64 */
-#	endif /* _WIN32 */
-
-
-#	ifdef _WIN32
-#	define ETIMEDOUT 116
-#       define EBUSY 16
-#	endif /* _WIN32 */
-
-	enum libusb_error
-	{
-		LIBUSB_SUCCESS = 0,
-		LIBUSB_ERROR_IO = -1,
-		LIBUSB_ERROR_INVALID_PARAM = -2,
-		LIBUSB_ERROR_ACCESS = -3,
-		LIBUSB_ERROR_NO_DEVICE = -4,
-		LIBUSB_ERROR_NOT_FOUND = -5,
-		LIBUSB_ERROR_BUSY = -6,
-		LIBUSB_ERROR_TIMEOUT = -ETIMEDOUT,
-		LIBUSB_ERROR_OVERFLOW = -8,
-		LIBUSB_ERROR_PIPE = -9,
-		LIBUSB_ERROR_INTERRUPTED = -10,
-		LIBUSB_ERROR_NO_MEM = -11,
-		LIBUSB_ERROR_NOT_SUPPORTED = -12,
-		LIBUSB_ERROR_SYS_BUSY = -EBUSY,
-		LIBUSB_ERROR_OTHER = -99
-	};
-#else
 /* NOTE: the header is in 'libusb-1.0' for linux and 'libusb-1.0' for windows. */
-#       include <libusb.h>
+#include <libusb.h>
 
-#       if (!defined(LIBUSB_API_VERSION)) || (defined(LIBUSB_API_VERSION) && LIBUSB_API_VERSION<0x01000102)
-#               error "This plugin needs at least libusb 1.0.16."
-#       endif
-
+#if (!defined(LIBUSB_API_VERSION)) || (defined(LIBUSB_API_VERSION) && LIBUSB_API_VERSION<0x01000102)
+#       error "This plugin needs at least libusb 1.0.16."
 #endif
-
-bool libusb_load();
-bool libusb_isloaded();
-void libusb_unload();
 
 
 #include "romloader_usb_device.h"
@@ -147,9 +102,6 @@ private:
 
 	libusb_context *m_ptLibUsbContext;
 	libusb_device_handle *m_ptDevHandle;
-
-	static const char *m_pcLibUsb_BusPattern;
-	static const char *m_pcLibUsb_DevicePattern;
 
 
 	typedef struct
