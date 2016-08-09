@@ -66,7 +66,7 @@ const char *romloader_papa_schlumpf_provider::m_pcPluginNamePattern = "romloader
 
 romloader_papa_schlumpf_provider::romloader_papa_schlumpf_provider(swig_type_info *p_romloader_papa_schlumpf, swig_type_info *p_romloader_papa_schlumpf_reference)
  : muhkuh_plugin_provider("romloader_papa_schlumpf")
-// , m_ptDevice(NULL)
+ , m_ptDevice(NULL)
 {
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_papa_schlumpf_provider::romloader_papa_schlumpf_provider(): p_romloader_papa_schlumpf=%p, p_romloader_papa_schlumpf_reference=%p\n", p_romloader_usb, p_romloader_usb_reference));
 
@@ -74,7 +74,7 @@ romloader_papa_schlumpf_provider::romloader_papa_schlumpf_provider(swig_type_inf
 	m_ptPluginTypeInfo = p_romloader_papa_schlumpf;
 	m_ptReferenceTypeInfo = p_romloader_papa_schlumpf_reference;
 
-//	libusb_load();
+	m_ptDevice = new romloader_papa_schlumpf_device(m_pcPluginId);
 
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_papa_schlumpf_provider::romloader_papa_schlumpf_provider()\n"));
 }
@@ -84,7 +84,11 @@ romloader_papa_schlumpf_provider::~romloader_papa_schlumpf_provider(void)
 {
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_papa_schlumpf_provider::~romloader_papa_schlumpf_provider()\n"));
 
-//	libusb_unload();
+	if( m_ptDevice!=NULL )
+	{
+		delete m_ptDevice;
+		m_ptDevice = NULL;
+	}
 
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_papa_schlumpf_provider::~romloader_papa_schlumpf_provider()\n"));
 }
@@ -93,52 +97,46 @@ romloader_papa_schlumpf_provider::~romloader_papa_schlumpf_provider(void)
 int romloader_papa_schlumpf_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess)
 {
 	int iResult;
-	romloader_papa_schlumpf_reference **pptReferences;
-	romloader_papa_schlumpf_reference **pptRefCnt;
-	romloader_papa_schlumpf_reference **pptRefEnd;
+	romloader_papa_schlumpf_device::PAPA_SCHLUMPF_ERROR_T tResult;
+	romloader_papa_schlumpf_device::INTERFACE_REFERENCE_T *ptIf;
+	romloader_papa_schlumpf_device::INTERFACE_REFERENCE_T *ptIfCnt;
+	romloader_papa_schlumpf_device::INTERFACE_REFERENCE_T *ptIfEnd;
+	size_t sizIf;
 	romloader_papa_schlumpf_reference *ptRef;
-	size_t sizReferences;
+	int iReferences;
+	const size_t sizMaxName = 32;
+	char acName[sizMaxName];
 
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_papa_schlumpf_provider::DetectInterfaces(): ptLuaStateForTableAccess=%p\n", ptLuaStateForTableAccess));
 
-	sizReferences = 0;
-#if 0
-	if (!libusb_isloaded())
-	{
-		return sizReferences;
-	}
+	iReferences = 0;
 
-	/* check the libusb context */
-	if( m_ptUsbDevice==NULL )
+	if( m_ptDevice!=NULL )
 	{
-		/* libusb was not initialized */
-		printf("%s(%p): libusb was not initialized!\n", m_pcPluginId, this);
-	}
-	else
-	{
-		/* detect devices */
-		pptReferences = NULL;
-		iResult = m_ptUsbDevice->detect_interfaces(&pptReferences, &sizReferences, this);
-		if( iResult==0 && pptReferences!=NULL )
+		/* Detect all devices. */
+		ptIf = NULL;
+		tResult = m_ptDevice->detect_interfaces(&ptIf, &sizIf);
+		if( tResult==romloader_papa_schlumpf_device::PAPA_SCHLUMPF_ERROR_Ok && ptIf!=NULL )
 		{
-			pptRefCnt = pptReferences;
-			pptRefEnd = pptReferences + sizReferences;
-			while( pptRefCnt<pptRefEnd )
+			ptIfCnt = ptIf;
+			ptIfEnd = ptIf + sizIf;
+			while( ptIfCnt<ptIfEnd )
 			{
-				ptRef = *pptRefCnt;
-				if( ptRef!=NULL )
-				{
-					add_reference_to_table(ptLuaStateForTableAccess, ptRef);
-				}
-				++pptRefCnt;
+				snprintf(acName, sizMaxName-1, m_pcPluginNamePattern, ptIfCnt->uiBusNr, ptIfCnt->uiDevAdr);
+				ptRef = new romloader_papa_schlumpf_reference(acName, m_pcPluginId, ptIfCnt->acPathString, false, this);
+				add_reference_to_table(ptLuaStateForTableAccess, ptRef);
+				++ptIfCnt;
+				++iReferences;
 			}
+
+			free(ptIf);
 		}
 	}
-#endif
+
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_papa_schlumpf_provider::DetectInterfaces(): sizReferences=%d\n", sizReferences));
 
-	return sizReferences;
+	return iReferences;
 }
 
 
@@ -356,7 +354,7 @@ uint8_t romloader_papa_schlumpf::read_data08(lua_State *ptClientData, uint32_t u
 {
 	/* Init values*/
 	uint32_t    sizInBuf = 0;
-	USB_STATUS_T tUsbStatus;
+	romloader_papa_schlumpf_device::USB_STATUS_T tUsbStatus;
 	PAPA_SCHLUMPF_USB_COMMAND_STATUS_T tPapaSchlumpfUsbCommandStatus;
 	PAPA_SCHLUMPF_PARAMETER_DATA_T tCmd;
 	PAPA_SCHLUMPF_DATA_BUFFER_T tBuffer;
@@ -370,8 +368,8 @@ uint8_t romloader_papa_schlumpf::read_data08(lua_State *ptClientData, uint32_t u
 	tCmd.tPapaSchlumpfParameter.uPapaSchlumpfUsbParameter.tPapaSchlumpfUsbParameterRead.ulElemCount = 1;
 
 	/*Send Command*/
-	tUsbStatus = sendAndReceivePackets(tCmd.auc, sizeof(tCmd), tBuffer.aucBuf, &sizInBuf);
-	if(tUsbStatus != USB_STATUS_OK)
+	tUsbStatus = m_ptDevice->sendAndReceivePackets(tCmd.auc, sizeof(tCmd), tBuffer.aucBuf, &sizInBuf);
+	if(tUsbStatus != romloader_papa_schlumpf_device::USB_STATUS_OK)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%p: failed to send command!\n", this);
 		isOk = false;
@@ -398,7 +396,7 @@ uint16_t romloader_papa_schlumpf::read_data16(lua_State *ptClientData, uint32_t 
 {
 	/*Init values*/
 	uint32_t   sizInBuf = 0;
-	USB_STATUS_T tUsbStatus;
+	romloader_papa_schlumpf_device::USB_STATUS_T tUsbStatus;
 	PAPA_SCHLUMPF_USB_COMMAND_STATUS_T tPapaSchlumpfUsbCommandStatus;
 	PAPA_SCHLUMPF_PARAMETER_DATA_T tCmd;
 	PAPA_SCHLUMPF_DATA_BUFFER_T tBuffer;
@@ -412,7 +410,7 @@ uint16_t romloader_papa_schlumpf::read_data16(lua_State *ptClientData, uint32_t 
 	tCmd.tPapaSchlumpfParameter.uPapaSchlumpfUsbParameter.tPapaSchlumpfUsbParameterRead.ulElemCount = 1;
 
 	/*Send Command*/
-	tUsbStatus = sendAndReceivePackets(tCmd.auc, sizeof(tCmd), tBuffer.aucBuf, &sizInBuf);
+	tUsbStatus = m_ptDevice->sendAndReceivePackets(tCmd.auc, sizeof(tCmd), tBuffer.aucBuf, &sizInBuf);
 	if(tUsbStatus != USB_STATUS_OK)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%p: failed to send command!\n", this);
@@ -440,7 +438,7 @@ uint32_t romloader_papa_schlumpf::read_data32(lua_State *ptClientData, uint32_t 
 {
 	/*Init values*/
 	uint32_t   sizInBuf = 0;
-	USB_STATUS_T tUsbStatus;
+	romloader_papa_schlumpf_device::USB_STATUS_T tUsbStatus;
 	PAPA_SCHLUMPF_USB_COMMAND_STATUS_T tPapaSchlumpfUsbCommandStatus;
 	PAPA_SCHLUMPF_PARAMETER_DATA_T tCmd;
 	PAPA_SCHLUMPF_DATA_BUFFER_T tBuffer;
@@ -454,8 +452,8 @@ uint32_t romloader_papa_schlumpf::read_data32(lua_State *ptClientData, uint32_t 
 	tCmd.tPapaSchlumpfParameter.uPapaSchlumpfUsbParameter.tPapaSchlumpfUsbParameterRead.ulElemCount = 1;
 
 	/*Send Command*/
-	tUsbStatus = sendAndReceivePackets(tCmd.auc, sizeof(tCmd), tBuffer.aucBuf, &sizInBuf);
-	if(tUsbStatus != USB_STATUS_OK)
+	tUsbStatus = m_ptDevice->sendAndReceivePackets(tCmd.auc, sizeof(tCmd), tBuffer.aucBuf, &sizInBuf);
+	if(tUsbStatus != romloader_papa_schlumpf_device::USB_STATUS_OK)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%p: failed to send command!\n", this);
 		isOk = false;
@@ -482,7 +480,7 @@ void romloader_papa_schlumpf::read_image(uint32_t ulNetxAddress, uint32_t ulSize
 {
 	/*Init values*/
 	uint32_t sizInBuf = 0;
-	USB_STATUS_T tUsbStatus;
+	romloader_papa_schlumpf_device::USB_STATUS_T tUsbStatus;
 	PAPA_SCHLUMPF_USB_COMMAND_STATUS_T tPapaSchlumpfUsbCommandStatus;
 	PAPA_SCHLUMPF_PARAMETER_DATA_T tCmd;
 	PAPA_SCHLUMPF_DATA_BUFFER_T tBuffer;
@@ -513,8 +511,8 @@ void romloader_papa_schlumpf::read_image(uint32_t ulNetxAddress, uint32_t ulSize
 		/*Set size in parameter structure*/
 		tCmd.tPapaSchlumpfParameter.uPapaSchlumpfUsbParameter.tPapaSchlumpfUsbParameterRead.ulElemCount = sizDataCurrent;
 
-		tUsbStatus = this->sendAndReceivePackets(tCmd.auc, sizeof(tCmd), tBuffer.aucBuf, &sizInBuf);
-		if(tUsbStatus != USB_STATUS_OK)
+		tUsbStatus = m_ptDevice->sendAndReceivePackets(tCmd.auc, sizeof(tCmd), tBuffer.aucBuf, &sizInBuf);
+		if(tUsbStatus != romloader_papa_schlumpf_device::USB_STATUS_OK)
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%p: failed to send command!\n", this);
 			isOk = false;
@@ -560,7 +558,7 @@ void romloader_papa_schlumpf::write_data08(lua_State *ptClientData, uint32_t ulN
 {
 	/*Init values*/
 	uint32_t   sizInBuf = 0;
-	USB_STATUS_T tUsbStatus;
+	romloader_papa_schlumpf_device::USB_STATUS_T tUsbStatus;
 	PAPA_SCHLUMPF_USB_COMMAND_STATUS_T tPapaSchlumpfUsbCommandStatus;
 	PAPA_SCHLUMPF_PARAMETER_DATA_T tCmd;
 	PAPA_SCHLUMPF_DATA_BUFFER_T tBuffer;
@@ -575,7 +573,7 @@ void romloader_papa_schlumpf::write_data08(lua_State *ptClientData, uint32_t ulN
 	tCmd.tPapaSchlumpfParameter.uPapaSchlumpfUsbParameter.tPapaSchlumpfUsbParameterWrite.uData.ucData[0] = ucData;
 
 	/*Send Command*/
-	tUsbStatus = sendAndReceivePackets(tCmd.auc, sizeof(tCmd), tBuffer.aucBuf, &sizInBuf);
+	tUsbStatus = m_ptDevice->sendAndReceivePackets(tCmd.auc, sizeof(tCmd), tBuffer.aucBuf, &sizInBuf);
 	if(tUsbStatus != USB_STATUS_OK)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%p: failed to send command!\n", this);
@@ -601,7 +599,7 @@ void romloader_papa_schlumpf::write_data16(lua_State *ptClientData, uint32_t ulN
 {
 	/*Init values*/
 	uint32_t   sizInBuf = 0;
-	USB_STATUS_T tUsbStatus;
+	romloader_papa_schlumpf_device::USB_STATUS_T tUsbStatus;
 	PAPA_SCHLUMPF_USB_COMMAND_STATUS_T tPapaSchlumpfUsbCommandStatus;
 	PAPA_SCHLUMPF_PARAMETER_DATA_T tCmd;
 	PAPA_SCHLUMPF_DATA_BUFFER_T tBuffer;
@@ -616,7 +614,7 @@ void romloader_papa_schlumpf::write_data16(lua_State *ptClientData, uint32_t ulN
 	tCmd.tPapaSchlumpfParameter.uPapaSchlumpfUsbParameter.tPapaSchlumpfUsbParameterWrite.uData.usData[0] = usData;
 
 	/*Send Command*/
-	tUsbStatus = sendAndReceivePackets(tCmd.auc, sizeof(tCmd), tBuffer.aucBuf, &sizInBuf);
+	tUsbStatus = m_ptDevice->sendAndReceivePackets(tCmd.auc, sizeof(tCmd), tBuffer.aucBuf, &sizInBuf);
 	if(tUsbStatus != USB_STATUS_OK)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%p: failed to send command!\n", this);
@@ -642,7 +640,7 @@ void romloader_papa_schlumpf::write_data32(lua_State *ptClientData, uint32_t ulN
 {
 	/*Init values*/
 	uint32_t   sizInBuf = 0;
-	USB_STATUS_T tUsbStatus;
+	romloader_papa_schlumpf_device::USB_STATUS_T tUsbStatus;
 	PAPA_SCHLUMPF_USB_COMMAND_STATUS_T tPapaSchlumpfUsbCommandStatus;
 	PAPA_SCHLUMPF_PARAMETER_DATA_T tCmd;
 	PAPA_SCHLUMPF_DATA_BUFFER_T tBuffer;
@@ -657,7 +655,7 @@ void romloader_papa_schlumpf::write_data32(lua_State *ptClientData, uint32_t ulN
 	tCmd.tPapaSchlumpfParameter.uPapaSchlumpfUsbParameter.tPapaSchlumpfUsbParameterWrite.uData.ulData[0] = ulData;
 
 	/*Send Command*/
-	tUsbStatus = sendAndReceivePackets(tCmd.auc, sizeof(tCmd), tBuffer.aucBuf, &sizInBuf);
+	tUsbStatus = m_ptDevice->sendAndReceivePackets(tCmd.auc, sizeof(tCmd), tBuffer.aucBuf, &sizInBuf);
 	if(tUsbStatus != USB_STATUS_OK)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%p: failed to send command!\n", this);
@@ -683,7 +681,7 @@ void romloader_papa_schlumpf::write_image(uint32_t ulNetxAddress, const char *pc
 {
 	/*Init values*/
 	PAPA_SCHLUMPF_USB_COMMAND_STATUS_T tPapaSchlumpfUsbCommandStatus;
-	USB_STATUS_T tUsbStatus;
+	romloader_papa_schlumpf_device::USB_STATUS_T tUsbStatus;
 	PAPA_SCHLUMPF_PARAMETER_DATA_T tCmd;
 	PAPA_SCHLUMPF_DATA_BUFFER_T tBuffer;
 	uint32_t sizInBuf;
@@ -731,7 +729,7 @@ void romloader_papa_schlumpf::write_image(uint32_t ulNetxAddress, const char *pc
 		memcpy(aucDataBuf, pcBUFFER_IN + sizDataBytesWritten, sizDataBytesCurrent);
 
 		/*execute command*/
-		tUsbStatus = this->sendAndReceivePackets(tCmd.auc, sizeof(tCmd), tBuffer.aucBuf, &sizInBuf);
+		tUsbStatus = m_ptDevice->sendAndReceivePackets(tCmd.auc, sizeof(tCmd), tBuffer.aucBuf, &sizInBuf);
 		if(tUsbStatus != USB_STATUS_OK)
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%p: failed to send command!\n", this);
@@ -772,7 +770,7 @@ void romloader_papa_schlumpf::call(uint32_t ulNetxAddress, uint32_t ulParameterR
 {
 	/*Init values*/
 	PAPA_SCHLUMPF_USB_COMMAND_STATUS_T tPapaSchlumpfUsbCommandStatus;
-	USB_STATUS_T tUsbStatus;
+	romloader_papa_schlumpf_device::USB_STATUS_T tUsbStatus;
 	PAPA_SCHLUMPF_PARAMETER_DATA_T tCmd;
 	PAPA_SCHLUMPF_DATA_BUFFER_T tBuffer;
 
@@ -790,7 +788,7 @@ void romloader_papa_schlumpf::call(uint32_t ulNetxAddress, uint32_t ulParameterR
 	tCmd.tPapaSchlumpfParameter.uPapaSchlumpfUsbParameter.tPapaSchlumpfUsbParameterCall.ulFunctionParameter = ulParameterR0;
 
 	/*Send Command*/
-	tUsbStatus = sendPacket(tCmd.auc, sizeof(tCmd));
+	tUsbStatus = m_ptDevice->sendPacket(tCmd.auc, sizeof(tCmd));
 	if(tUsbStatus != USB_STATUS_OK)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%p: failed to send command!\n", this);
@@ -799,7 +797,7 @@ void romloader_papa_schlumpf::call(uint32_t ulNetxAddress, uint32_t ulParameterR
 	else
 	{
 		/*Check if call is OK*/
-		tUsbStatus = receivePacket(tBuffer.aucBuf, &sizInBuf);
+		tUsbStatus = m_ptDevice->receivePacket(tBuffer.aucBuf, &sizInBuf);
 		if(tUsbStatus != USB_STATUS_OK)
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%p: failed to receive message!\n", this);
@@ -822,7 +820,7 @@ void romloader_papa_schlumpf::call(uint32_t ulNetxAddress, uint32_t ulParameterR
 					sizProgressData = 0;
 
 					/*Receive Message*/
-					tUsbStatus = receivePacket(tBuffer.aucBuf, &sizInBuf);
+					tUsbStatus = m_ptDevice->receivePacket(tBuffer.aucBuf, &sizInBuf);
 					if(tUsbStatus != USB_STATUS_OK)
 					{
 						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%p: failed to read message!\n", this);
@@ -875,77 +873,6 @@ void romloader_papa_schlumpf::call(uint32_t ulNetxAddress, uint32_t ulParameterR
 }
 
 
-romloader_papa_schlumpf::USB_STATUS_T romloader_papa_schlumpf::sendAndReceivePackets(uint8_t* aucOutBuf, uint32_t sizOutBuf, uint8_t* aucInBuf, uint32_t* sizInBuf)
-{
-	USB_STATUS_T tUsbStatus;
-
-	tUsbStatus = this->sendPacket(aucOutBuf, sizOutBuf);
-	if(tUsbStatus != USB_STATUS_OK)
-	{
-		return tUsbStatus;
-	}
-
-	tUsbStatus = this->receivePacket(aucInBuf, sizInBuf);
-	if(tUsbStatus != USB_STATUS_OK)
-	{
-		return tUsbStatus;
-	}
-
-	return tUsbStatus;
-}
-
-romloader_papa_schlumpf::USB_STATUS_T romloader_papa_schlumpf::sendPacket(uint8_t* aucOutBuf, uint32_t sizOutBuf)
-{
-	int iResult     = 0;
-	int iTransfered = 0;
-	int iTimeoutMs  = 60000;
-
-	iResult = libusb_bulk_transfer(this->g_pLibusbDeviceHandle, 0x01, aucOutBuf, sizOutBuf, &iTransfered, iTimeoutMs);
-
-	if(iResult != LIBUSB_SUCCESS)
-	{
-		//fprintf(stderr, "USB Error: Writing Data to Papa Schlumpf device failed!\n");
-		return USB_STATUS_ERROR;
-	}
-	else
-	{
-		/*Check if all bytes were transfered*/
-		if(iTransfered != sizOutBuf)
-		{
-			//fprintf(stderr, "USB Error: Not all bytes written to Papa Schlumpf device!\n");
-			return USB_STATUS_NOT_ALL_BYTES_TRANSFERED;
-		}
-	}
-
-	return USB_STATUS_OK;
-}
-
-romloader_papa_schlumpf::USB_STATUS_T romloader_papa_schlumpf::receivePacket(uint8_t* aucInBuf, uint32_t* pSizInBuf)
-{
-	int iResult        = 0;
-	int iTransfered    = 0;
-	int iTimeoutMs     = 60000;
-
-	iResult = libusb_bulk_transfer(this->g_pLibusbDeviceHandle, 0x81, aucInBuf, 64, &iTransfered, iTimeoutMs);
-
-	if(iResult != LIBUSB_SUCCESS)
-	{
-		return USB_STATUS_ERROR;
-	}
-	else
-	{
-		if (iTransfered == 0)
-		{
-			return USB_STATUS_RECEIVED_EMPTY_PACKET;
-		}
-		else
-		{
-			*pSizInBuf = iTransfered;
-		}
-	}
-
-	return USB_STATUS_OK;
-}
 
 
 #if 0

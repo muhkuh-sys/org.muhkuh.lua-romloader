@@ -35,11 +35,13 @@ SET_PROPERTY(SOURCE romloader_papa_schlumpf.i PROPERTY SWIG_FLAGS ${LIBUSB_DEFIN
 
 SET(romloader_papa_schlumpf_SOURCES
 	romloader_papa_schlumpf.cpp
+	romloader_papa_schlumpf_device.cpp
 )
 
 SET(romloader_papa_schlumpf_HEADERS
 	papa_schlumpf_firmware_interface.h
 	romloader_papa_schlumpf.h
+	romloader_papa_schlumpf_device.h
 )
 
 

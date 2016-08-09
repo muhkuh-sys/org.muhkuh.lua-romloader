@@ -26,6 +26,7 @@
  */
 #ifndef SWIG
 #       include "libusb.h"
+#       include "romloader_papa_schlumpf_device.h"
 #endif
 
 #ifndef __ROMLOADER_PAPA_SCHLUMPF_H__
@@ -74,35 +75,10 @@ public:
 
 private:
 #ifndef SWIG
-	typedef enum PAPA_SCHLUMPF_ERROR_ENUM
-	{
-		PAPA_SCHLUMPF_ERROR_Ok = 0,
-		PAPA_SCHLUMPF_ERROR_LibUsb_Open = 1,
-		PAPA_SCHLUMPF_ERROR_NoHardwareFound = 2,
-		PAPA_SCHLUMPF_ERROR_FailedToListUSBDevices = 3,
-		PAPA_SCHLUMPF_ERROR_FoundMoreThanOneDevice = 4,
-		PAPA_SCHLUMPF_ERROR_FailedToOpenDevice = 5,
-		PAPA_SCHLUMPF_ERROR_FailedToClaimInterface = 6,
-		PAPA_SCHLUMPF_ERROR_TransferError = 7,
-		PAPA_SCHLUMPF_ERROR_MemoryError = 8,
-		PAPA_SCHLUMPF_ERROR_netxError = 9
-	} PAPA_SCHLUMPF_ERROR_T;
-
-	/*Indicates status for the raw usb communication*/
-	typedef enum USB_STATUS_ENUM
-	{
-		USB_STATUS_OK = 0,
-		USB_STATUS_NOT_ALL_BYTES_TRANSFERED = 1,
-		USB_STATUS_ERROR = 2,
-		USB_STATUS_RECEIVED_EMPTY_PACKET = 3
-	} USB_STATUS_T;
+	romloader_papa_schlumpf_device *m_ptDevice;
 
 	libusb_device_handle *g_pLibusbDeviceHandle;
 	libusb_context       *g_pLibusbContext;
-
-	USB_STATUS_T sendAndReceivePackets(uint8_t* aucOutBuf, uint32_t sizOutBuf, uint8_t* aucInBuf, uint32_t* sizInBuf);
-	USB_STATUS_T sendPacket(uint8_t* aucOutBuf, uint32_t sizOutBuf);
-	USB_STATUS_T receivePacket(uint8_t* aucInBuf, uint32_t* pSizInBuf);
 #endif
 };
 
@@ -123,7 +99,7 @@ public:
 private:
 	static const char *m_pcPluginNamePattern;
 
-//	romloader_papa_schlumpf_device *m_ptDevice;
+	romloader_papa_schlumpf_device *m_ptDevice;
 };
 
 /*-----------------------------------*/
