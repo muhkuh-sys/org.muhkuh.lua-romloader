@@ -4,6 +4,8 @@
 #ifndef __MUHKUH_OPENOCD_H__
 #define __MUHKUH_OPENOCD_H__
 
+typedef int (*PFN_MUHKUH_CALL_PRINT_CALLBACK) (void *pvCallbackUserData, uint8_t *pucData, unsigned long ulDataSize);
+
 void *muhkuh_openocd_init(void);
 int muhkuh_openocd_get_result(void *pvContext, char *pcBuffer, size_t sizBufferMax);
 int muhkuh_openocd_command_run_line(void *pvContext, char *pcLine);
@@ -17,6 +19,7 @@ int muhkuh_openocd_write_data08(void *pvContext, uint32_t ulNetxAddress, uint8_t
 int muhkuh_openocd_write_data16(void *pvContext, uint32_t ulNetxAddress, uint16_t usData);
 int muhkuh_openocd_write_data32(void *pvContext, uint32_t ulNetxAddress, uint32_t ulData);
 int muhkuh_openocd_write_image(void *pvContext, uint32_t ulNetxAddress, const uint8_t *pucData, uint32_t ulSize);
+int muhkuh_openocd_call(void *pvContext, uint32_t ulNetxAddress, uint32_t ulR0, PFN_MUHKUH_CALL_PRINT_CALLBACK pfnCallback, void *pvCallbackUserData);
 
 
 #endif  /* __MUHKUH_OPENOCD_H__ */
