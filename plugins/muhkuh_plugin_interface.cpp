@@ -32,7 +32,7 @@
 #       define WRAPPER_LUA_RAWLEN lua_strlen
 #elif LUA_VERSION_NUM == 501
 #       define WRAPPER_LUA_RAWLEN lua_objlen
-#elif LUA_VERSION_NUM == 502
+#else
 #       define WRAPPER_LUA_RAWLEN lua_rawlen
 #endif
 
