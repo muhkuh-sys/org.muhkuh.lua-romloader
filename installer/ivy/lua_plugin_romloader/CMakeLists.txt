@@ -11,6 +11,7 @@ CONFIGURE_FILE(ivy.xml ivy-${VERSION_FULL}.xml)
 
 INSTALL(FILES ${MUHKUH_WIN32_INSTALL}/lua_plugins/romloader.dll
               ${MUHKUH_WIN32_INSTALL}/lua_plugins/romloader_eth.dll
+              ${MUHKUH_WIN32_INSTALL}/lua_plugins/romloader_papa_schlumpf.dll
               ${MUHKUH_WIN32_INSTALL}/lua_plugins/romloader_uart.dll
               ${MUHKUH_WIN32_INSTALL}/lua_plugins/romloader_usb.dll
         DESTINATION windows_x86
@@ -18,6 +19,7 @@ INSTALL(FILES ${MUHKUH_WIN32_INSTALL}/lua_plugins/romloader.dll
 
 INSTALL(FILES ${MUHKUH_WIN64_INSTALL}/lua_plugins/romloader.dll
               ${MUHKUH_WIN64_INSTALL}/lua_plugins/romloader_eth.dll
+              ${MUHKUH_WIN64_INSTALL}/lua_plugins/romloader_papa_schlumpf.dll
               ${MUHKUH_WIN64_INSTALL}/lua_plugins/romloader_uart.dll
               ${MUHKUH_WIN64_INSTALL}/lua_plugins/romloader_usb.dll
         DESTINATION windows_amd64
