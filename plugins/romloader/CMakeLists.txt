@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 2.8)
 
 #ADD_SUBDIRECTORY(dpm)
 ADD_SUBDIRECTORY(eth)
-#add_subdirectory(jtag)
+#ADD_SUBDIRECTORY(jtag)
+ADD_SUBDIRECTORY(papa_schlumpf)
 ADD_SUBDIRECTORY(usb)
 ADD_SUBDIRECTORY(uart)
 
