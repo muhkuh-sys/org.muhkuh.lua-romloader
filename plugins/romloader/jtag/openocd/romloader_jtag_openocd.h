@@ -7,6 +7,7 @@
 
 /*-------------------------------------------------------------------------*/
 
+typedef int (*PFN_MUHKUH_CALL_PRINT_CALLBACK) (void *pvCallbackUserData, uint8_t *pucData, unsigned long ulDataSize);
 
 class romloader_jtag_openocd
 {
@@ -47,7 +48,7 @@ public:
 	typedef int (*PFN_MUHKUH_OPENOCD_WRITE_DATA16) (void *pvContext, uint32_t ulNetxAddress, uint16_t usData);
 	typedef int (*PFN_MUHKUH_OPENOCD_WRITE_DATA32) (void *pvContext, uint32_t ulNetxAddress, uint32_t ulData);
 	typedef int (*PFN_MUHKUH_OPENOCD_WRITE_IMAGE) (void *pvContext, uint32_t ulNetxAddress, const uint8_t *pucData, uint32_t ulSize);
-
+	typedef int (*PFN_MUHKUH_OPENOCD_CALL) (void *pvContext, uint32_t ulNetxAddress, uint32_t ulR0, PFN_MUHKUH_CALL_PRINT_CALLBACK pfnCallback, void *pvCallbackUserData);
 
 	typedef struct MUHKUH_OPENOCD_FUNCTION_POINTERS_UNION
 	{
@@ -63,6 +64,7 @@ public:
 		PFN_MUHKUH_OPENOCD_WRITE_DATA16 pfnWriteData16;
 		PFN_MUHKUH_OPENOCD_WRITE_DATA32 pfnWriteData32;
 		PFN_MUHKUH_OPENOCD_WRITE_IMAGE pfnWriteImage;
+		PFN_MUHKUH_OPENOCD_CALL pfnCall;
 	} MUHKUH_OPENOCD_FUNCTION_POINTERS_T;
 
 
@@ -116,13 +118,13 @@ public:
 	int write_image(uint32_t ulNetxAddress, const uint8_t *pucData, uint32_t sizData);
 
 	/* Call routine. */
-//	int call(uint32_t ulNetxAddress, uint32_t ulParameterR0);
+//	int call(uint32_t ulNetxAddress, uint32_t ulParameterR0, PFN_MUHKUH_CALL_PRINT_CALLBACK pfnCallback);
 
 	/* Get the suggested chunk size for read_image and write_image. */
 	uint32_t get_image_chunk(void);
 
 private:
-	static const OPENOCD_NAME_RESOLVE_T atOpenOcdResolve[12];
+	static const OPENOCD_NAME_RESOLVE_T atOpenOcdResolve[13];
 
 	static const INTERFACE_SETUP_STRUCT_T atInterfaceCfg[4];
 

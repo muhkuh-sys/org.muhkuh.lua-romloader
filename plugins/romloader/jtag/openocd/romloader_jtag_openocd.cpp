@@ -44,7 +44,7 @@ romloader_jtag_openocd::~romloader_jtag_openocd(void)
 
 
 
-const romloader_jtag_openocd::OPENOCD_NAME_RESOLVE_T romloader_jtag_openocd::atOpenOcdResolve[12] =
+const romloader_jtag_openocd::OPENOCD_NAME_RESOLVE_T romloader_jtag_openocd::atOpenOcdResolve[13] =
 {
 	{
 		.pstrSymbolName = "muhkuh_openocd_init",
@@ -93,6 +93,10 @@ const romloader_jtag_openocd::OPENOCD_NAME_RESOLVE_T romloader_jtag_openocd::atO
 	{
 		.pstrSymbolName = "muhkuh_openocd_write_image",
 		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnWriteImage) / sizeof(void*)
+	},
+	{
+		.pstrSymbolName = "muhkuh_openocd_call",
+		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnCall) / sizeof(void*)
 	}
 };
 
@@ -321,8 +325,10 @@ int romloader_jtag_openocd::initialize(void)
  *
  * Use a ridiculously low speed to ensure that the connection is working in
  * absolutely all circumstances (even with Enricos flying wires. ;)
- *
  */
+
+/* FIXME: read this from some kind of configuration file. */
+
 const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::atInterfaceCfg[4] =
 {
 	{
@@ -415,7 +421,7 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::a
 };
 
 
-
+/* FIXME: read this from some kind of configuration file. */
 const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTargetCfg[2] =
 {
 	{
@@ -460,7 +466,8 @@ const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTa
 };
 
 
-
+/* FIXME: read this from some kind of configuration file. */
+/* TODO: Is it necessary to have a special reset code for every interface/target pair? */
 const char *romloader_jtag_openocd::pcResetCode = "reset_config trst_and_srst\n"
                                  "adapter_nsrst_delay 500\n"
                                  "jtag_ntrst_delay 500\n"
@@ -1065,9 +1072,28 @@ int romloader_jtag_openocd::write_image(uint32_t ulNetxAddress, const uint8_t *p
 }
 
 
+#if 0
+int romloader_jtag_openocd::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, PFN_MUHKUH_CALL_CALLBACK pfnCallback)
+{
+	int iResult;
+
+
+	/* Be pessimistic. */
+	iResult = -1;
+
+
+
+	return iResult;
+}
+#endif
+
 
 uint32_t romloader_jtag_openocd::get_image_chunk(void)
 {
+	/* This is the suggested size of a data chunk before executing the LUA callback. */
+	/* TODO: Is a fixed number OK or should this depend on some parameters like the JTAG speed?
+	 *       Maybe this could also be one fixed option for every interface/target pair - just like the reset code.
+	 */
 	return 1024;
 }
 
