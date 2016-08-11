@@ -51,15 +51,6 @@ public:
 		PAPA_SCHLUMPF_ERROR_netxError = 9
 	} PAPA_SCHLUMPF_ERROR_T;
 
-	/*Indicates status for the raw usb communication*/
-	typedef enum USB_STATUS_ENUM
-	{
-		USB_STATUS_OK = 0,
-		USB_STATUS_NOT_ALL_BYTES_TRANSFERED = 1,
-		USB_STATUS_ERROR = 2,
-		USB_STATUS_RECEIVED_EMPTY_PACKET = 3
-	} USB_STATUS_T;
-
 	static const int iPathMax = 32;
 	typedef struct INTERFACE_REFERENCE_STRUCT
 	{
@@ -71,17 +62,33 @@ public:
 	} INTERFACE_REFERENCE_T;
 	PAPA_SCHLUMPF_ERROR_T detect_interfaces(INTERFACE_REFERENCE_T **pptInterfaces, size_t *psizInterfaces);
 
+	typedef int (*PFN_CALL_PROGRESS_DATA_T) (void *pvUser, const char *pcProgressData, size_t sizProgressData);
 
-	romloader_papa_schlumpf_device::USB_STATUS_T sendAndReceivePackets(uint8_t* aucOutBuf, uint32_t sizOutBuf, uint8_t* aucInBuf, uint32_t* sizInBuf);
-	romloader_papa_schlumpf_device::USB_STATUS_T sendPacket(uint8_t* aucOutBuf, uint32_t sizOutBuf);
-	romloader_papa_schlumpf_device::USB_STATUS_T receivePacket(uint8_t* aucInBuf, uint32_t* pSizInBuf);
+	int read_data08(uint32_t ulDataSourceAddress, uint8_t *pucData);
+	int read_data16(uint32_t ulDataSourceAddress, uint16_t *pusData);
+	int read_data32(uint32_t ulDataSourceAddress, uint32_t *pulData);
+	int read_image(uint32_t ulNetxAddress, uint32_t ulSize, void *pvData);
 
+	int write_data08(uint32_t ulNetxAddress, uint8_t ucData);
+	int write_data16(uint32_t ulNetxAddress, uint16_t usData);
+	int write_data32(uint32_t ulNetxAddress, uint32_t ulData);
+	int write_image(uint32_t ulNetxAddress, uint32_t ulSize, const void *pvData);
 
+	int call(uint32_t ulNetxAddress, uint32_t ulParameterR0, PFN_CALL_PROGRESS_DATA_T pfnProgressData, void *pvProgressDataUser);
+
+	int Connect(unsigned int uiBusNr, unsigned int uiDeviceAdr);
 private:
 	char *m_pcPluginId;
 
 	libusb_device_handle *m_ptLibUsbDeviceHandle;
 	libusb_context       *m_ptLibUsbContext;
+
+	int send_start_packet(void);
+	int receive_report(char **ppcResponse, size_t *psizResponse, uint32_t *pulStatus);
+
+	int sendAndReceivePackets(uint8_t *aucOutBuf, uint32_t sizOutBuf, uint8_t *aucInBuf, uint32_t *sizInBuf);
+	int sendPacket(uint8_t *aucOutBuf, uint32_t sizOutBuf);
+	int receivePacket(uint8_t *aucInBuf, uint32_t *pSizInBuf);
 };
 
 

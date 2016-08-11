@@ -25,7 +25,6 @@
  * It should not be exported.
  */
 #ifndef SWIG
-#       include "libusb.h"
 #       include "romloader_papa_schlumpf_device.h"
 #endif
 
@@ -52,11 +51,11 @@ public:
 	virtual void Disconnect(lua_State *ptClientData);
 
 	/* Read a byte (8bit) from the netX to the PC. */
-	virtual uint8_t read_data08(lua_State *ptClientData, uint32_t ulDataSourceAddress);
+	virtual uint8_t read_data08(lua_State *ptClientData, uint32_t ulNetxAddress);
 	/* Read a word (16bit) from the netX to the PC. */
-	virtual uint16_t read_data16(lua_State *ptClientData, uint32_t ulDataSourceAddress);
+	virtual uint16_t read_data16(lua_State *ptClientData, uint32_t ulNetxAddress);
 	/* Read a long (32bit) from the netX to the PC. */
-	virtual uint32_t read_data32(lua_State *ptClientData, uint32_t ulDataSourceAddress);
+	virtual uint32_t read_data32(lua_State *ptClientData, uint32_t ulNetxAddress);
 	/* Read a byte array from the netX to the PC. */
 	virtual void read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 
@@ -73,12 +72,19 @@ public:
 	virtual void call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 // *** LUA interface end ***
 
+	static int call_progress_data_static(void *pvUser, const char *pcProgressData, size_t sizProgressData);
+	int call_progress_data(const char *pcProgressData, size_t sizProgressData);
+
 private:
 #ifndef SWIG
 	romloader_papa_schlumpf_device *m_ptDevice;
 
-	libusb_device_handle *g_pLibusbDeviceHandle;
-	libusb_context       *g_pLibusbContext;
+	romloader_papa_schlumpf_provider *m_ptProvider;
+	unsigned int m_uiBusNr;
+	unsigned int m_uiDeviceAdr;
+
+	SWIGLUA_REF *m_ptCallBackLuaFn;
+	long m_lCallBackUserData;
 #endif
 };
 
