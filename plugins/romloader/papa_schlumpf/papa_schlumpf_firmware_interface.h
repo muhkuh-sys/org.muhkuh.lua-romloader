@@ -75,7 +75,7 @@ typedef struct PAPA_SCHLUMPF_USB_PARAMETER_CALL_STRUCT
 
 typedef struct PAPA_SCHLUMPF_PARAMETER_STRUCT
 {
-	unsigned long ulDummy;
+	uint32_t ulDummy;
 	uint32_t ulPapaSchlumpfUsbCommand;
 	union
 	{
