@@ -77,7 +77,12 @@ public:
 	int call(uint32_t ulNetxAddress, uint32_t ulParameterR0, PFN_CALL_PROGRESS_DATA_T pfnProgressData, void *pvProgressDataUser);
 
 	int Connect(unsigned int uiBusNr, unsigned int uiDeviceAdr);
+	void Disconnect(void);
+
 private:
+	/* The index of the papa schlumpf interface to work with. */
+	static const int m_iUsbInterfaceIndex = 0;
+
 	char *m_pcPluginId;
 
 	libusb_device_handle *m_ptLibUsbDeviceHandle;

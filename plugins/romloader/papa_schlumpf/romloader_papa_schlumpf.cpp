@@ -241,6 +241,7 @@ romloader_papa_schlumpf::romloader_papa_schlumpf(const char *pcName, const char 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_papa_schlumpf::romloader_papa_schlumpf(): pcName='%s', pcTyp='%s', ptProvider=%p, uiBusNr=%d, uiDeviceAdr=%d\n", pcName, pcTyp, ptProvider, uiBusNr, uiDeviceAdr));
 
 	m_ptDevice = new romloader_papa_schlumpf_device(m_pcName);
+
 	DEBUGMSG(ZONE_FUNCTION, ("-romloader_papa_schlumpf::romloader_usb()\n"));
 }
 
@@ -327,11 +328,10 @@ void romloader_papa_schlumpf::Disconnect(lua_State *ptClientData)
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_papa_schlumpf::Disconnect(): ptClientData=%p\n", ptClientData));
 
 	/* NOTE: allow disconnects even if the plugin was already disconnected. */
-
-//	if( m_ptUsbDevice!=NULL )
-//	{
-//		m_ptUsbDevice->Disconnect();
-//	}
+	if( m_ptDevice!=NULL )
+	{
+		m_ptDevice->Disconnect();
+	}
 
 	m_fIsConnected = false;
 

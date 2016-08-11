@@ -76,6 +76,8 @@ romloader_papa_schlumpf_device::romloader_papa_schlumpf_device(const char *pcPlu
 
 romloader_papa_schlumpf_device::~romloader_papa_schlumpf_device(void)
 {
+        Disconnect();
+
 	if( m_ptLibUsbContext!=NULL )
 	{
 		/* Close the libusb context. */
@@ -940,7 +942,7 @@ int romloader_papa_schlumpf_device::Connect(unsigned int uiBusNr, unsigned int u
 						if( uiBusNr==uiEntryBusNr && uiDeviceAdr==uiEntryDeviceAdr )
 						{
 							/* Claim interface #0. */
-							iLibUsbResult = libusb_claim_interface(ptDevHandle, 0);
+							iLibUsbResult = libusb_claim_interface(ptDevHandle, m_iUsbInterfaceIndex);
 							if( iLibUsbResult==LIBUSB_SUCCESS )
 							{
 								/* The handle to the device is now open. */
@@ -1005,4 +1007,16 @@ int romloader_papa_schlumpf_device::Connect(unsigned int uiBusNr, unsigned int u
 	}
 
 	return iResult;
+}
+
+
+
+void romloader_papa_schlumpf_device::Disconnect(void)
+{
+	if( m_ptLibUsbDeviceHandle!=NULL )
+	{
+		libusb_release_interface(m_ptLibUsbDeviceHandle, m_iUsbInterfaceIndex);
+		libusb_close(m_ptLibUsbDeviceHandle);
+		m_ptLibUsbDeviceHandle = NULL;
+	}
 }
