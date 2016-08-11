@@ -4,8 +4,8 @@
 <muhkuh_buildsystem project="muhkuh">
 	<project_version>
 		<major>2</major>
-		<minor>2</minor>
-		<micro>2</micro>
+		<minor>3</minor>
+		<micro>0</micro>
 	</project_version>
 
 	<scons>
