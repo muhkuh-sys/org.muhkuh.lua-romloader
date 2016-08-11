@@ -56,6 +56,7 @@ int romloader_dpm_transfer_netx56::prepare_device(void)
 
 		case NETX_DEVICE_STATE_Romloader:
 			/* No, the monitor is not running yet. Download the monitor. */
+			printf("Detected running ROM code. Downloading the monitor code...\n");
 			iResult = download_and_run_image(auc_dpmmon_netx56_monitor, sizeof(auc_dpmmon_netx56_monitor));
 			printf("download_and_run_image: %d\n", iResult);
 			if( iResult==0 )
@@ -68,6 +69,7 @@ int romloader_dpm_transfer_netx56::prepare_device(void)
 				if( tState!=NETX_DEVICE_STATE_Monitor )
 				{
 					/* Failed to start the monitor. */
+					printf("Failed to start the monitor, the ROM cookie is still there!\n");
 					iResult = -1;
 				}
 				else
@@ -82,6 +84,80 @@ int romloader_dpm_transfer_netx56::prepare_device(void)
 			/* The monitor is already running. */
 			iResult = 0;
 			break;
+		}
+	}
+
+	return iResult;
+}
+
+
+
+int romloader_dpm_transfer_netx56::send_command(const uint8_t *pucCommand, uint32_t ulCommandSize)
+{
+	int iResult;
+
+
+	if( m_ptDpmDevice==NULL )
+	{
+		iResult = -1;
+	}
+	else if( ulCommandSize>NETX56_DPM_HOST_TO_NETX_BUFFERSIZE )
+	{
+		iResult = mailbox_send_chunk(pucCommand, ulCommandSize);
+	}
+
+	return iResult;
+}
+
+
+
+/* NOTE: this routine receives a data block with a known size. Use another routine to receive print messages. */
+int romloader_dpm_transfer_netx56::receive_response(uint8_t *pucBuffer, uint32_t ulDataSize)
+{
+	int iResult;
+	uint32_t ulReceiveCnt;
+	uint32_t ulBytesLeft;
+	uint32_t ulChunkSize;
+
+
+	/* Be optimistic. */
+	iResult = 0;
+
+	if( m_ptDpmDevice==NULL )
+	{
+		iResult = -1;
+	}
+	else
+	{
+		ulReceiveCnt = 0;
+		while( ulReceiveCnt<ulDataSize )
+		{
+			ulBytesLeft = ulDataSize - ulReceiveCnt;
+			iResult = mailbox_get_data(&ulChunkSize);
+			if( iResult==0 )
+			{
+				if( ulChunkSize==0 )
+				{
+					printf("Received an empty packet!\n");
+					iResult = -1;
+				}
+				else if( ulChunkSize>NETX56_DPM_NETX_TO_HOST_BUFFERSIZE )
+				{
+					printf("Received a packet with an invalid size!\n");
+					iResult = -1;
+				}
+				else if( ulChunkSize>ulBytesLeft )
+				{
+					printf("Received more data than expected!\n");
+					iResult = -1;
+				}
+				else
+				{
+					/* Received one more chunk. */
+					memcpy(pucBuffer+ulReceiveCnt, m_aucBufferNetxToHost, ulChunkSize);
+					ulReceiveCnt += ulChunkSize;
+				}
+			}
 		}
 	}
 
@@ -152,9 +228,11 @@ int romloader_dpm_transfer_netx56::mailbox_purr(uint32_t ulMask, uint32_t *ulRes
 }
 
 
+
 int romloader_dpm_transfer_netx56::mailbox_send_chunk(const uint8_t *pucChunk, uint32_t ulChunkSize)
 {
 	uint32_t ulValue;
+	unsigned int uiRetryCnt;
 	int iResult;
 
 
@@ -175,13 +253,27 @@ int romloader_dpm_transfer_netx56::mailbox_send_chunk(const uint8_t *pucChunk, u
 				if( iResult==0 )
 				{
 					/* Wait until netX has processed the data. */
+					uiRetryCnt = 80;
 					do
 					{
-						usleep(500);
 						iResult = mailbox_purr(NETX56_DPM_BOOT_NETX_RECEIVED_CMD, &ulValue);
 						if( iResult!=0 )
 						{
 							break;
+						}
+						else if( ulValue!=0 )
+						{
+							--uiRetryCnt;
+							if( uiRetryCnt==0 )
+							{
+								/* Timeout! */
+								iResult = -1;
+								break;
+							}
+							else
+							{
+								usleep(25);
+							}
 						}
 					} while( ulValue!=0 );
 				}
@@ -194,24 +286,38 @@ int romloader_dpm_transfer_netx56::mailbox_send_chunk(const uint8_t *pucChunk, u
 
 
 
-int romloader_dpm_transfer_netx56::mailbox_get_status(uint8_t *pucStatus)
+int romloader_dpm_transfer_netx56::mailbox_get_data(uint32_t *pulSize)
 {
 	int iResult;
 	uint32_t ulValue;
 	uint32_t ulCnt;
 	uint32_t ulRec;
 	uint8_t ucData;
-	unsigned int uiResult;
+	unsigned int uiRetryCnt;
 
 
 	/* Wait for data to receive. */
+	uiRetryCnt = 80;
 	do
 	{
-		usleep(500);
 		iResult = mailbox_purr(NETX56_DPM_BOOT_NETX_SEND_CMD, &ulValue);
 		if( iResult!=0 )
 		{
 			break;
+		}
+		else if( ulValue==0 )
+		{
+			--uiRetryCnt;
+			if( uiRetryCnt==0 )
+			{
+				/* Timeout! */
+				iResult = -1;
+				break;
+			}
+			else
+			{
+				usleep(25);
+			}
 		}
 	} while( ulValue==0 );
 
@@ -239,7 +345,7 @@ int romloader_dpm_transfer_netx56::mailbox_get_status(uint8_t *pucStatus)
 						iResult = m_ptDpmDevice->dpm_write32(OFFS_HBOOT(ulHandshake), ulValue);
 						if( iResult==0 )
 						{
-							*pucStatus = m_aucBufferNetxToHost[0];
+							*pulSize = ulRec;
 						}
 					}
 				}
@@ -247,7 +353,7 @@ int romloader_dpm_transfer_netx56::mailbox_get_status(uint8_t *pucStatus)
 		}
 	}
 
-	return uiResult;
+	return iResult;
 }
 
 
@@ -258,6 +364,7 @@ int romloader_dpm_transfer_netx56::download_and_run_image(const uint8_t *pucData
 	const uint8_t *pucCnt;
 	const uint8_t *pucEnd;
 	uint32_t ulChunkSize;
+	uint32_t ulResultSize;
 	uint8_t ucStatus;
 
 
@@ -283,35 +390,56 @@ int romloader_dpm_transfer_netx56::download_and_run_image(const uint8_t *pucData
 			pucCnt += ulChunkSize;
 
 			printf("wait for status...\n");
-			iResult = mailbox_get_status(&ucStatus);
+			iResult = mailbox_get_data(&ulResultSize);
 			if( iResult==0 )
 			{
-				printf("status: %d\n", ucStatus);
-
-				if( ucStatus==0 )
+				if( ulResultSize!=1 )
 				{
-					while( pucCnt<pucEnd )
+					printf("Received status packet with %d bytes, expected 1!\n", ulResultSize);
+					iResult = -1;
+				}
+				else
+				{
+					ucStatus = m_aucBufferNetxToHost[0];
+					printf("status: %d\n", ucStatus);
+					if( ucStatus==0 )
 					{
-						ulChunkSize = pucEnd - pucCnt;
-						if( ulChunkSize>NETX56_DPM_HOST_TO_NETX_BUFFERSIZE )
+						while( pucCnt<pucEnd )
 						{
-							ulChunkSize = NETX56_DPM_HOST_TO_NETX_BUFFERSIZE;
+							ulChunkSize = pucEnd - pucCnt;
+							if( ulChunkSize>NETX56_DPM_HOST_TO_NETX_BUFFERSIZE )
+							{
+								ulChunkSize = NETX56_DPM_HOST_TO_NETX_BUFFERSIZE;
+							}
+
+							printf("send %d bytes\n", ulChunkSize);
+							iResult = mailbox_send_chunk(pucCnt, ulChunkSize);
+							if( iResult!=0 )
+							{
+								break;
+							}
+							pucCnt += ulChunkSize;
 						}
 
-						printf("send %d bytes\n", ulChunkSize);
-						iResult = mailbox_send_chunk(pucCnt, ulChunkSize);
-						if( iResult!=0 )
+						printf("wait for status...\n");
+						iResult = mailbox_get_status(&ulResultSize);
+						if( iResult==0 )
 						{
-							break;
+							if( ulResultSize!=1 )
+							{
+								printf("Received status packet with %d bytes, expected 1!\n", ulResultSize);
+								iResult = -1;
+							}
+							else
+							{
+								ucStatus = m_aucBufferNetxToHost[0];
+								printf("status: %d\n", ucStatus);
+								if( ucStatus!=0 )
+								{
+									iResult = -1;
+								}
+							}
 						}
-						pucCnt += ulChunkSize;
-					}
-
-					printf("wait for status...\n");
-					iResult = mailbox_get_status(&ucStatus);
-					if( iResult==0 )
-					{
-						printf("status: %d\n", ucStatus);
 					}
 				}
 			}

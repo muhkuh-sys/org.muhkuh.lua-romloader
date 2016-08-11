@@ -23,49 +23,24 @@
 
 #include <string.h>
 
-#include "rdy_run.h"
-#include "systime.h"
 #include "monitor_commands.h"
+#include "rdy_run.h"
 #include "serial_vectors.h"
+#include "systime.h"
+#include "transport.h"
 
-/*-----------------------------------*/
+
+/*-------------------------------------------------------------------------*/
+
 
 void dpm_monitor(void)
 {
-#if ASIC_TYP==56
-	unsigned long ulRomId;
-#endif
-	BLINKI_HANDLE_T tBlinkiHandle;
-
 	systime_init();
 
-#if 0
-/* ASIC_TYP==56 */
-	ulRomId = aulRomId[2];
-	if( ulRomId==ROM_CODE_ID_NETX56 )
-	{
-		ulConsoleDevice = aulConsoleDevices_netx56[0];
-	}
-	else if( ulRomId==ROM_CODE_ID_NETX56B )
-	{
-		ulConsoleDevice = aulConsoleDevices_netx56b[0];
-	}
-	else
-	{
-		ulConsoleDevice = (unsigned long)CONSOLE_DEVICE_NONE;
-	}
-	if( ulConsoleDevice!=((unsigned long)CONSOLE_DEVICE_USB) && ulConsoleDevice!=((unsigned long)CONSOLE_DEVICE_UART0) )
-	{
-		while(1) {};
-	}
-	transport_set_vectors(ulConsoleDevice);
-#endif
-
-	rdy_run_setLEDs(RDYRUN_OFF);
-	rdy_run_blinki_init(&tBlinkiHandle, 0x00000055, 0x00000150);
+	transport_init();
 	while(1)
 	{
-		rdy_run_blinki(&tBlinkiHandle);
+		transport_loop();
 	}
 }
 

@@ -78,6 +78,12 @@ SECTIONS
 		__bss_end__ = . ;
 	} >INTRAM_MON
 
+	/* NOTE: align the DPM to the next 128 byte block. */
+	.dpm ALIGN(0x80):
+	{
+		*(.dpm)
+	} >INTRAM_MON
+
 	/* Set the top of the stack to the start of the code. */
 	stack_top = ORIGIN(INTRAM_MON) + LENGTH(INTRAM_MON);
 

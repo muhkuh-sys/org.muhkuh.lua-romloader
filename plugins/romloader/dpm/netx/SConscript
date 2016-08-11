@@ -36,6 +36,7 @@ Import('libmi_netx500', 'libmi_netx56', 'libmi_netx50', 'libmi_netx10')
 sources_monitor = """
 	src/init_netx_test.S
 	src/main.c
+	src/transport.c
 """
 
 #----------------------------------------------------------------------------

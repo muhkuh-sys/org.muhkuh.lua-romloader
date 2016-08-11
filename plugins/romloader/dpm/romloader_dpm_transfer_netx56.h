@@ -12,6 +12,8 @@ public:
 	virtual ~romloader_dpm_transfer_netx56(void);
 
 	virtual int prepare_device(void);
+	virtual int send_command(const uint8_t *pucCommand, uint32_t ulCommandSize);
+	virtual int receive_response(uint8_t *pucBuffer, uint32_t ulDataSize);
 
 protected:
 
@@ -30,10 +32,9 @@ private:
 
 	int mailbox_purr(uint32_t ulMask, uint32_t *ulResult);
 	int mailbox_send_chunk(const uint8_t *pucChunk, uint32_t ulChunkSize);
-	int mailbox_get_status(uint8_t *pucStatus);
+	int mailbox_get_data(uint32_t *pulSize);
 
 	uint8_t m_aucBufferNetxToHost[NETX56_DPM_NETX_TO_HOST_BUFFERSIZE];
-	uint8_t m_aucBufferHostToNetx[NETX56_DPM_HOST_TO_NETX_BUFFERSIZE];
 };
 
 #endif  /* __ROMLOADER_DPM_TRANSFER_NETX56_H__ */
