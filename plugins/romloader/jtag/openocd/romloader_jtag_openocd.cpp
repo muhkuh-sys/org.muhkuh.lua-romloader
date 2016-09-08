@@ -329,8 +329,30 @@ int romloader_jtag_openocd::initialize(void)
 
 /* FIXME: read this from some kind of configuration file. */
 
-const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::atInterfaceCfg[4] =
+const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::atInterfaceCfg[5] =
 {
+	{
+		.pcID = "NXJTAG-USB",
+		.pcCode_Setup = "interface ftdi\n"
+                                "transport select jtag\n"
+		                "ftdi_device_desc \"NXJTAG-USB\"\n"
+		                "ftdi_vid_pid 0x1939 0x0023\n"
+		                "adapter_khz 100\n"
+		                "\n"
+		                "ftdi_layout_init 0x0308 0x030b\n"
+		                "ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100\n"
+		                "ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
+		.pcCode_Probe = "proc probe {} {\n"
+		                "    set RESULT -1"
+		                "\n"
+		                "    if {[ catch {jtag init} ]==0 } {\n"
+		                "        set RESULT {OK}\n"
+		                "    }\n"
+		                "    return $RESULT\n"
+		                "}\n"
+		                "probe\n"
+	},
+	
 	{
 		.pcID = "Amontec_JTAGkey",
 		.pcCode_Setup = "interface ftdi\n"

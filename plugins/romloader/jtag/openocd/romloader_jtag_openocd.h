@@ -126,7 +126,7 @@ public:
 private:
 	static const OPENOCD_NAME_RESOLVE_T atOpenOcdResolve[13];
 
-	static const INTERFACE_SETUP_STRUCT_T atInterfaceCfg[4];
+	static const INTERFACE_SETUP_STRUCT_T atInterfaceCfg[5];
 
 	static const TARGET_SETUP_STRUCT_T atTargetCfg[2];
 
