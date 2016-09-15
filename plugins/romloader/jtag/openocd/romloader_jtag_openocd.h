@@ -121,7 +121,7 @@ public:
 //	int call(uint32_t ulNetxAddress, uint32_t ulParameterR0, PFN_MUHKUH_CALL_PRINT_CALLBACK pfnCallback);
 
 	/* Get the suggested chunk size for read_image and write_image. */
-	uint32_t get_image_chunk(void);
+	uint32_t get_image_chunk_size(void);
 
 private:
 	static const OPENOCD_NAME_RESOLVE_T atOpenOcdResolve[13];

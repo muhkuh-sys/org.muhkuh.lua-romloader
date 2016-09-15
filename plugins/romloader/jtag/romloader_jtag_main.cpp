@@ -99,7 +99,11 @@ romloader_jtag_provider::~romloader_jtag_provider(void)
 }
 
 
-
+/*
+   Detect interfaces and targets.
+   Calls romloader_jtag_openocd::detect.
+   For each interface/target combination found, a romloader_jtag_reference is created and added to ptLuaStateForTableAccess.
+ */
 int romloader_jtag_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess)
 {
 	int iResult;
@@ -147,7 +151,10 @@ int romloader_jtag_provider::DetectInterfaces(lua_State *ptLuaStateForTableAcces
 }
 
 
-
+/*
+   Instantiate the plugin.
+   Creates a romloader_jtag instance from a romloader_jtag_reference.
+ */
 romloader_jtag *romloader_jtag_provider::ClaimInterface(const muhkuh_plugin_reference *ptReference)
 {
 	romloader_jtag *ptPlugin;
@@ -261,7 +268,9 @@ romloader_jtag *romloader_jtag_provider::ClaimInterface(const muhkuh_plugin_refe
 	return ptPlugin;
 }
 
-
+/*
+   Release a muhkuh_plugin instance. Does nothing.
+ */
 bool romloader_jtag_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 {
 	bool fOk;
@@ -298,7 +307,12 @@ bool romloader_jtag_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 
 
 /*-------------------------------------*/
-
+/*
+   Open the JTAG plugin.
+   Creates a romloader_jtag_openocd instance.
+   Tries to load the openOCD library.
+   Stores the interface/target name strings.
+ */
 romloader_jtag::romloader_jtag(const char *pcName, const char *pcTyp, romloader_jtag_provider *ptProvider, const char *pcInterfaceName, const char *pcTargetName)
  : romloader(pcName, pcTyp, ptProvider)
  , m_ptJtagProvider(ptProvider)
@@ -561,7 +575,7 @@ void romloader_jtag::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **
 	else if ( ulSize>0 )
 	{
 		/* Get the suggested chunk size. */
-		ulMaxChunkSize = m_ptJtagDevice->get_image_chunk();
+		ulMaxChunkSize = m_ptJtagDevice->get_image_chunk_size();
 
 		pucBufferStart = (uint8_t*)malloc(ulSize);
 		if( pucBufferStart==NULL )
@@ -763,7 +777,7 @@ void romloader_jtag::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN
 	else if( sizBUFFER_IN!=0 )
 	{
 		/* Get the suggested chunk size. */
-		ulMaxChunkSize = m_ptJtagDevice->get_image_chunk();
+		ulMaxChunkSize = m_ptJtagDevice->get_image_chunk_size();
 
 		pucData = (const uint8_t*)pcBUFFER_IN;
 		ulSizeData = sizBUFFER_IN;
