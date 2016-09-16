@@ -54,6 +54,33 @@
 
 /*-------------------------------------*/
 
+class romloader_jtag_read_functinoid : public romloader_read_functinoid
+{
+public:
+	romloader_jtag_read_functinoid(romloader_jtag *ptDevice, lua_State *ptClientData)
+	{
+		m_ptJtagDevice = ptDevice;
+		m_ptClientData = ptClientData;
+	}
+
+	uint32_t read_data32(uint32_t ulAddress)
+	{
+		uint32_t ulValue;
+
+		ulValue = m_ptJtagDevice->read_data32(m_ptClientData, ulAddress);
+
+		return ulValue;
+	}
+
+private:
+	romloader_jtag *m_ptJtagDevice;
+	lua_State *m_ptClientData;
+};
+
+
+
+/*-------------------------------------*/
+
 const char *romloader_jtag_provider::m_pcPluginNamePattern = "romloader_jtag_%s@%s";
 
 romloader_jtag_provider::romloader_jtag_provider(swig_type_info *p_romloader_jtag, swig_type_info *p_romloader_jtag_reference)
@@ -371,7 +398,8 @@ romloader_jtag::~romloader_jtag(void)
 void romloader_jtag::Connect(lua_State *ptClientData)
 {
 	int iResult;
-
+	bool fOk;
+	romloader_jtag_read_functinoid ptReadFn(this, ptClientData);
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::Connect(): ptClientData=%p\n", ptClientData));
 
@@ -392,6 +420,12 @@ void romloader_jtag::Connect(lua_State *ptClientData)
 		{
 			/* NOTE: set m_fIsConnected to true here or detect_chiptyp and chip_init will fail! */
 			m_fIsConnected = true;
+
+			fOk = detect_chiptyp(&ptReadFn);
+			if (fOk != true)
+			{
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chip type", m_pcName, this);
+			}
 		}
 		DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::Connect(): iResult=%d\n", iResult));
 
