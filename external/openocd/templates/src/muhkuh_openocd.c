@@ -2,12 +2,13 @@
 
 #include <unistd.h>
 
-
 /*-------------------------------------*/
 /* openocd includes */
 
 #include "openocd.c"
 
+#include "target/target_type.h"
+#include "target/target_request.h"
 
 
 void *muhkuh_openocd_init(void)
@@ -54,22 +55,22 @@ int muhkuh_openocd_get_result(void *pvContext, char *pcBuffer, size_t sizBufferM
 	const char *pcResult;
 	int iResLen;
 	int iResult;
-	
-	
+
+
 	/* Be pessimistic. */
 	iResult = ERROR_FAIL;
-	
+
 	ptCmdCtx = (struct command_context *)pvContext;
 	if( ptCmdCtx!=NULL )
 	{
 		ptInterp = ptCmdCtx->interp;
-		
+
 		ptResultObj = Jim_GetResult(ptInterp);
 		if( ptResultObj!=NULL )
 		{
 			iResLen = 0;
 			pcResult = Jim_GetString(ptResultObj, &iResLen);
-			
+
 			/* Does the result still exist? */
 			if( pcResult!=NULL && iResLen>0 )
 			{
@@ -83,7 +84,7 @@ int muhkuh_openocd_get_result(void *pvContext, char *pcBuffer, size_t sizBufferM
 			}
 		}
 	}
-	
+
 	return iResult;
 }
 
@@ -385,7 +386,62 @@ int muhkuh_openocd_write_image(void *pvContext, uint32_t ulNetxAddress, const ui
 	return iResult;
 }
 
+/* Structure to hold the address of a line and its size.
+   Used as output_handler_priv.
+ */
+typedef struct {
+	uint8_t* pucDccData;
+	unsigned long ulDccDataSize;
+} DCC_LINE_BUFFER_T;
 
+/* Store a 0-terminated line in the buffer. */
+void dcc_line_buffer_put(DCC_LINE_BUFFER_T* ptBuffer, const char *line)
+{
+	unsigned long ulDccDataSize = strlen(line);
+	uint8_t* pucDccData = malloc(ulDccDataSize);
+
+	if (pucDccData != NULL)
+	{
+		strcpy(pucDccData, line);
+		ptBuffer->ulDccDataSize = ulDccDataSize;
+		ptBuffer->pucDccData = pucDccData;
+	}
+	else
+	{
+		printf("Error: failed to allocate buffer for DCC debug message\n");
+	}
+}
+
+/* Remove the current line from the buffer, if any.
+   fUsed = 1 if any line which may be in the buffer has already been used.
+   fUsed = 0 if any line in the buffer has not been used (prints a warning).
+ */
+void dcc_line_buffer_clear(DCC_LINE_BUFFER_T* ptBuffer, int fUsed)
+{
+	if (ptBuffer->pucDccData != NULL)
+	{
+		if (fUsed == 0)
+		{
+			printf("dropping debug message (not passed to Lua callback): %s\n", ptBuffer->pucDccData);
+		}
+
+		free(ptBuffer->pucDccData);
+		ptBuffer->pucDccData = NULL;
+		ptBuffer->ulDccDataSize = 0;
+	}
+}
+
+int romloader_jtag_command_output_handler(struct command_context *context, const char *line)
+{
+	DCC_LINE_BUFFER_T* ptBuffer = (DCC_LINE_BUFFER_T*) context->output_handler_priv;
+	if (line != NULL)
+	{
+		dcc_line_buffer_clear(ptBuffer, 0);
+		dcc_line_buffer_put(ptBuffer, line);
+	}
+
+	return ERROR_OK;
+}
 
 int muhkuh_openocd_call(void *pvContext, uint32_t ulNetxAddress, uint32_t ulR0, PFN_MUHKUH_CALL_PRINT_CALLBACK pfnCallback, void *pvCallbackUserData)
 {
@@ -397,6 +453,7 @@ int muhkuh_openocd_call(void *pvContext, uint32_t ulNetxAddress, uint32_t ulR0, 
 	int fIsRunning;
 	enum target_state tState;
 
+	DCC_LINE_BUFFER_T tDccLineBuffer = {NULL, 0};
 
 	/* Cast the handle to the command context. */
 	ptCmdCtx = (struct command_context*)pvContext;
@@ -426,15 +483,13 @@ int muhkuh_openocd_call(void *pvContext, uint32_t ulNetxAddress, uint32_t ulR0, 
 		}
 		else
 		{
-#if 0
-			// grab messages here
-			// TODO: redirect outputhandler, then grab messages, restore default output handler on halt
+			// redirect output handler, then grab messages, restore default output handler on halt
+			command_set_output_handler(ptCmdCtx, &romloader_jtag_command_output_handler, &tDccLineBuffer);
 
 			/* Wait for halt. */
 			do
 			{
 				usleep(1000*100);
-
 				ptTarget->type->poll(ptTarget);
 				tState = ptTarget->state;
 				if( tState==TARGET_HALTED )
@@ -444,8 +499,10 @@ int muhkuh_openocd_call(void *pvContext, uint32_t ulNetxAddress, uint32_t ulR0, 
 				}
 				else
 				{
-					/* Execute the callback. */
-					fIsRunning = pfnCallback(pvCallbackUserData, NULL, 0);
+					/* Execute the Lua callback. */
+					fIsRunning = pfnCallback(pvCallbackUserData, tDccLineBuffer.pucDccData, tDccLineBuffer.ulDccDataSize);
+					dcc_line_buffer_clear(&tDccLineBuffer, 1);
+
 					if( fIsRunning==0 )
 					{
 						/* The operation was canceled, halt the target. */
@@ -459,11 +516,19 @@ int muhkuh_openocd_call(void *pvContext, uint32_t ulNetxAddress, uint32_t ulR0, 
 					}
 					else
 					{
+						/* call OpenOCD timer callbacks */
 						target_call_timer_callbacks();
 					}
 				}
 			} while( tState!=TARGET_HALTED );
-#endif
+
+			/* call timer callbacks once more (to get remaining DCC output), then call the callback to consume this output */
+			target_call_timer_callbacks();
+			pfnCallback(pvCallbackUserData, tDccLineBuffer.pucDccData, tDccLineBuffer.ulDccDataSize);
+			dcc_line_buffer_clear(&tDccLineBuffer, 1);
+
+			command_clear_output_handler(ptCmdCtx);
+
 			/* FIXME: is this really necessary? */
 			usleep(1000);
 		}
@@ -471,5 +536,4 @@ int muhkuh_openocd_call(void *pvContext, uint32_t ulNetxAddress, uint32_t ulR0, 
 
 	return iResult;
 }
-
 
