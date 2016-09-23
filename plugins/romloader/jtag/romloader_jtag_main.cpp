@@ -426,6 +426,20 @@ void romloader_jtag::Connect(lua_State *ptClientData)
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chip type", m_pcName, this);
 			}
+			else
+			{
+
+				iResult = m_ptJtagDevice->init_chip(m_tChiptyp);
+
+				if( iResult!=0 )
+				{
+					MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to initialize the chip", m_pcName, this);
+				}
+				else
+				{
+
+				}
+			}
 		}
 		DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag::Connect(): iResult=%d\n", iResult));
 
@@ -858,18 +872,75 @@ void romloader_jtag::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN
 }
 
 
+/*
+Passing of the callback:
+
+* here:
+  void romloader_jtag::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+	iResult = m_ptJtagDevice->call(ulNetxAddress, ulParameterR0, NULL );
+
+In romloader_jtag_openocd:
+  int romloader_jtag_openocd::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, PFN_MUHKUH_CALL_PRINT_CALLBACK pfnCallback)
+	iResult = m_tJtagDevice.tFunctions.tFn.pfnCall(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, ulParameterR0, pfnCallback, NULL);
+
+* In muhkuh_openocd:
+  int muhkuh_openocd_call(void *pvContext, uint32_t ulNetxAddress, uint32_t ulR0, PFN_MUHKUH_CALL_PRINT_CALLBACK pfnCallback, void *pvCallbackUserData)
+	fIsRunning = pfnCallback(pvCallbackUserData, NULL, 0);
+
+
+* In romloader:
+  bool romloader::callback_string(SWIGLUA_REF *ptLuaFn, const char *pcProgressData, size_t sizProgressData, long lCallbackUserData)
+
+
+romloader_jtag_openocd.h/muhkuh_openocd.h
+typedef int (*PFN_MUHKUH_CALL_PRINT_CALLBACK) (void *pvCallbackUserData, uint8_t *pucData, unsigned long ulDataSize);
+
+
+typedef struct { lua_State* L; int ref;} SWIGLUA_REF;
+
+* lCallbackUserData is a value which is transparently passed through from the call in the Lua script to the Lua callback routine.
+
+*/
+
+typedef struct
+{
+	romloader_jtag* ptInstance;
+	SWIGLUA_REF*    ptLuaFn;
+	long            lCallbackUserData;
+} T_JTAG_CALLBACK_DATA;
+
+extern "C" {
+
+int romloader_jtag_callback_string_c(void *pvCallbackUserData, uint8_t *pucData, unsigned long ulDataSize)
+{
+	T_JTAG_CALLBACK_DATA* ptCallbackData = (T_JTAG_CALLBACK_DATA*) pvCallbackUserData;
+	SWIGLUA_REF* ptLuaFn = ptCallbackData->ptLuaFn;
+	long lCallbackUserData = ptCallbackData->lCallbackUserData;
+	romloader_jtag* pthis = ptCallbackData->ptInstance;
+	bool fIsRunning;
+	int iIsRunning;
+
+	//DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag_callback_string_c\n"));
+	fIsRunning = pthis->callback_string_public(ptLuaFn, (const char*)pucData, ulDataSize, lCallbackUserData);
+	iIsRunning = fIsRunning? 1 : 0;
+	//DEBUGMSG(ZONE_FUNCTION, ("-romloader_jtag_callback_string_c return value: %d\n", iIsRunning));
+
+	return iIsRunning;
+}
+}
+
+
+bool romloader_jtag::callback_string_public(SWIGLUA_REF *ptLuaFn, const char *pcProgressData, size_t sizProgressData, long lCallbackUserData)
+{
+	return callback_string(ptLuaFn, pcProgressData, sizProgressData, lCallbackUserData);
+}
+
 /* call routine */
 void romloader_jtag::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	bool fOk;
 	int iResult;
-	size_t sizInBuf;
-	unsigned char ucCommand;
-	unsigned char ucStatus;
-	bool fIsRunning;
-	char *pcProgressData;
-	size_t sizProgressData;
-
+	T_JTAG_CALLBACK_DATA tCallbackData;
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::call(): ulNetxAddress=0x%08x, ulParameterR0=0x%08x, tLuaFn.L=%p, lCallbackUserData=0x%08lx\n", ulNetxAddress, ulParameterR0, tLuaFn.L, lCallbackUserData));
 
@@ -880,63 +951,21 @@ void romloader_jtag::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLU
 	}
 	else
 	{
-			/* Receive message packets. */
-			while(1)
+			DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::call(): m_ptJtagDevice->call\n" ));
+
+			tCallbackData.ptInstance = this;
+			tCallbackData.ptLuaFn = &tLuaFn;
+			tCallbackData.lCallbackUserData = lCallbackUserData;
+
+ 			iResult = m_ptJtagDevice->call(ulNetxAddress, ulParameterR0, (PFN_MUHKUH_CALL_PRINT_CALLBACK) &romloader_jtag_callback_string_c, &tCallbackData);
+			if (iResult == 0)
 			{
-				pcProgressData = NULL;
-				sizProgressData = 0;
-#if 0
-				iResult = m_ptUsbDevice->receive_packet(m_aucPacketInputBuffer, m_sizMaxPacketSizeClient, &sizInBuf, 500);
-				if( iResult==LIBUSB_ERROR_TIMEOUT )
-				{ // should we print anything if a timeout occurs?
-				}
-				else if( iResult!=0 )
-				{
-					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: failed to receive packet! (error %d)", m_pcName, this, iResult);
-					fOk = false;
-					break;
-				}
-				else
-				{
-					ucStatus = m_aucPacketInputBuffer[0] & MONITOR_STATUS_MSK;
-					if( sizInBuf==1 && ucStatus==MONITOR_STATUS_CallFinished )
-					{
-						fOk = true;
-						break;
-					}
-					else if( sizInBuf>=1 && ucStatus==MONITOR_STATUS_CallMessage )
-					{
-//						printf("Received message:\n");
-//						hexdump(aucInBuf+1, sizInBuf-1, 0);
-						pcProgressData = (char*)m_aucPacketInputBuffer+1;
-						sizProgressData = sizInBuf-1;
-					}
-					else if( sizInBuf!=0 )
-					{
-						printf("Received invalid packet:\n");
-						hexdump(m_aucPacketInputBuffer, sizInBuf, 0);
-
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: received invalid packet!", m_pcName, this);
-						fOk = false;
-						break;
-					}
-				}
-
-				if (pcProgressData != NULL)
-				{
-					fIsRunning = callback_string(&tLuaFn, pcProgressData, sizProgressData, lCallbackUserData);
-					if( fIsRunning!=true )
-					{
-						/* Send a cancel request to the device. */
-						m_aucPacketOutputBuffer[0] = 0x2b;
-						iResult = m_ptUsbDevice->send_packet(m_aucPacketOutputBuffer, 1, 100);
-
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): the call was cancelled!", m_pcName, this);
-						fOk = false;
-						break;
-					}
-				}
-#endif
+				fOk = true;
+			}
+			else
+			{
+				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call failed!", m_pcName, this);
+				fOk = false;
 			}
 	}
 
@@ -944,6 +973,7 @@ void romloader_jtag::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLU
 
 	if( fOk!=true )
 	{
+		printf("Exit Error\n");
 		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
 	}
 }

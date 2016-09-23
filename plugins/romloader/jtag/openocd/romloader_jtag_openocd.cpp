@@ -6,7 +6,6 @@
 
 #include "shared_library.h"
 
-
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
 /* FIXME: search the shared library in some common places.
  * One solution would be the same folder as this LUA plugin. Here is a way to get the full path of something in Windows: https://msdn.microsoft.com/en-us/library/windows/desktop/ms683197.aspx
@@ -183,7 +182,7 @@ int romloader_jtag_openocd::add_detected_entry(const char *pcInterface, const ch
 
 /*
    Try to open the shared library.
-   If successful, resolve method names and initialize the shared libraly.
+   If successful, resolve method names and initialize the shared library.
  */
 int romloader_jtag_openocd::openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 {
@@ -462,6 +461,7 @@ const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTa
 		          "    if { $SC_CFG_RESULT=={OK} } {\n"
 		          "        target create netX_ARM966.cpu arm966e -endian little -chain-position netX_ARM966.cpu\n"
 		          "        netX_ARM966.cpu configure -event reset-init { halt }\n"
+		          "        netX_ARM966.cpu configure -work-area-phys 0x0380 -work-area-size 0x0080 -work-area-backup 1\n"
 		          "    }\n"
 		          "\n"
 		          "    return $SC_CFG_RESULT\n"
@@ -482,6 +482,7 @@ const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTa
 		          "    if { $SC_CFG_RESULT=={OK} } {\n"
 		          "        target create netX_ARM926.cpu arm926ejs -endian little -chain-position netX_ARM926.cpu\n"
 		          "        netX_ARM926.cpu configure -event reset-init { halt }\n"
+		          "        netX_ARM926.cpu configure -work-area-phys 0x0380 -work-area-size 0x0080 -work-area-backup 1\n"
 		          "    }\n"
 		          "\n"
 		          "    return $SC_CFG_RESULT\n"
@@ -499,7 +500,6 @@ const char *romloader_jtag_openocd::pcResetCode = "reset_config trst_and_srst\n"
                                  "\n"
                                  "init\n"
                                  "reset init\n";
-
 
 
 int romloader_jtag_openocd::setup_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg)
@@ -890,6 +890,45 @@ int romloader_jtag_openocd::connect(const char *pcInterfaceName, const char *pcT
 }
 
 
+/*
+   Initialize the chip and prepare it for running code.
+   (the equivalent of what the 'run' section did in the old OpenOCD configs)
+ */
+
+int romloader_jtag_openocd::init_chip(ROMLOADER_CHIPTYP tChiptyp)
+{
+	int iResult;
+	char strCmd[32];
+
+	fprintf(stderr, "Loading chip init script.\n");
+	iResult = m_tJtagDevice.tFunctions.tFn.pfnCommandRunLine(m_tJtagDevice.pvOpenocdContext, "source chip_init.tcl");
+	if( iResult!=0 )
+	{
+		fprintf(stderr, "Failed to load the chip init script: %d\n", iResult);
+		iResult = -1;
+	}
+	else
+	{
+		fprintf(stderr, "Running init_chip script.\n");
+		memset(strCmd, 0, sizeof(strCmd));
+		snprintf(strCmd, sizeof(strCmd)-1, "init_chip %d", tChiptyp);
+		iResult = m_tJtagDevice.tFunctions.tFn.pfnCommandRunLine(m_tJtagDevice.pvOpenocdContext, strCmd);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "Failed to run the init_chip script: %d\n", iResult);
+			iResult = -1;
+		}
+		else
+		{
+			fprintf(stderr, "Chip init complete.\n");
+			iResult = 0;
+		}
+
+	}
+
+	return iResult;
+}
+
 
 /* Close the connection to the device. */
 void romloader_jtag_openocd::disconnect(void)
@@ -1098,21 +1137,29 @@ int romloader_jtag_openocd::write_image(uint32_t ulNetxAddress, const uint8_t *p
 	return iResult;
 }
 
-
-#if 0
-int romloader_jtag_openocd::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, PFN_MUHKUH_CALL_CALLBACK pfnCallback)
+/* int muhkuh_openocd_call(void *pvContext, uint32_t ulNetxAddress, uint32_t ulR0, PFN_MUHKUH_CALL_PRINT_CALLBACK pfnCallback, void *pvCallbackUserData) */
+int romloader_jtag_openocd::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, PFN_MUHKUH_CALL_PRINT_CALLBACK pfnCallback, void *pvCallbackUserData)
 {
 	int iResult;
-
 
 	/* Be pessimistic. */
 	iResult = -1;
 
 
+	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnCall!=NULL )
+	{
+		/* Call code on netX. */
+		iResult = m_tJtagDevice.tFunctions.tFn.pfnCall(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, ulParameterR0, pfnCallback, pvCallbackUserData);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "call: Failed to call code at address 0x%08x: %d\n", ulNetxAddress, iResult);
+			iResult = -1;
+		}
+	}
+
 
 	return iResult;
 }
-#endif
 
 
 uint32_t romloader_jtag_openocd::get_image_chunk_size(void)
