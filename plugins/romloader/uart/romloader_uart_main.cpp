@@ -201,6 +201,7 @@ romloader_uart::~romloader_uart(void)
 	if( m_ptUartDev!=NULL )
 	{
 		m_ptUartDev->Close();
+		delete m_ptUartDev;
 	}
 }
 
