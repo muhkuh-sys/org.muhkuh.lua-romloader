@@ -32,7 +32,7 @@ void *sharedlib_open(const char *pcPath)
 void sharedlib_close(void *pvSharedLibraryHandle)
 {
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
-	FreeLibrary((HANDLE)pvSharedLibraryHandle);
+	FreeLibrary((HMODULE)pvSharedLibraryHandle);
 #elif defined(__GNUC__)
 	dlclose(pvSharedLibraryHandle);
 #else
@@ -75,7 +75,7 @@ void *sharedlib_resolve_symbol(void *pvSharedLibraryHandle, const char *pcSymbol
 
 
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
-	pvFn = GetProcAddress((HMODULE)pvSharedLibraryHandle, pcSymbol);
+	pvFn = (void*) GetProcAddress((HMODULE)pvSharedLibraryHandle, pcSymbol);
 #elif defined(__GNUC__)
 	pvFn = dlsym(pvSharedLibraryHandle, pcSymbol);
 #else

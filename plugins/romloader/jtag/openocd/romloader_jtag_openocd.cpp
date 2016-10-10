@@ -6,7 +6,6 @@
 
 #include "shared_library.h"
 
-
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
 /* FIXME: search the shared library in some common places.
  * One solution would be the same folder as this LUA plugin. Here is a way to get the full path of something in Windows: https://msdn.microsoft.com/en-us/library/windows/desktop/ms683197.aspx
@@ -181,7 +180,10 @@ int romloader_jtag_openocd::add_detected_entry(const char *pcInterface, const ch
 }
 
 
-
+/*
+   Try to open the shared library.
+   If successful, resolve method names and initialize the shared library.
+ */
 int romloader_jtag_openocd::openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 {
 	int iResult;
@@ -254,7 +256,7 @@ int romloader_jtag_openocd::openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 }
 
 
-
+/* Uninitialize and cose the shared library. */
 void romloader_jtag_openocd::openocd_close(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 {
 	if( ptDevice->pvSharedLibraryHandle!=NULL )
@@ -329,8 +331,30 @@ int romloader_jtag_openocd::initialize(void)
 
 /* FIXME: read this from some kind of configuration file. */
 
-const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::atInterfaceCfg[4] =
+const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::atInterfaceCfg[5] =
 {
+	{
+		.pcID = "NXJTAG-USB",
+		.pcCode_Setup = "interface ftdi\n"
+                                "transport select jtag\n"
+		                "ftdi_device_desc \"NXJTAG-USB\"\n"
+		                "ftdi_vid_pid 0x1939 0x0023\n"
+		                "adapter_khz 100\n"
+		                "\n"
+		                "ftdi_layout_init 0x0308 0x030b\n"
+		                "ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100\n"
+		                "ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
+		.pcCode_Probe = "proc probe {} {\n"
+		                "    set RESULT -1"
+		                "\n"
+		                "    if {[ catch {jtag init} ]==0 } {\n"
+		                "        set RESULT {OK}\n"
+		                "    }\n"
+		                "    return $RESULT\n"
+		                "}\n"
+		                "probe\n"
+	},
+
 	{
 		.pcID = "Amontec_JTAGkey",
 		.pcCode_Setup = "interface ftdi\n"
@@ -437,6 +461,7 @@ const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTa
 		          "    if { $SC_CFG_RESULT=={OK} } {\n"
 		          "        target create netX_ARM966.cpu arm966e -endian little -chain-position netX_ARM966.cpu\n"
 		          "        netX_ARM966.cpu configure -event reset-init { halt }\n"
+		          "        netX_ARM966.cpu configure -work-area-phys 0x0380 -work-area-size 0x0080 -work-area-backup 1\n"
 		          "    }\n"
 		          "\n"
 		          "    return $SC_CFG_RESULT\n"
@@ -457,6 +482,7 @@ const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTa
 		          "    if { $SC_CFG_RESULT=={OK} } {\n"
 		          "        target create netX_ARM926.cpu arm926ejs -endian little -chain-position netX_ARM926.cpu\n"
 		          "        netX_ARM926.cpu configure -event reset-init { halt }\n"
+		          "        netX_ARM926.cpu configure -work-area-phys 0x0380 -work-area-size 0x0080 -work-area-backup 1\n"
 		          "    }\n"
 		          "\n"
 		          "    return $SC_CFG_RESULT\n"
@@ -476,7 +502,6 @@ const char *romloader_jtag_openocd::pcResetCode = "reset_config trst_and_srst\n"
                                  "reset init\n";
 
 
-
 int romloader_jtag_openocd::setup_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg)
 {
 	int iResult;
@@ -494,7 +519,7 @@ int romloader_jtag_openocd::setup_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, c
 }
 
 
-
+/* Probe for a single interface. */
 int romloader_jtag_openocd::probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg)
 {
 	int iResult;
@@ -550,7 +575,7 @@ int romloader_jtag_openocd::probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, c
 }
 
 
-
+/* Find an interface configuration with the given ID. */
 const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T *romloader_jtag_openocd::find_interface(const char *pcInterfaceName)
 {
 	const INTERFACE_SETUP_STRUCT_T *ptCnt;
@@ -562,7 +587,6 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T *romloader_jtag_openocd::
 	/* No match yet. */
 	ptHit = NULL;
 
-	/* Try to run all command chunks to see which interfaces are present. */
 	ptCnt = atInterfaceCfg;
 	ptEnd = atInterfaceCfg + (sizeof(atInterfaceCfg)/sizeof(atInterfaceCfg[0]));
 	while( ptCnt<ptEnd )
@@ -581,7 +605,7 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T *romloader_jtag_openocd::
 }
 
 
-
+/* Probe for a single interface/target combination. */
 int romloader_jtag_openocd::probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg, const TARGET_SETUP_STRUCT_T *ptTargetCfg)
 {
 	int iResult;
@@ -635,7 +659,7 @@ int romloader_jtag_openocd::probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice, cons
 }
 
 
-
+/* Try all available targets with a given interface. */
 int romloader_jtag_openocd::detect_target(const INTERFACE_SETUP_STRUCT_T *ptIfCfg)
 {
 	const TARGET_SETUP_STRUCT_T *ptCnt;
@@ -677,7 +701,7 @@ int romloader_jtag_openocd::detect_target(const INTERFACE_SETUP_STRUCT_T *ptIfCf
 			/* Fatal error! */
 			break;
 		}
-		
+
 		/* Move to the next configuration. */
 		++ptCnt;
 	}
@@ -686,7 +710,7 @@ int romloader_jtag_openocd::detect_target(const INTERFACE_SETUP_STRUCT_T *ptIfCf
 }
 
 
-
+/* Find a target with the given name. */
 const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T *romloader_jtag_openocd::find_target(const char *pcTargetName)
 {
 	const TARGET_SETUP_STRUCT_T *ptCnt;
@@ -698,7 +722,6 @@ const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T *romloader_jtag_openocd::fin
 	/* No match yet. */
 	ptHit = NULL;
 
-	/* Try to run all command chunks to see which interfaces are present. */
 	ptCnt = atTargetCfg;
 	ptEnd = atTargetCfg + (sizeof(atTargetCfg)/sizeof(atTargetCfg[0]));
 	while( ptCnt<ptEnd )
@@ -717,7 +740,11 @@ const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T *romloader_jtag_openocd::fin
 }
 
 
-
+/*
+   Detect interfaces/targets.
+   Probe for all known interfaces. For each interface found, probe for all known targets.
+   Returns a list of ROMLOADER_JTAG_DETECT_ENTRY_T in pptEntries/psizEntries.
+ */
 int romloader_jtag_openocd::detect(ROMLOADER_JTAG_DETECT_ENTRY_T **pptEntries, size_t *psizEntries)
 {
 	const INTERFACE_SETUP_STRUCT_T *ptCnt;
@@ -790,7 +817,7 @@ int romloader_jtag_openocd::detect(ROMLOADER_JTAG_DETECT_ENTRY_T **pptEntries, s
 			++ptCnt;
 		}
 	}
-	
+
 	/* Discard all results if something really bad happened (like a fatal error). */
 	if( iResult<0 )
 	{
@@ -805,7 +832,7 @@ int romloader_jtag_openocd::detect(ROMLOADER_JTAG_DETECT_ENTRY_T **pptEntries, s
 }
 
 
-
+/* Open a connection to a given target on a given interface. */
 /* Open the connection to the device. */
 int romloader_jtag_openocd::connect(const char *pcInterfaceName, const char *pcTargetName)
 {
@@ -862,6 +889,45 @@ int romloader_jtag_openocd::connect(const char *pcInterfaceName, const char *pcT
 	return iResult;
 }
 
+
+/*
+   Initialize the chip and prepare it for running code.
+   (the equivalent of what the 'run' section did in the old OpenOCD configs)
+ */
+
+int romloader_jtag_openocd::init_chip(ROMLOADER_CHIPTYP tChiptyp)
+{
+	int iResult;
+	char strCmd[32];
+
+	fprintf(stderr, "Loading chip init script.\n");
+	iResult = m_tJtagDevice.tFunctions.tFn.pfnCommandRunLine(m_tJtagDevice.pvOpenocdContext, "source chip_init.tcl");
+	if( iResult!=0 )
+	{
+		fprintf(stderr, "Failed to load the chip init script: %d\n", iResult);
+		iResult = -1;
+	}
+	else
+	{
+		fprintf(stderr, "Running init_chip script.\n");
+		memset(strCmd, 0, sizeof(strCmd));
+		snprintf(strCmd, sizeof(strCmd)-1, "init_chip %d", tChiptyp);
+		iResult = m_tJtagDevice.tFunctions.tFn.pfnCommandRunLine(m_tJtagDevice.pvOpenocdContext, strCmd);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "Failed to run the init_chip script: %d\n", iResult);
+			iResult = -1;
+		}
+		else
+		{
+			fprintf(stderr, "Chip init complete.\n");
+			iResult = 0;
+		}
+
+	}
+
+	return iResult;
+}
 
 
 /* Close the connection to the device. */
@@ -1071,24 +1137,32 @@ int romloader_jtag_openocd::write_image(uint32_t ulNetxAddress, const uint8_t *p
 	return iResult;
 }
 
-
-#if 0
-int romloader_jtag_openocd::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, PFN_MUHKUH_CALL_CALLBACK pfnCallback)
+/* int muhkuh_openocd_call(void *pvContext, uint32_t ulNetxAddress, uint32_t ulR0, PFN_MUHKUH_CALL_PRINT_CALLBACK pfnCallback, void *pvCallbackUserData) */
+int romloader_jtag_openocd::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, PFN_MUHKUH_CALL_PRINT_CALLBACK pfnCallback, void *pvCallbackUserData)
 {
 	int iResult;
-
 
 	/* Be pessimistic. */
 	iResult = -1;
 
 
+	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnCall!=NULL )
+	{
+		/* Call code on netX. */
+		iResult = m_tJtagDevice.tFunctions.tFn.pfnCall(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, ulParameterR0, pfnCallback, pvCallbackUserData);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "call: Failed to call code at address 0x%08x: %d\n", ulNetxAddress, iResult);
+			iResult = -1;
+		}
+	}
+
 
 	return iResult;
 }
-#endif
 
 
-uint32_t romloader_jtag_openocd::get_image_chunk(void)
+uint32_t romloader_jtag_openocd::get_image_chunk_size(void)
 {
 	/* This is the suggested size of a data chunk before executing the LUA callback. */
 	/* TODO: Is a fixed number OK or should this depend on some parameters like the JTAG speed?

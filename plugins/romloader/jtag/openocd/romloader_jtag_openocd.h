@@ -4,6 +4,7 @@
 #ifndef __ROMLOADER_JTAG_OPENOCD_H__
 #define __ROMLOADER_JTAG_OPENOCD_H__
 
+#include "../../romloader_def.h"
 
 /*-------------------------------------------------------------------------*/
 
@@ -96,6 +97,10 @@ public:
 
 	/* Open the connection to the device. */
 	int connect(const char *pcInterfaceName, const char *pcTargetName);
+
+	/* initialize the chip. */
+	int init_chip(ROMLOADER_CHIPTYP tChiptyp);
+
 	/* Close the connection to the device. */
 	void disconnect(void);
 
@@ -118,20 +123,19 @@ public:
 	int write_image(uint32_t ulNetxAddress, const uint8_t *pucData, uint32_t sizData);
 
 	/* Call routine. */
-//	int call(uint32_t ulNetxAddress, uint32_t ulParameterR0, PFN_MUHKUH_CALL_PRINT_CALLBACK pfnCallback);
+	int call(uint32_t ulNetxAddress, uint32_t ulParameterR0, PFN_MUHKUH_CALL_PRINT_CALLBACK pfnCallback, void *pvCallbackUserData);
 
 	/* Get the suggested chunk size for read_image and write_image. */
-	uint32_t get_image_chunk(void);
+	uint32_t get_image_chunk_size(void);
 
 private:
 	static const OPENOCD_NAME_RESOLVE_T atOpenOcdResolve[13];
 
-	static const INTERFACE_SETUP_STRUCT_T atInterfaceCfg[4];
+	static const INTERFACE_SETUP_STRUCT_T atInterfaceCfg[5];
 
 	static const TARGET_SETUP_STRUCT_T atTargetCfg[2];
 
 	static const char *pcResetCode;
-
 
 	bool fJtagDeviceIsConnected;
 	ROMLOADER_JTAG_DEVICE_T m_tJtagDevice;

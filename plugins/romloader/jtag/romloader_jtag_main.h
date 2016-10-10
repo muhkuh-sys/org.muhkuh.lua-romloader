@@ -27,6 +27,9 @@
 
 #include "openocd/romloader_jtag_openocd.h"
 
+extern "C" {
+int romloader_jtag_callback_string_c(void *pvCallbackUserData, uint8_t *pucData, unsigned long ulDataSize);
+}
 
 /*-----------------------------------*/
 
@@ -71,6 +74,10 @@ public:
 
 	static void hexdump(const unsigned char *pucData, unsigned long ulSize, unsigned long ulNetxAddress);
 
+public:
+
+    // public wrapper for romloader::callback_string
+    bool callback_string_public(SWIGLUA_REF *ptLuaFn, const char *pcProgressData, size_t sizProgressData, long lCallbackUserData);
 private:
 	bool m_fIsInitialized;
 	romloader_jtag_provider *m_ptJtagProvider;
