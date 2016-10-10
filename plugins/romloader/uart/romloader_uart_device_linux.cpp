@@ -577,6 +577,8 @@ size_t romloader_uart_device_linux::scanSysFs(char ***pppcPortNames)
 						}
 					}
 				} while( iResult==0 );
+
+				closedir(ptDir);
 			}
 		}
 
