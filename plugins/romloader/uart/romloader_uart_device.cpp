@@ -76,6 +76,11 @@ romloader_uart_device::~romloader_uart_device(void)
 #else
 #       error "Unknown threading selected!"
 #endif
+
+	if( m_pcPortName!=NULL )
+	{
+		free(m_pcPortName);
+	}
 }
 
 
