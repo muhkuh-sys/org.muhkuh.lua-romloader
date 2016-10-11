@@ -129,6 +129,10 @@ int romloader_usb_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 				}
 				++pptRefCnt;
 			}
+			/* Free the list of references.
+			 * NOTE: Do not free the entries of the list. They are already linked to a LUA table.
+			 */
+			free(pptReferences);
 		}
 	}
 
