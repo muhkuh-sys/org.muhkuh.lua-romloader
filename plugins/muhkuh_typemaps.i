@@ -33,6 +33,7 @@
 	if( pcOutputData!=NULL && sizOutputData!=0 )
 	{
 		lua_pushlstring(L, pcOutputData, sizOutputData);
+		free(pcOutputData);
 	}
 	else
 	{
