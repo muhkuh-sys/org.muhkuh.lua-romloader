@@ -56,7 +56,7 @@ romloader_usb_device_libusb::romloader_usb_device_libusb(const char *pcPluginId)
 	memset(&m_tDeviceId, 0, sizeof(NETX_USB_DEVICE_T));
 
 	libusb_init(&m_ptLibUsbContext);
-	libusb_set_debug(m_ptLibUsbContext, 3);
+	libusb_set_debug(m_ptLibUsbContext, LIBUSB_LOG_LEVEL_INFO);
 }
 
 
