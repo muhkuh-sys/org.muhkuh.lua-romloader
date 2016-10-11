@@ -56,6 +56,7 @@ public:
 	const char *libusb_strerror(int iError);
 
 	int detect_interfaces(romloader_usb_reference ***ppptReferences, size_t *psizReferences, romloader_usb_provider *ptProvider);
+	void free_references(romloader_usb_reference **pptReferences, size_t sizReferences);
 	int Connect(unsigned int uiBusNr, unsigned int uiDeviceAdr);
 	void Disconnect(void);
 

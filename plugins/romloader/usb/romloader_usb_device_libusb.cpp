@@ -100,6 +100,7 @@ int romloader_usb_device_libusb::libusb_reset_and_close_device(void)
 }
 
 
+
 int romloader_usb_device_libusb::detect_interfaces(romloader_usb_reference ***ppptReferences, size_t *psizReferences, romloader_usb_provider *ptProvider)
 {
 	int iResult;
@@ -267,17 +268,7 @@ int romloader_usb_device_libusb::detect_interfaces(romloader_usb_reference ***pp
 	if( iResult!=0 && pptRef!=NULL )
 	{
 		/* Free all references in the array. */
-		while( sizRefCnt>0 )
-		{
-			--sizRefCnt;
-			ptRef = pptRef[sizRefCnt];
-			if( ptRef!=NULL )
-			{
-				delete ptRef;
-			}
-		}
-		/* Free the array. */
-		free(pptRef);
+		free_references(pptRef, sizRefCnt);
 		/* No more array. */
 		pptRef = NULL;
 		sizRefCnt = 0;
@@ -288,6 +279,31 @@ int romloader_usb_device_libusb::detect_interfaces(romloader_usb_reference ***pp
 
 	return iResult;
 }
+
+
+
+void romloader_usb_device_libusb::free_references(romloader_usb_reference **pptReferences, size_t sizReferences)
+{
+	romloader_usb_reference *ptRef;
+
+
+	if( pptReferences!=NULL )
+	{
+		/* Free all references in the array. */
+		while( sizReferences>0 )
+		{
+			--sizReferences;
+			ptRef = pptReferences[sizReferences];
+			if( ptRef!=NULL )
+			{
+				delete ptRef;
+			}
+		}
+		/* Free the array. */
+		free(pptReferences);
+	}
+}
+
 
 
 libusb_device *romloader_usb_device_libusb::find_netx_device(libusb_device **ptDeviceList, ssize_t ssizDevList, unsigned int uiBusNr, unsigned int uiDeviceAdr)
