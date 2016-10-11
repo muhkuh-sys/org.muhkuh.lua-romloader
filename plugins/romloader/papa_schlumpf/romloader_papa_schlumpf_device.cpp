@@ -103,9 +103,7 @@ romloader_papa_schlumpf_device::PAPA_SCHLUMPF_ERROR_T romloader_papa_schlumpf_de
 	libusb_device **ptDeviceList;
 	libusb_device **ptDevCnt, **ptDevEnd;
 	libusb_device *ptDevice;
-//	libusb_device *ptDevPapaSchlumpf;
 	libusb_device_handle *ptDevHandle;
-//	libusb_device_handle *ptDevHandlePapaSchlumpf;
 	struct libusb_device_descriptor sDevDesc;
 	unsigned int uiBusNr;
 	unsigned int uiDevAdr;
@@ -145,9 +143,6 @@ romloader_papa_schlumpf_device::PAPA_SCHLUMPF_ERROR_T romloader_papa_schlumpf_de
 		}
 		else
 		{
-			/* No Papa Schlumpf device found yet. */
-//			ptDevPapaSchlumpf = NULL;
-
 			/* Loop over all devices. */
 			ptDevCnt = ptDeviceList;
 			ptDevEnd = ptDevCnt + ssizDevList;
@@ -230,6 +225,12 @@ romloader_papa_schlumpf_device::PAPA_SCHLUMPF_ERROR_T romloader_papa_schlumpf_de
 
 				/* Next device in the list... */
 				++ptDevCnt;
+			}
+
+			/* Free the list of detected USB devices. */
+			if( ptDeviceList!=NULL )
+			{
+				libusb_free_device_list(ptDeviceList, 1);
 			}
 		}
 	}
