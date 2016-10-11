@@ -26,7 +26,12 @@
 
 /*-----------------------------------*/
 
-#include "romloader_usb_device_libusb.h"
+/* The LIBUSB header is only used in the private section of the class.
+ * It should not be exported.
+ */
+#ifndef SWIG
+#       include "romloader_usb_device_libusb.h"
+#endif
 
 /*-----------------------------------*/
 
@@ -72,6 +77,7 @@ public:
 	static void hexdump(const uint8_t *pucData, uint32_t ulSize, uint32_t ulNetxAddress);
 
 private:
+#ifndef SWIG
 	typedef struct
 	{
 		uint8_t *pucData;
@@ -113,6 +119,7 @@ private:
 
 	/* Pointer to the USB device and the USB device handle. */
 	romloader_usb_device_libusb *m_ptUsbDevice;
+#endif
 };
 
 /*-----------------------------------*/
