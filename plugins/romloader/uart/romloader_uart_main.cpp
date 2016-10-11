@@ -1409,14 +1409,17 @@ void romloader_uart::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **
 		}
 	}
 
-	if( fOk == true )
+	if( fOk==true )
 	{
 		*ppcBUFFER_OUT = pcBufferStart;
 		*psizBUFFER_OUT = sizBuffer;
 	}
 	else
 	{
-		if ( pcBufferStart!=NULL) free(pcBufferStart); 
+		if( pcBufferStart!=NULL )
+		{
+			free(pcBufferStart);
+		}
 		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
 	}
 }
