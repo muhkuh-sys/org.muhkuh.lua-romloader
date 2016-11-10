@@ -141,7 +141,7 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 }
 
 
-const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[7] =
+const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[8] =
 {
 	{
 		0xea080001,
@@ -197,6 +197,14 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[7] =
 		0x00108004,
 		ROMLOADER_CHIPTYP_NETX4000,
 		"netX4000"
+	},
+
+	{
+		0x2009fff0,
+		0x00005110,
+		0x1f13933b,
+		ROMLOADER_CHIPTYP_NETX90MPW,
+		"netX90MPW"
 	}
 };
 

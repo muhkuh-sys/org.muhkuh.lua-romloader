@@ -107,7 +107,7 @@ private:
 
 	/* Do not include this into the SWIG bindings. */
 #ifndef SWIG
-	static const ROMLOADER_RESET_ID_T atResIds[7];
+	static const ROMLOADER_RESET_ID_T atResIds[8];
 #endif
 };
 
