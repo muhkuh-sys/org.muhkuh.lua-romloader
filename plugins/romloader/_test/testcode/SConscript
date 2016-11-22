@@ -24,52 +24,48 @@
 #
 # Import the default compiler environments.
 #
-Import('env_netx500_default',  'env_netx56_default', 'env_netx50_default', 'env_netx10_default')
-
-
-#----------------------------------------------------------------------------
-# This is the list of sources. The elements must be separated with whitespace
-# (i.e. spaces, tabs, newlines). The amount of whitespace does not matter.
-montest_sources = """
-	src/header.S
-	src/init_netx_test.S
-	src/main.c
-	src/netx_consoleapp.c
-	src/systime.c
-	src/uprintf.c
-"""
+Import('atEnv')
 
 
 #----------------------------------------------------------------------------
 #
 # Build the files.
 #
-env_netx500 = env_netx500_default.Clone()
-env_netx500.Append(CPPPATH = ['platform'])
+montest_sources = """
+	src/header.S
+	src/init_netx_test.S
+	src/main.c
+	src/netx_consoleapp.c
+"""
+
+astrCppPath = ['#platform/src', '#platform/src/lib']
+
+env_netx500 = atEnv.NETX500.Clone()
+env_netx500.Append(CPPPATH = astrCppPath)
 env_netx500.Replace(LDFILE = File('src/netx500/netx500.ld'))
 src_netx500 = env_netx500.SetBuildPath('targets/netx500', 'src', montest_sources)
-elf_netx500 = env_netx500.Elf('targets/montest_netx500.elf', src_netx500)
+elf_netx500 = env_netx500.Elf('targets/montest_netx500.elf', src_netx500 + env_netx500['PLATFORM_LIBRARY'])
 bin_netx500 = env_netx500.ObjCopy('targets/montest_netx500.bin', elf_netx500)
 
-env_netx56 = env_netx56_default.Clone()
-env_netx56.Append(CPPPATH = ['platform'])
+env_netx56 = atEnv.NETX56.Clone()
+env_netx56.Append(CPPPATH = astrCppPath)
 env_netx56.Replace(LDFILE = File('src/netx56/netx56.ld'))
 src_netx56 = env_netx56.SetBuildPath('targets/netx56', 'src', montest_sources)
-elf_netx56 = env_netx56.Elf('targets/montest_netx56.elf', src_netx56)
+elf_netx56 = env_netx56.Elf('targets/montest_netx56.elf', src_netx56 + env_netx500['PLATFORM_LIBRARY'])
 bin_netx56 = env_netx56.ObjCopy('targets/montest_netx56.bin', elf_netx56)
 
-env_netx50 = env_netx50_default.Clone()
-env_netx50.Append(CPPPATH = ['platform'])
+env_netx50 = atEnv.NETX50.Clone()
+env_netx50.Append(CPPPATH = astrCppPath)
 env_netx50.Replace(LDFILE = File('src/netx50/netx50.ld'))
 src_netx50 = env_netx50.SetBuildPath('targets/netx50', 'src', montest_sources)
-elf_netx50 = env_netx50.Elf('targets/montest_netx50.elf', src_netx50)
+elf_netx50 = env_netx50.Elf('targets/montest_netx50.elf', src_netx50 + env_netx500['PLATFORM_LIBRARY'])
 bin_netx50 = env_netx50.ObjCopy('targets/montest_netx50.bin', elf_netx50)
 
-env_netx10 = env_netx10_default.Clone()
-env_netx10.Append(CPPPATH = ['platform'])
+env_netx10 = atEnv.NETX10.Clone()
+env_netx10.Append(CPPPATH = astrCppPath)
 env_netx10.Replace(LDFILE = File('src/netx10/netx10.ld'))
 src_netx10 = env_netx10.SetBuildPath('targets/netx10', 'src', montest_sources)
-elf_netx10 = env_netx10.Elf('targets/montest_netx10.elf', src_netx10)
+elf_netx10 = env_netx10.Elf('targets/montest_netx10.elf', src_netx10 + env_netx500['PLATFORM_LIBRARY'])
 bin_netx10 = env_netx10.ObjCopy('targets/montest_netx10.bin', elf_netx10)
 
 

@@ -22,12 +22,12 @@
 #include <string.h>
 #include "bootstrap_serial_vectors.h"
 
-#if ASIC_TYP==50
+#if ASIC_TYP==ASIC_TYP_NETX50
 #       include "uartmon_netx50_monitor_run.h"
 #       define MONITOR_DATA_START MONITOR_DATA_START_NETX50
 #       define MONITOR_DATA_END   MONITOR_DATA_END_NETX50
 #       define MONITOR_EXEC       MONITOR_EXEC_NETX50
-#elif ASIC_TYP==10
+#elif ASIC_TYP==ASIC_TYP_NETX10
 #       include "uartmon_netx10_monitor_run.h"
 #       define MONITOR_DATA_START MONITOR_DATA_START_NETX10
 #       define MONITOR_DATA_END   MONITOR_DATA_END_NETX10

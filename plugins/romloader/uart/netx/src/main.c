@@ -29,22 +29,22 @@
 #include "serial_vectors.h"
 #include "uart.h"
 
-#if ASIC_TYP==50 || ASIC_TYP==56
+#if ASIC_TYP==ASIC_TYP_NETX50 || ASIC_TYP==ASIC_TYP_NETX56
 #       include "transport_extension.h"
 #endif
 
-#if ASIC_TYP==50
+#if ASIC_TYP==ASIC_TYP_NETX50
 #       include "netx50/usb.h"
 #endif
 
 /*-----------------------------------*/
 
-#if ASIC_TYP==100 || ASIC_TYP==500
+#if ASIC_TYP==ASIC_TYP_NETX500
 	static const UART_CONFIGURATION_T tUartCfg =
 	{
 		.us_baud_div = UART_BAUDRATE_DIV(UART_BAUDRATE_115200)
 	};
-#elif ASIC_TYP==56
+#elif ASIC_TYP==ASIC_TYP_NETX56
 	typedef enum
 	{
 		CONSOLE_DEVICE_NONE             = 0,
@@ -67,7 +67,7 @@
 SERIAL_V1_COMM_UI_FN_T tSerialV1Vectors;
 
 
-#if ASIC_TYP==50
+#if ASIC_TYP==ASIC_TYP_NETX50
 static const SERIAL_V1_COMM_UI_FN_T tSerialNetx50UsbVectors =
 {
 	.aul =
@@ -89,18 +89,18 @@ typedef enum
 
 void uart_monitor(void)
 {
-#if ASIC_TYP==56
+#if ASIC_TYP==ASIC_TYP_NETX56
 	unsigned long ulRomId;
 	unsigned long ulConsoleDevice;
 #endif
-#if ASIC_TYP==50
+#if ASIC_TYP==ASIC_TYP_NETX50
 	unsigned long ulConsoleDevice;
 #endif
 
 
 	systime_init();
 
-#if ASIC_TYP==500 || ASIC_TYP==100
+#if ASIC_TYP==ASIC_TYP_NETX500
 	/* Both ASICs in this group can not use the ROM routines for UART
 	 * communication.
 	 * 
@@ -117,7 +117,7 @@ void uart_monitor(void)
 	tSerialV1Vectors.fn.fnPut   = uart_put;
 	tSerialV1Vectors.fn.fnPeek  = uart_peek;
 	tSerialV1Vectors.fn.fnFlush = uart_flush;
-#elif ASIC_TYP==10
+#elif ASIC_TYP==ASIC_TYP_NETX10
 	/* The netX10 ROM code uses areas in bank0 around offset 0x8180. This
 	 * is outside the RAM area reserved for the monitor code.
 	 */
@@ -127,7 +127,7 @@ void uart_monitor(void)
 	tSerialV1Vectors.fn.fnPut   = uart_put;
 	tSerialV1Vectors.fn.fnPeek  = uart_peek;
 	tSerialV1Vectors.fn.fnFlush = uart_flush;
-#elif ASIC_TYP==50
+#elif ASIC_TYP==ASIC_TYP_NETX50
 	/* Compare vectors to netx50 USB. This one needs special treatment. */
 	if( memcmp(&tSerialV2Vectors, &tSerialNetx50UsbVectors, sizeof(SERIAL_V2_COMM_FN_T))==0 )
 	{
@@ -147,7 +147,7 @@ void uart_monitor(void)
 		ulConsoleDevice = (unsigned long)CONSOLE_DEVICE_UART;
 	}
 	transport_set_vectors(ulConsoleDevice);
-#elif ASIC_TYP==56
+#elif ASIC_TYP==ASIC_TYP_NETX56
 	ulRomId = aulRomId[2];
 	if( ulRomId==ROM_CODE_ID_NETX56 )
 	{

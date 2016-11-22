@@ -12,7 +12,7 @@
 		<group>org.scons</group>
 		<name>scons-local</name>
 		<package>scons-local</package>
-		<version>2.3.5_1</version>
+		<version>2.5.0_1</version>
 		<typ>tar.bz2</typ>
 	</scons>
 
@@ -28,7 +28,14 @@
 			<group>org.gnu.gcc</group>
 			<name>gcc-arm-none-eabi</name>
 			<package>gcc-arm-none-eabi_${platform}_${machine}</package>
-			<version>4.7.2_1</version>
+			<version>4.7.2_2</version>
+			<typ>tar.bz2</typ>
+		</tool>
+		<tool>
+			<group>org.gnu.gcc</group>
+			<name>gcc-arm-none-eabi</name>
+			<package>gcc-arm-none-eabi_${platform}_${machine}</package>
+			<version>4.9.3_3</version>
 			<typ>tar.bz2</typ>
 		</tool>
 	</tools>

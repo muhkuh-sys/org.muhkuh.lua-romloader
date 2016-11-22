@@ -28,7 +28,7 @@
 
 /*-----------------------------------*/
 
-#if ASIC_TYP==56
+#if ASIC_TYP==ASIC_TYP_NETX56
 #      define USB_FIFO_DEPTH_JTag_TX 64
 #endif
 

@@ -24,7 +24,7 @@
 #
 # Import the default compiler environments.
 #
-Import('env_netx500_default',  'env_netx56_default', 'env_netx50_default', 'env_netx10_default')
+Import('atEnv')
 
 
 #----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ astrCppPaths = ['src', 'platform/src/lib']
 #
 # Build the netX500 files.
 #
-env_netx500 = env_netx500_default.Clone()
+env_netx500 = atEnv.NETX500.Clone()
 env_netx500.Append(CPPPATH = astrCppPaths)
 src_netx500 = env_netx500.SetBuildPath('targets/netx500', 'src', sources)
 libmi_netx500 = env_netx500.StaticLibrary('targets/libmi_netx500.a', src_netx500)
@@ -49,7 +49,7 @@ libmi_netx500 = env_netx500.StaticLibrary('targets/libmi_netx500.a', src_netx500
 #
 # Build the netX56 files.
 #
-env_netx56 = env_netx56_default.Clone()
+env_netx56 = atEnv.NETX56.Clone()
 env_netx56.Append(CPPPATH = astrCppPaths)
 src_netx56 = env_netx56.SetBuildPath('targets/netx56_monitor', 'src', sources)
 libmi_netx56 = env_netx56.StaticLibrary('targets/libmi_netx56.a', src_netx56)
@@ -59,7 +59,7 @@ libmi_netx56 = env_netx56.StaticLibrary('targets/libmi_netx56.a', src_netx56)
 #
 # Build the netX50 files.
 #
-env_netx50 = env_netx50_default.Clone()
+env_netx50 = atEnv.NETX50.Clone()
 env_netx50.Append(CPPPATH = astrCppPaths)
 src_netx50 = env_netx50.SetBuildPath('targets/netx50_monitor', 'src', sources)
 libmi_netx50 = env_netx50.StaticLibrary('targets/libmi_netx50.a', src_netx50)
@@ -69,7 +69,7 @@ libmi_netx50 = env_netx50.StaticLibrary('targets/libmi_netx50.a', src_netx50)
 #
 # Build the netX10 files.
 #
-env_netx10 = env_netx10_default.Clone()
+env_netx10 = atEnv.NETX10.Clone()
 env_netx10.Append(CPPPATH = astrCppPaths)
 src_netx10 = env_netx10.SetBuildPath('targets/netx10_monitor', 'src', sources)
 libmi_netx10 = env_netx10.StaticLibrary('targets/libmi_netx10.a', src_netx10)

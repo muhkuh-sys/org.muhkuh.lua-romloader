@@ -26,7 +26,7 @@
    and receive data from there.
 */
 
-#if ASIC_TYP==500 || ASIC_TYP==100 || ASIC_TYP==56 || ASIC_TYP==10
+#if ASIC_TYP==ASIC_TYP_NETX500 || ASIC_TYP==ASIC_TYP_NETX100 || ASIC_TYP==ASIC_TYP_NETX56 || ASIC_TYP==ASIC_TYP_NETX10
 	typedef unsigned char (*PFN_SERIAL_V1_GET_T)(void);
 	typedef void          (*PFN_SERIAL_V1_PUT_T)(unsigned char ucChar);
 	typedef unsigned int  (*PFN_SERIAL_V1_PEEK_T)(void);
@@ -36,7 +36,7 @@
 #       define SERIAL_V1_PUT(c) tSerialV1Vectors.fn.fnPut(c)
 #       define SERIAL_V1_PEEK() tSerialV1Vectors.fn.fnPeek()
 #       define SERIAL_V1_FLUSH() tSerialV1Vectors.fn.fnFlush()
-#elif ASIC_TYP==50
+#elif ASIC_TYP==ASIC_TYP_NETX50
 	typedef unsigned char (*PFN_SERIAL_V1_GET_T)(void);
 	typedef void          (*PFN_SERIAL_V1_PUT_T)(unsigned int iChar);
 	typedef unsigned int  (*PFN_SERIAL_V1_PEEK_T)(void);
@@ -97,6 +97,6 @@ typedef union
 extern SERIAL_V2_COMM_UI_FN_T tSerialV2Vectors;
 
 
-#endif	/* __SERIAL_VECTORS_H__ */
+#endif  /* __SERIAL_VECTORS_H__ */
 
 

@@ -43,7 +43,7 @@
 start:
 	mov     r0,     #0
 
-#if ASIC_TYP==10
+#if ASIC_TYP==ASIC_TYP_NETX10
 	@ netX10 has the TCMs enabled. Code, data and XC buffer must not
 	@ share the same INTRAM segment. This is difficult to handle.
 	@
@@ -62,7 +62,7 @@ start:
 	@ disable alignment check (#1 = 0)
 	ldr     r0,     =0x0f78
 	mcr     p15,    0, r0, c1, c0, 0
-#elif ASIC_TYP==50
+#elif ASIC_TYP==ASIC_TYP_NETX50
 	@ SDRAM fix
 	@ Setup the DMA controller to stop the fake transfer at 0x800DEAD0.
 	ldr     r0,     =HOSTADDR(dmac_ch0)

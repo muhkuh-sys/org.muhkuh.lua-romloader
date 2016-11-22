@@ -25,32 +25,30 @@
 # Set up the Muhkuh Build System.
 #
 SConscript('mbs/SConscript')
-Import('env_default')
+Import('atEnv')
 
+# Create a build environment for the ARM9 based netX chips.
+env_arm9 = atEnv.DEFAULT.CreateEnvironment(['gcc-arm-none-eabi-4.7', 'asciidoc'])
+env_arm9.CreateCompilerEnv('NETX500', ['arch=armv5te'])
+env_arm9.CreateCompilerEnv('NETX56', ['arch=armv5te'])
+env_arm9.CreateCompilerEnv('NETX50', ['arch=armv5te'])
+env_arm9.CreateCompilerEnv('NETX10', ['arch=armv5te'])
 
-#----------------------------------------------------------------------------
-#
-# Create the compiler environments.
-#
-env_netx500_default = env_default.CreateCompilerEnv('500', ['arch=armv5te'])
-env_netx56_default = env_default.CreateCompilerEnv('56', ['arch=armv5te'])
-env_netx50_default = env_default.CreateCompilerEnv('50', ['arch=armv5te'])
-env_netx10_default = env_default.CreateCompilerEnv('10', ['arch=armv5te'])
-Export('env_netx500_default', 'env_netx56_default', 'env_netx50_default', 'env_netx10_default')
+env_arm9.CreateCompilerEnv('NETX500', ['arch=armv5te', 'thumb'], name='NETX500_THUMB')
+env_arm9.CreateCompilerEnv('NETX56', ['arch=armv5te', 'thumb'], name='NETX56_THUMB')
+env_arm9.CreateCompilerEnv('NETX50', ['arch=armv5te', 'thumb'], name='NETX50_THUMB')
+env_arm9.CreateCompilerEnv('NETX10', ['arch=armv5te', 'thumb'], name='NETX10_THUMB')
 
-env_netx500_thumb_default = env_default.CreateCompilerEnv('500', ['arch=armv5te', 'thumb'])
-env_netx56_thumb_default = env_default.CreateCompilerEnv('56', ['arch=armv5te', 'thumb'])
-env_netx50_thumb_default = env_default.CreateCompilerEnv('50', ['arch=armv5te', 'thumb'])
-env_netx10_thumb_default = env_default.CreateCompilerEnv('10', ['arch=armv5te', 'thumb'])
-Export('env_netx500_thumb_default', 'env_netx56_thumb_default', 'env_netx50_thumb_default', 'env_netx10_thumb_default')
+# Create a build environment for the Cortex-R7 and Cortex-A9 based netX chips.
+env_cortexR7 = atEnv.DEFAULT.CreateEnvironment(['gcc-arm-none-eabi-4.9', 'asciidoc'])
+env_cortexR7.CreateCompilerEnv('NETX4000_RELAXED', ['arch=armv7', 'thumb'], ['arch=armv7-r', 'thumb'])
 
+# Create a build environment for the Cortex-M4 based netX chips.
+env_cortexM4 = atEnv.DEFAULT.CreateEnvironment(['gcc-arm-none-eabi-4.9', 'asciidoc'])
+env_cortexM4.CreateCompilerEnv('NETX90_MPW', ['arch=armv7', 'thumb'], ['arch=armv7e-m', 'thumb'])
 
-#----------------------------------------------------------------------------
-#
 # Build the platform libraries.
-#
-PLATFORM_LIB_CFG_BUILDS = [500, 56, 50, 10]
-SConscript('platform/SConscript', exports='PLATFORM_LIB_CFG_BUILDS')
+SConscript('platform/SConscript')
 
 
 #----------------------------------------------------------------------------

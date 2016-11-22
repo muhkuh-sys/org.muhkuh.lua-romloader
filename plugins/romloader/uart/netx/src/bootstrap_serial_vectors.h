@@ -22,7 +22,7 @@
 #ifndef __SERIAL_VECTORS_H__
 #define __SERIAL_VECTORS_H__
 
-#if ASIC_TYP==10
+#if ASIC_TYP==ASIC_TYP_NETX10
 	typedef unsigned int (*PFN_SERIAL_GET_T)(unsigned int tHandle);
 	typedef void         (*PFN_SERIAL_PUT_T)(unsigned int tHandle, unsigned char ucChar);
 	typedef unsigned int (*PFN_SERIAL_PEEK_T)(unsigned int tHandle);
@@ -60,6 +60,6 @@ typedef union
 extern SERIAL_COMM_UI_FN_T tSerialVectors;
 
 
-#endif	/* __SERIAL_VECTORS_H__ */
+#endif  /* __SERIAL_VECTORS_H__ */
 
 

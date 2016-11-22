@@ -259,7 +259,7 @@ static const SERIAL_V2_COMM_UI_FN_T tCallConsole =
 
 void monitor_init(void)
 {
-#if ASIC_TYP==500 || ASIC_TYP==56
+#if ASIC_TYP==ASIC_TYP_NETX500 || ASIC_TYP==ASIC_TYP_NETX56
 	unsigned long ulNetxVersion;
 #endif
 
@@ -272,7 +272,7 @@ void monitor_init(void)
 	ucSequenceLast = 0xffU;
 
 	/* Set the chip type */
-#if ASIC_TYP==500
+#if ASIC_TYP==ASIC_TYP_NETX500
 	ulNetxVersion = *((unsigned long*)ADR_NETX_VERSION_500_100);
 	if (ulNetxVersion == VAL_NETX_VERSION_500)
 	{
@@ -282,11 +282,11 @@ void monitor_init(void)
 	{
 		ucChiptype = ROMLOADER_CHIPTYP_NETX100;
 	}
-#elif ASIC_TYP==50
+#elif ASIC_TYP==ASIC_TYP_NETX50
 	ucChiptype = ROMLOADER_CHIPTYP_NETX50;
-#elif ASIC_TYP==10
+#elif ASIC_TYP==ASIC_TYP_NETX10
 	ucChiptype = ROMLOADER_CHIPTYP_NETX10;
-#elif ASIC_TYP==56
+#elif ASIC_TYP==ASIC_TYP_NETX56
 	ulNetxVersion = *((unsigned long*)ADR_NETX_VERSION_56);
 	if (ulNetxVersion == VAL_NETX_VERSION_56A)
 	{

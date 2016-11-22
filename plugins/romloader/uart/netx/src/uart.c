@@ -25,7 +25,7 @@
 #define ARRAYSIZE(a) (sizeof(a)/sizeof(a[0]))
 
 
-#if ASIC_TYP==10 || ASIC_TYP==50 || ASIC_TYP==56
+#if ASIC_TYP==ASIC_TYP_NETX10 || ASIC_TYP==ASIC_TYP_NETX50 || ASIC_TYP==ASIC_TYP_NETX56
 typedef struct
 {
 	MMIO_CFG_T tMmioRx;
@@ -36,7 +36,7 @@ typedef struct
 #endif
 
 
-#if ASIC_TYP==10
+#if ASIC_TYP==ASIC_TYP_NETX10
 static const UART_INSTANCE_T tUartInstance =
 {
 	MMIO_CFG_uart0_rxd,
@@ -44,7 +44,7 @@ static const UART_INSTANCE_T tUartInstance =
 	MMIO_CFG_uart0_rtsn,
 	MMIO_CFG_uart0_ctsn
 };
-#elif ASIC_TYP==50
+#elif ASIC_TYP==ASIC_TYP_NETX50
 static const UART_INSTANCE_T tUartInstance =
 {
 	MMIO_CFG_uart0_rxd,
@@ -52,7 +52,7 @@ static const UART_INSTANCE_T tUartInstance =
 	MMIO_CFG_uart0_rts,
 	MMIO_CFG_uart0_cts
 };
-#elif ASIC_TYP==56
+#elif ASIC_TYP==ASIC_TYP_NETX56
 static const UART_INSTANCE_T tUartInstance =
 {
 	MMIO_CFG_uart0_rxd,
@@ -67,10 +67,10 @@ void uart_init(const UART_CONFIGURATION_T *ptCfg)
 {
 	HOSTDEF(ptUart0Area);
 	unsigned long ulValue;
-#if ASIC_TYP==10 || ASIC_TYP==50 || ASIC_TYP==56
+#if ASIC_TYP==ASIC_TYP_NETX10 || ASIC_TYP==ASIC_TYP_NETX50 || ASIC_TYP==ASIC_TYP_NETX56
 	HOSTDEF(ptAsicCtrlArea);
 	HOSTDEF(ptMmioCtrlArea);
-#elif ASIC_TYP==100 || ASIC_TYP==500
+#elif ASIC_TYP==ASIC_TYP_NETX500
 	HOSTDEF(ptGpioArea);
 #endif
 
@@ -100,7 +100,7 @@ void uart_init(const UART_CONFIGURATION_T *ptCfg)
 	/* enable the uart */
 	ptUart0Area->ulUartcr = HOSTMSK(uartcr_uartEN);
 
-#if ASIC_TYP==10 || ASIC_TYP==50 || ASIC_TYP==56
+#if ASIC_TYP==ASIC_TYP_NETX10 || ASIC_TYP==ASIC_TYP_NETX50 || ASIC_TYP==ASIC_TYP_NETX56
 	/* setup the MMIO pins */
 	ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 	ptMmioCtrlArea->aulMmio_cfg[ptCfg->uc_rx_mmio] = tUartInstance.tMmioRx;
@@ -110,11 +110,11 @@ void uart_init(const UART_CONFIGURATION_T *ptCfg)
 	ulValue = HOSTMSK(uartdrvout_DRVTX);
 	ptUart0Area->ulUartdrvout = ulValue;
 
-#if ASIC_TYP==10 || ASIC_TYP==50 || ASIC_TYP==56
+#if ASIC_TYP==ASIC_TYP_NETX10 || ASIC_TYP==ASIC_TYP_NETX50 || ASIC_TYP==ASIC_TYP_NETX56
 	/* setup the MMIO pins */
 	ptAsicCtrlArea->ulAsic_ctrl_access_key = ptAsicCtrlArea->ulAsic_ctrl_access_key;
 	ptMmioCtrlArea->aulMmio_cfg[ptCfg->uc_tx_mmio] = tUartInstance.tMmioTx;
-#elif ASIC_TYP==100 || ASIC_TYP==500
+#elif ASIC_TYP==ASIC_TYP_NETX500
 	ptGpioArea->aulGpio_cfg[0] = 2;
 	ptGpioArea->aulGpio_cfg[1] = 2;
 	ptGpioArea->aulGpio_cfg[2] = 2;
@@ -130,7 +130,7 @@ void uart_put(unsigned char ucChar)
 	unsigned long ulVal;
 
 
-#if ASIC_TYP==50
+#if ASIC_TYP==ASIC_TYP_NETX50
 	/* Wait until the FIFO is empty. */
 	do
 	{
@@ -206,7 +206,7 @@ unsigned int uart_peek(void)
 void uart_close(void)
 {
 	HOSTDEF(ptUart0Area);
-#if ASIC_TYP==100 || ASIC_TYP==500
+#if ASIC_TYP==ASIC_TYP_NETX500
 	HOSTDEF(ptGpioArea)
 #endif
 
@@ -214,7 +214,7 @@ void uart_close(void)
 	/* Flush the buffer. */
 	uart_flush();
 
-#if ASIC_TYP==100 || ASIC_TYP==500
+#if ASIC_TYP==ASIC_TYP_NETX500
 	ptGpioArea->aulGpio_cfg[0] = 2;
 	ptGpioArea->aulGpio_cfg[1] = 2;
 	ptGpioArea->aulGpio_cfg[2] = 2;

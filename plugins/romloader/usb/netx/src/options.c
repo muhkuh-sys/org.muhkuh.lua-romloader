@@ -26,11 +26,11 @@
 #include "netx_io_areas.h"
 
 
-#if ASIC_TYP==10
+#if ASIC_TYP==ASIC_TYP_NETX10
 #       define USB_VENDOR_ID  0x1939
 #       define USB_PRODUCT_ID 0x000c
 #       define USB_RELEASE_ID 0x0002
-#elif ASIC_TYP==56
+#elif ASIC_TYP==ASIC_TYP_NETX56
 #       define USB_VENDOR_ID  0x1939
 #       define USB_PRODUCT_ID 0x0018
 #       define USB_RELEASE_ID 0x0002
@@ -90,7 +90,7 @@ typedef enum
 
 void options_set_default(void)
 {
-#if ASIC_TYP==56
+#if ASIC_TYP==ASIC_TYP_NETX56
 	HOSTDEF(ptAsicCtrlArea);
 	unsigned long ulValue;
 	unsigned long ulChipSubType;
@@ -100,7 +100,7 @@ void options_set_default(void)
 
 	memcpy(&g_t_options, &t_default_options, sizeof(OPTIONS_T));
 
-#if ASIC_TYP==56
+#if ASIC_TYP==ASIC_TYP_NETX56
 	/* Is this a netX52? */
 	ulValue = ptAsicCtrlArea->ulSample_at_nres;
 	ulChipSubType  = (ulValue&HOSTMSK(sample_at_nres_sar_mem_a18))>> HOSTSRT(sample_at_nres_sar_mem_a18);
