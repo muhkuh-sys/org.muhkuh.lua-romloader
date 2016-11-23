@@ -9,9 +9,9 @@ SET(romloader_papa_schlumpf_VERSION 0.0.1)
 FIND_PACKAGE(SWIG REQUIRED)
 INCLUDE(${SWIG_USE_FILE})
 
-if(${LUA51_FOUND})
+if(${LUA_FOUND})
 	include_directories(${LUA_INCLUDE_DIR})
-endif(${LUA51_FOUND})
+endif(${LUA_FOUND})
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
@@ -61,7 +61,7 @@ ADD_DEPENDENCIES(TARGET_romloader_papa_schlumpf_lib TARGET_libusb)
 # Build the lua plugin.
 #
 
-IF(${LUA51_FOUND})
+IF(${LUA_FOUND})
 	# Build the Lua module.
 	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_papa_schlumpf_LUA lua romloader_papa_schlumpf.i)
 	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_papa_schlumpf_LUA TARGET_romloader_papa_schlumpf_lib ${LUA_LIBRARIES} ${LIBUSB_LIBRARY} TARGET_plugins_romloader_LIB ${LIBUSB_LDFLAGS})
@@ -86,4 +86,4 @@ IF(${LUA51_FOUND})
 		ADD_TEST(NAME romloader_usb_MinGW_DLL_dependencies
 		         COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tests/mingw_dll_dependencies.py -u lua5.1 $<TARGET_FILE:TARGET_plugins_romloader_romloader_papa_schlumpf_LUA>)
 	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
-ENDIF(${LUA51_FOUND})
+ENDIF(${LUA_FOUND})

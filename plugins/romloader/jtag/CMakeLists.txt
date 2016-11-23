@@ -14,9 +14,9 @@ INCLUDE(${SWIG_USE_FILE})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 
-if(${LUA51_FOUND})
+if(${LUA_FOUND})
 	include_directories(${LUA_INCLUDE_DIR})
-endif(${LUA51_FOUND})
+endif(${LUA_FOUND})
 
 
 #-----------------------------------------------------------------------------
@@ -54,7 +54,7 @@ SET_SOURCE_FILES_PROPERTIES(romloader_jtag.i PROPERTIES CPLUSPLUS ON)
 SET_PROPERTY(SOURCE romloader_jtag.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/plugins)
 
 
-IF(${LUA51_FOUND})
+IF(${LUA_FOUND})
 	# Build the Lua module.
 	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_jtag_LUA lua romloader_jtag.i)
 	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_jtag_LUA TARGET_romloader_jtag_lib TARGET_romloader_jtag_openocd_lib ${LUA_LIBRARIES} TARGET_plugins_romloader_LIB)
@@ -79,5 +79,5 @@ IF(${LUA51_FOUND})
 		ADD_TEST(NAME romloader_jtag_MinGW_DLL_dependencies
 		         COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tests/mingw_dll_dependencies.py -u lua5.1 $<TARGET_FILE:TARGET_plugins_romloader_romloader_jtag_LUA>)
 	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
-ENDIF(${LUA51_FOUND})
+ENDIF(${LUA_FOUND})
 
