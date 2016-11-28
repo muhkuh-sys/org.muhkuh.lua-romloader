@@ -1,15 +1,19 @@
-cmake_minimum_required(VERSION 2.8.11) #required for TARGET_INCLUDE_DIRECTORIES
+cmake_minimum_required(VERSION 3.7)
+
+PROJECT("openocd"
+        VERSION ${VERSION_EXTERNAL})
 
 ADD_SUBDIRECTORY(jimtcl)
-
-
-PROJECT("openocd")
 
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckFunctionExists)
 INCLUDE(CheckLibraryExists)
 INCLUDE(CheckStructHasMember)
 INCLUDE(CheckTypeSize)
+
+
+MESSAGE("CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+FIND_PACKAGE("libusb" REQUIRED)
 
 
 #----------------------------------------------------------------------------
@@ -456,8 +460,7 @@ TARGET_INCLUDE_DIRECTORIES(LIBRARY_libopenocd
                                    src/helper
                                    src/jtag/drivers
                                    ${LIBJIM_INCLUDE_DIRECTORIES}
-                                   ${CMAKE_CURRENT_BINARY_DIR}/config
-                                   ${LIBUSB_INCLUDE_DIRECTORIES})
+                                   ${CMAKE_CURRENT_BINARY_DIR}/config)
 
 IF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	SET(LIBOPENOCD_LDFLAGS -lws2_32)
@@ -465,7 +468,7 @@ ELSE(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	SET(LIBOPENOCD_LDFLAGS "")
 ENDIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 TARGET_LINK_LIBRARIES(LIBRARY_libopenocd
-                      PRIVATE LIBRARY_jim ${LIBUSB_LIBRARY} "${LIBOPENOCD_LDFLAGS}" "${LIBJIM_LDFLAGS}" "${LIBUSB_LDFLAGS}")
+                      PRIVATE LIBRARY_jim libusb::TARGET_libusb "${LIBOPENOCD_LDFLAGS}" "${LIBJIM_LDFLAGS}")
 
 SET(LIBRARY_libopenocd_defines "")
 LIST(APPEND LIBRARY_libopenocd_defines "HAVE_CONFIG_H")
@@ -492,8 +495,12 @@ SET_TARGET_PROPERTIES(LIBRARY_libopenocd PROPERTIES OUTPUT_NAME "openocd")
 #
 
 SET(CMAKE_INSTALL_PREFIX /install)
-
-INSTALL(TARGETS LIBRARY_libopenocd DESTINATION lib)
+INSTALL(TARGETS LIBRARY_libopenocd
+        EXPORT EXPORT_package
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include)
 
 INSTALL(FILES src/muhkuh_openocd.h
         DESTINATION include)
@@ -519,3 +526,30 @@ TARGET_INCLUDE_DIRECTORIES(TARGET_openocd
 TARGET_COMPILE_DEFINITIONS(TARGET_openocd
                            PRIVATE ${LIBRARY_libopenocd_defines})
 
+
+#----------------------------------------------------------------------------
+#
+# Build the CMAKE package.
+#
+INCLUDE(CMakePackageConfigHelpers)
+
+SET(INCLUDE_INSTALL_DIR include/)
+CONFIGURE_PACKAGE_CONFIG_FILE(cmake/config.cmake.in
+                              "${CMAKE_CURRENT_BINARY_DIR}/package/${PROJECT_NAME}-config.cmake"
+                              INSTALL_DESTINATION cmake
+                              PATH_VARS INCLUDE_INSTALL_DIR)
+
+WRITE_BASIC_PACKAGE_VERSION_FILE("${CMAKE_CURRENT_BINARY_DIR}/package/${PROJECT_NAME}-version.cmake"
+                                 COMPATIBILITY ExactVersion)
+
+EXPORT(EXPORT EXPORT_package
+       FILE "${CMAKE_CURRENT_BINARY_DIR}/package/${PROJECT_NAME}-targets.cmake"
+       NAMESPACE ${PROJECT_NAME}::)
+
+INSTALL(EXPORT EXPORT_package
+        FILE ${PROJECT_NAME}-targets.cmake
+        NAMESPACE ${PROJECT_NAME}::
+        DESTINATION cmake)
+INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/package/${PROJECT_NAME}-config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/package/${PROJECT_NAME}-version.cmake"
+        DESTINATION cmake
+        COMPONENT Devel)

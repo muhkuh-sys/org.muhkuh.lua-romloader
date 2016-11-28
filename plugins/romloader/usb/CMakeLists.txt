@@ -9,6 +9,8 @@ SET(romloader_usb_VERSION 0.0.1)
 FIND_PACKAGE(SWIG REQUIRED)
 INCLUDE(${SWIG_USE_FILE})
 
+FIND_PACKAGE(libusb REQUIRED)
+
 if(${PYTHONLIBS_FOUND})
 	include_directories(${PYTHON_INCLUDE_DIRS})
 endif(${PYTHONLIBS_FOUND})
@@ -39,16 +41,8 @@ SET(NETX_USB_FIRMWARE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_ne
 #
 # Set the platform specific parts.
 #
-
-# Append the include directories for libusb.
-INCLUDE_DIRECTORIES(${LIBUSB_INCLUDE_DIRECTORIES})
-
-# Append the libusb defines.
-ADD_DEFINITIONS(${LIBUSB_DEFINES})
-
-
 SET_SOURCE_FILES_PROPERTIES(romloader_usb.i PROPERTIES CPLUSPLUS ON)
-SET_PROPERTY(SOURCE romloader_usb.i PROPERTY SWIG_FLAGS ${LIBUSB_DEFINES} -I${CMAKE_HOME_DIRECTORY}/plugins)
+SET_PROPERTY(SOURCE romloader_usb.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/plugins)
 
 
 SET(romloader_usb_SOURCES
@@ -66,14 +60,11 @@ SET(romloader_usb_HEADERS
 
 
 ADD_LIBRARY(TARGET_romloader_usb_lib STATIC ${romloader_usb_SOURCES})
+TARGET_LINK_LIBRARIES(TARGET_romloader_usb_lib libusb::TARGET_libusb)
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 	SET_TARGET_PROPERTIES(TARGET_romloader_usb_lib PROPERTIES COMPILE_FLAGS -fPIC)
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-
-# The library depends on the libusb header.
-ADD_DEPENDENCIES(TARGET_romloader_usb_lib TARGET_libusb)
-
 
 
 #----------------------------------------------------------------------------
@@ -84,7 +75,7 @@ ADD_DEPENDENCIES(TARGET_romloader_usb_lib TARGET_libusb)
 IF(${LUA_FOUND})
 	# Build the Lua module.
 	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_usb_LUA lua romloader_usb.i)
-	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_usb_LUA TARGET_romloader_usb_lib ${LUA_LIBRARIES} ${LIBUSB_LIBRARY} TARGET_plugins_romloader_LIB ${LIBUSB_LDFLAGS})
+	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_usb_LUA TARGET_romloader_usb_lib ${LUA_LIBRARIES} TARGET_plugins_romloader_LIB)
 
 	# Set the name of the output file to "romloader_usb".
 	SET_TARGET_PROPERTIES(TARGET_plugins_romloader_romloader_usb_LUA PROPERTIES PREFIX "" OUTPUT_NAME "romloader_usb")
@@ -94,9 +85,6 @@ IF(${LUA_FOUND})
 		set_property(TARGET TARGET_plugins_romloader_romloader_usb_LUA PROPERTY LINK_FLAGS "-static -static-libgcc -static-libstdc++")
 	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 
-	# The module depends on the libusb libraries.
-	ADD_DEPENDENCIES(TARGET_plugins_romloader_romloader_usb_LUA TARGET_libusb)
-	
 	# Install the lua module.
 	INSTALL(TARGETS TARGET_plugins_romloader_romloader_usb_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
 
@@ -104,7 +92,7 @@ IF(${LUA_FOUND})
 	IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 		# Here are the MinGW specific tests.
 		ADD_TEST(NAME romloader_usb_MinGW_DLL_dependencies
-		         COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tests/mingw_dll_dependencies.py -u lua5.1 $<TARGET_FILE:TARGET_plugins_romloader_romloader_usb_LUA>)
+		         COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tests/mingw_dll_dependencies.py -u lua5.1 -u lua5.2 -u lua5.3 $<TARGET_FILE:TARGET_plugins_romloader_romloader_usb_LUA>)
 	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 ENDIF(${LUA_FOUND})
 

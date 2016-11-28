@@ -27,10 +27,6 @@ FIND_PACKAGE(PythonInterp REQUIRED)
 
 # TODO: Show a summary with FeatureSummary .
 
-
-# Include the location of the dependencies.
-INCLUDE(ivy/ant_paths.cmake OPTIONAL)
-
 # Select the LUA version.
 INCLUDE(cmake/muhkuh_lua.cmake)
 
@@ -59,10 +55,7 @@ ENDIF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv)")
 #----------------------------------------------------------------------------
 #
 # Include the projects in the subdirectories.
-# NOTE: build the external components first. Many parts depend on them.
 #
-
-add_subdirectory(external)
 
 add_subdirectory(plugins)
 

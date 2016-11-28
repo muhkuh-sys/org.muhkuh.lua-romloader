@@ -1,6 +1,7 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.7)
 
-PROJECT("libusb")
+PROJECT("libusb"
+        VERSION ${VERSION_EXTERNAL})
 
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckFunctionExists)
@@ -120,6 +121,38 @@ ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STR
 SET_TARGET_PROPERTIES(TARGET_libusb PROPERTIES OUTPUT_NAME "usb")
 
 SET(CMAKE_INSTALL_PREFIX /install)
-INSTALL(TARGETS TARGET_libusb DESTINATION lib)
-INSTALL(FILES libusb/libusb.h DESTINATION include/libusb-1.0)
+INSTALL(TARGETS TARGET_libusb
+        EXPORT EXPORT_package
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include)
+INSTALL(FILES libusb/libusb.h DESTINATION include)
 
+
+#----------------------------------------------------------------------------
+#
+# Build the CMAKE package.
+#
+INCLUDE(CMakePackageConfigHelpers)
+
+SET(INCLUDE_INSTALL_DIR include/)
+CONFIGURE_PACKAGE_CONFIG_FILE(cmake/config.cmake.in
+                              "${CMAKE_CURRENT_BINARY_DIR}/package/${PROJECT_NAME}-config.cmake"
+                              INSTALL_DESTINATION cmake
+                              PATH_VARS INCLUDE_INSTALL_DIR)
+
+WRITE_BASIC_PACKAGE_VERSION_FILE("${CMAKE_CURRENT_BINARY_DIR}/package/${PROJECT_NAME}-version.cmake"
+                                 COMPATIBILITY ExactVersion)
+
+EXPORT(EXPORT EXPORT_package
+       FILE "${CMAKE_CURRENT_BINARY_DIR}/package/${PROJECT_NAME}-targets.cmake"
+       NAMESPACE ${PROJECT_NAME}::)
+
+INSTALL(EXPORT EXPORT_package
+        FILE ${PROJECT_NAME}-targets.cmake
+        NAMESPACE ${PROJECT_NAME}::
+        DESTINATION cmake)
+INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/package/${PROJECT_NAME}-config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/package/${PROJECT_NAME}-version.cmake"
+        DESTINATION cmake
+        COMPONENT Devel)
