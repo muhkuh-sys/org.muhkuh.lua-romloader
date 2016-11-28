@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jonchki-artifact version="1.0">
+	<info group="org.muhkuh.lua"
+	      module="romloader"
+	      artifact="lua5.2-romloader"
+	      version="@PROJECT_VERSION@"
+	      vcs-id="@PROJECT_VERSION_VCS@">
+		<license name="MIT"/>
+		<author name="Muhkuh team" url="https://github.com/muhkuh-sys" />
+		<description>
+			This module provides the romloader plugins for the LUA5.2 interpreter. The plugins provide communication with netX based hardware.
+		</description>
+	</info>
+	<dependencies>
+		<dependency group="org.lua" module="lua" artifact="lua5.2" version="5.2.4.1"/>
+	</dependencies>
+</jonchki-artifact>
