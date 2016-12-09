@@ -3,6 +3,6 @@ set -e
 
 #-----------------------------------------------------------------------------
 #
-# Build the windows32 versions.
+# Build the netX firmware versions.
 #
 python mbs/mbs
