@@ -5,7 +5,7 @@
 	      artifact="lua5.2-romloader"
 	      version="@PROJECT_VERSION@"
 	      vcs-id="@PROJECT_VERSION_VCS@">
-		<license name="MIT"/>
+		<license name="GPL-2.0"/>
 		<author name="Muhkuh team" url="https://github.com/muhkuh-sys" />
 		<description>
 			This module provides the romloader plugins for the LUA5.2 interpreter. The plugins provide communication with netX based hardware.
