@@ -62,8 +62,9 @@ SECTIONS
 		*(.init_code)
 		*(.text*)
 		*(.rodata*)
+
+		end_address = . ;
 	} >INTRAM_MON
-	end_address = LOADADDR(.code) + SIZEOF(.code);
 
 	.bss :
 	{
