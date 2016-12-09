@@ -13,5 +13,4 @@ strSetupFile = aOptions.infile.read()
 aOptions.infile.close()
 
 t = xml.etree.ElementTree.fromstring(strSetupFile)
-v = t.find('project_version')
-print '%d.%d.%d' % (long(v.find('major').text), long(v.find('minor').text), long(v.find('micro').text))
+print t.find('project_version').text
