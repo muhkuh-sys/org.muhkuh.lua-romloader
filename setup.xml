@@ -5,7 +5,7 @@
 	<project_version>
 		<major>2</major>
 		<minor>3</minor>
-		<micro>1</micro>
+		<micro>2</micro>
 	</project_version>
 
 	<scons>
