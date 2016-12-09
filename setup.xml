@@ -2,11 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="mbs/setup2html.xsl"?>
 
 <muhkuh_buildsystem project="muhkuh">
-	<project_version>
-		<major>2</major>
-		<minor>3</minor>
-		<micro>2</micro>
-	</project_version>
+	<project_version>2.3.2</project_version>
 
 	<scons>
 		<group>org.scons</group>
