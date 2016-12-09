@@ -20,6 +20,7 @@
 
 
 #include <string.h>
+#include "asic_types.h"
 #include "bootstrap_serial_vectors.h"
 
 #if ASIC_TYP==ASIC_TYP_NETX50

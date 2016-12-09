@@ -34,7 +34,9 @@ sources = """
 	src/monitor.c
 """
 
-astrCppPaths = ['src', 'platform/src/lib']
+astrCppPaths = ['src', '#platform/src', '#platform/src/lib']
+
+
 #----------------------------------------------------------------------------
 #
 # Build the netX500 files.

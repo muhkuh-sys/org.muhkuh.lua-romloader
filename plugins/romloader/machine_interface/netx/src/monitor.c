@@ -24,6 +24,7 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "asic_types.h"
 #include "serial_vectors_bridge.h"
 #include "monitor_commands.h"
 #include "../../../romloader_def.h"
@@ -276,25 +277,25 @@ void monitor_init(void)
 	ulNetxVersion = *((unsigned long*)ADR_NETX_VERSION_500_100);
 	if (ulNetxVersion == VAL_NETX_VERSION_500)
 	{
-		ucChiptype = ROMLOADER_CHIPTYP_NETX500;
+		ucChiptype = (unsigned char)ROMLOADER_CHIPTYP_NETX500;
 	}
 	else if (ulNetxVersion == VAL_NETX_VERSION_100)
 	{
-		ucChiptype = ROMLOADER_CHIPTYP_NETX100;
+		ucChiptype = (unsigned char)ROMLOADER_CHIPTYP_NETX100;
 	}
 #elif ASIC_TYP==ASIC_TYP_NETX50
-	ucChiptype = ROMLOADER_CHIPTYP_NETX50;
+	ucChiptype = (unsigned char)ROMLOADER_CHIPTYP_NETX50;
 #elif ASIC_TYP==ASIC_TYP_NETX10
-	ucChiptype = ROMLOADER_CHIPTYP_NETX10;
+	ucChiptype = (unsigned char)ROMLOADER_CHIPTYP_NETX10;
 #elif ASIC_TYP==ASIC_TYP_NETX56
 	ulNetxVersion = *((unsigned long*)ADR_NETX_VERSION_56);
 	if (ulNetxVersion == VAL_NETX_VERSION_56A)
 	{
-		ucChiptype = ROMLOADER_CHIPTYP_NETX56;
+		ucChiptype = (unsigned char)ROMLOADER_CHIPTYP_NETX56;
 	}
 	else if (ulNetxVersion == VAL_NETX_VERSION_56B)
 	{
-		ucChiptype = ROMLOADER_CHIPTYP_NETX56B;
+		ucChiptype = (unsigned char)ROMLOADER_CHIPTYP_NETX56B;
 	}
 #else
 #       error "Unknown ASIC type!"

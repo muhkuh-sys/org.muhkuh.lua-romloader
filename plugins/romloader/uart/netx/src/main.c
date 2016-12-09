@@ -23,10 +23,11 @@
 
 #include <string.h>
 
-#include "systime.h"
+#include "asic_types.h"
 #include "monitor_commands.h"
-#include "transport.h"
 #include "serial_vectors.h"
+#include "systime.h"
+#include "transport.h"
 #include "uart.h"
 
 #if ASIC_TYP==ASIC_TYP_NETX50 || ASIC_TYP==ASIC_TYP_NETX56
