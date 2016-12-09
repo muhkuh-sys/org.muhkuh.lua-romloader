@@ -9,9 +9,9 @@ SET(PROJECT_VERSION ${MUHKUH_VERSION_ALL})
 SET(INSTALL_WIN32 ${CMAKE_CURRENT_SOURCE_DIR}/../../../build_windows32/lua5.3/install)
 SET(INSTALL_WIN64 ${CMAKE_CURRENT_SOURCE_DIR}/../../../build_windows64/lua5.3/install)
 
-SET(CPACK_OUTPUT_FILE_PREFIX targets/jonchki/repository/org/muhkuh/lua/lua5.3-romloader/${PROJECT_VERSION})
+SET(CPACK_OUTPUT_FILE_PREFIX targets/jonchki/repository/org/muhkuh/lua/romloader/${PROJECT_VERSION})
 SET(CPACK_INCLUDE_TOPLEVEL_DIRECTORY FALSE)
-SET(CPACK_PACKAGE_FILE_NAME "lua5.1-romloader-${PROJECT_VERSION}")
+SET(CPACK_PACKAGE_FILE_NAME "lua5.3-romloader-${PROJECT_VERSION}")
 
 SET(CPACK_GENERATOR "ZIP")
 INCLUDE(CPack)
@@ -27,7 +27,7 @@ INSTALL(FILES ${INSTALL_WIN32}/lua_plugins/romloader.dll
               ${INSTALL_WIN32}/lua_plugins/romloader_papa_schlumpf.dll
               ${INSTALL_WIN32}/lua_plugins/romloader_uart.dll
               ${INSTALL_WIN32}/lua_plugins/romloader_usb.dll
-        DESTINATION windows_x86/lib)
+        DESTINATION windows_32/lua_plugins)
 
 
 #-----------------------------------------------------------------------------
@@ -40,7 +40,7 @@ INSTALL(FILES ${INSTALL_WIN64}/lua_plugins/romloader.dll
               ${INSTALL_WIN64}/lua_plugins/romloader_papa_schlumpf.dll
               ${INSTALL_WIN64}/lua_plugins/romloader_uart.dll
               ${INSTALL_WIN64}/lua_plugins/romloader_usb.dll
-        DESTINATION windows_x64/lib)
+        DESTINATION windows_64/lua_plugins)
 
 
 #-----------------------------------------------------------------------------
