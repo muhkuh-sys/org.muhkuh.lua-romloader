@@ -79,10 +79,10 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.h.in ${CMAKE_CURRENT_BIN
 IF(UNIX)
 	SET(SOURCES_libusb libusb/core.c
 	                   libusb/descriptor.c
+	                   libusb/hotplug.c
 	                   libusb/io.c
 	                   libusb/strerror.c
 	                   libusb/sync.c
-	                   libusb/hotplug.c
 	                   libusb/os/threads_posix.c
 	                   libusb/os/linux_usbfs.c
 	                   libusb/os/poll_posix.c
@@ -93,13 +93,14 @@ IF(UNIX)
 ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	SET(SOURCES_libusb libusb/core.c
 	                   libusb/descriptor.c
+	                   libusb/hotplug.c
 	                   libusb/io.c
 	                   libusb/strerror.c
 	                   libusb/sync.c
-	                   libusb/hotplug.c
 	                   libusb/os/threads_windows.c
 	                   libusb/os/poll_windows.c
-	                   libusb/os/windows_usb.c
+	                   libusb/os/windows_nt_common.c
+	                   libusb/os/windows_winusb.c
 	)
 	
 	add_definitions(-DHAVE_CONFIG_H)
