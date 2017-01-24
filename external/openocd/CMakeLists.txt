@@ -7,7 +7,7 @@ INCLUDE(ExternalProject)
 SET(VERSION_EXTERNAL "0.9.0")
 
 # Python is required for the patch script.
-FIND_PACKAGE(PythonInterp REQUIRED)
+FIND_PACKAGE(PythonInterp 2.7 REQUIRED)
 
 
 #----------------------------------------------------------------------------
