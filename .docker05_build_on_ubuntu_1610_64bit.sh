@@ -22,9 +22,9 @@ docker exec ${ID} bash -c 'cd /tmp/work && bash .build01_netx_firmware.sh'
 
 # Build the 64bit version.
 docker exec ${ID} bash -c 'cd /tmp/work && bash .build05_linux64.sh'
-docker exec ${ID} bash -c 'tar --create --file /tmp/work/build/build_lua5.1_ubuntu_1610_x86_64.tar.gz --gzip --directory /tmp/work/build_linux64/lua5.1/install .'
-docker exec ${ID} bash -c 'tar --create --file /tmp/work/build/build_lua5.2_ubuntu_1610_x86_64.tar.gz --gzip --directory /tmp/work/build_linux64/lua5.2/install .'
-docker exec ${ID} bash -c 'tar --create --file /tmp/work/build/build_lua5.3_ubuntu_1610_x86_64.tar.gz --gzip --directory /tmp/work/build_linux64/lua5.3/install .'
+docker exec ${ID} bash -c 'tar --create --file /tmp/work/build/build_lua5.1_ubuntu_1610_x86_64.tar.gz --gzip --directory /tmp/work/build/linux64/lua5.1/install .'
+docker exec ${ID} bash -c 'tar --create --file /tmp/work/build/build_lua5.2_ubuntu_1610_x86_64.tar.gz --gzip --directory /tmp/work/build/linux64/lua5.2/install .'
+docker exec ${ID} bash -c 'tar --create --file /tmp/work/build/build_lua5.3_ubuntu_1610_x86_64.tar.gz --gzip --directory /tmp/work/build/linux64/lua5.3/install .'
 docker exec ${ID} bash -c 'chown `stat -c %u:%g /tmp/work` /tmp/work/build/build_lua5.1_ubuntu_1610_x86_64.tar.gz'
 docker exec ${ID} bash -c 'chown `stat -c %u:%g /tmp/work` /tmp/work/build/build_lua5.2_ubuntu_1610_x86_64.tar.gz'
 docker exec ${ID} bash -c 'chown `stat -c %u:%g /tmp/work` /tmp/work/build/build_lua5.3_ubuntu_1610_x86_64.tar.gz'
