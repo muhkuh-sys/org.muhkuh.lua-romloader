@@ -5,4 +5,4 @@ set -e
 #
 # Build the netX firmware versions.
 #
-python mbs/mbs
+python2.7 mbs/mbs
