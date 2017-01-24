@@ -11,7 +11,10 @@
 			This module provides the romloader plugins for the LUA5.1 interpreter. The plugins provide communication with netX based hardware.
 		</description>
 	</info>
-	<dependencies>
+	<build-dependencies>
 		<dependency group="org.lua" module="lua" artifact="lua5.1" version="5.1.5.1"/>
+	</build-dependencies>
+	<dependencies>
+		<dependency group="org.lua" module="lua" artifact="lua5.1"/>
 	</dependencies>
 </jonchki-artifact>
