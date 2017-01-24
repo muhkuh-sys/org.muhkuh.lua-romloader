@@ -6,23 +6,11 @@
 
 # Ignore all files in the targets folder.
 /build/
-/build_linux32/
-/build_linux64/
-/build_windows32/
-/build_windows64/
-/compile/
 /plugins/romloader/_test/testcode/targets/
 /plugins/romloader/dpm/netx/targets/
 /plugins/romloader/machine_interface/netx/targets/
 /plugins/romloader/uart/netx/targets/
 /plugins/romloader/usb/netx/targets/
-
-# Ignore the Ivy library.
-/ivy/lib/
-
-# Ignore the Ivy path list.
-/ivy/ant_paths.cmake
-/ivy/path.properties
 
 # Ignore all compiled python modules.
 *.pyc
