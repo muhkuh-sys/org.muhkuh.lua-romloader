@@ -1,0 +1,18 @@
+<jonchkicfg>
+	<repositories>
+<!--
+		<repository id="sourceforge" type="url" cacheable="false">
+			<root>https://sourceforge.net/projects/muhkuh/files/jonchki</root>
+			<versions>[group]/[module]</versions>
+			<config>[group]/[module]/[version]/[artifact]-[version].xml</config>
+			<artifact>[group]/[module]/[version]/[artifact]-[version].zip</artifact>
+		</repository>
+-->
+		<repository id="nexus" type="url" cacheable="false">
+			<root>http://nexus.netx01.hilscher.local/content/repositories/jonchki</root>
+			<versions>[group]/[artifact]</versions>
+			<config>[group]/[artifact]/[version]/[artifact]-[version].xml</config>
+			<artifact>[group]/[artifact]/[version]/[artifact]-[version].zip</artifact>
+		</repository>
+	</repositories>
+</jonchkicfg>
