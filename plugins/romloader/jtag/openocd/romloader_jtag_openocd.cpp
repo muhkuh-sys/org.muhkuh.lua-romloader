@@ -46,56 +46,56 @@ romloader_jtag_openocd::~romloader_jtag_openocd(void)
 const romloader_jtag_openocd::OPENOCD_NAME_RESOLVE_T romloader_jtag_openocd::atOpenOcdResolve[13] =
 {
 	{
-		.pstrSymbolName = "muhkuh_openocd_init",
-		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnInit) / sizeof(void*)
+		"muhkuh_openocd_init",
+		offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnInit) / sizeof(void*)
 	},
 	{
-		.pstrSymbolName = "muhkuh_openocd_get_result",
-		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnGetResult) / sizeof(void*)
+		"muhkuh_openocd_get_result",
+		offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnGetResult) / sizeof(void*)
 	},
 	{
-		.pstrSymbolName = "muhkuh_openocd_command_run_line",
-		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnCommandRunLine) / sizeof(void*)
+		"muhkuh_openocd_command_run_line",
+		offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnCommandRunLine) / sizeof(void*)
 	},
 	{
-		.pstrSymbolName = "muhkuh_openocd_uninit",
-		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnUninit) / sizeof(void*)
+		"muhkuh_openocd_uninit",
+		offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnUninit) / sizeof(void*)
 	},
 	{
-		.pstrSymbolName = "muhkuh_openocd_read_data08",
-		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnReadData08) / sizeof(void*)
+		"muhkuh_openocd_read_data08",
+		offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnReadData08) / sizeof(void*)
 	},
 	{
-		.pstrSymbolName = "muhkuh_openocd_read_data16",
-		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnReadData16) / sizeof(void*)
+		"muhkuh_openocd_read_data16",
+		offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnReadData16) / sizeof(void*)
 	},
 	{
-		.pstrSymbolName = "muhkuh_openocd_read_data32",
-		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnReadData32) / sizeof(void*)
+		"muhkuh_openocd_read_data32",
+		offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnReadData32) / sizeof(void*)
 	},
 	{
-		.pstrSymbolName = "muhkuh_openocd_read_image",
-		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnReadImage) / sizeof(void*)
+		"muhkuh_openocd_read_image",
+		offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnReadImage) / sizeof(void*)
 	},
 	{
-		.pstrSymbolName = "muhkuh_openocd_write_data08",
-		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnWriteData08) / sizeof(void*)
+		"muhkuh_openocd_write_data08",
+		offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnWriteData08) / sizeof(void*)
 	},
 	{
-		.pstrSymbolName = "muhkuh_openocd_write_data16",
-		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnWriteData16) / sizeof(void*)
+		"muhkuh_openocd_write_data16",
+		offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnWriteData16) / sizeof(void*)
 	},
 	{
-		.pstrSymbolName = "muhkuh_openocd_write_data32",
-		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnWriteData32) / sizeof(void*)
+		"muhkuh_openocd_write_data32",
+		offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnWriteData32) / sizeof(void*)
 	},
 	{
-		.pstrSymbolName = "muhkuh_openocd_write_image",
-		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnWriteImage) / sizeof(void*)
+		"muhkuh_openocd_write_image",
+		offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnWriteImage) / sizeof(void*)
 	},
 	{
-		.pstrSymbolName = "muhkuh_openocd_call",
-		.sizPointerOffset = offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnCall) / sizeof(void*)
+		"muhkuh_openocd_call",
+		offsetof(romloader_jtag_openocd::MUHKUH_OPENOCD_FUNCTION_POINTERS_T, pfnCall) / sizeof(void*)
 	}
 };
 
@@ -334,52 +334,56 @@ int romloader_jtag_openocd::initialize(void)
 const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::atInterfaceCfg[5] =
 {
 	{
-		.pcID = "NXJTAG-USB",
-		.pcCode_Setup = "interface ftdi\n"
-                                "transport select jtag\n"
-		                "ftdi_device_desc \"NXJTAG-USB\"\n"
-		                "ftdi_vid_pid 0x1939 0x0023\n"
-		                "adapter_khz 100\n"
-		                "\n"
-		                "ftdi_layout_init 0x0308 0x030b\n"
-		                "ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100\n"
-		                "ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
-		.pcCode_Probe = "proc probe {} {\n"
-		                "    set RESULT -1"
-		                "\n"
-		                "    if {[ catch {jtag init} ]==0 } {\n"
-		                "        set RESULT {OK}\n"
-		                "    }\n"
-		                "    return $RESULT\n"
-		                "}\n"
-		                "probe\n"
+		"NXJTAG-USB",
+
+		"interface ftdi\n"
+		"transport select jtag\n"
+		"ftdi_device_desc \"NXJTAG-USB\"\n"
+		"ftdi_vid_pid 0x1939 0x0023\n"
+		"adapter_khz 100\n"
+		"\n"
+		"ftdi_layout_init 0x0308 0x030b\n"
+		"ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100\n"
+		"ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
+
+		"proc probe {} {\n"
+		"    set RESULT -1"
+		"\n"
+		"    if {[ catch {jtag init} ]==0 } {\n"
+		"        set RESULT {OK}\n"
+		"    }\n"
+		"    return $RESULT\n"
+		"}\n"
+		"probe\n"
 	},
 
 	{
-		.pcID = "Amontec_JTAGkey",
-		.pcCode_Setup = "interface ftdi\n"
-                                "transport select jtag\n"
-		                "ftdi_device_desc \"Amontec JTAGkey\"\n"
-		                "ftdi_vid_pid 0x0403 0xcff8\n"
-		                "adapter_khz 100\n"
-		                "\n"
-		                "ftdi_layout_init 0x0c08 0x0f1b\n"
-		                "ftdi_layout_signal nTRST -data 0x0100 -noe 0x0400\n"
-		                "ftdi_layout_signal nSRST -data 0x0200 -noe 0x0800\n",
-		.pcCode_Probe = "proc probe {} {\n"
-		                "    set RESULT -1"
-		                "\n"
-		                "    if {[ catch {jtag init} ]==0 } {\n"
-		                "        set RESULT {OK}\n"
-		                "    }\n"
-		                "    return $RESULT\n"
-		                "}\n"
-		                "probe\n"
+		"Amontec_JTAGkey",
+
+		"interface ftdi\n"
+		"transport select jtag\n"
+		"ftdi_device_desc \"Amontec JTAGkey\"\n"
+		"ftdi_vid_pid 0x0403 0xcff8\n"
+		"adapter_khz 100\n"
+		"\n"
+		"ftdi_layout_init 0x0c08 0x0f1b\n"
+		"ftdi_layout_signal nTRST -data 0x0100 -noe 0x0400\n"
+		"ftdi_layout_signal nSRST -data 0x0200 -noe 0x0800\n",
+
+		"proc probe {} {\n"
+		"    set RESULT -1"
+		"\n"
+		"    if {[ catch {jtag init} ]==0 } {\n"
+		"        set RESULT {OK}\n"
+		"    }\n"
+		"    return $RESULT\n"
+		"}\n"
+		"probe\n"
 	},
 
 	{
-		.pcID = "NXHX50-RE",
-		.pcCode_Setup = "interface ftdi\n"
+		"NXHX50-RE",
+		"interface ftdi\n"
                                 "transport select jtag\n"
 		                "ftdi_device_desc \"NXHX50-RE\"\n"
 		                "ftdi_vid_pid 0x0640 0x0028\n"
@@ -388,7 +392,7 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::a
 				"ftdi_layout_init 0x0108 0x010b\n"
 				"ftdi_layout_signal nTRST -data 0x0100\n"
 				"ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
-		.pcCode_Probe = "proc probe {} {\n"
+		"proc probe {} {\n"
 		                "    set RESULT -1\n"
 		                "\n"
 		                "    if {[ catch {jtag init} ]==0 } {\n"
@@ -400,8 +404,8 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::a
 	},
 
 	{
-		.pcID = "NXHX_51-ETM",
-		.pcCode_Setup = "interface ftdi\n"
+		"NXHX_51-ETM",
+		"interface ftdi\n"
                                 "transport select jtag\n"
 		                "ftdi_device_desc \"NXHX 51-ETM\"\n"
 		                "ftdi_vid_pid 0x0640 0x0028\n"
@@ -410,7 +414,7 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::a
 				"ftdi_layout_init 0x0108 0x010b\n"
 				"ftdi_layout_signal nTRST -data 0x0100\n"
 				"ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
-		.pcCode_Probe = "proc probe {} {\n"
+		"proc probe {} {\n"
 			        "    set RESULT -1\n"
 			        "\n"
 		                "    if {[ catch {jtag init} ]==0 } {\n"
@@ -422,8 +426,8 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::a
 	},
 
 	{
-		.pcID = "NXHX_500-ETM",
-		.pcCode_Setup = "interface ftdi\n"
+		"NXHX_500-ETM",
+		"interface ftdi\n"
                                 "transport select jtag\n"
 		                "ftdi_device_desc \"NXHX 500-ETM\"\n"
 		                "ftdi_vid_pid 0x0640 0x0028\n"
@@ -432,7 +436,7 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::a
 				"ftdi_layout_init 0x0108 0x010b\n"
 				"ftdi_layout_signal nTRST -data 0x0100\n"
 				"ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
-		.pcCode_Probe = "proc probe {} {\n"
+		"proc probe {} {\n"
 			        "    set RESULT -1\n"
 			        "\n"
 		                "    if {[ catch {jtag init} ]==0 } {\n"
@@ -449,8 +453,8 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::a
 const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTargetCfg[2] =
 {
 	{
-		.pcID = "netX_ARM966",
-		.pcCode = "proc test {} {\n"
+		"netX_ARM966",
+		"proc test {} {\n"
 		          "    global SC_CFG_RESULT\n"
 		          "    set SC_CFG_RESULT 0\n"
 		          "\n"
@@ -470,8 +474,8 @@ const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTa
 	},
 
 	{
-		.pcID = "netX_ARM926",
-		.pcCode = "proc test {} {\n"
+		"netX_ARM926",
+		"proc test {} {\n"
 		          "    global SC_CFG_RESULT\n"
 		          "    set SC_CFG_RESULT 0\n"
 		          "\n"
