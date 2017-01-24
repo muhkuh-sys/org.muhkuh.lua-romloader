@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<muhkuh_buildsystem>
+    <repositories>
+        <repository name="MBS Testing">http://nexus.netx01/content/repositories/mbs_testing</repository>
+    </repositories>
+</muhkuh_buildsystem>
