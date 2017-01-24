@@ -13,4 +13,4 @@ strSetupFile = aOptions.infile.read()
 aOptions.infile.close()
 
 t = xml.etree.ElementTree.fromstring(strSetupFile)
-print t.find('project_version').text
+print(t.find('project_version').text)
