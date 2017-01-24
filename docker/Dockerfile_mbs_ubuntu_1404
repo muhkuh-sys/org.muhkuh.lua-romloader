@@ -3,6 +3,7 @@ MAINTAINER doc_bacardi@users.sourceforge.net
 LABEL Description="This image contains the build environment for the MBS system on Ubuntu 14.04 ."
 
 # Install the common packages.
+RUN dpkg --add-architecture i386
 RUN apt-get update
 RUN apt-get install --assume-yes curl gcc-multilib g++-multilib git lib32z1 make python2.7
 
