@@ -25,6 +25,12 @@ ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0018", MODE="664", GROUP="plugdev"
 # netX52
 ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0019", MODE="664", GROUP="plugdev"
 
+# NXIO_Cert Test
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="1234", MODE="664", GROUP="plugdev"
+
+# NXJTAG
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0023", MODE="664", GROUP="plugdev"
+
 LABEL="netx_usb_rules_end"
 
 
@@ -36,6 +42,7 @@ SUBSYSTEM!="uio", GOTO="netx_uio_rules_end"
 
 # Hilscher PLX
 ATTR{name}=="netx_plx", MODE="664", GROUP="plugdev"
+ATTR{name}=="netx4000", MODE="664", GROUP="plugdev"
 
 LABEL="netx_uio_rules_end"
 
