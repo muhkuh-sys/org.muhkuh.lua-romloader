@@ -422,7 +422,7 @@ int romloader_dpm_transfer_netx56::download_and_run_image(const uint8_t *pucData
 						}
 
 						printf("wait for status...\n");
-						iResult = mailbox_get_status(&ulResultSize);
+						iResult = mailbox_get_data(&ulResultSize);
 						if( iResult==0 )
 						{
 							if( ulResultSize!=1 )
