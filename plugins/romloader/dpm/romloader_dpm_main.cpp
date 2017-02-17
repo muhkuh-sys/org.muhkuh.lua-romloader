@@ -279,9 +279,15 @@ void romloader_dpm::Connect(lua_State *ptClientData)
 					ptDevice = NULL;
 					break;
 
-				case ROMLOADER_CHIPTYP_NETX4000:
+				case ROMLOADER_CHIPTYP_NETX4000_RELAXED:
+				case ROMLOADER_CHIPTYP_NETX4000_FULL_SMALL:
 					/* Not yet! */
 					printf("netX4000 is not supported yet.\n");
+					break;
+
+				case ROMLOADER_CHIPTYP_NETX90_MPW:
+					/* Not yet! */
+					printf("netX90 is not supported yet.\n");
 					break;
 				}
 
