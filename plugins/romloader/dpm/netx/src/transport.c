@@ -183,9 +183,9 @@ void transport_init(void)
 
 void transport_loop(void)
 {
+	HOSTDEF(ptHandshakeDtcmArmMirrorArea);
 	unsigned long ulValue;
 	unsigned long ulPacketSize;
-	unsigned char *pucBuffer;
 
 
 	/* Wait for a packet. */
@@ -193,6 +193,9 @@ void transport_loop(void)
 	{
 		ulValue = mailbox_purr(NETX56_DPM_BOOT_NETX_RECEIVED_CMD);
 	} while( ulValue==0 );
+
+	/* Acknowledge the packet. */
+	ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^= NETX56_DPM_BOOT_NETX_RECEIVED_CMD<<SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
 
 	/* Is the packet's size valid? */
 	ulPacketSize = tDpm.ulHostToNetxDataSize;
