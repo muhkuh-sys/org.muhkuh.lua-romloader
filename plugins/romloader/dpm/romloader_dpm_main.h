@@ -70,6 +70,8 @@ public:
 // *** lua interface end ***
 
 private:
+	int synchronize(romloader_dpm_transfer *ptTransfer);
+
 	size_t m_sizMaxPacketSizeHost;
 
 	char *m_pcDeviceName;

@@ -35,7 +35,7 @@ romloader_dpm_provider::romloader_dpm_provider(swig_type_info *p_romloader_dpm, 
 {
 	printf("%s(%p): provider create\n", m_pcPluginId, this);
 
-	/* get the romloader_dpm lua type */
+	/* Get the romloader_dpm LUA type. */
 	m_ptPluginTypeInfo = p_romloader_dpm;
 	m_ptReferenceTypeInfo = p_romloader_dpm_reference;
 }
@@ -315,16 +315,27 @@ void romloader_dpm::Connect(lua_State *ptClientData)
 		/* Do we have a transfer object? */
 		if( ptTransfer!=NULL )
 		{
-			m_fIsConnected = true;
-
-			/* Delete any previous transfer object. */
-			if( m_ptTransfer!=NULL )
+			/* Get the magic packet. */
+			iResult = synchronize(ptTransfer);
+			if( iResult!=0 )
 			{
-				delete m_ptTransfer;
+				/* Failed to synchronize with the netX. */
+				delete ptTransfer;
+				ptTransfer = NULL;
 			}
+			else
+			{
+				m_fIsConnected = true;
 
-			/* Use the current transfer. */
-			m_ptTransfer = ptTransfer;
+				/* Delete any previous transfer object. */
+				if( m_ptTransfer!=NULL )
+				{
+					delete m_ptTransfer;
+				}
+
+				/* Use the current transfer. */
+				m_ptTransfer = ptTransfer;
+			}
 		}
 		else
 		{
@@ -347,6 +358,46 @@ void romloader_dpm::Disconnect(lua_State *ptClientData)
 	}
 
 	m_fIsConnected = false;
+}
+
+
+
+int romloader_dpm::synchronize(romloader_dpm_transfer *ptTransfer)
+{
+	int iResult;
+	uint32_t ulPacketSize;
+	unsigned int uiCnt;
+	uint8_t aucCommand[1];
+	uint8_t aucResponse[32];
+
+
+	aucCommand[0] = MONITOR_COMMAND_Magic;
+	iResult = ptTransfer->send_command(aucCommand, sizeof(aucCommand));
+	if( iResult!=0 )
+	{
+		fprintf(stderr, "Failed to send the sync packet: %d\n", iResult);
+	}
+	else
+	{
+		iResult = ptTransfer->receive_packet(aucResponse, sizeof(aucResponse), &ulPacketSize);
+		if( iResult!=0 )
+		{
+			fprintf(stderr, "Failed to receive the response of the SYNC packet: %d\n", iResult);
+		}
+		else
+		{
+			/* Dump the response. */
+			printf("Got %d bytes\n", ulPacketSize);
+			for(uiCnt=0; uiCnt<ulPacketSize; ++uiCnt)
+			{
+				printf(" %02x", aucResponse[ulPacketSize]);
+			}
+			printf("\n");
+		}
+	}
+
+	/* Send a packet. */
+	return iResult;
 }
 
 
@@ -485,8 +536,10 @@ uint16_t romloader_dpm::read_data16(lua_State *ptClientData, uint32_t ulNetxAddr
 uint32_t romloader_dpm::read_data32(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
 	uint8_t aucCommand[7];
+	uint8_t aucResponse[16];
 	uint32_t ulValue;
 	bool fOk;
+	int iResult;
 
 
 	/* Expect error. */
@@ -504,40 +557,42 @@ uint32_t romloader_dpm::read_data32(lua_State *ptClientData, uint32_t ulNetxAddr
 	}
 	else
 	{
-#if 0
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
 		aucCommand[0] = MONITOR_COMMAND_Read |
-		                (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT) |
-		                (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+		                (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT);
 		aucCommand[1] = 4;
 		aucCommand[2] = 0;
 		aucCommand[3] = (uint8_t)( ulNetxAddress       & 0xffU);
 		aucCommand[4] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
 		aucCommand[5] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
 		aucCommand[6] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
-		tResult = execute_command(aucCommand, 7);
-		if( tResult!=UARTSTATUS_OK )
+		printf("sending command...\n");
+		iResult = m_ptTransfer->send_command(aucCommand, 7);
+		printf("send done: %d\n", iResult);
+		if( iResult!=0 )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
 		}
 		else
 		{
-			if( m_sizPacketInputBuffer!=4+5 )
+			/* Expect 9 bytes of data.
+			 *  ...
+			 */
+			printf("receiving response...\n");
+			iResult = m_ptTransfer->receive_response(aucResponse, 4+5);
+			printf("receive finished: %d\n", iResult);
+			if( iResult!=0 )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to read_data32 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to read_data32 has wrong packet size!", m_pcName, this);
 			}
 			else
 			{
-				ulValue = ((uint32_t)(m_aucPacketInputBuffer[3]))      |
-				          ((uint32_t)(m_aucPacketInputBuffer[4]))<< 8U |
-				          ((uint32_t)(m_aucPacketInputBuffer[5]))<<16U |
-				          ((uint32_t)(m_aucPacketInputBuffer[6]))<<24U;
+				ulValue = ((uint32_t)(aucResponse[3]))      |
+				          ((uint32_t)(aucResponse[4]))<< 8U |
+				          ((uint32_t)(aucResponse[5]))<<16U |
+				          ((uint32_t)(aucResponse[6]))<<24U;
 				fOk = true;
 			}
 		}
-#endif
 	}
 
 	if( fOk!=true )
