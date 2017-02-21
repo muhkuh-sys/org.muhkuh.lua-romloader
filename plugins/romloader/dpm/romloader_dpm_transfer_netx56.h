@@ -14,6 +14,7 @@ public:
 	virtual int prepare_device(void);
 	virtual int send_command(const uint8_t *pucCommand, uint32_t ulCommandSize);
 	virtual int receive_response(uint8_t *pucBuffer, uint32_t ulDataSize);
+	virtual int receive_packet(uint8_t *pucBuffer, uint32_t ulMaxDataSize, uint32_t *pulDataRead);
 
 protected:
 

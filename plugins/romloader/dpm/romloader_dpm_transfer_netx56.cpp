@@ -62,6 +62,7 @@ int romloader_dpm_transfer_netx56::prepare_device(void)
 			if( iResult==0 )
 			{
 				/* Give the software some time to start and setup the DPM. */
+				/* FIXME: maybe this could become a polling loop. */
 				usleep(500);
 
 				/* Check the netX state again. */
@@ -97,11 +98,18 @@ int romloader_dpm_transfer_netx56::send_command(const uint8_t *pucCommand, uint3
 	int iResult;
 
 
+	printf("haha %p\n", m_ptDpmDevice);
 	if( m_ptDpmDevice==NULL )
 	{
 		iResult = -1;
 	}
 	else if( ulCommandSize>NETX56_DPM_HOST_TO_NETX_BUFFERSIZE )
+	{
+		/* Command too long error! */
+		printf("The command (%d bytes) is too long for the buffer (%d bytes).\n", ulCommandSize, NETX56_DPM_HOST_TO_NETX_BUFFERSIZE);
+		iResult = -1;
+	}
+	else
 	{
 		iResult = mailbox_send_chunk(pucCommand, ulCommandSize);
 	}
@@ -111,7 +119,11 @@ int romloader_dpm_transfer_netx56::send_command(const uint8_t *pucCommand, uint3
 
 
 
-/* NOTE: this routine receives a data block with a known size. Use another routine to receive print messages. */
+/* NOTE: this routine receives a data block with a known size. This is nice
+ *       for responses of the read and write command where the response has a
+ *       fixed size. Print messages are a different story. The host does not
+ *       know the size of the packet. Use receive_packet in this case.
+ */
 int romloader_dpm_transfer_netx56::receive_response(uint8_t *pucBuffer, uint32_t ulDataSize)
 {
 	int iResult;
@@ -157,6 +169,57 @@ int romloader_dpm_transfer_netx56::receive_response(uint8_t *pucBuffer, uint32_t
 					memcpy(pucBuffer+ulReceiveCnt, m_aucBufferNetxToHost, ulChunkSize);
 					ulReceiveCnt += ulChunkSize;
 				}
+			}
+		}
+	}
+
+	return iResult;
+}
+
+
+
+/* NOTE: this routine receives one packet with a maximum data size. */
+int romloader_dpm_transfer_netx56::receive_packet(uint8_t *pucBuffer, uint32_t ulMaxDataSize, uint32_t *pulDataRead)
+{
+	int iResult;
+	uint32_t ulChunkSize;
+
+
+	/* Be pessimistic. */
+	iResult = 0;
+
+	if( m_ptDpmDevice==NULL )
+	{
+		iResult = -1;
+	}
+	else
+	{
+		iResult = mailbox_get_data(&ulChunkSize);
+		if( iResult==0 )
+		{
+			if( ulChunkSize>NETX56_DPM_NETX_TO_HOST_BUFFERSIZE )
+			{
+				printf("Received a packet with an invalid size!\n");
+				iResult = -1;
+			}
+			else if( ulChunkSize>ulMaxDataSize )
+			{
+				printf("Received more data than expected!\n");
+				iResult = -1;
+			}
+			else
+			{
+				/* Copy the data part - if requested. */
+				if( pucBuffer!=NULL )
+				{
+					memcpy(pucBuffer, m_aucBufferNetxToHost, ulChunkSize);
+				}
+				/* Copy the data size - if requested. */
+				if( pulDataRead!=NULL )
+				{
+					*pulDataRead = ulChunkSize;
+				}
+				iResult = 0;
 			}
 		}
 	}
@@ -237,17 +300,21 @@ int romloader_dpm_transfer_netx56::mailbox_send_chunk(const uint8_t *pucChunk, u
 
 
 	/* Copy the chunk to the host->netX buffer. */
+	printf("1\n");
 	iResult = m_ptDpmDevice->dpm_write_area(OFFS_HBOOT(aucHostToNetxData), pucChunk, ulChunkSize);
 	if( iResult==0 )
 	{
+		printf("2\n");
 		/* Set the size of the chunk. */
 		iResult = m_ptDpmDevice->dpm_write32(OFFS_HBOOT(ulHostToNetxDataSize), ulChunkSize);
 		if( iResult==0 )
 		{
+			printf("3\n");
 			/* Toggle the handshake bit. */
 			iResult = m_ptDpmDevice->dpm_read32(OFFS_HBOOT(ulHandshake), &ulValue);
 			if( iResult==0 )
 			{
+				printf("4\n");
 				ulValue ^= NETX56_DPM_BOOT_HOST_SEND_CMD << SRT_NETX56_HANDSHAKE_REG_PC_DATA;
 				iResult = m_ptDpmDevice->dpm_write32(OFFS_HBOOT(ulHandshake), ulValue);
 				if( iResult==0 )
@@ -256,6 +323,7 @@ int romloader_dpm_transfer_netx56::mailbox_send_chunk(const uint8_t *pucChunk, u
 					uiRetryCnt = 80;
 					do
 					{
+						printf("5\n");
 						iResult = mailbox_purr(NETX56_DPM_BOOT_NETX_RECEIVED_CMD, &ulValue);
 						if( iResult!=0 )
 						{
