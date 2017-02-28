@@ -71,11 +71,31 @@ public:
 
 private:
 	int synchronize(romloader_dpm_transfer *ptTransfer);
-
-	size_t m_sizMaxPacketSizeHost;
+	void next_sequence_number();
 
 	char *m_pcDeviceName;
 	romloader_dpm_transfer *m_ptTransfer;
+
+	typedef enum USBSTATUS_ENUM
+	{
+		USBSTATUS_OK                        = 0,
+		USBSTATUS_TIMEOUT                   = 1,
+		USBSTATUS_PACKET_TOO_LARGE          = 2,
+		USBSTATUS_SEND_FAILED               = 3,
+		USBSTATUS_RECEIVE_FAILED            = 4,
+		USBSTATUS_FAILED_TO_SYNC            = 5,
+		USBSTATUS_CRC_MISMATCH              = 6,
+		USBSTATUS_MISSING_USERDATA          = 7,
+		USBSTATUS_COMMAND_EXECUTION_FAILED  = 8,
+		USBSTATUS_SEQUENCE_MISMATCH         = 9
+	} USBSTATUS_T;
+
+	static const size_t m_sizMaxPacketSizeHost = 8192+64;
+	size_t m_sizMaxPacketSizeClient;
+	uint8_t m_aucPacketOutputBuffer[m_sizMaxPacketSizeHost];
+	uint8_t m_aucPacketInputBuffer[m_sizMaxPacketSizeHost];
+
+	unsigned int m_uiMonitorSequence;
 };
 
 /*-----------------------------------*/

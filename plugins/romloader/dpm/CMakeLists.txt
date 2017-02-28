@@ -18,6 +18,8 @@ endif(${LUA_FOUND})
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
+# Add the path to the netX56 regdef. This is needed to setup the DPM register.
+INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/platform/src/netx56/")
 
 
 #----------------------------------------------------------------------------

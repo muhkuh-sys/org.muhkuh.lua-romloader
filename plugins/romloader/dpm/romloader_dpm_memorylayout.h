@@ -1,3 +1,6 @@
+#include "netx56_regdef.h"
+
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -15,7 +18,7 @@
 
 #define NETX56_BOOT_ID_ROM                     0x4c42584e
 
-
+#if 0
 typedef struct NX56_DPM_AREA_Ttag
 {
 	volatile uint32_t  ulDpm_cfg0x0;
@@ -71,7 +74,7 @@ typedef struct NX56_DPM_AREA_Ttag
 	volatile uint32_t  ulDpm_firmware_irq_mask2;
 	volatile uint32_t  ulDpm_netx_version;
 } NX56_DPM_AREA_T;
-
+#endif
 
 
 typedef struct HBOOT_DPM_NETX56_STRUCT

@@ -25,13 +25,12 @@
 #include "romloader_dpm_device_linux_uio.h"
 #include "romloader_dpm_transfer_netx56.h"
 
-
 /*-------------------------------------*/
 
 const char *romloader_dpm_provider::m_pcPluginNamePattern = "romloader_dpm_%s";
 
-romloader_dpm_provider::romloader_dpm_provider(swig_type_info *p_romloader_dpm, swig_type_info *p_romloader_dpm_reference)
- : muhkuh_plugin_provider("romloader_dpm")
+romloader_dpm_provider::romloader_dpm_provider(swig_type_info *p_romloader_dpm, swig_type_info *p_romloader_dpm_reference) :
+		muhkuh_plugin_provider("romloader_dpm")
 {
 	printf("%s(%p): provider create\n", m_pcPluginId, this);
 
@@ -40,14 +39,10 @@ romloader_dpm_provider::romloader_dpm_provider(swig_type_info *p_romloader_dpm, 
 	m_ptReferenceTypeInfo = p_romloader_dpm_reference;
 }
 
-
-
 romloader_dpm_provider::~romloader_dpm_provider(void)
 {
 	printf("%s(%p): provider delete\n", m_pcPluginId, this);
 }
-
-
 
 int romloader_dpm_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess)
 {
@@ -58,20 +53,19 @@ int romloader_dpm_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 	romloader_dpm_reference *ptReference;
 	bool fDeviceIsBusy;
 
-
 	/* Detect all interfaces. */
 	sizDeviceNames = romloader_dpm_device_linux_uio::ScanForDevices(&ppcDeviceNames);
 
-	if( ppcDeviceNames!=NULL )
+	if (ppcDeviceNames != NULL)
 	{
 		/* Add all detected devices to the table. */
 		ppcDeviceNamesCnt = ppcDeviceNames;
 		ppcDeviceNamesEnd = ppcDeviceNames + sizDeviceNames;
-		while( ppcDeviceNamesCnt<ppcDeviceNamesEnd )
+		while (ppcDeviceNamesCnt < ppcDeviceNamesEnd)
 		{
 			/* DPM devices are never busy. */
 			fDeviceIsBusy = false;
-	
+
 			/* Create the new instance. */
 			ptReference = new romloader_dpm_reference(*ppcDeviceNamesCnt, m_pcPluginId, fDeviceIsBusy, this);
 			add_reference_to_table(ptLuaStateForTableAccess, ptReference);
@@ -90,27 +84,23 @@ int romloader_dpm_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 	return sizDeviceNames;
 }
 
-
-
 romloader_dpm *romloader_dpm_provider::ClaimInterface(const muhkuh_plugin_reference *ptReference)
 {
 	romloader_dpm *ptPlugin;
 	const char *pcName;
 	char acDevice[PATH_MAX];
 
-
 	/* expect error */
 	ptPlugin = NULL;
 
-
-	if( ptReference==NULL )
+	if (ptReference == NULL)
 	{
 		fprintf(stderr, "%s(%p): claim_interface(): missing reference!\n", m_pcPluginId, this);
 	}
 	else
 	{
 		pcName = ptReference->GetName();
-		if( pcName==NULL )
+		if (pcName == NULL)
 		{
 			fprintf(stderr, "%s(%p): claim_interface(): missing name!\n", m_pcPluginId, this);
 		}
@@ -118,7 +108,7 @@ romloader_dpm *romloader_dpm_provider::ClaimInterface(const muhkuh_plugin_refere
 		 *       of DPM thing. A more closer look is done in the
 		 *       romloader_dpm class.
 		 */
-		else if( sscanf(pcName, m_pcPluginNamePattern, acDevice)!=1 )
+		else if (sscanf(pcName, m_pcPluginNamePattern, acDevice) != 1)
 		{
 			fprintf(stderr, "%s(%p): claim_interface(): invalid name: %s\n", m_pcPluginId, this, pcName);
 		}
@@ -136,7 +126,19 @@ romloader_dpm *romloader_dpm_provider::ClaimInterface(const muhkuh_plugin_refere
 	return ptPlugin;
 }
 
-
+/*
+ Increment the sequence number
+ Call when a packet has been received from the netX (the sequence number is incremented on the netX side, too).
+ - after synchronize()
+ - after receiving a response packet
+ Do not increment if the packet send/receive operation failed or no response was received.
+ If the netX did not receive the packet, it is still assuming the current sequence number.
+ */
+void romloader_dpm::next_sequence_number()
+{
+	printf("\n INCREMENT SEQUENCE NUMBER: %i", m_uiMonitorSequence);
+	m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK >> MONITOR_SEQUENCE_SRT);
+}
 
 bool romloader_dpm_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 {
@@ -144,23 +146,21 @@ bool romloader_dpm_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 	const char *pcName;
 	char acDevice[PATH_MAX];
 
-
 	/* expect error */
 	fOk = false;
 
-
-	if( ptPlugin==NULL )
+	if (ptPlugin == NULL)
 	{
 		fprintf(stderr, "%s(%p): release_interface(): missing plugin!\n", m_pcPluginId, this);
 	}
 	else
 	{
 		pcName = ptPlugin->GetName();
-		if( pcName==NULL )
+		if (pcName == NULL)
 		{
 			fprintf(stderr, "%s(%p): release_interface(): missing name!\n", m_pcPluginId, this);
 		}
-		else if( sscanf(pcName, m_pcPluginNamePattern, acDevice)!=1 )
+		else if (sscanf(pcName, m_pcPluginNamePattern, acDevice) != 1)
 		{
 			fprintf(stderr, "%s(%p): release_interface(): invalid name: %s\n", m_pcPluginId, this, pcName);
 		}
@@ -174,38 +174,30 @@ bool romloader_dpm_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 	return fOk;
 }
 
-
 /*-------------------------------------*/
 
-
-romloader_dpm::romloader_dpm(const char *pcName, const char *pcTyp, romloader_dpm_provider *ptProvider, const char *pcDeviceName)
- : romloader(pcName, pcTyp, ptProvider)
- , m_pcDeviceName(NULL)
- , m_ptTransfer(NULL)
+romloader_dpm::romloader_dpm(const char *pcName, const char *pcTyp, romloader_dpm_provider *ptProvider, const char *pcDeviceName) :
+		romloader(pcName, pcTyp, ptProvider), m_pcDeviceName(NULL), m_ptTransfer(NULL)
 {
 	printf("%s(%p): created in romloader_dpm\n", m_pcName, this);
 
 	m_pcDeviceName = strdup(pcDeviceName);
 }
 
-
-
 romloader_dpm::~romloader_dpm(void)
 {
 	printf("%s(%p): deleted in romloader_dpm\n", m_pcName, this);
 
-	if( m_pcDeviceName!=NULL )
+	if (m_pcDeviceName != NULL)
 	{
 		free(m_pcDeviceName);
 	}
 
-	if( m_ptTransfer!=NULL )
+	if (m_ptTransfer != NULL)
 	{
 		delete m_ptTransfer;
 	}
 }
-
-
 
 void romloader_dpm::Connect(lua_State *ptClientData)
 {
@@ -214,7 +206,6 @@ void romloader_dpm::Connect(lua_State *ptClientData)
 	ROMLOADER_CHIPTYP tChipTyp;
 	romloader_dpm_transfer *ptTransfer;
 
-
 	/* No device created yet. */
 	ptDevice = NULL;
 	/* No transfer object created yet. */
@@ -222,11 +213,11 @@ void romloader_dpm::Connect(lua_State *ptClientData)
 
 	printf("%s(%p): connect\n", m_pcName, this);
 
-	if( m_fIsConnected==false )
+	if (m_fIsConnected == false)
 	{
 		/* Is this a UIO device? */
 		iResult = romloader_dpm_device_linux_uio::IsMyDeviceName(m_pcDeviceName);
-		if( iResult==0 )
+		if (iResult == 0)
 		{
 			/* Yes, this is a UIO device. */
 			ptDevice = new romloader_dpm_device_linux_uio(m_pcDeviceName);
@@ -234,18 +225,18 @@ void romloader_dpm::Connect(lua_State *ptClientData)
 		/* TODO: Add more devices like the FTDI here. */
 
 		/* Was a device created? */
-		if( ptDevice!=NULL )
+		if (ptDevice != NULL)
 		{
 			/* Yes, we have a device. */
 
 			/* Try to open the device. */
 			iResult = ptDevice->Open();
-			if( iResult==0 )
+			if (iResult == 0)
 			{
 				/* Create a new transfer device. This depends on the chip type. */
 				ptTransfer = NULL;
 				tChipTyp = ptDevice->get_chiptyp();
-				switch(tChipTyp)
+				switch (tChipTyp)
 				{
 				case ROMLOADER_CHIPTYP_UNKNOWN:
 					break;
@@ -275,6 +266,8 @@ void romloader_dpm::Connect(lua_State *ptClientData)
 				case ROMLOADER_CHIPTYP_NETX56B:
 					/* Create a new transfer object. */
 					ptTransfer = new romloader_dpm_transfer_netx56(ptDevice);
+					printf("ptTransfer %p \n", ptTransfer);
+
 					/* The device is now owned by the transfer object. */
 					ptDevice = NULL;
 					break;
@@ -292,49 +285,60 @@ void romloader_dpm::Connect(lua_State *ptClientData)
 				}
 
 				/* Do we have a transfer object now? */
-				if( ptTransfer!=NULL )
+				if (ptTransfer != NULL)
 				{
 					/* Prepare the device so that a monitor is running. */
 					iResult = ptTransfer->prepare_device();
-					if( iResult!=0 )
+					if (iResult != 0)
 					{
 						/* Failed to prepare the device. It can not be used. */
 						delete ptTransfer;
 						ptTransfer = NULL;
+						printf("ptTransfer %p \n", ptTransfer);
+
 					}
 				}
 			}
 		}
 
+		printf("START OVER\n");
+
 		/* If a device is left here, this is an error. It should be owned by a transfer object. Delete it. */
-		if( ptDevice!=NULL )
+		if (ptDevice != NULL)
 		{
 			delete ptDevice;
 		}
 
 		/* Do we have a transfer object? */
-		if( ptTransfer!=NULL )
+		if (ptTransfer != NULL)
 		{
 			/* Get the magic packet. */
 			iResult = synchronize(ptTransfer);
-			if( iResult!=0 )
+			printf("ptTransfer %p \n", ptTransfer);
+
+			printf("iResult: %i", iResult);
+			if (iResult != 0)
 			{
 				/* Failed to synchronize with the netX. */
 				delete ptTransfer;
 				ptTransfer = NULL;
+				printf("ptTransfer %p \n", ptTransfer);
+
 			}
 			else
 			{
 				m_fIsConnected = true;
-
 				/* Delete any previous transfer object. */
-				if( m_ptTransfer!=NULL )
+				if (m_ptTransfer != NULL)
 				{
 					delete m_ptTransfer;
+
 				}
 
 				/* Use the current transfer. */
 				m_ptTransfer = ptTransfer;
+				printf("ptTransfer %p \n", ptTransfer);
+				printf("set new pt transfer object");
 			}
 		}
 		else
@@ -345,13 +349,11 @@ void romloader_dpm::Connect(lua_State *ptClientData)
 	}
 }
 
-
 void romloader_dpm::Disconnect(lua_State *ptClientData)
 {
 	printf("%s(%p): disconnect\n", m_pcName, this);
 
-
-	if( m_ptTransfer!=NULL )
+	if (m_ptTransfer != NULL)
 	{
 		delete m_ptTransfer;
 		m_ptTransfer = NULL;
@@ -360,104 +362,155 @@ void romloader_dpm::Disconnect(lua_State *ptClientData)
 	m_fIsConnected = false;
 }
 
-
-
 int romloader_dpm::synchronize(romloader_dpm_transfer *ptTransfer)
 {
+	const uint8_t aucMagicMooh[4] =
+	{ 0x4d, 0x4f, 0x4f, 0x48 };
 	int iResult;
 	uint32_t ulPacketSize;
 	unsigned int uiCnt;
 	uint8_t aucCommand[1];
 	uint8_t aucResponse[32];
+	uint8_t ucData;
+	uint8_t aucInBuf[64];
+	size_t sizInBuf;
 
+	const size_t sizExpectedResponse = 12;
+	uint8_t ucSequence;
+	uint32_t ulMiVersionMin;
+	uint32_t ulMiVersionMaj;
+	ROMLOADER_CHIPTYP tChipType;
+	size_t sizMaxPacketSize;
 
 	aucCommand[0] = MONITOR_COMMAND_Magic;
 	iResult = ptTransfer->send_command(aucCommand, sizeof(aucCommand));
-	if( iResult!=0 )
+	if (iResult != 0)
 	{
 		fprintf(stderr, "Failed to send the sync packet: %d\n", iResult);
 	}
 	else
 	{
+		printf("Receive_packet. \n");
 		iResult = ptTransfer->receive_packet(aucResponse, sizeof(aucResponse), &ulPacketSize);
-		if( iResult!=0 )
+		if (iResult != 0)
 		{
 			fprintf(stderr, "Failed to receive the response of the SYNC packet: %d\n", iResult);
+		}
+		else if (ulPacketSize == 0)
+		{
+			fprintf(stderr, "%s(%p): synchronize: received empty answer!\n", m_pcName, this);
+
+		}
+		else if (memcmp(aucMagicMooh, aucResponse + 1, sizeof(aucMagicMooh)) != 0)
+		{
+			fprintf(stderr, "Received knock sequence has no magic.\n");
+			for (uiCnt = 0; uiCnt < ulPacketSize; ++uiCnt)
+			{
+				printf(" 0x%x", aucResponse[uiCnt]);
+			}
 		}
 		else
 		{
 			/* Dump the response. */
 			printf("Got %d bytes\n", ulPacketSize);
-			for(uiCnt=0; uiCnt<ulPacketSize; ++uiCnt)
+			for (uiCnt = 0; uiCnt < ulPacketSize; ++uiCnt)
 			{
-				printf(" %02x", aucResponse[ulPacketSize]);
+				printf(" 0x%x", aucResponse[uiCnt]);
 			}
 			printf("\n");
+
+			/* Get the sequence number from the status byte. */
+			ucSequence = (aucResponse[0x00] & MONITOR_SEQUENCE_MSK) >> MONITOR_SEQUENCE_SRT;
+			fprintf(stderr, "Sequence number: 0x%02x\n", ucSequence);
+
+			ulMiVersionMin = ((uint32_t)(aucResponse[0x05])) | (((uint32_t)(aucResponse[0x06])) << 8U);
+			ulMiVersionMaj = ((uint32_t)(aucResponse[0x07])) | (((uint32_t)(aucResponse[0x08])) << 8U);
+			printf("Machine interface V%d.%d.\n", ulMiVersionMaj, ulMiVersionMin);
+
+			tChipType = (ROMLOADER_CHIPTYP) (aucResponse[0x09]);
+			printf("Chip type : %d\n", tChipType);
+
+			sizMaxPacketSize = ((size_t)(aucResponse[0x0a])) | (((size_t)(aucResponse[0x0b])) << 8U);
+			printf("Maximum packet size: 0x%04lx\n", sizMaxPacketSize);
+			/* Limit the packet size to the buffer size. */
+			if (sizMaxPacketSize > m_sizMaxPacketSizeHost)
+			{
+				sizMaxPacketSize = m_sizMaxPacketSizeHost;
+				printf("Limit maximum packet size to 0x%04lx\n", sizMaxPacketSize);
+			}
+
+			/* Set the new values. */
+			m_uiMonitorSequence = ucSequence;
+			m_tChiptyp = tChipType;
+			m_sizMaxPacketSizeClient = sizMaxPacketSize;
+
+			next_sequence_number();
 		}
 	}
-
 	/* Send a packet. */
 	return iResult;
 }
-
-
 
 uint8_t romloader_dpm::read_data08(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
 	uint8_t aucCommand[7];
 	uint8_t ucValue;
-	bool fOk;
 
+	uint8_t aucResponse[16];
+	bool fOk;
+	uint32_t ulPacketSize;
 
 	/* Expect error. */
 	fOk = false;
+	int iResult;
 
 	ucValue = 0;
 
-	if( m_fIsConnected==false )
+	if (m_fIsConnected == false)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
 	}
-	else if( m_ptTransfer==NULL )
+	else if (m_ptTransfer == NULL)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): no transfer object!", m_pcName, this);
 	}
 	else
 	{
-#if 0
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
-		aucCommand[0] = MONITOR_COMMAND_Read |
-		                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
-		                (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+		aucCommand[0] = MONITOR_COMMAND_Read | (MONITOR_ACCESSSIZE_Byte << MONITOR_ACCESSSIZE_SRT) | (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		aucCommand[1] = 1;
 		aucCommand[2] = 0;
-		aucCommand[3] = (uint8_t)( ulNetxAddress       & 0xffU);
-		aucCommand[4] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[5] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[6] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
-		tResult = execute_command(aucCommand, 7);
-		if( tResult!=UARTSTATUS_OK )
+		aucCommand[3] = (uint8_t)(ulNetxAddress & 0xffU);
+		aucCommand[4] = (uint8_t)((ulNetxAddress >> 8U) & 0xffU);
+		aucCommand[5] = (uint8_t)((ulNetxAddress >> 16U) & 0xffU);
+		aucCommand[6] = (uint8_t)((ulNetxAddress >> 24U) & 0xffU);
+		printf("sending command...\n");
+		printf("requested adr: 0x%02x%02x%02x%02x\n", aucCommand[6], aucCommand[5], aucCommand[4], aucCommand[3]);
+		iResult = m_ptTransfer->send_command(aucCommand, 7);
+
+		printf("send done: %d\n", iResult);
+		if (iResult != 0)
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
 		}
 		else
 		{
-			if( m_sizPacketInputBuffer!=4+2 )
+			printf("Receive_packet. \n");
+			iResult = m_ptTransfer->receive_packet(aucResponse, sizeof(aucResponse), &ulPacketSize);
+
+			printf("receive finished: %d\n", iResult);
+			if (iResult != 0)
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to read_data08 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to read_data32 has wrong packet size!", m_pcName, this);
 			}
 			else
 			{
-				ucValue = m_aucPacketInputBuffer[3];
+				ucValue = (uint32_t)(aucResponse[2]);
 				fOk = true;
 			}
 		}
-#endif
 	}
 
-	if( fOk!=true )
+	if (fOk != true)
 	{
 		MUHKUH_PLUGIN_EXIT_ERROR(ptClientData);
 	}
@@ -465,65 +518,65 @@ uint8_t romloader_dpm::read_data08(lua_State *ptClientData, uint32_t ulNetxAddre
 	return ucValue;
 }
 
-
-
 uint16_t romloader_dpm::read_data16(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
 	uint8_t aucCommand[7];
 	uint16_t usValue;
+	uint8_t aucResponse[16];
 	bool fOk;
-
+	uint32_t ulPacketSize;
 
 	/* Expect error. */
 	fOk = false;
+	int iResult;
 
 	usValue = 0;
 
-	if( m_fIsConnected==false )
+	if (m_fIsConnected == false)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
 	}
-	else if( m_ptTransfer==NULL )
+	else if (m_ptTransfer == NULL)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): no transfer object!", m_pcName, this);
 	}
 	else
 	{
-#if 0
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
-		aucCommand[0] = MONITOR_COMMAND_Read |
-		                (MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT) |
-		                (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+		aucCommand[0] = MONITOR_COMMAND_Read | (MONITOR_ACCESSSIZE_Word << MONITOR_ACCESSSIZE_SRT) | (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		aucCommand[1] = 2;
 		aucCommand[2] = 0;
-		aucCommand[3] = (uint8_t)( ulNetxAddress       & 0xffU);
-		aucCommand[4] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[5] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[6] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
-		tResult = execute_command(aucCommand, 7);
-		if( tResult!=UARTSTATUS_OK )
+		aucCommand[3] = (uint8_t)(ulNetxAddress & 0xffU);
+		aucCommand[4] = (uint8_t)((ulNetxAddress >> 8U) & 0xffU);
+		aucCommand[5] = (uint8_t)((ulNetxAddress >> 16U) & 0xffU);
+		aucCommand[6] = (uint8_t)((ulNetxAddress >> 24U) & 0xffU);
+		printf("sending command...\n");
+		printf("requested adr: 0x%02x%02x%02x%02x\n", aucCommand[6], aucCommand[5], aucCommand[4], aucCommand[3]);
+		iResult = m_ptTransfer->send_command(aucCommand, 7);
+
+		printf("send done: %d\n", iResult);
+		if (iResult != 0)
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
 		}
 		else
 		{
-			if( m_sizPacketInputBuffer!=4+3 )
+			printf("Receive_packet. \n");
+			iResult = m_ptTransfer->receive_packet(aucResponse, sizeof(aucResponse), &ulPacketSize);
+
+			printf("receive finished: %d\n", iResult);
+			if (iResult != 0)
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to read_data16 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to read_data32 has wrong packet size!", m_pcName, this);
 			}
 			else
 			{
-				usValue = ((uint16_t)(m_aucPacketInputBuffer[3])) |
-				          ((uint16_t)(m_aucPacketInputBuffer[4]))<<8U;
+				usValue = ((uint32_t)(aucResponse[2])) | ((uint32_t)(aucResponse[3])) << 8U;
 				fOk = true;
 			}
 		}
-#endif
 	}
 
-	if( fOk!=true )
+	if (fOk != true)
 	{
 		MUHKUH_PLUGIN_EXIT_ERROR(ptClientData);
 	}
@@ -531,71 +584,70 @@ uint16_t romloader_dpm::read_data16(lua_State *ptClientData, uint32_t ulNetxAddr
 	return usValue;
 }
 
-
-
 uint32_t romloader_dpm::read_data32(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
 	uint8_t aucCommand[7];
 	uint8_t aucResponse[16];
 	uint32_t ulValue;
+	unsigned char ucStatus;
+	uint32_t ulPacketSize;
+
 	bool fOk;
 	int iResult;
-
 
 	/* Expect error. */
 	fOk = false;
 
 	ulValue = 0;
+	printf("m_fIsConnected: %i", m_fIsConnected);
 
-	if( m_fIsConnected==false )
+	if (m_fIsConnected == false)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
 	}
-	else if( m_ptTransfer==NULL )
+	else if (m_ptTransfer == NULL)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): no transfer object!", m_pcName, this);
 	}
 	else
 	{
-		aucCommand[0] = MONITOR_COMMAND_Read |
-		                (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT);
+		aucCommand[0] = MONITOR_COMMAND_Read | (MONITOR_ACCESSSIZE_Long << MONITOR_ACCESSSIZE_SRT) | (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		aucCommand[1] = 4;
 		aucCommand[2] = 0;
-		aucCommand[3] = (uint8_t)( ulNetxAddress       & 0xffU);
-		aucCommand[4] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[5] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[6] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
+		aucCommand[3] = (uint8_t)(ulNetxAddress & 0xffU);
+		aucCommand[4] = (uint8_t)((ulNetxAddress >> 8U) & 0xffU);
+		aucCommand[5] = (uint8_t)((ulNetxAddress >> 16U) & 0xffU);
+		aucCommand[6] = (uint8_t)((ulNetxAddress >> 24U) & 0xffU);
 		printf("sending command...\n");
+		printf("requested adr: 0x%02x%02x%02x%02x\n", aucCommand[6], aucCommand[5], aucCommand[4], aucCommand[3]);
 		iResult = m_ptTransfer->send_command(aucCommand, 7);
+
 		printf("send done: %d\n", iResult);
-		if( iResult!=0 )
+		if (iResult != 0)
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
 		}
 		else
 		{
-			/* Expect 9 bytes of data.
-			 *  ...
-			 */
-			printf("receiving response...\n");
-			iResult = m_ptTransfer->receive_response(aucResponse, 4+5);
+			printf("Receive_packet. \n");
+			iResult = m_ptTransfer->receive_packet(aucResponse, sizeof(aucResponse), &ulPacketSize);
+
 			printf("receive finished: %d\n", iResult);
-			if( iResult!=0 )
+			if (iResult != 0)
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to read_data32 has wrong packet size!", m_pcName, this);
 			}
 			else
 			{
-				ulValue = ((uint32_t)(aucResponse[3]))      |
-				          ((uint32_t)(aucResponse[4]))<< 8U |
-				          ((uint32_t)(aucResponse[5]))<<16U |
-				          ((uint32_t)(aucResponse[6]))<<24U;
+				ulValue = ((uint32_t)(aucResponse[2])) | ((uint32_t)(aucResponse[3])) << 8U | ((uint32_t)(aucResponse[4])) << 16U | ((uint32_t)(aucResponse[5])) << 24U;
 				fOk = true;
 			}
 		}
 	}
 
-	if( fOk!=true )
+	next_sequence_number();
+
+	if (fOk != true)
 	{
 		MUHKUH_PLUGIN_EXIT_ERROR(ptClientData);
 	}
@@ -603,122 +655,156 @@ uint32_t romloader_dpm::read_data32(lua_State *ptClientData, uint32_t ulNetxAddr
 	return ulValue;
 }
 
-
-
+/**
+ * previous declaration:
+ * void romloader_dpm::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+ */
 void romloader_dpm::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
-	char *pcBufferStart;
-	char *pcBuffer;
-	size_t sizBuffer;
-	bool fOk;
-	size_t sizChunk;
-	uint8_t aucCommand[m_sizMaxPacketSizeHost];
-	bool fIsRunning;
-	long lBytesProcessed;
+
+	lCallbackUserData = 42;
+	*ppcBUFFER_OUT = "x";
+	*psizBUFFER_OUT = 1;
 
 
-	/* Be optimistic. */
-	fOk = true;
-
-	pcBufferStart = NULL;
-	sizBuffer = 0;
-
-	if( m_fIsConnected==false )
-	{
-		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
-		fOk = false;
-	}
-	else if( m_ptTransfer==NULL )
-	{
-		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): no transfer object!", m_pcName, this);
-	}
-	/* if ulSize == 0, we return with fOk == true, pcBufferStart == NULL and sizBuffer == 0 */
-	else if( ulSize > 0 )
-	{
-#if 0
-		pcBufferStart = (char*)malloc(ulSize);
-		if( pcBufferStart==NULL )
-		{
-			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to allocate %d bytes!", m_pcName, this, ulSize);
-			fOk = false;
-		}
-		else
-		{
-			sizBuffer = ulSize;
-
-			pcBuffer = pcBufferStart;
-			lBytesProcessed = 0;
-			do
-			{
-				sizChunk = ulSize;
-				if( sizChunk>m_sizMaxPacketSizeClient-6)
-				{
-					sizChunk = m_sizMaxPacketSizeClient-6;
-				}
-
-				/* Get the next sequence number. */
-				m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
-				aucCommand[0] = MONITOR_COMMAND_Read |
-				                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
-				                (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-				aucCommand[1] = (uint8_t)( sizChunk       & 0xffU);
-				aucCommand[2] = (uint8_t)((sizChunk>> 8U) & 0xffU);
-				aucCommand[3] = (uint8_t)( ulNetxAddress       & 0xffU);
-				aucCommand[4] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
-				aucCommand[5] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
-				aucCommand[6] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
-
-				tResult = execute_command(aucCommand, 7);
-				if( tResult!=UARTSTATUS_OK )
-				{
-					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
-					fOk = false;
-					break;
-				}
-				else
-				{
-					if( m_sizPacketInputBuffer!=4+sizChunk+1 )
-					{
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer to read_image has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
-						fOk = false;
-						break;
-					}
-					else
-					{
-						memcpy(pcBuffer, m_aucPacketInputBuffer+3, sizChunk);
-						pcBuffer += sizChunk;
-						ulSize -= sizChunk;
-						ulNetxAddress += sizChunk;
-						lBytesProcessed += sizChunk;
-
-						fIsRunning = callback_long(&tLuaFn, lBytesProcessed, lCallbackUserData);
-						if( fIsRunning!=true )
-						{
-							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): read_image canceled!", m_pcName, this);
-							fOk = false;
-							break;
-						}
-					}
-				}
-			} while( ulSize!=0 );
-		}
-#endif
-	}
-
-	if( fOk == true )
-	{
-		*ppcBUFFER_OUT = pcBufferStart;
-		*psizBUFFER_OUT = sizBuffer;
-	}
-	else
-	{
-		if ( pcBufferStart!=NULL) free(pcBufferStart); 
-		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
-	}
+//	char *pcBufferStart;
+//	char *pcBuffer;
+//	size_t sizBuffer;
+//	bool fOk;
+//	uint8_t aucResponse[16];
+//	uint32_t ulPacketSize;
+//
+//	size_t sizChunk;
+//	uint8_t aucCommand[m_sizMaxPacketSizeHost];
+//	bool fIsRunning;
+//	long lBytesProcessed;
+//	uint32_t ulValue;
+//
+//	int iResult;
+//
+//	/* Be optimistic. */
+//	fOk = true;
+//
+//	pcBufferStart = NULL;
+//	sizBuffer = 0;
+//
+//	if (m_fIsConnected == false)
+//	{
+//		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
+//		fOk = false;
+//	}
+//	else if (m_ptTransfer == NULL)
+//	{
+//		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): no transfer object!", m_pcName, this);
+//	}
+//	/* if ulSize == 0, we return with fOk == true, pcBufferStart == NULL and sizBuffer == 0 */
+//	else if (ulSize > 0)
+//	{
+//
+//		pcBufferStart = (char*) malloc(ulSize);
+//		if (pcBufferStart == NULL)
+//		{
+//			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to allocate %d bytes!", m_pcName, this, ulSize);
+//			fOk = false;
+//		}
+//		else
+//		{
+//			sizBuffer = ulSize;
+//
+//			pcBuffer = pcBufferStart;
+//			lBytesProcessed = 0;
+//			do
+//			{
+//				sizChunk = ulSize;
+//				if (sizChunk > m_sizMaxPacketSizeClient - 6)
+//				{
+//					sizChunk = m_sizMaxPacketSizeClient - 6;
+//				}
+//
+////				/* Get the next sequence number. */
+////				m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
+//
+//				aucCommand[0] = MONITOR_COMMAND_Read | (MONITOR_ACCESSSIZE_Byte << MONITOR_ACCESSSIZE_SRT) | (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+//				aucCommand[1] = (uint8_t)(sizChunk & 0xffU);
+//				aucCommand[2] = (uint8_t)((sizChunk >> 8U) & 0xffU);
+//				aucCommand[3] = (uint8_t)(ulNetxAddress & 0xffU);
+//				aucCommand[4] = (uint8_t)((ulNetxAddress >> 8U) & 0xffU);
+//				aucCommand[5] = (uint8_t)((ulNetxAddress >> 16U) & 0xffU);
+//				aucCommand[6] = (uint8_t)((ulNetxAddress >> 24U) & 0xffU);
+//
+//				/* ----*/
+//				printf("sending command...\n");
+//				printf("requested adr: 0x%02x%02x%02x%02x\n", aucCommand[6], aucCommand[5], aucCommand[4], aucCommand[3]);
+//				iResult = m_ptTransfer->send_command(aucCommand, 7);
+//
+//				printf("send done: %d\n", iResult);
+//				if (iResult != 0)
+//				{
+//					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L/*ptClientData*/,"%s(%p): failed to execute command!", m_pcName, this);
+//
+////							MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
+//				}
+//				else
+//				{
+//					printf("Receive_packet. \n");
+//					iResult = m_ptTransfer->receive_packet(aucResponse, sizeof(aucResponse), &ulPacketSize);
+//
+//					printf("receive finished: %d\n", iResult);
+//					if (iResult != 0)
+//					{
+//						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer to read_data32 has wrong packet size!", m_pcName, this);
+//					}
+//					else
+//					{
+//						ulValue = ((uint32_t)(aucResponse[2])) | ((uint32_t)(aucResponse[3])) << 8U | ((uint32_t)(aucResponse[4])) << 16U | ((uint32_t)(aucResponse[5])) << 24U;
+//						fOk = true;
+//					}
+//				}
+//
+//				/* ---- */
+//
+////				tResult = execute_command(aucCommand, 7);
+////				if( tResult!=UARTSTATUS_OK )
+////				{
+////					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
+////					fOk = false;
+////					break;
+////				}
+////				else
+////				{
+//				if (ulPacketSize != 3/*4+sizChunk+1*/)
+//				{
+//					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer to read_image has wrong packet size of %d!", m_pcName, this, ulPacketSize);
+//					fOk = false;
+//					break;
+//				}
+//				else
+//				{
+//					memcpy(pcBuffer, aucResponse + 2, sizChunk);
+//					pcBuffer += sizChunk;
+//					ulSize -= sizChunk;
+//					ulNetxAddress += sizChunk;
+//					lBytesProcessed += sizChunk;
+//
+//				}
+////				}
+//			} while (ulSize != 0);
+//		}
+//	}
+//
+//	if (fOk == true)
+//	{
+//		*ppcBUFFER_OUT = pcBufferStart;
+//		*psizBUFFER_OUT = sizBuffer;
+//	}
+//	else
+//	{
+//		if (pcBufferStart != NULL)
+//			free(pcBufferStart);
+//		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
+//	}
+//	return ulValue;
 }
-
-
 
 void romloader_dpm::write_data08(lua_State *ptClientData, uint32_t ulNetxAddress, uint8_t ucData)
 {
@@ -726,17 +812,16 @@ void romloader_dpm::write_data08(lua_State *ptClientData, uint32_t ulNetxAddress
 	uint32_t ulValue;
 	bool fOk;
 
-
 	/* Expect error. */
 	fOk = false;
 
 	ulValue = 0;
 
-	if( m_fIsConnected==false )
+	if (m_fIsConnected == false)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
 	}
-	else if( m_ptTransfer==NULL )
+	else if (m_ptTransfer == NULL)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): no transfer object!", m_pcName, this);
 	}
@@ -747,11 +832,11 @@ void romloader_dpm::write_data08(lua_State *ptClientData, uint32_t ulNetxAddress
 		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
 
 		aucCommand[0] = MONITOR_COMMAND_Write |
-		                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
-		                (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+		(MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
+		(uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		aucCommand[1] = 1;
 		aucCommand[2] = 0;
-		aucCommand[3] = (uint8_t)( ulNetxAddress       & 0xffU);
+		aucCommand[3] = (uint8_t)( ulNetxAddress & 0xffU);
 		aucCommand[4] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
 		aucCommand[5] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
 		aucCommand[6] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
@@ -775,12 +860,11 @@ void romloader_dpm::write_data08(lua_State *ptClientData, uint32_t ulNetxAddress
 #endif
 	}
 
-	if( fOk!=true )
+	if (fOk != true)
 	{
 		MUHKUH_PLUGIN_EXIT_ERROR(ptClientData);
 	}
 }
-
 
 void romloader_dpm::write_data16(lua_State *ptClientData, uint32_t ulNetxAddress, uint16_t usData)
 {
@@ -788,17 +872,16 @@ void romloader_dpm::write_data16(lua_State *ptClientData, uint32_t ulNetxAddress
 	uint32_t ulValue;
 	bool fOk;
 
-
 	/* Expect error. */
 	fOk = false;
 
 	ulValue = 0;
 
-	if( m_fIsConnected==false )
+	if (m_fIsConnected == false)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
 	}
-	else if( m_ptTransfer==NULL )
+	else if (m_ptTransfer == NULL)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): no transfer object!", m_pcName, this);
 	}
@@ -809,15 +892,15 @@ void romloader_dpm::write_data16(lua_State *ptClientData, uint32_t ulNetxAddress
 		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
 
 		aucCommand[0] = MONITOR_COMMAND_Write |
-		                (MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT) |
-		                (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+		(MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT) |
+		(uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
 		aucCommand[1] = 2;
 		aucCommand[2] = 0;
-		aucCommand[3] = (uint8_t)( ulNetxAddress       & 0xffU);
+		aucCommand[3] = (uint8_t)( ulNetxAddress & 0xffU);
 		aucCommand[4] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
 		aucCommand[5] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
 		aucCommand[6] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
-		aucCommand[7] = (uint8_t)( usData     & 0xffU);
+		aucCommand[7] = (uint8_t)( usData & 0xffU);
 		aucCommand[8] = (uint8_t)((usData>>8U)& 0xffU);
 		tResult = execute_command(aucCommand, 9);
 		if( tResult!=UARTSTATUS_OK )
@@ -838,79 +921,82 @@ void romloader_dpm::write_data16(lua_State *ptClientData, uint32_t ulNetxAddress
 #endif
 	}
 
-	if( fOk!=true )
+	if (fOk != true)
 	{
 		MUHKUH_PLUGIN_EXIT_ERROR(ptClientData);
 	}
 }
-
-
 
 void romloader_dpm::write_data32(lua_State *ptClientData, uint32_t ulNetxAddress, uint32_t ulData)
 {
 	uint8_t aucCommand[11];
 	uint32_t ulValue;
 	bool fOk;
+	uint32_t ulPacketSize;
 
+	int iResult;
 
 	/* Expect error. */
 	fOk = false;
 
 	ulValue = 0;
 
-	if( m_fIsConnected==false )
+	if (m_fIsConnected == false)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
 	}
-	else if( m_ptTransfer==NULL )
+	else if (m_ptTransfer == NULL)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): no transfer object!", m_pcName, this);
 	}
 	else
 	{
-#if 0
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
+		printf("\n####Writing 0x%x to adress 0x%x####", ulData, ulNetxAddress);
+		aucCommand[0] = MONITOR_COMMAND_Write | (MONITOR_ACCESSSIZE_Long << MONITOR_ACCESSSIZE_SRT) | (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+		aucCommand[1] = 4;
+		aucCommand[2] = 0;
+		aucCommand[3] = (uint8_t)(ulNetxAddress & 0xffU);
+		aucCommand[4] = (uint8_t)((ulNetxAddress >> 8U) & 0xffU);
+		aucCommand[5] = (uint8_t)((ulNetxAddress >> 16U) & 0xffU);
+		aucCommand[6] = (uint8_t)((ulNetxAddress >> 24U) & 0xffU);
+		aucCommand[7] = (uint8_t)(ulData & 0xffU);
+		aucCommand[8] = (uint8_t)((ulData >> 8U) & 0xffU);
+		aucCommand[9] = (uint8_t)((ulData >> 16U) & 0xffU);
+		aucCommand[10] = (uint8_t)((ulData >> 24U) & 0xffU);
 
-		aucCommand[0]  = MONITOR_COMMAND_Write |
-		                 (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT) |
-		                 (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-		aucCommand[1]  = 4;
-		aucCommand[2]  = 0;
-		aucCommand[3]  = (uint8_t)( ulNetxAddress       & 0xffU);
-		aucCommand[4]  = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[5]  = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[6]  = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
-		aucCommand[7]  = (uint8_t)( ulData       & 0xffU);
-		aucCommand[8]  = (uint8_t)((ulData>> 8U) & 0xffU);
-		aucCommand[9]  = (uint8_t)((ulData>>16U) & 0xffU);
-		aucCommand[10] = (uint8_t)((ulData>>24U) & 0xffU);
-		tResult = execute_command(aucCommand, 11);
-		if( tResult!=UARTSTATUS_OK )
+//		tResult = execute_command(aucCommand, 11);
+
+		uint8_t aucResponse[16];
+		unsigned char ucStatus;
+
+		iResult = m_ptTransfer->send_command(aucCommand, 11);
+
+		if (iResult != 0)
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
 		}
 		else
 		{
-			if( m_sizPacketInputBuffer!=4+1 )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to write_data32 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
-			}
-			else
-			{
-				fOk = true;
-			}
+//			if( m_sizMaxPacketSizeClient!=4+1 ) /* not sure with this */
+//			{
+//				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to write_data32 has wrong packet size of %d!", m_pcName, this, m_sizMaxPacketSizeClient);
+//			}
+//			else
+//			{
+			fOk = true;
+//			}
 		}
-#endif
-	}
 
-	if( fOk!=true )
+		printf("Receive_packet. \n");
+		iResult = m_ptTransfer->receive_packet(aucResponse, sizeof(aucResponse), &ulPacketSize);
+	}
+	next_sequence_number();
+
+	if (fOk != true)
 	{
 		MUHKUH_PLUGIN_EXIT_ERROR(ptClientData);
 	}
 }
-
-
 
 void romloader_dpm::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
@@ -920,20 +1006,19 @@ void romloader_dpm::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN,
 	bool fIsRunning;
 	long lBytesProcessed;
 
-
 	/* Be optimistic. */
 	fOk = true;
 
-	if( m_fIsConnected==false )
+	if (m_fIsConnected == false)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
 		fOk = false;
 	}
-	else if( m_ptTransfer==NULL )
+	else if (m_ptTransfer == NULL)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): no transfer object!", m_pcName, this);
 	}
-	else if( sizBUFFER_IN!=0 )
+	else if (sizBUFFER_IN != 0)
 	{
 #if 0
 		lBytesProcessed = 0;
@@ -949,11 +1034,11 @@ void romloader_dpm::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN,
 			m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
 
 			aucCommand[0] = MONITOR_COMMAND_Write |
-			                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
-			                (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-			aucCommand[1] = (uint8_t)( sizChunk       & 0xffU);
+			(MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
+			(uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+			aucCommand[1] = (uint8_t)( sizChunk & 0xffU);
 			aucCommand[2] = (uint8_t)((sizChunk>> 8U) & 0xffU);
-			aucCommand[3] = (uint8_t)( ulNetxAddress       & 0xffU);
+			aucCommand[3] = (uint8_t)( ulNetxAddress & 0xffU);
 			aucCommand[4] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
 			aucCommand[5] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
 			aucCommand[6] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
@@ -989,35 +1074,33 @@ void romloader_dpm::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN,
 					}
 				}
 			}
-		} while( sizBUFFER_IN!=0 );
+		}while( sizBUFFER_IN!=0 );
 #endif
 	}
 
-	if( fOk!=true )
+	if (fOk != true)
 	{
 		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
 	}
 }
 
-
-
 void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	bool fOk;
 	uint8_t aucCommand[9];
-	const uint8_t aucCancelBuf[1] = { 0x2b };
+	const uint8_t aucCancelBuf[1] =
+	{ 0x2b };
 	uint8_t ucStatus;
 	bool fIsRunning;
 	char *pcProgressData;
 	size_t sizProgressData;
 
-
-	if( m_fIsConnected==false )
+	if (m_fIsConnected == false)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
 		fOk = false;
 	}
-	else if( m_ptTransfer==NULL )
+	else if (m_ptTransfer == NULL)
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): no transfer object!", m_pcName, this);
 	}
@@ -1029,12 +1112,12 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA
 
 		/* Construct the command packet. */
 		aucCommand[0x00] = MONITOR_COMMAND_Execute |
-		                   (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-		aucCommand[0x01] = (uint8_t)( ulNetxAddress      & 0xffU);
+		(uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+		aucCommand[0x01] = (uint8_t)( ulNetxAddress & 0xffU);
 		aucCommand[0x02] = (uint8_t)((ulNetxAddress>>8 ) & 0xffU);
 		aucCommand[0x03] = (uint8_t)((ulNetxAddress>>16) & 0xffU);
 		aucCommand[0x04] = (uint8_t)((ulNetxAddress>>24) & 0xffU);
-		aucCommand[0x05] = (uint8_t)( ulParameterR0      & 0xffU);
+		aucCommand[0x05] = (uint8_t)( ulParameterR0 & 0xffU);
 		aucCommand[0x06] = (uint8_t)((ulParameterR0>>8 ) & 0xffU);
 		aucCommand[0x07] = (uint8_t)((ulParameterR0>>16) & 0xffU);
 		aucCommand[0x08] = (uint8_t)((ulParameterR0>>24) & 0xffU);
@@ -1058,7 +1141,6 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA
 			{
 				/* Get the next sequence number. */
 				//m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
 				/* Receive message packets. */
 				while(1)
 				{
@@ -1119,32 +1201,27 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA
 #endif
 	}
 
-	if( fOk!=true )
+	if (fOk != true)
 	{
 		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
 	}
 }
 
-
 /*-------------------------------------*/
 
-
-romloader_dpm_reference::romloader_dpm_reference(void)
- : muhkuh_plugin_reference()
+romloader_dpm_reference::romloader_dpm_reference(void) :
+		muhkuh_plugin_reference()
 {
 }
 
-
-romloader_dpm_reference::romloader_dpm_reference(const char *pcName, const char *pcTyp, bool fIsUsed, romloader_dpm_provider *ptProvider)
- : muhkuh_plugin_reference(pcName, pcTyp, fIsUsed, ptProvider)
+romloader_dpm_reference::romloader_dpm_reference(const char *pcName, const char *pcTyp, bool fIsUsed, romloader_dpm_provider *ptProvider) :
+		muhkuh_plugin_reference(pcName, pcTyp, fIsUsed, ptProvider)
 {
 }
 
-
-romloader_dpm_reference::romloader_dpm_reference(const romloader_dpm_reference *ptCloneMe)
- : muhkuh_plugin_reference(ptCloneMe)
+romloader_dpm_reference::romloader_dpm_reference(const romloader_dpm_reference *ptCloneMe) :
+		muhkuh_plugin_reference(ptCloneMe)
 {
 }
-
 
 /*-------------------------------------*/

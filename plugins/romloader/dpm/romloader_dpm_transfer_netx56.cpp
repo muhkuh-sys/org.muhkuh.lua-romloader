@@ -36,6 +36,7 @@ int romloader_dpm_transfer_netx56::prepare_device(void)
 {
 	int iResult;
 	NETX_DEVICE_STATE_T tState;
+	uint32_t ulValue;
 
 
 	/* Do we have a device? */
@@ -45,46 +46,66 @@ int romloader_dpm_transfer_netx56::prepare_device(void)
 	}
 	else
 	{
-		/* Is the monitor already running? */
-		tState = probe_netx_state();
-		switch( tState )
-		{
-		case NETX_DEVICE_STATE_Unknown:
-			/* The device is in an unknown state and can not be changed to something useful. */
-			iResult = -1;
-			break;
+		/* Setup the DPM registers.
+		 * FIXME: Do not run the setup for a serial DPM.
+		 */
 
-		case NETX_DEVICE_STATE_Romloader:
-			/* No, the monitor is not running yet. Download the monitor. */
-			printf("Detected running ROM code. Downloading the monitor code...\n");
-			iResult = download_and_run_image(auc_dpmmon_netx56_monitor, sizeof(auc_dpmmon_netx56_monitor));
-			printf("download_and_run_image: %d\n", iResult);
+		/* Activate the ready signal generation.
+		 * DPM is ready when external RDY-signal is high.
+		 */
+        ulValue  = MSK_NX56_dpm_rdy_cfg_rdy_pol;
+        /* ready is driven when active and inactive. Never highZ. (Push-Pull mode) */
+        ulValue |= 1 << SRT_NX56_dpm_rdy_cfg_rdy_drv_mode;
+		iResult = m_ptDpmDevice->dpm_write32(offsetof(DPM_REGISTER_NETX56_T,tCtrl)+offsetof(NX56_DPM_AREA_T,ulDpm_rdy_cfg), ulValue);
+		if( iResult==0 )
+		{
+			/* Disable setup times and filter. */
+			ulValue = 0;
+			iResult = m_ptDpmDevice->dpm_write32(offsetof(DPM_REGISTER_NETX56_T,tCtrl)+offsetof(NX56_DPM_AREA_T,ulDpm_timing_cfg), ulValue);
 			if( iResult==0 )
 			{
-				/* Give the software some time to start and setup the DPM. */
-				/* FIXME: maybe this could become a polling loop. */
-				usleep(500);
-
-				/* Check the netX state again. */
+				/* Is the monitor already running? */
 				tState = probe_netx_state();
-				if( tState!=NETX_DEVICE_STATE_Monitor )
+				switch( tState )
 				{
-					/* Failed to start the monitor. */
-					printf("Failed to start the monitor, the ROM cookie is still there!\n");
+				case NETX_DEVICE_STATE_Unknown:
+					/* The device is in an unknown state and can not be changed to something useful. */
 					iResult = -1;
-				}
-				else
-				{
-					/* Now the monitor is running and ready for commands. */
+					break;
+
+				case NETX_DEVICE_STATE_Romloader:
+					/* No, the monitor is not running yet. Download the monitor. */
+					printf("Detected running ROM code. Downloading the monitor code...\n");
+					iResult = download_and_run_image(auc_dpmmon_netx56_monitor, sizeof(auc_dpmmon_netx56_monitor));
+					printf("download_and_run_image: %d\n", iResult);
+					if( iResult==0 )
+					{
+						/* Give the software some time to start and setup the DPM. */
+						/* FIXME: maybe this could become a polling loop. */
+						usleep(500);
+						printf("--OK was sleeping\n--");
+						/* Check the netX state again. */
+						tState = probe_netx_state();
+						if( tState!=NETX_DEVICE_STATE_Monitor )
+						{
+							/* Failed to start the monitor. */
+							printf("Failed to start the monitor, the ROM cookie is still there!\n");
+							iResult = -1;
+						}
+						else
+						{
+							/* Now the monitor is running and ready for commands. */
+							iResult = 0;
+						}
+					}
+					break;
+
+				case NETX_DEVICE_STATE_Monitor:
+					/* The monitor is already running. */
 					iResult = 0;
+					break;
 				}
 			}
-			break;
-
-		case NETX_DEVICE_STATE_Monitor:
-			/* The monitor is already running. */
-			iResult = 0;
-			break;
 		}
 	}
 
@@ -98,20 +119,25 @@ int romloader_dpm_transfer_netx56::send_command(const uint8_t *pucCommand, uint3
 	int iResult;
 
 
-	printf("haha %p\n", m_ptDpmDevice);
+	printf("##send_command haha %p\n", m_ptDpmDevice);
+	fflush(stdout);
 	if( m_ptDpmDevice==NULL )
 	{
 		iResult = -1;
 	}
 	else if( ulCommandSize>NETX56_DPM_HOST_TO_NETX_BUFFERSIZE )
 	{
+		printf("Died of buffer overflow.");
 		/* Command too long error! */
 		printf("The command (%d bytes) is too long for the buffer (%d bytes).\n", ulCommandSize, NETX56_DPM_HOST_TO_NETX_BUFFERSIZE);
 		iResult = -1;
 	}
 	else
 	{
+		printf("before send chunk");
 		iResult = mailbox_send_chunk(pucCommand, ulCommandSize);
+		printf("after send chunk");
+
 	}
 
 	return iResult;
@@ -182,7 +208,7 @@ int romloader_dpm_transfer_netx56::receive_response(uint8_t *pucBuffer, uint32_t
 int romloader_dpm_transfer_netx56::receive_packet(uint8_t *pucBuffer, uint32_t ulMaxDataSize, uint32_t *pulDataRead)
 {
 	int iResult;
-	uint32_t ulChunkSize;
+	uint32_t ulChunkSize = 0;
 
 
 	/* Be pessimistic. */
@@ -205,6 +231,10 @@ int romloader_dpm_transfer_netx56::receive_packet(uint8_t *pucBuffer, uint32_t u
 			else if( ulChunkSize>ulMaxDataSize )
 			{
 				printf("Received more data than expected!\n");
+				for(int i = 0; i < ulChunkSize; i++){
+					printf("%i:%p, ", i, m_aucBufferNetxToHost);
+
+				}
 				iResult = -1;
 			}
 			else
@@ -212,7 +242,10 @@ int romloader_dpm_transfer_netx56::receive_packet(uint8_t *pucBuffer, uint32_t u
 				/* Copy the data part - if requested. */
 				if( pucBuffer!=NULL )
 				{
+					printf("Received right data size!\n");
+
 					memcpy(pucBuffer, m_aucBufferNetxToHost, ulChunkSize);
+
 				}
 				/* Copy the data size - if requested. */
 				if( pulDataRead!=NULL )
@@ -320,7 +353,7 @@ int romloader_dpm_transfer_netx56::mailbox_send_chunk(const uint8_t *pucChunk, u
 				if( iResult==0 )
 				{
 					/* Wait until netX has processed the data. */
-					uiRetryCnt = 80;
+					uiRetryCnt = 80000;
 					do
 					{
 						printf("5\n");
@@ -340,7 +373,7 @@ int romloader_dpm_transfer_netx56::mailbox_send_chunk(const uint8_t *pucChunk, u
 							}
 							else
 							{
-								usleep(25);
+								usleep(2500);
 							}
 						}
 					} while( ulValue!=0 );
@@ -348,7 +381,6 @@ int romloader_dpm_transfer_netx56::mailbox_send_chunk(const uint8_t *pucChunk, u
 			}
 		}
 	}
-
 	return iResult;
 }
 
@@ -365,7 +397,7 @@ int romloader_dpm_transfer_netx56::mailbox_get_data(uint32_t *pulSize)
 
 
 	/* Wait for data to receive. */
-	uiRetryCnt = 80;
+	uiRetryCnt = 80000000;
 	do
 	{
 		iResult = mailbox_purr(NETX56_DPM_BOOT_NETX_SEND_CMD, &ulValue);
@@ -379,15 +411,18 @@ int romloader_dpm_transfer_netx56::mailbox_get_data(uint32_t *pulSize)
 			if( uiRetryCnt==0 )
 			{
 				/* Timeout! */
+
+				/* FAIL HERE */
 				iResult = -1;
 				break;
 			}
 			else
 			{
-				usleep(25);
+				usleep(250);
 			}
 		}
 	} while( ulValue==0 );
+//	printf("Retries left: %d\n", uiRetryCnt);
 
 	if( iResult==0 )
 	{
@@ -410,7 +445,7 @@ int romloader_dpm_transfer_netx56::mailbox_get_data(uint32_t *pulSize)
 					if( iResult==0 )
 					{
 						ulValue ^= NETX56_DPM_BOOT_HOST_RECEIVED_CMD << SRT_NETX56_HANDSHAKE_REG_PC_DATA;
-						iResult = m_ptDpmDevice->dpm_write32(OFFS_HBOOT(ulHandshake), ulValue);
+						iResult = m_ptDpmDevice->dpm_write32(OFFS_HBOOT(ulHandshake), ulValue); //Received more data than expected!
 						if( iResult==0 )
 						{
 							*pulSize = ulRec;
@@ -434,7 +469,6 @@ int romloader_dpm_transfer_netx56::download_and_run_image(const uint8_t *pucData
 	uint32_t ulChunkSize;
 	uint32_t ulResultSize;
 	uint8_t ucStatus;
-
 
 	/* The image must have at least 68 bytes.
 	 * This is 64 bytes for the header and at least 1 DWORD of data.

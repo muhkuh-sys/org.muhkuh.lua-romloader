@@ -187,17 +187,21 @@ int romloader_dpm_device_linux_uio::dpm_read32(uint32_t ulDpmAddress, uint32_t *
 
 	if( (ulDpmAddress+sizeof(uint32_t))>m_sizUioMemory )
 	{
+		printf("dpm_read32########FAILED1!#############\n");
 		printf("The access at offset 0x%08x exceeds the DPM size of 0x%08zx bytes.\n", ulDpmAddress, m_sizUioMemory);
 		iResult = -1;
 	}
 	else if( (ulDpmAddress&3)!=0 )
 	{
+		printf("dpm_read32#########FAILED2!##########\n");
 		/* The access is not aligned! */
 		printf("The read32 access at offset 0x%08x is not aligned.\n", ulDpmAddress);
 		iResult = -1;
 	}
 	else
 	{
+//		printf("dpm_read32#########OK!##########\n");
+
 		*pulValue = *(m_pvUioMappedMemory.pul + (ulDpmAddress/sizeof(uint32_t)));
 		iResult = 0;
 	}
