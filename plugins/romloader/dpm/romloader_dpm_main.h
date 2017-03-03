@@ -71,6 +71,8 @@ public:
 
 private:
 	int synchronize(romloader_dpm_transfer *ptTransfer);
+	int execute_command(uint8_t aucCommand[], size_t sizAucCommand, uint8_t ** aucResponse, uint32_t * sizAucResponse);
+//	uint8_t * aucResponse;
 	void next_sequence_number();
 
 	char *m_pcDeviceName;
@@ -90,6 +92,9 @@ private:
 		USBSTATUS_SEQUENCE_MISMATCH         = 9
 	} USBSTATUS_T;
 
+	/**
+	 * @todo deprecated: m_sizMaxPacketSizeHost
+	 */
 	static const size_t m_sizMaxPacketSizeHost = 8192+64;
 	size_t m_sizMaxPacketSizeClient;
 	uint8_t m_aucPacketOutputBuffer[m_sizMaxPacketSizeHost];

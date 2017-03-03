@@ -445,7 +445,7 @@ int romloader_dpm_transfer_netx56::mailbox_get_data(uint32_t *pulSize)
 					if( iResult==0 )
 					{
 						ulValue ^= NETX56_DPM_BOOT_HOST_RECEIVED_CMD << SRT_NETX56_HANDSHAKE_REG_PC_DATA;
-						iResult = m_ptDpmDevice->dpm_write32(OFFS_HBOOT(ulHandshake), ulValue); //Received more data than expected!
+						iResult = m_ptDpmDevice->dpm_write32(OFFS_HBOOT(ulHandshake), ulValue);
 						if( iResult==0 )
 						{
 							*pulSize = ulRec;
