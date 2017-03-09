@@ -71,19 +71,19 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(NETX_CONSOLEAPP_PARAMETER_T *ptTes
 
 	/* say hi */
 	uprintf("ABC\n");
-//	uprintf(". *** test skeleton start ***\n");
-//	uprintf(". Parameter Address: 0x%08x\n", (unsigned long)ptTestParam);
-//	uprintf(". Parameter: 0x%08x\n", ulParameter);
-//
-//	/* Print a very long line (longer than 1 USB packet). */
-//	uprintf("012345678901234567890123456789012345678901234567890123456789012345678901234567\n");
-//	uprintf("000000000011111111112222222222333333333344444444445555555555666666666677777777\n");
+	uprintf(". *** test skeleton start ***\n");
+	uprintf(". Parameter Address: 0x%08x\n", (unsigned long)ptTestParam);
+	uprintf(". Parameter: 0x%08x\n", ulParameter);
+
+	/* Print a very long line (longer than 1 USB packet). */
+	uprintf("012345678901234567890123456789012345678901234567890123456789012345678901234567\n");
+	uprintf("000000000011111111112222222222333333333344444444445555555555666666666677777777\n");
 
 //	/* Print messages with a specific delay. */
-//	delay_print(100,    0);
-//	delay_print(  8,  500);
-//	delay_print(  4, 1000);
-//	delay_print(  2, 2000);
+	delay_print(100,    0);
+	delay_print(  8,  500);
+	delay_print(  4, 1000);
+	delay_print(  2, 2000);
 
 	/* write parameter to return message */
 	ptTestParam->pvReturnMessage = (void*)ulParameter;

@@ -1171,15 +1171,6 @@ void romloader_dpm::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN,
 void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 		SWIGLUA_REF tLuaFn, long lCallbackUserData) {
 
-#if TMP == 1
-	bool fOk;
-	uint8_t aucCommand[9];
-	const uint8_t aucCancelBuf[1] = { 0x2b };
-	uint8_t ucStatus;
-	bool fIsRunning;
-	char *pcProgressData;
-	size_t sizProgressData;
-#else
 	bool fOk;
 	uint8_t aucCommand[9];
 	const uint8_t aucCancelBuf[1] = { 0x2b };
@@ -1193,7 +1184,6 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 	uint8_t * aucResponse;
 	uint32_t * sizAucResponse;
 	aucResponse = NULL;
-#endif
 
 	if (m_fIsConnected == false) {
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName,
@@ -1203,153 +1193,44 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): no transfer object!",
 				m_pcName, this);
 	} else {
-
-
-#if TMP == 1
-
-#if 0
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
 		/* Construct the command packet. */
-		aucCommand[0x00] = MONITOR_COMMAND_Execute |
-		(uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-		aucCommand[0x01] = (uint8_t)( ulNetxAddress & 0xffU);
-		aucCommand[0x02] = (uint8_t)((ulNetxAddress>>8 ) & 0xffU);
-		aucCommand[0x03] = (uint8_t)((ulNetxAddress>>16) & 0xffU);
-		aucCommand[0x04] = (uint8_t)((ulNetxAddress>>24) & 0xffU);
-		aucCommand[0x05] = (uint8_t)( ulParameterR0 & 0xffU);
-		aucCommand[0x06] = (uint8_t)((ulParameterR0>>8 ) & 0xffU);
-		aucCommand[0x07] = (uint8_t)((ulParameterR0>>16) & 0xffU);
-		aucCommand[0x08] = (uint8_t)((ulParameterR0>>24) & 0xffU);
-
-//		printf("Executing call command:\n");
-//		hexdump(aucCommand, 9);
-		tResult = execute_command(aucCommand, 9);
-		if( tResult!=UARTSTATUS_OK )
-		{
-			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
-			fOk = false;
-		}
-		else
-		{
-			if( m_sizPacketInputBuffer!=4+1 )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer to call command has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
-				fOk = false;
-			}
-			else
-			{
-				/* Get the next sequence number. */
-				//m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-				/* Receive message packets. */
-				while(1)
-				{
-					pcProgressData = NULL;
-					sizProgressData = 0;
-
-					tResult = receive_packet();
-					if( tResult==UARTSTATUS_TIMEOUT )
-					{
-						/* Do nothing in case of timeout. The application is just running quietly. */
-					}
-					else if( tResult!=UARTSTATUS_OK )
-					{
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): Failed to receive a packet: %d", m_pcName, this, tResult);
-						fOk = false;
-					}
-					else
-					{
-						if( m_sizPacketInputBuffer<5 )
-						{
-							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): Received a packet without any user data!", m_pcName, this);
-							fOk = false;
-						}
-						else
-						{
-							ucStatus = m_aucPacketInputBuffer[2] & MONITOR_STATUS_MSK;
-							if( ucStatus==MONITOR_STATUS_CallMessage )
-							{
-								pcProgressData = (char*)m_aucPacketInputBuffer+3;
-								sizProgressData = m_sizPacketInputBuffer-5;
-							}
-							else if( ucStatus==MONITOR_STATUS_CallFinished )
-							{
-								fprintf(stderr, "%s(%p): Call has finished!", m_pcName, this);
-								fOk = true;
-								break;
-							}
-						}
-					}
-
-					if (pcProgressData != NULL)
-					{
-						fIsRunning = callback_string(&tLuaFn, pcProgressData, sizProgressData, lCallbackUserData);
-						if( fIsRunning!=true )
-						{
-							/* Send a cancel request to the device. */
-							tResult = send_packet(aucCancelBuf, 1);
-
-							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): the call was canceled!", m_pcName, this);
-							fOk = false;
-							break;
-						}
-					}
-
-				}
-			}
-		}
-#endif
-
-#else
-//		/* Get the next sequence number. */
-//		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
-		/* Construct the command packet. */
-		aucCommand[0x00] = MONITOR_COMMAND_Execute |
-		(uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-		aucCommand[0x01] = (uint8_t)( ulNetxAddress & 0xffU);
-		aucCommand[0x02] = (uint8_t)((ulNetxAddress>>8 ) & 0xffU);
-		aucCommand[0x03] = (uint8_t)((ulNetxAddress>>16) & 0xffU);
-		aucCommand[0x04] = (uint8_t)((ulNetxAddress>>24) & 0xffU);
-		aucCommand[0x05] = (uint8_t)( ulParameterR0 & 0xffU);
-		aucCommand[0x06] = (uint8_t)((ulParameterR0>>8 ) & 0xffU);
-		aucCommand[0x07] = (uint8_t)((ulParameterR0>>16) & 0xffU);
-		aucCommand[0x08] = (uint8_t)((ulParameterR0>>24) & 0xffU);
-
-//		printf("Executing call command:\n");
-//		hexdump(aucCommand, 9);
+		aucCommand[0x00] = MONITOR_COMMAND_Execute
+				| (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
+		aucCommand[0x01] = (uint8_t)(ulNetxAddress & 0xffU);
+		aucCommand[0x02] = (uint8_t)((ulNetxAddress >> 8) & 0xffU);
+		aucCommand[0x03] = (uint8_t)((ulNetxAddress >> 16) & 0xffU);
+		aucCommand[0x04] = (uint8_t)((ulNetxAddress >> 24) & 0xffU);
+		aucCommand[0x05] = (uint8_t)(ulParameterR0 & 0xffU);
+		aucCommand[0x06] = (uint8_t)((ulParameterR0 >> 8) & 0xffU);
+		aucCommand[0x07] = (uint8_t)((ulParameterR0 >> 16) & 0xffU);
+		aucCommand[0x08] = (uint8_t)((ulParameterR0 >> 24) & 0xffU);
 
 		sizAucResponse = (uint32_t*) malloc(sizeof(uint32_t));
 		*sizAucResponse = sizeof(lCallbackUserData); // give a hint how many space is needed.
 
 		//!!! WATCH SIZE AUCRESPONSE RETURN PARAM HERE
-		iResult = execute_command(aucCommand, sizeof(aucCommand),
-				&aucResponse, sizAucResponse);
+		iResult = execute_command(aucCommand, sizeof(aucCommand), &aucResponse,
+				sizAucResponse);
 
 		/* ??? */
 		next_sequence_number();
 		/* --- */
 
-		if( iResult!=0 )
-		{
-			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
+		if (iResult != 0) {
+			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L,
+					"%s(%p): failed to execute command!", m_pcName, this);
 			fOk = false;
-		}
-		else
-		{
-			if( *sizAucResponse!=/*4*/+1 )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer to call command has wrong packet size of %d!", m_pcName, this, *sizAucResponse);
+		} else {
+			if (*sizAucResponse != /*4*/+1) {
+				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L,
+						"%s(%p): answer to call command has wrong packet size of %d!",
+						m_pcName, this, *sizAucResponse);
 				fOk = false;
-			}
-			else
-			{
+			} else {
 				/* Get the next sequence number. */
 				//m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
 				/* Receive message packets. */
-				while(1)
-				{
+				while (1) {
 					pcProgressData = NULL;
 					sizProgressData = 0;
 
@@ -1366,50 +1247,56 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 //					}
 //					else
 
+//					aucLocalResponse[ulPacketSize] = 0;
 
-
-					printf("=====> REceived: %c%c%c\n", (char)aucLocalResponse[1], (char)aucLocalResponse[2], (char)aucLocalResponse[3]);
-
-
-					if( iResult!=0 )
-					{
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): Failed to receive a packet: %d", m_pcName, this, iResult);
-						fOk = false;
+//					printf("=====> REceived: %s\n", (char*) aucLocalResponse);
+					for (int i = 0; i < ulPacketSize; i++) {
+						printf("0x%02x ", aucLocalResponse[i]);
+						if (i % 16 == 15)
+							printf("\n");
 					}
-					else
-					{
-						if( ulPacketSize <5 )
-						{
-							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): Received a packet without any user data!", m_pcName, this);
+					printf("\n");
+
+					if (iResult != 0) {
+						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L,
+								"%s(%p): Failed to receive a packet: %d",
+								m_pcName, this, iResult);
+						fOk = false;
+					} else {
+						if (ulPacketSize < 1) {
+							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L,
+									"%s(%p): Received a packet without any user data!",
+									m_pcName, this);
 							fOk = false;
-						}
-						else
-						{
-						//  HERE THE PROBLEM STARTS --> GOT CALL FINISHED INSTEAD OF CALL MESSAGE --> GOT NO DATA FROM NETX
-							ucStatus = m_aucPacketInputBuffer[2] & MONITOR_STATUS_MSK;
-							if( ucStatus==MONITOR_STATUS_CallMessage )
-							{
-								pcProgressData = (char*)ulPacketSize+3;
-								sizProgressData = ulPacketSize-5;
-							}
-							else if( ucStatus==MONITOR_STATUS_CallFinished )
-							{
-								fprintf(stderr, "%s(%p): Call has finished!", m_pcName, this);
+						} else {
+							ucStatus = aucLocalResponse[0] & MONITOR_STATUS_MSK;
+							if (ucStatus == MONITOR_STATUS_CallMessage) {
+								pcProgressData = (char *) &aucLocalResponse[1];
+								sizProgressData = ulPacketSize - 1;
+
+//								pcProgressData = (char*)ulPacketSize+3;
+//								sizProgressData = ulPacketSize-5;
+							} else if (ucStatus
+									== MONITOR_STATUS_CallFinished) {
+								fprintf(stderr, "%s(%p): Call has finished!",
+										m_pcName, this);
 								fOk = true;
 								break;
 							}
 						}
 					}
 
-					if (pcProgressData != NULL)
-					{
-						fIsRunning = callback_string(&tLuaFn, pcProgressData, sizProgressData, lCallbackUserData);
-						if( fIsRunning!=true )
-						{
+					if (pcProgressData != NULL) {
+						fIsRunning = callback_string(&tLuaFn, pcProgressData,
+								sizProgressData, lCallbackUserData);
+						if (fIsRunning != true) {
 							/* Send a cancel request to the device. */
-							iResult = m_ptTransfer->send_command(aucCancelBuf, 1);
+							iResult = m_ptTransfer->send_command(aucCancelBuf,
+									1);
 
-							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): the call was canceled!", m_pcName, this);
+							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L,
+									"%s(%p): the call was canceled!", m_pcName,
+									this);
 							fOk = false;
 							break;
 						}
@@ -1418,8 +1305,6 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 				}
 			}
 		}
-#endif
-
 
 	}
 
