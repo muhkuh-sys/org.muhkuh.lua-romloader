@@ -37,7 +37,7 @@ typedef DWORD (WINAPI *CM_Open_DevNode_Key)(DWORD, DWORD, DWORD, DWORD, ::PHKEY,
 #define CM_REGISTRY_HARDWARE        (0x00000000)
 
 /*****************************************************************************/
-/*! Constructor                                   
+/*! Constructor
 *    \param szPortName Short name of the communication port
 *    \param szPortDesc Human-Readable description of port
 *    \param eType      Boot device type (detected by scan)                   */
@@ -67,13 +67,13 @@ romloader_uart_device_win::~romloader_uart_device_win()
 
 /*****************************************************************************/
 /*! Thread checking the state of the COM port cyclically (Wrapper function)
-*     \param pvParam Pointer to class object                     
+*     \param pvParam Pointer to class object
 *     \return Thread return value                                            */
 /*****************************************************************************/
 DWORD romloader_uart_device_win::CheckComStateThread(void* pvParam)
 {
   romloader_uart_device_win* pcDev = reinterpret_cast<romloader_uart_device_win*>(pvParam);
-  
+
   return pcDev->CheckComState();
 }
 
@@ -96,9 +96,9 @@ void romloader_uart_device_win::CheckComEvents(DWORD dwEventMask)
 	//data is ready, fetch them from serial port
 	dwBytesRead = 0;
 	dwCommError = 0;
-    
+
 	::ClearCommError(m_hPort, &dwCommError, &tComstat);
-   
+
 	dwBufferSize = tComstat.cbInQue;
 	if( dwBufferSize>0 )
 	{
@@ -108,10 +108,10 @@ void romloader_uart_device_win::CheckComEvents(DWORD dwEventMask)
 		OVERLAPPED tovRead;
 		memset(&tovRead, 0, sizeof(tovRead));
 		tovRead.hEvent = ::CreateEvent(0,TRUE,0,0);
-    
+
 		//get the data from the queue
 		BOOL fReadRet = ::ReadFile(m_hPort, pucBuffer, dwBufferSize, &dwBytesRead, &tovRead);
-   
+
 //		wxASSERT(fReadRet);
 
 		::CloseHandle(tovRead.hEvent);
@@ -126,8 +126,8 @@ void romloader_uart_device_win::CheckComEvents(DWORD dwEventMask)
 
 		delete[] pucBuffer;
 	}
-//  } 
-  
+//  }
+
 	if(dwEventMask & EV_TXEMPTY)
 	{
 		//Signal waiting thread data has been written
@@ -141,62 +141,63 @@ void romloader_uart_device_win::CheckComEvents(DWORD dwEventMask)
 /*****************************************************************************/
 DWORD romloader_uart_device_win::CheckComState()
 {
-  OVERLAPPED tOvWait     = {0};
+	OVERLAPPED tOvWait     = {0};
 
 
-  tOvWait.hEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL);
+	tOvWait.hEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL);
 
-  while(m_fRunning)
-  {
-    DWORD dwEventMask     = 0;
-    bool  fEventAvailable = false;
-    DWORD dwBla           = 0;
+	while(m_fRunning)
+	{
+		DWORD dwEventMask     = 0;
+		bool  fEventAvailable = false;
+		DWORD dwBla           = 0;
 
-    tOvWait.Internal     = 0;
-    tOvWait.InternalHigh = 0;
-    tOvWait.Offset       = 0;
-    tOvWait.OffsetHigh   = 0;
+		tOvWait.Internal     = 0;
+		tOvWait.InternalHigh = 0;
+		tOvWait.Offset       = 0;
+		tOvWait.OffsetHigh   = 0;
 
-    ::ResetEvent(tOvWait.hEvent);
+		::ResetEvent(tOvWait.hEvent);
 
-    if(WaitCommEvent(m_hPort, &dwEventMask, &tOvWait))
-    {
-      // no overlapped wait needed, data is ready
-      fEventAvailable = true;
-    } else
-    {
-      // Event not set, check if we are now in overlapped mode
-      DWORD dwLastError = GetLastError();
+		if(WaitCommEvent(m_hPort, &dwEventMask, &tOvWait))
+		{
+			// no overlapped wait needed, data is ready
+			fEventAvailable = true;
+		}
+		else
+		{
+			// Event not set, check if we are now in overlapped mode
+			DWORD dwLastError = GetLastError();
 
-      if(ERROR_IO_PENDING != dwLastError)
-      {
-        //no IO Event and not overlapped pending. This should never happen
-        //To allow other threads to run, let us sleep until next try
-        Sleep(10);
-        
-      } else
-      {
-        //we are in overlapped mode and wait comm event is pending, so check the overlapped event
-        DWORD dwWaitRes = WaitForSingleObject(tOvWait.hEvent, DEFAULT_SERIAL_POLLTIMEOUT);
-  
-        if(WAIT_OBJECT_0 == dwWaitRes)
-        {
-          //WaitComEvent is now available, so we can check the COM state
-          fEventAvailable = true;
-        }
-      }
-    }
+			if(ERROR_IO_PENDING != dwLastError)
+			{
+				// no IO Event and not overlapped pending. This should never happen
+				// To allow other threads to run, let us sleep until next try
+				Sleep(10);
+			}
+			else
+			{
+				// we are in overlapped mode and wait comm event is pending, so check the overlapped event
+				DWORD dwWaitRes = WaitForSingleObject(tOvWait.hEvent, DEFAULT_SERIAL_POLLTIMEOUT);
 
-    //WaitComEvent succeeded, so check the state now
-    if(fEventAvailable)
-    {
-      CheckComEvents(dwEventMask);
-    }
-  }
+				if(WAIT_OBJECT_0 == dwWaitRes)
+				{
+					//WaitComEvent is now available, so we can check the COM state
+					fEventAvailable = true;
+				}
+			}
+		}
 
-  ::CloseHandle(tOvWait.hEvent);
+		// WaitComEvent succeeded, so check the state now
+		if(fEventAvailable)
+		{
+			CheckComEvents(dwEventMask);
+		}
+	}
 
-  return 0;
+	::CloseHandle(tOvWait.hEvent);
+
+	return 0;
 }
 
 
@@ -209,47 +210,57 @@ DWORD romloader_uart_device_win::CheckComState()
 /*****************************************************************************/
 size_t romloader_uart_device_win::SendRaw(const unsigned char *pucData, size_t sizData, unsigned long ulTimeout)
 {
-  bool  fRet           = false;
-  DWORD dwBytesWritten = 0;
-  DWORD dwError;
+	bool  fRet           = false;
+	DWORD dwBytesWritten = 0;
+	DWORD dwError;
 
-  //We are operating in overlapped mode
-  OVERLAPPED tOverlap = {0};
-  tOverlap.hEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL);
 
-  //write the Data to the comport
-  BOOL  fResult = ::WriteFile(m_hPort, pucData, sizData, &dwBytesWritten, &tOverlap);
+	//  We are operating in overlapped mode
+	OVERLAPPED tOverlap = {0};
+	tOverlap.hEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL);
 
-  //check if everything has been written ok. if not, cancel transaction
-  if(fResult)
-  {
-    if(dwBytesWritten == sizData)
-      fRet = true;
-    else
-      ::CancelIo(m_hPort);
+	// write the Data to the comport
+	BOOL  fResult = ::WriteFile(m_hPort, pucData, sizData, &dwBytesWritten, &tOverlap);
 
-  } else
-  {
-    //we assume the write is still pending
-    dwError = GetLastError();
-    if( dwError != ERROR_IO_PENDING)
-    {
+	// check if everything has been written ok. if not, cancel transaction
+	if(fResult)
+	{
+		if(dwBytesWritten == sizData)
+		{
+			fRet = true;
+		}
+		else
+		{
+			::CancelIo(m_hPort);
+		}
+	}
+	else
+	{
+		// we assume the write is still pending
+		dwError = GetLastError();
+		if( dwError!=ERROR_IO_PENDING )
+		{
 //      wxASSERT(false);
 
-    //check for completion of the write
-    } else if(::WaitForSingleObject(tOverlap.hEvent, ulTimeout) == WAIT_OBJECT_0) 
-    {
-      ::GetOverlappedResult(m_hPort, &tOverlap, &dwBytesWritten, TRUE);
-      
-      //Check if not all bytes have been written
-      if(dwBytesWritten == sizData)
-        fRet = true;
-      else
-        ::CancelIo(m_hPort);
-    }
-  }
+			// check for completion of the write
+		}
+		else if(::WaitForSingleObject(tOverlap.hEvent, ulTimeout) == WAIT_OBJECT_0)
+		{
+			::GetOverlappedResult(m_hPort, &tOverlap, &dwBytesWritten, TRUE);
 
-  ::CloseHandle(tOverlap.hEvent);
+			// Check if not all bytes have been written
+			if( dwBytesWritten==sizData )
+			{
+				fRet = true;
+			}
+			else
+			{
+				::CancelIo(m_hPort);
+			}
+		}
+	}
+
+	::CloseHandle(tOverlap.hEvent);
 
 //  if(fRet)
 //  {
@@ -258,8 +269,9 @@ size_t romloader_uart_device_win::SendRaw(const unsigned char *pucData, size_t s
 //    wxASSERT(dwWaitRes == WAIT_OBJECT_0);
 //  }
 
-  return dwBytesWritten;
+	return dwBytesWritten;
 }
+
 
 /*****************************************************************************/
 /*! Flushes any pending data
@@ -267,7 +279,7 @@ size_t romloader_uart_device_win::SendRaw(const unsigned char *pucData, size_t s
 /*****************************************************************************/
 bool romloader_uart_device_win::Flush(void)
 {
-  return (TRUE == FlushFileBuffers(m_hPort));
+	return (TRUE == FlushFileBuffers(m_hPort));
 }
 
 
@@ -283,7 +295,7 @@ unsigned long romloader_uart_device_win::Peek(void)
 
 /*****************************************************************************/
 /*! Receive raw data from device
-*    \param pbData    Pointer to receive buffer        
+*    \param pbData    Pointer to receive buffer
 *    \param ulDataLen Length of data requested
 *    \param ulTimeout Timeout in ms to wait for receive complete
 *    \return Number of bytes that have been received                         */
@@ -335,25 +347,27 @@ size_t romloader_uart_device_win::RecvRaw(unsigned char *pucData, size_t sizData
 /*****************************************************************************/
 void romloader_uart_device_win::Close(void)
 {
-  // Check if RX Thread is running, and terminate it
-  if(NULL != m_hComStateThread)
-  {
-    m_fRunning = false;
-    
-    if(WaitForSingleObject(m_hComStateThread, THREAD_TERMINATE_TIME) == WAIT_TIMEOUT)
-      ::TerminateThread(m_hComStateThread, MAXDWORD);
+	// Check if RX Thread is running, and terminate it
+	if(NULL != m_hComStateThread)
+	{
+		m_fRunning = false;
 
-    m_hComStateThread = NULL;
-  }
+		if(WaitForSingleObject(m_hComStateThread, THREAD_TERMINATE_TIME) == WAIT_TIMEOUT)
+		{
+			::TerminateThread(m_hComStateThread, MAXDWORD);
+		}
 
-  // Check if the device is open, and close it
-  if(m_hPort != INVALID_HANDLE_VALUE)
-  {
-    // Close it
-    ::CloseHandle(m_hPort);
-    // device is now closed
-    m_hPort = INVALID_HANDLE_VALUE;
-  }
+		m_hComStateThread = NULL;
+	}
+
+	// Check if the device is open, and close it
+	if(m_hPort != INVALID_HANDLE_VALUE)
+	{
+		// Close it
+		::CloseHandle(m_hPort);
+		// device is now closed
+		m_hPort = INVALID_HANDLE_VALUE;
+	}
 
 	// delete the cards
 	deleteCards();
@@ -380,9 +394,9 @@ bool romloader_uart_device_win::Open()
 	initCards();
 
 	_snprintf(acPath, sizeof(acPath), "\\\\.\\%s", m_pcPortName);
-  	/* Open the port. */
+	/* Open the port. */
 	m_hPort= ::CreateFile(acPath,
-			      GENERIC_READ | GENERIC_WRITE,
+	                      GENERIC_READ | GENERIC_WRITE,
 	                      0,
 	                      NULL,
 	                      OPEN_EXISTING,
@@ -436,11 +450,11 @@ bool romloader_uart_device_win::Open()
 			fprintf(stderr, "failed to set com mask");
 		}
 		else if(NULL == (m_hComStateThread = CreateThread(NULL,
-                                                        0,
-                                                        CheckComStateThread,
-                                                        this,
-                                                        CREATE_SUSPENDED,
-                                                        NULL)))
+		                                                  0,
+		                                                  CheckComStateThread,
+		                                                  this,
+		                                                  CREATE_SUSPENDED,
+		                                                  NULL)))
 		{
 			/* Create the receive thread. */
 			fprintf(stderr, "Can't create receive thread!");
@@ -550,11 +564,11 @@ unsigned long romloader_uart_device_win::ScanForPorts(char ***pppcDeviceNames)
 
 						/* First test if this interface is a com port. */
 						if( (ERROR_SUCCESS == pfnOpenDevNodeKey(tDeviceInfoData.DevInst, 
-				                                        KEY_QUERY_VALUE, 
-				                                        0, 
-				                                        RegDisposition_OpenExisting, 
-				                                        &hkDevice, 
-				                                        CM_REGISTRY_HARDWARE)) &&
+						                                        KEY_QUERY_VALUE, 
+						                                        0, 
+						                                        RegDisposition_OpenExisting, 
+						                                        &hkDevice, 
+						                                        CM_REGISTRY_HARDWARE)) &&
 						    (ERROR_SUCCESS == RegQueryValueEx(hkDevice,
 									"Portname",
 									NULL,
@@ -663,6 +677,6 @@ unsigned long romloader_uart_device_win::ScanForPorts(char ***pppcDeviceNames)
 /*****************************************************************************/
 bool romloader_uart_device_win::Cancel()
 {
-  return TRUE == ::CancelIo(m_hPort);
+	return TRUE == ::CancelIo(m_hPort);
 }
 
