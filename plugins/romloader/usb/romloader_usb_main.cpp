@@ -400,7 +400,7 @@ bool romloader_usb::synchronize(void)
 		{
 			fprintf(stderr, "Packet:\n");
 			hexdump(aucInBuf, sizInBuf, 0);
-/*--- HIER ---*/
+
 			/* Get the sequence number from the status byte. */
 			ucSequence = (aucInBuf[0x00] & MONITOR_SEQUENCE_MSK) >> MONITOR_SEQUENCE_SRT;
 			fprintf(stderr, "Sequence number: 0x%02x\n", ucSequence);
