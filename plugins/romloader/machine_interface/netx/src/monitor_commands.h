@@ -43,6 +43,8 @@ typedef enum
 	MONITOR_COMMAND_Read                    = 0x00,
 	MONITOR_COMMAND_Write                   = 0x01,
 	MONITOR_COMMAND_Execute                 = 0x02,
+	MONITOR_COMMAND_Escape					= 0x2b,
+	MONITOR_COMMAND_Talk                    = 0x03,
 	MONITOR_COMMAND_Magic                   = 0xff
 } MONITOR_COMMAND_T;
 

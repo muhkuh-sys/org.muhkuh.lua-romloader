@@ -356,7 +356,7 @@ int romloader_dpm_transfer_netx56::mailbox_send_chunk(const uint8_t *pucChunk, u
 					uiRetryCnt = 80000;
 					do
 					{
-						printf("5\n");
+//						printf("5\n");
 						iResult = mailbox_purr(NETX56_DPM_BOOT_NETX_RECEIVED_CMD, &ulValue);
 						if( iResult!=0 )
 						{
