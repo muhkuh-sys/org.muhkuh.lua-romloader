@@ -378,10 +378,7 @@ void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPack
 					command_write_memory(pucPacket+7U, ulAddress, ulDataSize, tAccessSize);
 				}
 			}
-			else if(tCmd == MONITOR_COMMAND_Escape){
-				while(1); // halt here to see if its working.
-				// clear buffer etc.
-			}else
+			else
 			{
 				send_status(MONITOR_STATUS_InvalidCommand);
 			}

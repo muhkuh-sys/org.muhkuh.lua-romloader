@@ -20,15 +20,10 @@
 
 #include "transport.h"
 
-#include <stddef.h>
-#include <stdint.h>
-
-
 #include "monitor.h"
 #include "monitor_commands.h"
 #include "serial_vectors.h"
 #include "systime.h"
-
 
 /*-------------------------------------------------------------------------*/
 
@@ -47,8 +42,7 @@
 #define NETX56_DPM_NETX_TO_HOST_BUFFERSIZE     0x0200
 #define NETX56_DPM_HOST_TO_NETX_BUFFERSIZE     0x0400
 
-typedef struct HBOOT_DPM_NETX56_STRUCT
-{
+typedef struct HBOOT_DPM_NETX56_STRUCT {
 	volatile uint32_t ulDpmBootId;
 	volatile uint32_t ulDpmByteSize;
 	volatile uint32_t ulSdramExtGeneralCtrl;
@@ -66,8 +60,10 @@ typedef struct HBOOT_DPM_NETX56_STRUCT
 	volatile uint8_t aucHostToNetxData[NETX56_DPM_HOST_TO_NETX_BUFFERSIZE];
 } HBOOT_DPM_NETX56_T;
 
-static HBOOT_DPM_NETX56_T tDpm __attribute__ ((section (".dpm")));
+uint8_t aucNetMonToImageData[1];
+uint8_t aucImageToNetMonData[1];
 
+static HBOOT_DPM_NETX56_T tDpm __attribute__ ((section (".dpm")));
 
 /*-------------------------------------------------------------------------*/
 
@@ -77,16 +73,15 @@ size_t sizStreamBufferFill;
 size_t sizPacketOutputFill;
 size_t sizPacketOutputFillLast;
 
+size_t sizPacketOutputEmpty;
+size_t sizPacketOutputEmptyFirst;
 
 /*-------------------------------------------------------------------------*/
 
-
-static void dpm_init(void)
-{
+static void dpm_init(void) {
 	HOSTDEF(ptDpmArea);
 	unsigned long ulValue;
 	unsigned long ulNetxAdr;
-
 
 	/* Setup the DPM at the new location. */
 	tDpm.ulDpmBootId = BOOT_ID_MONITOR;
@@ -101,31 +96,30 @@ static void dpm_init(void)
 	tDpm.ulHostToNetxDataSize = 0;
 	tDpm.ulHandshake = 0;
 
-
 	/* Setup the map for the new DPM location. */
-        /* DPM mapping:
-         * 0x0000 - 0x00ff : DPM configuration area
-         * 0x0100 - 0x017f : dpm_mb_start
-         * 0x0180 - 0x01ff : intramhs_dpm_mirror
-         * 0x0200 - 0x07ff : dpm_mb_start+0x0100
-         */
+	/* DPM mapping:
+	 * 0x0000 - 0x00ff : DPM configuration area
+	 * 0x0100 - 0x017f : dpm_mb_start
+	 * 0x0180 - 0x01ff : intramhs_dpm_mirror
+	 * 0x0200 - 0x07ff : dpm_mb_start+0x0100
+	 */
 	ptDpmArea->asDpm_win[0].ulEnd = 0x017fU + 1;
-	ulNetxAdr = (unsigned long)&tDpm;
-	ulValue  = (ulNetxAdr-0x0100U) & HOSTMSK(dpm_win1_map_win_map);
+	ulNetxAdr = (unsigned long) &tDpm;
+	ulValue = (ulNetxAdr - 0x0100U) & HOSTMSK(dpm_win1_map_win_map);
 	ulValue |= ulNetxAdr & HOSTMSK(dpm_win1_map_win_page);
 	ulValue |= HOSTMSK(dpm_win1_map_byte_area)|HOSTMSK(dpm_win1_map_read_ahead);
 	ptDpmArea->asDpm_win[0].ulMap = ulValue;
 
 	ptDpmArea->asDpm_win[1].ulEnd = 0x01ffU + 1;
 	ulNetxAdr = HOSTADDR(intramhs_dpm_mirror);
-	ulValue  = (ulNetxAdr-0x0180U) & HOSTMSK(dpm_win1_map_win_map);
+	ulValue = (ulNetxAdr - 0x0180U) & HOSTMSK(dpm_win1_map_win_map);
 	ulValue |= ulNetxAdr & HOSTMSK(dpm_win1_map_win_page);
 	ulValue |= HOSTMSK(dpm_win1_map_byte_area);
 	ptDpmArea->asDpm_win[1].ulMap = ulValue;
 
 	ptDpmArea->asDpm_win[2].ulEnd = 0x07ffU + 1;
-	ulNetxAdr = ((unsigned long)&tDpm)+0x100;
-	ulValue  = (ulNetxAdr-0x0200U) & HOSTMSK(dpm_win1_map_win_map);
+	ulNetxAdr = ((unsigned long) &tDpm) + 0x100;
+	ulValue = (ulNetxAdr - 0x0200U) & HOSTMSK(dpm_win1_map_win_map);
 	ulValue |= ulNetxAdr & HOSTMSK(dpm_win1_map_win_page);
 	ulValue |= HOSTMSK(dpm_win1_map_byte_area)|HOSTMSK(dpm_win1_map_read_ahead);
 	ptDpmArea->asDpm_win[2].ulMap = ulValue;
@@ -135,40 +129,42 @@ static void dpm_init(void)
 
 }
 
+void queue_init() {
+	uiStartPoint = 0;
+	uiEndPoint = 0;
+	uiSize = 0;
+}
 
-
-static unsigned long mailbox_purr(unsigned long ulMask)
-{
+static unsigned long mailbox_purr(unsigned long ulMask) {
 	HOSTDEF(ptHandshakeDtcmArmMirrorArea);
 	unsigned long ulValue;
 	unsigned long ulHostPart;
 	unsigned long ulNetxPart;
 
-
 	ulValue = ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0];
 
-	ulHostPart  = ulValue >> SRT_NETX56_HANDSHAKE_REG_PC_DATA;
+	ulHostPart = ulValue >> SRT_NETX56_HANDSHAKE_REG_PC_DATA;
 	ulHostPart &= 3;
-	ulNetxPart  = ulValue >> SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+	ulNetxPart = ulValue >> SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
 	ulNetxPart &= 3;
 
 	/* Check for harmony. */
-	ulValue  = ulHostPart ^ ulNetxPart;
+	ulValue = ulHostPart ^ ulNetxPart;
 	/* Mask */
 	ulValue &= ulMask;
 
 	return ulValue;
 }
 
-
 /*-------------------------------------------------------------------------*/
 
-void transport_init(void)
-{
+void transport_init(void) {
 	/* Initialize the DPM. */
 	dpm_init();
 
 	monitor_init();
+
+	queue_init();
 
 	/* Initialize the stream buffer. */
 	sizStreamBufferHead = 0;
@@ -178,85 +174,110 @@ void transport_init(void)
 	sizPacketOutputFillLast = 0;
 }
 
-
-
-void transport_loop(void)
-{
+void transport_loop(void) {
 	HOSTDEF(ptHandshakeDtcmArmMirrorArea);
 	unsigned long ulValue;
 	unsigned long ulPacketSize;
 
-
 	/* Wait for a packet. */
-	do
-	{
+	do {
 		ulValue = mailbox_purr(NETX56_DPM_BOOT_NETX_RECEIVED_CMD);
-	} while( ulValue==0 );
+	} while (ulValue == 0);
 
 	/* Acknowledge the packet. */
-	ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^= NETX56_DPM_BOOT_NETX_RECEIVED_CMD<<SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+	ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^=
+	NETX56_DPM_BOOT_NETX_RECEIVED_CMD << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
 
 	/* Is the packet's size valid? */
 	ulPacketSize = tDpm.ulHostToNetxDataSize;
-	if( ulPacketSize==0 )
-	{
+	if (ulPacketSize == 0) {
 		/* Send magic cookie and version info. */
 		monitor_send_magic(NETX56_DPM_NETX_TO_HOST_BUFFERSIZE);
-	}
-	else if( ulPacketSize<=NETX56_DPM_HOST_TO_NETX_BUFFERSIZE )
-	{
+	} else if (ulPacketSize <= NETX56_DPM_HOST_TO_NETX_BUFFERSIZE) {
 		/* Yes, the packet size is valid. */
-		monitor_process_packet(tDpm.aucHostToNetxData, ulPacketSize, NETX56_DPM_NETX_TO_HOST_BUFFERSIZE);
+		monitor_process_packet(tDpm.aucHostToNetxData, ulPacketSize,
+		NETX56_DPM_NETX_TO_HOST_BUFFERSIZE);
 	}
 }
 
+/**
+ * Receive byte??
+ * @todo could be made more beautiful with return by param.
+ * @return: 0 if queue full (not handled yet).
+ */
 
+uint8_t transport_dequeue() {
+	char ucData = 0;
+	if (uiSize >= 1) {
+		ucData = ucQueue[uiEndPoint++];
+		uiSize--;
+	}
+	return ucData;
+}
 
-void transport_send_byte(unsigned char ucData)
-{
-	if( sizPacketOutputFill<NETX56_DPM_HOST_TO_NETX_BUFFERSIZE )
-	{
+void transport_enqueue(unsigned char ucData) {
+	if (uiSize <= QUEUE_LENGTH) {
+		ucQueue[uiStartPoint++] = ucData;
+	}
+	uiSize++;
+}
+
+void transport_send_byte(unsigned char ucData) {
+	if (sizPacketOutputFill < NETX56_DPM_HOST_TO_NETX_BUFFERSIZE) {
 		tDpm.aucNetxToHostData[sizPacketOutputFill] = ucData;
 		++sizPacketOutputFill;
 	}
-/*
-	else
-	{
-		uprintf("discarding byte 0x%02x\n", ucData);
-	}
-*/
 }
 
-
-
-void transport_send_packet(void)
-{
+void transport_send_packet(void) {
 	HOSTDEF(ptHandshakeDtcmArmMirrorArea);
 	unsigned long ulValue;
 
+	/*--- check if the sent esc ---*/
+	unsigned long ulPacketSize;
+	const unsigned char *pucPacket = tDpm.aucHostToNetxData;
+	/* Is the packet's size valid? */
+	ulPacketSize = tDpm.ulHostToNetxDataSize;
+	if (ulPacketSize == 0) {
 
-	/* Send the packet. */
-	tDpm.ulNetxToHostDataSize = sizPacketOutputFill;
+		//..
+	} else if (ulPacketSize <= NETX56_DPM_HOST_TO_NETX_BUFFERSIZE) {
 
-	/* Toggle the 'packet send' flag. */
-	ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^= NETX56_DPM_BOOT_NETX_SEND_CMD<<SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+		if (tDpm.aucHostToNetxData[0] == 0x42) {
 
-	/* Wait for host ACK. */
-	do
-	{
-		ulValue = mailbox_purr(NETX56_DPM_BOOT_NETX_SEND_CMD);
-	} while( ulValue!=0 );
+			/* Acknowledge the packet. */
+			ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^=
+			NETX56_DPM_BOOT_NETX_RECEIVED_CMD << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
 
-	/* Remember the packet size for resends. */
-	sizPacketOutputFillLast = sizPacketOutputFill;
+			transport_enqueue(tDpm.aucHostToNetxData[0]);
+			tDpm.aucHostToNetxData[0] = 0x0; // erase esc sequence from queue to make shure netX is sending data.
 
-	sizPacketOutputFill = 0;
+		} else {
+
+			/*-----------------------*/
+
+			/* Send the packet. */
+			tDpm.ulNetxToHostDataSize = sizPacketOutputFill;
+
+			/* Toggle the 'packet send' flag. */
+			ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^=
+			NETX56_DPM_BOOT_NETX_SEND_CMD << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+
+			/* Wait for host ACK. */
+			do {
+				ulValue = mailbox_purr(NETX56_DPM_BOOT_NETX_SEND_CMD);
+			} while (ulValue != 0);
+
+			/* Remember the packet size for resends. */
+			sizPacketOutputFillLast = sizPacketOutputFill;
+
+			sizPacketOutputFill = 0;
+		}
+
+	}
 }
 
-
-
-void transport_resend_packet(void)
-{
+void transport_resend_packet(void) {
 	/* Restore the last packet size. */
 	sizPacketOutputFill = sizPacketOutputFillLast;
 
@@ -264,23 +285,19 @@ void transport_resend_packet(void)
 	transport_send_packet();
 }
 
+unsigned char transport_call_console_get(void) {
+	uint8_t uiReceivedByte = transport_dequeue();
+	return uiReceivedByte;
 
-
-unsigned char transport_call_console_get(void)
-{
-	return 0;
 }
 
+void transport_call_console_put(unsigned int uiChar) {
 
-
-void transport_call_console_put(unsigned int uiChar)
-{
 	/* Add the byte to the FIFO. */
-	transport_send_byte((unsigned char)uiChar);
+	transport_send_byte((unsigned char) uiChar);
 
 	/* Reached the maximum packet size? */
-	if( sizPacketOutputFill>=NETX56_DPM_NETX_TO_HOST_BUFFERSIZE )
-	{
+	if (sizPacketOutputFill >= NETX56_DPM_NETX_TO_HOST_BUFFERSIZE) {
 		/* Yes -> send the packet. */
 		transport_send_packet();
 
@@ -290,17 +307,11 @@ void transport_call_console_put(unsigned int uiChar)
 
 }
 
-
-
-unsigned int transport_call_console_peek(void)
-{
-	return 0;
+unsigned int transport_call_console_peek(void) {
+	return uiSize;
 }
 
-
-
-void transport_call_console_flush(void)
-{
+void transport_call_console_flush(void) {
 	/* Send the packet. */
 	transport_send_packet();
 
@@ -308,3 +319,10 @@ void transport_call_console_flush(void)
 	transport_send_byte(MONITOR_STATUS_CallMessage);
 }
 
+void transport_netMon_to_netX_send_byte() {
+
+}
+
+void transport_netMon_to_netX() {
+
+}
