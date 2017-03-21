@@ -243,38 +243,79 @@ void transport_send_packet(void) {
 		//..
 	} else if (ulPacketSize <= NETX56_DPM_HOST_TO_NETX_BUFFERSIZE) {
 
-		if (tDpm.aucHostToNetxData[0] == 0x42) {
+		ulValue = ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0];
+		ulValue = ulValue >> 16;
+		ulValue &= 0x8000;
+
+		if (ulValue == 0x8000) {
 
 			/* Acknowledge the packet. */
 			ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^=
-			NETX56_DPM_BOOT_NETX_RECEIVED_CMD << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+			NETX56_DPM_BOOT_NETX_RECEIVED_CMD
+					<< SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
 
-			transport_enqueue(tDpm.aucHostToNetxData[0]);
-			tDpm.aucHostToNetxData[0] = 0x0; // erase esc sequence from queue to make shure netX is sending data.
+			transport_enqueue(0x2B); // ESC REQ
 
-		} else {
+			transport_acknowledge_escape_command(0, 0);
+			/* We don't set back the flag because host should do this */
+			/* Wait for a packet. */
 
-			/*-----------------------*/
+		}/* else {*/
 
-			/* Send the packet. */
-			tDpm.ulNetxToHostDataSize = sizPacketOutputFill;
+		/*-----------------------*/
 
-			/* Toggle the 'packet send' flag. */
-			ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^=
-			NETX56_DPM_BOOT_NETX_SEND_CMD << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+		/* Send the packet. */
+		tDpm.ulNetxToHostDataSize = sizPacketOutputFill;
 
-			/* Wait for host ACK. */
-			do {
-				ulValue = mailbox_purr(NETX56_DPM_BOOT_NETX_SEND_CMD);
-			} while (ulValue != 0);
+		/* Toggle the 'packet send' flag. */
+		ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^=
+		NETX56_DPM_BOOT_NETX_SEND_CMD << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
 
-			/* Remember the packet size for resends. */
-			sizPacketOutputFillLast = sizPacketOutputFill;
+//		/* Wait for host ACK. */
+//		do {
+//			ulValue = mailbox_purr(NETX56_DPM_BOOT_NETX_SEND_CMD);
+//		} while (ulValue != 0);
 
-			sizPacketOutputFill = 0;
-		}
+		/* Remember the packet size for resends. */
+		sizPacketOutputFillLast = sizPacketOutputFill;
 
+		sizPacketOutputFill = 0;
+		//}
 	}
+}
+
+/**
+ * escape command expresses as msb of handshake
+ */
+int transport_acknowledge_escape_command() {
+	HOSTDEF(ptHandshakeDtcmArmMirrorArea);
+
+	uint32_t ulValue;
+	unsigned int uiRetryCnt;
+	int iResult;
+	uint32_t ulHostPart;
+	uint32_t ulNetxPart;
+
+
+	ulValue = ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0];
+
+	ulHostPart = ulValue >> SRT_NETX56_HANDSHAKE_REG_PC_DATA;
+	ulHostPart |= 0x80;
+	/* not needed yet */
+	ulNetxPart = ulValue >> SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+	ulNetxPart &= 0xFF;
+	ulNetxPart |= 0x80;
+
+	ulValue = 0;
+	ulValue |= ulHostPart << SRT_NETX56_HANDSHAKE_REG_PC_DATA;
+	ulValue |= ulNetxPart << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+
+
+	ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] = ulValue;
+//	ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^=
+//	ulValue << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+
+	return iResult = 0;
 }
 
 void transport_resend_packet(void) {
@@ -326,3 +367,4 @@ void transport_netMon_to_netX_send_byte() {
 void transport_netMon_to_netX() {
 
 }
+

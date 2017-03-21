@@ -141,7 +141,7 @@ void romloader_dpm::next_sequence_number() {
  * @todo error code for different cases?
  */
 int romloader_dpm::execute_command(uint8_t aucCommand[],
-		size_t sizAucCommandXXX, uint8_t ** aucResponse,
+		size_t sizAucCommand, uint8_t ** aucResponse,
 		uint32_t * sizAucResponse) {
 
 	uint8_t aucLocalResponse[*sizAucResponse + 1]; // assume that we getting exactly what we asked for (+ 2 byte header)
@@ -153,7 +153,7 @@ int romloader_dpm::execute_command(uint8_t aucCommand[],
 	printf("executing command...\n");
 	printf("requested adr: 0x%02x%02x%02x%02x\n", aucCommand[6], aucCommand[5],
 			aucCommand[4], aucCommand[3]);
-	iResult = m_ptTransfer->send_command(aucCommand, sizAucCommandXXX);
+	iResult = m_ptTransfer->send_command(aucCommand, sizAucCommand);
 
 	printf("send done: %d\n", iResult);
 	// break if error to avoid crashing in receive
@@ -1185,9 +1185,7 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 		iResult = execute_command(aucCommand, sizeof(aucCommand), &aucResponse,
 				sizAucResponse);
 
-		/* ??? */
 		next_sequence_number();
-		/* --- */
 
 		if (iResult != 0) {
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L,
@@ -1204,6 +1202,9 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 				//m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
 				/* Receive message packets. */
 				int maxSends = 0;
+				uint8_t aucLocalResponse[m_sizMaxPacketSizeClient]; // assume that we getting exactly what we asked for (+ 2 byte header)
+				uint32_t ulPacketSize;
+
 				while (1) {
 
 					printf("==========> MAXSENDS: %i\n", maxSends++);
@@ -1258,36 +1259,31 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 					if (pcProgressData != NULL) {
 						fIsRunning = callback_string(&tLuaFn, pcProgressData,
 								sizProgressData, lCallbackUserData);
-						if (/*fIsRunning != true*/maxSends == 5) {
+						if (fIsRunning != true) {
 							/* Send a cancel request to the device. */
 							/* Construct the command packet. */
 
+							iResult = m_ptTransfer->send_escape_command(NULL,
+									NULL);
 
-
-							iResult = m_ptTransfer->send_command(aucCancelBuf,
-									1);
-
-
-							uint8_t aucLocalResponse[m_sizMaxPacketSizeClient]; // assume that we getting exactly what we asked for (+ 2 byte header)
-
-							uint32_t ulPacketSize;
+							//receive ESC COMMAND
 
 							int iResult = -1;
 
 							printf("send done: %d\n", iResult);
 
 							printf("Receive_packet. \n");
-							iResult = m_ptTransfer->receive_packet(aucLocalResponse,
-									sizeof(aucLocalResponse), &ulPacketSize);
+							iResult =
+									m_ptTransfer->receive_escape_acknowledge_command();
 							next_sequence_number();
 
 							printf("nextX ESC RESP: %s\n", aucLocalResponse);
 
-							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L,
-									"%s(%p): the call was canceled!", m_pcName,
-									this);
-							fOk = false;
-							break;
+//							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L,
+//									"%s(%p): the call was canceled!", m_pcName,
+//									this);
+//							fOk = false;
+//							break;
 						}
 					}
 

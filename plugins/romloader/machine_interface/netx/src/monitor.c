@@ -49,6 +49,20 @@ typedef void (*PFN_MONITOR_CALL_T)(unsigned long ulR0);
 /*-----------------------------------*/
 
 
+static void msleep(unsigned long ulDelayMs) {
+	unsigned int uiCnt;
+	unsigned long ulTimer;
+	int iElapsed;
+
+	if (ulDelayMs != 0) {
+		ulTimer = systime_get_ms();
+		do {
+			iElapsed = systime_elapsed(ulTimer, ulDelayMs);
+		} while (iElapsed == 0);
+	}
+
+}
+
 static const unsigned char aucMagic[8] =
 {
 	/* Magic */
@@ -202,6 +216,8 @@ static void command_call(unsigned long ulAddress, unsigned long ulR0)
 	/* Send the status packet. */
 	send_status(MONITOR_STATUS_Ok);
 
+
+	msleep(1000);
 	/* Start the new message packet. */
 	transport_send_byte(MONITOR_STATUS_CallMessage);
 

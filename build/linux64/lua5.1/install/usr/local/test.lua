@@ -48,22 +48,35 @@ function hexdump(strData, uiBytesPerRow)
 end
 
 
+
+iCnt = 0
 function callback_progress(a,b)
+
   print(string.format("%d%% (%d/%d)", a*100/b, a, b))
+
+  iCnt = iCnt + 1
+  if iCnt <= 100 then
+    return true
+  else
+    return false
+  end
+
   return true
 end
 
-iCnt = 0
 function callback(a,b)
   print(string.format("[netX %d] %s", b, a))
   io.write(a)
-
---  iCnt = iCnt + 1
---  if iCnt <= 10000 then
---    return true
---  else
---    return false
---  end
+  
+  
+  iCnt = iCnt + 1
+  print("CALLBACK" .. iCnt)
+  if iCnt <= 100 then
+    return true
+  else
+    return false
+  end
+  
   return true
 end
 
@@ -79,7 +92,7 @@ end
 
 function stdCall(tParentWindow, tPlugin, ulAddress, ulParameter)
   print("__/Output/____________________________________________________________________")
-  tPlugin:call(ulAddress, ulParameter, callback, 0)
+  tPlugin:call(ulAddress, ulParameter, callback_progress, 0)
   print("")
   print("______________________________________________________________________________")
 end

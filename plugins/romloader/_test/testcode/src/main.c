@@ -76,14 +76,17 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(
 
 	/* say hi */
 
-	char tmp[10];
+	char *tmp[25];
 	while (1) {
 		uprintf("ABC\n");
 
 		int i = 0;
 		if (0 != SERIAL_PEEK()) {
 			while (0 != SERIAL_PEEK()) {
-				tmp[i++] = SERIAL_GET();
+				if(0x2B == SERIAL_GET()){
+					uprintf("ask for ESC\n");
+				}
+
 			}
 			uprintf("GOT >>>%s<<< FROM HOST\n", tmp);
 			break;
