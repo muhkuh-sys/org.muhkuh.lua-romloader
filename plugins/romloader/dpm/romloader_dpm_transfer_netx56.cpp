@@ -316,8 +316,7 @@ int romloader_dpm_transfer_netx56::mailbox_purr(uint32_t ulMask,
 /**
  * escape command expresses as msb of handshake
  */
-int romloader_dpm_transfer_netx56::send_escape_command(const uint8_t *pucChunk,
-		uint32_t ulChunkSize) {
+int romloader_dpm_transfer_netx56::send_escape_command() {
 	uint32_t ulValue;
 	unsigned int uiRetryCnt;
 	int iResult;

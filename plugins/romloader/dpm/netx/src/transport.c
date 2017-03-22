@@ -129,7 +129,7 @@ static void dpm_init(void) {
 
 }
 
-void queue_init() {
+void queue_init(void) {
 	uiStartPoint = 0;
 	uiEndPoint = 0;
 	uiSize = 0;
@@ -206,7 +206,7 @@ void transport_loop(void) {
  * @return: 0 if queue full (not handled yet).
  */
 
-uint8_t transport_dequeue() {
+uint8_t transport_dequeue(void) {
 	char ucData = 0;
 	if (uiSize >= 1) {
 		ucData = ucQueue[uiEndPoint++];
@@ -256,7 +256,7 @@ void transport_send_packet(void) {
 
 			transport_enqueue(0x2B); // ESC REQ
 
-			transport_acknowledge_escape_command(0, 0);
+			transport_acknowledge_escape_command();
 			/* We don't set back the flag because host should do this */
 			/* Wait for a packet. */
 
@@ -289,7 +289,7 @@ void transport_send_packet(void) {
  *
  * @todo get rid of the magic numbers
  */
-int transport_acknowledge_escape_command() {
+int transport_acknowledge_escape_command(void) {
 	HOSTDEF(ptHandshakeDtcmArmMirrorArea);
 
 	uint32_t ulValue;
@@ -312,10 +312,7 @@ int transport_acknowledge_escape_command() {
 	ulValue |= ulHostPart << SRT_NETX56_HANDSHAKE_REG_PC_DATA;
 	ulValue |= ulNetxPart << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
 
-
 	ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] = ulValue;
-//	ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^=
-//	ulValue << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
 
 	return iResult = 0;
 }
@@ -374,7 +371,7 @@ void transport_netMon_to_netX() {
 /**
  * @todo: get rid of the magic numbers
  */
-int transport_is_ready_to_execute() {
+int transport_is_ready_to_execute(void) {
 	HOSTDEF(ptHandshakeDtcmArmMirrorArea);
 
 	uint32_t ulValue;

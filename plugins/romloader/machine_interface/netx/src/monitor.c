@@ -33,10 +33,6 @@
 #include "../../../romloader_def.h"
 #include "transport.h"
 
-
-#define SRT_NETX56_HANDSHAKE_REG_ARM_DATA      16
-#define SRT_NETX56_HANDSHAKE_REG_PC_DATA       24
-
 /*-----------------------------------*/
 
 typedef union {
@@ -49,20 +45,6 @@ typedef union {
 typedef void (*PFN_MONITOR_CALL_T)(unsigned long ulR0);
 
 /*-----------------------------------*/
-
-static void msleep(unsigned long ulDelayMs) {
-	unsigned int uiCnt;
-	unsigned long ulTimer;
-	int iElapsed;
-
-	if (ulDelayMs != 0) {
-		ulTimer = systime_get_ms();
-		do {
-			iElapsed = systime_elapsed(ulTimer, ulDelayMs);
-		} while (iElapsed == 0);
-	}
-
-}
 
 static const unsigned char aucMagic[8] = {
 /* Magic */
@@ -203,8 +185,7 @@ static void command_call(unsigned long ulAddress, unsigned long ulR0) {
 	/* Send the status packet. */
 	send_status(MONITOR_STATUS_Ok);
 
-//	msleep(1000);
-//	replace with status receive
+	//	replace with status receive
 	while(!transport_is_ready_to_execute());
 
 	/* Start the new message packet. */

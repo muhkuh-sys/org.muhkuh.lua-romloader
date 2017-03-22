@@ -46,7 +46,6 @@ static void delay_print(unsigned int uiMessages, unsigned long ulDelayMs) {
 }
 
 static void msleep(unsigned long ulDelayMs) {
-	unsigned int uiCnt;
 	unsigned long ulTimer;
 	int iElapsed;
 
@@ -76,11 +75,9 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(
 
 	/* say hi */
 
-	char *tmp[25];
 	while (1) {
 		uprintf("ABC\n");
 
-		int i = 0;
 		if (0 != SERIAL_PEEK()) {
 				if(0x2B == SERIAL_GET()){
 					uprintf("ask for ESC\n");
@@ -98,19 +95,12 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(
 			"012345678901234567890123456789012345678901234567890123456789012345678901234567\n");
 	uprintf(
 			"000000000011111111112222222222333333333344444444445555555555666666666677777777\n");
-//	char c = NULL;
-//	while (0 != 0) {
-//
-//
-//
-//		msleep(100);
-//
-//	}
-////	/* Print messages with a specific delay. */
-//	delay_print(100,    0);
-//	delay_print(  8,  500);
-//	delay_print(  4, 1000);
-//	delay_print(  2, 2000);
+
+	/* Print messages with a specific delay. */
+	delay_print(100,    0);
+	delay_print(  8,  500);
+	delay_print(  4, 1000);
+	delay_print(  2, 2000);
 
 	/* write parameter to return message */
 	ptTestParam->pvReturnMessage = (void*) ulParameter;

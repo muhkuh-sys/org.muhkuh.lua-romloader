@@ -70,7 +70,7 @@ function callback(a,b)
   
   
   iCnt = iCnt + 1
-  print("CALLBACK" .. iCnt)
+--  print("CALLBACK" .. iCnt)
   if iCnt <= 100 then
     return true
   else

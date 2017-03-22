@@ -629,38 +629,23 @@ uint32_t romloader_dpm::read_data32(lua_State *ptClientData,
 	return ulValue;
 }
 
-#define tmp 0
 
 void romloader_dpm::read_image(uint32_t ulNetxAddress, uint32_t ulSize,
 		char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn,
 		long lCallbackUserData) {
-	/* lua return param example */
-//	*ppcBUFFER_OUT = (char*) malloc(10 * sizeof(char));
-//	**ppcBUFFER_OUT = 'x';
-//	*psizBUFFER_OUT = ulSize;
+
 	char *pcBufferStart;
 	char *pcBuffer;
 	size_t sizBuffer;
 	bool fOk;
 	size_t sizChunk;
 
-#if tmp == 1
-	uint8_t aucResponse[m_sizMaxPacketSizeHost];
-	uint32_t ulPacketSize;
-	uint8_t aucCommand[m_sizMaxPacketSizeHost];
-
-#else
-
 	uint8_t * aucResponse;
 	uint32_t * sizAucResponse;
-
 	uint32_t ulPacketSize;
-
 	uint8_t aucCommand[7]; // from m_sizMaxPacketSizeClient --> doesn't make any sense?
 
 	aucResponse = NULL;
-
-#endif
 
 	long lBytesProcessed;
 	uint32_t ulValue;
@@ -711,40 +696,11 @@ void romloader_dpm::read_image(uint32_t ulNetxAddress, uint32_t ulSize,
 				aucCommand[4] = (uint8_t)((ulNetxAddress >> 8U) & 0xffU);
 				aucCommand[5] = (uint8_t)((ulNetxAddress >> 16U) & 0xffU);
 				aucCommand[6] = (uint8_t)((ulNetxAddress >> 24U) & 0xffU);
-#if tmp == 1
-				printf("sending command...\n");
-				printf("requested adr: 0x%02x%02x%02x%02x\n", aucCommand[6], aucCommand[5], aucCommand[4], aucCommand[3]);
-				iResult = m_ptTransfer->send_command(aucCommand, 7);
 
-				printf("send done: %d\n", iResult);
-				if (iResult != 0)
-				{
-					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L/*ptClientData*/,"%s(%p): failed to execute command!", m_pcName, this);
-
-					//							MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
-				}
-				else
-				{
-					printf("Receive_packet. \n");
-					iResult = m_ptTransfer->receive_packet(aucResponse, sizeof(aucResponse), &ulPacketSize);
-
-					printf("receive finished: %d\n", iResult);
-					if (iResult != 0)
-					{
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer to read_data32 has wrong packet size!", m_pcName, this);
-					}
-					else
-					{
-						ulValue = ((uint32_t)(aucResponse[2])) | ((uint32_t)(aucResponse[3])) << 8U | ((uint32_t)(aucResponse[4])) << 16U | ((uint32_t)(aucResponse[5])) << 24U;
-						fOk = true;
-					}
-				}
-#else
 				sizAucResponse = (uint32_t*) malloc(sizeof(uint32_t));
 				*sizAucResponse = ulSize; // give a hint how much space is needed.
 				iResult = execute_command(aucCommand, sizeof(aucCommand),
 						&aucResponse, sizAucResponse);
-#endif
 				if (iResult != 0) {
 					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L,
 							"%s(%p): failed to execute command!", m_pcName,
@@ -801,12 +757,9 @@ void romloader_dpm::write_data08(lua_State *ptClientData,
 
 	ulValue = 0;
 
-#if tmp == 0
 	uint8_t * aucResponse;
 	uint32_t * sizAucResponse;
 	aucResponse = NULL;
-
-#endif
 
 	if (m_fIsConnected == false) {
 		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!",
@@ -827,37 +780,10 @@ void romloader_dpm::write_data08(lua_State *ptClientData,
 		aucCommand[6] = (uint8_t)((ulNetxAddress >> 24U) & 0xffU);
 		aucCommand[7] = ucData;
 
-//		tResult = execute_command(aucCommand, 11);
-#if tmp == 1
-		uint8_t aucResponse[16];
-		unsigned char ucStatus;
-
-		iResult = m_ptTransfer->send_command(aucCommand, 8);
-
-		if (iResult != 0)
-		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
-		}
-		else
-		{
-//			if( m_sizMaxPacketSizeClient!=4+1 ) /* not sure with this */
-//			{
-//				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to write_data32 has wrong packet size of %d!", m_pcName, this, m_sizMaxPacketSizeClient);
-//			}
-//			else
-//			{
-			fOk = true;
-//			}
-		}
-		printf("Receive_packet. \n");
-		iResult = m_ptTransfer->receive_packet(aucResponse, sizeof(aucResponse), &ulPacketSize);
-
-#else
 		sizAucResponse = (uint32_t*) malloc(sizeof(uint32_t));
 		*sizAucResponse = sizeof(ucData); // give a hint how many space is needed.
 		iResult = execute_command(aucCommand, sizeof(aucCommand), &aucResponse,
 				sizAucResponse);
-#endif
 	}
 	next_sequence_number();
 
@@ -875,11 +801,9 @@ void romloader_dpm::write_data16(lua_State *ptClientData,
 
 	int iResult;
 
-#if tmp == 0
 	uint8_t * aucResponse;
 	uint32_t * sizAucResponse;
 	aucResponse = NULL;
-#endif
 
 	ulValue = 0;
 
@@ -903,33 +827,6 @@ void romloader_dpm::write_data16(lua_State *ptClientData,
 		aucCommand[7] = (uint8_t)(usData & 0xffU);
 		aucCommand[8] = (uint8_t)((usData >> 8U) & 0xffU);
 
-//		tResult = execute_command(aucCommand, 11);
-#if tmp == 1
-
-		uint8_t aucResponse[16];
-		unsigned char ucStatus;
-
-		iResult = m_ptTransfer->send_command(aucCommand, 9);
-
-		if (iResult != 0)
-		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
-		}
-		else
-		{
-//			if( m_sizMaxPacketSizeClient!=4+1 ) /* not sure with this */
-//			{
-//				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to write_data32 has wrong packet size of %d!", m_pcName, this, m_sizMaxPacketSizeClient);
-//			}
-//			else
-//			{
-			fOk = true;
-//			}
-		}
-
-		printf("Receive_packet. \n");
-		iResult = m_ptTransfer->receive_packet(aucResponse, sizeof(aucResponse), &ulPacketSize);
-#else
 		sizAucResponse = (uint32_t*) malloc(sizeof(uint32_t));
 		*sizAucResponse = sizeof(usData); // give a hint how many space is needed.
 		iResult = execute_command(aucCommand, sizeof(aucCommand), &aucResponse,
@@ -937,11 +834,8 @@ void romloader_dpm::write_data16(lua_State *ptClientData,
 		free(aucResponse);
 		free(sizAucResponse);
 		aucResponse = NULL;
-#endif
 	}
 	next_sequence_number();
-
-//	}
 
 	if (iResult != 0) {
 		MUHKUH_PLUGIN_EXIT_ERROR(ptClientData);
@@ -955,11 +849,9 @@ void romloader_dpm::write_data32(lua_State *ptClientData,
 	uint32_t ulPacketSize;
 
 	int iResult;
-#if tmp == 0
 	uint8_t * aucResponse;
 	uint32_t * sizAucResponse;
 	aucResponse = NULL;
-#endif
 
 	ulValue = 0;
 
@@ -1008,20 +900,12 @@ void romloader_dpm::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN,
 	long lBytesProcessed;
 
 	uint32_t ulValue;
-
 	uint32_t ulPacketSize;
-
 	int iResult;
-#if tmp == 1
-	uint8_t aucCommand[m_sizMaxPacketSizeHost];
-	uint8_t aucResponse[m_sizMaxPacketSizeHost];
-#else
 
 	uint8_t * aucResponse;
 	uint32_t * sizAucResponse;
 	aucResponse = NULL;
-
-#endif
 
 	/* Expect error. */
 	fOk = false;
@@ -1055,36 +939,10 @@ void romloader_dpm::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN,
 			aucCommand[6] = (uint8_t)((ulNetxAddress >> 24U) & 0xffU);
 			memcpy(aucCommand + 7, pcBUFFER_IN, sizChunk);
 
-#if tmp == 1
-			printf("sending command...\n");
-			printf("requested adr: 0x%02x%02x%02x%02x\n", aucCommand[6], aucCommand[5], aucCommand[4], aucCommand[3]);
-			iResult = m_ptTransfer->send_command(aucCommand, 7 + sizChunk);
-
-			printf("send done: %d\n", iResult);
-			if (iResult != 0)
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L/*ptClientData*/,"%s(%p): failed to execute command!", m_pcName, this);
-
-//							MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
-			}
-			else
-			{
-				printf("Receive_packet. \n");
-				iResult = m_ptTransfer->receive_packet(aucResponse, sizeof(aucResponse), &ulPacketSize);
-
-				printf("receive finished: %d\n", iResult);
-				if (iResult != 0)
-				{
-					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer to read_data32 has wrong packet size!", m_pcName, this);
-				}
-				else
-				{
-#else
 			sizAucResponse = (uint32_t*) malloc(sizeof(uint32_t));
 			*sizAucResponse = sizBUFFER_IN; // give a hint how many space is needed.
 			iResult = execute_command(aucCommand, sizeof(aucCommand),
 					&aucResponse, sizAucResponse);
-#endif
 			ulValue = ((uint32_t)(aucResponse[2]))
 					| ((uint32_t)(aucResponse[3])) << 8U
 					| ((uint32_t)(aucResponse[4])) << 16U
@@ -1095,17 +953,6 @@ void romloader_dpm::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN,
 //				}
 //			}
 
-			/* ---- */
-
-//			tResult = execute_command(aucCommand, sizChunk+7);
-//			if( tResult!=UARTSTATUS_OK )
-//			{
-//				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
-//				fOk = false;
-//				break;
-//			}
-//			else
-//			{
 			if (*sizAucResponse != 1) {
 				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L,
 						"%s(%p): answer to write_data08 has wrong packet size of %d!",
@@ -1184,7 +1031,6 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 		iResult = execute_command(aucCommand, sizeof(aucCommand), &aucResponse,
 				sizAucResponse);
 
-
 		if (iResult != 0) {
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L,
 					"%s(%p): failed to execute command!", m_pcName, this);
@@ -1198,7 +1044,6 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 			} else {
 
 				/* Receive message packets. */
-				int maxSends = 0;
 				uint8_t aucLocalResponse[m_sizMaxPacketSizeClient]; // assume that we getting exactly what we asked for (+ 2 byte header)
 				uint32_t ulPacketSize;
 
@@ -1206,12 +1051,9 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 				free(sizAucResponse);
 				next_sequence_number();
 
-
 				m_ptTransfer->send_is_ready_to_execute();
 
 				while (1) {
-
-					printf("==========> MAXSENDS: %i\n", maxSends++);
 					pcProgressData = NULL;
 					sizProgressData = 0;
 
@@ -1219,13 +1061,10 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 
 					uint32_t ulPacketSize;
 
-					iResult =
-							m_ptTransfer->receive_packet(aucLocalResponse,
-									m_sizMaxPacketSizeClient/*sizeof(aucLocalResponse)*/,
-									&ulPacketSize);
+					iResult = m_ptTransfer->receive_packet(aucLocalResponse,
+							m_sizMaxPacketSizeClient, &ulPacketSize);
 //					aucLocalResponse[ulPacketSize] = 0;
 
-//					printf("=====> REceived: %s\n", (char*) aucLocalResponse);
 					for (int i = 0; i < ulPacketSize; i++) {
 						printf("0x%02x ", aucLocalResponse[i]);
 						if (i % 16 == 15)
@@ -1250,8 +1089,6 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 								pcProgressData = (char *) &aucLocalResponse[1];
 								sizProgressData = ulPacketSize - 1;
 
-//								pcProgressData = (char*)ulPacketSize+3;
-//								sizProgressData = ulPacketSize-5;
 							} else if (ucStatus
 									== MONITOR_STATUS_CallFinished) {
 								fprintf(stderr, "%s(%p): Call has finished!",
@@ -1270,18 +1107,14 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 							/* Send a cancel request to the device. */
 							/* Construct the command packet. */
 
-							iResult = m_ptTransfer->send_escape_command(NULL,
-									NULL);
+							iResult = m_ptTransfer->send_escape_command();
 
-							int iResult = -1;
 
 							printf("send done: %d\n", iResult);
 
 							printf("Receive_packet. \n");
 							iResult =
 									m_ptTransfer->receive_escape_acknowledge_command();
-
-							printf("nextX ESC RESP: %s\n", aucLocalResponse);
 
 //							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L,
 //									"%s(%p): the call was canceled!", m_pcName,
