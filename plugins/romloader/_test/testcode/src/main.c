@@ -82,13 +82,9 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(
 
 		int i = 0;
 		if (0 != SERIAL_PEEK()) {
-			while (0 != SERIAL_PEEK()) {
 				if(0x2B == SERIAL_GET()){
 					uprintf("ask for ESC\n");
 				}
-
-			}
-			uprintf("GOT >>>%s<<< FROM HOST\n", tmp);
 			break;
 		}
 	}
@@ -110,7 +106,6 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(
 //		msleep(100);
 //
 //	}
-	uprintf("GOT SOMETHING\n");
 ////	/* Print messages with a specific delay. */
 //	delay_print(100,    0);
 //	delay_print(  8,  500);

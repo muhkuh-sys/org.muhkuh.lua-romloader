@@ -249,10 +249,10 @@ void transport_send_packet(void) {
 
 		if (ulValue == 0x8000) {
 
-			/* Acknowledge the packet. */
-			ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^=
-			NETX56_DPM_BOOT_NETX_RECEIVED_CMD
-					<< SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+//			/* Acknowledge the packet. */
+//			ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^=
+//			NETX56_DPM_BOOT_NETX_RECEIVED_CMD
+//					<< SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
 
 			transport_enqueue(0x2B); // ESC REQ
 
@@ -271,10 +271,10 @@ void transport_send_packet(void) {
 		ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^=
 		NETX56_DPM_BOOT_NETX_SEND_CMD << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
 
-//		/* Wait for host ACK. */
-//		do {
-//			ulValue = mailbox_purr(NETX56_DPM_BOOT_NETX_SEND_CMD);
-//		} while (ulValue != 0);
+		/* Wait for host ACK. */
+		do {
+			ulValue = mailbox_purr(NETX56_DPM_BOOT_NETX_SEND_CMD);
+		} while (ulValue != 0);
 
 		/* Remember the packet size for resends. */
 		sizPacketOutputFillLast = sizPacketOutputFill;
@@ -286,6 +286,8 @@ void transport_send_packet(void) {
 
 /**
  * escape command expresses as msb of handshake
+ *
+ * @todo get rid of the magic numbers
  */
 int transport_acknowledge_escape_command() {
 	HOSTDEF(ptHandshakeDtcmArmMirrorArea);
@@ -368,3 +370,37 @@ void transport_netMon_to_netX() {
 
 }
 
+
+/**
+ * @todo: get rid of the magic numbers
+ */
+int transport_is_ready_to_execute() {
+	HOSTDEF(ptHandshakeDtcmArmMirrorArea);
+
+	uint32_t ulValue;
+	unsigned int uiRetryCnt;
+	int iResult;
+	uint32_t ulHostPart;
+	uint32_t ulNetxPart;
+
+	ulValue = ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0];
+
+	ulHostPart = ulValue >> SRT_NETX56_HANDSHAKE_REG_PC_DATA;
+	ulHostPart &= 0x40;
+
+	ulNetxPart = ulValue >> SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+
+	if (ulHostPart == 0x40) {
+		/* set back the netx flag */
+		/* IS THIS NEEDED???*/
+		ulNetxPart &= 0xBF;
+
+		ulValue = 0;
+		ulValue |= ulHostPart << SRT_NETX56_HANDSHAKE_REG_PC_DATA;
+		ulValue |= ulNetxPart << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+
+		ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] = ulValue;
+		return 1;
+	}
+	return iResult = 0;
+}

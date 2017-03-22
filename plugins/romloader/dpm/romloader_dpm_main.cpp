@@ -140,9 +140,8 @@ void romloader_dpm::next_sequence_number() {
  * @return response or -1 in case of error
  * @todo error code for different cases?
  */
-int romloader_dpm::execute_command(uint8_t aucCommand[],
-		size_t sizAucCommand, uint8_t ** aucResponse,
-		uint32_t * sizAucResponse) {
+int romloader_dpm::execute_command(uint8_t aucCommand[], size_t sizAucCommand,
+		uint8_t ** aucResponse, uint32_t * sizAucResponse) {
 
 	uint8_t aucLocalResponse[*sizAucResponse + 1]; // assume that we getting exactly what we asked for (+ 2 byte header)
 
@@ -160,7 +159,7 @@ int romloader_dpm::execute_command(uint8_t aucCommand[],
 	if (iResult != 0) {
 		return iResult;
 	}
-	printf("Receive_packet. \n");
+	printf("EXEC COMM Receive_packet. \n");
 	iResult = m_ptTransfer->receive_packet(aucLocalResponse,
 			sizeof(aucLocalResponse), &ulPacketSize);
 	// break if error to avoid copying crap
@@ -1140,6 +1139,9 @@ void romloader_dpm::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN,
 	}
 }
 
+/**
+ * @todo rename is_ready_to_execute
+ */
 void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 		SWIGLUA_REF tLuaFn, long lCallbackUserData) {
 
@@ -1150,9 +1152,6 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 	bool fIsRunning;
 	char *pcProgressData;
 	size_t sizProgressData;
-
-	uint32_t ulData = 0x43444344; // eay pattern for test
-
 	int iResult = -1;
 
 	uint8_t * aucResponse;
@@ -1185,7 +1184,6 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 		iResult = execute_command(aucCommand, sizeof(aucCommand), &aucResponse,
 				sizAucResponse);
 
-		next_sequence_number();
 
 		if (iResult != 0) {
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L,
@@ -1198,12 +1196,18 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 						m_pcName, this, *sizAucResponse);
 				fOk = false;
 			} else {
-				/* Get the next sequence number. */
-				//m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
+
 				/* Receive message packets. */
 				int maxSends = 0;
 				uint8_t aucLocalResponse[m_sizMaxPacketSizeClient]; // assume that we getting exactly what we asked for (+ 2 byte header)
 				uint32_t ulPacketSize;
+
+				free(aucResponse);
+				free(sizAucResponse);
+				next_sequence_number();
+
+
+				m_ptTransfer->send_is_ready_to_execute();
 
 				while (1) {
 
@@ -1215,8 +1219,10 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 
 					uint32_t ulPacketSize;
 
-					iResult = m_ptTransfer->receive_packet(aucLocalResponse,
-							sizeof(aucLocalResponse), &ulPacketSize);
+					iResult =
+							m_ptTransfer->receive_packet(aucLocalResponse,
+									m_sizMaxPacketSizeClient/*sizeof(aucLocalResponse)*/,
+									&ulPacketSize);
 //					aucLocalResponse[ulPacketSize] = 0;
 
 //					printf("=====> REceived: %s\n", (char*) aucLocalResponse);
@@ -1251,7 +1257,8 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 								fprintf(stderr, "%s(%p): Call has finished!",
 										m_pcName, this);
 								fOk = true;
-								break;
+
+								return;
 							}
 						}
 					}
@@ -1266,8 +1273,6 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 							iResult = m_ptTransfer->send_escape_command(NULL,
 									NULL);
 
-							//receive ESC COMMAND
-
 							int iResult = -1;
 
 							printf("send done: %d\n", iResult);
@@ -1275,7 +1280,6 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 							printf("Receive_packet. \n");
 							iResult =
 									m_ptTransfer->receive_escape_acknowledge_command();
-							next_sequence_number();
 
 							printf("nextX ESC RESP: %s\n", aucLocalResponse);
 
@@ -1288,6 +1292,8 @@ void romloader_dpm::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 					}
 
 				}
+//				m_ptTransfer->send_is_ready_to_execute();
+
 			}
 		}
 

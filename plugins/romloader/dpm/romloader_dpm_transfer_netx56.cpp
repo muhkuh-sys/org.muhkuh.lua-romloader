@@ -233,7 +233,7 @@ int romloader_dpm_transfer_netx56::receive_escape_acknowledge_command() {
 	/* adapt handshake flag with msb in order to get esc information in it */
 	iResult = m_ptDpmDevice->dpm_read32(OFFS_HBOOT(ulHandshake), &ulValue);
 	if (iResult == 0) {
-		/* not needed yet */
+
 		ulHostPart = ulValue >> SRT_NETX56_HANDSHAKE_REG_PC_DATA;
 		ulHostPart |= 0x80;
 
@@ -241,6 +241,7 @@ int romloader_dpm_transfer_netx56::receive_escape_acknowledge_command() {
 		ulNetxPart &= 0x80;
 
 		if (ulNetxPart == 0x80) {
+			/* set back the host flag */
 			ulHostPart &= 0x7F;
 			ulValue = 0;
 			ulValue |= ulHostPart << SRT_NETX56_HANDSHAKE_REG_PC_DATA;
@@ -345,6 +346,41 @@ int romloader_dpm_transfer_netx56::send_escape_command(const uint8_t *pucChunk,
 
 	return iResult;
 }
+
+
+/**
+ * escape command expresses as msb of handshake
+ */
+int romloader_dpm_transfer_netx56::send_is_ready_to_execute() {
+	uint32_t ulValue;
+	unsigned int uiRetryCnt;
+	int iResult;
+	uint32_t ulHostPart;
+	uint32_t ulNetxPart;
+
+	/* adapt handshake flag with msb in order to get esc information in it */
+	iResult = m_ptDpmDevice->dpm_read32(OFFS_HBOOT(ulHandshake), &ulValue);
+	if (iResult == 0) {
+		ulHostPart = ulValue >> SRT_NETX56_HANDSHAKE_REG_PC_DATA;
+		ulHostPart |= 0x40;
+		/* not needed yet */
+		ulNetxPart = ulValue >> SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+		ulNetxPart &= 0xFF;
+
+	}
+
+	ulValue = 0;
+	ulValue |= ulHostPart << SRT_NETX56_HANDSHAKE_REG_PC_DATA;
+	ulValue |= ulNetxPart << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+
+	iResult = m_ptDpmDevice->dpm_write32(OFFS_HBOOT(ulHandshake), ulValue);
+	if (iResult == 0) {
+
+	}
+
+	return iResult;
+}
+
 
 int romloader_dpm_transfer_netx56::mailbox_send_chunk(const uint8_t *pucChunk,
 		uint32_t ulChunkSize) {

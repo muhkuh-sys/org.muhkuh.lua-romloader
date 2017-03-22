@@ -299,18 +299,7 @@ function hex_dump(buf)
   end
 end
 
---iCnt = 0
---local function callback(a,b)
---  print('callback: ', a, b)
---  iCnt = iCnt + 1
---  if iCnt <= 10 then
---    return true
---  else
---    return false
---  end
---end
 
-----strFilePath = "../../../../../../plugins/romloader/_test/testcode/targets/montest_netx56.bin"
 strFilePath = "../../../../../../plugins/romloader/_test/testcode/targets/montest_netx56.bin"
 --
 print("Exec path: " .. arg[0] .. "\n")
@@ -325,12 +314,10 @@ mbin_write(tParentWindow, tPlugin, aAttr)
 mbin_set_parameter(tPlugin,aAttr, 4)
 local retAParameter
 local ulResut = mbin_execute(tParentWindow, tPlugin, aAttr, retAParameter)
-print("FCT RES: " .. ulResut)
---
+--print("FCT RES: " .. ulResut)
 
---              ??             OK       OK           OK
---mbin_simple_run(tParentWindow, tPlugin, strFilePath, aParameter)
---
+
+
 --tPlugin:write_image(0x08004000, "123", callback, 10);
 --local strResult = tPlugin:read_image(0x08004000, 3, callback, 10);
 --hex_dump(strResult)

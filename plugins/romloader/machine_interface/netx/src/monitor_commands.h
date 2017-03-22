@@ -56,6 +56,7 @@ typedef enum
 	MONITOR_STATUS_InvalidCommand            = 0x03,
 	MONITOR_STATUS_InvalidPacketSize         = 0x04,
 	MONITOR_STATUS_InvalidSizeParameter      = 0x05,
+	MONITOR_STATUS_ReddyToExecute			 = 0x07,
 	MONITOR_STATUS_InvalidSequenceNumber     = 0x06
 } MONITOR_STATUS_T;
 

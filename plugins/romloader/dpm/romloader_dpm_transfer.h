@@ -26,6 +26,7 @@ public:
 	virtual int receive_response(uint8_t *pucBuffer, uint32_t ulDataSize) = 0;
 	virtual int receive_packet(uint8_t *pucBuffer, uint32_t ulMaxDataSize, uint32_t *pulDataRead) = 0;
 	virtual int receive_escape_acknowledge_command() = 0;
+	virtual int send_is_ready_to_execute() = 0;
 
 protected:
 	romloader_dpm_device *m_ptDpmDevice;

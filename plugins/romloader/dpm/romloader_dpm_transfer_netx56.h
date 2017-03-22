@@ -17,6 +17,8 @@ public:
 	virtual int receive_response(uint8_t *pucBuffer, uint32_t ulDataSize);
 	virtual int receive_packet(uint8_t *pucBuffer, uint32_t ulMaxDataSize, uint32_t *pulDataRead);
 	virtual int receive_escape_acknowledge_command();
+	virtual int send_is_ready_to_execute();
+
 
 protected:
 
