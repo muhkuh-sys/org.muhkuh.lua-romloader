@@ -41,6 +41,7 @@ unsigned int transport_call_console_peek(void);
 void transport_call_console_flush(void);
 int transport_is_ready_to_execute(void);
 
+
 #define QUEUE_LENGTH 0x20
 uint8_t ucQueue[QUEUE_LENGTH];
 uint32_t uiStartPoint;

@@ -21,29 +21,37 @@
 #include "netx_consoleapp.h"
 #include "systime.h"
 #include "serial_vectors.h"
+#include "uprintf.h"
 
 #include "main.h"
 
 /*-----------------------------------*/
 
-static void delay_print(unsigned int uiMessages, unsigned long ulDelayMs) {
+static void delay_print(unsigned int uiMessages, unsigned long ulDelayMs)
+{
 	unsigned int uiCnt;
 	unsigned long ulTimer;
 	int iElapsed;
 
+
 	/* print a lot of messages */
 	uprintf(". counting from 0 to %d and %dms delay.\n", uiMessages, ulDelayMs);
-	for (uiCnt = 0; uiCnt < uiMessages; ++uiCnt) {
-		if (ulDelayMs != 0) {
+	for(uiCnt=0; uiCnt<uiMessages; ++uiCnt)
+	{
+		if( ulDelayMs!=0 )
+		{
 			ulTimer = systime_get_ms();
-			do {
+			do
+			{
 				iElapsed = systime_elapsed(ulTimer, ulDelayMs);
-			} while (iElapsed == 0);
+			} while( iElapsed==0 );
 		}
 		uprintf("%% %d/%d\n", uiCnt, uiMessages);
 	}
 
+
 }
+
 
 static void msleep(unsigned long ulDelayMs) {
 	unsigned long ulTimer;
@@ -58,20 +66,22 @@ static void msleep(unsigned long ulDelayMs) {
 
 }
 
+
 /* This is your main function for the test,
- your control starts here. */
-NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(
-		NETX_CONSOLEAPP_PARAMETER_T *ptTestParam) {
+   your control starts here. */
+NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(NETX_CONSOLEAPP_PARAMETER_T *ptTestParam)
+{
 	/* this is the result of the test */
 	NETX_CONSOLEAPP_RESULT_T tTestResult;
 	/* this is the input parameter from the xml file */
 	unsigned long ulParameter;
 
+
 	/* Init all modules. */
 	systime_init();
 
 	/* the input parameter is  */
-	ulParameter = (unsigned long) ptTestParam->pvInitParams;
+	ulParameter = (unsigned long)ptTestParam->pvInitParams;
 
 	/* say hi */
 
@@ -103,7 +113,7 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(
 	delay_print(  2, 2000);
 
 	/* write parameter to return message */
-	ptTestParam->pvReturnMessage = (void*) ulParameter;
+	ptTestParam->pvReturnMessage = (void*)ulParameter;
 
 	/* test result is "ok" */
 	tTestResult = NETX_CONSOLEAPP_RESULT_OK;
