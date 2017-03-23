@@ -300,8 +300,12 @@ void romloader_dpm::Connect(lua_State *ptClientData) {
 
 				case ROMLOADER_CHIPTYP_NETX4000_RELAXED:
 				case ROMLOADER_CHIPTYP_NETX4000_FULL_SMALL:
-					/* Not yet! */
-					printf("netX4000 is not supported yet.\n");
+					/* Create a new transfer object. */
+					ptTransfer = new romloader_dpm_transfer_netx4000(ptDevice);
+					printf("ptTransfer %p \n", ptTransfer);
+
+					/* The device is now owned by the transfer object. */
+					ptDevice = NULL;
 					break;
 
 				case ROMLOADER_CHIPTYP_NETX90_MPW:

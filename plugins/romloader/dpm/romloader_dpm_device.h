@@ -75,7 +75,8 @@ protected:
 
 private:
 	static const DPM_DETECT_ELEMENT_T atDpmDetectElements_netx56[2];
-	static const DPM_DETECT_LIST_T atDpmDetectList[1];
+	static const DPM_DETECT_ELEMENT_T atDpmDetectElements_netx4000_RELAXED[2];
+	static const DPM_DETECT_LIST_T atDpmDetectList[2];
 };
 
 

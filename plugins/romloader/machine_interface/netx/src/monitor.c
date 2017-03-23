@@ -23,8 +23,6 @@
 #include <stddef.h>
 #include <string.h>
 
-
-
 #include "netx_io_areas.h"
 
 #include "asic_types.h"
@@ -228,13 +226,16 @@ static const SERIAL_V2_COMM_UI_FN_T tCallConsole = { .fn = { .fnGet =
 #define ADR_NETX_VERSION_56       0x080f0008
 #define VAL_NETX_VERSION_56A      0x00006003
 #define VAL_NETX_VERSION_56B      0x00106003
+#define ADR_NETX_VERSION_4000     0x04100020
+#define VAL_NETX_VERSION_4000_RELAXED      0x00108004
+#define VAL_NETX_VERSION_4000_FULL      0x0010b004
 
 #define ADR_NETX_VERSION_500_100  0x00200008
 #define VAL_NETX_VERSION_500      0x00001000
 #define VAL_NETX_VERSION_100      0x00003002
 
 void monitor_init(void) {
-#if ASIC_TYP==ASIC_TYP_NETX500 || ASIC_TYP==ASIC_TYP_NETX56
+#if ASIC_TYP==ASIC_TYP_NETX500 || ASIC_TYP==ASIC_TYP_NETX56 || ASIC_TYP==ASIC_TYP_NETX4000_RELAXED
 	unsigned long ulNetxVersion;
 #endif
 
@@ -269,6 +270,16 @@ void monitor_init(void) {
 	else if (ulNetxVersion == VAL_NETX_VERSION_56B)
 	{
 		ucChiptype = (unsigned char)ROMLOADER_CHIPTYP_NETX56B;
+	}
+#elif ASIC_TYP==ASIC_TYP_NETX4000_RELAXED
+	ulNetxVersion = *((unsigned long*)ADR_NETX_VERSION_4000);
+	if (ulNetxVersion == VAL_NETX_VERSION_4000_RELAXED)
+	{
+		ucChiptype = (unsigned char)ROMLOADER_CHIPTYP_NETX4000_RELAXED;
+	}
+	else if (ulNetxVersion == VAL_NETX_VERSION_4000_FULL)
+	{
+		ucChiptype = (unsigned char)ROMLOADER_CHIPTYP_NETX4000_FULL_SMALL;
 	}
 #else
 #       error "Unknown ASIC type!"

@@ -23,26 +23,28 @@
 #include "monitor.h"
 #include "monitor_commands.h"
 #include "serial_vectors.h"
-#include "systime.h"
+//#include "systime.h"
+
+#include "globals.h"
 
 /*-------------------------------------------------------------------------*/
 
-#define NETX56_DPM_BOOT_NETX_RECEIVED_CMD      0x01
-#define NETX56_DPM_BOOT_NETX_SEND_CMD          0x02
+#define DPM_BOOT_NETX_RECEIVED_CMD      0x01
+#define DPM_BOOT_NETX_SEND_CMD          0x02
 
-#define NETX56_DPM_BOOT_HOST_SEND_CMD          0x01
-#define NETX56_DPM_BOOT_HOST_RECEIVED_CMD      0x02
+#define DPM_BOOT_HOST_SEND_CMD          0x01
+#define DPM_BOOT_HOST_RECEIVED_CMD      0x02
 
-#define SRT_NETX56_HANDSHAKE_REG_ARM_DATA      16
-#define SRT_NETX56_HANDSHAKE_REG_PC_DATA       24
+#define SRT_HANDSHAKE_REG_ARM_DATA      16
+#define SRT_HANDSHAKE_REG_PC_DATA       24
 
 /* The ID "MMON" shows that the monitor is running. */
 #define BOOT_ID_MONITOR 0x4e4f4d4d
 
-#define NETX56_DPM_NETX_TO_HOST_BUFFERSIZE     0x0200
-#define NETX56_DPM_HOST_TO_NETX_BUFFERSIZE     0x0400
+#define DPM_NETX_TO_HOST_BUFFERSIZE     0x0200
+#define DPM_HOST_TO_NETX_BUFFERSIZE     0x0400
 
-typedef struct HBOOT_DPM_NETX56_STRUCT {
+typedef struct HBOOT_DPM_STRUCT {
 	volatile uint32_t ulDpmBootId;
 	volatile uint32_t ulDpmByteSize;
 	volatile uint32_t ulSdramExtGeneralCtrl;
@@ -56,14 +58,14 @@ typedef struct HBOOT_DPM_NETX56_STRUCT {
 	volatile uint32_t ulHostToNetxDataSize;
 	volatile uint32_t ulHandshake;
 	volatile uint32_t aulReserved_84[31];
-	volatile uint8_t aucNetxToHostData[NETX56_DPM_NETX_TO_HOST_BUFFERSIZE];
-	volatile uint8_t aucHostToNetxData[NETX56_DPM_HOST_TO_NETX_BUFFERSIZE];
-} HBOOT_DPM_NETX56_T;
+	volatile uint8_t aucNetxToHostData[DPM_NETX_TO_HOST_BUFFERSIZE];
+	volatile uint8_t aucHostToNetxData[DPM_HOST_TO_NETX_BUFFERSIZE];
+} HBOOT_DPM_T;
 
 uint8_t aucNetMonToImageData[1];
 uint8_t aucImageToNetMonData[1];
 
-static HBOOT_DPM_NETX56_T tDpm __attribute__ ((section (".dpm")));
+static HBOOT_DPM_T tDpm __attribute__ ((section (".dpm")));
 
 /*-------------------------------------------------------------------------*/
 
@@ -79,13 +81,14 @@ size_t sizPacketOutputEmptyFirst;
 /*-------------------------------------------------------------------------*/
 
 static void dpm_init(void) {
-	HOSTDEF(ptDpmArea);
+//	HOSTDEF_PT_DPM_AREA;
+//HOSTDEF(ptDpmArea);
 	unsigned long ulValue;
 	unsigned long ulNetxAdr;
 
 	/* Setup the DPM at the new location. */
 	tDpm.ulDpmBootId = BOOT_ID_MONITOR;
-	tDpm.ulDpmByteSize = 0x0100 + sizeof(HBOOT_DPM_NETX56_T);
+	tDpm.ulDpmByteSize = 0x0100 + sizeof(HBOOT_DPM_T);
 	tDpm.ulSdramExtGeneralCtrl = 0;
 	tDpm.ulSdramExtTimingCtrl = 0;
 	tDpm.ulSdramExtByteSize = 0;
@@ -103,6 +106,7 @@ static void dpm_init(void) {
 	 * 0x0180 - 0x01ff : intramhs_dpm_mirror
 	 * 0x0200 - 0x07ff : dpm_mb_start+0x0100
 	 */
+#if ASIC_TYP==ASIC_TYP_NETX56
 	ptDpmArea->asDpm_win[0].ulEnd = 0x017fU + 1;
 	ulNetxAdr = (unsigned long) &tDpm;
 	ulValue = (ulNetxAdr - 0x0100U) & HOSTMSK(dpm_win1_map_win_map);
@@ -126,7 +130,34 @@ static void dpm_init(void) {
 
 	ptDpmArea->asDpm_win[3].ulEnd = 0U;
 	ptDpmArea->asDpm_win[3].ulMap = 0U;
+#elif ASIC_TYP==ASIC_TYP_NETX4000_RELAXED
+	HOSTDEF_PT_DPM_AREA;
 
+#include "../../../../../platform/src/netx4000_relaxed/netx4000_io_areas.h"
+	ptDpmArea->ulDpm_win1_end = 0x017fU + 1; //ulDpm_win1_end
+	ulNetxAdr = (unsigned long) &tDpm;
+	ulValue = (ulNetxAdr - 0x0100U) & HOSTMSK(dpm_win1_map_win_map);
+	ulValue |= ulNetxAdr & HOSTMSK(dpm_win1_map_win_page);
+	ulValue |= HOSTMSK(dpm_win1_map_byte_area)|HOSTMSK(dpm_win1_map_read_ahead);
+	ptDpmArea->ulDpm_win1_map = ulValue;
+
+	ptDpmArea->ulDpm_win2_end = 0x01ffU + 1;
+	ulNetxAdr = HOSTADDR(intramhs_dpm_mirror);
+	ulValue = (ulNetxAdr - 0x0180U) & HOSTMSK(dpm_win1_map_win_map);
+	ulValue |= ulNetxAdr & HOSTMSK(dpm_win1_map_win_page);
+	ulValue |= HOSTMSK(dpm_win1_map_byte_area);
+	ptDpmArea->ulDpm_win2_map = ulValue;
+
+	ptDpmArea->ulDpm_win3_end = 0x07ffU + 1;
+	ulNetxAdr = ((unsigned long) &tDpm) + 0x100;
+	ulValue = (ulNetxAdr - 0x0200U) & HOSTMSK(dpm_win1_map_win_map);
+	ulValue |= ulNetxAdr & HOSTMSK(dpm_win1_map_win_page);
+	ulValue |= HOSTMSK(dpm_win1_map_byte_area)|HOSTMSK(dpm_win1_map_read_ahead);
+	ptDpmArea->ulDpm_win3_map = ulValue;
+
+	ptDpmArea->ulDpm_win4_end = 0U;
+	ptDpmArea->ulDpm_win4_map = 0U;
+#endif
 }
 
 void queue_init(void) {
@@ -135,17 +166,20 @@ void queue_init(void) {
 	uiSize = 0;
 }
 
+
 static unsigned long mailbox_purr(unsigned long ulMask) {
-	HOSTDEF(ptHandshakeDtcmArmMirrorArea);
+	HOSTDEF_PT_HANDSHAKE_ARM_MIRROR_AREA;   // HOSTDEF(ptHandshakeDtcmArmMirrorArea);
+
+
 	unsigned long ulValue;
 	unsigned long ulHostPart;
 	unsigned long ulNetxPart;
 
-	ulValue = ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0];
+	ulValue = PT_HANDSCHAKE_ARM_MIRROR_AREA_HANDSHAKE_REG;
 
-	ulHostPart = ulValue >> SRT_NETX56_HANDSHAKE_REG_PC_DATA;
+	ulHostPart = ulValue >> SRT_HANDSHAKE_REG_PC_DATA;
 	ulHostPart &= 3;
-	ulNetxPart = ulValue >> SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+	ulNetxPart = ulValue >> SRT_HANDSHAKE_REG_ARM_DATA;
 	ulNetxPart &= 3;
 
 	/* Check for harmony. */
@@ -175,28 +209,28 @@ void transport_init(void) {
 }
 
 void transport_loop(void) {
-	HOSTDEF(ptHandshakeDtcmArmMirrorArea);
+	HOSTDEF_PT_HANDSHAKE_ARM_MIRROR_AREA;
 	unsigned long ulValue;
 	unsigned long ulPacketSize;
 
 	/* Wait for a packet. */
 	do {
-		ulValue = mailbox_purr(NETX56_DPM_BOOT_NETX_RECEIVED_CMD);
+		ulValue = mailbox_purr(DPM_BOOT_NETX_RECEIVED_CMD);
 	} while (ulValue == 0);
 
 	/* Acknowledge the packet. */
 	ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^=
-	NETX56_DPM_BOOT_NETX_RECEIVED_CMD << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+	DPM_BOOT_NETX_RECEIVED_CMD << SRT_HANDSHAKE_REG_ARM_DATA;
 
 	/* Is the packet's size valid? */
 	ulPacketSize = tDpm.ulHostToNetxDataSize;
 	if (ulPacketSize == 0) {
 		/* Send magic cookie and version info. */
-		monitor_send_magic(NETX56_DPM_NETX_TO_HOST_BUFFERSIZE);
-	} else if (ulPacketSize <= NETX56_DPM_HOST_TO_NETX_BUFFERSIZE) {
+		monitor_send_magic(DPM_NETX_TO_HOST_BUFFERSIZE);
+	} else if (ulPacketSize <= DPM_HOST_TO_NETX_BUFFERSIZE) {
 		/* Yes, the packet size is valid. */
 		monitor_process_packet(tDpm.aucHostToNetxData, ulPacketSize,
-		NETX56_DPM_NETX_TO_HOST_BUFFERSIZE);
+		DPM_NETX_TO_HOST_BUFFERSIZE);
 	}
 }
 
@@ -223,14 +257,14 @@ void transport_enqueue(unsigned char ucData) {
 }
 
 void transport_send_byte(unsigned char ucData) {
-	if (sizPacketOutputFill < NETX56_DPM_HOST_TO_NETX_BUFFERSIZE) {
+	if (sizPacketOutputFill < DPM_HOST_TO_NETX_BUFFERSIZE) {
 		tDpm.aucNetxToHostData[sizPacketOutputFill] = ucData;
 		++sizPacketOutputFill;
 	}
 }
 
 void transport_send_packet(void) {
-	HOSTDEF(ptHandshakeDtcmArmMirrorArea);
+	HOSTDEF_PT_HANDSHAKE_ARM_MIRROR_AREA;
 	unsigned long ulValue;
 
 	/*--- check if the sent esc ---*/
@@ -241,7 +275,7 @@ void transport_send_packet(void) {
 	if (ulPacketSize == 0) {
 
 		//..
-	} else if (ulPacketSize <= NETX56_DPM_HOST_TO_NETX_BUFFERSIZE) {
+	} else if (ulPacketSize <= DPM_HOST_TO_NETX_BUFFERSIZE) {
 
 		ulValue = ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0];
 		ulValue = ulValue >> 16;
@@ -251,8 +285,8 @@ void transport_send_packet(void) {
 
 //			/* Acknowledge the packet. */
 //			ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^=
-//			NETX56_DPM_BOOT_NETX_RECEIVED_CMD
-//					<< SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+//			DPM_BOOT_NETX_RECEIVED_CMD
+//					<< SRT_HANDSHAKE_REG_ARM_DATA;
 
 			transport_enqueue(0x2B); // ESC REQ
 
@@ -269,11 +303,11 @@ void transport_send_packet(void) {
 
 		/* Toggle the 'packet send' flag. */
 		ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] ^=
-		NETX56_DPM_BOOT_NETX_SEND_CMD << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+		DPM_BOOT_NETX_SEND_CMD << SRT_HANDSHAKE_REG_ARM_DATA;
 
 		/* Wait for host ACK. */
 		do {
-			ulValue = mailbox_purr(NETX56_DPM_BOOT_NETX_SEND_CMD);
+			ulValue = mailbox_purr(DPM_BOOT_NETX_SEND_CMD);
 		} while (ulValue != 0);
 
 		/* Remember the packet size for resends. */
@@ -290,7 +324,7 @@ void transport_send_packet(void) {
  * @todo get rid of the magic numbers
  */
 int transport_acknowledge_escape_command(void) {
-	HOSTDEF(ptHandshakeDtcmArmMirrorArea);
+	HOSTDEF_PT_HANDSHAKE_ARM_MIRROR_AREA;
 
 	uint32_t ulValue;
 	unsigned int uiRetryCnt;
@@ -301,16 +335,16 @@ int transport_acknowledge_escape_command(void) {
 
 	ulValue = ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0];
 
-	ulHostPart = ulValue >> SRT_NETX56_HANDSHAKE_REG_PC_DATA;
+	ulHostPart = ulValue >> SRT_HANDSHAKE_REG_PC_DATA;
 	ulHostPart |= 0x80;
 	/* not needed yet */
-	ulNetxPart = ulValue >> SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+	ulNetxPart = ulValue >> SRT_HANDSHAKE_REG_ARM_DATA;
 	ulNetxPart &= 0xFF;
 	ulNetxPart |= 0x80;
 
 	ulValue = 0;
-	ulValue |= ulHostPart << SRT_NETX56_HANDSHAKE_REG_PC_DATA;
-	ulValue |= ulNetxPart << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+	ulValue |= ulHostPart << SRT_HANDSHAKE_REG_PC_DATA;
+	ulValue |= ulNetxPart << SRT_HANDSHAKE_REG_ARM_DATA;
 
 	ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] = ulValue;
 
@@ -337,7 +371,7 @@ void transport_call_console_put(unsigned int uiChar) {
 	transport_send_byte((unsigned char) uiChar);
 
 	/* Reached the maximum packet size? */
-	if (sizPacketOutputFill >= NETX56_DPM_NETX_TO_HOST_BUFFERSIZE) {
+	if (sizPacketOutputFill >= DPM_NETX_TO_HOST_BUFFERSIZE) {
 		/* Yes -> send the packet. */
 		transport_send_packet();
 
@@ -372,7 +406,7 @@ void transport_netMon_to_netX() {
  * @todo: get rid of the magic numbers
  */
 int transport_is_ready_to_execute(void) {
-	HOSTDEF(ptHandshakeDtcmArmMirrorArea);
+	HOSTDEF_PT_HANDSHAKE_ARM_MIRROR_AREA;
 
 	uint32_t ulValue;
 	unsigned int uiRetryCnt;
@@ -382,10 +416,10 @@ int transport_is_ready_to_execute(void) {
 
 	ulValue = ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0];
 
-	ulHostPart = ulValue >> SRT_NETX56_HANDSHAKE_REG_PC_DATA;
+	ulHostPart = ulValue >> SRT_HANDSHAKE_REG_PC_DATA;
 	ulHostPart &= 0x40;
 
-	ulNetxPart = ulValue >> SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+	ulNetxPart = ulValue >> SRT_HANDSHAKE_REG_ARM_DATA;
 
 	if (ulHostPart == 0x40) {
 		/* set back the netx flag */
@@ -393,8 +427,8 @@ int transport_is_ready_to_execute(void) {
 		ulNetxPart &= 0xBF;
 
 		ulValue = 0;
-		ulValue |= ulHostPart << SRT_NETX56_HANDSHAKE_REG_PC_DATA;
-		ulValue |= ulNetxPart << SRT_NETX56_HANDSHAKE_REG_ARM_DATA;
+		ulValue |= ulHostPart << SRT_HANDSHAKE_REG_PC_DATA;
+		ulValue |= ulNetxPart << SRT_HANDSHAKE_REG_ARM_DATA;
 
 		ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0] = ulValue;
 		return 1;
