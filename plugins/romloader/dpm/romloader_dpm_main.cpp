@@ -24,7 +24,7 @@
 #include "romloader_dpm_main.h"
 #include "romloader_dpm_device_linux_uio.h"
 #include "romloader_dpm_transfer_netx56.h"
-//#include "romloader_dpm_transfer_netx4000.h"
+#include "romloader_dpm_transfer_netx4000.h"
 /*-------------------------------------*/
 
 const char *romloader_dpm_provider::m_pcPluginNamePattern = "romloader_dpm_%s";
@@ -319,8 +319,8 @@ void romloader_dpm::Connect(lua_State *ptClientData)
 				case ROMLOADER_CHIPTYP_NETX4000_RELAXED:
 				case ROMLOADER_CHIPTYP_NETX4000_FULL_SMALL:
 					/* Create a new transfer object. */
-//					ptTransfer = new romloader_dpm_transfer_netx4000(ptDevice);
-//					printf("ptTransfer %p \n", ptTransfer);
+					ptTransfer = new romloader_dpm_transfer_netx4000(ptDevice);
+					printf("ptTransfer %p \n", ptTransfer);
 
 					/* The device is now owned by the transfer object. */
 					ptDevice = NULL;
