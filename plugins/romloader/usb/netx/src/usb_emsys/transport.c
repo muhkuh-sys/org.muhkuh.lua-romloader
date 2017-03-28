@@ -64,6 +64,13 @@ void transport_send_packet(void)
 
 
 
+int transport_is_ready_to_execute(void)
+{
+	return 1;
+}
+
+
+
 void transport_send_byte(unsigned char ucData)
 {
 	if( sizPacketTxFill<MONITOR_USB_MAX_PACKET_SIZE )
