@@ -25,7 +25,7 @@
 # Import the default compiler environments and the platform libraries.
 #
 Import('atEnv')
-Import('libmi_netx500', 'libmi_netx56', 'libmi_netx50', 'libmi_netx10')
+Import('libmi_netx500', 'libmi_netx56', 'libmi_netx50', 'libmi_netx10', 'libmi_netx4000')
 
 
 #----------------------------------------------------------------------------
@@ -50,3 +50,18 @@ elf_netx56_monitor = env_netx56_monitor.Elf('targets/dpmmon_netx56_monitor.elf',
 bb0_netx56_monitor = env_netx56_monitor.BootBlock('targets/dpmmon_netx56_monitor.img', elf_netx56_monitor, BOOTBLOCK_SRC='DPM', BOOTBLOCK_DST='INTRAM')
 arr_netx56_monitor = env_netx56_monitor.DataArray('targets/dpmmon_netx56_monitor.c', bb0_netx56_monitor, DATAARRAY_NAME='auc_dpmmon_netx56_monitor')
 sym_netx56_monitor = env_netx56_monitor.GccSymbolTemplate('targets/dpmmon_netx56_monitor_run.h', elf_netx56_monitor, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/dpmmon_netx56_monitor_run.h'))
+
+#----------------------------------------------------------------------------
+#
+# Build the netX4000 files.
+#
+env_netx4000_monitor = atEnv.NETX4000_RELAXED.Clone()
+env_netx4000_monitor.Replace(BOOTBLOCK_CHIPTYPE = 4000)
+env_netx4000_monitor.Append(CPPPATH = ['src', '../../machine_interface/netx/src', '#platform/src', '#platform/src/lib'])
+env_netx4000_monitor.Replace(LDFILE = File('src/netx4000/netx4000.ld'))
+src_netx4000_monitor = env_netx4000_monitor.SetBuildPath('targets/netx4000_monitor', 'src', sources_monitor)
+elf_netx4000_monitor = env_netx4000_monitor.Elf('targets/dpmmon_netx4000_monitor.elf', src_netx4000_monitor + env_netx4000_monitor['PLATFORM_LIBRARY'] + libmi_netx4000)
+bb0_netx4000_monitor = env_netx4000_monitor.HBootImage('targets/dpmmon_netx4000_monitor.img', 'src/netx4000/CR7_to_INTRAM.xml', HBOOTIMAGE_KNOWN_FILES=dict({'tElfCR7': elf_netx4000_monitor}))
+arr_netx4000_monitor = env_netx4000_monitor.DataArray('targets/dpmmon_netx4000_monitor.c', bb0_netx4000_monitor, DATAARRAY_NAME='auc_dpmmon_netx4000_monitor')
+sym_netx4000_monitor = env_netx4000_monitor.GccSymbolTemplate('targets/dpmmon_netx4000_monitor_run.h', elf_netx4000_monitor, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/dpmmon_netx4000_monitor_run.h'))
+

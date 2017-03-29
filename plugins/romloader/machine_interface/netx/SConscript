@@ -56,6 +56,15 @@ env_netx56.Append(CPPPATH = astrCppPaths)
 src_netx56 = env_netx56.SetBuildPath('targets/netx56_monitor', 'src', sources)
 libmi_netx56 = env_netx56.StaticLibrary('targets/libmi_netx56.a', src_netx56)
 
+#----------------------------------------------------------------------------
+#
+# Build the netX4000 files.
+#
+env_netx4000 = atEnv.NETX4000_RELAXED.Clone()
+env_netx4000.Append(CPPPATH = astrCppPaths)
+src_netx4000 = env_netx56.SetBuildPath('targets/netx4000_monitor', 'src', sources)
+libmi_netx4000 = env_netx56.StaticLibrary('targets/libmi_netx4000.a', src_netx4000)
+
 
 #----------------------------------------------------------------------------
 #
@@ -81,4 +90,4 @@ libmi_netx10 = env_netx10.StaticLibrary('targets/libmi_netx10.a', src_netx10)
 #
 # Export all libraries.
 #
-Export('libmi_netx500', 'libmi_netx56', 'libmi_netx50', 'libmi_netx10')
+Export('libmi_netx500', 'libmi_netx56', 'libmi_netx50', 'libmi_netx10', 'libmi_netx4000')

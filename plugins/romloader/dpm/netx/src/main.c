@@ -30,11 +30,44 @@
 #include "transport.h"
 
 
+
+
+#include "monitor_commands.h"
+#include "serial_vectors.h"
+//#include "systime.h"
+
+#include "globals.h"
+
 /*-------------------------------------------------------------------------*/
+
+#define DPM_BOOT_NETX_RECEIVED_CMD      0x01
+#define DPM_BOOT_NETX_SEND_CMD          0x02
+
+#define DPM_BOOT_HOST_SEND_CMD          0x01
+#define DPM_BOOT_HOST_RECEIVED_CMD      0x02
+
+#define SRT_HANDSHAKE_REG_ARM_DATA      16
+#define SRT_HANDSHAKE_REG_PC_DATA       24
+
+/* The ID "MMON" shows that the monitor is running. */
+#define BOOT_ID_MONITOR 0x4e4f4d4d
+
+#define DPM_NETX_TO_HOST_BUFFERSIZE     0x0200
+#define DPM_HOST_TO_NETX_BUFFERSIZE     0x0400
+
+
 
 
 void dpm_monitor(void)
 {
+
+/* First acknowledgement of this code running _before_ context switch. */
+HOSTDEF_PT_HANDSHAKE_ARM_MIRROR_AREA;
+/* Acknowledge the packet. */
+PT_HANDSCHAKE_ARM_MIRROR_AREA_HANDSHAKE_REG ^=	DPM_BOOT_NETX_RECEIVED_CMD << SRT_HANDSHAKE_REG_ARM_DATA;
+
+
+
 	systime_init();
 
 	transport_init();
@@ -43,7 +76,4 @@ void dpm_monitor(void)
 		transport_loop();
 	}
 }
-
-
-/*-----------------------------------*/
 

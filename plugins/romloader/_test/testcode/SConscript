@@ -54,6 +54,13 @@ src_netx56 = env_netx56.SetBuildPath('targets/netx56', 'src', montest_sources)
 elf_netx56 = env_netx56.Elf('targets/montest_netx56.elf', src_netx56 + env_netx56['PLATFORM_LIBRARY'])
 bin_netx56 = env_netx56.ObjCopy('targets/montest_netx56.bin', elf_netx56)
 
+env_netx4000 = atEnv.NETX4000_RELAXED.Clone()
+env_netx4000.Append(CPPPATH = astrCppPath)
+env_netx4000.Replace(LDFILE = File('src/netx4000/netx4000.ld'))
+src_netx4000 = env_netx4000.SetBuildPath('targets/netx4000', 'src', montest_sources)
+elf_netx4000 = env_netx4000.Elf('targets/montest_netx4000.elf', src_netx4000 + env_netx4000['PLATFORM_LIBRARY'])
+bin_netx4000 = env_netx4000.ObjCopy('targets/montest_netx4000.bin', elf_netx4000)
+
 env_netx50 = atEnv.NETX50.Clone()
 env_netx50.Append(CPPPATH = astrCppPath)
 env_netx50.Replace(LDFILE = File('src/netx50/netx50.ld'))

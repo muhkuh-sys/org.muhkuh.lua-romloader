@@ -44,11 +44,14 @@ IF(UNIX)
 	
 	SET(romloader_dpm_SOURCES
 		netx/targets/dpmmon_netx56_monitor.c
+		netx/targets/dpmmon_netx4000_monitor.c
 		romloader_dpm_device_linux_uio.cpp
 		romloader_dpm_device.cpp
 		romloader_dpm_main.cpp
 		romloader_dpm_transfer.cpp
 		romloader_dpm_transfer_netx56.cpp
+		romloader_dpm_transfer_netx4000.cpp
+		
 	)
 	
 	SET(romloader_dpm_HEADERS
