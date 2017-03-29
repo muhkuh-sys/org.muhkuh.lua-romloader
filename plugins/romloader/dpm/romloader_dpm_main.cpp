@@ -988,8 +988,7 @@ void romloader_dpm::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN,
 			fOk = true;
 			free(aucResponse);
 			aucResponse = NULL;
-//				}
-//			}
+
 
 			if( *sizAucResponse!=1 )
 			{

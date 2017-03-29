@@ -207,11 +207,11 @@ void transport_init(void)
 	monitor_init();
 
 	queue_init();
-
+#if ASIC_TYP==ASIC_TYP_NETX4000_RELAXED
 	/* OK - we're in the monitor code */
 	transport_send_byte(MONITOR_STATUS_Ok);
 	transport_send_packet();
-
+#endif
 	/* Initialize the stream buffer. */
 	sizStreamBufferHead = 0;
 	sizStreamBufferFill = 0;

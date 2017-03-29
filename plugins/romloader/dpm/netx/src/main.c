@@ -61,10 +61,12 @@
 void dpm_monitor(void)
 {
 
+#if ASIC_TYP==ASIC_TYP_NETX4000_RELAXED
 /* First acknowledgement of this code running _before_ context switch. */
 HOSTDEF_PT_HANDSHAKE_ARM_MIRROR_AREA;
 /* Acknowledge the packet. */
 PT_HANDSCHAKE_ARM_MIRROR_AREA_HANDSHAKE_REG ^=	DPM_BOOT_NETX_RECEIVED_CMD << SRT_HANDSHAKE_REG_ARM_DATA;
+#endif ASIC_TYP==ASIC_TYP_NETX4000_RELAXED
 
 
 
