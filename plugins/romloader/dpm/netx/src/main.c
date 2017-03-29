@@ -61,12 +61,11 @@
 void dpm_monitor(void)
 {
 
+/* First acknowledgement of this code running _before_ context switch. */
 HOSTDEF_PT_HANDSHAKE_ARM_MIRROR_AREA;
 /* Acknowledge the packet. */
-//PT_HANDSCHAKE_ARM_MIRROR_AREA_HANDSHAKE_REG /*ptHandshakeDtcmArmMirrorArea->aulHandshakeReg[0]*/ ^=	DPM_BOOT_NETX_RECEIVED_CMD << SRT_HANDSHAKE_REG_ARM_DATA;
-int lVal = PT_HANDSCHAKE_ARM_MIRROR_AREA_HANDSHAKE_REG; // = 0x03030000;
-PT_HANDSCHAKE_ARM_MIRROR_AREA_HANDSHAKE_REG = 0x02030000;
-PT_HANDSCHAKE_ARM_MIRROR_AREA_HANDSHAKE_REG = 0x03030000;
+PT_HANDSCHAKE_ARM_MIRROR_AREA_HANDSHAKE_REG ^=	DPM_BOOT_NETX_RECEIVED_CMD << SRT_HANDSHAKE_REG_ARM_DATA;
+
 
 
 	systime_init();
@@ -77,7 +76,4 @@ PT_HANDSCHAKE_ARM_MIRROR_AREA_HANDSHAKE_REG = 0x03030000;
 		transport_loop();
 	}
 }
-
-
-/*-----------------------------------*/
 
