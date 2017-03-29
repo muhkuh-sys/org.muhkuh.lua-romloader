@@ -48,7 +48,7 @@
 #define DPM_NETX_TO_HOST_BUFFERSIZE     0x0200
 #define DPM_HOST_TO_NETX_BUFFERSIZE     0x0400
 
-typedef struct HBOOT_DPM_NETX56_STRUCT
+typedef struct HBOOT_DPM_STRUCT
 {
 	volatile uint32_t ulDpmBootId;
 	volatile uint32_t ulDpmByteSize;
@@ -208,6 +208,9 @@ void transport_init(void)
 	monitor_init();
 
 	queue_init();
+
+	transport_send_byte(MONITOR_STATUS_Ok);
+	transport_send_packet();
 
 	/* Initialize the stream buffer. */
 	sizStreamBufferHead = 0;

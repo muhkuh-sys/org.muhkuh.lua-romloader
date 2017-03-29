@@ -300,7 +300,9 @@ function hex_dump(buf)
 end
 
 
-strFilePath = "../../../../../../plugins/romloader/_test/testcode/targets/montest_netx56.bin"
+strFilePath = "../../../../../../plugins/romloader/_test/testcode/targets/montest_netx4000.bin"
+--strFilePath = "../../../../../../plugins/romloader/_test/testcode/targets/montest_netx56.bin"
+
 --
 print("Exec path: " .. arg[0] .. "\n")
 io.input(strFilePath)
@@ -342,12 +344,12 @@ local ulResut = mbin_execute(tParentWindow, tPlugin, aAttr, retAParameter)
 --local strResult = tPlugin:read_image(0x08004000, 160, callback, 10);
 --hex_dump(strResult)
 --
---tPlugin:write_data32(0x08004020, 0xAAAAAAAA)
---local strResult = tPlugin:read_data32(0x08004020);
+--tPlugin:write_data32(0x05080100, 0xAAAAAAAA)
+--local strResult = tPlugin:read_data32(0x05080100);
 --print(string.format("LUA: Try 0: 0x%08x", strResult))
 --
---tPlugin:write_data32(0x08004020, 0xBBBBBBBB)
---local strResult = tPlugin:read_data32(0x08004020);
+--tPlugin:write_data32(0x05080200, 0xBBBBBBBB)
+--local strResult = tPlugin:read_data32(0x05080200);
 --print(string.format("LUA: Try 0: 0x%08x", strResult))
 --
 --tPlugin:write_data32(0x08004020, 0x00000000)

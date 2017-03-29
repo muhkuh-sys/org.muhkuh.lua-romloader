@@ -253,11 +253,8 @@ int romloader_dpm_transfer_netx4000::receive_escape_acknowledge_command() {
 			if (iResult != 0) {
 				// die with error
 			}
-
 		}
-
 	}
-
 	return iResult;
 }
 
