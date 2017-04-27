@@ -17,22 +17,36 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-
+#include <stddef.h>
+#include <stdint.h>
 
 #ifndef __TRANSPORT_H__
 #define __TRANSPORT_H__
 
+void queue_init(void);
 void transport_init(void);
 void transport_loop(void);
 
+uint8_t transport_dequeue(void);
+void transport_enqueue(unsigned char ucData);
+
 void transport_send_byte(unsigned char ucData);
 void transport_send_packet(void);
+int transport_acknowledge_escape_command(void);
 void transport_resend_packet(void);
 
 unsigned char transport_call_console_get(void);
 void transport_call_console_put(unsigned int uiChar);
 unsigned int transport_call_console_peek(void);
 void transport_call_console_flush(void);
+int transport_is_ready_to_execute(void);
+
+
+#define QUEUE_LENGTH 0x20
+uint8_t ucQueue[QUEUE_LENGTH];
+uint32_t uiStartPoint;
+uint32_t uiEndPoint;
+uint32_t uiSize;
 
 
 #endif  /* __TRANSPORT_H__ */

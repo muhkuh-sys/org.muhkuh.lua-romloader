@@ -51,17 +51,36 @@ const romloader_dpm_device::DPM_DETECT_ELEMENT_T romloader_dpm_device::atDpmDete
 };
 
 
+const romloader_dpm_device::DPM_DETECT_ELEMENT_T romloader_dpm_device::atDpmDetectElements_netx4000_RELAXED[2] =
+{
+	{
+		.sizOffset = offsetof(NETX_DPM_MEMORYLAYOUT_T,uReg) + offsetof(DPM_REGISTER_NETX4000_RELAXED_T,tCtrl) + offsetof(NX4000_DPM_AREA_T,ulDpm_netx_version),
+		.ulMask = NETX4000_RELAXED_NETX_VERSION_MASK,
+		.ulExpectedValue = NETX4000_RELAXED_NETX_VERSION_STEP
+	},
+	{
+		.sizOffset = offsetof(NETX_DPM_MEMORYLAYOUT_T,uReg) + offsetof(DPM_REGISTER_NETX4000_RELAXED_T,tCtrl) + offsetof(NX4000_DPM_AREA_T,ulDpm_netx_version_bigend16),
+		.ulMask = LITTLE16_TO_BIGEND16_UINT32(NETX4000_RELAXED_NETX_VERSION_MASK),
+		.ulExpectedValue = LITTLE16_TO_BIGEND16_UINT32(NETX4000_RELAXED_NETX_VERSION_STEP)
+	},
+};
 
-const romloader_dpm_device::DPM_DETECT_LIST_T romloader_dpm_device::atDpmDetectList[1] =
+const romloader_dpm_device::DPM_DETECT_LIST_T romloader_dpm_device::atDpmDetectList[2] =
 {
 	{
 		.pcName = "netX56",
 		.tChipTyp = ROMLOADER_CHIPTYP_NETX56,
 		.ptDetectList = atDpmDetectElements_netx56,
 		.sizDetectList = sizeof(atDpmDetectElements_netx56)/sizeof(atDpmDetectElements_netx56[0])
+	},
+
+	{
+		.pcName = "netX4000_RELAXED",
+		.tChipTyp = ROMLOADER_CHIPTYP_NETX4000_RELAXED,
+		.ptDetectList = atDpmDetectElements_netx4000_RELAXED,
+		.sizDetectList = sizeof(atDpmDetectElements_netx4000_RELAXED)/sizeof(atDpmDetectElements_netx4000_RELAXED[0])
 	}
 };
-
 
 
 romloader_dpm_device::romloader_dpm_device(void)

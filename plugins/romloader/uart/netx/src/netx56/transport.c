@@ -577,6 +577,13 @@ void transport_send_packet(void)
 
 
 
+int transport_is_ready_to_execute(void)
+{
+	return 1;
+}
+
+
+
 void transport_resend_packet(void)
 {
 	/* Restore the last packet size. */

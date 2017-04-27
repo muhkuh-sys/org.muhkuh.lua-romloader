@@ -2,14 +2,14 @@
 #include "romloader_dpm_memorylayout.h"
 
 
-#ifndef __ROMLOADER_DPM_TRANSFER_NETX56_H__
-#define __ROMLOADER_DPM_TRANSFER_NETX56_H__
+#ifndef __ROMLOADER_DPM_TRANSFER_NETX4000_H__
+#define __ROMLOADER_DPM_TRANSFER_NETX4000_H__
 
-class romloader_dpm_transfer_netx56 : public romloader_dpm_transfer
+class romloader_dpm_transfer_netx4000 : public romloader_dpm_transfer
 {
 public:
-	romloader_dpm_transfer_netx56(romloader_dpm_device *ptDpmDevice);
-	virtual ~romloader_dpm_transfer_netx56(void);
+	romloader_dpm_transfer_netx4000(romloader_dpm_device *ptDpmDevice);
+	virtual ~romloader_dpm_transfer_netx4000(void);
 
 	virtual int prepare_device(void);
 	virtual int send_command(const uint8_t *pucCommand, uint32_t ulCommandSize);
@@ -39,8 +39,8 @@ private:
 	int mailbox_send_chunk(const uint8_t *pucChunk, uint32_t ulChunkSize);
 	int mailbox_get_data(uint32_t *pulSize);
 
-	uint8_t m_aucBufferNetxToHost[NETX56_DPM_NETX_TO_HOST_BUFFERSIZE];
+	uint8_t m_aucBufferNetxToHost[NETX4000_RELAXED_DPM_NETX_TO_HOST_BUFFERSIZE];
 };
 
-#endif  /* __ROMLOADER_DPM_TRANSFER_NETX56_H__ */
+#endif  /* __ROMLOADER_DPM_TRANSFER_NETX4000_H__ */
 

@@ -1,15 +1,14 @@
-#include "netx56_regdef.h"
-
+#include "netx56/netx56_regdef.h"
+#include "netx4000_relaxed/netx4000_regdef.h"
 
 #include <stddef.h>
 #include <stdint.h>
-
 
 #ifndef __ROMLOADER_DPM_MEMORYLAYOUT_H__
 #define __ROMLOADER_DPM_MEMORYLAYOUT_H__
 
 
-
+/* netX56 stuff */
 #define NETX56_NETX_VERSION_MASK               0x000000ff
 #define NETX56_NETX_VERSION_STEP               0x00000043
 
@@ -17,6 +16,19 @@
 #define NETX56_DPM_HOST_TO_NETX_BUFFERSIZE     0x0400
 
 #define NETX56_BOOT_ID_ROM                     0x4c42584e
+
+/* netX 4000 relaxed stuff*/
+#define NETX4000_RELAXED_NETX_VERSION_MASK              0xffffffff
+#define NETX4000_RELAXED_NETX_VERSION_STEP              0x73413c08
+
+#define NETX4000_RELAXED_DPM_NETX_TO_HOST_BUFFERSIZE    0x0200
+#define NETX4000_RELAXED_DPM_HOST_TO_NETX_BUFFERSIZE    0x0400
+
+#define NETX4000_RELAXED_BOOT_ID_ROM    	  			0x4c42584e // same as 56
+
+#define HBOOT_DPM_COOKIE								0x73413c08 // 4000er cookie
+#define HBOOT_DPM_COOKIE_BIGEND16						0x52840b4c
+
 
 #if 0
 typedef struct NX56_DPM_AREA_Ttag
@@ -96,6 +108,24 @@ typedef struct HBOOT_DPM_NETX56_STRUCT
 	volatile uint8_t aucHostToNetxData[NETX56_DPM_HOST_TO_NETX_BUFFERSIZE];
 } HBOOT_DPM_NETX56_T;
 
+typedef struct HBOOT_DPM_NETX4000_RELAXED_STRUCT
+{
+	volatile uint32_t ulDpmBootId;
+	volatile uint32_t ulDpmByteSize;
+	volatile uint32_t ulSdramExtGeneralCtrl;
+	volatile uint32_t ulSdramExtTimingCtrl;
+	volatile uint32_t ulSdramExtByteSize;
+	volatile uint32_t ulSdramHifGeneralCtrl;
+	volatile uint32_t ulSdramHifTimingCtrl;
+	volatile uint32_t ulSdramHifByteSize;
+	volatile uint32_t aulReserved_20[22];
+	volatile uint32_t ulNetxToHostDataSize;
+	volatile uint32_t ulHostToNetxDataSize;
+	volatile uint32_t ulHandshake;
+	volatile uint32_t aulReserved_84[31];
+	volatile uint8_t aucNetxToHostData[NETX4000_RELAXED_DPM_NETX_TO_HOST_BUFFERSIZE];
+	volatile uint8_t aucHostToNetxData[NETX4000_RELAXED_DPM_HOST_TO_NETX_BUFFERSIZE];
+} HBOOT_DPM_NETX4000_RELAXED_T;
 
 
 typedef struct DPM_REGISTER_NETX56_STRUCT
@@ -105,11 +135,18 @@ typedef struct DPM_REGISTER_NETX56_STRUCT
 	volatile uint8_t aucBitflipImage[65536-sizeof(NX56_DPM_AREA_T)-sizeof(HBOOT_DPM_NETX56_T)];
 } DPM_REGISTER_NETX56_T;
 
+typedef struct DPM_REGISTER_NETX4000_RELAXED_STRUCT
+{
+	NX4000_DPM_AREA_T tCtrl;
+	HBOOT_DPM_NETX4000_RELAXED_T tHboot;
+	volatile uint8_t aucBitflipImage[65536-sizeof(NX4000_DPM_AREA_T)-sizeof(HBOOT_DPM_NETX4000_RELAXED_T)];
+} DPM_REGISTER_NETX4000_RELAXED_T;
 
 
 typedef union NETX_LAYOUT_UNION
 {
-	DPM_REGISTER_NETX56_T tNetx56;
+	DPM_REGISTER_NETX56_T 			tNetx56;
+	DPM_REGISTER_NETX4000_RELAXED_T tNetx4000Relaxed;
 } NETX_LAYOUT_T;
 
 

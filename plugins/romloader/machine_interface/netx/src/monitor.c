@@ -24,6 +24,7 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "netx_io_areas.h"
 #include "asic_types.h"
 #include "serial_vectors_bridge.h"
 #include "monitor_commands.h"
@@ -202,6 +203,8 @@ static void command_call(unsigned long ulAddress, unsigned long ulR0)
 	/* Send the status packet. */
 	send_status(MONITOR_STATUS_Ok);
 
+	while(!transport_is_ready_to_execute());
+
 	/* Start the new message packet. */
 	transport_send_byte(MONITOR_STATUS_CallMessage);
 
@@ -210,6 +213,8 @@ static void command_call(unsigned long ulAddress, unsigned long ulR0)
 
 	/* Flush any remaining bytes in the FIFO. */
 	transport_send_packet();
+
+	while(!transport_is_ready_to_execute());
 
 	/* The call finished, notify the PC. */
 	send_status(MONITOR_STATUS_CallFinished);
@@ -249,18 +254,20 @@ static const SERIAL_V2_COMM_UI_FN_T tCallConsole =
 	}
 };
 
+#define ADR_NETX_VERSION_56       		0x080f0008
+#define VAL_NETX_VERSION_56A      		0x00006003
+#define VAL_NETX_VERSION_56B      		0x00106003
+#define ADR_NETX_VERSION_4000     		0x04100020
+#define VAL_NETX_VERSION_4000_RELAXED   0x00108004
+#define VAL_NETX_VERSION_4000_FULL      0x0010b004
 
-#define ADR_NETX_VERSION_56       0x080f0008
-#define VAL_NETX_VERSION_56A      0x00006003
-#define VAL_NETX_VERSION_56B      0x00106003
-
-#define ADR_NETX_VERSION_500_100  0x00200008
-#define VAL_NETX_VERSION_500      0x00001000
-#define VAL_NETX_VERSION_100      0x00003002
+#define ADR_NETX_VERSION_500_100  		0x00200008
+#define VAL_NETX_VERSION_500      		0x00001000
+#define VAL_NETX_VERSION_100      		0x00003002
 
 void monitor_init(void)
 {
-#if ASIC_TYP==ASIC_TYP_NETX500 || ASIC_TYP==ASIC_TYP_NETX56
+#if ASIC_TYP==ASIC_TYP_NETX500 || ASIC_TYP==ASIC_TYP_NETX56 || ASIC_TYP==ASIC_TYP_NETX4000_RELAXED
 	unsigned long ulNetxVersion;
 #endif
 
@@ -296,6 +303,16 @@ void monitor_init(void)
 	else if (ulNetxVersion == VAL_NETX_VERSION_56B)
 	{
 		ucChiptype = (unsigned char)ROMLOADER_CHIPTYP_NETX56B;
+	}
+#elif ASIC_TYP==ASIC_TYP_NETX4000_RELAXED
+	ulNetxVersion = *((unsigned long*)ADR_NETX_VERSION_4000);
+	if (ulNetxVersion == VAL_NETX_VERSION_4000_RELAXED)
+	{
+		ucChiptype = (unsigned char)ROMLOADER_CHIPTYP_NETX4000_RELAXED;
+	}
+	else if (ulNetxVersion == VAL_NETX_VERSION_4000_FULL)
+	{
+		ucChiptype = (unsigned char)ROMLOADER_CHIPTYP_NETX4000_FULL_SMALL;
 	}
 #else
 #       error "Unknown ASIC type!"
@@ -378,7 +395,10 @@ void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPack
 					command_write_memory(pucPacket+7U, ulAddress, ulDataSize, tAccessSize);
 				}
 			}
-			else
+			else if(tCmd == MONITOR_COMMAND_Escape){
+				while(1); // halt here to see if its working.
+				// clear buffer etc.
+			}else
 			{
 				send_status(MONITOR_STATUS_InvalidCommand);
 			}

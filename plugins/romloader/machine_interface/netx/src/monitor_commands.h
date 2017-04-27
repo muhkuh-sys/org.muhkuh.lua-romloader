@@ -43,6 +43,8 @@ typedef enum
 	MONITOR_COMMAND_Read                    = 0x00,
 	MONITOR_COMMAND_Write                   = 0x01,
 	MONITOR_COMMAND_Execute                 = 0x02,
+	MONITOR_COMMAND_Escape					= 0x2b,
+	MONITOR_COMMAND_Talk                    = 0x03,
 	MONITOR_COMMAND_Magic                   = 0xff
 } MONITOR_COMMAND_T;
 
@@ -54,6 +56,7 @@ typedef enum
 	MONITOR_STATUS_InvalidCommand            = 0x03,
 	MONITOR_STATUS_InvalidPacketSize         = 0x04,
 	MONITOR_STATUS_InvalidSizeParameter      = 0x05,
+	MONITOR_STATUS_ReddyToExecute			 = 0x07,
 	MONITOR_STATUS_InvalidSequenceNumber     = 0x06
 } MONITOR_STATUS_T;
 

@@ -25,8 +25,8 @@
 /* The V1 vectors are the interface to the hardware. They send data to the PC
    and receive data from there.
 */
-
-#if ASIC_TYP==ASIC_TYP_NETX500 || ASIC_TYP==ASIC_TYP_NETX100 || ASIC_TYP==ASIC_TYP_NETX56 || ASIC_TYP==ASIC_TYP_NETX10
+/*Assume the 4000 is the same like 56*/
+#if ASIC_TYP==ASIC_TYP_NETX500 || ASIC_TYP==ASIC_TYP_NETX100 || ASIC_TYP==ASIC_TYP_NETX56 || ASIC_TYP==ASIC_TYP_NETX10 || ASIC_TYP==ASIC_TYP_NETX4000_RELAXED
 	typedef unsigned char (*PFN_SERIAL_V1_GET_T)(void);
 	typedef void          (*PFN_SERIAL_V1_PUT_T)(unsigned char ucChar);
 	typedef unsigned int  (*PFN_SERIAL_V1_PEEK_T)(void);
