@@ -21,7 +21,7 @@ sleep 5
 lxc exec ${CONTAINER} -- bash -c 'apt-get update --assume-yes'
 
 # Install the project specific packages.
-lxc exec ${CONTAINER} -- bash -c 'apt-get install --assume-yes lua5.1 lua-filesystem lua-expat lua51-mhash lua-curl lua-zip gcc-multilib lib32z1 swig3'
+lxc exec ${CONTAINER} -- bash -c 'apt-get install --assume-yes lua5.1 lua-filesystem lua-expat lua51-mhash lua-sql-sqlite3'
 
 # Build the netX firmware.
 lxc exec ${CONTAINER} -- bash -c 'cd /tmp/work && bash .build01_netx_firmware.sh'
