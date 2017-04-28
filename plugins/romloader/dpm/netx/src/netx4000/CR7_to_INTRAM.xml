@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<HBootImage type="REGULAR">
+	<Chunks>
+		<!-- Load Programm for CR7 and start afterwards -->
+		<Data>
+			<File name="@tElfCR7" />
+		</Data>
+		<Execute>
+			<File name="@tElfCR7" />
+		</Execute>
+
+	</Chunks>
+</HBootImage>
+
