@@ -4,17 +4,16 @@
 	      module="romloader"
 	      artifact="lua5.3-romloader"
 	      version="@PROJECT_VERSION@"
-	      vcs-id="@PROJECT_VERSION_VCS@">
+	      vcs-id="@PROJECT_VERSION_VCS@"
+	      extension="tar.xz">
 		<license name="GPL-2.0"/>
 		<author name="Muhkuh team" url="https://github.com/muhkuh-sys" />
 		<description>
 			This module provides the romloader plugins for the LUA5.3 interpreter. The plugins provide communication with netX based hardware.
 		</description>
 	</info>
-	<build-dependencies>
-		<dependency group="org.lua" module="lua" artifact="lua5.3" version="5.3.3.1"/>
-	</build-dependencies>
 	<dependencies>
-		<dependency group="org.lua" module="lua" artifact="lua5.3"/>
+		<build-dependency group="org.lua" module="lua" artifact="lua" version="5.3"/>
+		<dependency group="org.lua" module="lua" artifact="lua"/>
 	</dependencies>
 </jonchki-artifact>
