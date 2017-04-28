@@ -49,9 +49,13 @@ romloader_uart_device_win::romloader_uart_device_win(const char *pcPortName)
   , m_hComStateThread(NULL)
   , m_hTxEmpty(NULL)
   , m_hNewRxEvent(NULL)
+  , m_pvCallbackUserData(NULL)
+  , m_tReceiveStatus(romloader_uart_device_win::RECEIVESTATUS_Idle)
+  , m_hEventSendData(NULL)
 {
-  m_hTxEmpty    = CreateEvent(NULL, FALSE, FALSE, NULL);
-  m_hNewRxEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	m_hTxEmpty       = ::CreateEvent(NULL, FALSE, FALSE, NULL);
+	m_hNewRxEvent    = ::CreateEvent(NULL, FALSE, FALSE, NULL);
+	m_hEventSendData = ::CreateEvent(NULL, TRUE, FALSE, NULL);
 }
 
 /*****************************************************************************/
@@ -59,11 +63,40 @@ romloader_uart_device_win::romloader_uart_device_win(const char *pcPortName)
 /*****************************************************************************/
 romloader_uart_device_win::~romloader_uart_device_win()
 {
-  Close();
+	Close();
 
-  ::CloseHandle(m_hTxEmpty);
-  ::CloseHandle(m_hNewRxEvent);
+	::CloseHandle(m_hTxEmpty);
+	::CloseHandle(m_hNewRxEvent);
+	::CloseHandle(m_hEventSendData);
 }
+
+
+void romloader_uart_device_win::print_error(void)
+{
+	char *pcMsg = NULL;
+	DWORD dwError;
+
+
+	dwError = GetLastError();
+	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+	              0,
+	              dwError,
+	              0,
+	              pcMsg,
+	              1024,
+	              NULL);
+	if( pcMsg!=NULL )
+	{
+		fprintf(stderr, "Error %d: %s\n", dwError, pcMsg);
+		LocalFree(pcMsg);
+	}
+	else
+	{
+		fprintf(stderr, "Error %d.\n", dwError);
+	}
+}
+
+
 
 /*****************************************************************************/
 /*! Thread checking the state of the COM port cyclically (Wrapper function)
@@ -72,67 +105,9 @@ romloader_uart_device_win::~romloader_uart_device_win()
 /*****************************************************************************/
 DWORD romloader_uart_device_win::CheckComStateThread(void* pvParam)
 {
-  romloader_uart_device_win* pcDev = reinterpret_cast<romloader_uart_device_win*>(pvParam);
+	romloader_uart_device_win* pcDev = reinterpret_cast<romloader_uart_device_win*>(pvParam);
 
-  return pcDev->CheckComState();
-}
-
-/*****************************************************************************/
-/*! Function checking the state of the COM port
-*     \param dwEventMask Event mask of last state change                     */
-/*****************************************************************************/
-void romloader_uart_device_win::CheckComEvents(DWORD dwEventMask)
-{
-	DWORD   dwBytesRead;
-	DWORD   dwCommError;
-	DWORD   dwBufferSize;
-	unsigned char *pucBuffer;
-	COMSTAT tComstat    = {0};
-
-
-  /* *** DEBUG *** Always check for a received char, EV_RXCHAR is not set sometimes and I don't know why! */
-//  if(dwEventMask & EV_RXCHAR)
-//  {
-	//data is ready, fetch them from serial port
-	dwBytesRead = 0;
-	dwCommError = 0;
-
-	::ClearCommError(m_hPort, &dwCommError, &tComstat);
-
-	dwBufferSize = tComstat.cbInQue;
-	if( dwBufferSize>0 )
-	{
-		pucBuffer = new unsigned char[dwBufferSize];
-		memset(pucBuffer, 0, dwBufferSize);
-
-		OVERLAPPED tovRead;
-		memset(&tovRead, 0, sizeof(tovRead));
-		tovRead.hEvent = ::CreateEvent(0,TRUE,0,0);
-
-		//get the data from the queue
-		BOOL fReadRet = ::ReadFile(m_hPort, pucBuffer, dwBufferSize, &dwBytesRead, &tovRead);
-
-//		wxASSERT(fReadRet);
-
-		::CloseHandle(tovRead.hEvent);
-
-		if ( dwBytesRead > 0 )
-		{
-			writeCards(pucBuffer, dwBytesRead);
-
-			// Signal read function that new data is available
-			::SetEvent(m_hNewRxEvent);
-		}
-
-		delete[] pucBuffer;
-	}
-//  }
-
-	if(dwEventMask & EV_TXEMPTY)
-	{
-		//Signal waiting thread data has been written
-		::SetEvent(m_hTxEmpty);
-	}
+	return pcDev->CheckComState();
 }
 
 /*****************************************************************************/
@@ -141,63 +116,308 @@ void romloader_uart_device_win::CheckComEvents(DWORD dwEventMask)
 /*****************************************************************************/
 DWORD romloader_uart_device_win::CheckComState()
 {
-	OVERLAPPED tOvWait     = {0};
+	DWORD dwThreadResult;
+	BOOL fOK;
+	DWORD dwEventMask;
+	DWORD dwResult;
+	DWORD dwCommError;
+	DWORD dwBytesRead;
+	DWORD dwCharsInBuffer;
+	unsigned char *pucBuffer;
+	OVERLAPPED tOvWait = {0};
+	OVERLAPPED tOvRead = {0};
+	COMSTAT tComstat = {0};
 
+
+	/* Be optimistic. */
+	dwThreadResult = ERROR_SUCCESS;
+
+	pucBuffer = NULL;
+	dwBytesRead = 0;
 
 	tOvWait.hEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL);
-
-	while(m_fRunning)
+	if( tOvWait.hEvent==NULL )
 	{
-		DWORD dwEventMask     = 0;
-		bool  fEventAvailable = false;
-		DWORD dwBla           = 0;
+		dwThreadResult = ::GetLastError();
 
-		tOvWait.Internal     = 0;
-		tOvWait.InternalHigh = 0;
-		tOvWait.Offset       = 0;
-		tOvWait.OffsetHigh   = 0;
-
-		::ResetEvent(tOvWait.hEvent);
-
-		if(WaitCommEvent(m_hPort, &dwEventMask, &tOvWait))
+		fprintf(stderr, "%s(%d): Failed to create the event for tOvWait.\n", __FILE__, __LINE__);
+		print_error();
+	}
+	else
+	{
+		tOvRead.hEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL);
+		if( tOvRead.hEvent==NULL )
 		{
-			// no overlapped wait needed, data is ready
-			fEventAvailable = true;
+			dwThreadResult = ::GetLastError();
+
+			::CloseHandle(tOvWait.hEvent);
+
+			fprintf(stderr, "%s(%d): Failed to create the event for tOvRead.\n", __FILE__, __LINE__);
+			print_error();
 		}
 		else
 		{
-			// Event not set, check if we are now in overlapped mode
-			DWORD dwLastError = GetLastError();
-
-			if(ERROR_IO_PENDING != dwLastError)
+			while(m_fRunning)
 			{
-				// no IO Event and not overlapped pending. This should never happen
-				// To allow other threads to run, let us sleep until next try
-				Sleep(10);
-			}
-			else
-			{
-				// we are in overlapped mode and wait comm event is pending, so check the overlapped event
-				DWORD dwWaitRes = WaitForSingleObject(tOvWait.hEvent, DEFAULT_SERIAL_POLLTIMEOUT);
-
-				if(WAIT_OBJECT_0 == dwWaitRes)
+				switch(m_tReceiveStatus)
 				{
-					//WaitComEvent is now available, so we can check the COM state
-					fEventAvailable = true;
+				case RECEIVESTATUS_Idle:
+//					fprintf(stderr, "%s(%d): RECEIVESTATUS_Idle\n", __FILE__, __LINE__);
+
+					/* Request the communication events. */
+					fOK = ::WaitCommEvent(m_hPort, &dwEventMask, &tOvWait);
+					if( fOK==0 )
+					{
+						/* Check what happened. */
+						dwResult = ::GetLastError();
+						if( dwResult==ERROR_IO_PENDING )
+						{
+							/* The operation did not finish yet. */
+//							fprintf(stderr, "%s(%d): WaitCommEvent returned ERROR_IO_PENDING\n", __FILE__, __LINE__);
+							m_tReceiveStatus = RECEIVESTATUS_WaitForCommEventOverlap;
+						}
+						else
+						{
+							/* Failed to get the COMM event. */
+							print_error();
+							fprintf(stderr, "%s(%d): WaitCommEvent failed.\n", __FILE__, __LINE__);
+							m_tReceiveStatus = RECEIVESTATUS_Error;
+						}
+					}
+					else
+					{
+						/* The request was processed immediately.
+						 * The event mask "dwEventMask" has values now.
+						 */
+						m_tReceiveStatus = RECEIVESTATUS_ProcessCommEvents;
+					}
+					break;
+
+
+				case RECEIVESTATUS_WaitForCommEventOverlap:
+//					fprintf(stderr, "%s(%d): RECEIVESTATUS_WaitForCommEventOverlap\n", __FILE__, __LINE__);
+
+					/* The request for the communication events has not finished yet.
+					 * Wait for it.
+					 */
+					dwResult = ::WaitForSingleObject(tOvWait.hEvent, m_PollingTimeoutForCommEventsInMs);
+//					fprintf(stderr, "%s(%d): WaitForSingleObject returned %d\n", __FILE__, __LINE__, dwResult);
+					switch(dwResult)
+					{
+					case WAIT_OBJECT_0:
+						fOK = ::GetOverlappedResult(m_hPort, &tOvWait, &dwResult, FALSE);
+//						fprintf(stderr, "%s(%d): GetOverlappedResult returned %d\n", __FILE__, __LINE__, fOK);
+						if( fOK!=0 )
+						{
+//							fprintf(stderr, "%s(%d): dwResult=%d\n", __FILE__, __LINE__, dwResult);
+
+							/* GetOverlappedResult returned the result of the WaitCommEvent function. */
+							if( dwResult!=0 )
+							{
+								/* The event mask "dwEventMask" has values now. */
+								m_tReceiveStatus = RECEIVESTATUS_ProcessCommEvents;
+							}
+							else
+							{
+								/* The WaitCommEvent function failed. */
+								print_error();
+								fprintf(stderr, "%s(%d): The WaitCommEvent function failed after a wait.\n", __FILE__, __LINE__);
+								m_tReceiveStatus = RECEIVESTATUS_Error;
+							}
+						}
+						else
+						{
+							/* Failed to get the result of the overlapped read operation. */
+							print_error();
+							fprintf(stderr, "%s(%d): Failed to get the result of the overlapped read operation.\n", __FILE__, __LINE__);
+							m_tReceiveStatus = RECEIVESTATUS_Error;
+						}
+						break;
+
+					case WAIT_TIMEOUT:
+						/* Continue to wait for an event. */
+						break;
+
+					default:
+						/* Error, stop. */
+						print_error();
+						fprintf(stderr, "%s(%d): WaitForSingleObject failed in state RECEIVESTATUS_WaitForCommEventOverlap\n", __FILE__, __LINE__);
+						m_tReceiveStatus = RECEIVESTATUS_Error;
+						break;
+					}
+					break;
+
+
+				case RECEIVESTATUS_ProcessCommEvents:
+//					fprintf(stderr, "%s(%d): RECEIVESTATUS_ProcessCommEvents\n", __FILE__, __LINE__);
+
+					/* Check the event for received chars. */
+					if( (dwEventMask&EV_RXCHAR)==0 )
+					{
+						/* No chars were received. Go back to the idle state. */
+						m_tReceiveStatus = RECEIVESTATUS_Idle;
+					}
+					else
+					{
+						/* The receive buffer contains some chars. Find out how many. */
+						fOK = ::ClearCommError(m_hPort, &dwCommError, &tComstat);
+//						fprintf(stderr, "%s(%d): ClearCommError returned %d\n", __FILE__, __LINE__, fOK);
+						if( fOK!=0 )
+						{
+							dwCharsInBuffer = tComstat.cbInQue;
+							if( dwCharsInBuffer>0 )
+							{
+								/* Remove any old buffer. */
+								if( pucBuffer!=NULL )
+								{
+									delete[] pucBuffer;
+									pucBuffer = NULL;
+								}
+								dwBytesRead = 0;
+
+								/* Create a new buffer for the received data. */
+								pucBuffer = new unsigned char[dwCharsInBuffer];
+								if( pucBuffer==NULL )
+								{
+									print_error();
+									fprintf(stderr, "%s(%d): Failed to allocate %d bytes.\n", __FILE__, __LINE__, dwCharsInBuffer);
+									m_tReceiveStatus = RECEIVESTATUS_Error;
+								}
+								else
+								{
+									/* Get the data from the receive buffer.
+									 *
+									 * NOTE: Get the number of bytes read with GetOverlappedResult.
+									 * See "Remarks" here: https://msdn.microsoft.com/en-us/library/windows/desktop/aa365467(v=vs.85).aspx
+									 *
+									 * "If hFile was opened with FILE_FLAG_OVERLAPPED, the following conditions are in effect:
+									 *  ...
+									 *  * The lpNumberOfBytesRead parameter should be set to NULL. Use the GetOverlappedResult function to get the actual number of bytes read. ..."
+									 */
+									fOK = ::ReadFile(m_hPort, pucBuffer, dwCharsInBuffer, NULL, &tOvRead);
+									if( fOK!=0 )
+									{
+										/* The read request finished immediately.
+										 * Get the number of bytes read.
+										 */
+										fOK = ::GetOverlappedResult(m_hPort, &tOvRead, &dwBytesRead, FALSE);
+										if( fOK!=0 )
+										{
+											m_tReceiveStatus = RECEIVESTATUS_ProcessData;
+										}
+										else
+										{
+											print_error();
+											fprintf(stderr, "%s(%d): Failed to get the result of the overlapped read operation.\n", __FILE__, __LINE__);
+											m_tReceiveStatus = RECEIVESTATUS_Error;
+										}
+									}
+									else
+									{
+										dwResult = ::GetLastError();
+										if( dwResult==ERROR_IO_PENDING )
+										{
+											/* The read request is still in progress. */
+											m_tReceiveStatus = RECEIVESTATUS_WaitForDataOverlap;
+										}
+										else
+										{
+											print_error();
+											fprintf(stderr, "%s(%d): ReadFile failed.\n", __FILE__, __LINE__);
+											m_tReceiveStatus = RECEIVESTATUS_Error;
+										}
+									}
+								}
+							}
+						}
+						else
+						{
+							print_error();
+							fprintf(stderr, "%s(%d): ClearCommError failed.\n", __FILE__, __LINE__);
+							m_tReceiveStatus = RECEIVESTATUS_Error;
+						}
+					}
+					break;
+
+
+				case RECEIVESTATUS_WaitForDataOverlap:
+//					fprintf(stderr, "%s(%d): RECEIVESTATUS_WaitForDataOverlap\n", __FILE__, __LINE__);
+
+					/* Wait for the read operation to finish. */
+					dwResult = ::WaitForSingleObject(tOvRead.hEvent, m_PollingTimeoutForReadInMs);
+					switch(dwResult)
+					{
+					case WAIT_OBJECT_0:
+						fOK = ::GetOverlappedResult(m_hPort, &tOvRead, &dwBytesRead, FALSE);
+						if( fOK!=0 )
+						{
+							m_tReceiveStatus = RECEIVESTATUS_ProcessData;
+						}
+						else
+						{
+							print_error();
+							fprintf(stderr, "%s(%d): Failed to get the result of the overlapped read operation.\n", __FILE__, __LINE__);
+							m_tReceiveStatus = RECEIVESTATUS_Error;
+						}
+						break;
+
+					case WAIT_TIMEOUT:
+						/* Continue to wait for the data. */
+						break;
+
+					default:
+						/* Error, stop. */
+						print_error();
+						fprintf(stderr, "%s(%d): WaitForSingleObject failed in state RECEIVESTATUS_WaitForDataOverlap\n", __FILE__, __LINE__);
+						m_tReceiveStatus = RECEIVESTATUS_Error;
+						break;
+					}
+					break;
+
+
+				case RECEIVESTATUS_ProcessData:
+//					fprintf(stderr, "%s(%d): RECEIVESTATUS_ProcessData\n", __FILE__, __LINE__);
+
+					if( pucBuffer!=NULL )
+					{
+						if( dwBytesRead>0 )
+						{
+//							fprintf(stderr, "%s(%d): Received %d bytes.\n", __FILE__, __LINE__, dwBytesRead);
+
+							writeCards(pucBuffer, dwBytesRead);
+
+							// Signal read function that new data is available
+							::SetEvent(m_hNewRxEvent);
+						}
+
+						delete[] pucBuffer;
+						pucBuffer = NULL;
+					}
+					dwBytesRead = 0;
+
+					/* Move back to the idle state. */
+					m_tReceiveStatus = RECEIVESTATUS_Idle;
+
+					break;
+
+
+				case RECEIVESTATUS_Error:
+					/* Stay in this state until the main thread gives up. */
+					break;
 				}
 			}
-		}
 
-		// WaitComEvent succeeded, so check the state now
-		if(fEventAvailable)
-		{
-			CheckComEvents(dwEventMask);
+			::CloseHandle(tOvRead.hEvent);
+			::CloseHandle(tOvWait.hEvent);
+
+			if( pucBuffer!=NULL )
+			{
+				delete[] pucBuffer;
+			}
 		}
 	}
 
-	::CloseHandle(tOvWait.hEvent);
-
-	return 0;
+	return dwThreadResult;
 }
 
 
@@ -210,64 +430,108 @@ DWORD romloader_uart_device_win::CheckComState()
 /*****************************************************************************/
 size_t romloader_uart_device_win::SendRaw(const unsigned char *pucData, size_t sizData, unsigned long ulTimeout)
 {
-	bool  fRet           = false;
-	DWORD dwBytesWritten = 0;
-	DWORD dwError;
+	bool  fRet;
+	DWORD dwBytesWritten;
+	DWORD dwResult;
+	BOOL fResult;
 
 
-	//  We are operating in overlapped mode
-	OVERLAPPED tOverlap = {0};
-	tOverlap.hEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL);
+//	fprintf(stderr, "%s(%d): Sending %d bytes.\n", __FILE__, __LINE__, sizData);
 
-	// write the Data to the comport
-	BOOL  fResult = ::WriteFile(m_hPort, pucData, sizData, &dwBytesWritten, &tOverlap);
+	/* Be pessimistic. */
+	fRet = false;
 
-	// check if everything has been written ok. if not, cancel transaction
-	if(fResult)
+	/* Create an overlap control. */
+	OVERLAPPED tOverlapWrite = {0};
+	tOverlapWrite.hEvent = m_hEventSendData;
+
+	/* Write the data to the port. */
+	fResult = ::WriteFile(m_hPort, pucData, sizData, NULL, &tOverlapWrite);
+//	fprintf(stderr, "%s(%d): WriteFile returned %d.\n", __FILE__, __LINE__, fResult);
+	if( fResult!=0 )
 	{
-		if(dwBytesWritten == sizData)
+		/* The write request finished immediately.
+		 * Get the number of bytes written.
+		 */
+		fResult = ::GetOverlappedResult(m_hPort, &tOverlapWrite, &dwBytesWritten, FALSE);
+//		fprintf(stderr, "%s(%d): GetOverlappedResult returned %d.\n", __FILE__, __LINE__, fResult);
+		if( fResult!=0 )
 		{
-			fRet = true;
-		}
-		else
-		{
-			::CancelIo(m_hPort);
-		}
-	}
-	else
-	{
-		// we assume the write is still pending
-		dwError = GetLastError();
-		if( dwError!=ERROR_IO_PENDING )
-		{
-//      wxASSERT(false);
-
-			// check for completion of the write
-		}
-		else if(::WaitForSingleObject(tOverlap.hEvent, ulTimeout) == WAIT_OBJECT_0)
-		{
-			::GetOverlappedResult(m_hPort, &tOverlap, &dwBytesWritten, TRUE);
-
-			// Check if not all bytes have been written
+//			fprintf(stderr, "%s(%d): dwBytesWritten=%d.\n", __FILE__, __LINE__, dwBytesWritten);
+			/* Were all bytes written? */
 			if( dwBytesWritten==sizData )
 			{
+				/* Yes -> success. */
 				fRet = true;
 			}
 			else
 			{
+				/* No -> cancel any pending operations. */
+				fprintf(stderr, "%s(%d): Requested to write %d bytes, but only %d were processed.\n", __FILE__, __LINE__, sizData, dwBytesWritten);
 				::CancelIo(m_hPort);
 			}
 		}
+		else
+		{
+			print_error();
+			fprintf(stderr, "%s(%d): Failed to get the result of the overlapped write operation.\n", __FILE__, __LINE__);
+		}
+	}
+	else
+	{
+		dwResult = ::GetLastError();
+		if( dwResult==ERROR_IO_PENDING )
+		{
+			/* Wait for the write operation to finish. */
+			dwResult = ::WaitForSingleObject(tOverlapWrite.hEvent, ulTimeout);
+			switch(dwResult)
+			{
+			case WAIT_OBJECT_0:
+				fResult = ::GetOverlappedResult(m_hPort, &tOverlapWrite, &dwBytesWritten, FALSE);
+				if( fResult!=0 )
+				{
+					/* Were all bytes written? */
+					if( dwBytesWritten==sizData )
+					{
+						/* Yes -> success. */
+						fRet = true;
+					}
+					else
+					{
+						/* No -> cancel any pending operations. */
+						fprintf(stderr, "%s(%d): Requested to write %d bytes, but only %d were processed.\n", __FILE__, __LINE__, sizData, dwBytesWritten);
+						::CancelIo(m_hPort);
+					}
+				}
+				else
+				{
+					print_error();
+					fprintf(stderr, "%s(%d): Failed to get the result of the overlapped read operation.\n", __FILE__, __LINE__);
+				}
+				break;
+
+			case WAIT_TIMEOUT:
+				fprintf(stderr, "%s(%d): Failed to send %d bytes in %d ms: timeout\n", __FILE__, __LINE__, sizData, ulTimeout);
+				break;
+
+			default:
+				/* Error, stop. */
+				print_error();
+				fprintf(stderr, "%s(%d): WaitForSingleObject failed\n", __FILE__, __LINE__);
+				break;
+			}
+		}
+		else
+		{
+			print_error();
+			fprintf(stderr, "%s(%d): WriteFile failed.\n", __FILE__, __LINE__);
+		}
 	}
 
-	::CloseHandle(tOverlap.hEvent);
-
-//  if(fRet)
-//  {
-//    //wait until txempty
-//    DWORD dwWaitRes = WaitForSingleObject(m_hTxEmpty, 10000);
-//    wxASSERT(dwWaitRes == WAIT_OBJECT_0);
-//  }
+	if( fRet!=true )
+	{
+		dwBytesWritten = 0;
+	}
 
 	return dwBytesWritten;
 }
@@ -445,7 +709,9 @@ bool romloader_uart_device_win::Open()
 			fprintf(stderr, "failed to setup com");
 		}
 		/* Only monitor RXCHAR and TXEMPTY. */
-		else if( !::SetCommMask(m_hPort, EV_RXCHAR | EV_TXEMPTY) )
+//		else if( !::SetCommMask(m_hPort, EV_RXCHAR | EV_TXEMPTY) )
+		/* Only monitor RXCHAR. */
+		else if( !::SetCommMask(m_hPort, EV_RXCHAR) )
 		{
 			fprintf(stderr, "failed to set com mask");
 		}
@@ -563,11 +829,11 @@ unsigned long romloader_uart_device_win::ScanForPorts(char ***pppcDeviceNames)
 						DWORD dwPortNameLen  = sizeof(szPortName);
 
 						/* First test if this interface is a com port. */
-						if( (ERROR_SUCCESS == pfnOpenDevNodeKey(tDeviceInfoData.DevInst, 
-						                                        KEY_QUERY_VALUE, 
-						                                        0, 
-						                                        RegDisposition_OpenExisting, 
-						                                        &hkDevice, 
+						if( (ERROR_SUCCESS == pfnOpenDevNodeKey(tDeviceInfoData.DevInst,
+						                                        KEY_QUERY_VALUE,
+						                                        0,
+						                                        RegDisposition_OpenExisting,
+						                                        &hkDevice,
 						                                        CM_REGISTRY_HARDWARE)) &&
 						    (ERROR_SUCCESS == RegQueryValueEx(hkDevice,
 									"Portname",

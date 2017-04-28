@@ -31,37 +31,55 @@
 class romloader_uart_device_win : public romloader_uart_device  
 {
 public:
-  romloader_uart_device_win(const char *pcPortName);
-  virtual ~romloader_uart_device_win();
+	romloader_uart_device_win(const char *pcPortName);
+	virtual ~romloader_uart_device_win();
 
-  static DWORD WINAPI CheckComStateThread(void* pvParam);
+	static DWORD WINAPI CheckComStateThread(void* pvParam);
 
-  virtual bool Open(void);
-  virtual void Close(void);
+	virtual bool Open(void);
+	virtual void Close(void);
 
-  size_t SendRaw(const unsigned char *pucData, size_t sizData, unsigned long ulTimeout);
-  bool Cancel(void);
-  size_t RecvRaw(unsigned char *pucData, size_t sizData, unsigned long ulTimeout);
-  bool Flush(void);
-  unsigned long Peek(void);
+	size_t SendRaw(const unsigned char *pucData, size_t sizData, unsigned long ulTimeout);
+	bool Cancel(void);
+	size_t RecvRaw(unsigned char *pucData, size_t sizData, unsigned long ulTimeout);
+	bool Flush(void);
+	unsigned long Peek(void);
 
-  static unsigned long  ScanForPorts(char ***pppcDeviceNames);
+	static unsigned long  ScanForPorts(char ***pppcDeviceNames);
+
 
 protected:
-  unsigned long GetMaxBlockSize(void) { return 4096; }
+	unsigned long GetMaxBlockSize(void) { return 4096; }
 
-  void              CheckComEvents(DWORD dwEventMask);
-  DWORD             CheckComState();
+	void              CheckComEvents(DWORD dwEventMask);
+	DWORD             CheckComState();
 
-  bool              m_fRunning;       /**< true if the receiver thread should run. false to end it*/
-  HANDLE            m_hPort;          /**< Handle to the serial port */
-  HANDLE            m_hComStateThread;/**< Handle to the receiver thread */
+	bool              m_fRunning;       /**< true if the receiver thread should run. false to end it*/
+	HANDLE            m_hPort;          /**< Handle to the serial port */
+	HANDLE            m_hComStateThread;/**< Handle to the receiver thread */
 
-  HANDLE            m_hTxEmpty;       /**< Handle to the TX Empty event being signalled, when all data has been written */
-  HANDLE            m_hNewRxEvent;    /**< Handle to the new RX Data available event */
-  
+	HANDLE            m_hTxEmpty;       /**< Handle to the TX Empty event being signalled, when all data has been written */
+	HANDLE            m_hNewRxEvent;    /**< Handle to the new RX Data available event */
+
 private:
+	typedef enum RECEIVESTATUS_ENUM
+	{
+		RECEIVESTATUS_Idle = 0,
+		RECEIVESTATUS_WaitForCommEventOverlap = 1,
+		RECEIVESTATUS_ProcessCommEvents = 2,
+		RECEIVESTATUS_WaitForDataOverlap = 3,
+		RECEIVESTATUS_ProcessData = 4,
+		RECEIVESTATUS_Error = 5
+	} RECEIVESTATUS_T;
+
+	static const DWORD m_PollingTimeoutForCommEventsInMs = 500;
+	static const DWORD m_PollingTimeoutForReadInMs = 500;
+
+
+	void print_error(void);
 	void *m_pvCallbackUserData;
+	RECEIVESTATUS_T m_tReceiveStatus;
+	HANDLE m_hEventSendData;
 };
 
-#endif	/* __ROMLOADER_UART_DEVICE_WIN_H__ */
+#endif  /* __ROMLOADER_UART_DEVICE_WIN_H__ */
