@@ -8,21 +8,21 @@ SET(PROJECT_VERSION ${MUHKUH_VERSION_ALL})
 
 SET(INSTALL_WINDOWS_X86        "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/windows_x86")
 SET(INSTALL_WINDOWS_X86_64     "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/windows_x86_64")
-SET(INSTALL_UBUNTU_1204_X86    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/ubuntu_1204_x86")
-SET(INSTALL_UBUNTU_1204_X86_64 "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/ubuntu_1204_x86_64")
 SET(INSTALL_UBUNTU_1404_X86    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/ubuntu_1404_x86")
 SET(INSTALL_UBUNTU_1404_X86_64 "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/ubuntu_1404_x86_64")
 SET(INSTALL_UBUNTU_1604_X86    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/ubuntu_1604_x86")
 SET(INSTALL_UBUNTU_1604_X86_64 "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/ubuntu_1604_x86_64")
 SET(INSTALL_UBUNTU_1610_X86    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/ubuntu_1610_x86")
 SET(INSTALL_UBUNTU_1610_X86_64 "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/ubuntu_1610_x86_64")
+SET(INSTALL_UBUNTU_1704_X86    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/ubuntu_1704_x86")
+SET(INSTALL_UBUNTU_1704_X86_64 "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/ubuntu_1704_x86_64")
 
 
 SET(CPACK_OUTPUT_FILE_PREFIX targets/jonchki/repository/org/muhkuh/lua/romloader/${PROJECT_VERSION})
 SET(CPACK_INCLUDE_TOPLEVEL_DIRECTORY FALSE)
 SET(CPACK_PACKAGE_FILE_NAME "lua5.3-romloader-${PROJECT_VERSION}")
 
-SET(CPACK_GENERATOR "ZIP")
+SET(CPACK_GENERATOR "TXZ")
 INCLUDE(CPack)
 
 
@@ -37,14 +37,6 @@ INSTALL(FILES ${INSTALL_WINDOWS_X86}/lua_plugins/romloader.dll
               ${INSTALL_WINDOWS_X86}/lua_plugins/romloader_uart.dll
               ${INSTALL_WINDOWS_X86}/lua_plugins/romloader_usb.dll
         DESTINATION windows_x86/lua_plugins)
-
-INSTALL(FILES ${INSTALL_UBUNTU_1204_X86}/lua_plugins/romloader.so
-              ${INSTALL_UBUNTU_1204_X86}/lua_plugins/romloader_eth.so
-              ${INSTALL_UBUNTU_1204_X86}/lua_plugins/romloader_jtag.so
-              ${INSTALL_UBUNTU_1204_X86}/lua_plugins/romloader_papa_schlumpf.so
-              ${INSTALL_UBUNTU_1204_X86}/lua_plugins/romloader_uart.so
-              ${INSTALL_UBUNTU_1204_X86}/lua_plugins/romloader_usb.so
-        DESTINATION ubuntu_1204_x86/lua_plugins)
 
 INSTALL(FILES ${INSTALL_UBUNTU_1404_X86}/lua_plugins/romloader.so
               ${INSTALL_UBUNTU_1404_X86}/lua_plugins/romloader_eth.so
@@ -70,6 +62,14 @@ INSTALL(FILES ${INSTALL_UBUNTU_1610_X86}/lua_plugins/romloader.so
               ${INSTALL_UBUNTU_1610_X86}/lua_plugins/romloader_usb.so
         DESTINATION ubuntu_1610_x86/lua_plugins)
 
+INSTALL(FILES ${INSTALL_UBUNTU_1704_X86}/lua_plugins/romloader.so
+              ${INSTALL_UBUNTU_1704_X86}/lua_plugins/romloader_eth.so
+              ${INSTALL_UBUNTU_1704_X86}/lua_plugins/romloader_jtag.so
+              ${INSTALL_UBUNTU_1704_X86}/lua_plugins/romloader_papa_schlumpf.so
+              ${INSTALL_UBUNTU_1704_X86}/lua_plugins/romloader_uart.so
+              ${INSTALL_UBUNTU_1704_X86}/lua_plugins/romloader_usb.so
+        DESTINATION ubuntu_1704_x86/lua_plugins)
+
 
 #-----------------------------------------------------------------------------
 #
@@ -82,14 +82,6 @@ INSTALL(FILES ${INSTALL_WINDOWS_X86_64}/lua_plugins/romloader.dll
               ${INSTALL_WINDOWS_X86_64}/lua_plugins/romloader_uart.dll
               ${INSTALL_WINDOWS_X86_64}/lua_plugins/romloader_usb.dll
         DESTINATION windows_x86_64/lua_plugins)
-
-INSTALL(FILES ${INSTALL_UBUNTU_1204_X86_64}/lua_plugins/romloader.so
-              ${INSTALL_UBUNTU_1204_X86_64}/lua_plugins/romloader_eth.so
-              ${INSTALL_UBUNTU_1204_X86_64}/lua_plugins/romloader_jtag.so
-              ${INSTALL_UBUNTU_1204_X86_64}/lua_plugins/romloader_papa_schlumpf.so
-              ${INSTALL_UBUNTU_1204_X86_64}/lua_plugins/romloader_uart.so
-              ${INSTALL_UBUNTU_1204_X86_64}/lua_plugins/romloader_usb.so
-        DESTINATION ubuntu_1204_x86_64/lua_plugins)
 
 INSTALL(FILES ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/romloader.so
               ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/romloader_eth.so
@@ -115,6 +107,14 @@ INSTALL(FILES ${INSTALL_UBUNTU_1610_X86_64}/lua_plugins/romloader.so
               ${INSTALL_UBUNTU_1610_X86_64}/lua_plugins/romloader_usb.so
         DESTINATION ubuntu_1610_x86_64/lua_plugins)
 
+INSTALL(FILES ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/romloader.so
+              ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/romloader_eth.so
+              ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/romloader_jtag.so
+              ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/romloader_papa_schlumpf.so
+              ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/romloader_uart.so
+              ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/romloader_usb.so
+        DESTINATION ubuntu_1704_x86_64/lua_plugins)
+
 #-----------------------------------------------------------------------------
 
 INSTALL(FILES install.lua
@@ -123,3 +123,14 @@ INSTALL(FILES install.lua
 CONFIGURE_FILE(romloader.xml
                ${CPACK_OUTPUT_FILE_PREFIX}/lua5.3-romloader-${PROJECT_VERSION}.xml
                @ONLY)
+
+
+#-----------------------------------------------------------------------------
+#
+# Filter the pom.xml file.
+#
+SET(POM_ARTIFACT_ID  "lua5.3-romloader")
+SET(POM_GROUP_ID     "org.muhkuh.lua")
+SET(POM_VERSION      "${PROJECT_VERSION}")
+SET(POM_PACKAGING    "tar.xz")
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/pom.xml ${CPACK_OUTPUT_FILE_PREFIX}/pom.xml)
