@@ -53,20 +53,6 @@ static void delay_print(unsigned int uiMessages, unsigned long ulDelayMs)
 }
 
 
-static void msleep(unsigned long ulDelayMs) {
-	unsigned long ulTimer;
-	int iElapsed;
-
-	if (ulDelayMs != 0) {
-		ulTimer = systime_get_ms();
-		do {
-			iElapsed = systime_elapsed(ulTimer, ulDelayMs);
-		} while (iElapsed == 0);
-	}
-
-}
-
-
 /* This is your main function for the test,
    your control starts here. */
 NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(NETX_CONSOLEAPP_PARAMETER_T *ptTestParam)
