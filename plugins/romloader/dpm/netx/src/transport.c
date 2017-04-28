@@ -447,19 +447,19 @@ void transport_call_console_flush(void)
 }
 
 
-
-void transport_netMon_to_netX_send_byte()
+#if 0
+void transport_netMon_to_netX_send_byte(void)
 {
 
 }
 
 
 
-void transport_netMon_to_netX()
+void transport_netMon_to_netX(void)
 {
 
 }
-
+#endif
 
 /**
  * @todo: get rid of the magic numbers
