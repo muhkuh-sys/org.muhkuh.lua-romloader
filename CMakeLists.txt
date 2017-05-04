@@ -48,6 +48,18 @@ IF((${BUILDCFG_ONLY_JONCHKI_CFG} STREQUAL "OFF"))
 
 	#---------------------------------------------------------------------
 	#
+	# Create an include file with all version information.
+	#
+	CONFIGURE_FILE(templates/version_information.h
+	               ${CMAKE_BINARY_DIR}/version_information/version_information.h
+	               @ONLY)
+	CONFIGURE_FILE(templates/version_information.i
+	               ${CMAKE_BINARY_DIR}/version_information/version_information.i
+	               @ONLY)
+
+
+	#---------------------------------------------------------------------
+	#
 	# Set custom definitions for several compiler.
 	#
 
