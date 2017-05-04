@@ -3,8 +3,6 @@ cmake_minimum_required(VERSION 2.8)
 
 PROJECT("romloader_dpm")
 
-SET(romloader_dpm_VERSION 0.0.1)
-
 
 INCLUDE(${SWIG_USE_FILE})
 
@@ -39,7 +37,7 @@ INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/platform/src/")
 # Maybe the future brings support for the NXHX-FTDI and companions which allows easy access on windows too.
 IF(UNIX)
 	SET_SOURCE_FILES_PROPERTIES(romloader_dpm.i PROPERTIES CPLUSPLUS ON)
-	SET_PROPERTY(SOURCE romloader_dpm.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/plugins)
+	SET_PROPERTY(SOURCE romloader_dpm.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/plugins -I${CMAKE_BINARY_DIR}/version_information)
 	
 	
 	SET(romloader_dpm_SOURCES

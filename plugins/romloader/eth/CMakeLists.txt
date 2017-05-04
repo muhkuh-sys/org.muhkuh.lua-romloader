@@ -3,8 +3,6 @@ cmake_minimum_required(VERSION 2.8)
 
 PROJECT("romloader_eth")
 
-SET(romloader_eth_VERSION 0.0.1)
-
 
 INCLUDE(${SWIG_USE_FILE})
 
@@ -39,7 +37,7 @@ ENDIF(UNIX)
 
 
 SET_SOURCE_FILES_PROPERTIES(romloader_eth.i PROPERTIES CPLUSPLUS ON)
-SET_PROPERTY(SOURCE romloader_eth.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/plugins)
+SET_PROPERTY(SOURCE romloader_eth.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/plugins -I${CMAKE_BINARY_DIR}/version_information)
 
 
 SET(romloader_eth_SOURCES

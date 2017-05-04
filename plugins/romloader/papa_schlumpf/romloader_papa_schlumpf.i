@@ -49,3 +49,5 @@
 %include "../romloader.h"
 %include "../romloader_def.h"
 %include "romloader_papa_schlumpf.h"
+
+%include "version_information.i"

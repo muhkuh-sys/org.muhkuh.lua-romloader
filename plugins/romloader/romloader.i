@@ -18,3 +18,5 @@
 %include "../muhkuh_plugin_interface.h"
 %include "romloader.h"
 %include "romloader_def.h"
+
+%include "version_information.i"

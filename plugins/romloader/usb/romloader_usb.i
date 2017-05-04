@@ -49,3 +49,5 @@
 %include "../romloader.h"
 %include "../romloader_def.h"
 %include "romloader_usb_main.h"
+
+%include "version_information.i"

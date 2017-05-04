@@ -3,8 +3,6 @@ cmake_minimum_required(VERSION 2.8)
 
 PROJECT("romloader_usb")
 
-SET(romloader_usb_VERSION 0.0.1)
-
 
 FIND_PACKAGE(SWIG REQUIRED)
 INCLUDE(${SWIG_USE_FILE})
@@ -42,7 +40,7 @@ SET(NETX_USB_FIRMWARE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/netx/targets/usbmon_ne
 # Set the platform specific parts.
 #
 SET_SOURCE_FILES_PROPERTIES(romloader_usb.i PROPERTIES CPLUSPLUS ON)
-SET_PROPERTY(SOURCE romloader_usb.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/plugins)
+SET_PROPERTY(SOURCE romloader_usb.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/plugins -I${CMAKE_BINARY_DIR}/version_information)
 
 
 SET(romloader_usb_SOURCES

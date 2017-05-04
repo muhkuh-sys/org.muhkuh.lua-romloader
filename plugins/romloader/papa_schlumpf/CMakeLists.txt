@@ -3,8 +3,6 @@ cmake_minimum_required(VERSION 3.7)
 
 PROJECT("romloader_papa_schlumpf")
 
-SET(romloader_papa_schlumpf_VERSION 0.0.1)
-
 
 FIND_PACKAGE(SWIG REQUIRED)
 INCLUDE(${SWIG_USE_FILE})
@@ -24,7 +22,7 @@ INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
 # Set the platform specific parts.
 #
 SET_SOURCE_FILES_PROPERTIES(romloader_papa_schlumpf.i PROPERTIES CPLUSPLUS ON)
-SET_PROPERTY(SOURCE romloader_papa_schlumpf.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/plugins)
+SET_PROPERTY(SOURCE romloader_papa_schlumpf.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/plugins -I${CMAKE_BINARY_DIR}/version_information)
 
 
 SET(romloader_papa_schlumpf_SOURCES
