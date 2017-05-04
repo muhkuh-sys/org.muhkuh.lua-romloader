@@ -1,44 +1,69 @@
 #-----------------------------------------------------------------------------
 #
-# Get the VCS version and store it in the variable PROJECT_VERSION_VCS.
+# Get the VCS version from GIT and store it in the variable
+# PROJECT_VERSION_VCS and PROJECT_VERSION_VCS_LONG.
+# Store the origin in PROJECT_ORIGIN_VCS_URL.
 #
 
-# TODO: Check the project's root folder for a ".git", ".hg" or ".svn" folder.
-# For now we know that this project uses GIT.
 FIND_PACKAGE(Git)
 IF(GIT_FOUND)
-	EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} describe --abbrev=12 --always --dirty=+
+	EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} describe --abbrev=12 --always --dirty=+ --long
 	                RESULT_VARIABLE VCS_VERSION_RESULT
 	                OUTPUT_VARIABLE VCS_VERSION_OUTPUT)
-	
+
+
 	IF(VCS_VERSION_RESULT EQUAL 0)
 		STRING(STRIP "${VCS_VERSION_OUTPUT}" VCS_VERSION_OUTPUT_STRIP)
-		
-		STRING(REGEX MATCH "^[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]\\+?$" MATCH ${VCS_VERSION_OUTPUT_STRIP})
+
+		STRING(REGEX MATCH "^[0-9a-f]+\\+?$" MATCH ${VCS_VERSION_OUTPUT_STRIP})
 		IF(NOT MATCH STREQUAL "")
 			# This is a repository with no tags. Use the raw SHA sum.
-			SET(PROJECT_VERSION_VCS_VERSION ${MATCH})
+			SET(PROJECT_VERSION_VCS "GIT${VCS_VERSION_OUTPUT_STRIP}")
+			SET(PROJECT_VERSION_VCS_LONG "GIT${VCS_VERSION_OUTPUT_STRIP}")
 		ELSE(NOT MATCH STREQUAL "")
-			STRING(REGEX MATCH "^v([0-9]+\\.[0-9]+\\.[0-9]+)$" MATCH ${VCS_VERSION_OUTPUT_STRIP})
-			IF(NOT MATCH STREQUAL "")
-				# This is a repository which is exactly on a tag. Use the tag name.
-				SET(PROJECT_VERSION_VCS_VERSION ${CMAKE_MATCH_1})
-			ELSE(NOT MATCH STREQUAL "")
-				STRING(REGEX MATCH "^v[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+-g([0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]\\+?)$" MATCH ${VCS_VERSION_OUTPUT_STRIP})
-				IF(NOT MATCH STREQUAL "")
-					# This is a repository with commits after the last tag.
-					SET(PROJECT_VERSION_VCS_VERSION ${CMAKE_MATCH_1})
-				ELSE(NOT MATCH STREQUAL "")
-					# The description has an unknown format.
-					SET(PROJECT_VERSION_VCS_VERSION ${VCS_VERSION_OUTPUT_STRIP})
-				ENDIF(NOT MATCH STREQUAL "")
-			ENDIF(NOT MATCH STREQUAL "")
+			STRING(REGEX MATCH "^v([0-9.]+)-([0-9]+)-g([0-9a-f]+\\+?)$" MATCH ${VCS_VERSION_OUTPUT_STRIP})
+			IF(MATCH STREQUAL "")
+				# The description has an unknown format. Use the tag name.
+				SET(PROJECT_VERSION_VCS "GIT${VCS_VERSION_OUTPUT_STRIP}")
+				SET(PROJECT_VERSION_VCS_LONG "GIT${VCS_VERSION_OUTPUT_STRIP}")
+			ELSE(MATCH STREQUAL "")
+				SET(VCS_REVS_SINCE_TAG ${CMAKE_MATCH_2})
+				IF(VCS_REVS_SINCE_TAG EQUAL 0)
+					# This is a repository which is exactly on a tag. Use the tag name.
+					SET(PROJECT_VERSION_VCS "GIT${CMAKE_MATCH_1}")
+					SET(PROJECT_VERSION_VCS_LONG "GIT${CMAKE_MATCH_1}-${CMAKE_MATCH_3}")
+				ELSE(VCS_REVS_SINCE_TAG EQUAL 0)
+					# This is a repository with commits after the last tag. Use the checkin ID.
+					SET(PROJECT_VERSION_VCS "GIT${CMAKE_MATCH_3}")
+					SET(PROJECT_VERSION_VCS_LONG "GIT${CMAKE_MATCH_3}")
+				ENDIF(VCS_REVS_SINCE_TAG EQUAL 0)
+			ENDIF(MATCH STREQUAL "")
 		ENDIF(NOT MATCH STREQUAL "")
+	ELSE(VCS_VERSION_RESULT EQUAL 0)
+		# The GIT command failed. Set the VCS version to "unknown".
+		SET(PROJECT_VERSION_VCS unknown)
+		SET(PROJECT_VERSION_VCS_LONG unknown)
 	ENDIF(VCS_VERSION_RESULT EQUAL 0)
-	
-	STRING(CONCAT PROJECT_VERSION_VCS "GIT" "${PROJECT_VERSION_VCS_VERSION}")
+
+
+	# Get the remote origin URL from GIT.
+	EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} config --get remote.origin.url
+	                RESULT_VARIABLE VCS_ORIGIN_RESULT
+	                OUTPUT_VARIABLE VCS_ORIGIN_OUTPUT)
+	IF(VCS_ORIGIN_RESULT EQUAL 0)
+		STRING(STRIP "${VCS_ORIGIN_OUTPUT}" PROJECT_ORIGIN_VCS_URL)
+	ELSE(VCS_ORIGIN_RESULT EQUAL 0)
+		# The GIT command failed. Set the remote origin URL to "unknown".
+		SET(PROJECT_ORIGIN_VCS_URL unknown)
+	ENDIF(VCS_ORIGIN_RESULT EQUAL 0)
+
 ELSE(GIT_FOUND)
+	# No GIT tool found. Set all results to "unknown".
 	SET(PROJECT_VERSION_VCS unknown)
+	SET(PROJECT_VERSION_VCS_LONG unknown)
+	SET(PROJECT_ORIGIN_VCS_URL unknown)
 ENDIF(GIT_FOUND)
 
 MESSAGE("PROJECT_VERSION_VCS: ${PROJECT_VERSION_VCS}")
+MESSAGE("PROJECT_VERSION_VCS_LONG: ${PROJECT_VERSION_VCS_LONG}")
+MESSAGE("PROJECT_ORIGIN_VCS_URL: ${PROJECT_ORIGIN_VCS_URL}")
