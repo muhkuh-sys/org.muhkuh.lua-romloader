@@ -1,7 +1,0 @@
-
-%include "../dpm_netx5_main.h"
-%include "../../dpm.h"
-
-#include "../dpm_lua.i"
-
-%function %gc dpm *dpm_netx5_create(voidptr_long pvHandle)
