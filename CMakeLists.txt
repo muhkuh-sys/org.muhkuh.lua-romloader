@@ -22,6 +22,18 @@ INCLUDE(${CMAKE_HOME_DIRECTORY}/cmake/muhkuh_version.cmake)
 
 SET(PROJECT_VERSION "${MUHKUH_VERSION_ALL}")
 
+
+# Python is used for the firmware build script and some test scripts.
+FIND_PACKAGE(PythonInterp 2.7 REQUIRED)
+
+# Add a custom target for the netX firmware.
+ADD_CUSTOM_TARGET(TARGET_NETX_FIRMWARE
+                  COMMAND "${PYTHON_EXECUTABLE}" mbs/mbs
+                  WORKING_DIRECTORY ${CMAKE_HOME_DIRECTORY}
+                  COMMENT "Build the netX firmware.")
+
+
+
 # Filter the jonchki configuration.
 CONFIGURE_FILE(jonchki/installer/lua${BUILDCFG_LUA_VERSION}/romloader.xml
                ${CMAKE_CURRENT_BINARY_DIR}/lua${BUILDCFG_LUA_VERSION}-romloader-${PROJECT_VERSION}.xml
@@ -35,9 +47,6 @@ IF((${BUILDCFG_ONLY_JONCHKI_CFG} STREQUAL "OFF"))
 
 	# Swig is required to generate the bindings.
 	FIND_PACKAGE(SWIG REQUIRED)
-
-	# Python is used for some test scripts.
-	FIND_PACKAGE(PythonInterp 2.7 REQUIRED)
 
 	# Select the LUA version.
 	INCLUDE(cmake/muhkuh_lua.cmake)

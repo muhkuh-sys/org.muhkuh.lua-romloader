@@ -58,6 +58,8 @@ IF(UNIX)
 	
 	
 	ADD_LIBRARY(TARGET_romloader_dpm_lib STATIC ${romloader_dpm_SOURCES})
+	# Build the netX firmware before this library.
+	ADD_DEPENDENCIES(TARGET_romloader_dpm_lib TARGET_NETX_FIRMWARE)
 #	TARGET_LINK_LIBRARIES(TARGET_romloader_dpm_lib ${romloader_dpm_platform_LIBS})
 	# This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 	IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")

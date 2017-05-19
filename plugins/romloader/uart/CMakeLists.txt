@@ -88,6 +88,8 @@ SET(romloader_uart_HEADERS
 
 
 add_library(TARGET_romloader_uart_lib STATIC ${romloader_uart_SOURCES})
+# Build the netX firmware before this library.
+ADD_DEPENDENCIES(TARGET_romloader_uart_lib TARGET_NETX_FIRMWARE)
 target_link_libraries(TARGET_romloader_uart_lib ${romloader_uart_platform_LIBS})
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
