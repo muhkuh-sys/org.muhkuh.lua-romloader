@@ -32,7 +32,12 @@ ADD_CUSTOM_TARGET(TARGET_NETX_FIRMWARE
                   WORKING_DIRECTORY ${CMAKE_HOME_DIRECTORY}
                   COMMENT "Build the netX firmware.")
 
+# Add a custom target for the externals.
+ADD_CUSTOM_TARGET(TARGET_EXTERNALS
+                  DEPENDS TARGET_libusb TARGET_openocd
+                  COMMENT "Build the externals.")
 
+ADD_SUBDIRECTORY(external)
 
 # Filter the jonchki configuration.
 CONFIGURE_FILE(jonchki/installer/lua${BUILDCFG_LUA_VERSION}/romloader.xml
