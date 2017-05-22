@@ -1,16 +1,16 @@
-cmake_minimum_required(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.7)
 
-PROJECT("muhkuh")
-
-
-# Enable tests (see here for details: http://www.vtk.org/Wiki/CMake/Testing_With_CTest)
-ENABLE_TESTING()
-
-
-# Set some installation folders.
-INCLUDE(cmake/muhkuh_installation_folders.cmake)
-
-OPTION(BUILDCFG_ONLY_JONCHKI_CFG "Build only the jonchki configuration. This is used for the resolve phase. The default is OFF."
+#-----------------------------------------------------------------------------
+#
+# The project options.
+#
+OPTION(BUILDCFG_LUA_USE_SYSTEM "Use the system-wide installed LUA version. The default is ON."
+       "ON")
+OPTION(BUILDCFG_LUA_51 "Build the project for LUA5.1 . The default is ON."
+       "ON")
+OPTION(BUILDCFG_LUA_52 "Build the project for LUA5.2 . The default is OFF."
+       "OFF")
+OPTION(BUILDCFG_LUA_53 "Build the project for LUA5.3 . The default is OFF."
        "OFF")
 
 
@@ -20,7 +20,9 @@ INCLUDE(${CMAKE_HOME_DIRECTORY}/cmake/version.cmake)
 # Generate a version number from a file or VCS.
 INCLUDE(${CMAKE_HOME_DIRECTORY}/cmake/muhkuh_version.cmake)
 
-SET(PROJECT_VERSION "${MUHKUH_VERSION_ALL}")
+
+PROJECT("muhkuh"
+        VERSION ${MUHKUH_VERSION_ALL})
 
 
 # Python is used for the firmware build script and some test scripts.
@@ -39,63 +41,127 @@ ADD_CUSTOM_TARGET(TARGET_EXTERNALS
 
 ADD_SUBDIRECTORY(external)
 
-# Filter the jonchki configuration.
-CONFIGURE_FILE(jonchki/installer/lua${BUILDCFG_LUA_VERSION}/romloader.xml
-               ${CMAKE_CURRENT_BINARY_DIR}/lua${BUILDCFG_LUA_VERSION}-romloader-${PROJECT_VERSION}.xml
+# Filter the jonchki configurations.
+CONFIGURE_FILE(jonchki/installer/lua5.1/romloader.xml
+               ${CMAKE_CURRENT_BINARY_DIR}/lua5.1-romloader-${PROJECT_VERSION}.xml
+               @ONLY)
+CONFIGURE_FILE(jonchki/installer/lua5.2/romloader.xml
+               ${CMAKE_CURRENT_BINARY_DIR}/lua5.2-romloader-${PROJECT_VERSION}.xml
+               @ONLY)
+CONFIGURE_FILE(jonchki/installer/lua5.3/romloader.xml
+               ${CMAKE_CURRENT_BINARY_DIR}/lua5.3-romloader-${PROJECT_VERSION}.xml
                @ONLY)
 
-IF((${BUILDCFG_ONLY_JONCHKI_CFG} STREQUAL "OFF"))
-	#---------------------------------------------------------------------
-	#
-	# Find all packages.
-	#
-
-	# Swig is required to generate the bindings.
-	FIND_PACKAGE(SWIG REQUIRED)
-
-	# Select the LUA version.
-	INCLUDE(cmake/muhkuh_lua.cmake)
-
-	# Add a custom target for the swig runtime for LUA.
-	INCLUDE(cmake/muhkuh_swig_lua_runtime.cmake)
-
-
-	#---------------------------------------------------------------------
-	#
-	# Create an include file with all version information.
-	#
-	CONFIGURE_FILE(templates/version_information.h
-	               ${CMAKE_BINARY_DIR}/version_information/version_information.h
-	               @ONLY)
-	CONFIGURE_FILE(templates/version_information.i
-	               ${CMAKE_BINARY_DIR}/version_information/version_information.i
-	               @ONLY)
-
-
-	#---------------------------------------------------------------------
-	#
-	# Set custom definitions for several compiler.
-	#
-
-	# Microsoft: Do not show msvs security warnings about unsafe functions.
-	IF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv|nmake)")
-		ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
-		ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
-	ENDIF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv|nmake)")
-
-
-	# Microsoft: Set warning level to 2.
-	IF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv)")
-		ADD_DEFINITIONS(/W2)
-	ENDIF(${CMAKE_BUILD_TOOL} MATCHES "(msdev|VCExpress|devenv)")
-
-
-	#---------------------------------------------------------------------
-	#
-	# Include the projects in the subdirectories.
-	#
-	ADD_SUBDIRECTORY(plugins)
-ENDIF((${BUILDCFG_ONLY_JONCHKI_CFG} STREQUAL "OFF"))
+INCLUDE(ExternalProject)
 
 #-----------------------------------------------------------------------------
+#
+# Build the LUA5.1 version.
+#
+IF( BUILDCFG_LUA_51 )
+	SET(PLUGINS_LUA51_CMAKE_ARGS "")
+	LIST(APPEND PLUGINS_LUA51_CMAKE_ARGS "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
+	LIST(APPEND PLUGINS_LUA51_CMAKE_ARGS "-DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
+	LIST(APPEND PLUGINS_LUA51_CMAKE_ARGS "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}")
+	LIST(APPEND PLUGINS_LUA51_CMAKE_ARGS "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
+	LIST(APPEND PLUGINS_LUA51_CMAKE_ARGS "-DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_BINARY_DIR}/../libusb/install/cmake")
+	IF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+		LIST(APPEND PLUGINS_LUA51_CMAKE_ARGS "-DCMAKE_RC_COMPILER=${CMAKE_RC_COMPILER}")
+	ENDIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
+	LIST(APPEND PLUGINS_LUA51_CMAKE_ARGS "-Dopenocd_DIR=${CMAKE_CURRENT_BINARY_DIR}/external/openocd/install/cmake")
+	LIST(APPEND PLUGINS_LUA51_CMAKE_ARGS "-Dlibusb_DIR=${CMAKE_CURRENT_BINARY_DIR}/external/libusb/install/cmake")
+
+	LIST(APPEND PLUGINS_LUA51_CMAKE_ARGS "-DBUILDCFG_LUA_USE_SYSTEM=${BUILDCFG_LUA_USE_SYSTEM}")
+	LIST(APPEND PLUGINS_LUA51_CMAKE_ARGS "-DBUILDCFG_LUA_VERSION=5.1")
+
+	LIST(APPEND PLUGINS_LUA51_CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/install/lua5.1")
+
+
+	# Build the plugins as an external project.
+	# This is important as it allows the "find_package" command to use the
+	# components from the "external" folder.
+	ExternalProject_Add(TARGET_PLUGINS_LUA51
+	                    DEPENDS TARGET_NETX_FIRMWARE TARGET_EXTERNALS
+	                    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/lua5.1/plugins
+	                    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/plugins
+	                    CMAKE_ARGS ${PLUGINS_LUA51_CMAKE_ARGS}
+	)
+ENDIF( BUILDCFG_LUA_51 )
+
+
+
+#-----------------------------------------------------------------------------
+#
+# Build the LUA5.2 version.
+#
+IF( BUILDCFG_LUA_52 )
+	SET(PLUGINS_LUA52_CMAKE_ARGS "")
+	LIST(APPEND PLUGINS_LUA52_CMAKE_ARGS "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
+	LIST(APPEND PLUGINS_LUA52_CMAKE_ARGS "-DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
+	LIST(APPEND PLUGINS_LUA52_CMAKE_ARGS "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}")
+	LIST(APPEND PLUGINS_LUA52_CMAKE_ARGS "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
+	LIST(APPEND PLUGINS_LUA52_CMAKE_ARGS "-DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_BINARY_DIR}/../libusb/install/cmake")
+	IF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+		LIST(APPEND PLUGINS_LUA52_CMAKE_ARGS "-DCMAKE_RC_COMPILER=${CMAKE_RC_COMPILER}")
+	ENDIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+
+	LIST(APPEND PLUGINS_LUA52_CMAKE_ARGS "-Dopenocd_DIR=${CMAKE_CURRENT_BINARY_DIR}/external/openocd/install/cmake")
+	LIST(APPEND PLUGINS_LUA52_CMAKE_ARGS "-Dlibusb_DIR=${CMAKE_CURRENT_BINARY_DIR}/external/libusb/install/cmake")
+
+	LIST(APPEND PLUGINS_LUA52_CMAKE_ARGS "-DBUILDCFG_LUA_USE_SYSTEM=${BUILDCFG_LUA_USE_SYSTEM}")
+	LIST(APPEND PLUGINS_LUA52_CMAKE_ARGS "-DBUILDCFG_LUA_VERSION=5.2")
+
+	LIST(APPEND PLUGINS_LUA52_CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/install/lua5.1")
+
+
+	# Build the plugins as an external project.
+	# This is important as it allows the "find_package" command to use the
+	# components from the "external" folder.
+	ExternalProject_Add(TARGET_PLUGINS_LUA52
+	                    DEPENDS TARGET_NETX_FIRMWARE TARGET_EXTERNALS
+	                    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/lua5.2/plugins
+	                    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/plugins
+	                    CMAKE_ARGS ${PLUGINS_LUA52_CMAKE_ARGS}
+	)
+ENDIF( BUILDCFG_LUA_52 )
+
+
+
+#-----------------------------------------------------------------------------
+#
+# Build the LUA5.3 version.
+#
+IF( BUILDCFG_LUA_53 )
+	SET(PLUGINS_LUA53_CMAKE_ARGS "")
+	LIST(APPEND PLUGINS_LUA53_CMAKE_ARGS "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}")
+	LIST(APPEND PLUGINS_LUA53_CMAKE_ARGS "-DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
+	LIST(APPEND PLUGINS_LUA53_CMAKE_ARGS "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}")
+	LIST(APPEND PLUGINS_LUA53_CMAKE_ARGS "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
+	LIST(APPEND PLUGINS_LUA53_CMAKE_ARGS "-DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_BINARY_DIR}/../libusb/install/cmake")
+	IF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+		LIST(APPEND PLUGINS_LUA53_CMAKE_ARGS "-DCMAKE_RC_COMPILER=${CMAKE_RC_COMPILER}")
+	ENDIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+
+	LIST(APPEND PLUGINS_LUA53_CMAKE_ARGS "-Dopenocd_DIR=${CMAKE_CURRENT_BINARY_DIR}/external/openocd/install/cmake")
+	LIST(APPEND PLUGINS_LUA53_CMAKE_ARGS "-Dlibusb_DIR=${CMAKE_CURRENT_BINARY_DIR}/external/libusb/install/cmake")
+
+	LIST(APPEND PLUGINS_LUA53_CMAKE_ARGS "-DBUILDCFG_LUA_USE_SYSTEM=${BUILDCFG_LUA_USE_SYSTEM}")
+	LIST(APPEND PLUGINS_LUA53_CMAKE_ARGS "-DBUILDCFG_LUA_VERSION=5.3")
+
+	LIST(APPEND PLUGINS_LUA53_CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/install/lua5.1")
+
+
+	# Build the plugins as an external project.
+	# This is important as it allows the "find_package" command to use the
+	# components from the "external" folder.
+	ExternalProject_Add(TARGET_PLUGINS_LUA53
+	                    DEPENDS TARGET_NETX_FIRMWARE TARGET_EXTERNALS
+	                    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/lua5.3/plugins
+	                    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/plugins
+	                    CMAKE_ARGS ${PLUGINS_LUA53_CMAKE_ARGS}
+	)
+ENDIF( BUILDCFG_LUA_53 )
+
+
+#-----------------------------------------------------------------------------

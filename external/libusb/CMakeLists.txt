@@ -2,30 +2,14 @@ cmake_minimum_required(VERSION 3.7)
 
 #----------------------------------------------------------------------------
 #
-# This script provides the libusb parts to the build process.
+# Build libusb and create a CMake component.
 #
-# 1) It depacks the archiv.
-# 2) Eventually compile the sources.
-# 3) It provides all necessary variables to link the library.
-#
-# The provided variables are:
-#
-#  LIBUSB_LIBRARIES : The libusb library with the complete path and all
-#                     required system libraries. The list must be separated
-#                     with whitespace.
-#
-#  LIBUSB_DEFINES : All defines for the libusb library. This should be a
-#                   list of entries starting with "-D".
-#
-#  LIBUSB_INCLUDE_DIRECTORIES : The include folders for the library headers.
-#                               The list must be separated with whitespace.
-#
-
 PROJECT("libusb")
+
+SET(VERSION_EXTERNAL "1.0.21")
 
 INCLUDE(ExternalProject)
 
-SET(VERSION_EXTERNAL "1.0.21")
 
 #----------------------------------------------------------------------------
 #
@@ -43,15 +27,10 @@ ENDIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
 ExternalProject_Add(TARGET_libusb
                     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libusb-${VERSION_EXTERNAL}
+                    EXCLUDE_FROM_ALL 1
                     URL ${CMAKE_CURRENT_SOURCE_DIR}/libusb-${VERSION_EXTERNAL}.tar.bz2
                     URL_HASH SHA1=54d71841542eb1a6f0b0420878a4d5434efe8d28
                     PATCH_COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/templates ${CMAKE_CURRENT_BINARY_DIR}/libusb-${VERSION_EXTERNAL}/src/TARGET_libusb
                     CMAKE_ARGS ${LIBUSB_CMAKE_ARGS}
                     INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install DESTDIR=${CMAKE_CURRENT_BINARY_DIR}
 )
-
-
-
-#IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-#	SET(LDFLAGS "-pthread -lrt -ludev")
-#ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")

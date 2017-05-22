@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.7)
+
 
 PROJECT("openocd")
 
@@ -26,7 +27,9 @@ IF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 ENDIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
 ExternalProject_Add(TARGET_openocd
+                    DEPENDS TARGET_libusb
                     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/openocd-${VERSION_EXTERNAL}
+                    EXCLUDE_FROM_ALL 1
                     URL ${CMAKE_CURRENT_SOURCE_DIR}/openocd-${VERSION_EXTERNAL}.tar.bz2
                     URL_HASH SHA1=bcf99bb21f09513065b2c9ece148ace7d16cdd0c
                     PATCH_COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tools/apply_patches.py --working-folder ${CMAKE_CURRENT_BINARY_DIR}/openocd-${VERSION_EXTERNAL}/src/TARGET_openocd --patch-folder ${CMAKE_CURRENT_SOURCE_DIR}/patches --strip 1 --copy-folder ${CMAKE_CURRENT_SOURCE_DIR}/copy
@@ -34,8 +37,3 @@ ExternalProject_Add(TARGET_openocd
                     INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install DESTDIR=${CMAKE_CURRENT_BINARY_DIR}
 )
 ADD_DEPENDENCIES(TARGET_openocd TARGET_libusb)
-
-
-#IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-#	SET(DEFINES "-std=c99")
-#ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")

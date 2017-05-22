@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.7)
 
 ADD_SUBDIRECTORY(openocd)
 
@@ -10,13 +10,6 @@ FIND_PACKAGE(SWIG REQUIRED)
 INCLUDE(${SWIG_USE_FILE})
 
 FIND_PACKAGE(openocd REQUIRED)
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${SWIG_RUNTIME_OUTPUT_PATH})
-
-if(${LUA_FOUND})
-	include_directories(${LUA_INCLUDE_DIR})
-endif(${LUA_FOUND})
 
 
 #-----------------------------------------------------------------------------
@@ -36,6 +29,8 @@ SET(romloader_jtag_HEADERS
 
 ADD_LIBRARY(TARGET_romloader_jtag_lib STATIC ${romloader_jtag_SOURCES})
 TARGET_LINK_LIBRARIES(TARGET_romloader_jtag_lib openocd::LIBRARY_libopenocd)
+TARGET_INCLUDE_DIRECTORIES(TARGET_romloader_jtag_lib
+                           PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${SWIG_RUNTIME_OUTPUT_PATH})
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 	SET_TARGET_PROPERTIES(TARGET_romloader_jtag_lib PROPERTIES COMPILE_FLAGS -fPIC)
@@ -52,33 +47,29 @@ ADD_DEPENDENCIES(TARGET_romloader_jtag_lib TARGET_romloader_jtag_openocd_lib)
 #
 
 SET_SOURCE_FILES_PROPERTIES(romloader_jtag.i PROPERTIES CPLUSPLUS ON)
-SET_PROPERTY(SOURCE romloader_jtag.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY}/plugins -I${CMAKE_BINARY_DIR}/version_information)
+SET_PROPERTY(SOURCE romloader_jtag.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY} -I${CMAKE_BINARY_DIR}/version_information)
+SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_jtag_LUA lua romloader_jtag.i)
+SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_jtag_LUA TARGET_romloader_jtag_lib TARGET_romloader_jtag_openocd_lib ${LUA_LIBRARIES} TARGET_plugins_romloader_LIB)
+TARGET_INCLUDE_DIRECTORIES(TARGET_plugins_romloader_romloader_jtag_LUA
+                           PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
+# Set the name of the output file to "romloader_jtag".
+SET_TARGET_PROPERTIES(TARGET_plugins_romloader_romloader_jtag_LUA PROPERTIES PREFIX "" OUTPUT_NAME "romloader_jtag")
 
-IF(${LUA_FOUND})
-	# Build the Lua module.
-	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_jtag_LUA lua romloader_jtag.i)
-	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_jtag_LUA TARGET_romloader_jtag_lib TARGET_romloader_jtag_openocd_lib ${LUA_LIBRARIES} TARGET_plugins_romloader_LIB)
+IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+	# On minGW link all compiler libraries static.
+	SET_PROPERTY(TARGET TARGET_plugins_romloader_romloader_jtag_LUA PROPERTY LINK_FLAGS "-static -static-libgcc -static-libstdc++")
+ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 
-	# Set the name of the output file to "romloader_jtag".
-	SET_TARGET_PROPERTIES(TARGET_plugins_romloader_romloader_jtag_LUA PROPERTIES PREFIX "" OUTPUT_NAME "romloader_jtag")
+# The module depends on the openocd libraries.
+ADD_DEPENDENCIES(TARGET_plugins_romloader_romloader_jtag_LUA TARGET_romloader_jtag_openocd_lib)
 
-	IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
-		# On minGW link all compiler libraries static.
-		SET_PROPERTY(TARGET TARGET_plugins_romloader_romloader_jtag_LUA PROPERTY LINK_FLAGS "-static -static-libgcc -static-libstdc++")
-	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+# Install the lua module.
+INSTALL(TARGETS TARGET_plugins_romloader_romloader_jtag_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
 
-	# The module depends on the openocd libraries.
-	ADD_DEPENDENCIES(TARGET_plugins_romloader_romloader_jtag_LUA TARGET_romloader_jtag_openocd_lib)
-
-	# Install the lua module.
-	INSTALL(TARGETS TARGET_plugins_romloader_romloader_jtag_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
-
-	# Add tests for this module.
-	IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
-		# Here are the MinGW specific tests.
-		ADD_TEST(NAME romloader_jtag_MinGW_DLL_dependencies
-		         COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tests/mingw_dll_dependencies.py -u lua5.1 -u lua5.2 -u lua5.3 $<TARGET_FILE:TARGET_plugins_romloader_romloader_jtag_LUA>)
-	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
-ENDIF(${LUA_FOUND})
-
+# Add tests for this module.
+IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+	# Here are the MinGW specific tests.
+	ADD_TEST(NAME romloader_jtag_MinGW_DLL_dependencies
+	         COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tests/mingw_dll_dependencies.py -u lua5.1 -u lua5.2 -u lua5.3 $<TARGET_FILE:TARGET_plugins_romloader_romloader_jtag_LUA>)
+ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
