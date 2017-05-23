@@ -81,12 +81,19 @@ IF( BUILDCFG_LUA_51 )
 	# Build the plugins as an external project.
 	# This is important as it allows the "find_package" command to use the
 	# components from the "external" folder.
-	ExternalProject_Add(TARGET_PLUGINS_LUA51
+	ExternalProject_Add(TARGET_PLUGINS_LUA51_PROJECT
+	                    EXCLUDE_FROM_ALL 1
 	                    DEPENDS TARGET_NETX_FIRMWARE TARGET_EXTERNALS
 	                    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/lua5.1/plugins
 	                    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/plugins
 	                    CMAKE_ARGS ${PLUGINS_LUA51_CMAKE_ARGS}
 	)
+
+	ADD_CUSTOM_TARGET(TARGET_PLUGINS_LUA51 ALL
+	                  COMMAND "${CMAKE_MAKE_PROGRAM}" install 
+	                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lua5.1/plugins/src/TARGET_PLUGINS_LUA51_PROJECT-build
+	                  COMMENT "Compile the plugins.")
+	ADD_DEPENDENCIES(TARGET_PLUGINS_LUA51 TARGET_PLUGINS_LUA51_PROJECT)
 ENDIF( BUILDCFG_LUA_51 )
 
 
