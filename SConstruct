@@ -69,7 +69,7 @@ SConscript('plugins/romloader/_test/testcode/SConscript')
 #
 # Build the plugin update code.
 #
-#SConscript('plugins/romloader/uart/netx/SConscript')
+SConscript('plugins/romloader/uart/netx/SConscript')
 SConscript('plugins/romloader/usb/netx/SConscript')
 
 
