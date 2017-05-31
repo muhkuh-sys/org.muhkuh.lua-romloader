@@ -179,7 +179,6 @@ int romloader_jtag_openocd::add_detected_entry(const char *pcInterface, const ch
 	return iResult;
 }
 
-
 /*
    Try to open the shared library.
    If successful, resolve method names and initialize the shared library.
@@ -242,6 +241,16 @@ int romloader_jtag_openocd::openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 			else
 			{
 				ptDevice->pvOpenocdContext = pvOpenocdContext;
+
+				fprintf(stderr, "Loading script.\n");
+				iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, "source jtag_detect_init.tcl");
+				if( iResult!=0 )
+				{
+					fprintf(stderr, "Failed to load the script: %d\n", iResult);
+					iResult = -1;
+				}
+
+
 			}
 		}
 
@@ -335,26 +344,8 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::a
 {
 	{
 		"NXJTAG-USB",
-
-		"interface ftdi\n"
-		"transport select jtag\n"
-		"ftdi_device_desc \"NXJTAG-USB\"\n"
-		"ftdi_vid_pid 0x1939 0x0023\n"
-		"adapter_khz 100\n"
-		"\n"
-		"ftdi_layout_init 0x0308 0x030b\n"
-		"ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100\n"
-		"ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
-
-		"proc probe {} {\n"
-		"    set RESULT -1"
-		"\n"
-		"    if {[ catch {jtag init} ]==0 } {\n"
-		"        set RESULT {OK}\n"
-		"    }\n"
-		"    return $RESULT\n"
-		"}\n"
-		"probe\n"
+		"setup_interface NXJTAG-USB",
+		"probe_interface",
 	},
 
 	{
@@ -450,27 +441,11 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::a
 
 
 /* FIXME: read this from some kind of configuration file. */
-const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTargetCfg[2] =
+const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTargetCfg[3] =
 {
 	{
 		"netX_ARM966",
-		"proc test {} {\n"
-		          "    global SC_CFG_RESULT\n"
-		          "    set SC_CFG_RESULT 0\n"
-		          "\n"
-		          "    jtag newtap netX_ARM966 cpu -irlen 4 -ircapture 1 -irmask 0xf -expected-id 0x25966021\n"
-		          "    jtag configure netX_ARM966.cpu -event setup { global SC_CFG_RESULT ; echo {Yay} ; set SC_CFG_RESULT {OK} }\n"
-		          "    jtag init\n"
-		          "\n"
-		          "    if { $SC_CFG_RESULT=={OK} } {\n"
-		          "        target create netX_ARM966.cpu arm966e -endian little -chain-position netX_ARM966.cpu\n"
-		          "        netX_ARM966.cpu configure -event reset-init { halt }\n"
-		          "        netX_ARM966.cpu configure -work-area-phys 0x0380 -work-area-size 0x0080 -work-area-backup 1\n"
-		          "    }\n"
-		          "\n"
-		          "    return $SC_CFG_RESULT\n"
-		          "}\n"
-		          "test\n"
+		"probe_cpu netX_ARM966"
 	},
 
 	{
@@ -492,18 +467,15 @@ const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTa
 		          "    return $SC_CFG_RESULT\n"
 		          "}\n"
 		          "test\n"
+	},
+
+	{
+		"netX4000_R7",
+		"probe_cpu netX4000_R7"
 	}
 };
 
 
-/* FIXME: read this from some kind of configuration file. */
-/* TODO: Is it necessary to have a special reset code for every interface/target pair? */
-const char *romloader_jtag_openocd::pcResetCode = "reset_config trst_and_srst\n"
-                                 "adapter_nsrst_delay 500\n"
-                                 "jtag_ntrst_delay 500\n"
-                                 "\n"
-                                 "init\n"
-                                 "reset init\n";
 
 
 int romloader_jtag_openocd::setup_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg)
@@ -874,7 +846,7 @@ int romloader_jtag_openocd::connect(const char *pcInterfaceName, const char *pcT
 					{
 						/* Stop the target. */
 						fprintf(stderr, "Running reset code.\n");
-						iResult = m_tJtagDevice.tFunctions.tFn.pfnCommandRunLine(m_tJtagDevice.pvOpenocdContext, pcResetCode);
+						iResult = m_tJtagDevice.tFunctions.tFn.pfnCommandRunLine(m_tJtagDevice.pvOpenocdContext, "reset_board");
 						if( iResult!=0 )
 						{
 							fprintf(stderr, "Failed to run the reset code: %d\n", iResult);

@@ -133,7 +133,7 @@ private:
 
 	static const INTERFACE_SETUP_STRUCT_T atInterfaceCfg[5];
 
-	static const TARGET_SETUP_STRUCT_T atTargetCfg[2];
+	static const TARGET_SETUP_STRUCT_T atTargetCfg[3];
 
 	static const char *pcResetCode;
 
