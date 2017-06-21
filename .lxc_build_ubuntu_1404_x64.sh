@@ -13,8 +13,9 @@ PRJDIR=`pwd`
 mkdir -p ${PRJDIR}/build
 
 # Start the container and mount the project folder.
-lxc launch mbs-ubuntu-1404-x64 ${CONTAINER} -c security.privileged=true
+lxc init mbs-ubuntu-1404-x64 ${CONTAINER} -c security.privileged=true
 lxc config device add ${CONTAINER} projectDir disk source=${PRJDIR} path=/tmp/work
+lxc start ${CONTAINER}
 sleep 5
 
 # Update the package list to prevent "not found" messages.
