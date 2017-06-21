@@ -29,45 +29,42 @@ CMAKE_PATHS="-Dopenocd_DIR='${BUILD_DIR}/external/openocd/install/cmake' -Dlibus
 
 # Get the build requirements for the LUA5.1 version.
 pushd ${BUILD_DIR}/lua5.1/build_requirements
-cmake -DBUILDCFG_ONLY_JONCHKI_CFG="ON" -DBUILDCFG_LUA_VERSION="5.1" -DBUILDCFG_LUA_USE_SYSTEM="OFF" -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${PRJ_DIR}
+cmake -DBUILDCFG_ONLY_JONCHKI_CFG="ON" -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${PRJ_DIR}
 make
 lua5.1 ${JONCHKI} --verbose debug --syscfg ${PRJ_DIR}/jonchki/jonchkisys.cfg --prjcfg ${PRJ_DIR}/jonchki/jonchkicfg.xml ${JONCHKI_SYSTEM} --build-dependencies lua5.1-romloader-*.xml
 popd
 
 # Build the LUA5.1 version.
 pushd ${BUILD_DIR}/lua5.1
-cmake -DBUILDCFG_ONLY_JONCHKI_CFG="OFF" -DBUILDCFG_LUA_VERSION="5.1" -DBUILDCFG_LUA_USE_SYSTEM="OFF" -DJONCHKI_BUILD_REQUIREMENTS_INSTALL_DIR=${BUILD_DIR}/lua5.1/build_requirements/jonchki/install -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${CMAKE_PATHS} ${PRJ_DIR}
+cmake -DBUILDCFG_ONLY_JONCHKI_CFG="OFF" -DBUILDCFG_LUA_USE_SYSTEM="OFF" -DBUILDCFG_LUA_51="ON" -DBUILDCFG_LUA_52="OFF" -DBUILDCFG_LUA_53="OFF" -DJONCHKI_BUILD_REQUIREMENTS_INSTALL_DIR=${BUILD_DIR}/lua5.1/build_requirements/jonchki/install -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${CMAKE_PATHS} ${PRJ_DIR}
 make
-make test
 make install DESTDIR=${BUILD_DIR}/lua5.1/install
 popd
 
 # Get the build requirements for the LUA5.2 version.
 pushd ${BUILD_DIR}/lua5.2/build_requirements
-cmake -DBUILDCFG_ONLY_JONCHKI_CFG="ON" -DBUILDCFG_LUA_VERSION="5.2" -DBUILDCFG_LUA_USE_SYSTEM="OFF" -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${PRJ_DIR}
+cmake -DBUILDCFG_ONLY_JONCHKI_CFG="ON" -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${PRJ_DIR}
 make
 lua5.1 ${JONCHKI} --verbose info --syscfg ${PRJ_DIR}/jonchki/jonchkisys.cfg --prjcfg ${PRJ_DIR}/jonchki/jonchkicfg.xml ${JONCHKI_SYSTEM} --build-dependencies lua5.2-romloader-*.xml
 popd
 
 # Build the LUA5.2 version.
 pushd ${BUILD_DIR}/lua5.2
-cmake -DBUILDCFG_ONLY_JONCHKI_CFG="OFF" -DBUILDCFG_LUA_VERSION="5.2" -DBUILDCFG_LUA_USE_SYSTEM="OFF" -DJONCHKI_BUILD_REQUIREMENTS_INSTALL_DIR=${BUILD_DIR}/lua5.2/build_requirements/jonchki/install -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${CMAKE_PATHS} ${PRJ_DIR}
+cmake -DBUILDCFG_ONLY_JONCHKI_CFG="OFF" -DBUILDCFG_LUA_USE_SYSTEM="OFF" -DBUILDCFG_LUA_51="OFF" -DBUILDCFG_LUA_52="ON" -DBUILDCFG_LUA_53="OFF" -DJONCHKI_BUILD_REQUIREMENTS_INSTALL_DIR=${BUILD_DIR}/lua5.2/build_requirements/jonchki/install -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${CMAKE_PATHS} ${PRJ_DIR}
 make
-make test
 make install DESTDIR=${BUILD_DIR}/lua5.2/install
 popd
 
 # Get the build requirements for the LUA5.3 version.
 pushd ${BUILD_DIR}/lua5.3/build_requirements
-cmake -DBUILDCFG_ONLY_JONCHKI_CFG="ON" -DBUILDCFG_LUA_VERSION="5.3" -DBUILDCFG_LUA_USE_SYSTEM="OFF" -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${PRJ_DIR}
+cmake -DBUILDCFG_ONLY_JONCHKI_CFG="ON" -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${PRJ_DIR}
 make
 lua5.1 ${JONCHKI} --verbose info --syscfg ${PRJ_DIR}/jonchki/jonchkisys.cfg --prjcfg ${PRJ_DIR}/jonchki/jonchkicfg.xml ${JONCHKI_SYSTEM} --build-dependencies lua5.3-romloader-*.xml
 popd
 
 # Build the LUA5.3 version.
 pushd ${BUILD_DIR}/lua5.3
-cmake -DBUILDCFG_ONLY_JONCHKI_CFG="OFF" -DBUILDCFG_LUA_VERSION="5.3" -DBUILDCFG_LUA_USE_SYSTEM="OFF" -DJONCHKI_BUILD_REQUIREMENTS_INSTALL_DIR=${BUILD_DIR}/lua5.3/build_requirements/jonchki/install -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${CMAKE_PATHS} ${PRJ_DIR}
+cmake -DBUILDCFG_ONLY_JONCHKI_CFG="OFF" -DBUILDCFG_LUA_USE_SYSTEM="OFF" -DBUILDCFG_LUA_51="OFF" -DBUILDCFG_LUA_52="OFF" -DBUILDCFG_LUA_53="ON" -DJONCHKI_BUILD_REQUIREMENTS_INSTALL_DIR=${BUILD_DIR}/lua5.3/build_requirements/jonchki/install -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${CMAKE_PATHS} ${PRJ_DIR}
 make
-make test
 make install DESTDIR=${BUILD_DIR}/lua5.3/install
 popd
