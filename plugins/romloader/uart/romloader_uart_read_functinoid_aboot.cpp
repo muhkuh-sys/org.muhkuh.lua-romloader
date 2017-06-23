@@ -23,17 +23,17 @@
 
 
 /* Load- and entry points for the bootstrap firmware. */
-#include "netx/targets/uartmon_netx50_bootstrap_run.h"
+#include "uartmon_netx50_bootstrap_run.h"
 
 /* Data of the bootstrap firmware. */
-#include "netx/targets/uartmon_netx50_bootstrap.h"
+#include "uartmon_netx50_bootstrap.h"
 
 /* Data of the monitor firmware. */
-#include "netx/targets/uartmon_netx50_monitor.h"
-#include "netx/targets/uartmon_netx500_monitor.h"
+#include "uartmon_netx50_monitor.h"
+#include "uartmon_netx500_monitor.h"
 
 /* The load and execute address of the netX500 monitor. */
-#include "netx/targets/uartmon_netx500_monitor_run.h"
+#include "uartmon_netx500_monitor_run.h"
 
 
 #ifdef _MSC_VER

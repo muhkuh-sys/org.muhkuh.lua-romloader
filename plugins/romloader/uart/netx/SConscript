@@ -140,36 +140,3 @@ bin_netx10_bootstrap = env_netx10_bootstrap.ObjCopy(os.path.join(strTargetPath, 
 arr_netx10_bootstrap = env_netx10_bootstrap.DataArray(os.path.join(strTargetPath, 'uartmon_netx10_bootstrap.c'), bin_netx10_bootstrap, DATAARRAY_NAME='auc_uartmon_netx10_bootstrap')
 sym_netx10_bootstrap = env_netx10_bootstrap.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx10_bootstrap_run.h'), elf_netx10_bootstrap, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx10_bootstrap_run.h'))
 
-#----------------------------------------------------------------------------
-#
-# Build the diff and the zip distribution.
-#
-#atEnv.DEFAULT.Diff('targets/uartmon_firmware.diff', arr_netx500_monitor +
-#                                                  sym_netx500_monitor +
-#                                                  arr_netx56_monitor +
-#                                                  sym_netx56_monitor +
-#                                                  arr_netx50_monitor +
-#                                                  sym_netx50_monitor +
-#                                                  arr_netx50_bootstrap +
-#                                                  sym_netx50_bootstrap +
-#                                                  arr_netx10_monitor +
-#                                                  sym_netx10_monitor +
-#                                                  arr_netx10_bootstrap +
-#                                                  sym_netx10_bootstrap,
-#                                                  DIFF_PATCHED_FOLDER='')
-
-
-#tRelease = atEnv.DEFAULT.ArchiveList('zip')
-#tRelease.AddFiles('plugins/romloader/uart/netx/targets/',  arr_netx500_monitor,
-#                                                           sym_netx500_monitor,
-#                                                           arr_netx56_monitor,
-#                                                           sym_netx56_monitor,
-#                                                           arr_netx50_monitor,
-#                                                           sym_netx50_monitor,
-#                                                           arr_netx50_bootstrap,
-#                                                           sym_netx50_bootstrap,
-#                                                           arr_netx10_monitor,
-#                                                           sym_netx10_monitor,
-#                                                           arr_netx10_bootstrap,
-#                                                           sym_netx10_bootstrap)
-#tArc = atEnv.DEFAULT.Archive('targets/uartmon_firmware.zip', None, ARCHIVE_CONTENTS=tRelease)

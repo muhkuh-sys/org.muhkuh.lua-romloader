@@ -24,13 +24,13 @@
 #include "romloader_uart_read_functinoid_hboot1.h"
 
 /* Load- and entry points for the bootstrap firmware. */
-#include "netx/targets/uartmon_netx10_bootstrap_run.h"
+#include "uartmon_netx10_bootstrap_run.h"
 
 /* Data of the bootstrap firmware. */
-#include "netx/targets/uartmon_netx10_bootstrap.h"
+#include "uartmon_netx10_bootstrap.h"
 
 /* Data of the monitor firmware. */
-#include "netx/targets/uartmon_netx10_monitor.h"
+#include "uartmon_netx10_monitor.h"
 
 
 #ifdef _MSC_VER

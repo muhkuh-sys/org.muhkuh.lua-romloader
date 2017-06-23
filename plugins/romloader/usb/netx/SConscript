@@ -104,19 +104,3 @@ elf_netx10 = env_netx10.Elf(os.path.join(strTargetPath, 'usbmon_netx10.elf'), sr
 bin_netx10 = env_netx10.ObjCopy(os.path.join(strTargetPath, 'usbmon_netx10.bin'), elf_netx10)
 arr_netx10 = env_netx10.DataArray(os.path.join(strTargetPath, 'usbmon_netx10.c'), bin_netx10, DATAARRAY_NAME='auc_usbmon_netx10')
 
-
-#----------------------------------------------------------------------------
-#
-# Build the diff and the zip distribution.
-#
-#atEnv.DEFAULT.Diff('targets/usbmon_firmware.diff', arr_netx500 +
-#                                                 arr_netx56 +
-#                                                 arr_netx10,
-#                                                 DIFF_PATCHED_FOLDER='')
-
-#tRelease = atEnv.DEFAULT.ArchiveList('zip')
-#tRelease.AddFiles('plugins/romloader/uart/netx/targets/', arr_netx500 +
-#                                                          arr_netx56 +
-#                                                          arr_netx10)
-#tArc = atEnv.DEFAULT.Archive('targets/usbmon_firmware.zip', None, ARCHIVE_CONTENTS=tRelease)
-

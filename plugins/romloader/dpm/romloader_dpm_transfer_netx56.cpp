@@ -1,8 +1,8 @@
 #include "romloader_dpm_transfer_netx56.h"
 #include <unistd.h>
 
-#include "netx/targets/dpmmon_netx56_monitor.h"
-#include "netx/targets/dpmmon_netx56_monitor_run.h"
+#include "dpmmon_netx56_monitor.h"
+#include "dpmmon_netx56_monitor_run.h"
 
 
 #define NETX56_DPM_BOOT_NETX_RECEIVED_CMD      0x01

@@ -24,10 +24,10 @@
 #include "romloader_uart_read_functinoid_mi1.h"
 
 /* Load- and entry points for the monitor firmware. */
-#include "netx/targets/uartmon_netx56_monitor_run.h"
+#include "uartmon_netx56_monitor_run.h"
 
 /* Data of the monitor firmware. */
-#include "netx/targets/uartmon_netx56_monitor.h"
+#include "uartmon_netx56_monitor.h"
 
 
 #define UART_BASE_TIMEOUT_MS 500
