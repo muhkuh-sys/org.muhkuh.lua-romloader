@@ -39,21 +39,21 @@ lxc exec ${CONTAINER} -- bash -c 'apt-get install --assume-yes lua5.1 lua-filesy
 
 # Build the 32bit version.
 lxc exec ${CONTAINER} -- bash -c 'export PATH=/usr/mingw-w64-i686/bin:${PATH} && cd /tmp/work && bash .build02_windows32.sh'
-lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_lua5.1_windows_x86.tar.gz --gzip --directory /tmp/work/build/windows32/lua5.1/install .'
-lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_lua5.2_windows_x86.tar.gz --gzip --directory /tmp/work/build/windows32/lua5.2/install .'
-lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_lua5.3_windows_x86.tar.gz --gzip --directory /tmp/work/build/windows32/lua5.3/install .'
-lxc file pull ${CONTAINER}/tmp/work/build/build_lua5.1_windows_x86.tar.gz build/
-lxc file pull ${CONTAINER}/tmp/work/build/build_lua5.2_windows_x86.tar.gz build/
-lxc file pull ${CONTAINER}/tmp/work/build/build_lua5.3_windows_x86.tar.gz build/
+lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_windows_x86_lua5.1.tar.gz --gzip --directory /tmp/work/build/windows32/lua5.1/install .'
+lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_windows_x86_lua5.2.tar.gz --gzip --directory /tmp/work/build/windows32/lua5.2/install .'
+lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_windows_x86_lua5.3.tar.gz --gzip --directory /tmp/work/build/windows32/lua5.3/install .'
+lxc file pull ${CONTAINER}/tmp/work/build/build_windows_x86_lua5.1.tar.gz build/
+lxc file pull ${CONTAINER}/tmp/work/build/build_windows_x86_lua5.2.tar.gz build/
+lxc file pull ${CONTAINER}/tmp/work/build/build_windows_x86_lua5.3.tar.gz build/
 
 # Build the 64bit version.
 lxc exec ${CONTAINER} -- bash -c 'export PATH=/usr/mingw-w64-x86_64/bin:${PATH} && cd /tmp/work && bash .build03_windows64.sh'
-lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_lua5.1_windows_x86_64.tar.gz --gzip --directory /tmp/work/build/windows64/lua5.1/install .'
-lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_lua5.2_windows_x86_64.tar.gz --gzip --directory /tmp/work/build/windows64/lua5.2/install .'
-lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_lua5.3_windows_x86_64.tar.gz --gzip --directory /tmp/work/build/windows64/lua5.3/install .'
-lxc file pull ${CONTAINER}/tmp/work/build/build_lua5.1_windows_x86_64.tar.gz build/
-lxc file pull ${CONTAINER}/tmp/work/build/build_lua5.2_windows_x86_64.tar.gz build/
-lxc file pull ${CONTAINER}/tmp/work/build/build_lua5.3_windows_x86_64.tar.gz build/
+lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_windows_x86_64_lua5.1.tar.gz --gzip --directory /tmp/work/build/windows64/lua5.1/install .'
+lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_windows_x86_64_lua5.2.tar.gz --gzip --directory /tmp/work/build/windows64/lua5.2/install .'
+lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_windows_x86_64_lua5.3.tar.gz --gzip --directory /tmp/work/build/windows64/lua5.3/install .'
+lxc file pull ${CONTAINER}/tmp/work/build/build_windows_x86_64_lua5.1.tar.gz build/
+lxc file pull ${CONTAINER}/tmp/work/build/build_windows_x86_64_lua5.2.tar.gz build/
+lxc file pull ${CONTAINER}/tmp/work/build/build_windows_x86_64_lua5.3.tar.gz build/
 
 # Stop and remove the container.
 lxc stop ${CONTAINER}

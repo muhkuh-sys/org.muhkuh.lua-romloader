@@ -39,12 +39,12 @@ lxc exec ${CONTAINER} -- bash -c 'apt-get install --assume-yes lua5.1 lua-filesy
 
 # Build the 32bit version.
 lxc exec ${CONTAINER} -- bash -c 'cd /tmp/work && bash .build04_linux.sh'
-lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_lua5.1_ubuntu_1604_x86.tar.gz --gzip --directory /tmp/work/build/linux/lua5.1/install .'
-lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_lua5.2_ubuntu_1604_x86.tar.gz --gzip --directory /tmp/work/build/linux/lua5.2/install .'
-lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_lua5.3_ubuntu_1604_x86.tar.gz --gzip --directory /tmp/work/build/linux/lua5.3/install .'
-lxc file pull ${CONTAINER}/tmp/work/build/build_lua5.1_ubuntu_1604_x86.tar.gz build/
-lxc file pull ${CONTAINER}/tmp/work/build/build_lua5.2_ubuntu_1604_x86.tar.gz build/
-lxc file pull ${CONTAINER}/tmp/work/build/build_lua5.3_ubuntu_1604_x86.tar.gz build/
+lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_ubuntu_1604_x86_lua5.1.tar.gz --gzip --directory /tmp/work/build/linux/lua5.1/install .'
+lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_ubuntu_1604_x86_lua5.2.tar.gz --gzip --directory /tmp/work/build/linux/lua5.2/install .'
+lxc exec ${CONTAINER} -- bash -c 'tar --create --file /tmp/work/build/build_ubuntu_1604_x86_lua5.3.tar.gz --gzip --directory /tmp/work/build/linux/lua5.3/install .'
+lxc file pull ${CONTAINER}/tmp/work/build/build_ubuntu_1604_x86_lua5.1.tar.gz build/
+lxc file pull ${CONTAINER}/tmp/work/build/build_ubuntu_1604_x86_lua5.2.tar.gz build/
+lxc file pull ${CONTAINER}/tmp/work/build/build_ubuntu_1604_x86_lua5.3.tar.gz build/
 
 # Stop and remove the container.
 lxc stop ${CONTAINER}
