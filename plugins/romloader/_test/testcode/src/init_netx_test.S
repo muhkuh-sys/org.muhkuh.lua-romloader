@@ -1,10 +1,23 @@
 
 	.section .init_code, "ax"
-	.arm
+#include "asic_types.h"
 
+@--------------------------------------
+
+@ The Cortex-M4 in the netX90 is a THUMB-only CPU.
+@ All others start in 32 bit mode.
+#if ASIC_TYP==ASIC_TYP_NETX90_MPW
+	.syntax unified
+	.thumb
+#else
+	.arm
+#endif
+
+  
 	.extern netx_consoleapp_init
 	.global start
 
+  
 @--------------------------------------
 
   .func start_init_s
@@ -18,10 +31,11 @@ start:
 	ldr     r3, =__bss_end__
 clear_bss:
 	cmp     r2, r3
+	itt lo
 	strlo   r1, [r2], #4
 	blo     clear_bss
 
-	bl      netx_consoleapp_init
+	blx     netx_consoleapp_init
 
 	ldmfd   sp!, {r0, r1, r2, r3, lr}
 	bx      lr

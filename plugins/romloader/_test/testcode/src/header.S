@@ -18,10 +18,9 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include "asic_types.h"
 
 	.section .header, "a"
-	.arm
-
 	.extern load_address
 	.extern start
 
@@ -31,7 +30,12 @@
 	.word 0x00010000
 
 	.word load_address
+#if ASIC_TYP==ASIC_TYP_NETX90_MPW
+	@ start address in thumb mode.
+	.word start+1
+#else
 	.word start
+#endif
 	.word parameter_start_address
 	.word parameter_end_address
 
