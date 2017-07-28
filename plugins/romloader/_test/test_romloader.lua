@@ -71,7 +71,7 @@ if __MUHKUH_TEST_PARAMETER then
 	fCheckExpectedOutput = tobool(  __MUHKUH_TEST_PARAMETER.checkoutput, true)    
 	fCheckOutputEnd      = tobool(  __MUHKUH_TEST_PARAMETER.checkoutputend, true) 
 else
-	ulTestSize           = 0x100 
+	ulTestSize           = 0x100
 	uiParameterLoops     = 1     
 	fCheckExpectedOutput = true 
 	fCheckOutputEnd      = true 
@@ -188,7 +188,7 @@ function addExpectedOutputLoop(n, iMsDelay)
 end
 
 -- Construct the expected output
-strNetxCR = "\r\n"
+strNetxCR = "\r\n" 
 addExpectedOutput(". *** test skeleton start ***" .. strNetxCR)
 --addExpectedOutput(". Parameter Address: 0x08018880" .. strNetxCR)
 addExpectedOutput("skip")
@@ -228,6 +228,9 @@ function getExpectedOutput()
 			iLinePos = 1
 			iExpectedOutputLine = iExpectedOutputLine + 1
 		end
+	elseif tPluginTyp=="romloader_jtag" then
+		strExpected = strLine:gsub(string.char(13, 10), string.char(13, 10, 10))
+		iExpectedOutputLine = iExpectedOutputLine + 1
 		
 	else
 		strExpected = strLine
