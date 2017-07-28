@@ -1005,7 +1005,7 @@ int romloader_jtag_openocd::read_image(uint32_t ulNetxAddress, uint8_t *pucData,
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnReadImage(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, pucData, sizData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "read_data32: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			fprintf(stderr, "read_image: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
@@ -1026,11 +1026,11 @@ int romloader_jtag_openocd::write_data08(uint32_t ulNetxAddress, uint8_t ucData)
 
 	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnWriteData08!=NULL )
 	{
-		/* Read memory. */
+		/* Write memory. */
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnWriteData08(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, ucData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "read_data32: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			fprintf(stderr, "write_data08: Failed to write address 0x%08x: %d\n", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
@@ -1051,11 +1051,11 @@ int romloader_jtag_openocd::write_data16(uint32_t ulNetxAddress, uint16_t usData
 
 	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnWriteData16!=NULL )
 	{
-		/* Read memory. */
+		/* Write memory. */
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnWriteData16(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, usData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "read_data32: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			fprintf(stderr, "write_data16: Failed to write address 0x%08x: %d\n", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
@@ -1076,11 +1076,11 @@ int romloader_jtag_openocd::write_data32(uint32_t ulNetxAddress, uint32_t ulData
 
 	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnWriteData32!=NULL )
 	{
-		/* Read memory. */
+		/* Write memory. */
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnWriteData32(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, ulData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "read_data32: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			fprintf(stderr, "write_data32: Failed to write address 0x%08x: %d\n", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
@@ -1101,11 +1101,11 @@ int romloader_jtag_openocd::write_image(uint32_t ulNetxAddress, const uint8_t *p
 
 	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnWriteImage!=NULL )
 	{
-		/* Read memory. */
+		/* Write memory. */
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnWriteImage(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, pucData, sizData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "read_data32: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			fprintf(stderr, "write_image: Failed to write address 0x%08x: %d\n", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
