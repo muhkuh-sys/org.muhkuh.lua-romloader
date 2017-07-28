@@ -1,0 +1,74 @@
+# -*- coding: utf-8 -*-
+#-------------------------------------------------------------------------#
+#   Copyright (C) 2011 by Christoph Thelen                                #
+#   doc_bacardi@users.sourceforge.net                                     #
+#                                                                         #
+#   This program is free software; you can redistribute it and/or modify  #
+#   it under the terms of the GNU General Public License as published by  #
+#   the Free Software Foundation; either version 2 of the License, or     #
+#   (at your option) any later version.                                   #
+#                                                                         #
+#   This program is distributed in the hope that it will be useful,       #
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
+#   GNU General Public License for more details.                          #
+#                                                                         #
+#   You should have received a copy of the GNU General Public License     #
+#   along with this program; if not, write to the                         #
+#   Free Software Foundation, Inc.,                                       #
+#   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             #
+#-------------------------------------------------------------------------#
+
+
+#----------------------------------------------------------------------------
+#
+# Import the default compiler environments and the platform libraries.
+#
+Import('atEnv')
+import os.path
+
+#----------------------------------------------------------------------------
+# This is the list of sources. The elements must be separated with whitespace
+# (i.e. spaces, tabs, newlines). The amount of whitespace does not matter.
+sources = """
+	src/dcc_io_asm.s
+	src/dcc_io.c
+"""
+
+aCppPath = ['src']
+strTargetPath = Dir('#targets/plugins/romloader/jtag/netx').get_path()
+
+#----------------------------------------------------------------------------
+
+def build_elf_bin(pars):
+	target_path = pars.target_dir + '/' + pars.target_name
+	env = pars.env.Clone()
+	env.Replace(LDFILE = pars.ldfile)
+	env.Append(CPPPATH = aCppPath)
+	env.Append(CPPPATH = pars.cpppath)
+	env.Append(CPPDEFINES = pars.defines)
+	
+	src = env.SetBuildPath(pars.target_dir, 'src', pars.sources)
+	elf = env.Elf(    target_path + '.elf', src + env['PLATFORM_LIBRARY'])
+	txt = env.ObjDump(target_path + '.txt', elf, OBJDUMP_FLAGS=['--disassemble', '--source', '--all-headers', '--wide'])
+	bin = env.ObjCopy(target_path + '.bin', elf)
+	#sym_netx500_dcc = env_netx500_dcc.GccSymbolTemplate(os.path.join(strTargetPath, 'netx500_dcc_run.h'), elf_netx500_dcc, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/netx500_dcc_run.h'))
+	return elf, bin
+
+# build netx 500 binary
+class buildpars:
+	env         = atEnv.NETX500
+	cpppath     = []
+	sources     = sources
+	defines     = []
+	ldfile      = 'src/netx500.ld'
+	target_dir  = strTargetPath + '/netx500'
+	target_name = 'netx500_dccout_0400_10001e00' # 'netx500_dcc'
+build_elf_bin(buildpars)
+
+# build netx 50 binary (also usable on netx 10, 51, 52)
+buildpars.env         = atEnv.NETX50
+buildpars.ldfile      = 'src/netx50.ld'
+buildpars.target_dir  = strTargetPath + '/netx50'
+buildpars.target_name = 'netx50_dccout_0400_04000e00' #'netx50_dcc'
+build_elf_bin(buildpars)
