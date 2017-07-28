@@ -1,3 +1,5 @@
+echo "Loading chip_init.tcl"
+
 set ROMLOADER_CHIPTYP_UNKNOWN   0 
 set ROMLOADER_CHIPTYP_NETX500   1 
 set ROMLOADER_CHIPTYP_NETX100   2 
@@ -93,7 +95,7 @@ proc init_chip {iChiptyp} {
 		arm926ejs cp15 0 0 1 0 0x00050078
 		arm926ejs cp15 0 0 9 1 0x10000001
 		
-	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX50 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
 		puts "Setting up registers for netX 10/50/51/52."
 		# ldr     r0,     =0x0f7c  
 		# MCR    <co-pro>, <op>, <ARM reg>, <co-pro reg>, <co-pro reg2>, <op2>
@@ -107,14 +109,16 @@ proc init_chip {iChiptyp} {
 		# 2:  1 enable DTCM 
 		# 1:  0 disable alignment check
 		
+		# apparently, a second write/read access must be made to the register
 		arm966e cp15 2 0x00000f7c
-		arm966e cp15 2 0x00000f7c # write twice to work around OpenOCD bug
+		#arm966e cp15 2 0x00000f7c
+		arm966e cp15 2 
 		
 		# init regs
 		bp 0x080000fc 4 hw        ; # set breakpoint
 		reg cpsr 0xd3             ; # disable FIQ/IRQ, disable Thumb, set Abort mode
-		reg spsr_svc 0xd3         
-		reg r13_svc 0x08000dfc    ; # stack 0500-0dfc
+		reg spsr_svc 0xd3
+		reg sp_svc 0x08000dfc    ; # stack 0500-0dfc
 		reg lr_svc 0x080000fc     ; # when any program returns, jump to the breakpoint address, stopping execution
 	
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000 } {
@@ -197,6 +201,13 @@ proc init_chip {iChiptyp} {
 			mww 0x04000ff8 0      ; # Peek
 			mww 0x04000ffc 0x0404 ; # Flush
 			
+			mdw 0x00000400
+			mdw 0x04000ff0
+			mdw 0x04000ff4
+			mdw 0x04000ff8
+			mdw 0x04000ffc
+		
+		
 		} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
 			puts "Setting up DCC output for netX 10/51/52."
 			
@@ -322,3 +333,5 @@ proc init_chip {iChiptyp} {
 	
 	
 }
+
+echo "Done loading chip_init.tcl"
