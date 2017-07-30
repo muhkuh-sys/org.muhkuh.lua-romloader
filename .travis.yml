@@ -10,8 +10,8 @@ env:
 
 before_install:
   - sudo dpkg --purge cmake cmake-doc cmake-data
-  - curl --location --silent http://download.opensuse.org/repositories/home:doc_bacardi/xUbuntu_14.04/Release.key | apt-key add -
-  - echo "deb http://download.opensuse.org/repositories/home:/doc_bacardi/xUbuntu_14.04/ /" > /etc/apt/sources.list.d/build_opensuse_org_home_docbacardi.list
+  - curl --location --silent http://download.opensuse.org/repositories/home:doc_bacardi/xUbuntu_14.04/Release.key | sudo apt-key add -
+  - echo "deb http://download.opensuse.org/repositories/home:/doc_bacardi/xUbuntu_14.04/ /" | sudo tee /etc/apt/sources.list.d/build_opensuse_org_home_docbacardi.list
   - sudo apt-get update -qq
   - sudo apt-get --assume-yes install cmake3 curl gcc g++ git lib32z1 make mingw-w64-mbs python2.7 swig3
 
