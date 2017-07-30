@@ -1,45 +1,24 @@
+dist: trusty
+sudo: true
 language: c
 
 
 env:
   global:
-    - secure: "JQR2MRfSzKiI5gQF+FWUaJYO3TG7b7GQtVVMI6g33J7aYjFo7SEMZvxBhHOF/G1IkSNGNBvLDbxPTKZsBUHHV33orhMSr3E0kkwwKwpPON2wVVe9eSA8paj/t/r3U0p8QdGa7PP75ahFmpRCh2P5XGJDtghi5s1gcuBRpts9o8m/bRLZNjqI1Cd5w8AqTDgl/xbRsoCD8eqett6rn8DrXemFTpaxb0oYN5Y74jjCx560oouCRRSwC3qghstBChTRw7PFTVr2WWicB2pEN2/ttAZ63/pdJm9XeWDTf47QWI3/kAegyy/aMQhO+mcfT9RAdcckuf8T2z8NHqkMiH8rh5QdkBJIbf9mQPM4tcGc2IXQOonVboeLI7SD4VJzw8g9SDEiGbL6YOIN4jamQcQkgNkueh4v6V8XgjBkSd5vThw3upHfgH84LzZ3buMuJtD4Hl0SaMJEaqHzByMtQ1vQ6PE9qyz8vo8MmOzTqFQxUveJNMlpc7mwrc108c26ml1HdgUFbXVJi/rgxTSNbmptJj9oSuj8hdOC/mmSN8JO+RclFHQMVPNLJQnZuf7XiAfuj9wY5kxwvxoIstKqLxRI4xRTXyeN+ttN3JyjU0j3wlwGpuFcd5JK+SS8GH2rOSoouBj3NQAoDmujvOcYsSUYkTDshkUrbVNof+OE1wFLun8="
-    - PATH=/usr/mingw-w64-i686/bin:/usr/mingw-w64-x86_64/bin:/tmp/apache-ant-1.9.6/bin:${PATH}
+    - PATH=/usr/mingw-w64-i686/bin:/usr/mingw-w64-x86_64/bin:${PATH}
 
 
 before_install:
   - sudo dpkg --purge cmake cmake-doc cmake-data
-  - curl http://download.opensuse.org/repositories/home:/doc_bacardi/xUbuntu_12.04/Release.key | sudo apt-key add -
-  - echo "deb http://download.opensuse.org/repositories/home:/doc_bacardi/xUbuntu_12.04 ./" | sudo tee -a /etc/apt/sources.list
+  - curl --location --silent http://download.opensuse.org/repositories/home:doc_bacardi/xUbuntu_14.04/Release.key | apt-key add -
+  - echo "deb http://download.opensuse.org/repositories/home:/doc_bacardi/xUbuntu_14.04/ /" > /etc/apt/sources.list.d/build_opensuse_org_home_docbacardi.list
   - sudo apt-get update -qq
-  - sudo apt-get --assume-yes install mingw-w64-mbs
-  - sudo apt-get --assume-yes install swig3 cmake3
-  - sudo apt-get --assume-yes install python-pip python-virtualenv
-  - wget http://downloads.sourceforge.net/project/muhkuh/mbs/org/apache/ant/1.9.6/apache-ant-1.9.6-bin.tar.bz2 -O /tmp/apache-ant-1.9.6-bin.tar.bz2
-  - tar --directory /tmp --extract --bzip2 --file /tmp/apache-ant-1.9.6-bin.tar.bz2
-  - virtualenv ~/virtualenv/python2.7
-  - source ~/virtualenv/python2.7/bin/activate
-  - pip install -q requests
+  - sudo apt-get --assume-yes install cmake3 curl gcc g++ git lib32z1 make mingw-w64-mbs python2.7 swig3
 
 
 # This is the command to build the whole project and pack the results in a distributable form.
 script:
-  - ./.build.sh
-
-
-after_success:
-  - python installer/ivy/deploy.py build/artifacts/artifacts_lua_plugin_romloader.xml
-
-
-# Deploy the artifacts to GitHub.
-deploy:
-  provider: releases
-  api_key:
-    secure: "MqWZwu4uCiryRk6+mIlMCsw4D60IIctpSqBpPvKUB0YuGTeCq0U0Za8rRo+94n+MMYi31AMWPB1vmZemBKAiDjEt1FLNzedLAxs9iSX/fVyT6iYP7IAmxBO4wsXnIGMEGWSYEwoC7gKisZoLL+Ln4cRtbT3TclPmxKYYeNuXx7uqhUKrtEto3Ap3pTIiLJDRl8+qILNKKHpqy83cN9L95+OTAJRIXsS3fOobp8bmy7XcnfvhTOseuPz4TxUcatInFOFzryL+FUdSpwoky16aOO+SWFkzn21LqCuvTwZzRmk4jPd7NqTI8h7bBMoLQli2ePwi3vq4uKGrRxglOQeOfT5Xtvk7Ar8BZDena8Nf5DKpVIQa8/dPBtA1blWP4xJclFC52m7pW7tv0TE+uAeGyrG2qZiL6vMThYnWYOH6Gy6VhCWTRKFrUfKtMigamPmLcdNANcZHnrBCF+WDoYmjmo1G9qM+E+J1Qpp5GsW4H+3/6+5RlKkmJqqTVNGpQ81k7kJLBNT4YMjYrNT4h25LMWqCUK+LeAYgpStv77FbQLXY53TTY2Qodfuib4vpASlK1f5UycedkJkkIX17eaPInmk1MFZ0Dk5kIKBkiyGMUk+35CXoS7lfzKJ2UHZQGkp2dHZMe05L9+toqszTbdnKF0OhKsiYAqxGjTcCpybCxnk="
-  file:
-    - build/ivy.xml
-    - build/lua51-romloader.zip
-  skip_cleanup: true
-  on:
-    repo: muhkuh-sys/org.muhkuh.lua-lua51-romloader
-    tags: true
+  - ./.build01_netx_firmware.sh
+  - ./.build02_windows32.sh
+  - ./.build03_windows64.sh
+  - ./.build04_linux.sh
