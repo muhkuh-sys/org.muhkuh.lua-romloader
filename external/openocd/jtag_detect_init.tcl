@@ -1,5 +1,14 @@
 puts "loading script jtag_detect_init.tcl"
 
+# todo/wishlist:
+# Get the list of known interfaces from the script. Currently, it's hardcoded.
+# Get the list of known targets for an NXHX interface. Currently, all possible targets are tried on each interface found.
+# Is it possible to recognize the NXHX boards by their description string directly?
+
+# ###################################################################
+#   Init/probe for JTAG interfaces
+# ###################################################################
+
 # Configure an NXHX JTAG interface.
 proc setup_interface_nxhx {strBoardName} {
 	interface ftdi
@@ -13,23 +22,22 @@ proc setup_interface_nxhx {strBoardName} {
 	ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200
 }
 
-
 proc setup_interface_nxjtag_usb {} {
 	interface ftdi
 	transport select jtag
 	ftdi_device_desc "NXJTAG-USB"
 	ftdi_vid_pid 0x1939 0x0023
 	adapter_khz 100
-
-	#ftdi_layout_init 0x0308 0x030b
-	#ftdi_layout_signal nTRST -data 0x0100
-	#ftdi_layout_signal nSRST -data 0x0200 
-
+	
 	ftdi_layout_init 0x0308 0x030b
 	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
 	ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200
 }
 
+# Display name/device description:
+# Olimex OpenOCD JTAG TINY
+# Device description from bus:
+# Olimex OpenOCD JTAG ARM-USB-TINY-H
 proc setup_interface_olimex_arm_usb_tiny_h {} {
 	interface ftdi
 	transport select jtag
@@ -43,6 +51,7 @@ proc setup_interface_olimex_arm_usb_tiny_h {} {
 	ftdi_layout_signal LED -data 0x0800  
 }
 
+# Amontec_JTAGkey
 proc setup_interface_jtagkey {} {
 	interface ftdi
 	transport select jtag
@@ -57,7 +66,6 @@ proc setup_interface_jtagkey {} {
 
 
 # Configure an interface.
-# todo: add Olimex?
 proc setup_interface {strInterfaceID} {
 	echo "+setup_interface $strInterfaceID"
 	if {$strInterfaceID == "NXJTAG-USB" } {
@@ -92,6 +100,9 @@ proc probe_interface {} {
 }
 
 
+# ###################################################################
+#   Setup/Probe CPU
+# ###################################################################
 
 proc probe_cpu {strCpuID} {
 	echo "+probe_cpu $strCpuID"
@@ -147,7 +158,6 @@ proc probe_cpu {strCpuID} {
 			#
 			target create netx4000.r7 cortex_r4 -chain-position netx4000.dap -coreid 0 -dbgbase 0x80130000
 			netx4000.r7 configure -work-area-phys 0x05080000 -work-area-size 0x4000 -work-area-backup 1
-			
 			netx4000.r7 configure -event reset-assert-post "cortex_r4 dbginit"
 			
 			# Dual Cortex A9s
@@ -171,8 +181,6 @@ proc probe_cpu {strCpuID} {
 			global strTarget
 			set strTarget netX4000
 		}
-		
-		
 	}
 	echo "- probe_cpu $SC_CFG_RESULT"
 	return $SC_CFG_RESULT
@@ -206,6 +214,9 @@ proc reset_netX_ARM926_ARM966 {} {
 
 
 
+# ###################################################################
+#    Init/reset netx 4000
+# ###################################################################
 
 proc mread32 {addr} {
   set value(0) 0
