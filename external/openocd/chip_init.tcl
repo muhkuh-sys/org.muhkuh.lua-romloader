@@ -10,34 +10,43 @@ set ROMLOADER_CHIPTYP_NETX56    6
 set ROMLOADER_CHIPTYP_NETX56B   7 
 set ROMLOADER_CHIPTYP_NETX4000  8 
 
-# setup_io serial_vectors_addr dcc_code_filename dcc_code_addr dcc_buffer_ptr_addr dcc_buffer_addr  
+# fEnableDCCOutput       true: download DCC code, set serial vectors and buffer, false: clear serial vectors
+# ulSerialVectorAddr     Address of serial vectors
+# strDccCodeFile         DCC code filename
+# ulDccCodeAddr          Address of DCC code
+# ulDccBufferAddr        Address of DCC buffer
+# ulDccBufferPointerAddr Address of DCC buffer pointer
 
-proc setup_dcc_io {ulSerialVectorAddr {strDccCodeFile ""}  {ulDccCodeAddr 0} {ulDccBufferPointerAddr 0} {ulDccBufferAddr 0}} {
-	if { $strDccCodeFile != "" &&  $ulDccCodeAddr != 0 && $ulDccBufferAddr != 0 && $ulDccBufferPointerAddr != 0 } {
+proc setup_dcc_io {fEnableDCCOutput {ulSerialVectorAddr 0} {strDccCodeFile ""}  {ulDccCodeAddr 0} {ulDccBufferAddr 0} {ulDccBufferPointerAddr 0}} {
+	if { $fEnableDCCOutput == "true" } {
 		puts "Setting up DCC output"
 
 		# dcc put/flush routines
 		puts "Loading DCC code"
 		load_image $strDccCodeFile $ulDccCodeAddr bin
 		
-		# reset buffer pointer
-		puts "Setting buffer pointer"
-		mww $ulDccBufferPointerAddr  $ulDccBufferAddr
-		
 		puts "Setting serial vectors"
 		mww       $ulSerialVectorAddr         0                          ; # Get
 		mww [expr $ulSerialVectorAddr + 4  ]  $ulDccCodeAddr             ; # Put
 		mww [expr $ulSerialVectorAddr + 8  ]  0                          ; # Peek
 		mww [expr $ulSerialVectorAddr + 12 ]  [expr $ulDccCodeAddr + 4 ] ; # Flush
-	
+		
+		# reset buffer pointer
+		puts "Setting buffer pointer"
+		mww $ulDccBufferPointerAddr  $ulDccBufferAddr
+		
 	} else {
-		puts "Setting up for no DCC output"
-		puts "Clearing serial vectors"
+		puts "Setting up for no DCC output (Clearing serial vectors)"
 		mww       $ulSerialVectorAddr         0 ; # Get
 		mww [expr $ulSerialVectorAddr + 4  ]  0 ; # Put
 		mww [expr $ulSerialVectorAddr + 8  ]  0 ; # Peek
 		mww [expr $ulSerialVectorAddr + 12 ]  0 ; # Flush
 	}
+	
+	mdw       $ulSerialVectorAddr        
+	mdw [expr $ulSerialVectorAddr + 4  ] 
+	mdw [expr $ulSerialVectorAddr + 8  ] 
+	mdw [expr $ulSerialVectorAddr + 12 ] 
 }
 
 proc init_chip {iChiptyp} {
@@ -149,8 +158,6 @@ proc init_chip {iChiptyp} {
 		reg sp_svc 0x0003ffec
 		reg lr_svc 0x04100000
 		
-		
-		
 		# test DTCM
 		# mww 0x0003fff0 0x12345678
 		# set value(0) 0
@@ -167,134 +174,43 @@ proc init_chip {iChiptyp} {
 	# Set up DCC output or disable output
 	########################################
 	
-	if { $fEnableDCCOutput == "true" } {
-		if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX500 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX100 } {
-			puts "Setting up DCC output for netX 500/100."
-			# load buffered print routines
-			puts "Loading DCC code"
-			load_image netx500_dccout_0400_10001e00.bin 0x0400 bin
-			
-			# reset buffer pointer
-			puts "Setting buffer pointer"
-			mww 0x10001fe0 0x10001e00
-				
-			puts "Setting serial vectors"
-			mww 0x10001ff0 0      ; # Get
-			mww 0x10001ff4 0x0400 ; # Put
-			mww 0x10001ff8 0      ; # Peek
-			mww 0x10001ffc 0x0404 ; # Flush
-			
-		} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX50 } {
-			puts "Setting up DCC output for netX 50."
-			
-			# dcc put/flush routines
-			puts "Loading DCC code"
-			load_image netx50_dccout_0400_04000e00.bin 0x0400 bin
-			
-			# reset buffer pointer
-			puts "Setting buffer pointer"
-			mww 0x04000fe0 0x04000e00
-				
-			puts "Setting serial vectors"
-			mww 0x04000ff0 0      ; # Get
-			mww 0x04000ff4 0x0400 ; # Put
-			mww 0x04000ff8 0      ; # Peek
-			mww 0x04000ffc 0x0404 ; # Flush
-			
-			mdw 0x00000400
-			mdw 0x04000ff0
-			mdw 0x04000ff4
-			mdw 0x04000ff8
-			mdw 0x04000ffc
+	if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX500 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX100 } {
+		setup_dcc_io $fEnableDCCOutput 0x10001ff0 netx500_dccout_0400_10001e00.bin  0x0400 0x10001e00 0x10001fe0 
 		
-		
-		} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
-			puts "Setting up DCC output for netX 10/51/52."
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX50 } {
+		setup_dcc_io $fEnableDCCOutput 0x04000ff0 netx50_dccout_0400_04000e00.bin 0x0400 0x04000e00 0x04000fe0 
 			
-			# dcc put/flush routines
-			puts "Loading DCC code"
-			load_image netx50_dccout_0400_04000e00.bin 0x0400 bin
-			
-			# reset buffer pointer
-			puts "Setting buffer pointer"
-			mww 0x04000fe0 0x04000e00
-		
-			puts "Setting serial vectors"
-			mww 0x08000100 0      ; # Get
-			mww 0x08000104 0x0400 ; # Put
-			mww 0x08000108 0      ; # Peek
-			mww 0x0800010c 0x0404 ; # Flush
-			
-			#puts "Setting up no output for netX 10/51/52."
-			#mww 0x08000100 0 ; # Get
-			#mww 0x08000104 0 ; # Put
-			#mww 0x08000108 0 ; # Peek
-			#mww 0x0800010c 0 ; # Flush
-			
-			setup_dcc_io 0x08000100 netx50_dccout_0400_04000e00.bin 0x0400 0x04000fe0 0x04000e00
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
+		setup_dcc_io $fEnableDCCOutput 0x08000100 netx50_dccout_0400_04000e00.bin 0x0400 0x04000e00 0x04000fe0
 
-		} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000 } {
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000 } {
+		setup_dcc_io false 0x0003fff0 netx50_dccout_0400_04000e00.bin 0x0400 0x0003fe00 0x04000fe0
+		#setup_dcc_io $fEnableDCCOutput 0x0003fff0 netx50_dccout_0400_04000e00.bin 0x0400 0x0003fe00 0x04000fe0
 		
-			puts "Serial IO setup for netx 4000 - WIP"
-			
-			# dcc put/flush routines
-			#puts "Loading DCC code"
-			#load_image netx50_dccout_0400_04000e00.bin 0x0400 bin
-			
-			#puts "Setting buffer pointer"
-			#mww 0x04000fe0 0x0003fe00
-			
-			puts "Setting up no output for netX 4000."
-			mww 0x0003fff0 0 ; # Get
-			mww 0x0003fff4 0 ; # Put
-			mww 0x0003fff8 0 ; # Peek
-			mww 0x0003fffc 0 ; # Flush
-			
-			setup_dcc_io 0x0003fff0
-			
-			#netx 4000 UART iovcectors: 0x04101445 0x04101479 0x04101449 0x0410144D 
-			#puts "Debug: setting UART vectors on netx 4000"
-			#mww 0x0003fff0 0x04101445 ; # Get
-			#mww 0x0003fff4 0x04101479 ; # Put
-			#mww 0x0003fff8 0x04101449 ; # Peek
-			#mww 0x0003fffc 0x0410144D ; # Flush
-			
-		} else {
-			puts "Unknown chip type $iChiptyp"
-		}
+		# dcc put/flush routines
+		#puts "Loading DCC code"
+		#load_image netx50_dccout_0400_04000e00.bin 0x0400 bin
+		#
+		#puts "Setting buffer pointer"
+		#mww 0x04000fe0 0x0003fe00
+		#
+		#puts "Setting up no output for netX 4000."
+		#mww 0x0003fff0 0 ; # Get
+		#mww 0x0003fff4 0 ; # Put
+		#mww 0x0003fff8 0 ; # Peek
+		#mww 0x0003fffc 0 ; # Flush
+		#
+		#setup_dcc_io false 0x0003fff0
+		
+		#netx 4000 UART iovcectors: 0x04101445 0x04101479 0x04101449 0x0410144D 
+		#puts "Debug: setting UART vectors on netx 4000"
+		#mww 0x0003fff0 0x04101445 ; # Get
+		#mww 0x0003fff4 0x04101479 ; # Put
+		#mww 0x0003fff8 0x04101449 ; # Peek
+		#mww 0x0003fffc 0x0410144D ; # Flush
 		
 	} else {
-		if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX500 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX100 } {
-			puts "Setting up no output for netX 500/100."
-			mww 0x10001ff0 0 ; # Get
-			mww 0x10001ff4 0 ; # Put
-			mww 0x10001ff8 0 ; # Peek
-			mww 0x10001ffc 0 ; # Flush
-			
-		} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX50 } {
-			puts "Setting up no output for netX 50."
-			mww 0x04000ff0 0 ; # Get
-			mww 0x04000ff4 0 ; # Put
-			mww 0x04000ff8 0 ; # Peek
-			mww 0x04000ffc 0 ; # Flush
-			
-		} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B }  {
-			puts "Setting up no output for netX 10/51/52."
-			mww 0x08000100 0 ; # Get
-			mww 0x08000104 0 ; # Put
-			mww 0x08000108 0 ; # Peek
-			mww 0x0800010c 0 ; # Flush
-			
-		} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000 } {
-			puts "Setting up no output for netX 4000."
-			mww 0x0003fff0 0 ; # Get
-			mww 0x0003fff4 0 ; # Put
-			mww 0x0003fff8 0 ; # Peek
-			mww 0x0003fffc 0 ; # Flush
-			
-		} else {
-			puts "Unknown chip type $iChiptyp"
-		}
+		puts "Unknown chip type $iChiptyp"
 	}
 	
 	if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX500 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX100 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX50 ||
@@ -305,33 +221,19 @@ proc init_chip {iChiptyp} {
 	}
 	
 	# Is this speed ok or should it be 1 MHz?
-	adapter_khz 6000
-	
-	
-	
-	#                          Effective intram locations
-	# Breakpoint/LR                 00fc 
-	# Serial Vectors netX10/51/52   0100 - 010f 
-	# DCC workarea                  0380 - 03ff
-	# DCC code                      0400 - 04ff 
-	# Initial stack                 0500 - 0dfc
-	# Buffer                        0e00 - 0eff (netX 50: DTCM 0x04000e00)
-	# Buffer pointer                0fe0        (netX 50: DTCM 0x04000fe0)
-	# Serial Vectors netX50         0ff0 - 0fff (netX 50: DTCM 0x04000ff0)
-	
-	# netx 4000 (todo):
-	#                          Effective intram locations
-	# Breakpoint/LR                 00fc 
-	# Serial Vectors                0100 - 010f 
-	# DCC workarea                  0380 - 03ff
-	# DCC code                      0400 - 04ff 
-	# Initial stack                 0500 - 0dfc
-	# Buffer                        0e00 - 0eff (netX 50: DTCM 0x04000e00)
-	# Buffer pointer                0fe0        (netX 50: DTCM 0x04000fe0)
-	# Serial Vectors netX50         0ff0 - 0fff (netX 50: DTCM 0x04000ff0)
-	
-	
+	adapter_khz 1000
 	
 }
+
+
+#                          Effective intram locations
+# Breakpoint/LR                 00fc 
+# Serial Vectors netX10/51/52   0100 - 010f 
+# DCC workarea                  0380 - 03ff
+# DCC code                      0400 - 04ff 
+# Initial stack                 0500 - 0dfc
+# Buffer                        0e00 - 0eff (netX 50: DTCM 0x04000e00)
+# Buffer pointer                0fe0        (netX 50: DTCM 0x04000fe0)
+# Serial Vectors netX50         0ff0 - 0fff (netX 50: DTCM 0x04000ff0)
 
 echo "Done loading chip_init.tcl"
