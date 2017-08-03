@@ -345,97 +345,31 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::a
 	{
 		"NXJTAG-USB",
 		"setup_interface NXJTAG-USB",
-		"probe_interface",
+		"probe_interface"
 	},
 
 	{
 		"Amontec_JTAGkey",
-
-		"interface ftdi\n"
-		"transport select jtag\n"
-		"ftdi_device_desc \"Amontec JTAGkey\"\n"
-		"ftdi_vid_pid 0x0403 0xcff8\n"
-		"adapter_khz 100\n"
-		"\n"
-		"ftdi_layout_init 0x0c08 0x0f1b\n"
-		"ftdi_layout_signal nTRST -data 0x0100 -noe 0x0400\n"
-		"ftdi_layout_signal nSRST -data 0x0200 -noe 0x0800\n",
-
-		"proc probe {} {\n"
-		"    set RESULT -1"
-		"\n"
-		"    if {[ catch {jtag init} ]==0 } {\n"
-		"        set RESULT {OK}\n"
-		"    }\n"
-		"    return $RESULT\n"
-		"}\n"
-		"probe\n"
+		"setup_interface Amontec_JTAGkey",
+		"probe_interface"
 	},
 
 	{
 		"NXHX50-RE",
-		"interface ftdi\n"
-                                "transport select jtag\n"
-		                "ftdi_device_desc \"NXHX50-RE\"\n"
-		                "ftdi_vid_pid 0x0640 0x0028\n"
-		                "adapter_khz 100\n"
-		                "\n"
-				"ftdi_layout_init 0x0108 0x010b\n"
-				"ftdi_layout_signal nTRST -data 0x0100\n"
-				"ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
-		"proc probe {} {\n"
-		                "    set RESULT -1\n"
-		                "\n"
-		                "    if {[ catch {jtag init} ]==0 } {\n"
-		                "        set RESULT {OK}\n"
-		                "    }\n"
-		                "    return $RESULT\n"
-		                "}\n"
-		                "probe\n"
+		"setup_interface NXHX50-RE",
+		"probe_interface"
 	},
 
 	{
 		"NXHX_51-ETM",
-		"interface ftdi\n"
-                                "transport select jtag\n"
-		                "ftdi_device_desc \"NXHX 51-ETM\"\n"
-		                "ftdi_vid_pid 0x0640 0x0028\n"
-		                "adapter_khz 100\n"
-		                "\n"
-				"ftdi_layout_init 0x0108 0x010b\n"
-				"ftdi_layout_signal nTRST -data 0x0100\n"
-				"ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
-		"proc probe {} {\n"
-			        "    set RESULT -1\n"
-			        "\n"
-		                "    if {[ catch {jtag init} ]==0 } {\n"
-		                "        set RESULT {OK}\n"
-		                "    }\n"
-		                "    return $RESULT\n"
-		                "}\n"
-		                "probe\n"
+		"setup_interface NXHX_51-ETM",
+		"probe_interface"
 	},
 
 	{
 		"NXHX_500-ETM",
-		"interface ftdi\n"
-                                "transport select jtag\n"
-		                "ftdi_device_desc \"NXHX 500-ETM\"\n"
-		                "ftdi_vid_pid 0x0640 0x0028\n"
-		                "adapter_khz 100\n"
-		                "\n"
-				"ftdi_layout_init 0x0108 0x010b\n"
-				"ftdi_layout_signal nTRST -data 0x0100\n"
-				"ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
-		"proc probe {} {\n"
-			        "    set RESULT -1\n"
-			        "\n"
-		                "    if {[ catch {jtag init} ]==0 } {\n"
-		                "        set RESULT {OK}\n"
-		                "    }\n"
-		                "    return $RESULT\n"
-		                "}\n"
-		                "probe\n"
+		"setup_interface NXHX_500-ETM",
+		"probe_interface"
 	}
 };
 
@@ -450,23 +384,7 @@ const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTa
 
 	{
 		"netX_ARM926",
-		"proc test {} {\n"
-		          "    global SC_CFG_RESULT\n"
-		          "    set SC_CFG_RESULT 0\n"
-		          "\n"
-		          "    jtag newtap netX_ARM926 cpu -irlen 4 -ircapture 1 -irmask 0xf -expected-id 0x07926021\n"
-		          "    jtag configure netX_ARM926.cpu -event setup { global SC_CFG_RESULT ; echo {Yay} ; set SC_CFG_RESULT {OK} }\n"
-		          "    jtag init\n"
-		          "\n"
-		          "    if { $SC_CFG_RESULT=={OK} } {\n"
-		          "        target create netX_ARM926.cpu arm926ejs -endian little -chain-position netX_ARM926.cpu\n"
-		          "        netX_ARM926.cpu configure -event reset-init { halt }\n"
-		          "        netX_ARM926.cpu configure -work-area-phys 0x0380 -work-area-size 0x0080 -work-area-backup 1\n"
-		          "    }\n"
-		          "\n"
-		          "    return $SC_CFG_RESULT\n"
-		          "}\n"
-		          "test\n"
+		"probe_cpu netX_ARM926"
 	},
 
 	{
