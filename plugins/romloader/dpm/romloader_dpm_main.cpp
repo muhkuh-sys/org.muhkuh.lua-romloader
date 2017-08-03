@@ -32,8 +32,6 @@ const char *romloader_dpm_provider::m_pcPluginNamePattern = "romloader_dpm_%s";
 romloader_dpm_provider::romloader_dpm_provider(swig_type_info *p_romloader_dpm, swig_type_info *p_romloader_dpm_reference) :
 		muhkuh_plugin_provider("romloader_dpm")
 {
-	printf("%s(%p): provider create\n", m_pcPluginId, this);
-
 	/* Get the romloader_dpm LUA type. */
 	m_ptPluginTypeInfo = p_romloader_dpm;
 	m_ptReferenceTypeInfo = p_romloader_dpm_reference;
@@ -41,7 +39,6 @@ romloader_dpm_provider::romloader_dpm_provider(swig_type_info *p_romloader_dpm, 
 
 romloader_dpm_provider::~romloader_dpm_provider(void)
 {
-	printf("%s(%p): provider delete\n", m_pcPluginId, this);
 }
 
 int romloader_dpm_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess)

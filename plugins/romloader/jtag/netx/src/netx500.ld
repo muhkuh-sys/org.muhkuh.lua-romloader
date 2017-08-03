@@ -9,4 +9,4 @@ buffer_end     = 0x10001f00;
 pch_buffer_ptr = 0x10001fe0;
 serial_vectors = 0x10001ff0;
 
-INCLUDE plugins\romloader\jtag\netx\src\netx.ld
+INCLUDE plugins/romloader/jtag/netx/src/netx.ld

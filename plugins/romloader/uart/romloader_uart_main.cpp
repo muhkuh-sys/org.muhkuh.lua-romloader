@@ -41,8 +41,6 @@ const char *romloader_uart_provider::m_pcPluginNamePattern = "romloader_uart_%s"
 romloader_uart_provider::romloader_uart_provider(swig_type_info *p_romloader_uart, swig_type_info *p_romloader_uart_reference)
  : muhkuh_plugin_provider("romloader_uart")
 {
-	printf("%s(%p): provider create\n", m_pcPluginId, this);
-
 	/* get the romloader_uart lua type */
 	m_ptPluginTypeInfo = p_romloader_uart;
 	m_ptReferenceTypeInfo = p_romloader_uart_reference;
@@ -52,7 +50,6 @@ romloader_uart_provider::romloader_uart_provider(swig_type_info *p_romloader_uar
 
 romloader_uart_provider::~romloader_uart_provider(void)
 {
-	printf("%s(%p): provider delete\n", m_pcPluginId, this);
 }
 
 
