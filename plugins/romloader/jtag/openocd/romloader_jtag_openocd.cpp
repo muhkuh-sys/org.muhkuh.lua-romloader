@@ -9,7 +9,7 @@
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
 /* FIXME: search the shared library in some common places.
  * One solution would be the same folder as this LUA plugin. Here is a way to get the full path of something in Windows: https://msdn.microsoft.com/en-us/library/windows/desktop/ms683197.aspx
- * The same is possible for Linux: http://stackoverflow.com/questions/1642128/linux-how-to-get-full-name-of-shared-object-just-loaded-from-the-constructor
+ * Here is a discussion on StackOverflow on this topic: https://stackoverflow.com/questions/6924195/get-dll-path-at-runtime . Note the 2 differrent approaches with "__ImageBase" and "GetModuleHandleEx".
  */
 #define OPENOCD_SHARED_LIBRARY_FILENAME "openocd.dll"
 
