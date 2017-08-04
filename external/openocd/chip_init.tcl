@@ -8,7 +8,8 @@ set ROMLOADER_CHIPTYP_NETX5     4
 set ROMLOADER_CHIPTYP_NETX10    5 
 set ROMLOADER_CHIPTYP_NETX56    6 
 set ROMLOADER_CHIPTYP_NETX56B   7 
-set ROMLOADER_CHIPTYP_NETX4000  8 
+set ROMLOADER_CHIPTYP_NETX4000_RELAXED  8 
+set ROMLOADER_CHIPTYP_NETX90_MPW 10
 
 # fEnableDCCOutput       true: download DCC code, set serial vectors and buffer, false: clear serial vectors
 # ulSerialVectorAddr     Address of serial vectors
@@ -60,10 +61,13 @@ proc init_chip {iChiptyp} {
 	global ROMLOADER_CHIPTYP_NETX10  
 	global ROMLOADER_CHIPTYP_NETX56  
 	global ROMLOADER_CHIPTYP_NETX56B 
-	global ROMLOADER_CHIPTYP_NETX4000
+	global ROMLOADER_CHIPTYP_NETX4000_RELAXED
+	global ROMLOADER_CHIPTYP_NETX90_MPW
 
 	puts "init_chip $iChiptyp"
 
+
+	
 	###############################
 	# SDRAM fix for netX 50
 	###############################
@@ -130,8 +134,9 @@ proc init_chip {iChiptyp} {
 		reg sp_svc 0x08000dfc    ; # stack 0500-0dfc
 		reg lr_svc 0x080000fc     ; # when any program returns, jump to the breakpoint address, stopping execution
 	
-	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000 } {
-		puts "Setup for netx 4000 - WIP"
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_RELAXED } {
+	
+		puts "Init netx 4000 - WIP"
 
 		# enable DTCM
 		
@@ -147,10 +152,13 @@ proc init_chip {iChiptyp} {
 		# http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0458c/CHDEFBFI.html
 		set MSK_CR7_CP15_DTCMRR_Enable      0x00000001
 		set VAL_CR7_CP15_DTCMRR_Size_128KB  8
+		set SRT_CR7_CP15_DTCMRR_Size        2
 		set SRT_CR7_CP15_DTCMRR_SBZ6        6 
 		set VAL_CR7_CP15_DTCMRR_Base_addr   0x00020000
 		set VAL_CR7_CP15_DTCMRR             [ expr $VAL_CR7_CP15_DTCMRR_Base_addr | ($VAL_CR7_CP15_DTCMRR_Size_128KB << $SRT_CR7_CP15_DTCMRR_SBZ6) | $MSK_CR7_CP15_DTCMRR_Enable ]
+		#set VAL_CR7_CP15_DTCMRR             [ expr $VAL_CR7_CP15_DTCMRR_Base_addr | ($VAL_CR7_CP15_DTCMRR_Size_128KB << $SRT_CR7_CP15_DTCMRR_Size) | $MSK_CR7_CP15_DTCMRR_Enable ]
 		
+		arm mcr 15 0 9 1 0 $VAL_CR7_CP15_DTCMRR
 		arm mcr 15 0 9 1 0 $VAL_CR7_CP15_DTCMRR
 		
 		bp 0x04100000 4 hw
@@ -165,10 +173,22 @@ proc init_chip {iChiptyp} {
 		# puts "0x0003fff0" 
 		# puts $value(0)
 		
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW } {
+		puts "Init netx 90 MPW"
+		reg xPSR 0x01000000
+		# reg MSP 0x00040000
+		
+		bp 0x2009fff8 4 hw
+		reg cpsr 0xd3 #?
+		reg sp_svc 0x2009fff8
+		reg lr_svc 0x2009fffc
+		
 		
 	} else {
 		puts "Unknown chip type $iChiptyp"
 	}
+	
+
 	
 	########################################
 	# Set up DCC output or disable output
@@ -182,25 +202,12 @@ proc init_chip {iChiptyp} {
 			
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
 		setup_dcc_io $fEnableDCCOutput 0x08000100 netx50_dccout_0400_04000e00.bin 0x0400 0x04000e00 0x04000fe0
-
-	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000 } {
-		setup_dcc_io false 0x0003fff0 netx50_dccout_0400_04000e00.bin 0x0400 0x0003fe00 0x04000fe0
-		#setup_dcc_io $fEnableDCCOutput 0x0003fff0 netx50_dccout_0400_04000e00.bin 0x0400 0x0003fe00 0x04000fe0
 		
-		# dcc put/flush routines
-		#puts "Loading DCC code"
-		#load_image netx50_dccout_0400_04000e00.bin 0x0400 bin
-		#
-		#puts "Setting buffer pointer"
-		#mww 0x04000fe0 0x0003fe00
-		#
-		#puts "Setting up no output for netX 4000."
-		#mww 0x0003fff0 0 ; # Get
-		#mww 0x0003fff4 0 ; # Put
-		#mww 0x0003fff8 0 ; # Peek
-		#mww 0x0003fffc 0 ; # Flush
-		#
-		#setup_dcc_io false 0x0003fff0
+		mdw 0x0400 0x40
+
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_RELAXED } {
+		# debugmsgs on Cortex-R/A are not supported by openOCD 0.10.0
+		setup_dcc_io false 0x0003fff0 netx4000cr7_dccout_05080000_05080e00.bin 0x05080000 0x05080e00 0x05080fe0
 		
 		#netx 4000 UART iovcectors: 0x04101445 0x04101479 0x04101449 0x0410144D 
 		#puts "Debug: setting UART vectors on netx 4000"
@@ -209,19 +216,23 @@ proc init_chip {iChiptyp} {
 		#mww 0x0003fff8 0x04101449 ; # Peek
 		#mww 0x0003fffc 0x0410144D ; # Flush
 		
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW } {
+		
+		
 	} else {
 		puts "Unknown chip type $iChiptyp"
 	}
 	
-	if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX500 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX100 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX50 ||
-		$iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
+	if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX500 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX100 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 ||
+		$iChiptyp == $ROMLOADER_CHIPTYP_NETX50 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B ||
+		$iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW } {
 		arm7_9 dcc_downloads enable
 		arm7_9 fast_memory_access enable
 		target_request debugmsgs enable
 	}
 	
 	# Is this speed ok or should it be 1 MHz?
-	adapter_khz 1000
+	adapter_khz 6000
 	
 }
 

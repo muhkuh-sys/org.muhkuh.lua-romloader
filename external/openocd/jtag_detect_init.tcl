@@ -181,6 +181,23 @@ proc probe_cpu {strCpuID} {
 			global strTarget
 			set strTarget netX4000
 		}
+		
+	# netx 90 - WIP
+	} elseif { $strCpuID == "netX90_COM" } {
+		jtag newtap netx90 dap -expected-id 0x6ba00477 -irlen 4
+		jtag newtap netx90 tap -expected-id 0x102046ad -irlen 4
+		jtag configure netx90.dap -event setup { global SC_CFG_RESULT ; echo {Yay - setup netx 90} ; set SC_CFG_RESULT {OK} }
+		jtag init
+	
+		if { $SC_CFG_RESULT=={OK} } {
+			target create netx90.comm cortex_m -chain-position netx90.dap -coreid 0 -ap-num 2
+			netx90.comm configure -event reset-init { halt }
+			netx90.comm configure -work-area-phys 0x00040000 -work-area-size 0x4000 -work-area-backup 1
+			
+			global strTarget
+			set strTarget netx90_COM
+		}
+		
 	}
 	echo "- probe_cpu $SC_CFG_RESULT"
 	return $SC_CFG_RESULT
@@ -192,10 +209,20 @@ proc reset_board {} {
 	echo "+ reset_board  target: $strTarget"
 	if { $strTarget == "netX4000" } then {
 		reset_netx4000
+	} elseif { $strTarget == "netx90_COM" } then {
+		reset_netx90_COM
 	} else {
 		reset_netX_ARM926_ARM966
 	}
 	echo "- reset_board "
+}
+
+proc reset_netx90_COM {} {
+	# if srst is not fitted use SYSRESETREQ to perform a soft reset
+	cortex_m reset_config sysresetreq
+	
+	init
+	#halt
 }
 
 proc reset_netX_ARM926_ARM966 {} {
@@ -211,7 +238,6 @@ proc reset_netX_ARM926_ARM966 {} {
 	reset init
 	echo {-reset init}
 }
-
 
 
 # ###################################################################
