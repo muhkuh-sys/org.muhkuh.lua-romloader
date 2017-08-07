@@ -71,7 +71,7 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(NETX_CONSOLEAPP_PARAMETER_T *ptTes
 
 	/* say hi */
 
-	while (1) {
+	/*while (1) {
 		uprintf("ABC\n");
 
 		if (0 != SERIAL_PEEK()) {
@@ -80,7 +80,7 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(NETX_CONSOLEAPP_PARAMETER_T *ptTes
 				}
 			break;
 		}
-	}
+	}*/
 
 	uprintf(". *** test skeleton start ***\n");
 	uprintf(". Parameter Address: 0x%08x\n", (unsigned long) ptTestParam);
