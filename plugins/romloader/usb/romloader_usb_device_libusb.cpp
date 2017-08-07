@@ -40,9 +40,9 @@
 #include "romloader_usb_main.h"
 #include "../uuencoder.h"
 
-#include "netx/targets/usbmon_netx10.h"
-#include "netx/targets/usbmon_netx56.h"
-#include "netx/targets/usbmon_netx500.h"
+#include "usbmon_netx10.h"
+#include "usbmon_netx56.h"
+#include "usbmon_netx500.h"
 
 
 /*-------------------------------------*/

@@ -1,6 +1,8 @@
 /***************************************************************************
- *   Copyright (C) 2010 by Christoph Thelen                                *
- *   doc_bacardi@users.sourceforge.net                                     *
+ *   Copyright (C) 2008 by Dominic Rath                                    *
+ *   Dominic.Rath@gmx.de                                                   *
+ *   Copyright (C) 2008 by Spencer Oliver                                  *
+ *   spen@spen-soft.co.uk                                                  *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -18,28 +20,11 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "asic_types.h"
+#ifndef DCC_STDIO_H
+#define DCC_STDIO_H
 
-	.section .header, "a"
-	.extern load_address
-	.extern start
+void dcc_buffer_flush(void);
+void dcc_buffer_putchar(unsigned int iChar);
 
-@--------------------------------------
 
-	.ascii "mooh"
-	.word 0x00010000
-
-	.word load_address
-#if ASIC_TYP==ASIC_TYP_NETX90_MPW
-	@ start address in thumb mode.
-	.word start+1
-#else
-	.word start
-#endif
-	.word parameter_start_address
-	.word parameter_end_address
-
-@--------------------------------------
-
-  .end
-
+#endif	/* DCC_STDIO_H */

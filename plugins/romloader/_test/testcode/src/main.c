@@ -70,7 +70,7 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(NETX_CONSOLEAPP_PARAMETER_T *ptTes
 	ulParameter = (unsigned long)ptTestParam->pvInitParams;
 
 	/* say hi */
-
+/*
 	/*while (1) {
 		uprintf("ABC\n");
 
@@ -81,11 +81,11 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(NETX_CONSOLEAPP_PARAMETER_T *ptTes
 			break;
 		}
 	}*/
-
+*/
 	uprintf(". *** test skeleton start ***\n");
 	uprintf(". Parameter Address: 0x%08x\n", (unsigned long) ptTestParam);
 	uprintf(". Parameter: 0x%08x\n", ulParameter);
-
+    
 	/* Print a very long line (longer than 1 USB packet). */
 	uprintf(
 			"012345678901234567890123456789012345678901234567890123456789012345678901234567\n");

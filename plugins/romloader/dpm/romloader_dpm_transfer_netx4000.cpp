@@ -2,8 +2,8 @@
 #include <unistd.h>
 
 
-#include "netx/targets/dpmmon_netx4000_monitor.h"
-#include "netx/targets/dpmmon_netx4000_monitor_run.h"
+#include "dpmmon_netx4000_monitor.h"
+#include "dpmmon_netx4000_monitor_run.h"
 
 #define NETX4000_DPM_BOOT_NETX_RECEIVED_CMD      0x01
 #define NETX4000_DPM_BOOT_NETX_SEND_CMD          0x02

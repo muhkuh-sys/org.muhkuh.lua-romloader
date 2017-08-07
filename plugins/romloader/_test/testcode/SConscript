@@ -25,7 +25,7 @@
 # Import the default compiler environments.
 #
 Import('atEnv')
-
+import os.path
 
 #----------------------------------------------------------------------------
 #
@@ -39,51 +39,46 @@ montest_sources = """
 """
 
 astrCppPath = ['#platform/src', '#platform/src/lib']
+strTargetPath = Dir('#targets/plugins/romloader/_test/testcode').get_path()
 
 env_netx500 = atEnv.NETX500.Clone()
 env_netx500.Append(CPPPATH = astrCppPath)
 env_netx500.Replace(LDFILE = File('src/netx500/netx500.ld'))
-src_netx500 = env_netx500.SetBuildPath('targets/netx500', 'src', montest_sources)
-elf_netx500 = env_netx500.Elf('targets/montest_netx500.elf', src_netx500 + env_netx500['PLATFORM_LIBRARY'])
-bin_netx500 = env_netx500.ObjCopy('targets/montest_netx500.bin', elf_netx500)
+src_netx500 = env_netx500.SetBuildPath(os.path.join(strTargetPath, 'netx500'), 'src', montest_sources)
+elf_netx500 = env_netx500.Elf(os.path.join(strTargetPath, 'montest_netx500.elf'), src_netx500 + env_netx500['PLATFORM_LIBRARY'])
+bin_netx500 = env_netx500.ObjCopy(os.path.join(strTargetPath, 'montest_netx500.bin'), elf_netx500)
 
 env_netx56 = atEnv.NETX56.Clone()
 env_netx56.Append(CPPPATH = astrCppPath)
 env_netx56.Replace(LDFILE = File('src/netx56/netx56.ld'))
-src_netx56 = env_netx56.SetBuildPath('targets/netx56', 'src', montest_sources)
-elf_netx56 = env_netx56.Elf('targets/montest_netx56.elf', src_netx56 + env_netx56['PLATFORM_LIBRARY'])
-bin_netx56 = env_netx56.ObjCopy('targets/montest_netx56.bin', elf_netx56)
+src_netx56 = env_netx56.SetBuildPath(os.path.join(strTargetPath, 'netx56'), 'src', montest_sources)
+elf_netx56 = env_netx56.Elf(os.path.join(strTargetPath, 'montest_netx56.elf'), src_netx56 + env_netx56['PLATFORM_LIBRARY'])
+bin_netx56 = env_netx56.ObjCopy(os.path.join(strTargetPath, 'montest_netx56.bin'), elf_netx56)
 
 env_netx4000 = atEnv.NETX4000_RELAXED.Clone()
 env_netx4000.Append(CPPPATH = astrCppPath)
 env_netx4000.Replace(LDFILE = File('src/netx4000/netx4000.ld'))
-src_netx4000 = env_netx4000.SetBuildPath('targets/netx4000', 'src', montest_sources)
-elf_netx4000 = env_netx4000.Elf('targets/montest_netx4000.elf', src_netx4000 + env_netx4000['PLATFORM_LIBRARY'])
-bin_netx4000 = env_netx4000.ObjCopy('targets/montest_netx4000.bin', elf_netx4000)
+src_netx4000 = env_netx4000.SetBuildPath(os.path.join(strTargetPath, 'netx4000'), 'src', montest_sources)
+elf_netx4000 = env_netx4000.Elf(os.path.join(strTargetPath, 'montest_netx4000.elf'), src_netx4000 + env_netx4000['PLATFORM_LIBRARY'])
+bin_netx4000 = env_netx4000.ObjCopy(os.path.join(strTargetPath, 'montest_netx4000.bin'), elf_netx4000)
 
 env_netx50 = atEnv.NETX50.Clone()
 env_netx50.Append(CPPPATH = astrCppPath)
 env_netx50.Replace(LDFILE = File('src/netx50/netx50.ld'))
-src_netx50 = env_netx50.SetBuildPath('targets/netx50', 'src', montest_sources)
-elf_netx50 = env_netx50.Elf('targets/montest_netx50.elf', src_netx50 + env_netx50['PLATFORM_LIBRARY'])
-bin_netx50 = env_netx50.ObjCopy('targets/montest_netx50.bin', elf_netx50)
+src_netx50 = env_netx50.SetBuildPath(os.path.join(strTargetPath, 'netx50'), 'src', montest_sources)
+elf_netx50 = env_netx50.Elf(os.path.join(strTargetPath, 'montest_netx50.elf'), src_netx50 + env_netx50['PLATFORM_LIBRARY'])
+bin_netx50 = env_netx50.ObjCopy(os.path.join(strTargetPath, 'montest_netx50.bin'), elf_netx50)
 
 env_netx10 = atEnv.NETX10.Clone()
 env_netx10.Append(CPPPATH = astrCppPath)
 env_netx10.Replace(LDFILE = File('src/netx10/netx10.ld'))
-src_netx10 = env_netx10.SetBuildPath('targets/netx10', 'src', montest_sources)
-elf_netx10 = env_netx10.Elf('targets/montest_netx10.elf', src_netx10 + env_netx10['PLATFORM_LIBRARY'])
-bin_netx10 = env_netx10.ObjCopy('targets/montest_netx10.bin', elf_netx10)
+src_netx10 = env_netx10.SetBuildPath(os.path.join(strTargetPath, 'netx10'), 'src', montest_sources)
+elf_netx10 = env_netx10.Elf(os.path.join(strTargetPath, 'montest_netx10.elf'), src_netx10 + env_netx10['PLATFORM_LIBRARY'])
+bin_netx10 = env_netx10.ObjCopy(os.path.join(strTargetPath, 'montest_netx10.bin'), elf_netx10)
 
-
-#----------------------------------------------------------------------------
-#
-# Build the zip distribution.
-#
-#aTranslate = dict({
-#	bin_netx500[0]: 'plugins/romloader/usb/netx/targets/',
-#	bin_netx56[0]:  'plugins/romloader/usb/netx/targets/',
-#	bin_netx50[0]:  'plugins/romloader/usb/netx/targets/',
-#	bin_netx10[0]:  'plugins/romloader/usb/netx/targets/',
-#})
-#env_default.FlexZip('targets/montest_firmware.zip', bin_netx500 + bin_netx56 + bin_netx50 + bin_netx10, ZIP_PATH_TRANSLATE=aTranslate)
+env_netx90 = atEnv.NETX90_MPW.Clone()
+env_netx90.Append(CPPPATH = astrCppPath)
+env_netx90.Replace(LDFILE = File('src/netx90/netx90.ld'))
+src_netx90 = env_netx90.SetBuildPath(os.path.join(strTargetPath, 'netx90'), 'src', montest_sources)
+elf_netx90 = env_netx90.Elf(os.path.join(strTargetPath, 'montest_netx90.elf'), src_netx90 + env_netx90['PLATFORM_LIBRARY'])
+bin_netx90 = env_netx90.ObjCopy(os.path.join(strTargetPath, 'montest_netx90.bin'), elf_netx90)

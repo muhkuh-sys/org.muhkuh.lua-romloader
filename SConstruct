@@ -79,3 +79,10 @@ SConscript('plugins/romloader/usb/netx/SConscript')
 #
 SConscript('plugins/romloader/dpm/netx/SConscript')
 
+
+#----------------------------------------------------------------------------
+#
+# Build the DCC output code.
+#
+SConscript('plugins/romloader/jtag/netx/SConscript')
+

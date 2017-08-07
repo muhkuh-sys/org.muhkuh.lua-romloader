@@ -24,22 +24,21 @@
 --   - write random data with write_data8/16/32 and check with read_image
 --   - write random data with write_image and check with read_data8/16/32
 --   - call binary and check its output
---
---  Changes:
---    Date      Author   Description
---  28 aug 12    SL      set test areas to the usable range after MI 2.0 has been installed
---               SL      added output checking
 -----------------------------------------------------------------------------
 
+require("muhkuh_cli_init")
+require("bit")
 
 -- The usable intram when MI 2.0 is running
 atTestAreas = {
-	[romloader.ROMLOADER_CHIPTYP_NETX500] = {ulTestAreaStart = 0x00004000, ulTestAreaSize  = 0x0001c000},
-	[romloader.ROMLOADER_CHIPTYP_NETX100] = {ulTestAreaStart = 0x00004000, ulTestAreaSize  = 0x0001c000},
-	[romloader.ROMLOADER_CHIPTYP_NETX56]  = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0009c000},
-	[romloader.ROMLOADER_CHIPTYP_NETX56B] = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0009c000},
-	[romloader.ROMLOADER_CHIPTYP_NETX50]  = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x00014000},
-	[romloader.ROMLOADER_CHIPTYP_NETX10]  = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0002c000},
+	[romloader.ROMLOADER_CHIPTYP_NETX500]           = {ulTestAreaStart = 0x00004000, ulTestAreaSize  = 0x0001c000},
+	[romloader.ROMLOADER_CHIPTYP_NETX100]           = {ulTestAreaStart = 0x00004000, ulTestAreaSize  = 0x0001c000},
+	[romloader.ROMLOADER_CHIPTYP_NETX56]            = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0009c000},
+	[romloader.ROMLOADER_CHIPTYP_NETX56B]           = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0009c000},
+	[romloader.ROMLOADER_CHIPTYP_NETX50]            = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x00014000},
+	[romloader.ROMLOADER_CHIPTYP_NETX10]            = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0002c000},
+	[romloader.ROMLOADER_CHIPTYP_NETX4000_RELAXED]  = {ulTestAreaStart = 0x04000000, ulTestAreaSize  = 0x00010000},
+	[romloader.ROMLOADER_CHIPTYP_NETX90_MPW]        = {ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},
 }
 
 -- print date/time in every line, useful when it stops in the middle of the night
@@ -61,17 +60,33 @@ function tobool(x, fDefault)
 end
 
 -- get the test parameters
-local ulTestSize           = tonumber(__MUHKUH_TEST_PARAMETER.testsize)             -- size of the memory area to test
-local uiParameterLoops     = tonumber(__MUHKUH_TEST_PARAMETER.loops)                -- 0 = endless
-local fCheckExpectedOutput = tobool(  __MUHKUH_TEST_PARAMETER.checkoutput, true)    -- enable output checking
-local fCheckOutputEnd      = tobool(  __MUHKUH_TEST_PARAMETER.checkoutputend, true) -- enable checking of the output at the return from a acall
-                                    
+local ulTestSize           -- max. size of the memory area to test
+local uiParameterLoops     -- 0 = endless
+local fCheckExpectedOutput -- enable output checking
+local fCheckOutputEnd      -- enable checking of the output at the return from a call   
+
+if __MUHKUH_TEST_PARAMETER then
+	ulTestSize           = tonumber(__MUHKUH_TEST_PARAMETER.testsize)             
+	uiParameterLoops     = tonumber(__MUHKUH_TEST_PARAMETER.loops)                
+	fCheckExpectedOutput = tobool(  __MUHKUH_TEST_PARAMETER.checkoutput, true)    
+	fCheckOutputEnd      = tobool(  __MUHKUH_TEST_PARAMETER.checkoutputend, true) 
+else
+	ulTestSize           = 0x100
+	uiParameterLoops     = 1     
+	fCheckExpectedOutput = true 
+	fCheckOutputEnd      = true 
+end
+
 local function printf(...) print(string.format(...)) end
 printf("ulTestSize           0x%08x", ulTestSize)
 printf("uiParameterLoops     %d",     uiParameterLoops)
 printf("fCheckExpectedOutput %s",     tostring(fCheckExpectedOutput))
 printf("fCheckOutputEnd      %s",     tostring(fCheckOutputEnd))
 
+
+--------------------------------------------------------------------------
+-- test memory access
+--------------------------------------------------------------------------
 
 local function get_rnd_data(len)
 	local data = ""
@@ -173,7 +188,7 @@ function addExpectedOutputLoop(n, iMsDelay)
 end
 
 -- Construct the expected output
-strNetxCR = "\r\n"
+strNetxCR = "\r\n" 
 addExpectedOutput(". *** test skeleton start ***" .. strNetxCR)
 --addExpectedOutput(". Parameter Address: 0x08018880" .. strNetxCR)
 addExpectedOutput("skip")
@@ -184,24 +199,28 @@ addExpectedOutputLoop(100, 0)
 addExpectedOutputLoop(8, 500)
 addExpectedOutputLoop(4, 1000)
 addExpectedOutputLoop(2, 2000)
---addExpectedOutput("ok" .. strNetxCR)
 
 
 
 -- Get the next piece of expected output.
--- If the Plugin is USB, split the current line into 63 byte segments
+-- If the Plugin is USB and the chip type is not netx 100/500, 
+-- split the current line into 63 byte segments
 -- Uses:
 -- astrExpectedOutput    array of expected output lines
 -- iExpectedOutputLine   index into astrExpectedOutput
 -- iLinePos              1-based position in iExpectedOutputLine
 -- tPlugin               plugin, used to check we're using USB
 USB_BLOCK_SIZE = 63
+
 function getExpectedOutput()
 	local strLine = astrExpectedOutput[iExpectedOutputLine]
-	assert(strLine, "Expected output exhausted")
+	assert((not fCheckExpectedOutput) or strLine, "Expected output exhausted")
 	local strExpected
 	
-	if tPlugin:GetTyp()=="romloader_usb" then
+	local tPluginTyp = tPlugin:GetTyp()
+	local tAsicTyp = tPlugin:GetChiptyp()
+	if tPluginTyp=="romloader_usb" 
+	and tAsicTyp~=romloader.ROMLOADER_CHIPTYP_NETX100 and tAsicTyp~=romloader.ROMLOADER_CHIPTYP_NETX500 then
 		local iLen = strLine:len()
 		strExpected = strLine:sub(iLinePos, iLinePos + USB_BLOCK_SIZE - 1)
 		iLinePos = iLinePos + USB_BLOCK_SIZE
@@ -209,6 +228,9 @@ function getExpectedOutput()
 			iLinePos = 1
 			iExpectedOutputLine = iExpectedOutputLine + 1
 		end
+	elseif tPluginTyp=="romloader_jtag" then
+		strExpected = strLine:gsub(string.char(13, 10), string.char(13, 10, 10))
+		iExpectedOutputLine = iExpectedOutputLine + 1
 		
 	else
 		strExpected = strLine
@@ -267,10 +289,11 @@ function mbin_simple_run(tParentWindow, tPlugin, strFilename, aParameter)
 	tester.mbin_debug(aAttr)
 	tester.mbin_write(tParentWindow, tPlugin, aAttr)
 	tester.mbin_set_parameter(tPlugin, aAttr, aParameter)
-	-- function mbin_execute(tParentWindow, tPlugin, aAttr, fnCallback, ulUserData)
 	iExpectedOutputLine = 1
 	iLinePos = 1
-	local result = tester.mbin_execute(tParentWindow, tPlugin, aAttr, fnCallbackCheckOutput, 0)
+
+	-- function mbin_execute(tParentWindow, tPlugin, aAttr, aParameter, fnCallback, ulUserData)
+	local result = tester.mbin_execute(tParentWindow, tPlugin, aAttr, aParameter, fnCallbackCheckOutput, 0)
 	if fCheckOutputEnd and not isOutputComplete() then
 		error("did not receive all expected output")
 	end
@@ -499,36 +522,41 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 	print("Ok!")
 	print(" ")
 
--- More complicated / notyet implemented
---	print("---------------------------------------")
---	print(string.format("** Loop %d **", uiLoopCounter))
---	print(" call test")
---	-- Get the chiptyp.
---	local tAsicTyp = tPlugin:GetChiptyp()
---	-- Get the binary for the ASIC.
---	print(string.format("detected chip type: %d %s", tAsicTyp, tPlugin:GetChiptypName(tAsicTyp)))
---	local uiAsicType = nil
---	if tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX50 then
---		uiAsicType = 50
---	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX100 or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX500 then
---		uiAsicType = 500
---	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX10 then
---		uiAsicType = 10
---	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX56 or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX56B then
---		uiAsicType = 56
---	end
---
---	if uiAsicType==nil then
---		error("Unknown chiptyp! " .. tostring(tAsicTyp))
---	end
---
---	local strBinaryName = string.format("montest_netx%d.bin", uiAsicType)
---
---	ulMagic = 0x12345678
---	ulResult = mbin_simple_run(nil, tPlugin, strBinaryName, ulMagic)
---	if ulResult~=0 then
---		error(string.format("The code returned an error code: 0x%08x", ulResult))
---	end
+
+	print("---------------------------------------")
+	print(string.format("** Loop %d **", uiLoopCounter))
+	print(" call test")
+	-- Get the chiptyp.
+	local tAsicTyp = tPlugin:GetChiptyp()
+	local ulSerialVectorAddr
+	-- Get the binary for the ASIC.
+	print(string.format("detected chip type: %d %s", tAsicTyp, tPlugin:GetChiptypName(tAsicTyp)))
+	local uiAsicType = nil
+	if tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX50 then
+		uiAsicType = 50
+	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX100 or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX500 then
+		uiAsicType = 500
+	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX10 then
+		uiAsicType = 10
+	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX56 or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX56B then
+		uiAsicType = 56
+	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX4000_RELAXED then
+		uiAsicType = 4000
+	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX90_MPW then
+		uiAsicType = 90
+	end
+
+	if uiAsicType==nil then
+		error("Unknown chiptyp! " .. tostring(tAsicTyp))
+	end
+
+	local strBinaryName = string.format("netx/montest_netx%d.bin", uiAsicType)
+
+	ulMagic = 0x12345678
+	ulResult = mbin_simple_run(nil, tPlugin, strBinaryName, ulMagic)
+	if ulResult~=0 then
+		error(string.format("The code returned an error code: 0x%08x", ulResult))
+	end
 
 
 	uiLoopCounter = uiLoopCounter + 1

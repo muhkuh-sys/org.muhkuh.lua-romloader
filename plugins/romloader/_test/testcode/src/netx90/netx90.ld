@@ -1,19 +1,19 @@
 /***************************************************************************
- *   Copyright (C) 2010 by Christoph Thelen                                *
- *   doc_bacardi@users.sourceforge.net                                     *
+ *   Copyright (C) 2010 by Hilscher GmbH                                   *
+ *   cthelen@hilscher.com                                                  *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
+ *   it under the terms of the GNU Library General Public License as       *
+ *   published by the Free Software Foundation; either version 2 of the    *
+ *   License, or (at your option) any later version.                       *
  *                                                                         *
  *   This program is distributed in the hope that it will be useful,       *
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
  *   GNU General Public License for more details.                          *
  *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program; if not, write to the                         *
+ *   You should have received a copy of the GNU Library General Public     *
+ *   License along with this program; if not, write to the                 *
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
@@ -22,37 +22,33 @@ ENTRY(start)
 
 MEMORY
 {
-	ASSERT_EMPTY(rwx): ORIGIN = 0x00000000,  LENGTH = 0
-	IOVECTORS(rwx):    ORIGIN = 0x0003fff0,  LENGTH = 0x00000010
-	INTRAM(rwx):       ORIGIN = 0x05084000,  LENGTH = 0x00001000
+	ASSERT_EMPTY(rwx): ORIGIN = 0x00000000, LENGTH = 0
+	INTRAM(rwx):       ORIGIN = 0x00024000, LENGTH = 0x0001c000
+	IOVECTORS(rw):     ORIGIN = 0x2009FFF0, LENGTH = 0x00000010
 }
 
 
 /* Section Definitions */
 SECTIONS
 {
-	/* These sections must be empty, put them in a memory with a size of
-	 * 0 bytes
-	 */
+	/* NOTE: include all sections here which should be empty. */
 	.assert_empty (NOLOAD) :
 	{
-		/* NOTE: include all sections here which should be empty.
-		 */
-		*(.data)
+		*(.data*)
 		*(.glue*)
-		*(.igot.plt)
-		*(.iplt)
 		*(.vfp11_veneer)
 		*(.v4_bx)
+		*(.iplt)
+		*(.rel.dyn)
+		*(.rel.iplt)
+		*(.igot.plt)
 	} >ASSERT_EMPTY
 
-
-	.serial_vectors ORIGIN(IOVECTORS) :
+	.serial_vectors ORIGIN(IOVECTORS) (NOLOAD) :
 	{
-		tSerialVectors = . ;
+		PROVIDE ( tSerialVectors = . );
 		. = . + 0x10;
 	} >IOVECTORS
-
 
 	.code ORIGIN(INTRAM) :
 	{
@@ -72,22 +68,19 @@ SECTIONS
 		parameter_end_address = . ;
 	} >INTRAM
 
-
 	.bss :
 	{
-		/* zero-initialized data */
-
+		/* .bss section which is used for uninitialized data */
 		__bss_start__ = . ;
 
-		*(.bss)
-		*(COMMON)
+		*(.bss COMMON)
 
 		__bss_end__ = . ;
 	} >INTRAM
 
-
 	/* set the top of the stack to the end of INTRAM */
 	stack_top = ORIGIN(INTRAM) + LENGTH(INTRAM) ;
+
 
 
 	/* Stabs debugging sections.  */
@@ -99,8 +92,9 @@ SECTIONS
 	.stab.indexstr 0 : { *(.stab.indexstr) }
 	.comment       0 : { *(.comment) }
 	/* DWARF debug sections.
-		Symbols in the DWARF debugging sections are relative to the beginning
-		of the section so we begin them at 0.  */
+	 * Symbols in the DWARF debugging sections are relative to the beginning
+	 * of the section so we begin them at 0.
+	 */
 	/* DWARF 1 */
 	.debug          0 : { *(.debug) }
 	.line           0 : { *(.line) }

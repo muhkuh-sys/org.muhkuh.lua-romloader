@@ -9,7 +9,7 @@
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
 /* FIXME: search the shared library in some common places.
  * One solution would be the same folder as this LUA plugin. Here is a way to get the full path of something in Windows: https://msdn.microsoft.com/en-us/library/windows/desktop/ms683197.aspx
- * The same is possible for Linux: http://stackoverflow.com/questions/1642128/linux-how-to-get-full-name-of-shared-object-just-loaded-from-the-constructor
+ * Here is a discussion on StackOverflow on this topic: https://stackoverflow.com/questions/6924195/get-dll-path-at-runtime . Note the 2 differrent approaches with "__ImageBase" and "GetModuleHandleEx".
  */
 #define OPENOCD_SHARED_LIBRARY_FILENAME "openocd.dll"
 
@@ -345,103 +345,37 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::a
 	{
 		"NXJTAG-USB",
 		"setup_interface NXJTAG-USB",
-		"probe_interface",
+		"probe_interface"
 	},
 
 	{
 		"Amontec_JTAGkey",
-
-		"interface ftdi\n"
-		"transport select jtag\n"
-		"ftdi_device_desc \"Amontec JTAGkey\"\n"
-		"ftdi_vid_pid 0x0403 0xcff8\n"
-		"adapter_khz 100\n"
-		"\n"
-		"ftdi_layout_init 0x0c08 0x0f1b\n"
-		"ftdi_layout_signal nTRST -data 0x0100 -noe 0x0400\n"
-		"ftdi_layout_signal nSRST -data 0x0200 -noe 0x0800\n",
-
-		"proc probe {} {\n"
-		"    set RESULT -1"
-		"\n"
-		"    if {[ catch {jtag init} ]==0 } {\n"
-		"        set RESULT {OK}\n"
-		"    }\n"
-		"    return $RESULT\n"
-		"}\n"
-		"probe\n"
+		"setup_interface Amontec_JTAGkey",
+		"probe_interface"
 	},
 
 	{
 		"NXHX50-RE",
-		"interface ftdi\n"
-                                "transport select jtag\n"
-		                "ftdi_device_desc \"NXHX50-RE\"\n"
-		                "ftdi_vid_pid 0x0640 0x0028\n"
-		                "adapter_khz 100\n"
-		                "\n"
-				"ftdi_layout_init 0x0108 0x010b\n"
-				"ftdi_layout_signal nTRST -data 0x0100\n"
-				"ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
-		"proc probe {} {\n"
-		                "    set RESULT -1\n"
-		                "\n"
-		                "    if {[ catch {jtag init} ]==0 } {\n"
-		                "        set RESULT {OK}\n"
-		                "    }\n"
-		                "    return $RESULT\n"
-		                "}\n"
-		                "probe\n"
+		"setup_interface NXHX50-RE",
+		"probe_interface"
 	},
 
 	{
 		"NXHX_51-ETM",
-		"interface ftdi\n"
-                                "transport select jtag\n"
-		                "ftdi_device_desc \"NXHX 51-ETM\"\n"
-		                "ftdi_vid_pid 0x0640 0x0028\n"
-		                "adapter_khz 100\n"
-		                "\n"
-				"ftdi_layout_init 0x0108 0x010b\n"
-				"ftdi_layout_signal nTRST -data 0x0100\n"
-				"ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
-		"proc probe {} {\n"
-			        "    set RESULT -1\n"
-			        "\n"
-		                "    if {[ catch {jtag init} ]==0 } {\n"
-		                "        set RESULT {OK}\n"
-		                "    }\n"
-		                "    return $RESULT\n"
-		                "}\n"
-		                "probe\n"
+		"setup_interface NXHX_51-ETM",
+		"probe_interface"
 	},
 
 	{
 		"NXHX_500-ETM",
-		"interface ftdi\n"
-                                "transport select jtag\n"
-		                "ftdi_device_desc \"NXHX 500-ETM\"\n"
-		                "ftdi_vid_pid 0x0640 0x0028\n"
-		                "adapter_khz 100\n"
-		                "\n"
-				"ftdi_layout_init 0x0108 0x010b\n"
-				"ftdi_layout_signal nTRST -data 0x0100\n"
-				"ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200\n",
-		"proc probe {} {\n"
-			        "    set RESULT -1\n"
-			        "\n"
-		                "    if {[ catch {jtag init} ]==0 } {\n"
-		                "        set RESULT {OK}\n"
-		                "    }\n"
-		                "    return $RESULT\n"
-		                "}\n"
-		                "probe\n"
+		"setup_interface NXHX_500-ETM",
+		"probe_interface"
 	}
 };
 
 
 /* FIXME: read this from some kind of configuration file. */
-const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTargetCfg[3] =
+const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTargetCfg[4] =
 {
 	{
 		"netX_ARM966",
@@ -450,29 +384,19 @@ const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTa
 
 	{
 		"netX_ARM926",
-		"proc test {} {\n"
-		          "    global SC_CFG_RESULT\n"
-		          "    set SC_CFG_RESULT 0\n"
-		          "\n"
-		          "    jtag newtap netX_ARM926 cpu -irlen 4 -ircapture 1 -irmask 0xf -expected-id 0x07926021\n"
-		          "    jtag configure netX_ARM926.cpu -event setup { global SC_CFG_RESULT ; echo {Yay} ; set SC_CFG_RESULT {OK} }\n"
-		          "    jtag init\n"
-		          "\n"
-		          "    if { $SC_CFG_RESULT=={OK} } {\n"
-		          "        target create netX_ARM926.cpu arm926ejs -endian little -chain-position netX_ARM926.cpu\n"
-		          "        netX_ARM926.cpu configure -event reset-init { halt }\n"
-		          "        netX_ARM926.cpu configure -work-area-phys 0x0380 -work-area-size 0x0080 -work-area-backup 1\n"
-		          "    }\n"
-		          "\n"
-		          "    return $SC_CFG_RESULT\n"
-		          "}\n"
-		          "test\n"
+		"probe_cpu netX_ARM926"
 	},
 
 	{
 		"netX4000_R7",
 		"probe_cpu netX4000_R7"
+	},
+	
+	{
+		"netX90_COM",
+		"probe_cpu netX90_COM"
 	}
+
 };
 
 
@@ -1005,7 +929,7 @@ int romloader_jtag_openocd::read_image(uint32_t ulNetxAddress, uint8_t *pucData,
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnReadImage(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, pucData, sizData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "read_data32: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			fprintf(stderr, "read_image: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
@@ -1026,11 +950,11 @@ int romloader_jtag_openocd::write_data08(uint32_t ulNetxAddress, uint8_t ucData)
 
 	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnWriteData08!=NULL )
 	{
-		/* Read memory. */
+		/* Write memory. */
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnWriteData08(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, ucData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "read_data32: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			fprintf(stderr, "write_data08: Failed to write address 0x%08x: %d\n", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
@@ -1051,11 +975,11 @@ int romloader_jtag_openocd::write_data16(uint32_t ulNetxAddress, uint16_t usData
 
 	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnWriteData16!=NULL )
 	{
-		/* Read memory. */
+		/* Write memory. */
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnWriteData16(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, usData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "read_data32: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			fprintf(stderr, "write_data16: Failed to write address 0x%08x: %d\n", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
@@ -1076,11 +1000,11 @@ int romloader_jtag_openocd::write_data32(uint32_t ulNetxAddress, uint32_t ulData
 
 	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnWriteData32!=NULL )
 	{
-		/* Read memory. */
+		/* Write memory. */
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnWriteData32(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, ulData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "read_data32: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			fprintf(stderr, "write_data32: Failed to write address 0x%08x: %d\n", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
@@ -1101,11 +1025,11 @@ int romloader_jtag_openocd::write_image(uint32_t ulNetxAddress, const uint8_t *p
 
 	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnWriteImage!=NULL )
 	{
-		/* Read memory. */
+		/* Write memory. */
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnWriteImage(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, pucData, sizData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "read_data32: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			fprintf(stderr, "write_image: Failed to write address 0x%08x: %d\n", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}

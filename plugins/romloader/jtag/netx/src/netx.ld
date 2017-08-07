@@ -18,26 +18,26 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-ENTRY(start)
+/*
+This script is to be included by a chiptypa specific script.
+The incuding script must define the following memory areas:
+	ASSERT_EMPTY
+	INTRAM0_MON
 
-MEMORY
-{
-	ASSERT_EMPTY(rwx): ORIGIN = 0x00000000,  LENGTH = 0
-	IOVECTORS(rwx):    ORIGIN = 0x0003fff0,  LENGTH = 0x00000010
-	INTRAM(rwx):       ORIGIN = 0x05084000,  LENGTH = 0x00001000
-}
-
-
+It must also define the following symbols:
+	ab_buffer:      start of the output buffer in memory 
+	buffer_end:     end address of the buffer 
+	pch_buffer_ptr: pointer into the buffer 
+	serial_vectors: serial vectors (unused) 
+*/ 
+ 
 /* Section Definitions */
 SECTIONS
 {
-	/* These sections must be empty, put them in a memory with a size of
-	 * 0 bytes
-	 */
+	/* These sections must be empty, put them in a memory with a size of 0 bytes */
 	.assert_empty (NOLOAD) :
 	{
-		/* NOTE: include all sections here which should be empty.
-		 */
+		/* NOTE: include all sections here which should be empty. */
 		*(.data)
 		*(.glue*)
 		*(.igot.plt)
@@ -46,48 +46,24 @@ SECTIONS
 		*(.v4_bx)
 	} >ASSERT_EMPTY
 
-
-	.serial_vectors ORIGIN(IOVECTORS) :
-	{
-		tSerialVectors = . ;
-		. = . + 0x10;
-	} >IOVECTORS
-
-
-	.code ORIGIN(INTRAM) :
+	.code ORIGIN(INTRAM0_MON) :
 	{
 		load_address = . ;
-
-		KEEP(*(.header))
-		*(.init_code)
-		*(.text)
+		KEEP(*(.dcc_out_s))
+		*(.text*)
 		*(.rodata*)
-	} >INTRAM
-
-
-	.parameter :
-	{
-		parameter_start_address = . ;
-		. = . + 0x0100;
-		parameter_end_address = . ;
-	} >INTRAM
+		end_address = . ;
+	} >INTRAM0_MON
 
 
 	.bss :
 	{
 		/* zero-initialized data */
-
 		__bss_start__ = . ;
-
 		*(.bss)
 		*(COMMON)
-
 		__bss_end__ = . ;
-	} >INTRAM
-
-
-	/* set the top of the stack to the end of INTRAM */
-	stack_top = ORIGIN(INTRAM) + LENGTH(INTRAM) ;
+	} >INTRAM0_MON
 
 
 	/* Stabs debugging sections.  */

@@ -63,11 +63,6 @@ const char *romloader_eth_provider::m_pcPluginNamePattern = "romloader_eth_%s";
 romloader_eth_provider::romloader_eth_provider(swig_type_info *p_romloader_eth, swig_type_info *p_romloader_eth_reference)
  : muhkuh_plugin_provider("romloader_eth")
 {
-	int iResult;
-
-
-	printf("%s(%p): provider create\n", m_pcPluginId, this);
-
 	/* get the romloader_eth lua type */
 	m_ptPluginTypeInfo = p_romloader_eth;
 	m_ptReferenceTypeInfo = p_romloader_eth_reference;
@@ -76,7 +71,6 @@ romloader_eth_provider::romloader_eth_provider(swig_type_info *p_romloader_eth, 
 
 romloader_eth_provider::~romloader_eth_provider(void)
 {
-	printf("%s(%p): provider delete\n", m_pcPluginId, this);
 }
 
 
