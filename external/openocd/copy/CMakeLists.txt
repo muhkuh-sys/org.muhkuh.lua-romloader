@@ -24,7 +24,7 @@ SET(BUILD_FTDI 1)
 SET(BUILD_HLADAPTER 1)
 SET(BUILD_HLADAPTER_ICDI 1)
 SET(BUILD_HLADAPTER_STLINK 1)
-SET(BUILD_JLINK 1)
+SET(BUILD_JLINK 0)
 SET(BUILD_OPENDOUS 1)
 SET(BUILD_OSBDM 1)
 SET(BUILD_ULINK 1)
@@ -91,11 +91,11 @@ SET(PARPORT_USE_PPDEV 0)
 SET(PACKAGE "openocd")
 SET(PACKAGE_BUGREPORT "OpenOCD Mailing List <openocd-devel@lists.sourceforge.net>")
 SET(PACKAGE_NAME "openocd")
-SET(PACKAGE_STRING "openocd 0.9.0")
+SET(PACKAGE_STRING "openocd 0.10.0")
 SET(PACKAGE_TARNAME "openocd")
 SET(PACKAGE_URL "")
-SET(PACKAGE_VERSION "0.9.0")
-SET(VERSION "0.9.0")
+SET(PACKAGE_VERSION "0.10.0")
+SET(VERSION "0.10.0")
 
 IF(${CMAKE_COMPILER_IS_GNUCC})
 	SET(_GNU_SOURCE 1)
@@ -162,7 +162,7 @@ ENDFUNCTION(OPENOCD_BIN2CHAR HEXDUMP_INPUT_FILE HEXDUMP_OUTPUT_FILE HEXDUMP_SYMB
 #-----------------------------------------------------------------------------
 
 # Generate a hexdump from the XScale debug handler.
-OPENOCD_BIN2CHAR("src/target/xscale/debug_handler.bin" "${CMAKE_CURRENT_BINARY_DIR}/config/xscale_debug.inc" "xscale_debug_handler")
+# OPENOCD_BIN2CHAR("src/target/xscale/debug_handler.bin" "${CMAKE_CURRENT_BINARY_DIR}/config/xscale_debug.inc" "xscale_debug_handler")
 
 
 
@@ -210,12 +210,15 @@ SET(SOURCES_libflash
 	src/flash/nand/s3c24xx.c
 	src/flash/nand/s3c6400.c
 	src/flash/nand/tcl.c
+	src/flash/nor/aducm360.c
 	src/flash/nor/aduc702x.c
+	src/flash/nor/ambiqmicro.c
 	src/flash/nor/at91sam3.c
 	src/flash/nor/at91sam4.c
 	src/flash/nor/at91sam4l.c
 	src/flash/nor/at91sam7.c
 	src/flash/nor/at91samd.c
+	src/flash/nor/atsamv.c
 	src/flash/nor/avrf.c
 	src/flash/nor/cfi.c
 	src/flash/nor/core.c
@@ -225,17 +228,22 @@ SET(SOURCES_libflash
 	src/flash/nor/em357.c
 	src/flash/nor/faux.c
 	src/flash/nor/fm3.c
+	src/flash/nor/fm4.c
+	src/flash/nor/jtagspi.c
 	src/flash/nor/kinetis.c
+	src/flash/nor/kinetis_ke.c
 	src/flash/nor/lpc2000.c
 	src/flash/nor/lpc288x.c
 	src/flash/nor/lpc2900.c
 	src/flash/nor/lpcspifi.c
 	src/flash/nor/mdr.c
-	src/flash/nor/mini51.c
+#	src/flash/nor/mini51.c
 	src/flash/nor/mrvlqspi.c
+	src/flash/nor/niietcm4.c
 	src/flash/nor/non_cfi.c
 	src/flash/nor/nrf51.c
-	src/flash/nor/nuc1x.c
+#	src/flash/nor/nuc1x.c
+	src/flash/nor/numicro.c
 	src/flash/nor/ocl.c
 	src/flash/nor/pic32mx.c
 	src/flash/nor/psoc4.c
@@ -245,6 +253,7 @@ SET(SOURCES_libflash
 	src/flash/nor/stm32f1x.c
 	src/flash/nor/stm32f2x.c
 	src/flash/nor/stm32lx.c
+	src/flash/nor/stm32l4x.c
 	src/flash/nor/stmsmi.c
 	src/flash/nor/str7x.c
 	src/flash/nor/str9x.c
@@ -252,6 +261,8 @@ SET(SOURCES_libflash
 	src/flash/nor/tcl.c
 	src/flash/nor/tms470.c
 	src/flash/nor/virtual.c
+	src/flash/nor/xmc1xxx.c
+	src/flash/nor/xmc4xxx.c
 )
 
 
@@ -261,6 +272,7 @@ SET(SOURCES_libhelper
 	src/helper/configuration.c
 	src/helper/fileio.c
 	src/helper/ioutil_stubs.c
+	src/helper/jep106.c
 	src/helper/jim-nvp.c
 	src/helper/log.c
 	src/helper/options.c
@@ -288,7 +300,7 @@ SET(SOURCES_libjtag
 	src/jtag/drivers/driver.c
 	src/jtag/drivers/dummy.c
 	src/jtag/drivers/ftdi.c
-	src/jtag/drivers/jlink.c
+#	src/jtag/drivers/jlink.c
 	src/jtag/drivers/jtag_vpi.c
 	src/jtag/drivers/libusb1_common.c
 	src/jtag/drivers/mpsse.c
@@ -327,6 +339,8 @@ SET(SOURCES_librtos
 	src/rtos/rtos_embkernel_stackings.c
 	src/rtos/rtos_mqx_stackings.c
 	src/rtos/rtos_standard_stackings.c
+	src/rtos/rtos_ucos_iii_stackings.c
+	src/rtos/uCOS-III.c
 )
 
 
@@ -368,6 +382,8 @@ SET(SOURCES_libtarget
 	src/target/armv4_5_cache.c
 	src/target/armv4_5_mmu.c
 	src/target/armv7a.c
+	src/target/armv7a_cache.c
+	src/target/armv7a_cache_l2x.c
 	src/target/armv7m.c
 	src/target/armv7m_trace.c
 	src/target/avr32_ap7k.c
@@ -390,6 +406,7 @@ SET(SOURCES_libtarget
 	src/target/hla_target.c
 	src/target/image.c
 	src/target/lakemont.c
+	src/target/ls1_sap.c
 	src/target/mips32.c
 	src/target/mips32_dmaacc.c
 	src/target/mips32_pracc.c
@@ -406,6 +423,7 @@ SET(SOURCES_libtarget
 	src/target/nds32_v3_common.c
 	src/target/nds32_v3m.c
 	src/target/quark_x10xx.c
+	src/target/quark_d20xx.c
 	src/target/register.c
 	src/target/smp.c
 	src/target/target.c
@@ -458,8 +476,10 @@ TARGET_INCLUDE_DIRECTORIES(LIBRARY_libopenocd
                            PRIVATE src
                                    src/helper
                                    src/jtag/drivers
+                                   src/jtag/drivers/libjaylink
                                    ${LIBJIM_INCLUDE_DIRECTORIES}
                                    ${CMAKE_CURRENT_BINARY_DIR}/config)
+                                   
 
 IF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	SET(LIBOPENOCD_LDFLAGS -lws2_32)
@@ -474,7 +494,7 @@ LIST(APPEND LIBRARY_libopenocd_defines "HAVE_CONFIG_H")
 LIST(APPEND LIBRARY_libopenocd_defines "PKGDATADIR=\"/usr/local/share/openocd\"")
 LIST(APPEND LIBRARY_libopenocd_defines "RELSTR=\"-local\"")
 LIST(APPEND LIBRARY_libopenocd_defines "GITVERSION=\"0\"")
-LIST(APPEND LIBRARY_libopenocd_defines "PKGBLDDATE=\"2013-12-22-15:10\"")
+LIST(APPEND LIBRARY_libopenocd_defines "PKGBLDDATE=\"2017-06-29-14:10\"")
 LIST(APPEND LIBRARY_libopenocd_defines "BINDIR=\"/usr/this/is/the/bin/dir/define/changeme/baccy\"")
 IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 	LIST(APPEND LIBRARY_libopenocd_defines "__USE_MINGW_ANSI_STDIO")

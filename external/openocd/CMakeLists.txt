@@ -5,7 +5,7 @@ PROJECT("openocd")
 
 INCLUDE(ExternalProject)
 
-SET(VERSION_EXTERNAL "0.9.0")
+SET(VERSION_EXTERNAL "0.10.0")
 
 # Python is required for the patch script.
 FIND_PACKAGE(PythonInterp 2.7 REQUIRED)
@@ -31,7 +31,7 @@ ExternalProject_Add(TARGET_openocd
                     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/openocd-${VERSION_EXTERNAL}
                     EXCLUDE_FROM_ALL 1
                     URL ${CMAKE_CURRENT_SOURCE_DIR}/openocd-${VERSION_EXTERNAL}.tar.bz2
-                    URL_HASH SHA1=bcf99bb21f09513065b2c9ece148ace7d16cdd0c
+                    URL_HASH SHA1=3245d43d60a1a93f8b0f6b1ce20b53e38cab7a4a
                     PATCH_COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tools/apply_patches.py --working-folder ${CMAKE_CURRENT_BINARY_DIR}/openocd-${VERSION_EXTERNAL}/src/TARGET_openocd --patch-folder ${CMAKE_CURRENT_SOURCE_DIR}/patches --strip 1 --copy-folder ${CMAKE_CURRENT_SOURCE_DIR}/copy
                     CMAKE_ARGS ${OPENOCD_CMAKE_ARGS}
                     INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install DESTDIR=${CMAKE_CURRENT_BINARY_DIR}

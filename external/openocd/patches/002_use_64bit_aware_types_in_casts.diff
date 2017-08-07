@@ -1,34 +1,33 @@
 diff -uNr org/jimtcl/jim-exec.c new/jimtcl/jim-exec.c
 --- org/jimtcl/jim-exec.c	2015-04-24 17:11:32.000000000 +0200
 +++ new/jimtcl/jim-exec.c	2016-03-29 10:15:22.000000000 +0200
-@@ -20,6 +20,7 @@
+@@ -20,7 +20,8 @@
   * express or implied warranty.
   */
  
+ #define _GNU_SOURCE
 +#include <stddef.h>
  #include <string.h>
  #include <ctype.h>
  
-@@ -304,7 +305,7 @@
-         }
-         else {
-             Jim_ListAppendElement(interp, errorCode, Jim_NewStringObj(interp, "CHILDSTATUS", -1));
--            Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, (long)pid));
-+            Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, (ptrdiff_t)pid));
-             Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, WEXITSTATUS(waitStatus)));
-         }
-     }
-@@ -331,7 +332,7 @@
- #else
-         Jim_SetResultFormatted(interp, "child %s by signal %d", action, WTERMSIG(waitStatus));
-         Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, WTERMSIG(waitStatus)));
+@@ -325,6 +326,6 @@
+     if (WIFEXITED(waitStatus)) {
+         Jim_ListAppendElement(interp, errorCode, Jim_NewStringObj(interp, "CHILDSTATUS", -1));
 -        Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, (long)pid));
 +        Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, (ptrdiff_t)pid));
-         Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, WTERMSIG(waitStatus)));
- #endif
+         Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, WEXITSTATUS(waitStatus)));
      }
-@@ -412,7 +413,7 @@
-         /* The return value is a list of the pids */
+     else {
+@@ -350,7 +351,7 @@
+         }
+
+-        Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, (long)pid));
++        Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, (ptrdiff_t)pid));
+         Jim_ListAppendElement(interp, errorCode, Jim_NewStringObj(interp, Jim_SignalId(WTERMSIG(waitStatus)), -1));
+         Jim_ListAppendElement(interp, errorCode, Jim_NewStringObj(interp, Jim_SignalName(WTERMSIG(waitStatus)), -1));
+     }
+     Jim_SetGlobalVariableStr(interp, "errorCode", errorCode);
+@@ -435,9 +436,9 @@
          listObj = Jim_NewListObj(interp, NULL, 0);
          for (i = 0; i < numPids; i++) {
 -            Jim_ListAppendElement(interp, listObj, Jim_NewIntObj(interp, (long)pidPtr[i]));
@@ -36,16 +35,19 @@ diff -uNr org/jimtcl/jim-exec.c new/jimtcl/jim-exec.c
          }
          Jim_SetResult(interp, listObj);
          JimDetachPids(interp, numPids, pidPtr);
-@@ -1269,7 +1270,7 @@
- 
+         Jim_Free(pidPtr);
+         return JIM_OK;
+     }
+@@ -1313,7 +1314,7 @@
  static FILE *JimFdOpenForRead(fdtype fd)
  {
 -    return _fdopen(_open_osfhandle((int)fd, _O_RDONLY | _O_TEXT), "r");
 +    return _fdopen(_open_osfhandle((intptr_t)fd, _O_RDONLY | _O_TEXT), "r");
  }
- 
+
  static fdtype JimFileno(FILE *fh)
-@@ -1291,7 +1292,7 @@
+ { 
+@@ -1338,7 +1339,7 @@
  
  static FILE *JimFdOpenForWrite(fdtype fd)
  {
