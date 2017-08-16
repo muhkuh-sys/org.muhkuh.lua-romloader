@@ -100,13 +100,24 @@ proc init_chip {iChiptyp} {
 		# TCM enabled, stack at 0x10000200
 		bp 0x200000 4 hw
 		reg cpsr 0xd3
-		reg r13_svc 0x10000200
+		reg sp_svc 0x10000200
 		reg lr_svc 0x200000
-		arm926ejs cp15 0 0 7 7 0
-		arm926ejs cp15 0 4 7 10 0
-		arm926ejs cp15 0 0 8 7 0
-		arm926ejs cp15 0 0 1 0 0x00050078
-		arm926ejs cp15 0 0 9 1 0x10000001
+
+		# arm926ejs cp15 opcode_1 opcode_2 CRn CRm value
+		# MCR/MRC p15, <Opcode_1>, <Rd>, c15, <CRm>, <Opcode_2>
+		# arm926ejs cp15 0 0 7 7 0
+		# arm926ejs cp15 0 4 7 10 0
+		# arm926ejs cp15 0 0 8 7 0
+		# arm926ejs cp15 0 0 1 0 0x00050078
+		# arm926ejs cp15 0 0 9 1 0x10000001
+
+		# arm mcr pX op1 CRn CRm op2 value
+		arm mcr 15 0 7  7 0 0
+		arm mcr 15 0 7 10 4 0
+		arm mcr 15 0 8  7 0 0
+		arm mcr 15 0 1  0 0 0x00050078
+		arm mcr 15 0 9  1 0 0x10000001
+
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX50 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
 		puts "Setting up registers for netX 10/50/51/52."
@@ -246,3 +257,5 @@ proc init_chip {iChiptyp} {
 # Serial Vectors netX50         0ff0 - 0fff (netX 50: DTCM 0x04000ff0)
 
 echo "Done loading chip_init.tcl"
+
+
