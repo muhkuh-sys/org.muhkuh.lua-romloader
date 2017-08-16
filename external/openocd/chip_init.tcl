@@ -198,13 +198,11 @@ proc init_chip {iChiptyp} {
 		setup_dcc_io $fEnableDCCOutput 0x10001ff0 netx500_dccout_0400_10001e00.bin  0x0400 0x10001e00 0x10001fe0 
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX50 } {
-		setup_dcc_io $fEnableDCCOutput 0x04000ff0 netx50_dccout_0400_04000e00.bin 0x0400 0x04000e00 0x04000fe0 
+		setup_dcc_io $fEnableDCCOutput 0x04000ff0 netx10_50_51_52_dccout_0400_04000e00.bin 0x0400 0x04000e00 0x04000fe0 
 			
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
-		setup_dcc_io $fEnableDCCOutput 0x08000100 netx50_dccout_0400_04000e00.bin 0x0400 0x04000e00 0x04000fe0
+		setup_dcc_io $fEnableDCCOutput 0x08000100 netx10_50_51_52_dccout_0400_04000e00.bin 0x0400 0x04000e00 0x04000fe0
 		
-		mdw 0x0400 0x40
-
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_RELAXED } {
 		# debugmsgs on Cortex-R/A are not supported by openOCD 0.10.0
 		setup_dcc_io false 0x0003fff0 netx4000cr7_dccout_05080000_05080e00.bin 0x05080000 0x05080e00 0x05080fe0

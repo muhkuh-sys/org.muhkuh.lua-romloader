@@ -55,7 +55,7 @@ def build_elf_bin(pars):
 	#sym_netx500_dcc = env_netx500_dcc.GccSymbolTemplate(os.path.join(strTargetPath, 'netx500_dcc_run.h'), elf_netx500_dcc, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/netx500_dcc_run.h'))
 	return elf, bin
 
-# build netx 500 binary
+# build binary for netx 500/100
 class buildpars:
 	env         = atEnv.NETX500
 	cpppath     = []
@@ -63,15 +63,16 @@ class buildpars:
 	defines     = []
 	ldfile      = 'src/netx500.ld'
 	target_dir  = strTargetPath + '/netx500'
-	target_name = 'netx500_dccout_0400_10001e00' # 'netx500_dcc'
+	target_name = 'netx500_dccout_0400_10001e00'
 build_elf_bin(buildpars)
 
-# build netx 50 binary (also usable on netx 10, 51, 52)
+# build binary for netx 10_50_51_52 
 buildpars.env         = atEnv.NETX50
-buildpars.ldfile      = 'src/netx50.ld'
-buildpars.target_dir  = strTargetPath + '/netx50'
-buildpars.target_name = 'netx50_dccout_0400_04000e00' #'netx50_dcc'
+buildpars.ldfile      = 'src/netx10_50_51_52.ld'
+buildpars.target_dir  = strTargetPath + '/netx10_50_51_52'
+buildpars.target_name = 'netx10_50_51_52_dccout_0400_04000e00' 
 build_elf_bin(buildpars)
+
 
 # build netx 4000/R7 binary
 #buildpars.env         = atEnv.NETX4000_RELAXED
