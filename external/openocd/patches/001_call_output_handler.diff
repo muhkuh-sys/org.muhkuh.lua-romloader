@@ -22,7 +22,7 @@ diff -uNr org/src/helper/command.c new/src/helper/command.c
  		free(string);
  	}
  
-@@ -535,16 +533,13 @@
+@@ -535,15 +533,13 @@
  	string = alloc_vprintf(format, ap);
  	if (string != NULL) {
  		strcat(string, "\n");	/* alloc_vprintf guaranteed the buffer to be at least one
@@ -35,7 +35,6 @@ diff -uNr org/src/helper/command.c new/src/helper/command.c
 -		LOG_USER_N("%s", string);
 -		/* We already printed it above
 -		 * command_output_text(context, string); */
--		free(string);
 +					 * char longer */
 +		/* If an output handler has been set, print via the handler. Otherwise, print via LOG_USER_N. */
 +		if (context && context->output_handler) {
@@ -43,9 +42,9 @@ diff -uNr org/src/helper/command.c new/src/helper/command.c
 +		} else {
 +			LOG_USER_N("%s", string);
 +		}
+ 		free(string);
  	}
  
- 	va_end(ap);
 @@ -717,6 +712,13 @@
  	context->output_handler = output_handler;
  	context->output_handler_priv = priv;
