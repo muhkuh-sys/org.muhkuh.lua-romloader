@@ -1,7 +1,0 @@
-
-%include "../romloader_openocd_main.h"
-%include "../../romloader.h"
-
-#include "../romloader_lua.i"
-
-%function %gc romloader *romloader_openocd_create(voidptr_long pvHandle)
