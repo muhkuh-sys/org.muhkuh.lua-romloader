@@ -136,6 +136,39 @@ local function test08(tPlugin, address, value)
 end
 
 
+COMPARE_MAX_ERRORS = 10
+local function compare_readback(strData, strData_readback)
+	print("Readback data:")
+	tester.hexdump(data_readback,16)
+	
+	local iLenData = strData:len()
+	local iLenData_readback = strData_readback:len()
+	if iLenData~=iLenData_readback then
+		error(string.format("Data and readback data differ in length: %d <-> %d", iLenData, iLenData_readback))
+	end
+	
+	local iCompErrs = 0
+	for i=1, iLenData do
+		local bData = strData:byte(i)
+		local bData_readback = strData_readback:byte(i)
+		if bData~=bData_readback then
+			print(string.format("Readback data does not match - offset 0x%08x, data:0x%02x, readback: 0x%02x", i-1, bData, bData_readback))
+			iCompErrs = iCompErrs + 1
+			if iCompErrs >= COMPARE_MAX_ERRORS then
+				print("Too many errors, stopping")
+				break
+			end
+		end
+	end
+	
+	if iCompErrs>0 then
+		error("Readback data does not match written values!")
+	else
+		print("Ok!")
+		print(" ")
+		return true
+	end
+end
 --------------------------------------------------------------------------
 -- execute binary, check output in message callback against expected output
 --------------------------------------------------------------------------
@@ -392,13 +425,7 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 		tPlugin:write_data32(address, value)
 	end
 	data_readback = tester.stdRead(none, tPlugin, ulTestAreaStart, data:len())
-	print("Readback data:")
-	tester.hexdump(data_readback,16)
-	if data~=data_readback then
-		error("Readback data does not match written values!")
-	end
-	print("Ok!")
-	print(" ")
+	assert(compare_readback(data, data_readback))
 
 	print("---------------------------------------")
 	print(string.format("** Loop %d **", uiLoopCounter))
@@ -415,13 +442,7 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 		tPlugin:write_data16(address, value)
 	end
 	data_readback = tester.stdRead(none, tPlugin, ulTestAreaStart, data:len())
-	print("Readback data:")
-	tester.hexdump(data_readback,16)
-	if data~=data_readback then
-		error("Readback data does not match written values!")
-	end
-	print("Ok!")
-	print(" ")
+	assert(compare_readback(data, data_readback))
 
 	print("---------------------------------------")
 	print(string.format("** Loop %d **", uiLoopCounter))
@@ -438,13 +459,7 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 		tPlugin:write_data08(address, value)
 	end
 	data_readback = tester.stdRead(none, tPlugin, ulTestAreaStart, data:len())
-	print("Readback data:")
-	tester.hexdump(data_readback,16)
-	if data~=data_readback then
-		error("Readback data does not match written values!")
-	end
-	print("Ok!")
-	print(" ")
+	assert(compare_readback(data, data_readback))
 
 	print("---------------------------------------")
 	print(string.format("** Loop %d **", uiLoopCounter))
@@ -465,13 +480,7 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 		data_readback = data_readback .. string.char( bit.band( bit.rshift(value, 16), 0xff) )
 		data_readback = data_readback .. string.char( bit.band( bit.rshift(value, 24), 0xff) )
 	end
-	print("Readback data:")
-	tester.hexdump(data_readback,16)
-	if data~=data_readback then
-		error("Readback data does not match written values!")
-	end
-	print("Ok!")
-	print(" ")
+	assert(compare_readback(data, data_readback))
 
 	print("---------------------------------------")
 	print(string.format("** Loop %d **", uiLoopCounter))
@@ -490,13 +499,7 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 		data_readback = data_readback .. string.char( bit.band(            value,      0xff) )
 		data_readback = data_readback .. string.char( bit.band( bit.rshift(value,  8), 0xff) )
 	end
-	print("Readback data:")
-	tester.hexdump(data_readback,16)
-	if data~=data_readback then
-		error("Readback data does not match written values!")
-	end
-	print("Ok!")
-	print(" ")
+	assert(compare_readback(data, data_readback))
 
 	print("---------------------------------------")
 	print(string.format("** Loop %d **", uiLoopCounter))
@@ -514,14 +517,7 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 		print(string.format("read data: 0x%08X = 0x%02X", address, value))
 		data_readback = data_readback .. string.char( bit.band(            value,      0xff) )
 	end
-	print("Readback data:")
-	tester.hexdump(data_readback,16)
-	if data~=data_readback then
-		error("Readback data does not match written values!")
-	end
-	print("Ok!")
-	print(" ")
-
+	assert(compare_readback(data, data_readback))
 
 	print("---------------------------------------")
 	print(string.format("** Loop %d **", uiLoopCounter))
