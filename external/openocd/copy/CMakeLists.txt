@@ -479,7 +479,7 @@ TARGET_INCLUDE_DIRECTORIES(LIBRARY_libopenocd
                                    src/jtag/drivers/libjaylink
                                    ${LIBJIM_INCLUDE_DIRECTORIES}
                                    ${CMAKE_CURRENT_BINARY_DIR}/config)
-                                   
+
 
 IF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	SET(LIBOPENOCD_LDFLAGS -lws2_32)
@@ -504,7 +504,9 @@ TARGET_COMPILE_DEFINITIONS(LIBRARY_libopenocd
                            PRIVATE ${LIBRARY_libopenocd_defines})
 
 # Set the name of the output file to "openocd".
-SET_TARGET_PROPERTIES(LIBRARY_libopenocd PROPERTIES OUTPUT_NAME "openocd")
+SET_TARGET_PROPERTIES(LIBRARY_libopenocd PROPERTIES
+                      PREFIX ""
+                      OUTPUT_NAME "openocd")
 
 
 #-----------------------------------------------------------------------------
