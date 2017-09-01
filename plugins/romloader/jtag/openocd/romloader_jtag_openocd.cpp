@@ -258,6 +258,7 @@ int romloader_jtag_openocd::openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 		{
 			/* Close the shared library. */
 			sharedlib_close(pvSharedLibraryHandle);
+			ptDevice->pvSharedLibraryHandle = NULL;
 		}
 	}
 
@@ -273,10 +274,12 @@ void romloader_jtag_openocd::openocd_close(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 		if( ptDevice->pvOpenocdContext!=NULL )
 		{
 			ptDevice->tFunctions.tFn.pfnUninit(ptDevice->pvOpenocdContext);
+			ptDevice->pvOpenocdContext=NULL;
 		}
 
 		/* Close the shared library. */
 		sharedlib_close(ptDevice->pvSharedLibraryHandle);
+		ptDevice->pvSharedLibraryHandle=NULL;
 	}
 }
 
