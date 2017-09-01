@@ -343,37 +343,13 @@ int romloader_jtag_openocd::initialize(void)
 
 /* FIXME: read this from some kind of configuration file. */
 
-const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::atInterfaceCfg[5] =
+const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::atInterfaceCfg[] =
 {
-	{
-		"NXJTAG-USB",
-		"setup_interface NXJTAG-USB",
-		"probe_interface"
-	},
-
-	{
-		"Amontec_JTAGkey",
-		"setup_interface Amontec_JTAGkey",
-		"probe_interface"
-	},
-
-	{
-		"NXHX50-RE",
-		"setup_interface NXHX50-RE",
-		"probe_interface"
-	},
-
-	{
-		"NXHX_51-ETM",
-		"setup_interface NXHX_51-ETM",
-		"probe_interface"
-	},
-
-	{
-		"NXHX_500-ETM",
-		"setup_interface NXHX_500-ETM",
-		"probe_interface"
-	}
+	{"NXJTAG-USB",             "setup_interface NXJTAG-USB",            "probe_interface"},
+	{"Amontec_JTAGkey",        "setup_interface Amontec_JTAGkey",       "probe_interface"},
+	{"Olimex_ARM_USB_TINY_H",  "setup_interface Olimex_ARM_USB_TINY_H", "probe_interface"},
+	{"NXHX_500/50/51/10",      "setup_interface NXHX_500_50_51_10",     "probe_interface"},
+	{"NXHX_90-JTAG",           "setup_interface NXHX_90-JTAG",          "probe_interface"}, 
 };
 
 

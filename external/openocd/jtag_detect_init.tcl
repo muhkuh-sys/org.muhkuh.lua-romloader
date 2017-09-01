@@ -9,11 +9,9 @@ puts "loading script jtag_detect_init.tcl"
 #   Init/probe for JTAG interfaces
 # ###################################################################
 
-# Configure an NXHX JTAG interface.
-proc setup_interface_nxhx {strBoardName} {
+proc setup_interface_nxhx_generic {} {
 	interface ftdi
 	transport select jtag
-	ftdi_device_desc $strBoardName
 	ftdi_vid_pid 0x0640 0x0028
 	adapter_khz 100
 	
@@ -21,7 +19,6 @@ proc setup_interface_nxhx {strBoardName} {
 	ftdi_layout_signal nTRST -data 0x0100
 	ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200
 }
-
 
 # hilscher_nxhx_onboard.tcl:
 #interface ftdi
@@ -87,24 +84,15 @@ proc setup_interface_jtagkey {} {
 	ftdi_layout_signal nSRST -data 0x0200 -noe 0x0800
 }
 
-
 # Configure an interface.
 proc setup_interface {strInterfaceID} {
 	echo "+setup_interface $strInterfaceID"
-	if {$strInterfaceID == "NXJTAG-USB" } {
-		setup_interface_nxjtag_usb
-		
-	} elseif {$strInterfaceID == "Amontec_JTAGkey" } {
-		setup_interface_jtagkey
-	
-	} elseif {$strInterfaceID == "NXHX50-RE" } {
-		setup_interface_nxhx "NXHX50-RE"
-		
-	} elseif {$strInterfaceID == "NXHX_51-ETM" } {
-		setup_interface_nxhx "NXHX 51-ETM"
-		
-	} elseif {$strInterfaceID == "NXHX_500-ETM" } {
-		setup_interface_nxhx "NXHX 500-ETM"
+
+	if       {$strInterfaceID == "NXJTAG-USB"}            {setup_interface_nxjtag_usb
+	} elseif {$strInterfaceID == "Olimex_ARM_USB_TINY_H"} {setup_interface_olimex_arm_usb_tiny_h
+	} elseif {$strInterfaceID == "Amontec_JTAGkey"}       {setup_interface_jtagkey
+	} elseif {$strInterfaceID == "NXHX_500_50_51_10"}     {setup_interface_nxhx_generic
+	} elseif {$strInterfaceID == "NXHX_90-JTAG"}          {setup_interface_nxhx90_jtag
 	} 
 	
 	echo "-setup_interface $strInterfaceID"
@@ -359,3 +347,4 @@ proc reset_netx4000 {} {
 }
 
 echo "Done loading jtag_detect_init.tcl"
+
