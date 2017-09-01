@@ -82,8 +82,9 @@ build_elf_bin(buildpars)
 #build_elf_bin(buildpars)
 
 # build netx 90 COM binary
-#buildpars.env         = atEnv.NETX90_MPW
-#buildpars.ldfile      = 'src/netx90.ld'
-#buildpars.target_dir  = strTargetPath + '/netx90'
-#buildpars.target_name = 'netx90_com_dccout' 
-#build_elf_bin(buildpars)
+buildpars.env         = atEnv.NETX90_MPW
+buildpars.ldfile      = 'src/netx90.ld'
+buildpars.target_dir  = strTargetPath + '/netx90'
+buildpars.target_name = 'netx90_com_dccout' 
+build_elf_bin(buildpars)
+
