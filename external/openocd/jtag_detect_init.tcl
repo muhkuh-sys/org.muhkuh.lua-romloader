@@ -22,12 +22,35 @@ proc setup_interface_nxhx {strBoardName} {
 	ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200
 }
 
+
+# hilscher_nxhx_onboard.tcl:
+#interface ftdi
+#ftdi_vid_pid 0x0640 0x0028
+#
+#ftdi_layout_init 0x0308 0x030b
+#ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
+#ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200
+
+
+proc setup_interface_nxhx90_jtag {} {
+	interface ftdi
+	transport select jtag
+	ftdi_device_desc "NXHX 90-JTAG"
+	ftdi_vid_pid 0x1939 0x002C
+	adapter_khz 50
+	
+	ftdi_layout_init 0x0308 0x030b
+	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
+	ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200 
+}
+
+
 proc setup_interface_nxjtag_usb {} {
 	interface ftdi
 	transport select jtag
 	ftdi_device_desc "NXJTAG-USB"
 	ftdi_vid_pid 0x1939 0x0023
-	adapter_khz 100
+	adapter_khz 50
 	
 	ftdi_layout_init 0x0308 0x030b
 	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
@@ -184,6 +207,7 @@ proc probe_cpu {strCpuID} {
 		
 	# netx 90 - WIP
 	} elseif { $strCpuID == "netX90_COM" } {
+		echo "+ probe_cpu netX90_COM"
 		jtag newtap netx90 dap -expected-id 0x6ba00477 -irlen 4
 		jtag newtap netx90 tap -expected-id 0x102046ad -irlen 4
 		jtag configure netx90.dap -event setup { global SC_CFG_RESULT ; echo {Yay - setup netx 90} ; set SC_CFG_RESULT {OK} }
@@ -222,6 +246,7 @@ proc reset_netx90_COM {} {
 	cortex_m reset_config sysresetreq
 	
 	init
+	reset init
 	#halt
 }
 
