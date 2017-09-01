@@ -14,27 +14,37 @@ set ROMLOADER_CHIPTYP_NETX90_MPW 10
 # fEnableDCCOutput       true: download DCC code, set serial vectors and buffer, false: clear serial vectors
 # ulSerialVectorAddr     Address of serial vectors
 # strDccCodeFile         DCC code filename
+# strArmThumb            "arm" or "thumb"
 # ulDccCodeAddr          Address of DCC code
 # ulDccBufferAddr        Address of DCC buffer
 # ulDccBufferPointerAddr Address of DCC buffer pointer
 
-proc setup_dcc_io {fEnableDCCOutput {ulSerialVectorAddr 0} {strDccCodeFile ""}  {ulDccCodeAddr 0} {ulDccBufferAddr 0} {ulDccBufferPointerAddr 0}} {
+proc setup_dcc_io {fEnableDCCOutput {ulSerialVectorAddr 0} {strDccCodeFile ""} {strArmThumb "arm"} {ulDccCodeAddr 0}  {ulDccBufferAddr 0} {ulDccBufferPointerAddr 0}} {
 	if { $fEnableDCCOutput == "true" } {
 		puts "Setting up DCC output"
 
 		# dcc put/flush routines
 		puts "Loading DCC code"
 		load_image $strDccCodeFile $ulDccCodeAddr bin
-		
+
 		puts "Setting serial vectors"
-		mww       $ulSerialVectorAddr         0                          ; # Get
-		mww [expr $ulSerialVectorAddr + 4  ]  $ulDccCodeAddr             ; # Put
-		mww [expr $ulSerialVectorAddr + 8  ]  0                          ; # Peek
-		mww [expr $ulSerialVectorAddr + 12 ]  [expr $ulDccCodeAddr + 4 ] ; # Flush
+		
+		if { $strArmThumb == "thumb" } {
+			set iOffset 1
+		} else {
+			set iOffset 0
+		}
+
+		mww       $ulSerialVectorAddr         0                                    ; # Get
+		mww [expr $ulSerialVectorAddr + 4  ]  [expr $ulDccCodeAddr + $iOffset]     ; # Put
+		mww [expr $ulSerialVectorAddr + 8  ]  0                                    ; # Peek
+		mww [expr $ulSerialVectorAddr + 12 ]  [expr $ulDccCodeAddr + 4 + $iOffset] ; # Flush
 		
 		# reset buffer pointer
 		puts "Setting buffer pointer"
 		mww $ulDccBufferPointerAddr  $ulDccBufferAddr
+
+		target_request debugmsgs enable
 		
 	} else {
 		puts "Setting up for no DCC output (Clearing serial vectors)"
@@ -48,6 +58,7 @@ proc setup_dcc_io {fEnableDCCOutput {ulSerialVectorAddr 0} {strDccCodeFile ""}  
 	mdw [expr $ulSerialVectorAddr + 4  ] 
 	mdw [expr $ulSerialVectorAddr + 8  ] 
 	mdw [expr $ulSerialVectorAddr + 12 ] 
+	mdw $ulDccBufferPointerAddr
 }
 
 proc init_chip {iChiptyp} {
@@ -147,6 +158,16 @@ proc init_chip {iChiptyp} {
 	
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_RELAXED } {
 	
+		# test code           0x00024000
+		# serial vectors      0x2009fff0
+		# 
+		# DCC code            0x00020400
+		# DCC buffer          0x00020e00
+		# DCC buffer pointer  0x00020fe0
+		# 
+		# JTAG breakpoint     0x00023ffc
+		# JTAG SP             0x2009ff80
+
 		puts "Init netx 4000 - WIP"
 
 		# enable DTCM
@@ -185,15 +206,71 @@ proc init_chip {iChiptyp} {
 		# puts $value(0)
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW } {
-		puts "Init netx 90 MPW"
+	
+		puts "Setting up registers for netx 90 MPW"
+
+		puts "Setting ananlog parameters"
+		# d:\projekt\netx90\blinki_jtag\Blinki\scripts\netx90_analog_init.cfg
+		mww 0xff0016c0 0x00000000
+		mww 0xff0016c4 0x00000000
+		mww 0xff0016c8 0x00049f04
+		
+		# Configure the PLL.
+		mww 0xFF0016C8 0x00049f04
+		
+		# Start the PLL.
+		mww 0xFF0016C8 0x00049f05
+		
+		# Release the PLL reset.
+		mww 0xFF0016C8 0x00049f07
+		
+		# Disable the PLL bypass.
+		mww 0xFF0016C8 0x00049f03
+		
+		# Switch to 100MHz clock by setting d_dcdc_use_clk to 1.
+		mww 0xFF0016C8 0x01049f03
+		
+		# Lock the analog parameter and hide the ROM.
+		mww 0xff0016cc 0x00000005
+		
+		
+		
+		puts "Configuring pad ctrl for MMIO4-7 (input, disable pull-down)"
+		proc read_data32 {addr} {
+			set value(0) 0
+			mem2array value 32 $addr 1
+			return $value(0)
+		}
+
+		proc unlock_asic_ctrl {} {
+			set accesskey [read_data32 0xff4012c0]
+			mww 0xff4012c0 [expr $accesskey]
+		}
+
+		unlock_asic_ctrl
+		mww 0xff4010c8 0x00000000
+		
+		unlock_asic_ctrl
+		mww 0xff4010cc 0x00000000
+		
+		unlock_asic_ctrl
+		mww 0xff4010d0 0x00000000
+		
+		unlock_asic_ctrl
+		mww 0xff4010d4 0x00000000
+		
+		mdw 0
+		mdw 0xff4010c8
+		mdw 0xff4010cc
+		mdw 0xff4010d0
+		mdw 0xff4010d4
+		
+		
 		reg xPSR 0x01000000
-		# reg MSP 0x00040000
-		
-		bp 0x2009fff8 4 hw
-		reg cpsr 0xd3 #?
-		reg sp_svc 0x2009fff8
-		reg lr_svc 0x2009fffc
-		
+		# reg msp 0x00040000		
+		bp 0x00023ffd 2 hw
+		reg sp 0x2009ff80
+		reg lr 0x00023ffd
 		
 	} else {
 		puts "Unknown chip type $iChiptyp"
@@ -206,17 +283,17 @@ proc init_chip {iChiptyp} {
 	########################################
 	
 	if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX500 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX100 } {
-		setup_dcc_io $fEnableDCCOutput 0x10001ff0 netx500_dccout_0400_10001e00.bin  0x0400 0x10001e00 0x10001fe0 
+		setup_dcc_io $fEnableDCCOutput 0x10001ff0 netx500_dccout_0400_10001e00.bin arm 0x0400 0x10001e00 0x10001fe0 
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX50 } {
-		setup_dcc_io $fEnableDCCOutput 0x04000ff0 netx10_50_51_52_dccout_0400_04000e00.bin 0x0400 0x04000e00 0x04000fe0 
+		setup_dcc_io $fEnableDCCOutput 0x04000ff0 netx10_50_51_52_dccout_0400_04000e00.bin arm 0x0400 0x04000e00 0x04000fe0 
 			
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
-		setup_dcc_io $fEnableDCCOutput 0x08000100 netx10_50_51_52_dccout_0400_04000e00.bin 0x0400 0x04000e00 0x04000fe0
+		setup_dcc_io $fEnableDCCOutput 0x08000100 netx10_50_51_52_dccout_0400_04000e00.bin arm 0x0400 0x04000e00 0x04000fe0
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_RELAXED } {
 		# debugmsgs on Cortex-R/A are not supported by openOCD 0.10.0
-		setup_dcc_io false 0x0003fff0 netx4000cr7_dccout_05080000_05080e00.bin 0x05080000 0x05080e00 0x05080fe0
+		setup_dcc_io false 0x0003fff0 netx4000cr7_dccout_05080000_05080e00.bin arm 0x05080000 0x05080e00 0x05080fe0
 		
 		#netx 4000 UART iovcectors: 0x04101445 0x04101479 0x04101449 0x0410144D 
 		#puts "Debug: setting UART vectors on netx 4000"
@@ -226,22 +303,20 @@ proc init_chip {iChiptyp} {
 		#mww 0x0003fffc 0x0410144D ; # Flush
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW } {
-		
+		setup_dcc_io $fEnableDCCOutput 0x2009fff0 netx90_com_dccout.bin thumb 0x00020400 0x00020e00 0x00020fe0
 		
 	} else {
 		puts "Unknown chip type $iChiptyp"
+		
 	}
 	
 	if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX500 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX100 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 ||
-		$iChiptyp == $ROMLOADER_CHIPTYP_NETX50 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B ||
-		$iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW } {
+		$iChiptyp == $ROMLOADER_CHIPTYP_NETX50 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
 		arm7_9 dcc_downloads enable
 		arm7_9 fast_memory_access enable
-		target_request debugmsgs enable
 	}
 	
-	# Is this speed ok or should it be 1 MHz?
-	adapter_khz 6000
+	adapter_khz 1000
 	
 }
 
