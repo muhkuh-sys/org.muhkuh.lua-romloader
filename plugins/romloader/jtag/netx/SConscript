@@ -63,14 +63,14 @@ class buildpars:
 	defines     = []
 	ldfile      = 'src/netx500.ld'
 	target_dir  = strTargetPath + '/netx500'
-	target_name = 'netx500_dccout_0400_10001e00'
+	target_name = 'dcc_netx500'
 build_elf_bin(buildpars)
 
 # build binary for netx 10_50_51_52 
 buildpars.env         = atEnv.NETX50
 buildpars.ldfile      = 'src/netx10_50_51_52.ld'
 buildpars.target_dir  = strTargetPath + '/netx10_50_51_52'
-buildpars.target_name = 'netx10_50_51_52_dccout_0400_04000e00' 
+buildpars.target_name = 'dcc_netx10_50_51_52' 
 build_elf_bin(buildpars)
 
 
@@ -85,6 +85,6 @@ build_elf_bin(buildpars)
 buildpars.env         = atEnv.NETX90_MPW
 buildpars.ldfile      = 'src/netx90.ld'
 buildpars.target_dir  = strTargetPath + '/netx90'
-buildpars.target_name = 'netx90_com_dccout' 
+buildpars.target_name = 'dcc_netx90_com' 
 build_elf_bin(buildpars)
 

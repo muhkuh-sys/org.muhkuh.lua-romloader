@@ -283,13 +283,13 @@ proc init_chip {iChiptyp} {
 	########################################
 	
 	if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX500 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX100 } {
-		setup_dcc_io $fEnableDCCOutput 0x10001ff0 netx500_dccout_0400_10001e00.bin arm 0x0400 0x10001e00 0x10001fe0 
+		setup_dcc_io $fEnableDCCOutput 0x10001ff0 dcc_netx500.bin arm 0x0400 0x10001e00 0x10001fe0 
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX50 } {
-		setup_dcc_io $fEnableDCCOutput 0x04000ff0 netx10_50_51_52_dccout_0400_04000e00.bin arm 0x0400 0x04000e00 0x04000fe0 
+		setup_dcc_io $fEnableDCCOutput 0x04000ff0 dcc_netx10_50_51_52.bin arm 0x0400 0x04000e00 0x04000fe0 
 			
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
-		setup_dcc_io $fEnableDCCOutput 0x08000100 netx10_50_51_52_dccout_0400_04000e00.bin arm 0x0400 0x04000e00 0x04000fe0
+		setup_dcc_io $fEnableDCCOutput 0x08000100 dcc_netx10_50_51_52.bin arm 0x0400 0x04000e00 0x04000fe0
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_RELAXED } {
 		# debugmsgs on Cortex-R/A are not supported by openOCD 0.10.0
@@ -303,7 +303,7 @@ proc init_chip {iChiptyp} {
 		#mww 0x0003fffc 0x0410144D ; # Flush
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW } {
-		setup_dcc_io $fEnableDCCOutput 0x2009fff0 netx90_com_dccout.bin thumb 0x00020400 0x00020e00 0x00020fe0
+		setup_dcc_io $fEnableDCCOutput 0x2009fff0 dcc_netx90_com.bin thumb 0x00020400 0x00020e00 0x00020fe0
 		
 	} else {
 		puts "Unknown chip type $iChiptyp"
