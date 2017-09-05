@@ -391,25 +391,36 @@ int muhkuh_openocd_write_image(void *pvContext, uint32_t ulNetxAddress, const ui
  */
 typedef struct {
 	uint8_t* pucDccData;
-	unsigned long ulDccDataSize;
+	unsigned long ulDccDataSize; 	/* data size without the terminating null byte. */
 } DCC_LINE_BUFFER_T;
 
 /* Store a 0-terminated line in the buffer. */
 void dcc_line_buffer_put(DCC_LINE_BUFFER_T* ptBuffer, const char *line)
 {
-	unsigned long ulDccDataSize = strlen(line);
-	uint8_t* pucDccData = malloc(ulDccDataSize);
+	unsigned long ulDccDataSize;
+	uint8_t* pucDccData;
 
-	if (pucDccData != NULL)
+	if (line == NULL)
 	{
-		strcpy(pucDccData, line);
-		ptBuffer->ulDccDataSize = ulDccDataSize;
-		ptBuffer->pucDccData = pucDccData;
+		fprintf(stderr, "dcc_line_buffer_put: line == NULL\n");
 	}
 	else
 	{
-		printf("Error: failed to allocate buffer for DCC debug message\n");
+		ulDccDataSize = strlen(line);
+		pucDccData = malloc(ulDccDataSize+1);
+		if (pucDccData != NULL)
+		{
+			strcpy(pucDccData, line);
+			ptBuffer->ulDccDataSize = ulDccDataSize;
+			ptBuffer->pucDccData = pucDccData;
+		}
+		else
+		{
+			printf("!Error: failed to allocate buffer for DCC debug message\n");
+		}
+
 	}
+
 }
 
 /* Remove the current line from the buffer, if any.
@@ -422,7 +433,7 @@ void dcc_line_buffer_clear(DCC_LINE_BUFFER_T* ptBuffer, int fUsed)
 	{
 		if (fUsed == 0)
 		{
-			printf("dropping debug message (not passed to Lua callback): %s\n", ptBuffer->pucDccData);
+			fprintf(stderr,"dropping debug message (not passed to Lua callback): %s\n", ptBuffer->pucDccData);
 		}
 
 		free(ptBuffer->pucDccData);
