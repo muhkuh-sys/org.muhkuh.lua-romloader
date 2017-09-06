@@ -298,8 +298,10 @@ proc reset_netx4000 {} {
 
 	puts "+reset_netx4000"
 	
-	reset_config srst_only separate
-	#reset_config trst_and_srst separate
+	#reset_config srst_only separate
+	# Use both SRST and TRST, since that is more reliable and ensures that 
+	# the same reset vector is read in all cases.
+	reset_config trst_and_srst separate
 	adapter_nsrst_delay 500
 	adapter_nsrst_assert_width 50
 	
