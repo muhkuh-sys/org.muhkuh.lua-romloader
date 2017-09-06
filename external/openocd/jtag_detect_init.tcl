@@ -13,7 +13,7 @@ proc setup_interface_nxhx_generic {} {
 	interface ftdi
 	transport select jtag
 	ftdi_vid_pid 0x0640 0x0028
-	adapter_khz 100
+	adapter_khz 1000
 	
 	ftdi_layout_init 0x0108 0x010b
 	ftdi_layout_signal nTRST -data 0x0100
@@ -34,7 +34,7 @@ proc setup_interface_nxhx90_jtag {} {
 	transport select jtag
 	ftdi_device_desc "NXHX 90-JTAG"
 	ftdi_vid_pid 0x1939 0x002C
-	adapter_khz 50
+	adapter_khz 1000
 	
 	ftdi_layout_init 0x0308 0x030b
 	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
@@ -47,7 +47,7 @@ proc setup_interface_nxjtag_usb {} {
 	transport select jtag
 	ftdi_device_desc "NXJTAG-USB"
 	ftdi_vid_pid 0x1939 0x0023
-	adapter_khz 50
+	adapter_khz 1000
 	
 	ftdi_layout_init 0x0308 0x030b
 	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
@@ -63,7 +63,7 @@ proc setup_interface_olimex_arm_usb_tiny_h {} {
 	transport select jtag
 	ftdi_device_desc "Olimex OpenOCD JTAG ARM-USB-TINY-H"
 	ftdi_vid_pid 0x15ba 0x002a
-	adapter_khz 100
+	adapter_khz 1000
 	
 	ftdi_layout_init 0x0808 0x0a1b
 	ftdi_layout_signal nSRST -oe 0x0200
@@ -77,7 +77,7 @@ proc setup_interface_jtagkey {} {
 	transport select jtag
 	ftdi_device_desc "Amontec JTAGkey"
 	ftdi_vid_pid 0x0403 0xcff8
-	adapter_khz 100
+	adapter_khz 1000
 	
 	ftdi_layout_init 0x0c08 0x0f1b
 	ftdi_layout_signal nTRST -data 0x0100 -noe 0x0400
