@@ -18,6 +18,13 @@ mkdir ${BUILD_DIR}/lua5.3
 mkdir ${BUILD_DIR}/lua5.3/build_requirements
 
 
+# Install jonchki v0.0.1.1 .
+python2.7 jonchki/jonchkihere.py --jonchki-version 0.0.1.1 ${BUILD_DIR}
+
+# This is the path to the jonchki tool.
+JONCHKI=${BUILD_DIR}/jonchki-0.0.1.1/jonchki
+
+
 # Build the external components.
 pushd ${BUILD_DIR}/external
 cmake -DBUILDCFG_ONLY_JONCHKI_CFG="ON" -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${PRJ_DIR}/external
@@ -31,7 +38,7 @@ CMAKE_PATHS="-Dopenocd_DIR='${BUILD_DIR}/external/openocd/install/cmake' -Dlibus
 pushd ${BUILD_DIR}/lua5.1/build_requirements
 cmake -DBUILDCFG_ONLY_JONCHKI_CFG="ON" -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${PRJ_DIR}
 make
-lua5.1 ${JONCHKI} --verbose debug --syscfg ${PRJ_DIR}/jonchki/jonchkisys.cfg --prjcfg ${PRJ_DIR}/jonchki/jonchkicfg.xml ${JONCHKI_SYSTEM} --build-dependencies lua5.1-romloader-*.xml
+${JONCHKI} --verbose debug --syscfg ${PRJ_DIR}/jonchki/jonchkisys.cfg --prjcfg ${PRJ_DIR}/jonchki/jonchkicfg.xml ${JONCHKI_SYSTEM} --build-dependencies lua5.1-romloader-*.xml
 popd
 
 # Build the LUA5.1 version.
@@ -44,7 +51,7 @@ popd
 pushd ${BUILD_DIR}/lua5.2/build_requirements
 cmake -DBUILDCFG_ONLY_JONCHKI_CFG="ON" -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${PRJ_DIR}
 make
-lua5.1 ${JONCHKI} --verbose info --syscfg ${PRJ_DIR}/jonchki/jonchkisys.cfg --prjcfg ${PRJ_DIR}/jonchki/jonchkicfg.xml ${JONCHKI_SYSTEM} --build-dependencies lua5.2-romloader-*.xml
+${JONCHKI} --verbose info --syscfg ${PRJ_DIR}/jonchki/jonchkisys.cfg --prjcfg ${PRJ_DIR}/jonchki/jonchkicfg.xml ${JONCHKI_SYSTEM} --build-dependencies lua5.2-romloader-*.xml
 popd
 
 # Build the LUA5.2 version.
@@ -57,7 +64,7 @@ popd
 pushd ${BUILD_DIR}/lua5.3/build_requirements
 cmake -DBUILDCFG_ONLY_JONCHKI_CFG="ON" -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${PRJ_DIR}
 make
-lua5.1 ${JONCHKI} --verbose info --syscfg ${PRJ_DIR}/jonchki/jonchkisys.cfg --prjcfg ${PRJ_DIR}/jonchki/jonchkicfg.xml ${JONCHKI_SYSTEM} --build-dependencies lua5.3-romloader-*.xml
+${JONCHKI} --verbose info --syscfg ${PRJ_DIR}/jonchki/jonchkisys.cfg --prjcfg ${PRJ_DIR}/jonchki/jonchkicfg.xml ${JONCHKI_SYSTEM} --build-dependencies lua5.3-romloader-*.xml
 popd
 
 # Build the LUA5.3 version.

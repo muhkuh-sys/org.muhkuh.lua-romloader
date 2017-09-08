@@ -35,7 +35,7 @@ lxc exec ${CONTAINER} -- bash -c 'mount --bind /tmp/platform_targets /tmp/work/p
 lxc exec ${CONTAINER} -- bash -c 'apt-get update --assume-yes'
 
 # Install the project specific packages.
-lxc exec ${CONTAINER} -- bash -c 'apt-get install --assume-yes lua5.1 lua-filesystem lua-expat lua51-mhash lua-sql-sqlite3 libudev-dev'
+lxc exec ${CONTAINER} -- bash -c 'apt-get install --assume-yes libudev-dev'
 
 # Build the 64bit version.
 lxc exec ${CONTAINER} -- bash -c 'cd /tmp/work && bash .build04_linux.sh'
