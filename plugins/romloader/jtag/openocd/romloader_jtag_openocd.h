@@ -137,6 +137,13 @@ private:
 
 	static const char *pcResetCode;
 
+	/* This is the path to the folder where the romloader_jtag plugin, the
+	 * openocd shared object and the TCL scripts live.
+	 */
+	char *m_pcPluginPath;
+	/* This is the full path to the openocd shared object. */
+	char *m_pcOpenocdSharedObjectPath;
+
 	bool fJtagDeviceIsConnected;
 	ROMLOADER_JTAG_DEVICE_T m_tJtagDevice;
 
@@ -148,6 +155,9 @@ private:
 	size_t m_sizDetectedCnt;
 	size_t m_sizDetectedMax;
 
+
+	void get_plugin_path(void);
+	void get_openocd_path(void);
 
 	void free_detect_entries(void);
 	int add_detected_entry(const char *pcInterface, const char *pcTarget);

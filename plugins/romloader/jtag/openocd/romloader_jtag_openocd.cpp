@@ -7,20 +7,13 @@
 #include "shared_library.h"
 
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
-/* FIXME: search the shared library in some common places.
- * One solution would be the same folder as this LUA plugin. Here is a way to get the full path of something in Windows: https://msdn.microsoft.com/en-us/library/windows/desktop/ms683197.aspx
- * Here is a discussion on StackOverflow on this topic: https://stackoverflow.com/questions/6924195/get-dll-path-at-runtime . Note the 2 differrent approaches with "__ImageBase" and "GetModuleHandleEx".
- */
-#define OPENOCD_SHARED_LIBRARY_FILENAME "openocd.dll"
+#       define OPENOCD_SHARED_LIBRARY_FILENAME "openocd.dll"
+#       include <windows.h>
 
 #elif defined(__GNUC__)
-/* FIXME: search the shared library in some common places.
- * One solution would be the same folder as this LUA plugin. Here is a way to get the full path of something in Windows: https://msdn.microsoft.com/en-us/library/windows/desktop/ms683197.aspx
- * The same is possible for Linux: http://stackoverflow.com/questions/1642128/linux-how-to-get-full-name-of-shared-object-just-loaded-from-the-constructor
- */
-#define OPENOCD_SHARED_LIBRARY_FILENAME "/tmp/n/libopenocd.so"
-
-
+#       define OPENOCD_SHARED_LIBRARY_FILENAME "openocd.so"
+#       include <dlfcn.h>
+#       include <unistd.h>
 #endif
 
 
@@ -30,8 +23,13 @@ romloader_jtag_openocd::romloader_jtag_openocd(void)
  , m_ptDetected(NULL)
  , m_sizDetectedCnt(0)
  , m_sizDetectedMax(0)
+ , m_pcPluginPath(NULL)
+ , m_pcOpenocdSharedObjectPath(NULL)
 {
 	memset(&m_tJtagDevice, 0, sizeof(ROMLOADER_JTAG_DEVICE_T));
+
+	get_plugin_path();
+	get_openocd_path();
 }
 
 
@@ -39,6 +37,258 @@ romloader_jtag_openocd::romloader_jtag_openocd(void)
 romloader_jtag_openocd::~romloader_jtag_openocd(void)
 {
 	free_detect_entries();
+
+	if( m_pcPluginPath!=NULL )
+	{
+		free(m_pcPluginPath);
+		m_pcPluginPath = NULL;
+	}
+	if( m_pcOpenocdSharedObjectPath!=NULL )
+	{
+		free(m_pcOpenocdSharedObjectPath);
+		m_pcOpenocdSharedObjectPath = NULL;
+	}
+}
+
+
+
+void romloader_jtag_openocd::get_plugin_path(void)
+{
+#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
+	char *pcPath;
+	DWORD dwFlags;
+	BOOL fResult;
+	LPCTSTR pfnMember;
+	HMODULE hModule;
+	DWORD dwBufferSize;
+	DWORD dwResult;
+	char *pcSlash;
+	size_t sizPath;
+
+
+	pcPath = NULL;
+
+	/* Get the module by an address, but do not increase the refcount. */
+	dwFlags =   GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS
+	          | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
+	/* Use this function to identify the module. */
+	pfnMember = (LPCTSTR)(romloader_jtag_openocd::atOpenOcdResolve);
+	fResult = GetModuleHandleEx(dwFlags, pfnMember, &hModule);
+	if( fResult==0 )
+	{
+		fprintf(stderr, "Failed to get the module handle: %d\n", GetLastError());
+	}
+	else
+	{
+		dwBufferSize = 0x00010000;
+		pcPath = (char*)malloc(dwBufferSize);
+		if( pcPath==NULL )
+		{
+			fprintf(stderr, "Failed to allocate %d bytes for the path buffer.\n", dwBufferSize);
+		}
+		else
+		{
+			dwResult = GetModuleFileName(hModule, pcPath, dwBufferSize);
+			/* NOTE: dwResult contains the length of the string without the terminating 0.
+			 *       If the buffer is too small, the function returns the provided size of
+			 *       the buffer, in this case "dwBufferSize".
+			 *       Therefore the function failed if the result is dwBufferSize.
+			 */
+			if( dwResult>0 && dwResult<dwBufferSize )
+			{
+				fprintf(stderr, "Module path: '%s'\n", pcPath);
+
+				/* Find the last backslash in the path. */
+				pcSlash = strrchr(pcPath, '\\');
+				if( pcSlash==NULL )
+				{
+					fprintf(stderr, "Failed to find the end of the path!\n");
+					free(pcPath);
+					pcPath = NULL;
+				}
+				else
+				{
+					/* Terminate the string after the last slash. */
+					pcSlash[1] = 0;
+
+					/* Allocate the new buffer. */
+					sizPath = strlen(pcPath);
+					m_pcPluginPath = (char*)malloc(sizPath + 1);
+					if( m_pcPluginPath==NULL )
+					{
+						fprintf(stderr, "Failed to allocate a buffer for the plugin path.\n");
+					}
+					else
+					{
+						memcpy(m_pcPluginPath, pcPath, sizPath + 1);
+					}
+
+					free(pcPath);
+					pcPath = NULL;
+				}
+			}
+			else
+			{
+				fprintf(stderr, "Failed to get the module file name: %d\n", dwResult);
+				free(pcPath);
+				pcPath = NULL;
+			}
+		}
+	}
+#elif defined(__GNUC__)
+	Dl_info tDlInfo;
+	int iResult;
+	size_t sizPath;
+	const char *pcSlash;
+	size_t sizCwdBufferSize;
+	size_t sizCwd;
+	char *pcCwd;
+	char *pcGetCwdResult;
+	int iCwdAddSlash;
+
+
+	iResult = dladdr(romloader_jtag_openocd::atOpenOcdResolve, &tDlInfo);
+	if( iResult==0 )
+	{
+		fprintf(stderr, "Failed to get information about the shared object.\n");
+	}
+	else
+	{
+		if( tDlInfo.dli_fname!=NULL )
+		{
+			fprintf(stderr, "Path to the shared object: '%s'\n", tDlInfo.dli_fname);
+
+			/* Is this an absolute path? */
+			iResult = -1;
+			if( tDlInfo.dli_fname[0]=='/' )
+			{
+				/* Yes -> no need to prepend the current working directory. */
+				sizCwd = 0;
+				pcCwd = NULL;
+				iCwdAddSlash = 0;
+				iResult = 0;
+			}
+			else
+			{
+				/* No, prepend the current working folder. */
+				sizCwdBufferSize = 65536;
+				pcCwd = (char*)malloc(sizCwdBufferSize);
+				if( pcCwd==NULL )
+				{
+					fprintf(stderr, "Failed to allocate a buffer for the current working folder.\n");
+				}
+				else
+				{
+					pcGetCwdResult = getcwd(pcCwd, sizCwdBufferSize);
+					if( pcGetCwdResult==NULL )
+					{
+						fprintf(stderr, "Failed to get the current working folder.\n");
+					}
+					else
+					{
+						sizCwd = strlen(pcCwd);
+						iCwdAddSlash = 0;
+						if( sizCwd>0 && pcCwd[sizCwd-1]!='/' )
+						{
+							iCwdAddSlash = 1;
+						}
+						iResult = 0;
+					}
+				}
+			}
+
+			if( iResult==0 )
+			{
+				/* Find the last backslash in the path. */
+				pcSlash = strrchr(tDlInfo.dli_fname, '/');
+				if( pcSlash==NULL )
+				{
+					fprintf(stderr, "Failed to find the end of the path!\n");
+					if( pcCwd!=NULL )
+					{
+						free(pcCwd);
+						pcCwd = NULL;
+						sizCwd = 0;
+					}
+				}
+				else
+				{
+					sizPath = (size_t)(pcSlash - tDlInfo.dli_fname) + 1;
+					m_pcPluginPath = (char*)malloc(sizCwd + iCwdAddSlash + sizPath + 1);
+					if( m_pcPluginPath==NULL )
+					{
+						fprintf(stderr, "Failed to allocate a buffer for the path.\n");
+						if( pcCwd!=NULL )
+						{
+							free(pcCwd);
+							pcCwd = NULL;
+							sizCwd = 0;
+						}
+					}
+					else
+					{
+						if( pcCwd!=NULL && sizCwd!=0 )
+						{
+							memcpy(m_pcPluginPath, pcCwd, sizCwd);
+						}
+						if( iCwdAddSlash!=0 )
+						{
+							m_pcPluginPath[sizCwd] = '/';
+						}
+						memcpy(m_pcPluginPath + sizCwd + iCwdAddSlash, tDlInfo.dli_fname, sizPath);
+						m_pcPluginPath[sizCwd + iCwdAddSlash + sizPath] = 0;
+					}
+				}
+			}
+		}
+	}
+#endif
+}
+
+
+
+void romloader_jtag_openocd::get_openocd_path(void)
+{
+	size_t sizOpenOcdSo;
+	size_t sizPluginPath;
+
+
+	sizOpenOcdSo = sizeof(OPENOCD_SHARED_LIBRARY_FILENAME);
+
+	if( m_pcPluginPath==NULL )
+	{
+		m_pcOpenocdSharedObjectPath = (char*)malloc(sizOpenOcdSo + 1);
+		if( m_pcOpenocdSharedObjectPath!=NULL )
+		{
+			/* Initialize the path with the name of the shared object only. */
+			memcpy(m_pcOpenocdSharedObjectPath, OPENOCD_SHARED_LIBRARY_FILENAME, sizOpenOcdSo);
+			/* Terminate the name with a 0. */
+			m_pcOpenocdSharedObjectPath[sizOpenOcdSo] = 0;
+		}
+	}
+	else
+	{
+		sizPluginPath = strlen(m_pcPluginPath);
+		m_pcOpenocdSharedObjectPath = (char*)malloc(sizPluginPath + sizOpenOcdSo + 1);
+		if( m_pcOpenocdSharedObjectPath!=NULL )
+		{
+			/* Copy the path to this module to the start of the OpenOCD path. */
+			memcpy(m_pcOpenocdSharedObjectPath, m_pcPluginPath, sizPluginPath);
+			/* Append the name of the OpenOCD shared object. */
+			memcpy(m_pcOpenocdSharedObjectPath + sizPluginPath, OPENOCD_SHARED_LIBRARY_FILENAME, sizOpenOcdSo);
+			/* Terminate the name with a 0. */
+			m_pcOpenocdSharedObjectPath[sizPluginPath + sizOpenOcdSo] = 0;
+		}
+	}
+
+	if( m_pcOpenocdSharedObjectPath==NULL )
+	{
+		fprintf(stderr, "Failed to get the path to the OpenOCD shared object.\n");
+	}
+	else
+	{
+		fprintf(stderr, "The path to the OpenOCD shared object is: '%s'\n", m_pcOpenocdSharedObjectPath);
+	}
 }
 
 
@@ -198,12 +448,12 @@ int romloader_jtag_openocd::openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 	iResult = 0;
 
 	/* Try to open the shared library. */
-	pvSharedLibraryHandle = sharedlib_open(OPENOCD_SHARED_LIBRARY_FILENAME);
+	pvSharedLibraryHandle = sharedlib_open(m_pcOpenocdSharedObjectPath);
 	if( pvSharedLibraryHandle==NULL )
 	{
 		/* Failed to open the shared library. */
 		sharedlib_get_error(acError, sizeof(acError));
-		fprintf(stderr, "Failed to open the shared library %s.\n", OPENOCD_SHARED_LIBRARY_FILENAME);
+		fprintf(stderr, "Failed to open the shared library %s.\n", m_pcOpenocdSharedObjectPath);
 		fprintf(stderr, "Error: %s\n", acError);
 		iResult = -1;
 	}
