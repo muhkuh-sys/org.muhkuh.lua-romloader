@@ -72,30 +72,6 @@ pipeline {
                 }
             }
         }
-        stage('Ubuntu 16.10 x64') {
-            steps {
-                sh './.lxc_build_ubuntu_1610_x64.sh'
-            }
-            post {
-                failure {
-                    /* Stop and remove the running container. Do not fail on this commands. */
-                    sh 'lxc stop c0 || true'
-                    sh 'lxc delete c0 || true'
-                }
-            }
-        }
-        stage('Ubuntu 16.10 x86') {
-            steps {
-                sh './.lxc_build_ubuntu_1610_x86.sh'
-            }
-            post {
-                failure {
-                    /* Stop and remove the running container. Do not fail on this commands. */
-                    sh 'lxc stop c0 || true'
-                    sh 'lxc delete c0 || true'
-                }
-            }
-        }
         stage('Ubuntu 17.04 x64') {
             steps {
                 sh './.lxc_build_ubuntu_1704_x64.sh'
