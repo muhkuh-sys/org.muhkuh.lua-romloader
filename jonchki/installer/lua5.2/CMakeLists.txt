@@ -31,7 +31,7 @@ INCLUDE(CPack)
 INSTALL(FILES ${INSTALL_WINDOWS_X86}/lua_plugins/romloader.dll
               ${INSTALL_WINDOWS_X86}/lua_plugins/romloader_eth.dll
               ${INSTALL_WINDOWS_X86}/lua_plugins/romloader_jtag.dll
-              ${INSTALL_WINDOWS_X86}/lua_plugins/libopenocd.dll
+              ${INSTALL_WINDOWS_X86}/lua_plugins/openocd.dll
               ${INSTALL_WINDOWS_X86}/lua_plugins/romloader_papa_schlumpf.dll
               ${INSTALL_WINDOWS_X86}/lua_plugins/romloader_uart.dll
               ${INSTALL_WINDOWS_X86}/lua_plugins/romloader_usb.dll
@@ -40,7 +40,7 @@ INSTALL(FILES ${INSTALL_WINDOWS_X86}/lua_plugins/romloader.dll
 INSTALL(FILES ${INSTALL_UBUNTU_1404_X86}/lua_plugins/romloader.so
               ${INSTALL_UBUNTU_1404_X86}/lua_plugins/romloader_eth.so
               ${INSTALL_UBUNTU_1404_X86}/lua_plugins/romloader_jtag.so
-              ${INSTALL_UBUNTU_1404_X86}/lua_plugins/libopenocd.so
+              ${INSTALL_UBUNTU_1404_X86}/lua_plugins/openocd.so
               ${INSTALL_UBUNTU_1404_X86}/lua_plugins/romloader_papa_schlumpf.so
               ${INSTALL_UBUNTU_1404_X86}/lua_plugins/romloader_uart.so
               ${INSTALL_UBUNTU_1404_X86}/lua_plugins/romloader_usb.so
@@ -49,7 +49,7 @@ INSTALL(FILES ${INSTALL_UBUNTU_1404_X86}/lua_plugins/romloader.so
 INSTALL(FILES ${INSTALL_UBUNTU_1604_X86}/lua_plugins/romloader.so
               ${INSTALL_UBUNTU_1604_X86}/lua_plugins/romloader_eth.so
               ${INSTALL_UBUNTU_1604_X86}/lua_plugins/romloader_jtag.so
-              ${INSTALL_UBUNTU_1604_X86}/lua_plugins/libopenocd.so
+              ${INSTALL_UBUNTU_1604_X86}/lua_plugins/openocd.so
               ${INSTALL_UBUNTU_1604_X86}/lua_plugins/romloader_papa_schlumpf.so
               ${INSTALL_UBUNTU_1604_X86}/lua_plugins/romloader_uart.so
               ${INSTALL_UBUNTU_1604_X86}/lua_plugins/romloader_usb.so
@@ -58,7 +58,7 @@ INSTALL(FILES ${INSTALL_UBUNTU_1604_X86}/lua_plugins/romloader.so
 INSTALL(FILES ${INSTALL_UBUNTU_1704_X86}/lua_plugins/romloader.so
               ${INSTALL_UBUNTU_1704_X86}/lua_plugins/romloader_eth.so
               ${INSTALL_UBUNTU_1704_X86}/lua_plugins/romloader_jtag.so
-              ${INSTALL_UBUNTU_1704_X86}/lua_plugins/libopenocd.so
+              ${INSTALL_UBUNTU_1704_X86}/lua_plugins/openocd.so
               ${INSTALL_UBUNTU_1704_X86}/lua_plugins/romloader_papa_schlumpf.so
               ${INSTALL_UBUNTU_1704_X86}/lua_plugins/romloader_uart.so
               ${INSTALL_UBUNTU_1704_X86}/lua_plugins/romloader_usb.so
@@ -72,7 +72,7 @@ INSTALL(FILES ${INSTALL_UBUNTU_1704_X86}/lua_plugins/romloader.so
 INSTALL(FILES ${INSTALL_WINDOWS_X86_64}/lua_plugins/romloader.dll
               ${INSTALL_WINDOWS_X86_64}/lua_plugins/romloader_eth.dll
               ${INSTALL_WINDOWS_X86_64}/lua_plugins/romloader_jtag.dll
-              ${INSTALL_WINDOWS_X86_64}/lua_plugins/libopenocd.dll
+              ${INSTALL_WINDOWS_X86_64}/lua_plugins/openocd.dll
               ${INSTALL_WINDOWS_X86_64}/lua_plugins/romloader_papa_schlumpf.dll
               ${INSTALL_WINDOWS_X86_64}/lua_plugins/romloader_uart.dll
               ${INSTALL_WINDOWS_X86_64}/lua_plugins/romloader_usb.dll
@@ -81,7 +81,7 @@ INSTALL(FILES ${INSTALL_WINDOWS_X86_64}/lua_plugins/romloader.dll
 INSTALL(FILES ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/romloader.so
               ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/romloader_eth.so
               ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/romloader_jtag.so
-              ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/libopenocd.so
+              ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/openocd.so
               ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/romloader_papa_schlumpf.so
               ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/romloader_uart.so
               ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/romloader_usb.so
@@ -90,7 +90,7 @@ INSTALL(FILES ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/romloader.so
 INSTALL(FILES ${INSTALL_UBUNTU_1604_X86_64}/lua_plugins/romloader.so
               ${INSTALL_UBUNTU_1604_X86_64}/lua_plugins/romloader_eth.so
               ${INSTALL_UBUNTU_1604_X86_64}/lua_plugins/romloader_jtag.so
-              ${INSTALL_UBUNTU_1604_X86_64}/lua_plugins/libopenocd.so
+              ${INSTALL_UBUNTU_1604_X86_64}/lua_plugins/openocd.so
               ${INSTALL_UBUNTU_1604_X86_64}/lua_plugins/romloader_papa_schlumpf.so
               ${INSTALL_UBUNTU_1604_X86_64}/lua_plugins/romloader_uart.so
               ${INSTALL_UBUNTU_1604_X86_64}/lua_plugins/romloader_usb.so
@@ -99,7 +99,7 @@ INSTALL(FILES ${INSTALL_UBUNTU_1604_X86_64}/lua_plugins/romloader.so
 INSTALL(FILES ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/romloader.so
               ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/romloader_eth.so
               ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/romloader_jtag.so
-              ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/libopenocd.so
+              ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/openocd.so
               ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/romloader_papa_schlumpf.so
               ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/romloader_uart.so
               ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/romloader_usb.so
