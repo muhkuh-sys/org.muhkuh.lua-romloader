@@ -16,6 +16,9 @@
 #       include <unistd.h>
 #endif
 
+/* NOTE: this must end with a slash. */
+#define OPENOCD_SUBFOLDER "openocd/"
+
 
 
 romloader_jtag_openocd::romloader_jtag_openocd(void)
@@ -24,6 +27,7 @@ romloader_jtag_openocd::romloader_jtag_openocd(void)
  , m_sizDetectedCnt(0)
  , m_sizDetectedMax(0)
  , m_pcPluginPath(NULL)
+ , m_pcOpenocdDataPath(NULL)
  , m_pcOpenocdSharedObjectPath(NULL)
 {
 	memset(&m_tJtagDevice, 0, sizeof(ROMLOADER_JTAG_DEVICE_T));
@@ -42,6 +46,11 @@ romloader_jtag_openocd::~romloader_jtag_openocd(void)
 	{
 		free(m_pcPluginPath);
 		m_pcPluginPath = NULL;
+	}
+	if( m_pcOpenocdDataPath!=NULL )
+	{
+		free(m_pcOpenocdDataPath);
+		m_pcOpenocdDataPath = NULL;
 	}
 	if( m_pcOpenocdSharedObjectPath!=NULL )
 	{
@@ -251,43 +260,76 @@ void romloader_jtag_openocd::get_openocd_path(void)
 {
 	size_t sizOpenOcdSo;
 	size_t sizPluginPath;
+	size_t sizOpenOcdSubfolder;
 
 
 	sizOpenOcdSo = sizeof(OPENOCD_SHARED_LIBRARY_FILENAME);
 
 	if( m_pcPluginPath==NULL )
 	{
-		m_pcOpenocdSharedObjectPath = (char*)malloc(sizOpenOcdSo + 1);
-		if( m_pcOpenocdSharedObjectPath!=NULL )
+		m_pcOpenocdDataPath = (char*)malloc(2);
+		if( m_pcOpenocdDataPath!=NULL )
 		{
-			/* Initialize the path with the name of the shared object only. */
-			memcpy(m_pcOpenocdSharedObjectPath, OPENOCD_SHARED_LIBRARY_FILENAME, sizOpenOcdSo);
-			/* Terminate the name with a 0. */
-			m_pcOpenocdSharedObjectPath[sizOpenOcdSo] = 0;
+			m_pcOpenocdDataPath[0] = '.';
+			m_pcOpenocdDataPath[1] = 0;
+
+			m_pcOpenocdSharedObjectPath = (char*)malloc(sizOpenOcdSo + 1);
+			if( m_pcOpenocdSharedObjectPath==NULL )
+			{
+				free(m_pcOpenocdDataPath);
+				m_pcOpenocdDataPath = NULL;
+			}
+			else
+			{
+				/* Initialize the path with the name of the shared object only. */
+				memcpy(m_pcOpenocdSharedObjectPath, OPENOCD_SHARED_LIBRARY_FILENAME, sizOpenOcdSo);
+				/* Terminate the name with a 0. */
+				m_pcOpenocdSharedObjectPath[sizOpenOcdSo] = 0;
+			}
 		}
 	}
 	else
 	{
 		sizPluginPath = strlen(m_pcPluginPath);
-		m_pcOpenocdSharedObjectPath = (char*)malloc(sizPluginPath + sizOpenOcdSo + 1);
-		if( m_pcOpenocdSharedObjectPath!=NULL )
+		sizOpenOcdSubfolder = strlen(OPENOCD_SUBFOLDER);
+		m_pcOpenocdDataPath = (char*)malloc(sizPluginPath + sizOpenOcdSubfolder + 1);
+		if( m_pcOpenocdDataPath!=NULL )
 		{
 			/* Copy the path to this module to the start of the OpenOCD path. */
-			memcpy(m_pcOpenocdSharedObjectPath, m_pcPluginPath, sizPluginPath);
-			/* Append the name of the OpenOCD shared object. */
-			memcpy(m_pcOpenocdSharedObjectPath + sizPluginPath, OPENOCD_SHARED_LIBRARY_FILENAME, sizOpenOcdSo);
-			/* Terminate the name with a 0. */
-			m_pcOpenocdSharedObjectPath[sizPluginPath + sizOpenOcdSo] = 0;
+			memcpy(m_pcOpenocdDataPath, m_pcPluginPath, sizPluginPath);
+			/* Append the subfolder. */
+			memcpy(m_pcOpenocdDataPath + sizPluginPath, OPENOCD_SUBFOLDER, sizOpenOcdSubfolder);
+			/* Terminate the path. */
+			m_pcOpenocdDataPath[sizPluginPath + sizOpenOcdSubfolder] = 0;
+
+			m_pcOpenocdSharedObjectPath = (char*)malloc(sizPluginPath + sizOpenOcdSubfolder + sizOpenOcdSo + 1);
+			if( m_pcOpenocdSharedObjectPath==NULL )
+			{
+				free(m_pcOpenocdDataPath);
+				m_pcOpenocdDataPath = NULL;
+			}
+			else
+			{
+				/* Copy the path to this module to the start of the OpenOCD path. */
+				memcpy(m_pcOpenocdSharedObjectPath, m_pcPluginPath, sizPluginPath);
+				/* Append the subfolder. */
+				memcpy(m_pcOpenocdSharedObjectPath + sizPluginPath, OPENOCD_SUBFOLDER, sizOpenOcdSubfolder);
+				/* Append the name of the OpenOCD shared object. */
+				memcpy(m_pcOpenocdSharedObjectPath + sizPluginPath + sizOpenOcdSubfolder, OPENOCD_SHARED_LIBRARY_FILENAME, sizOpenOcdSo);
+				/* Terminate the name with a 0. */
+				m_pcOpenocdSharedObjectPath[sizPluginPath + sizOpenOcdSubfolder + sizOpenOcdSo] = 0;
+			}
 		}
 	}
 
-	if( m_pcOpenocdSharedObjectPath==NULL )
+	if( m_pcOpenocdDataPath!=NULL && m_pcOpenocdSharedObjectPath!=NULL )
 	{
-		fprintf(stderr, "Failed to get the path to the OpenOCD shared object.\n");
+		fprintf(stderr, "The path to the OpenOCD data files is:    '%s'\n", m_pcOpenocdDataPath);
+		fprintf(stderr, "The path to the OpenOCD shared object is: '%s'\n", m_pcOpenocdSharedObjectPath);
 	}
 	else
 	{
-		fprintf(stderr, "The path to the OpenOCD shared object is: '%s'\n", m_pcOpenocdSharedObjectPath);
+		fprintf(stderr, "Failed to get the path to the OpenOCD shared object.\n");
 	}
 }
 
@@ -481,8 +523,8 @@ int romloader_jtag_openocd::openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 
 		if( iResult==0 )
 		{
-			/* Call the init function. */
-			pvOpenocdContext = ptDevice->tFunctions.tFn.pfnInit();
+			/* Call the init function and pass the data path as a search path for scripts. */
+			pvOpenocdContext = ptDevice->tFunctions.tFn.pfnInit(m_pcOpenocdDataPath);
 			if( pvOpenocdContext==NULL )
 			{
 				fprintf(stderr, "Failed to initialize the OpenOCD device context.\n");
@@ -493,7 +535,7 @@ int romloader_jtag_openocd::openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 				ptDevice->pvOpenocdContext = pvOpenocdContext;
 
 				fprintf(stderr, "Loading script.\n");
-				iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, "source jtag_detect_init.tcl");
+				iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, "source [find jtag_detect_init.tcl]");
 				if( iResult!=0 )
 				{
 					fprintf(stderr, "Failed to load the script: %d\n", iResult);
@@ -1030,7 +1072,7 @@ int romloader_jtag_openocd::init_chip(ROMLOADER_CHIPTYP tChiptyp)
 	char strCmd[32];
 
 	fprintf(stderr, "Loading chip init script.\n");
-	iResult = m_tJtagDevice.tFunctions.tFn.pfnCommandRunLine(m_tJtagDevice.pvOpenocdContext, "source chip_init.tcl");
+	iResult = m_tJtagDevice.tFunctions.tFn.pfnCommandRunLine(m_tJtagDevice.pvOpenocdContext, "source [find chip_init.tcl]");
 	if( iResult!=0 )
 	{
 		fprintf(stderr, "Failed to load the chip init script: %d\n", iResult);

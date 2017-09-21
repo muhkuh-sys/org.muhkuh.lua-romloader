@@ -36,7 +36,7 @@ public:
 		const char *pcCode;
 	} TARGET_SETUP_STRUCT_T;
 
-	typedef void * (*PFN_MUHKUH_OPENOCD_INIT_T) (void);
+	typedef void * (*PFN_MUHKUH_OPENOCD_INIT_T) (const char *pcScriptSearchDir);
 	typedef int (*PFN_MUHKUH_OPENOCD_GET_RESULT_T) (void *pvContext, char *pcBuffer, size_t sizBufferMax);
 	typedef int (*PFN_MUHKUH_OPENOCD_COMMAND_RUN_LINE_T) (void *pvContext, const char *pcLine);
 	typedef void (*PFN_MUHKUH_OPENOCD_UNINIT_T) (void *pvContext);
@@ -141,6 +141,8 @@ private:
 	 * openocd shared object and the TCL scripts live.
 	 */
 	char *m_pcPluginPath;
+	/* This is the path to the openocd data files. */
+	char *m_pcOpenocdDataPath;
 	/* This is the full path to the openocd shared object. */
 	char *m_pcOpenocdSharedObjectPath;
 

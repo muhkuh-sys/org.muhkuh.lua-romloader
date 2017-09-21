@@ -11,7 +11,7 @@
 #include "target/target_request.h"
 
 
-void *muhkuh_openocd_init(void)
+void *muhkuh_openocd_init(const char *pcScriptSearchDir)
 {
 	/* Initialize command line interface. */
 	struct command_context *ptCmdCtx;
@@ -31,6 +31,12 @@ void *muhkuh_openocd_init(void)
 			{
 				command_context_mode(ptCmdCtx, COMMAND_CONFIG);
 				command_set_output_handler(ptCmdCtx, configuration_output_handler, NULL);
+
+				/* Add a search path to the interpreter. */
+				if( pcScriptSearchDir!=NULL )
+				{
+					add_script_search_dir(pcScriptSearchDir);
+				}
 
 				iResult = server_preinit();
 				if( iResult==ERROR_OK )

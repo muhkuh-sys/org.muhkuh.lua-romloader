@@ -28,7 +28,7 @@ TARGET_INCLUDE_DIRECTORIES(TARGET_romloader_jtag_openocd_lib
 
 # Install the openocd library to the same folder as the LUA module.
 INSTALL(FILES ${OPENOCD_LOCATION}
-        DESTINATION ${INSTALL_DIR_LUA_MODULES})
+        DESTINATION ${INSTALL_DIR_LUA_MODULES}/openocd)
 
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")

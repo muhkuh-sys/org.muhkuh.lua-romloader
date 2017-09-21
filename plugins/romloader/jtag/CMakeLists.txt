@@ -65,7 +65,22 @@ ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC})
 ADD_DEPENDENCIES(TARGET_plugins_romloader_romloader_jtag_LUA TARGET_romloader_jtag_openocd_lib)
 
 # Install the lua module.
-INSTALL(TARGETS TARGET_plugins_romloader_romloader_jtag_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
+INSTALL(TARGETS TARGET_plugins_romloader_romloader_jtag_LUA
+        DESTINATION ${INSTALL_DIR_LUA_MODULES})
+
+# Install the OpenOCD scripts.
+INSTALL(FILES openocd/tcl/jtag_detect_init.tcl
+        DESTINATION ${INSTALL_DIR_LUA_MODULES}/openocd)
+INSTALL(FILES openocd/tcl/chip_init.tcl
+        DESTINATION ${INSTALL_DIR_LUA_MODULES}/openocd)
+
+# Install the DCC binaries.
+INSTALL(FILES ../../../targets/plugins/romloader/jtag/netx/netx500/dcc_netx500.bin
+        DESTINATION ${INSTALL_DIR_LUA_MODULES}/openocd)
+INSTALL(FILES ../../../targets/plugins/romloader/jtag/netx/netx10_50_51_52/dcc_netx10_50_51_52.bin
+        DESTINATION ${INSTALL_DIR_LUA_MODULES}/openocd)
+INSTALL(FILES ../../../targets/plugins/romloader/jtag/netx/netx90/dcc_netx90_com.bin
+        DESTINATION ${INSTALL_DIR_LUA_MODULES}/openocd)
 
 # Add tests for this module.
 IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))

@@ -6,7 +6,7 @@
 
 typedef int (*PFN_MUHKUH_CALL_PRINT_CALLBACK) (void *pvCallbackUserData, uint8_t *pucData, unsigned long ulDataSize);
 
-void *muhkuh_openocd_init(void);
+void *muhkuh_openocd_init(const char *pcScriptSearchDir);
 int muhkuh_openocd_get_result(void *pvContext, char *pcBuffer, size_t sizBufferMax);
 int muhkuh_openocd_command_run_line(void *pvContext, char *pcLine);
 void muhkuh_openocd_uninit(void *pvContext);
