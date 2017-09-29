@@ -24,7 +24,7 @@ MEMORY
 {
 	ASSERT_EMPTY(rwx): ORIGIN = 0x00000000,  LENGTH = 0
 	IOVECTORS(rwx):    ORIGIN = 0x0003fff0,  LENGTH = 0x00000010
-	INTRAM(rwx):       ORIGIN = 0x05084000,  LENGTH = 0x00001000
+	LLRAM(rwx):        ORIGIN = 0x04000000,  LENGTH = 0x00010000
 }
 
 
@@ -54,7 +54,7 @@ SECTIONS
 	} >IOVECTORS
 
 
-	.code ORIGIN(INTRAM) :
+	.code ORIGIN(LLRAM) :
 	{
 		load_address = . ;
 
@@ -62,7 +62,7 @@ SECTIONS
 		*(.init_code)
 		*(.text)
 		*(.rodata*)
-	} >INTRAM
+	} >LLRAM
 
 
 	.parameter :
@@ -70,7 +70,7 @@ SECTIONS
 		parameter_start_address = . ;
 		. = . + 0x0100;
 		parameter_end_address = . ;
-	} >INTRAM
+	} >LLRAM
 
 
 	.bss :
@@ -83,11 +83,11 @@ SECTIONS
 		*(COMMON)
 
 		__bss_end__ = . ;
-	} >INTRAM
+	} >LLRAM
 
 
-	/* set the top of the stack to the end of INTRAM */
-	stack_top = ORIGIN(INTRAM) + LENGTH(INTRAM) ;
+	/* set the top of the stack to the end of LLRAM */
+	stack_top = ORIGIN(LLRAM) + LENGTH(LLRAM) ;
 
 
 	/* Stabs debugging sections.  */

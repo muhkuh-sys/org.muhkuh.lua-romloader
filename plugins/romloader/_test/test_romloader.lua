@@ -37,7 +37,7 @@ atTestAreas = {
 	[romloader.ROMLOADER_CHIPTYP_NETX56B]           = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0009c000},
 	[romloader.ROMLOADER_CHIPTYP_NETX50]            = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x00014000},
 	[romloader.ROMLOADER_CHIPTYP_NETX10]            = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0002c000},
-	[romloader.ROMLOADER_CHIPTYP_NETX4000_RELAXED]  = {ulTestAreaStart = 0x04000000, ulTestAreaSize  = 0x00010000},
+	[romloader.ROMLOADER_CHIPTYP_NETX4000_RELAXED]  = {ulTestAreaStart = 0x04010000, ulTestAreaSize  = 0x000f0000},
 	[romloader.ROMLOADER_CHIPTYP_NETX90_MPW]        = {ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},
 }
 
@@ -71,7 +71,7 @@ if __MUHKUH_TEST_PARAMETER then
 	fCheckExpectedOutput = tobool(  __MUHKUH_TEST_PARAMETER.checkoutput, true)    
 	fCheckOutputEnd      = tobool(  __MUHKUH_TEST_PARAMETER.checkoutputend, true) 
 else
-	ulTestSize           = 0x100
+	ulTestSize           = 0x1000
 	uiParameterLoops     = 1     
 	fCheckExpectedOutput = true 
 	fCheckOutputEnd      = true 
