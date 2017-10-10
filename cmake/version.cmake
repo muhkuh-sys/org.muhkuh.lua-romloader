@@ -7,7 +7,7 @@
 
 FIND_PACKAGE(Git)
 IF(GIT_FOUND)
-	EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} describe --abbrev=12 --always --dirty=+ --long
+	EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_HOME_DIRECTORY} describe --abbrev=12 --always --dirty=+ --long
 	                RESULT_VARIABLE VCS_VERSION_RESULT
 	                OUTPUT_VARIABLE VCS_VERSION_OUTPUT)
 
@@ -47,7 +47,7 @@ IF(GIT_FOUND)
 
 
 	# Get the remote origin URL from GIT.
-	EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} config --get remote.origin.url
+	EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_HOME_DIRECTORY} config --get remote.origin.url
 	                RESULT_VARIABLE VCS_ORIGIN_RESULT
 	                OUTPUT_VARIABLE VCS_ORIGIN_OUTPUT)
 	IF(VCS_ORIGIN_RESULT EQUAL 0)
