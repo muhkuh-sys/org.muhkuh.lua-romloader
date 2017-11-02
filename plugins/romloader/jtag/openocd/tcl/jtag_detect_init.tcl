@@ -1,5 +1,12 @@
 puts "loading script jtag_detect_init.tcl"
 
+set _USE_SOFT_RESET_ false
+
+# Uncomment the following two lines if SRST is not present on the JTAG adapter or not connected to the target.
+#source [find netx_swreset.tcl]
+#set _USE_SOFT_RESET_ true
+
+
 # todo/wishlist:
 # Get the list of known interfaces from the script. Currently, it's hardcoded.
 # Get the list of known targets for an NXHX interface. Currently, all possible targets are tried on each interface found.
@@ -118,6 +125,7 @@ proc probe_interface {} {
 proc probe_cpu {strCpuID} {
 	echo "+probe_cpu $strCpuID"
 	global SC_CFG_RESULT
+	global _USE_SOFT_RESET_
 	set SC_CFG_RESULT 0
 	
 	if { $strCpuID == "netX_ARM966" } {
@@ -134,6 +142,10 @@ proc probe_cpu {strCpuID} {
 		if { $SC_CFG_RESULT=={OK} } {
 			echo {creating target netX_ARM966.cpu}
 			target create netX_ARM966.cpu arm966e -endian little -chain-position netX_ARM966.cpu
+			if $_USE_SOFT_RESET_ {
+				netX_ARM966.cpu configure -event reset-assert { reset_assert }
+				netX_ARM966.cpu configure -event reset-deassert-post { reset_deassert_post }
+			}
 			#this halt might not really do anything, the cpu is halted before the message appears .
 			netX_ARM966.cpu configure -event reset-init { echo {netX_ARM966.cpu  reset-init event}; halt } 
 			netX_ARM966.cpu configure -work-area-phys 0x0380 -work-area-size 0x0080 -work-area-backup 1
@@ -151,7 +163,11 @@ proc probe_cpu {strCpuID} {
 		
 		if { $SC_CFG_RESULT=={OK} } {
 			target create netX_ARM926.cpu arm926ejs -endian little -chain-position netX_ARM926.cpu
-			netX_ARM926.cpu configure -event reset-init { halt }
+			if $_USE_SOFT_RESET_ {
+				netX_ARM926.cpu configure -event reset-assert { reset_assert }
+				netX_ARM926.cpu configure -event reset-deassert-post { reset_deassert_post }
+			}
+			netX_ARM926.cpu configure -event reset-init { echo {netX_ARM926.cpu  reset-init event}; halt }
 			netX_ARM926.cpu configure -work-area-phys 0x0380 -work-area-size 0x0080 -work-area-backup 1
 			
 			global strTarget
@@ -170,6 +186,10 @@ proc probe_cpu {strCpuID} {
 			target create netx4000.r7 cortex_r4 -chain-position netx4000.dap -coreid 0 -dbgbase 0x80130000
 			netx4000.r7 configure -work-area-phys 0x05080000 -work-area-size 0x4000 -work-area-backup 1
 			netx4000.r7 configure -event reset-assert-post "cortex_r4 dbginit"
+			if $_USE_SOFT_RESET_ {
+				netx4000.r7 configure -event reset-assert { reset_assert_netx4000 }
+				netx4000.r7 configure -event reset-deassert-post { reset_deassert_post_netx4000 }
+			}
 			
 			# Dual Cortex A9s
 			target create netx4000.a9_0 cortex_a -chain-position netx4000.dap -coreid 1 -dbgbase 0x80110000
@@ -235,18 +255,28 @@ proc reset_netx90_COM {} {
 	
 	init
 	reset init
-	#halt
 }
 
+
+
 proc reset_netX_ARM926_ARM966 {} {
-	reset_config trst_and_srst
-	#reset_config none separate
-	adapter_nsrst_delay 500
-	jtag_ntrst_delay 500
+	global _USE_SOFT_RESET_
+
+	if $_USE_SOFT_RESET_ {
+		echo "Using software reset"
+		reset_config trst_only
+		jtag_ntrst_delay 500
+	} else {
+		echo "Using hardware reset (SRST)"
+		reset_config trst_and_srst
+		adapter_nsrst_delay 500
+		jtag_ntrst_delay 500
+	}
 	
 	echo {+init}
 	init
 	echo {-init}
+	
 	echo {+reset init}
 	reset init
 	echo {-reset init}
@@ -264,13 +294,9 @@ proc mread32 {addr} {
 }
 
 proc set_firewall {addr value} {
-	puts $addr
   set accesskey [mread32 0xF408017C]
   mww 0xF408017C [expr $accesskey]
   mww [expr $addr] [expr $value]
-
-  #puts [format "Access key %x" $accesskey]
-  #puts [format "Writing %x to %x" $value $addr]
 }
 
 # A9 cannot access netX part per default, this firewalls need to be disabled from 
@@ -295,16 +321,22 @@ proc disable_firewalls { } {
 }
 
 proc reset_netx4000 {} {
+	global _USE_SOFT_RESET_
 
 	puts "+reset_netx4000"
 	
-	#reset_config srst_only separate
-	# Use both SRST and TRST, since that is more reliable and ensures that 
-	# the same reset vector is read in all cases.
-	reset_config trst_and_srst separate
-	adapter_nsrst_delay 500
-	adapter_nsrst_assert_width 50
-	
+	if $_USE_SOFT_RESET_ {
+		echo "Using software reset"
+		reset_config trst_only
+	} else {
+		echo "Using hardware reset (SRST)"
+		reset_config trst_and_srst separate
+		adapter_nsrst_delay 500
+		#adapter_nsrst_delay 0
+		adapter_nsrst_assert_width 50
+	}
+
+
 	netx4000.r7 configure -event reset-init {
 		puts "Halt R7"
 		halt
@@ -317,7 +349,7 @@ proc reset_netx4000 {} {
 		halt
 	}
 	
-	netx4000.a9_0 configure -event reset-init {
+	netx4000.a9_1 configure -event reset-init {
 		puts "Halt A9/1"
 		halt
 	}
