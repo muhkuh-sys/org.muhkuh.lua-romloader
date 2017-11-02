@@ -38,6 +38,7 @@ INSTALL(FILES ${INSTALL_WINDOWS_X86}/lua_plugins/romloader.dll
 
 INSTALL(FILES ${INSTALL_WINDOWS_X86}/lua_plugins/openocd/openocd.dll
               ${INSTALL_WINDOWS_X86}/lua_plugins/openocd/jtag_detect_init.tcl
+              ${INSTALL_WINDOWS_X86}/lua_plugins/openocd/netx_swreset.tcl
               ${INSTALL_WINDOWS_X86}/lua_plugins/openocd/chip_init.tcl
               ${INSTALL_WINDOWS_X86}/lua_plugins/openocd/dcc_netx500.bin
               ${INSTALL_WINDOWS_X86}/lua_plugins/openocd/dcc_netx10_50_51_52.bin
@@ -54,6 +55,7 @@ INSTALL(FILES ${INSTALL_UBUNTU_1404_X86}/lua_plugins/romloader.so
 
 INSTALL(FILES ${INSTALL_UBUNTU_1404_X86}/lua_plugins/openocd/openocd.so
               ${INSTALL_UBUNTU_1404_X86}/lua_plugins/openocd/jtag_detect_init.tcl
+              ${INSTALL_UBUNTU_1404_X86}/lua_plugins/openocd/netx_swreset.tcl
               ${INSTALL_UBUNTU_1404_X86}/lua_plugins/openocd/chip_init.tcl
               ${INSTALL_UBUNTU_1404_X86}/lua_plugins/openocd/dcc_netx500.bin
               ${INSTALL_UBUNTU_1404_X86}/lua_plugins/openocd/dcc_netx10_50_51_52.bin
@@ -70,6 +72,7 @@ INSTALL(FILES ${INSTALL_UBUNTU_1604_X86}/lua_plugins/romloader.so
 
 INSTALL(FILES ${INSTALL_UBUNTU_1604_X86}/lua_plugins/openocd/openocd.so
               ${INSTALL_UBUNTU_1604_X86}/lua_plugins/openocd/jtag_detect_init.tcl
+              ${INSTALL_UBUNTU_1604_X86}/lua_plugins/openocd/netx_swreset.tcl
               ${INSTALL_UBUNTU_1604_X86}/lua_plugins/openocd/chip_init.tcl
               ${INSTALL_UBUNTU_1604_X86}/lua_plugins/openocd/dcc_netx500.bin
               ${INSTALL_UBUNTU_1604_X86}/lua_plugins/openocd/dcc_netx10_50_51_52.bin
@@ -86,6 +89,7 @@ INSTALL(FILES ${INSTALL_UBUNTU_1704_X86}/lua_plugins/romloader.so
 
 INSTALL(FILES ${INSTALL_UBUNTU_1704_X86}/lua_plugins/openocd/openocd.so
               ${INSTALL_UBUNTU_1704_X86}/lua_plugins/openocd/jtag_detect_init.tcl
+              ${INSTALL_UBUNTU_1704_X86}/lua_plugins/openocd/netx_swreset.tcl
               ${INSTALL_UBUNTU_1704_X86}/lua_plugins/openocd/chip_init.tcl
               ${INSTALL_UBUNTU_1704_X86}/lua_plugins/openocd/dcc_netx500.bin
               ${INSTALL_UBUNTU_1704_X86}/lua_plugins/openocd/dcc_netx10_50_51_52.bin
@@ -107,6 +111,7 @@ INSTALL(FILES ${INSTALL_WINDOWS_X86_64}/lua_plugins/romloader.dll
 
 INSTALL(FILES ${INSTALL_WINDOWS_X86_64}/lua_plugins/openocd/openocd.dll
               ${INSTALL_WINDOWS_X86_64}/lua_plugins/openocd/jtag_detect_init.tcl
+              ${INSTALL_WINDOWS_X86_64}/lua_plugins/openocd/netx_swreset.tcl
               ${INSTALL_WINDOWS_X86_64}/lua_plugins/openocd/chip_init.tcl
               ${INSTALL_WINDOWS_X86_64}/lua_plugins/openocd/dcc_netx500.bin
               ${INSTALL_WINDOWS_X86_64}/lua_plugins/openocd/dcc_netx10_50_51_52.bin
@@ -123,6 +128,7 @@ INSTALL(FILES ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/romloader.so
 
 INSTALL(FILES ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/openocd/openocd.so
               ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/openocd/jtag_detect_init.tcl
+              ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/openocd/netx_swreset.tcl
               ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/openocd/chip_init.tcl
               ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/openocd/dcc_netx500.bin
               ${INSTALL_UBUNTU_1404_X86_64}/lua_plugins/openocd/dcc_netx10_50_51_52.bin
@@ -139,6 +145,7 @@ INSTALL(FILES ${INSTALL_UBUNTU_1604_X86_64}/lua_plugins/romloader.so
 
 INSTALL(FILES ${INSTALL_UBUNTU_1604_X86_64}/lua_plugins/openocd/openocd.so
               ${INSTALL_UBUNTU_1604_X86_64}/lua_plugins/openocd/jtag_detect_init.tcl
+              ${INSTALL_UBUNTU_1604_X86_64}/lua_plugins/openocd/netx_swreset.tcl
               ${INSTALL_UBUNTU_1604_X86_64}/lua_plugins/openocd/chip_init.tcl
               ${INSTALL_UBUNTU_1604_X86_64}/lua_plugins/openocd/dcc_netx500.bin
               ${INSTALL_UBUNTU_1604_X86_64}/lua_plugins/openocd/dcc_netx10_50_51_52.bin
@@ -155,6 +162,7 @@ INSTALL(FILES ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/romloader.so
 
 INSTALL(FILES ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/openocd/openocd.so
               ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/openocd/jtag_detect_init.tcl
+              ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/openocd/netx_swreset.tcl
               ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/openocd/chip_init.tcl
               ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/openocd/dcc_netx500.bin
               ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/openocd/dcc_netx10_50_51_52.bin

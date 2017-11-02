@@ -71,6 +71,8 @@ INSTALL(TARGETS TARGET_plugins_romloader_romloader_jtag_LUA
 # Install the OpenOCD scripts.
 INSTALL(FILES openocd/tcl/jtag_detect_init.tcl
         DESTINATION ${INSTALL_DIR_LUA_MODULES}/openocd)
+INSTALL(FILES openocd/tcl/netx_swreset.tcl
+        DESTINATION ${INSTALL_DIR_LUA_MODULES}/openocd)
 INSTALL(FILES openocd/tcl/chip_init.tcl
         DESTINATION ${INSTALL_DIR_LUA_MODULES}/openocd)
 
