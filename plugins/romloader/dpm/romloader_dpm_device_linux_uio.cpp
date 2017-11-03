@@ -308,6 +308,10 @@ int romloader_dpm_device_linux_uio::dpm_write_area(uint32_t ulDpmAddress, const 
  * TODO: Is there a way to distinguish the mainline and Hilscher version and print a warning?
  * /sys/class/uio/uio0/version is always 0.0.1 . :(
  *
+ * A rather strange and complicated way could be the module parameters. The old
+ * module does not have any parameters. The new module has 3 parameters. Maybe
+ * this can be checked with libkmod.
+ *
  */
 const romloader_dpm_device_linux_uio::NETX_UIO_TYP_T romloader_dpm_device_linux_uio::acKnownNetxUioTypes[1] =
 {
