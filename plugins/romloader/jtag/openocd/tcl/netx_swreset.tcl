@@ -8,16 +8,18 @@ proc peek { strFmt ulAddr } {
 	return $ulVal
 }
 
-set ROMLOADER_CHIPTYP_UNKNOWN   0 
-set ROMLOADER_CHIPTYP_NETX500   1 
-set ROMLOADER_CHIPTYP_NETX100   2 
-set ROMLOADER_CHIPTYP_NETX50    3 
-set ROMLOADER_CHIPTYP_NETX5     4 
-set ROMLOADER_CHIPTYP_NETX10    5 
-set ROMLOADER_CHIPTYP_NETX56    6 
-set ROMLOADER_CHIPTYP_NETX56B   7 
+set ROMLOADER_CHIPTYP_UNKNOWN           0 
+set ROMLOADER_CHIPTYP_NETX500           1 
+set ROMLOADER_CHIPTYP_NETX100           2 
+set ROMLOADER_CHIPTYP_NETX50            3 
+set ROMLOADER_CHIPTYP_NETX5             4 
+set ROMLOADER_CHIPTYP_NETX10            5 
+set ROMLOADER_CHIPTYP_NETX56            6 
+set ROMLOADER_CHIPTYP_NETX56B           7 
 set ROMLOADER_CHIPTYP_NETX4000_RELAXED  8 
-set ROMLOADER_CHIPTYP_NETX90_MPW 10
+set ROMLOADER_CHIPTYP_NETX90_MPW        10
+set ROMLOADER_CHIPTYP_NETX4000_FULL     11
+set ROMLOADER_CHIPTYP_NETX4100_SMALL    12
 
 
 proc check_chiptyp { ulResetAddrRead ulResetAddr ulCheckAddr ulCheckVal } {
@@ -32,6 +34,7 @@ proc check_chiptyp { ulResetAddrRead ulResetAddr ulCheckAddr ulCheckVal } {
 	return $ret
 }
 
+
 # An implementation of romloader::get_chiptyp
 # Assumes that the target is halted and memory access is possible.
 proc get_chiptyp { }  {
@@ -45,6 +48,8 @@ proc get_chiptyp { }  {
 	global ROMLOADER_CHIPTYP_NETX56B 
 	global ROMLOADER_CHIPTYP_NETX4000_RELAXED
 	global ROMLOADER_CHIPTYP_NETX90_MPW
+	global ROMLOADER_CHIPTYP_NETX4000_FULL
+	global ROMLOADER_CHIPTYP_NETX4100_SMALL
 
 	set ulResetAddrRead [ mread32 0 ]
 	puts [ format "Reset vector: %x " $ulResetAddrRead ]
@@ -68,7 +73,16 @@ proc get_chiptyp { }  {
 		echo "netX 51/52 step B detected"
 	} elseif { [ check_chiptyp $ulResetAddrRead 0xe59ff00c 0x04100020 0x00108004 ] } { 
 		set iChiptyp $ROMLOADER_CHIPTYP_NETX4000_RELAXED  
-		echo "netX 4000 detected"
+		echo "netX 4000 Relaxed detected"
+	} elseif { [ check_chiptyp $ulResetAddrRead 0xe59ff00c 0x04100020 0x0010b004 ] } { 
+		set ulOTP [ mread32 0xf80000c0 ]; # Read OTP fuse
+		if { ( $ulOTP & 0x1 ) == 0 } {
+			set iChiptyp $ROMLOADER_CHIPTYP_NETX4000_FULL
+			echo "netX 4000 Full detected"
+		} else {
+			set iChiptyp $ROMLOADER_CHIPTYP_NETX4100_SMALL
+			echo "netX 4100 Small detected"
+		}
 	} elseif { [ check_chiptyp $ulResetAddrRead 0x2009fff0 0x00005110 0x1f13933b ] } { 
 		echo "netX 90MPW detected"
 		set iChiptyp $ROMLOADER_CHIPTYP_NETX90_MPW        
@@ -288,7 +302,7 @@ proc reset_assert_netx4000 {} {
 	set ADDR_NX4000_IDPM1_RES_REQ          0xf40813dc
 
 	set DPM_RESET_LEN                      8
-	set ADDR_WRITE_STUB                    0x00010000
+	set ADDR_WRITE_STUB                    0x04000000
 	
 	# Software  Reset Request
 	set ADDR_NX4000_RAP_SYSCTRL_RSTCTRL    0xf8000050   
