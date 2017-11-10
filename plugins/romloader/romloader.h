@@ -88,6 +88,9 @@ protected:
 		uint32_t ulResetVector;
 		uint32_t ulVersionAddress;
 		uint32_t ulVersionValue;
+		uint32_t ulCheckAddress;
+		uint32_t ulCheckMask;
+		uint32_t ulCheckCmpValue;
 		ROMLOADER_CHIPTYP tChiptyp;
 		const char *pcChiptypName;
 	} ROMLOADER_RESET_ID_T;
@@ -107,7 +110,7 @@ private:
 
 	/* Do not include this into the SWIG bindings. */
 #ifndef SWIG
-	static const ROMLOADER_RESET_ID_T atResIds[8];
+	static const ROMLOADER_RESET_ID_T atResIds[10];
 #endif
 };
 

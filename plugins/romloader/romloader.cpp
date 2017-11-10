@@ -91,6 +91,10 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 	const ROMLOADER_RESET_ID_T *ptRstCnt, *ptRstEnd;
 	uint32_t ulVersionAddr;
 	uint32_t ulVersion;
+	
+	uint32_t ulCheckAddr;
+	uint32_t ulCheckVal;
+	uint32_t ulCheckValMasked;
 	bool fResult;
 	ROMLOADER_CHIPTYP tChiptyp;
 	//const char *pcChiptypName;
@@ -116,10 +120,23 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 			printf("%s(%p): version value: 0x%08X\n", m_pcName, this, ulVersion);
 			if( ptRstCnt->ulVersionValue==ulVersion )
 			{
-				// found chip!
-				tChiptyp = ptRstCnt->tChiptyp;
-				printf("%s(%p): found chip %s.\n", m_pcName, this, ptRstCnt->pcChiptypName);
-				break;
+				ulCheckAddr = ptRstCnt->ulCheckAddress;
+				ulCheckVal = 0;
+
+				if (ulCheckAddr != 0)
+				{
+					ulCheckVal = ptFn->read_data32(ulCheckAddr);
+					ulCheckValMasked = ulCheckVal & ptRstCnt->ulCheckMask;
+					printf("%s(%p): check address: 0x%08X  value: 0x%08X masked: 0x%08X \n", m_pcName, this, ulCheckAddr, ulCheckVal, ulCheckValMasked);
+				}
+					
+				if ((ulCheckAddr==0) || (ulCheckValMasked==ptRstCnt->ulCheckCmpValue))
+				{
+					// found chip!
+					tChiptyp = ptRstCnt->tChiptyp;
+					printf("%s(%p): found chip %s.\n", m_pcName, this, ptRstCnt->pcChiptypName);
+					break;
+				}
 			}
 		}
 		++ptRstCnt;
@@ -141,12 +158,15 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 }
 
 
-const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[8] =
+const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[10] =
 {
 	{
 		0xea080001,
 		0x00200008,
 		0x00001000,
+		0,
+		0,
+		0,
 		ROMLOADER_CHIPTYP_NETX500,
 		"netX500"
 	},
@@ -155,6 +175,9 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[8] =
 		0xea080002,
 		0x00200008,
 		0x00003002,
+		0,
+		0,
+		0,
 		ROMLOADER_CHIPTYP_NETX100,
 		"netX100"
 	},
@@ -163,6 +186,9 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[8] =
 		0xeac83ffc,
 		0x08200008,
 		0x00002001,
+		0,
+		0,
+		0,
 		ROMLOADER_CHIPTYP_NETX50,
 		"netX50"
 	},
@@ -171,6 +197,9 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[8] =
 		0xeafdfffa,
 		0x08070008,
 		0x00005003,
+		0,
+		0,
+		0,
 		ROMLOADER_CHIPTYP_NETX10,
 		"netX10"
 	},
@@ -179,6 +208,9 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[8] =
 		0xeafbfffa,
 		0x080f0008,
 		0x00006003,
+		0,
+		0,
+		0,
 		ROMLOADER_CHIPTYP_NETX56,
 		"netX51/52 Step A"
 	},
@@ -187,6 +219,9 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[8] =
 		0xeafbfffa,
 		0x080f0008,
 		0x00106003,
+		0,
+		0,
+		0,
 		ROMLOADER_CHIPTYP_NETX56B,
 		"netX51/52 Step B"
 	},
@@ -195,14 +230,42 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[8] =
 		0xe59ff00c,
 		0x04100020,
 		0x00108004,
+		0,
+		0,
+		0,
 		ROMLOADER_CHIPTYP_NETX4000_RELAXED,
-		"netX4000"
+		"netX4000 RLXD"
+	},
+	
+	{
+		0xe59ff00c,
+		0x04100020,
+		0x0010b004,
+		0xf80000c0, /* RAP_SYSCTRL_OTP_CONFIG_0 bit 0 is the package type */
+		0x00000001,
+		0x00000000, /* 0 = netx 4000 Full */
+		ROMLOADER_CHIPTYP_NETX4000_FULL,
+		"netX4000 Full"
 	},
 
+	{
+		0xe59ff00c,
+		0x04100020,
+		0x0010b004,
+		0xf80000c0, /* RAP_SYSCTRL_OTP_CONFIG_0 bit 0 is the package type */
+		0x00000001,
+		0x00000001, /* 1 = netx 4100 /netx 4000 Small */
+		ROMLOADER_CHIPTYP_NETX4100_SMALL,
+		"netX4100 Small"
+	},
+	
 	{
 		0x2009fff0,
 		0x00005110,
 		0x1f13933b,
+		0,
+		0,
+		0,
 		ROMLOADER_CHIPTYP_NETX90_MPW,
 		"netX90MPW"
 	}
