@@ -312,7 +312,16 @@ void monitor_init(void)
 	}
 	else if (ulNetxVersion == VAL_NETX_VERSION_4000_FULL)
 	{
-		ucChiptype = (unsigned char)ROMLOADER_CHIPTYP_NETX4000_FULL_SMALL;
+		/* On the netx 4000 full/small, an OTP fuse bit indicates the package type. */
+		NX4000_DEF_ptRAPSysctrlArea
+		if ((ptRAPSysctrlArea->aulRAP_SYSCTRL_OTP_CONFIG_[0] & 0x1UL) == 0UL)
+		{
+			ucChiptype = (unsigned char)ROMLOADER_CHIPTYP_NETX4000_FULL;
+		}
+		else
+		{
+			ucChiptype = (unsigned char)ROMLOADER_CHIPTYP_NETX4100_SMALL;
+		}		
 	}
 #else
 #       error "Unknown ASIC type!"
