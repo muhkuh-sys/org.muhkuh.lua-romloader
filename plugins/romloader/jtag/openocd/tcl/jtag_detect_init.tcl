@@ -3,8 +3,8 @@ puts "loading script jtag_detect_init.tcl"
 set _USE_SOFT_RESET_ false
 
 # Uncomment the following two lines if SRST is not present on the JTAG adapter or not connected to the target.
-#source [find netx_swreset.tcl]
-#set _USE_SOFT_RESET_ true
+#  source [find netx_swreset.tcl]
+#  set _USE_SOFT_RESET_ true
 
 
 # todo/wishlist:
@@ -189,22 +189,23 @@ proc probe_cpu {strCpuID} {
 			if $_USE_SOFT_RESET_ {
 				netx4000.r7 configure -event reset-assert { reset_assert_netx4000 }
 				netx4000.r7 configure -event reset-deassert-post { reset_deassert_post_netx4000 }
-			}
+			}			
+			netx4000.r7 configure -event reset-init { echo {netx 4000 R7 reset-init event}; halt }
 			
 			# Dual Cortex A9s
-			target create netx4000.a9_0 cortex_a -chain-position netx4000.dap -coreid 1 -dbgbase 0x80110000
-			netx4000.a9_0 configure -work-area-phys 0x05000000 -work-area-size 0x4000 -work-area-backup 1
-			target create netx4000.a9_1 cortex_a -chain-position netx4000.dap -coreid 2 -dbgbase 0x80112000
-			netx4000.a9_1 configure -work-area-phys 0x05004000 -work-area-size 0x4000 -work-area-backup 1
-			
-			netx4000.a9_0 configure -event reset-assert-post "cortex_a dbginit"
-			netx4000.a9_1 configure -event reset-assert-post "cortex_a dbginit"
+			# target create netx4000.a9_0 cortex_a -chain-position netx4000.dap -coreid 1 -dbgbase 0x80110000
+			# netx4000.a9_0 configure -work-area-phys 0x05000000 -work-area-size 0x4000 -work-area-backup 1
+			# target create netx4000.a9_1 cortex_a -chain-position netx4000.dap -coreid 2 -dbgbase 0x80112000
+			# netx4000.a9_1 configure -work-area-phys 0x05004000 -work-area-size 0x4000 -work-area-backup 1
+			# 
+			# netx4000.a9_0 configure -event reset-assert-post "cortex_a dbginit"
+			# netx4000.a9_1 configure -event reset-assert-post "cortex_a dbginit"
 			
 			# Only reset r7 (master CPU)
-			netx4000.a9_0 configure -event reset-assert ""
-			netx4000.a9_1 configure -event reset-assert ""
+			# netx4000.a9_0 configure -event reset-assert ""
+			# netx4000.a9_1 configure -event reset-assert ""
 			
-			target smp netx4000.a9_0 netx4000.a9_1
+			# target smp netx4000.a9_0 netx4000.a9_1
 			
 			# Select r7 as default target
 			targets netx4000.r7
@@ -344,41 +345,89 @@ proc reset_netx4000 {} {
 		disable_firewalls
 	}
 	
-	netx4000.a9_0 configure -event reset-init {
-		puts "Halt A9/0"
-		halt
-	}
+	# netx4000.a9_0 configure -event reset-init {
+	# 	puts "Halt A9/0"
+	# 	halt
+	# }
 	
-	netx4000.a9_1 configure -event reset-init {
-		puts "Halt A9/1"
-		halt
-	}
+	# netx4000.a9_1 configure -event reset-init {
+	# 	puts "Halt A9/1"
+	# 	halt
+	# }
 	
 	puts "init"
 	init
 	
-	puts "dap apid 0"
-	dap apid 0
-	puts "dap apid 1"
-	dap apid 1
-	puts "dap apid 2"
-	dap apid 2
+	# puts "dap apid 0"
+	# dap apid 0
+	# puts "dap apid 1"
+	# dap apid 1
+	# puts "dap apid 2"
+	# dap apid 2
 	
-	puts "dap info"
-	dap info
+	# puts "dap info"
+	# dap info
 	puts "dap memaccess"
 	dap memaccess
 	puts "dap apcsw 1"
 	dap apcsw 1
-
 	
 	puts "reset init"
 	reset init
 	
 	targets netx4000.r7
 	
+	netx4000_enable_tcm	
+	
 	puts "-reset_netx4000"
 }
+
+# enable ITCM+DTCM and set reset vector at start of ITCM
+# TRM chapter 4.3.13
+# 
+# MRC    p15,    0,   <Rd>, c9,  c1,  0
+# MRC coproc,  op1, <Rd>, CRn, CRm, op2
+# -> arm mrc coproc op1 CRn CRm op2
+
+# MCR p15,      0, <Rd>, c9,  c1,  0
+# MCR coproc, op1, <Rd>, CRn, CRm, op2
+# -> arm mcr coproc op1 CRn CRm op2 value
+
+# http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0458c/CHDEFBFI.html
+
+proc netx4000_enable_tcm {} {
+	set __ITCM_START_ADDRESS__         0x00000000
+	set __DTCM_START_ADDRESS__         0x00020000
+			
+	set MSK_CR7_CP15_ITCMRR_Enable     0x00000001
+	set SRT_CR7_CP15_ITCMRR_Enable     0
+	
+	set MSK_CR7_CP15_ITCMRR_Size        0x0000003c
+	set SRT_CR7_CP15_ITCMRR_Size        2
+	set VAL_CR7_CP15_ITCMRR_Size_128KB  8
+	
+	set MSK_CR7_CP15_DTCMRR_Enable     0x00000001
+	set SRT_CR7_CP15_DTCMRR_Enable     0
+	
+	set MSK_CR7_CP15_DTCMRR_Size       0x0000003c
+	set SRT_CR7_CP15_DTCMRR_Size       2
+	set VAL_CR7_CP15_DTCMRR_Size_128KB 8
+	
+	set ulItcm [expr $__ITCM_START_ADDRESS__  | $MSK_CR7_CP15_ITCMRR_Enable | ( $VAL_CR7_CP15_ITCMRR_Size_128KB << $SRT_CR7_CP15_ITCMRR_Size ) ]
+	set ulDtcm [expr $__DTCM_START_ADDRESS__  | $MSK_CR7_CP15_DTCMRR_Enable | ( $VAL_CR7_CP15_DTCMRR_Size_128KB << $SRT_CR7_CP15_DTCMRR_Size ) ]
+
+	puts "netx 4000 Enable ITCM/DTCM"
+	puts [ format "ulItcm: %08x" $ulItcm ]
+	puts [ format "ulDtcm: %08x" $ulDtcm ]
+	
+	arm mcr 15 0 9 1 1 $ulItcm
+	arm mcr 15 0 9 1 0 $ulDtcm
+	
+	puts "Set reset vector in ITCM"
+	mww 0 0xE59FF00C
+	mdw 0
+}
+
 
 echo "Done loading jtag_detect_init.tcl"
 
