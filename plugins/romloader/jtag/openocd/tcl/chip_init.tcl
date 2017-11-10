@@ -10,6 +10,8 @@ set ROMLOADER_CHIPTYP_NETX56    6
 set ROMLOADER_CHIPTYP_NETX56B   7 
 set ROMLOADER_CHIPTYP_NETX4000_RELAXED  8 
 set ROMLOADER_CHIPTYP_NETX90_MPW 10
+set ROMLOADER_CHIPTYP_NETX4000_FULL  11
+set ROMLOADER_CHIPTYP_NETX4100_SMALL 12
 
 # fEnableDCCOutput       true: download DCC code, set serial vectors and buffer, false: clear serial vectors
 # ulSerialVectorAddr     Address of serial vectors
@@ -74,6 +76,9 @@ proc init_chip {iChiptyp} {
 	global ROMLOADER_CHIPTYP_NETX56B 
 	global ROMLOADER_CHIPTYP_NETX4000_RELAXED
 	global ROMLOADER_CHIPTYP_NETX90_MPW
+	global ROMLOADER_CHIPTYP_NETX4000_FULL
+	global ROMLOADER_CHIPTYP_NETX4100_SMALL
+	
 
 	puts "init_chip $iChiptyp"
 
@@ -156,54 +161,16 @@ proc init_chip {iChiptyp} {
 		reg sp_svc 0x08000dfc    ; # stack 0500-0dfc
 		reg lr_svc 0x080000fc     ; # when any program returns, jump to the breakpoint address, stopping execution
 	
-	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_RELAXED } {
-	
-		# test code           0x00024000
-		# serial vectors      0x2009fff0
-		# 
-		# DCC code            0x00020400
-		# DCC buffer          0x00020e00
-		# DCC buffer pointer  0x00020fe0
-		# 
-		# JTAG breakpoint     0x00023ffc
-		# JTAG SP             0x2009ff80
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_RELAXED \
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_FULL \
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX4100_SMALL} {
 
-		puts "Init netx 4000 - WIP"
-
-		# enable DTCM
-		
-		# DTCM Region Register - DTCMRR
-		# TRM chapter 4.3.13
-		# 
-		# MRC p15, 0, <Rd>, c9, c1, 0
-		# -> arm mrc pX coproc op1 CRn CRm op2
-		
-		# MCR p15, 0, <Rd>, c9, c1, 0
-		# -> arm mcr pX op1 CRn CRm op2 value
-		
-		# http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0458c/CHDEFBFI.html
-		set MSK_CR7_CP15_DTCMRR_Enable      0x00000001
-		set VAL_CR7_CP15_DTCMRR_Size_128KB  8
-		set SRT_CR7_CP15_DTCMRR_Size        2
-		set SRT_CR7_CP15_DTCMRR_SBZ6        6 
-		set VAL_CR7_CP15_DTCMRR_Base_addr   0x00020000
-		set VAL_CR7_CP15_DTCMRR             [ expr $VAL_CR7_CP15_DTCMRR_Base_addr | ($VAL_CR7_CP15_DTCMRR_Size_128KB << $SRT_CR7_CP15_DTCMRR_SBZ6) | $MSK_CR7_CP15_DTCMRR_Enable ]
-		#set VAL_CR7_CP15_DTCMRR             [ expr $VAL_CR7_CP15_DTCMRR_Base_addr | ($VAL_CR7_CP15_DTCMRR_Size_128KB << $SRT_CR7_CP15_DTCMRR_Size) | $MSK_CR7_CP15_DTCMRR_Enable ]
-		
-		arm mcr 15 0 9 1 0 $VAL_CR7_CP15_DTCMRR
-		arm mcr 15 0 9 1 0 $VAL_CR7_CP15_DTCMRR
+		puts "Init netx 4000"
 		
 		bp 0x04100000 4 hw
 		reg cpsr 0xd3
 		reg sp_svc 0x0003ffec
 		reg lr_svc 0x04100000
-		
-		# test DTCM
-		# mww 0x0003fff0 0x12345678
-		# set value(0) 0
-		# mem2array value 32 0x0003fff0 1
-		# puts "0x0003fff0" 
-		# puts $value(0)
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW } {
 	
