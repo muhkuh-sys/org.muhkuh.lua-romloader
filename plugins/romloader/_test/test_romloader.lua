@@ -38,6 +38,8 @@ atTestAreas = {
 	[romloader.ROMLOADER_CHIPTYP_NETX50]            = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x00014000},
 	[romloader.ROMLOADER_CHIPTYP_NETX10]            = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0002c000},
 	[romloader.ROMLOADER_CHIPTYP_NETX4000_RELAXED]  = {ulTestAreaStart = 0x04010000, ulTestAreaSize  = 0x000f0000},
+	[romloader.ROMLOADER_CHIPTYP_NETX4000_FULL]     = {ulTestAreaStart = 0x04010000, ulTestAreaSize  = 0x000f0000},
+	[romloader.ROMLOADER_CHIPTYP_NETX4100_SMALL]    = {ulTestAreaStart = 0x04010000, ulTestAreaSize  = 0x000f0000},
 	[romloader.ROMLOADER_CHIPTYP_NETX90_MPW]        = {ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},
 }
 
@@ -536,7 +538,9 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 		uiAsicType = 10
 	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX56 or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX56B then
 		uiAsicType = 56
-	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX4000_RELAXED then
+	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX4000_RELAXED
+	or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX4000_FULL
+	or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX4100_SMALL then
 		uiAsicType = 4000
 	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX90_MPW then
 		uiAsicType = 90
