@@ -314,7 +314,8 @@ void romloader_dpm::Connect(lua_State *ptClientData)
 					break;
 
 				case ROMLOADER_CHIPTYP_NETX4000_RELAXED:
-				case ROMLOADER_CHIPTYP_NETX4000_FULL_SMALL:
+				case ROMLOADER_CHIPTYP_NETX4000_FULL:
+				case ROMLOADER_CHIPTYP_NETX4100_SMALL:
 					/* Create a new transfer object. */
 					ptTransfer = new romloader_dpm_transfer_netx4000(ptDevice);
 					printf("ptTransfer %p \n", ptTransfer);
