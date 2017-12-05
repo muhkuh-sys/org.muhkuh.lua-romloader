@@ -30,12 +30,27 @@
 
 #define MONITOR_COMMAND_MSK     0x0fU
 #define MONITOR_COMMAND_SRT     0U
-#define MONITOR_ACCESSSIZE_MSK  0x30U
-#define MONITOR_ACCESSSIZE_SRT  4U
+#define MONITOR_ACCESSSIZE_MSK  0xc0U
+#define MONITOR_ACCESSSIZE_SRT  6U
 #define MONITOR_STATUS_MSK      0x3fU
 #define MONITOR_STATUS_SRT      0U
 #define MONITOR_SEQUENCE_MSK    0xc0U
 #define MONITOR_SEQUENCE_SRT    6U
+
+
+typedef enum MONITOR_PACKET_TYP
+{
+	MONITOR_PACKET_TYP_Command_Read          = 0x00,
+	MONITOR_PACKET_TYP_Command_Write         = 0x01,
+	MONITOR_PACKET_TYP_Command_Execute       = 0x02,
+	MONITOR_PACKET_TYP_Status                = 0x03,
+	MONITOR_PACKET_TYP_Read_Data             = 0x04,
+	MONITOR_PACKET_TYP_Call_Message          = 0x05,
+	MONITOR_PACKET_TYP_ACK                   = 0x06,
+	MONITOR_PACKET_TYP_CancelOperation       = 0x07,
+	MONITOR_PACKET_TYP_MagicData             = 0x4d,
+	MONITOR_PACKET_TYP_Command_Magic         = 0xff
+} MONITOR_PACKET_TYP_T;
 
 
 typedef enum
@@ -59,12 +74,14 @@ typedef enum
 	MONITOR_STATUS_ReddyToExecute			 = 0x07,
 	MONITOR_STATUS_InvalidSequenceNumber     = 0x06
 } MONITOR_STATUS_T;
+#define MONITOR_STATUS_Call_Finished 1
 
 typedef enum
 {
 	MONITOR_ACCESSSIZE_Byte                  = 0,
 	MONITOR_ACCESSSIZE_Word                  = 1,
-	MONITOR_ACCESSSIZE_Long                  = 2
+	MONITOR_ACCESSSIZE_Long                  = 2,
+	MONITOR_ACCESSSIZE_Any                   = 3
 } MONITOR_ACCESSSIZE_T;
 
 

@@ -83,21 +83,9 @@ private:
 		ROMLOADER_COMMANDSET_UNKNOWN          = 0,
 		ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1  = 1,
 		ROMLOADER_COMMANDSET_MI1              = 2,
-		ROMLOADER_COMMANDSET_MI2              = 3
+		ROMLOADER_COMMANDSET_MI2              = 3,
+		ROMLOADER_COMMANDSET_MI3              = 4
 	} ROMLOADER_COMMANDSET_T;
-
-	typedef enum
-	{
-		UARTSTATUS_OK                        = 0,
-		UARTSTATUS_TIMEOUT                   = 1,
-		UARTSTATUS_PACKET_TOO_LARGE          = 2,
-		UARTSTATUS_SEND_FAILED               = 3,
-		UARTSTATUS_FAILED_TO_SYNC            = 4,
-		UARTSTATUS_CRC_MISMATCH              = 5,
-		UARTSTATUS_MISSING_USERDATA          = 6,
-		UARTSTATUS_COMMAND_EXECUTION_FAILED  = 7,
-		UARTSTATUS_SEQUENCE_MISMATCH         = 8
-	} UARTSTATUS_T;
 
 	static const size_t sizMaxPacketSizeHost = 4096;
 	size_t m_sizMaxPacketSizeClient;
@@ -109,7 +97,7 @@ private:
 
 	romloader_uart_device_platform *m_ptUartDev;
 
-	unsigned int m_uiMonitorSequence;
+	unsigned char m_ucMonitorSequence;
 
 	size_t m_sizPacketRingBufferHead;
 	size_t m_sizPacketRingBufferFill;
@@ -120,15 +108,18 @@ private:
 
 
 	void packet_ringbuffer_init(void);
-	UARTSTATUS_T packet_ringbuffer_fill(size_t sizRequestedFillLevel);
+	TRANSPORTSTATUS_T packet_ringbuffer_fill(size_t sizRequestedFillLevel);
 	uint8_t packet_ringbuffer_get(void);
 	int packet_ringbuffer_peek(size_t sizOffset);
 	void packet_ringbuffer_discard(void);
 
-	UARTSTATUS_T send_sync_command(void);
-	UARTSTATUS_T send_packet(const uint8_t *pucData, size_t sizData);
-	UARTSTATUS_T receive_packet(void);
-	UARTSTATUS_T execute_command(const uint8_t *aucCommand, size_t sizCommand);
+	TRANSPORTSTATUS_T send_sync_command(void);
+	TRANSPORTSTATUS_T send_packet(const uint8_t *pucData, size_t sizData);
+	TRANSPORTSTATUS_T receive_packet(void);
+	TRANSPORTSTATUS_T send_ack(unsigned char ucSequenceToAck);
+	TRANSPORTSTATUS_T execute_command(const uint8_t *aucCommand, size_t sizCommand);
+	TRANSPORTSTATUS_T read_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, uint16_t sizDataInBytes);
+	TRANSPORTSTATUS_T write_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, const void *pvData, uint16_t sizDataInBytes);
 };
 
 /*-----------------------------------*/

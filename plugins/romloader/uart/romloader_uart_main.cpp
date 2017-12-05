@@ -34,6 +34,49 @@
 #       define snprintf _snprintf
 #endif
 
+
+/*-------------------------------------*/
+
+/* Endianness macros translating 16 and 32bit from the host to the netX byte order.
+ * FIXME: Detect the host endianness. More infos here:
+ *          http://www.boost.org/doc/libs/1_43_0/boost/detail/endian.hpp
+ *          https://cmake.org/cmake/help/v3.5/module/TestBigEndian.html
+ */
+#define HTONETX16(a) (a)
+#define HTONETX32(a) (a)
+
+#define NETXTOH16(a) (a)
+#define NETXTOH32(a) (a)
+
+
+struct MIV3_PACKET_COMMAND_READWRITE_DATA_STRUCT
+{
+	uint8_t ucPacketType;
+	uint16_t usDataSize;
+	uint32_t ulAddress;
+} __attribute__ ((packed));
+
+typedef union MIV3_PACKET_COMMAND_READWRITE_DATA_UNION
+{
+	struct MIV3_PACKET_COMMAND_READWRITE_DATA_STRUCT s;
+	uint8_t auc[7];
+} __attribute__ ((packed)) MIV3_PACKET_COMMAND_READWRITE_DATA_T;
+
+
+struct MIV3_PACKET_COMMAND_CALL_STRUCT
+{
+	uint8_t ucPacketType;
+	uint32_t ulAddress;
+	uint32_t ulR0;
+} __attribute__ ((packed));
+
+typedef union MIV3_PACKET_COMMAND_CALL_UNION
+{
+	struct MIV3_PACKET_COMMAND_CALL_STRUCT s;
+	uint8_t auc[7];
+} __attribute__ ((packed)) MIV3_PACKET_COMMAND_CALL_T;
+
+
 /*-------------------------------------*/
 
 const char *romloader_uart_provider::m_pcPluginNamePattern = "romloader_uart_%s";
@@ -128,7 +171,7 @@ romloader_uart *romloader_uart_provider::ClaimInterface(const muhkuh_plugin_refe
 		else
 		{
 			ptPlugin = new romloader_uart(pcName, m_pcPluginId, this, acDevice);
-			printf("%s(%p): claim_interface(): claimed interface %s.\n", m_pcPluginId, this, pcName);
+//			printf("%s(%p): claim_interface(): claimed interface %s.\n", m_pcPluginId, this, pcName);
 		}
 	}
 
@@ -181,11 +224,9 @@ romloader_uart::romloader_uart(const char *pcName, const char *pcTyp, romloader_
  : romloader(pcName, pcTyp, ptProvider)
  , m_ptUartDev(NULL)
 {
-	printf("%s(%p): created in romloader_uart\n", m_pcName, this);
-
 	m_ptUartDev = new romloader_uart_device_platform(pcDeviceName);
 
-	m_uiMonitorSequence = 0;
+	m_ucMonitorSequence = 0;
 
 	packet_ringbuffer_init();
 }
@@ -193,8 +234,6 @@ romloader_uart::romloader_uart(const char *pcName, const char *pcTyp, romloader_
 
 romloader_uart::~romloader_uart(void)
 {
-	printf("%s(%p): deleted in romloader_uart\n", m_pcName, this);
-
 	if( m_ptUartDev!=NULL )
 	{
 		m_ptUartDev->Close();
@@ -333,10 +372,11 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 						/* The size information does not include the CRC. Add the 2 bytes here. */
 						sizPacket += 2;
 						
-						/* Is the size ok? */
+						/* Is the size OK? */
 						if( sizPacket<11 )
 						{
 							fprintf(stderr, "The received packet is too small. It must be at least 11 bytes, but it is %ld bytes.\n", sizPacket);
+							hexdump(aucData, sizPacket);
 						}
 						else if( sizPacket>(sizeof(aucData)-2) )
 						{
@@ -352,14 +392,10 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 							}
 							else
 							{
-								ucStatus = aucData[2] & MONITOR_STATUS_MSK;
+								ucStatus = aucData[3];
 								if( ucStatus!=MONITOR_STATUS_Ok )
 								{
 									fprintf(stderr, "The status of the response is not OK but 0x%02x.\n", ucStatus);
-								}
-								else if( memcmp(aucData+3, aucMagicMooh, sizeof(aucMagicMooh))!=0 )
-								{
-									fprintf(stderr, "The response packet has no MOOH magic!\n");
 								}
 								else
 								{
@@ -379,23 +415,67 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 									}
 									else
 									{
-										ulMiVersionMin = (uint32_t)(aucData[7] | (aucData[8]<<8));
-										ulMiVersionMaj = (uint32_t)(aucData[9] | (aucData[10]<<8));
-										printf("Found new machine interface V%d.%d.\n", ulMiVersionMaj, ulMiVersionMin);
-										
-										if( ulMiVersionMaj==1 )
+										if( memcmp(aucData+3, aucMagicMooh, sizeof(aucMagicMooh))==0 )
 										{
-											tCmdSet = ROMLOADER_COMMANDSET_MI1;
-											fResult = true;
+											hexdump(aucData, sizPacket);
+											ulMiVersionMin = (uint32_t)(aucData[7] | (aucData[8]<<8));
+											ulMiVersionMaj = (uint32_t)(aucData[9] | (aucData[10]<<8));
+											printf("Found new machine interface V%d.%d.\n", ulMiVersionMaj, ulMiVersionMin);
+											
+											if( ulMiVersionMaj==1 )
+											{
+												tCmdSet = ROMLOADER_COMMANDSET_MI1;
+												fResult = true;
+											}
+											else if( ulMiVersionMaj==2 )
+											{
+												tCmdSet = ROMLOADER_COMMANDSET_MI2;
+												fResult = true;
+											}
+/* This is an invalid combination.
+											else if( ulMiVersionMaj==3 )
+											{
+												tCmdSet = ROMLOADER_COMMANDSET_MI3;
+												fResult = true;
+											}
+*/
+											else
+											{
+												fprintf(stderr, "Unknown machine interface version %d.%d\n", ulMiVersionMaj, ulMiVersionMin);
+											}
 										}
-										else if( ulMiVersionMaj==2 )
+										else if( memcmp(aucData+4, aucMagicMooh, sizeof(aucMagicMooh))==0 )
 										{
-											tCmdSet = ROMLOADER_COMMANDSET_MI2;
-											fResult = true;
+											ulMiVersionMin = (uint32_t)(aucData[8] | (aucData[9]<<8));
+											ulMiVersionMaj = (uint32_t)(aucData[10] | (aucData[11]<<8));
+											printf("Found new machine interface V%d.%d.\n", ulMiVersionMaj, ulMiVersionMin);
+
+/* These combinations are invald.
+											if( ulMiVersionMaj==1 )
+											{
+												tCmdSet = ROMLOADER_COMMANDSET_MI1;
+												fResult = true;
+											}
+											else if( ulMiVersionMaj==2 )
+											{
+												tCmdSet = ROMLOADER_COMMANDSET_MI2;
+												fResult = true;
+											}
+											else 
+*/
+											if( ulMiVersionMaj==3 )
+											{
+												tCmdSet = ROMLOADER_COMMANDSET_MI3;
+												fResult = true;
+											}
+											else
+											{
+												fprintf(stderr, "Unknown machine interface version %d.%d\n", ulMiVersionMaj, ulMiVersionMin);
+											}
 										}
 										else
 										{
-											fprintf(stderr, "Unknown machine interface version %d.%d\n", ulMiVersionMaj, ulMiVersionMin);
+											fprintf(stderr, "The response packet has no MOOH magic!\n");
 										}
 									}
 								}
@@ -438,11 +518,11 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 
 
 
-romloader_uart::UARTSTATUS_T romloader_uart::send_sync_command(void)
+romloader::TRANSPORTSTATUS_T romloader_uart::send_sync_command(void)
 {
 	const uint8_t aucKnock[5] = { '*', 0x00, 0x00, '*', '#' };
 	size_t sizSend;
-	UARTSTATUS_T tResult;
+	TRANSPORTSTATUS_T tResult;
 	uint8_t ucStatus;
 	unsigned int uiRetryCnt;
 
@@ -454,12 +534,12 @@ romloader_uart::UARTSTATUS_T romloader_uart::send_sync_command(void)
 		if( sizSend!=sizeof(aucKnock) )
 		{
 			fprintf(stderr, "! send_sync_command: failed to send the packet!\n");
-			tResult = UARTSTATUS_SEND_FAILED;
+			tResult = TRANSPORTSTATUS_SEND_FAILED;
 		}
 		else
 		{
 			tResult = receive_packet();
-			if( tResult!=UARTSTATUS_OK )
+			if( tResult!=TRANSPORTSTATUS_OK )
 			{
 				fprintf(stderr, "! send_sync_command: receive_packet failed with error code %d\n", tResult);
 			}
@@ -468,25 +548,25 @@ romloader_uart::UARTSTATUS_T romloader_uart::send_sync_command(void)
 				if( m_sizPacketInputBuffer<5 )
 				{
 					fprintf(stderr, "! send_sync_command: received no user data!\n");
-					tResult = UARTSTATUS_MISSING_USERDATA;
+					tResult = TRANSPORTSTATUS_MISSING_USERDATA;
 				}
 				else
 				{
-					ucStatus = m_aucPacketInputBuffer[2] & MONITOR_STATUS_MSK;
+					ucStatus = m_aucPacketInputBuffer[3];
 					if( ucStatus==0 )
 					{
-						tResult = UARTSTATUS_OK;
+						tResult = TRANSPORTSTATUS_OK;
 					}
 					else
 					{
 						fprintf(stderr, "! send_sync_command: status is not OK: %d\n", ucStatus);
-						tResult = UARTSTATUS_COMMAND_EXECUTION_FAILED;
+						tResult = TRANSPORTSTATUS_COMMAND_EXECUTION_FAILED;
 					}
 				}
 			}
 		}
 
-		if( tResult!=UARTSTATUS_OK )
+		if( tResult!=TRANSPORTSTATUS_OK )
 		{
 			--uiRetryCnt;
 			if( uiRetryCnt==0 )
@@ -504,7 +584,7 @@ romloader_uart::UARTSTATUS_T romloader_uart::send_sync_command(void)
 			}
 		}
 
-	} while( tResult!=UARTSTATUS_OK );
+	} while( tResult!=TRANSPORTSTATUS_OK );
 
 	return tResult;
 }
@@ -514,15 +594,22 @@ romloader_uart::UARTSTATUS_T romloader_uart::send_sync_command(void)
 bool romloader_uart::synchronize(void)
 {
 	const uint8_t aucMagicMooh[4] = { 0x4d, 0x4f, 0x4f, 0x48 };
-	UARTSTATUS_T tResult;
+	TRANSPORTSTATUS_T tResult;
 	bool fResult;
-	/* The expected knock response is 16 bytes:
+
+
+	/* The expected size of a V3 knock response is 17 bytes:
 	 *    2 size bytes
+	 *    1 Current sequence number
 	 *    1 status byte
-	 *   11 data bytes (see monitor_commands.h for more information)
+	 *    4 MOOH magic
+	 *    2 MI version minor
+	 *    2 MI version major
+	 *    1 Chip type
+	 *    2 Maximum packet size
 	 *    2 bytes CRC
 	 */
-	const size_t sizExpectedResponse = 16;
+	const size_t sizExpectedResponse = 17;
 	uint8_t ucSequence;
 	uint32_t ulMiVersionMin;
 	uint32_t ulMiVersionMaj;
@@ -530,45 +617,36 @@ bool romloader_uart::synchronize(void)
 	size_t sizMaxPacketSize;
 
 
+	fprintf(stderr, "synchronize\n");
 	fResult = false;
 
 	tResult = send_sync_command();
-	if( tResult!=UARTSTATUS_OK )
+	if( tResult!=TRANSPORTSTATUS_OK )
 	{
 		/* Failed to send knock sequence to device. */
 		fprintf(stderr, "Failed to send knock sequence to device.\n");
 	}
-	else if( m_sizPacketInputBuffer!=sizExpectedResponse )
-	{
-		fprintf(stderr, "Received knock sequence with invalid size of %ld. Expected: %ld.\n", m_sizPacketInputBuffer, sizExpectedResponse);
-		hexdump(m_aucPacketInputBuffer, m_sizPacketInputBuffer);
-	}
-	else if( memcmp(m_aucPacketInputBuffer+3, aucMagicMooh, sizeof(aucMagicMooh))!=0 )
-	{
-		fprintf(stderr, "Received knock sequence has no magic.\n");
-		hexdump(m_aucPacketInputBuffer, m_sizPacketInputBuffer);
-	}
-	else
+	else if( m_sizPacketInputBuffer==sizExpectedResponse && memcmp(m_aucPacketInputBuffer+4, aucMagicMooh, sizeof(aucMagicMooh))==0 )
 	{
 		fprintf(stderr, "Packet:\n");
 		hexdump(m_aucPacketInputBuffer, m_sizPacketInputBuffer);
 
-		/* Get the sequence number from the status byte. */
-		ucSequence = (m_aucPacketInputBuffer[0x02] & MONITOR_SEQUENCE_MSK) >> MONITOR_SEQUENCE_SRT;
+		/* Get the sequence number. */
+		ucSequence = m_aucPacketInputBuffer[0x02];
 		fprintf(stderr, "Sequence number: 0x%02x\n", ucSequence);
 
-		ulMiVersionMin =  ((uint32_t)(m_aucPacketInputBuffer[0x07])) |
+		ulMiVersionMin =  ((uint32_t)(m_aucPacketInputBuffer[0x09])) |
 		                 (((uint32_t)(m_aucPacketInputBuffer[0x08]))<<8U);
-		ulMiVersionMaj =  ((uint32_t)(m_aucPacketInputBuffer[0x09])) |
-		                 (((uint32_t)(m_aucPacketInputBuffer[0x0a]))<<8U);
+		ulMiVersionMaj =  ((uint32_t)(m_aucPacketInputBuffer[0x0a])) |
+		                 (((uint32_t)(m_aucPacketInputBuffer[0x0b]))<<8U);
 		printf("Machine interface V%d.%d.\n", ulMiVersionMaj, ulMiVersionMin);
 
-		tChipType = (ROMLOADER_CHIPTYP)(m_aucPacketInputBuffer[0x0b]);
+		tChipType = (ROMLOADER_CHIPTYP)(m_aucPacketInputBuffer[0x0c]);
 		printf("Chip type : %d\n", tChipType);
 
 		/* sizMaxPacketSizeClient = min(max. packet size from response, sizMaxPacketSizeHost) */
-		sizMaxPacketSize =  ((size_t)(m_aucPacketInputBuffer[0x0c])) |
-		                   (((size_t)(m_aucPacketInputBuffer[0x0d]))<<8U);
+		sizMaxPacketSize =  ((size_t)(m_aucPacketInputBuffer[0x0d])) |
+		                   (((size_t)(m_aucPacketInputBuffer[0x0e]))<<8U);
 		printf("Maximum packet size: 0x%04lx\n", sizMaxPacketSize);
 		/* Limit the packet size to the buffer size. */
 		if( sizMaxPacketSize>sizMaxPacketSizeHost )
@@ -578,11 +656,18 @@ bool romloader_uart::synchronize(void)
 		}
 
 		/* Set the new values. */
-		m_uiMonitorSequence = ucSequence;
+		m_ucMonitorSequence = ucSequence;
 		m_tChiptyp = tChipType;
 		m_sizMaxPacketSizeClient = sizMaxPacketSize;
-		
+
 		fResult = true;
+	}
+	else
+	{
+		fprintf(stderr, "Received an invalid knock response.\n");
+		hexdump(m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+
+		/* TODO: Send a "Cancel Operation" packet here and retry. */
 	}
 
 	return fResult;
@@ -605,7 +690,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 	fResult = false;
 	ptFn = NULL;
 
-	printf("%s(%p): connect\n", m_pcName, this);
+//	printf("%s(%p): connect\n", m_pcName, this);
 
 	if( m_ptUartDev!=NULL && m_fIsConnected==false )
 	{
@@ -684,6 +769,12 @@ void romloader_uart::Connect(lua_State *ptClientData)
 
 
 				case ROMLOADER_COMMANDSET_MI2:
+					fprintf(stderr, "TODO: Update the V2 device to V3.\n");
+					fResult = false;
+					break;
+
+
+				case ROMLOADER_COMMANDSET_MI3:
 					fprintf(stderr, "The device does not need an update.\n");
 					fResult = true;
 					break;
@@ -721,6 +812,10 @@ void romloader_uart::Disconnect(lua_State *ptClientData)
 
 	if( m_ptUartDev!=NULL )
 	{
+		/* Flush all waiting data. */
+		m_ptUartDev->Flush();
+
+		/* Close the UART device. */
 		m_ptUartDev->Close();
 	}
 
@@ -737,17 +832,17 @@ void romloader_uart::packet_ringbuffer_init(void)
 
 
 
-romloader_uart::UARTSTATUS_T romloader_uart::packet_ringbuffer_fill(size_t sizRequestedFillLevel)
+romloader::TRANSPORTSTATUS_T romloader_uart::packet_ringbuffer_fill(size_t sizRequestedFillLevel)
 {
 	size_t sizWritePosition;
-	UARTSTATUS_T tResult;
+	TRANSPORTSTATUS_T tResult;
 	size_t sizReceiveCnt;
 	size_t sizChunk;
 	size_t sizRead;
 
 
 	/* Expect success. */
-	tResult = UARTSTATUS_OK;
+	tResult = TRANSPORTSTATUS_OK;
 
 	/* Does the buffer contain enough data? */
 	if( m_sizPacketRingBufferFill<sizRequestedFillLevel )
@@ -781,7 +876,7 @@ romloader_uart::UARTSTATUS_T romloader_uart::packet_ringbuffer_fill(size_t sizRe
 			if( sizRead!=sizChunk )
 			{
 //				fprintf(stderr, "TIMEOUT: requested %d bytes, got only %d.\n", sizChunk, sizRead);
-				tResult = UARTSTATUS_TIMEOUT;
+				tResult = TRANSPORTSTATUS_TIMEOUT;
 				break;
 			}
 		} while( sizReceiveCnt>0 );
@@ -839,37 +934,47 @@ void romloader_uart::packet_ringbuffer_discard(void)
 
 
 
-romloader_uart::UARTSTATUS_T romloader_uart::send_packet(const uint8_t *pucData, size_t sizData)
+romloader::TRANSPORTSTATUS_T romloader_uart::send_packet(const uint8_t *pucData, size_t sizData)
 {
-	UARTSTATUS_T tResult;
+	TRANSPORTSTATUS_T tResult;
 	uint8_t aucPacketBuffer[sizMaxPacketSizeHost];
 	uint16_t usCrc;
 	const uint8_t *pucCnt;
 	const uint8_t *pucEnd;
 	size_t sizSend;
 	size_t sizPacket;
+	size_t sizMaxUserData;
 
 
 	/* The maximum packet size is reduced by...
 	 *   the start char (1 byte),
 	 *   the size information (2 bytes)
+	 *   the sequence number (1 byte)
 	 *   and the CRC (2 bytes).
 	 */
-	if( sizData<=m_sizMaxPacketSizeClient-5 )
+	sizMaxUserData = m_sizMaxPacketSizeClient - 6U;
+	if( sizData<=sizMaxUserData )
 	{
 		/* Set the packet start character. */
 		aucPacketBuffer[0] = MONITOR_STREAM_PACKET_START;
-		/* Set the size of the user data. */
+		/* Set the size of the user data.
+		 * Add 1 byte for the sequence number.
+		 */
+		++sizData;
 		aucPacketBuffer[1] = (uint8_t)( sizData        & 0xffU);
 		aucPacketBuffer[2] = (uint8_t)((sizData >> 8U) & 0xffU);
 
+		/* Copy the sequence number. */
+		aucPacketBuffer[3] = m_ucMonitorSequence;
+		--sizData;
+
 		/* Copy the user data. */
-		memcpy(aucPacketBuffer+3, pucData, sizData);
+		memcpy(aucPacketBuffer+4, pucData, sizData);
 
 		/* Generate the CRC. */
 		usCrc = 0;
 		pucCnt = aucPacketBuffer + 1;
-		pucEnd = aucPacketBuffer + 1 + 2 + sizData;
+		pucEnd = aucPacketBuffer + 1 + 2 + 1 + sizData;
 		while( pucCnt<pucEnd )
 		{
 			usCrc = crc16(usCrc, *pucCnt);
@@ -877,26 +982,27 @@ romloader_uart::UARTSTATUS_T romloader_uart::send_packet(const uint8_t *pucData,
 		}
 
 		/* Append the CRC. */
-		aucPacketBuffer[sizData+3] = (uint8_t)((usCrc>>8U) & 0xffU);
-		aucPacketBuffer[sizData+4] = (uint8_t)( usCrc      & 0xffU);
+		aucPacketBuffer[sizData+4] = (uint8_t)((usCrc>>8U) & 0xffU);
+		aucPacketBuffer[sizData+5] = (uint8_t)( usCrc      & 0xffU);
 
 		/* Send the buffer. */
-		sizPacket = sizData + 5;
+		sizPacket = sizData + 6;
 		sizSend = m_ptUartDev->SendRaw(aucPacketBuffer, sizPacket, UART_BASE_TIMEOUT_MS + sizPacket*UART_CHAR_TIMEOUT_MS);
 		if( sizSend==sizPacket )
 		{
-			tResult = UARTSTATUS_OK;
+			m_ptUartDev->Flush();
+			tResult = TRANSPORTSTATUS_OK;
 		}
 		else
 		{
 			fprintf(stderr, "! send_packet: failed to send the packet!\n");
-			tResult = UARTSTATUS_SEND_FAILED;
+			tResult = TRANSPORTSTATUS_SEND_FAILED;
 		}
 	}
 	else
 	{
-		fprintf(stderr, "! send_packet: packet too large: %ld bytes!\n", sizData);
-		tResult = UARTSTATUS_PACKET_TOO_LARGE;
+		fprintf(stderr, "! send_packet: packet too large: %zd bytes! Maximum size is %zd.\n", sizData, sizMaxUserData);
+		tResult = TRANSPORTSTATUS_PACKET_TOO_LARGE;
 	}
 
 	return tResult;
@@ -904,25 +1010,26 @@ romloader_uart::UARTSTATUS_T romloader_uart::send_packet(const uint8_t *pucData,
 
 
 
-romloader_uart::UARTSTATUS_T romloader_uart::receive_packet(void)
+romloader::TRANSPORTSTATUS_T romloader_uart::receive_packet(void)
 {
 	unsigned int uiRetries;
 	uint8_t ucData;
 	bool fFound;
-	UARTSTATUS_T tResult;
+	TRANSPORTSTATUS_T tResult;
 	size_t sizData;
 	size_t sizPacket;
 	uint16_t usCrc;
 	size_t sizCnt;
 
 
+//	fprintf(stderr, "receive_packet\n");
 	/* Wait for the start character. */
 	fFound = false;
-	uiRetries = 10;
+	uiRetries = 64;
 	do
 	{
 		tResult = packet_ringbuffer_fill(1);
-		if( tResult==UARTSTATUS_OK )
+		if( tResult==TRANSPORTSTATUS_OK )
 		{
 			ucData = packet_ringbuffer_get();
 			if( ucData==MONITOR_STREAM_PACKET_START )
@@ -935,29 +1042,37 @@ romloader_uart::UARTSTATUS_T romloader_uart::receive_packet(void)
 				fprintf(stderr, "WARNING: Skipping char 0x%02x.\n", ucData);
 			}
 		}
+		else if( tResult==TRANSPORTSTATUS_TIMEOUT )
+		{
+			/* Nothing received. */
+			break;
+		}
 		--uiRetries;
 	} while( uiRetries>0 );
 
 	if( fFound!=true )
 	{
 		fprintf(stderr, "receive_packet: no start char found!\n");
-		tResult = UARTSTATUS_FAILED_TO_SYNC;
+		tResult = TRANSPORTSTATUS_FAILED_TO_SYNC;
 	}
 	else
 	{
+//		fprintf(stderr, "Got start char\n");
+
 		/* Get the size information. */
 		tResult = packet_ringbuffer_fill(2);
-		if( tResult==UARTSTATUS_OK )
+		if( tResult==TRANSPORTSTATUS_OK )
 		{
 			sizData  =  (size_t)(packet_ringbuffer_peek(0));
 			sizData |= ((size_t)(packet_ringbuffer_peek(1))) << 8U;
+//			fprintf(stderr, "Expected packet size: %zd bytes\n", sizData);
 
-			/* The complete packet consists of the size info, the user data and the CRC.*/
+			/* The complete packet consists of the size info, the user data and the CRC. The sequence number is already part of the user data. */
 			sizPacket = 2 + sizData + 2;
 
 			/* Get the rest of the packet. */
 			tResult = packet_ringbuffer_fill(sizPacket);
-			if( tResult==UARTSTATUS_OK )
+			if( tResult==TRANSPORTSTATUS_OK )
 			{
 				/* Generate the CRC. */
 				usCrc = 0;
@@ -984,18 +1099,20 @@ romloader_uart::UARTSTATUS_T romloader_uart::receive_packet(void)
 				{
 					fprintf(stderr, "! receive_packet: CRC failed.\n");
 
-					/* Debug: get the complete packet and dump it. */
-					printf("packet size: 0x%08lx bytes\n", sizPacket);
+					/* Debug: get the complete packet and dump it.
+					 * NOTE: Do not remove the data from the buffer.
+					 */
+//					printf("packet size: 0x%08lx bytes\n", sizPacket);
 					sizCnt = 0;
 					do
 					{
-						m_aucPacketInputBuffer[sizCnt] = packet_ringbuffer_get();
+						m_aucPacketInputBuffer[sizCnt] = packet_ringbuffer_peek(sizCnt);
 						++sizCnt;
 					} while( sizCnt<sizPacket );
-					printf("Packet data:\n");
-					hexdump(m_aucPacketInputBuffer, sizPacket);
+//					printf("Packet data:\n");
+//					hexdump(m_aucPacketInputBuffer, sizPacket);
 
-					tResult = UARTSTATUS_CRC_MISMATCH;
+					tResult = TRANSPORTSTATUS_CRC_MISMATCH;
 				}
 			}
 			else
@@ -1014,11 +1131,88 @@ romloader_uart::UARTSTATUS_T romloader_uart::receive_packet(void)
 
 
 
-romloader_uart::UARTSTATUS_T romloader_uart::execute_command(const unsigned char *aucCommand, size_t sizCommand)
+struct PACKET_ACK_STRUCT
 {
-	UARTSTATUS_T tResult;
+	uint8_t  ucStreamStart;
+	uint16_t usDataSize;
+	uint8_t  ucSequenceNumber;
+	uint8_t  ucPacketType;
+	uint8_t  ucCrcHi;
+	uint8_t  ucCrcLo;
+} __attribute__ ((packed));
+
+typedef union PACKET_ACK_UNION
+{
+	struct PACKET_ACK_STRUCT s;
+	uint8_t auc[7];
+} PACKET_ACK_T;
+
+
+romloader::TRANSPORTSTATUS_T romloader_uart::send_ack(unsigned char ucSequenceToAck)
+{
+	TRANSPORTSTATUS_T tResult;
+	PACKET_ACK_T tPacketAck;
+	uint16_t usCrc;
+	size_t sizCnt;
+	size_t sizPacket;
+	size_t sizSend;
+
+
+//	fprintf(stderr, "Sending ACK for sequence number %d.\n", ucSequenceToAck);
+
+	/* Set the packet start character. */
+	tPacketAck.s.ucStreamStart = MONITOR_STREAM_PACKET_START;
+
+	/* Set the size of the user data.
+	 *  1 byte sequence number
+	 *  1 byte packet type
+	 */
+	tPacketAck.s.usDataSize = 2;
+
+	/* Set the sequence number. */
+	tPacketAck.s.ucSequenceNumber = ucSequenceToAck;
+
+	/* Set the packet typ. */
+	tPacketAck.s.ucPacketType = MONITOR_PACKET_TYP_ACK;
+
+	/* Generate the CRC. */
+	usCrc = 0;
+	sizCnt = offsetof(struct PACKET_ACK_STRUCT, usDataSize);
+	while( sizCnt<offsetof(struct PACKET_ACK_STRUCT, ucCrcHi) )
+	{
+		usCrc = crc16(usCrc, tPacketAck.auc[sizCnt]);
+		++sizCnt;
+	}
+
+	/* Append the CRC. */
+	tPacketAck.s.ucCrcHi = (uint8_t)((usCrc>>8U) & 0xffU);
+	tPacketAck.s.ucCrcLo = (uint8_t)( usCrc      & 0xffU);
+
+	/* Send the buffer. */
+	sizPacket = sizeof(PACKET_ACK_T);
+//	hexdump(tPacketAck.auc, sizPacket);
+	sizSend = m_ptUartDev->SendRaw(tPacketAck.auc, sizPacket, UART_BASE_TIMEOUT_MS + sizPacket*UART_CHAR_TIMEOUT_MS);
+	if( sizSend==sizPacket )
+	{
+		m_ptUartDev->Flush();
+		tResult = TRANSPORTSTATUS_OK;
+	}
+	else
+	{
+		fprintf(stderr, "! send_packet: failed to send the ACK packet!\n");
+		tResult = TRANSPORTSTATUS_SEND_FAILED;
+	}
+
+	return tResult;
+}
+
+
+
+romloader::TRANSPORTSTATUS_T romloader_uart::execute_command(const unsigned char *aucCommand, size_t sizCommand)
+{
+	TRANSPORTSTATUS_T tResult;
 	unsigned char ucStatus;
-	unsigned int uiSequence;
+	unsigned char ucPacketSequence;
 	unsigned int uiRetryCnt;
 
 
@@ -1029,79 +1223,57 @@ romloader_uart::UARTSTATUS_T romloader_uart::execute_command(const unsigned char
 		packet_ringbuffer_discard();
 		m_ptUartDev->discardCards();
 
+		/* Send the command. */
+//		fprintf(stderr, "Sending packet...\n");
 		tResult = send_packet(aucCommand, sizCommand);
-		if( tResult!=UARTSTATUS_OK )
+		if( tResult!=TRANSPORTSTATUS_OK )
 		{
 			fprintf(stderr, "! execute_command: send_packet failed with error code %d\n", tResult);
 		}
 		else
 		{
+			/* Receive the ACK for the command. */
+//			fprintf(stderr, "Wait for ACK...\n");
 			tResult = receive_packet();
-			if( tResult!=UARTSTATUS_OK )
+			if( tResult!=TRANSPORTSTATUS_OK )
 			{
 				fprintf(stderr, "! execute_command: receive_packet failed with error code %d\n", tResult);
 			}
 			else
 			{
-				if( m_sizPacketInputBuffer<5 )
+				if( m_sizPacketInputBuffer==6 && m_aucPacketInputBuffer[3]==MONITOR_PACKET_TYP_ACK )
 				{
-					fprintf(stderr, "! execute_command: packet size too small: %ld. It has no user data!\n", m_sizPacketInputBuffer);
-					tResult = UARTSTATUS_MISSING_USERDATA;
-				}
-				else
-				{
-					ucStatus = (m_aucPacketInputBuffer[2] & MONITOR_STATUS_MSK) >> MONITOR_STATUS_SRT;
-					uiSequence = (m_aucPacketInputBuffer[2] & MONITOR_SEQUENCE_MSK) >> MONITOR_SEQUENCE_SRT;
-					if( ucStatus!=0 )
+					/* Get the sequence number. */
+					ucPacketSequence = m_aucPacketInputBuffer[2];
+					if( ucPacketSequence!=m_ucMonitorSequence )
 					{
-						fprintf(stderr, "! execute_command: status is not OK: 0x%02x\n", ucStatus);
-						switch( ((MONITOR_STATUS_T)ucStatus) )
-						{
-						case MONITOR_STATUS_Ok:
-							fprintf(stderr, "OK\n");
-							break;
-						case MONITOR_STATUS_CallMessage:
-							fprintf(stderr, "CallMessage\n");
-							break;
-						case MONITOR_STATUS_CallFinished:
-							fprintf(stderr, "CallFinished\n");
-							break;
-						case MONITOR_STATUS_InvalidCommand:
-							fprintf(stderr, "InvalidCommand\n");
-							break;
-						case MONITOR_STATUS_InvalidPacketSize:
-							fprintf(stderr, "InvalidPacketSize\n");
-							break;
-						case MONITOR_STATUS_InvalidSizeParameter:
-							fprintf(stderr, "InvalidSizeParameter\n");
-							break;
-						case MONITOR_STATUS_InvalidSequenceNumber:
-							fprintf(stderr, "InvalidSequenceNumber\n");
-							break;
-						}
-						
-						if( ((MONITOR_STATUS_T)ucStatus)==MONITOR_STATUS_InvalidSequenceNumber )
-						{
-							synchronize();
-						}
-						
-						tResult = UARTSTATUS_COMMAND_EXECUTION_FAILED;
-					}
-					else if( uiSequence!=m_uiMonitorSequence )
-					{
-						fprintf(stderr, "! execute_command: the sequence does not match: %d / %d\n", uiSequence, m_uiMonitorSequence);
+						fprintf(stderr, "! execute_command: the sequence does not match: %d / %d\n", ucPacketSequence, m_ucMonitorSequence);
 						synchronize();
-						tResult = UARTSTATUS_SEQUENCE_MISMATCH;
+						tResult = TRANSPORTSTATUS_SEQUENCE_MISMATCH;
 					}
 					else
 					{
-						tResult = UARTSTATUS_OK;
+//						fprintf(stderr, "ACK OK...\n");
+
+						/* The packet was acknowledged.
+						 * Now increase the sequence number .
+						 */
+						++m_ucMonitorSequence;
+
+						tResult = TRANSPORTSTATUS_OK;
 					}
+				}
+				else
+				{
+					fprintf(stderr, "! execute_command: expected an ACK packet with 6 bytes, but received %ld bytes:\n", m_sizPacketInputBuffer);
+					hexdump(m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+/* FIXME: change the result. */
+					tResult = TRANSPORTSTATUS_MISSING_USERDATA;
 				}
 			}
 		}
 
-		if( tResult!=UARTSTATUS_OK )
+		if( tResult!=TRANSPORTSTATUS_OK )
 		{
 			--uiRetryCnt;
 			if( uiRetryCnt==0 )
@@ -1119,7 +1291,191 @@ romloader_uart::UARTSTATUS_T romloader_uart::execute_command(const unsigned char
 			}
 		}
 
-	} while( tResult!=UARTSTATUS_OK );
+	} while( tResult!=TRANSPORTSTATUS_OK );
+
+	return tResult;
+}
+
+
+
+romloader::TRANSPORTSTATUS_T romloader_uart::read_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, uint16_t sizDataInBytes)
+{
+	MIV3_PACKET_COMMAND_READWRITE_DATA_T tPacketReadData;
+	TRANSPORTSTATUS_T tResult;
+	uint8_t ucPacketTyp;
+
+
+	if( m_fIsConnected==false )
+	{
+		tResult = TRANSPORTSTATUS_NOT_CONNECTED;
+	}
+	else
+	{
+		tPacketReadData.s.ucPacketType =  MONITOR_PACKET_TYP_Command_Read |
+		                                 (tAccessSize<<MONITOR_ACCESSSIZE_SRT);
+		tPacketReadData.s.usDataSize = HTONETX16(sizDataInBytes);
+		tPacketReadData.s.ulAddress = HTONETX32(ulNetxAddress);
+		tResult = execute_command(tPacketReadData.auc, sizeof(tPacketReadData));
+		if( tResult==TRANSPORTSTATUS_OK )
+		{
+			/* Receive the data. */
+			tResult = receive_packet();
+			if( tResult==TRANSPORTSTATUS_OK )
+			{
+				/* A minimum packet must have 6 bytes:
+				 *   2 bytes packet size
+				 *   1 byte sequence number
+				 *   1 byte packet type
+				 *   0 bytes data
+				 *   2 bytes CRC
+				 */
+				if( m_sizPacketInputBuffer<6 )
+				{
+					/* The packet is too small for 1 byte of user data. */
+					tResult = TRANSPORTSTATUS_PACKET_TOO_SMALL;
+				}
+				else
+				{
+					/* Get the packet type. */
+					ucPacketTyp = m_aucPacketInputBuffer[3];
+
+					if( ucPacketTyp==MONITOR_PACKET_TYP_Read_Data )
+					{
+						if( m_sizPacketInputBuffer==6+sizDataInBytes )
+						{
+							/* The response matches the number of requested bytes. */
+							send_ack(m_ucMonitorSequence);
+							/* Increase the sequence number. */
+							++m_ucMonitorSequence;
+						}
+						else
+						{
+							/* The packet type is set to "read_data", but the response does
+							 * not match the requested number of bytes.
+							 */
+							tResult = TRANSPORTSTATUS_UNEXPECTED_PACKET_SIZE;
+						}
+					}
+					else if( ucPacketTyp==MONITOR_PACKET_TYP_Status )
+					{
+						if( m_sizPacketInputBuffer==5+2 )
+						{
+							/* The netX sent a status code in response to the read command. */
+							fprintf(stderr, "Status package received. Status %d.\n", m_aucPacketInputBuffer[4]);
+							send_ack(m_ucMonitorSequence);
+							/* Increase the sequence number. */
+							++m_ucMonitorSequence;
+							tResult = TRANSPORTSTATUS_NETX_ERROR;
+						}
+						else
+						{
+							/* The packet type is set to "status", but the size of the packet does not match a valid status packet. */
+							tResult = TRANSPORTSTATUS_INVALID_PACKET_SIZE;
+						}
+					}
+					else
+					{
+						hexdump(m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+						fprintf(stderr, "Answer to read_data has unexpected packet typ 0x%02x!", ucPacketTyp);
+						tResult = TRANSPORTSTATUS_UNEXPECTED_PACKET_TYP;
+					}
+				}
+			}
+		}
+	}
+
+	return tResult;
+}
+
+
+
+romloader::TRANSPORTSTATUS_T romloader_uart::write_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, const void *pvData, uint16_t sizDataInBytes)
+{
+	union WRITE_DATA_UNION
+	{
+		struct WRITE_DATA_STRUCT
+		{
+			MIV3_PACKET_COMMAND_READWRITE_DATA_T s;
+			uint8_t auc[sizMaxPacketSizeHost - sizeof(MIV3_PACKET_COMMAND_READWRITE_DATA_T)];
+		} __attribute__ ((packed)) s;
+		uint8_t auc[sizMaxPacketSizeHost];
+	} __attribute__ ((packed)) uWriteData;
+	TRANSPORTSTATUS_T tResult;
+	uint8_t ucPacketTyp;
+	uint8_t ucStatus;
+
+
+	if( m_fIsConnected==false )
+	{
+		tResult = TRANSPORTSTATUS_NOT_CONNECTED;
+	}
+	else
+	{
+		/* Set the header fields. */
+		uWriteData.s.s.s.ucPacketType =  MONITOR_PACKET_TYP_Command_Write |
+		                                 (tAccessSize<<MONITOR_ACCESSSIZE_SRT);
+		uWriteData.s.s.s.usDataSize = HTONETX16(sizDataInBytes);
+		uWriteData.s.s.s.ulAddress = HTONETX32(ulNetxAddress);
+
+		/* Add the data. */
+		memcpy(uWriteData.s.auc, pvData, sizDataInBytes);
+
+		tResult = execute_command(uWriteData.auc, sizeof(MIV3_PACKET_COMMAND_READWRITE_DATA_T)+sizDataInBytes);
+		if( tResult==TRANSPORTSTATUS_OK )
+		{
+			/* Receive the status. */
+			tResult = receive_packet();
+			if( tResult==TRANSPORTSTATUS_OK )
+			{
+				/* A minimum packet must have 6 bytes:
+				 *   2 bytes packet size
+				 *   1 byte sequence number
+				 *   1 byte packet type
+				 *   0 bytes data
+				 *   2 bytes CRC
+				 */
+				if( m_sizPacketInputBuffer<6 )
+				{
+					/* The packet is too small for 1 byte of user data. */
+					tResult = TRANSPORTSTATUS_PACKET_TOO_SMALL;
+				}
+				else
+				{
+					/* Get the packet type. */
+					ucPacketTyp = m_aucPacketInputBuffer[3];
+
+					if( ucPacketTyp==MONITOR_PACKET_TYP_Status )
+					{
+						if( m_sizPacketInputBuffer==5+2 )
+						{
+							/* The netX sent a status code. */
+							ucStatus = m_aucPacketInputBuffer[4];
+							send_ack(m_ucMonitorSequence);
+							/* Increase the sequence number. */
+							++m_ucMonitorSequence;
+							if( ucStatus!=MONITOR_STATUS_Ok )
+							{
+								/* The netX sent an error. */
+								fprintf(stderr, "Status != OK received. Status %d.\n", ucStatus);
+								tResult = TRANSPORTSTATUS_NETX_ERROR;
+							}
+						}
+						else
+						{
+							/* The packet type is set to "status", but the size of the packet does not match a valid status packet. */
+							tResult = TRANSPORTSTATUS_INVALID_PACKET_SIZE;
+						}
+					}
+					else
+					{
+						hexdump(m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+						fprintf(stderr, "Answer to read_data has unexpected packet typ 0x%02x!", ucPacketTyp);
+						tResult = TRANSPORTSTATUS_UNEXPECTED_PACKET_TYP;
+					}
+				}
+			}
+		}
+	}
 
 	return tResult;
 }
@@ -1128,52 +1484,24 @@ romloader_uart::UARTSTATUS_T romloader_uart::execute_command(const unsigned char
 
 uint8_t romloader_uart::read_data08(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
-	uint8_t aucCommand[7];
-	UARTSTATUS_T tResult;
+	TRANSPORTSTATUS_T tResult;
 	uint8_t ucValue;
 	bool fOk;
 
 
 	/* Expect error. */
 	fOk = false;
-
 	ucValue = 0;
 
-	if( m_fIsConnected==false )
+	tResult = read_data(ulNetxAddress, MONITOR_ACCESSSIZE_Byte, 1);
+	if( tResult!=TRANSPORTSTATUS_OK )
 	{
-		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): %s!", m_pcName, this, get_error_message(tResult));
 	}
 	else
 	{
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
-		aucCommand[0] = MONITOR_COMMAND_Read |
-		                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
-		                (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-		aucCommand[1] = 1;
-		aucCommand[2] = 0;
-		aucCommand[3] = (uint8_t)( ulNetxAddress       & 0xffU);
-		aucCommand[4] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[5] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[6] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
-		tResult = execute_command(aucCommand, 7);
-		if( tResult!=UARTSTATUS_OK )
-		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
-		}
-		else
-		{
-			if( m_sizPacketInputBuffer!=4+2 )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to read_data08 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
-			}
-			else
-			{
-				ucValue = m_aucPacketInputBuffer[3];
-				fOk = true;
-			}
-		}
+		ucValue = m_aucPacketInputBuffer[4];
+		fOk = true;
 	}
 
 	if( fOk!=true )
@@ -1188,53 +1516,25 @@ uint8_t romloader_uart::read_data08(lua_State *ptClientData, uint32_t ulNetxAddr
 
 uint16_t romloader_uart::read_data16(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
-	uint8_t aucCommand[7];
-	UARTSTATUS_T tResult;
+	TRANSPORTSTATUS_T tResult;
 	uint16_t usValue;
 	bool fOk;
 
 
 	/* Expect error. */
 	fOk = false;
-
 	usValue = 0;
 
-	if( m_fIsConnected==false )
+	tResult = read_data(ulNetxAddress, MONITOR_ACCESSSIZE_Word, 2);
+	if( tResult!=TRANSPORTSTATUS_OK )
 	{
-		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): %s!", m_pcName, this, get_error_message(tResult));
 	}
 	else
 	{
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
-		aucCommand[0] = MONITOR_COMMAND_Read |
-		                (MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT) |
-		                (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-		aucCommand[1] = 2;
-		aucCommand[2] = 0;
-		aucCommand[3] = (uint8_t)( ulNetxAddress       & 0xffU);
-		aucCommand[4] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[5] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[6] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
-		tResult = execute_command(aucCommand, 7);
-		if( tResult!=UARTSTATUS_OK )
-		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
-		}
-		else
-		{
-			if( m_sizPacketInputBuffer!=4+3 )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to read_data16 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
-			}
-			else
-			{
-				usValue = ((uint16_t)(m_aucPacketInputBuffer[3])) |
-				          ((uint16_t)(m_aucPacketInputBuffer[4]))<<8U;
-				fOk = true;
-			}
-		}
+		usValue  = ((uint16_t)(m_aucPacketInputBuffer[4]));
+		usValue |= ((uint16_t)(m_aucPacketInputBuffer[5]))<< 8U;
+		fOk = true;
 	}
 
 	if( fOk!=true )
@@ -1249,55 +1549,27 @@ uint16_t romloader_uart::read_data16(lua_State *ptClientData, uint32_t ulNetxAdd
 
 uint32_t romloader_uart::read_data32(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
-	uint8_t aucCommand[7];
-	UARTSTATUS_T tResult;
+	TRANSPORTSTATUS_T tResult;
 	uint32_t ulValue;
 	bool fOk;
 
 
 	/* Expect error. */
 	fOk = false;
-
 	ulValue = 0;
 
-	if( m_fIsConnected==false )
+	tResult = read_data(ulNetxAddress, MONITOR_ACCESSSIZE_Long, 4);
+	if( tResult!=TRANSPORTSTATUS_OK )
 	{
-		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): %s!", m_pcName, this, get_error_message(tResult));
 	}
 	else
 	{
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
-		aucCommand[0] = MONITOR_COMMAND_Read |
-		                (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT) |
-		                (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-		aucCommand[1] = 4;
-		aucCommand[2] = 0;
-		aucCommand[3] = (uint8_t)( ulNetxAddress       & 0xffU);
-		aucCommand[4] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[5] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[6] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
-		tResult = execute_command(aucCommand, 7);
-		if( tResult!=UARTSTATUS_OK )
-		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
-		}
-		else
-		{
-			if( m_sizPacketInputBuffer!=4+5 )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to read_data32 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
-			}
-			else
-			{
-				ulValue = ((uint32_t)(m_aucPacketInputBuffer[3]))      |
-				          ((uint32_t)(m_aucPacketInputBuffer[4]))<< 8U |
-				          ((uint32_t)(m_aucPacketInputBuffer[5]))<<16U |
-				          ((uint32_t)(m_aucPacketInputBuffer[6]))<<24U;
-				fOk = true;
-			}
-		}
+		ulValue  = ((uint32_t)(m_aucPacketInputBuffer[4]));
+		ulValue |= ((uint32_t)(m_aucPacketInputBuffer[5]))<< 8U;
+		ulValue |= ((uint32_t)(m_aucPacketInputBuffer[6]))<<16U;
+		ulValue |= ((uint32_t)(m_aucPacketInputBuffer[7]))<<24U;
+		fOk = true;
 	}
 
 	if( fOk!=true )
@@ -1317,8 +1589,8 @@ void romloader_uart::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **
 	size_t sizBuffer;
 	bool fOk;
 	size_t sizChunk;
-	UARTSTATUS_T tResult;
-	uint8_t aucCommand[sizMaxPacketSizeHost];
+	size_t sizChunkMaxSize;
+	TRANSPORTSTATUS_T tResult;
 	bool fIsRunning;
 	long lBytesProcessed;
 
@@ -1326,16 +1598,24 @@ void romloader_uart::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **
 	/* Be optimistic. */
 	fOk = true;
 
+	/* The maximum size for a data chunk is the buffer size minus the
+	 * protocol fields:
+	 *  1 byte start char
+	 *  2 byte packet size
+	 *  1 byte sequence number
+	 *  1 byte packet type
+	 *  2 byte data size
+	 *  4 byte netX address
+	 *  2 byte CRC
+	 */
+//	sizChunkMaxSize = m_sizMaxPacketSizeClient - 13U;
+	sizChunkMaxSize = m_sizMaxPacketSizeClient - 256U;
+
 	pcBufferStart = NULL;
 	sizBuffer = 0;
 
-	if( m_fIsConnected==false )
-	{
-		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
-		fOk = false;
-	}
 	/* if ulSize == 0, we return with fOk == true, pcBufferStart == NULL and sizBuffer == 0 */
-	else if( ulSize > 0 )
+	if( ulSize > 0 )
 	{
 		pcBufferStart = (char*)malloc(ulSize);
 		if( pcBufferStart==NULL )
@@ -1352,54 +1632,30 @@ void romloader_uart::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **
 			do
 			{
 				sizChunk = ulSize;
-				if( sizChunk>m_sizMaxPacketSizeClient-6)
+				if( sizChunk>sizChunkMaxSize)
 				{
-					sizChunk = m_sizMaxPacketSizeClient-6;
+					sizChunk = sizChunkMaxSize;
 				}
 
-				/* Get the next sequence number. */
-				m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
-				aucCommand[0] = MONITOR_COMMAND_Read |
-				                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
-				                (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-				aucCommand[1] = (uint8_t)( sizChunk       & 0xffU);
-				aucCommand[2] = (uint8_t)((sizChunk>> 8U) & 0xffU);
-				aucCommand[3] = (uint8_t)( ulNetxAddress       & 0xffU);
-				aucCommand[4] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
-				aucCommand[5] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
-				aucCommand[6] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
-
-				tResult = execute_command(aucCommand, 7);
-				if( tResult!=UARTSTATUS_OK )
+				tResult = read_data(ulNetxAddress, MONITOR_ACCESSSIZE_Any, sizChunk);
+				if( tResult!=TRANSPORTSTATUS_OK )
 				{
-					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
-					fOk = false;
-					break;
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): %s!", m_pcName, this, get_error_message(tResult));
 				}
 				else
 				{
-					if( m_sizPacketInputBuffer!=4+sizChunk+1 )
+					memcpy(pcBuffer, m_aucPacketInputBuffer+4, sizChunk);
+					pcBuffer += sizChunk;
+					ulSize -= sizChunk;
+					ulNetxAddress += sizChunk;
+					lBytesProcessed += sizChunk;
+
+					fIsRunning = callback_long(&tLuaFn, lBytesProcessed, lCallbackUserData);
+					if( fIsRunning!=true )
 					{
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer to read_image has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
+						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): read_image canceled!", m_pcName, this);
 						fOk = false;
 						break;
-					}
-					else
-					{
-						memcpy(pcBuffer, m_aucPacketInputBuffer+3, sizChunk);
-						pcBuffer += sizChunk;
-						ulSize -= sizChunk;
-						ulNetxAddress += sizChunk;
-						lBytesProcessed += sizChunk;
-
-						fIsRunning = callback_long(&tLuaFn, lBytesProcessed, lCallbackUserData);
-						if( fIsRunning!=true )
-						{
-							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): read_image canceled!", m_pcName, this);
-							fOk = false;
-							break;
-						}
 					}
 				}
 			} while( ulSize!=0 );
@@ -1425,52 +1681,20 @@ void romloader_uart::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **
 
 void romloader_uart::write_data08(lua_State *ptClientData, uint32_t ulNetxAddress, uint8_t ucData)
 {
-	uint8_t aucCommand[8];
-	UARTSTATUS_T tResult;
-	uint32_t ulValue;
+	TRANSPORTSTATUS_T tResult;
+	uint8_t aucData[1];
 	bool fOk;
 
 
-	/* Expect error. */
-	fOk = false;
+	/* Be optimistic. */
+	fOk = true;
 
-	ulValue = 0;
-
-	if( m_fIsConnected==false )
+	aucData[0] = ucData;
+	tResult = write_data(ulNetxAddress, MONITOR_ACCESSSIZE_Byte, aucData, 1);
+	if( tResult!=TRANSPORTSTATUS_OK )
 	{
-		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
-	}
-	else
-	{
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
-		aucCommand[0] = MONITOR_COMMAND_Write |
-		                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
-		                (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-		aucCommand[1] = 1;
-		aucCommand[2] = 0;
-		aucCommand[3] = (uint8_t)( ulNetxAddress       & 0xffU);
-		aucCommand[4] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[5] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[6] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
-		aucCommand[7] = ucData;
-		tResult = execute_command(aucCommand, 8);
-		if( tResult!=UARTSTATUS_OK )
-		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
-		}
-		else
-		{
-			if( m_sizPacketInputBuffer!=4+1 )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to write_data08 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
-			}
-			else
-			{
-				fOk = true;
-			}
-		}
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): %s", m_pcName, this, get_error_message(tResult));
+		fOk = false;
 	}
 
 	if( fOk!=true )
@@ -1482,53 +1706,20 @@ void romloader_uart::write_data08(lua_State *ptClientData, uint32_t ulNetxAddres
 
 void romloader_uart::write_data16(lua_State *ptClientData, uint32_t ulNetxAddress, uint16_t usData)
 {
-	uint8_t aucCommand[9];
-	UARTSTATUS_T tResult;
-	uint32_t ulValue;
+	TRANSPORTSTATUS_T tResult;
+	uint16_t ausData[1];
 	bool fOk;
 
 
-	/* Expect error. */
-	fOk = false;
+	/* Be optimistic. */
+	fOk = true;
 
-	ulValue = 0;
-
-	if( m_fIsConnected==false )
+	ausData[0] = HTONETX16(usData);
+	tResult = write_data(ulNetxAddress, MONITOR_ACCESSSIZE_Word, ausData, 2);
+	if( tResult!=TRANSPORTSTATUS_OK )
 	{
-		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
-	}
-	else
-	{
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
-		aucCommand[0] = MONITOR_COMMAND_Write |
-		                (MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT) |
-		                (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-		aucCommand[1] = 2;
-		aucCommand[2] = 0;
-		aucCommand[3] = (uint8_t)( ulNetxAddress       & 0xffU);
-		aucCommand[4] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[5] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[6] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
-		aucCommand[7] = (uint8_t)( usData     & 0xffU);
-		aucCommand[8] = (uint8_t)((usData>>8U)& 0xffU);
-		tResult = execute_command(aucCommand, 9);
-		if( tResult!=UARTSTATUS_OK )
-		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
-		}
-		else
-		{
-			if( m_sizPacketInputBuffer!=4+1 )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to write_data16 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
-			}
-			else
-			{
-				fOk = true;
-			}
-		}
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): %s", m_pcName, this, get_error_message(tResult));
+		fOk = false;
 	}
 
 	if( fOk!=true )
@@ -1541,55 +1732,20 @@ void romloader_uart::write_data16(lua_State *ptClientData, uint32_t ulNetxAddres
 
 void romloader_uart::write_data32(lua_State *ptClientData, uint32_t ulNetxAddress, uint32_t ulData)
 {
-	uint8_t aucCommand[11];
-	UARTSTATUS_T tResult;
-	uint32_t ulValue;
+	TRANSPORTSTATUS_T tResult;
+	uint32_t aulData[1];
 	bool fOk;
 
 
-	/* Expect error. */
-	fOk = false;
+	/* Be optimistic. */
+	fOk = true;
 
-	ulValue = 0;
-
-	if( m_fIsConnected==false )
+	aulData[0] = HTONETX32(ulData);
+	tResult = write_data(ulNetxAddress, MONITOR_ACCESSSIZE_Long, aulData, 4);
+	if( tResult!=TRANSPORTSTATUS_OK )
 	{
-		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): not connected!", m_pcName, this);
-	}
-	else
-	{
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
-		aucCommand[0]  = MONITOR_COMMAND_Write |
-		                 (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT) |
-		                 (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-		aucCommand[1]  = 4;
-		aucCommand[2]  = 0;
-		aucCommand[3]  = (uint8_t)( ulNetxAddress       & 0xffU);
-		aucCommand[4]  = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
-		aucCommand[5]  = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
-		aucCommand[6]  = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
-		aucCommand[7]  = (uint8_t)( ulData       & 0xffU);
-		aucCommand[8]  = (uint8_t)((ulData>> 8U) & 0xffU);
-		aucCommand[9]  = (uint8_t)((ulData>>16U) & 0xffU);
-		aucCommand[10] = (uint8_t)((ulData>>24U) & 0xffU);
-		tResult = execute_command(aucCommand, 11);
-		if( tResult!=UARTSTATUS_OK )
-		{
-			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to execute command!", m_pcName, this);
-		}
-		else
-		{
-			if( m_sizPacketInputBuffer!=4+1 )
-			{
-				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): answer to write_data32 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
-			}
-			else
-			{
-				fOk = true;
-			}
-		}
+		MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): %s", m_pcName, this, get_error_message(tResult));
+		fOk = false;
 	}
 
 	if( fOk!=true )
@@ -1604,8 +1760,8 @@ void romloader_uart::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN
 {
 	bool fOk;
 	size_t sizChunk;
-	UARTSTATUS_T tResult;
-	uint8_t aucCommand[sizMaxPacketSizeHost];
+	size_t sizChunkMaxSize;
+	TRANSPORTSTATUS_T tResult;
 	bool fIsRunning;
 	long lBytesProcessed;
 
@@ -1613,64 +1769,49 @@ void romloader_uart::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN
 	/* Be optimistic. */
 	fOk = true;
 
-	if( m_fIsConnected==false )
-	{
-		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
-		fOk = false;
-	}
-	else if( sizBUFFER_IN!=0 )
+	/* The maximum size for a data chunk is the buffer size minus the
+	 * protocol fields:
+	 *  1 byte start char
+	 *  2 byte packet size
+	 *  1 byte sequence number
+	 *  1 byte packet type
+	 *  2 byte data size
+	 *  4 byte netX address
+	 *  2 byte CRC
+	 */
+//	sizChunkMaxSize = m_sizMaxPacketSizeClient - 13U;
+	sizChunkMaxSize = m_sizMaxPacketSizeClient - 256U;
+
+	if( sizBUFFER_IN!=0 )
 	{
 		lBytesProcessed = 0;
 		do
 		{
 			sizChunk = sizBUFFER_IN;
-			if( sizChunk>m_sizMaxPacketSizeClient-12 )
+			if( sizChunk>sizChunkMaxSize )
 			{
-				sizChunk = m_sizMaxPacketSizeClient-12;
+				sizChunk = sizChunkMaxSize;
 			}
 
-			/* Get the next sequence number. */
-			m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
-			aucCommand[0] = MONITOR_COMMAND_Write |
-			                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT) |
-			                (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-			aucCommand[1] = (uint8_t)( sizChunk       & 0xffU);
-			aucCommand[2] = (uint8_t)((sizChunk>> 8U) & 0xffU);
-			aucCommand[3] = (uint8_t)( ulNetxAddress       & 0xffU);
-			aucCommand[4] = (uint8_t)((ulNetxAddress>> 8U) & 0xffU);
-			aucCommand[5] = (uint8_t)((ulNetxAddress>>16U) & 0xffU);
-			aucCommand[6] = (uint8_t)((ulNetxAddress>>24U) & 0xffU);
-			memcpy(aucCommand+7, pcBUFFER_IN, sizChunk);
-			tResult = execute_command(aucCommand, sizChunk+7);
-			if( tResult!=UARTSTATUS_OK )
+			tResult = write_data(ulNetxAddress, MONITOR_ACCESSSIZE_Any, pcBUFFER_IN, sizChunk);
+			if( tResult!=TRANSPORTSTATUS_OK )
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
+				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): %s", m_pcName, this, get_error_message(tResult));
 				fOk = false;
-				break;
 			}
 			else
 			{
-				if( m_sizPacketInputBuffer!=4+1 )
+				pcBUFFER_IN += sizChunk;
+				sizBUFFER_IN -= sizChunk;
+				ulNetxAddress += sizChunk;
+				lBytesProcessed += sizChunk;
+
+				fIsRunning = callback_long(&tLuaFn, lBytesProcessed, lCallbackUserData);
+				if( fIsRunning!=true )
 				{
-					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer to write_data08 has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): write_image canceled!", m_pcName, this);
 					fOk = false;
 					break;
-				}
-				else
-				{
-					pcBUFFER_IN += sizChunk;
-					sizBUFFER_IN -= sizChunk;
-					ulNetxAddress += sizChunk;
-					lBytesProcessed += sizChunk;
-
-					fIsRunning = callback_long(&tLuaFn, lBytesProcessed, lCallbackUserData);
-					if( fIsRunning!=true )
-					{
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): write_image canceled!", m_pcName, this);
-						fOk = false;
-						break;
-					}
 				}
 			}
 		} while( sizBUFFER_IN!=0 );
@@ -1687,13 +1828,14 @@ void romloader_uart::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN
 void romloader_uart::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	bool fOk;
-	UARTSTATUS_T tResult;
-	uint8_t aucCommand[9];
+	TRANSPORTSTATUS_T tResult;
+	MIV3_PACKET_COMMAND_CALL_T tCallCommand;
 	const uint8_t aucCancelBuf[1] = { 0x2b };
 	uint8_t ucStatus;
 	bool fIsRunning;
 	char *pcProgressData;
 	size_t sizProgressData;
+	uint8_t ucPacketTyp;
 
 
 	if( m_fIsConnected==false )
@@ -1703,96 +1845,111 @@ void romloader_uart::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLU
 	}
 	else
 	{
-		/* Get the next sequence number. */
-		m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
-
-		/* Construct the command packet. */
-		aucCommand[0x00] = MONITOR_COMMAND_Execute |
-		                   (uint8_t)(m_uiMonitorSequence << MONITOR_SEQUENCE_SRT);
-		aucCommand[0x01] = (uint8_t)( ulNetxAddress      & 0xffU);
-		aucCommand[0x02] = (uint8_t)((ulNetxAddress>>8 ) & 0xffU);
-		aucCommand[0x03] = (uint8_t)((ulNetxAddress>>16) & 0xffU);
-		aucCommand[0x04] = (uint8_t)((ulNetxAddress>>24) & 0xffU);
-		aucCommand[0x05] = (uint8_t)( ulParameterR0      & 0xffU);
-		aucCommand[0x06] = (uint8_t)((ulParameterR0>>8 ) & 0xffU);
-		aucCommand[0x07] = (uint8_t)((ulParameterR0>>16) & 0xffU);
-		aucCommand[0x08] = (uint8_t)((ulParameterR0>>24) & 0xffU);
-
-//		printf("Executing call command:\n");
-//		hexdump(aucCommand, 9);
-		tResult = execute_command(aucCommand, 9);
-		if( tResult!=UARTSTATUS_OK )
+		tCallCommand.s.ucPacketType = MONITOR_COMMAND_Execute;
+		tCallCommand.s.ulAddress = HTONETX32(ulNetxAddress);
+		tCallCommand.s.ulR0 = HTONETX32(ulParameterR0);
+		tResult = execute_command(tCallCommand.auc, sizeof(tCallCommand));
+		if( tResult!=TRANSPORTSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
 			fOk = false;
 		}
 		else
 		{
-			if( m_sizPacketInputBuffer!=4+1 )
+			/* Receive message packets. */
+			while(1)
 			{
-				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): answer to call command has wrong packet size of %d!", m_pcName, this, m_sizPacketInputBuffer);
-				fOk = false;
-			}
-			else
-			{
-				/* Get the next sequence number. */
-				//m_uiMonitorSequence = (m_uiMonitorSequence + 1) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT);
+				pcProgressData = NULL;
+				sizProgressData = 0;
 
-				/* Receive message packets. */
-				while(1)
+				tResult = receive_packet();
+				if( tResult==TRANSPORTSTATUS_TIMEOUT )
 				{
-					pcProgressData = NULL;
-					sizProgressData = 0;
-
-					tResult = receive_packet();
-					if( tResult==UARTSTATUS_TIMEOUT )
+					/* Do nothing in case of timeout. The application is just running quietly. */
+				}
+				else if( tResult!=TRANSPORTSTATUS_OK )
+				{
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): Failed to receive a call message packet: %s (%d)", m_pcName, this, get_error_message(tResult), tResult);
+					fOk = false;
+				}
+				else
+				{
+					/* A minimum packet must have 6 bytes:
+					 *   2 bytes packet size
+					 *   1 byte sequence number
+					 *   1 byte packet type
+					 *   0 bytes data
+					 *   2 bytes CRC
+					 */
+					if( m_sizPacketInputBuffer<6 )
 					{
-						/* Do nothing in case of timeout. The application is just running quietly. */
-					}
-					else if( tResult!=UARTSTATUS_OK )
-					{
-						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): Failed to receive a packet: %d", m_pcName, this, tResult);
-						fOk = false;
+						/* The packet is too small for 1 byte of user data. */
+						tResult = TRANSPORTSTATUS_PACKET_TOO_SMALL;
 					}
 					else
 					{
-						if( m_sizPacketInputBuffer<5 )
+						/* Get the packet type. */
+						ucPacketTyp = m_aucPacketInputBuffer[3];
+
+						if( ucPacketTyp==MONITOR_PACKET_TYP_Call_Message )
 						{
-							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): Received a packet without any user data!", m_pcName, this);
-							fOk = false;
+							/* Acknowledge the packet. */
+							send_ack(m_ucMonitorSequence);
+							/* Increase the sequence number. */
+							++m_ucMonitorSequence;
+
+							/* NOTE: Do not check the size of the user data here. It should be possible to send 0 bytes. */
+							pcProgressData = ((char*)m_aucPacketInputBuffer) + 4U;
+							sizProgressData = m_sizPacketInputBuffer - 6U;
 						}
-						else
+						else if( ucPacketTyp==MONITOR_PACKET_TYP_Status )
 						{
-							ucStatus = m_aucPacketInputBuffer[2] & MONITOR_STATUS_MSK;
-							if( ucStatus==MONITOR_STATUS_CallMessage )
+							if( m_sizPacketInputBuffer==5+2 )
 							{
-								pcProgressData = (char*)m_aucPacketInputBuffer+3;
-								sizProgressData = m_sizPacketInputBuffer-5;
+								/* The netX sent a status code. */
+
+								/* Acknowledge the packet. */
+								send_ack(m_ucMonitorSequence);
+								/* Increase the sequence number. */
+								++m_ucMonitorSequence;
+
+								ucStatus = m_aucPacketInputBuffer[4];
+								if( ucStatus==MONITOR_STATUS_Call_Finished )
+								{
+									fprintf(stderr, "%s(%p): Call has finished!", m_pcName, this);
+									fOk = true;
+									break;
+								}
+								else
+								{
+									/* The netX sent an error. */
+									fprintf(stderr, "Status != call_finished received. Status %d.\n", ucStatus);
+									tResult = TRANSPORTSTATUS_NETX_ERROR;
+								}
 							}
-							else if( ucStatus==MONITOR_STATUS_CallFinished )
+							else
 							{
-								fprintf(stderr, "%s(%p): Call has finished!", m_pcName, this);
-								fOk = true;
-								break;
+								/* The packet type is set to "status", but the size of the packet does not match a valid status packet. */
+								tResult = TRANSPORTSTATUS_INVALID_PACKET_SIZE;
 							}
 						}
 					}
-
-					if (pcProgressData != NULL)
-					{
-						fIsRunning = callback_string(&tLuaFn, pcProgressData, sizProgressData, lCallbackUserData);
-						if( fIsRunning!=true )
-						{
-							/* Send a cancel request to the device. */
-							tResult = send_packet(aucCancelBuf, 1);
-
-							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): the call was canceled!", m_pcName, this);
-							fOk = false;
-							break;
-						}
-					}
-
 				}
+
+				if (pcProgressData != NULL)
+				{
+					fIsRunning = callback_string(&tLuaFn, pcProgressData, sizProgressData, lCallbackUserData);
+					if( fIsRunning!=true )
+					{
+						/* Send a cancel request to the device. */
+						tResult = send_packet(aucCancelBuf, 1);
+
+						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): the call was canceled!", m_pcName, this);
+						fOk = false;
+						break;
+					}
+				}
+
 			}
 		}
 	}
