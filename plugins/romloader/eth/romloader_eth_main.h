@@ -40,6 +40,9 @@
 
 /*-----------------------------------*/
 
+/* Do not use these structures in Swig. */
+#if !defined(SWIG)
+
 /* Endianness macros translating 16 and 32bit from the host to the netX byte order.
  * FIXME: Detect the host endianness. More infos here:
  *          http://www.boost.org/doc/libs/1_43_0/boost/detail/endian.hpp
@@ -53,13 +56,13 @@
 
 
 /* This is a packet header up to the packet type. */
-struct MIV3_PACKET_HEADER_STRUCT
+struct __attribute__((__packed__)) MIV3_PACKET_HEADER_STRUCT
 {
 	uint8_t  ucStreamStart;
 	uint16_t usDataSize;
 	uint8_t  ucSequenceNumber;
 	uint8_t  ucPacketType;
-} __attribute__ ((packed));
+};
 
 typedef union MIV3_PACKET_HEADER_UNION
 {
@@ -70,7 +73,7 @@ typedef union MIV3_PACKET_HEADER_UNION
 
 
 /* This is a complete sync packet. */
-struct MIV3_PACKET_SYNC_STRUCT
+struct __attribute__((__packed__)) MIV3_PACKET_SYNC_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
 	uint8_t  aucMacic[4];
@@ -80,7 +83,7 @@ struct MIV3_PACKET_SYNC_STRUCT
 	uint16_t  usMaximumPacketSize;
 	uint8_t   ucCrcHi;
 	uint8_t   ucCrcLo;
-} __attribute__ ((packed));
+};
 
 typedef union MIV3_PACKET_SYNC_UNION
 {
@@ -91,12 +94,12 @@ typedef union MIV3_PACKET_SYNC_UNION
 
 
 /* This is a complete acknowledge packet. */
-struct MIV3_PACKET_ACK_STRUCT
+struct __attribute__((__packed__)) MIV3_PACKET_ACK_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
 	uint8_t  ucCrcHi;
 	uint8_t  ucCrcLo;
-} __attribute__ ((packed));
+};
 
 typedef union MIV3_PACKET_ACK_UNION
 {
@@ -107,13 +110,13 @@ typedef union MIV3_PACKET_ACK_UNION
 
 
 /* This is a complete status packet. */
-struct MIV3_PACKET_STATUS_STRUCT
+struct __attribute__((__packed__)) MIV3_PACKET_STATUS_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
 	uint8_t  ucStatus;
 	uint8_t  ucCrcHi;
 	uint8_t  ucCrcLo;
-} __attribute__ ((packed));
+};
 
 typedef union MIV3_PACKET_STATUS_UNION
 {
@@ -124,13 +127,13 @@ typedef union MIV3_PACKET_STATUS_UNION
 
 
 /* This is a complete status packet. */
-struct MIV3_PACKET_CANCEL_CALL_STRUCT
+struct __attribute__((__packed__)) MIV3_PACKET_CANCEL_CALL_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
 	uint8_t  ucData;
 	uint8_t  ucCrcHi;
 	uint8_t  ucCrcLo;
-} __attribute__ ((packed));
+};
 
 typedef union MIV3_PACKET_CANCEL_CALL_UNION
 {
@@ -141,34 +144,36 @@ typedef union MIV3_PACKET_CANCEL_CALL_UNION
 
 
 /* This is either a complete read packet or the start of a write packet. */
-struct MIV3_PACKET_COMMAND_READWRITE_DATA_STRUCT
+struct __attribute__((__packed__)) MIV3_PACKET_COMMAND_READWRITE_DATA_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
 	uint16_t usDataSize;
 	uint32_t ulAddress;
-} __attribute__ ((packed));
+};
 
 typedef union MIV3_PACKET_COMMAND_READWRITE_DATA_UNION
 {
 	struct MIV3_PACKET_COMMAND_READWRITE_DATA_STRUCT s;
 	uint8_t auc[11];
-} __attribute__ ((packed)) MIV3_PACKET_COMMAND_READWRITE_DATA_T;
+} MIV3_PACKET_COMMAND_READWRITE_DATA_T;
 
 
 
 /* This is a complete call package. */
-struct MIV3_PACKET_COMMAND_CALL_STRUCT
+struct __attribute__((__packed__)) MIV3_PACKET_COMMAND_CALL_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
 	uint32_t ulAddress;
 	uint32_t ulR0;
-} __attribute__ ((packed));
+};
 
 typedef union MIV3_PACKET_COMMAND_CALL_UNION
 {
 	struct MIV3_PACKET_COMMAND_CALL_STRUCT s;
 	uint8_t auc[13];
-} __attribute__ ((packed)) MIV3_PACKET_COMMAND_CALL_T;
+} MIV3_PACKET_COMMAND_CALL_T;
+
+#endif  /* !defined(SWIG) */
 
 
 /*-----------------------------------*/
