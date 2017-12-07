@@ -74,7 +74,9 @@ public:
 	virtual void call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 // *** lua interface end ***
 
-	static void hexdump(const uint8_t *pucData, uint32_t ulSize, uint32_t ulNetxAddress);
+protected:
+	virtual TRANSPORTSTATUS_T send_raw_packet(const void *pvPacket, size_t sizPacket);
+	virtual TRANSPORTSTATUS_T receive_packet(void);
 
 private:
 #ifndef SWIG

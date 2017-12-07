@@ -495,6 +495,20 @@ int romloader_dpm::synchronize(romloader_dpm_transfer *ptTransfer)
 	return iResult;
 }
 
+
+
+romloader::TRANSPORTSTATUS_T romloader_dpm::send_raw_packet(const void *pvPacket, size_t sizPacket)
+{
+}
+
+
+
+romloader::TRANSPORTSTATUS_T romloader_dpm::receive_packet(void)
+{
+}
+
+
+
 uint8_t romloader_dpm::read_data08(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
 	uint8_t aucCommand[7];

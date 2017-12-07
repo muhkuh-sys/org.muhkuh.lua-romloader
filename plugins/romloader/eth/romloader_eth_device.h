@@ -30,6 +30,27 @@
 #endif
 
 
+#if !defined(SWIG)
+
+struct __attribute__((__packed__)) MIV3_ETHERNET_DISCOVER_MAGIC_STRUCTURE
+{
+	uint8_t ucMiStatus;
+	char acMagic[4];
+	uint16_t usVersionMinor;
+	uint16_t usVersionMajor;
+	uint16_t usMaximumPacketSize;
+	uint32_t ulIP;
+};
+
+typedef union MIV3_ETHERNET_DISCOVER_MAGIC_UNION
+{
+	struct MIV3_ETHERNET_DISCOVER_MAGIC_STRUCTURE s;
+	unsigned char auc[15];
+} MIV3_ETHERNET_DISCOVER_MAGIC_T;
+
+#endif  /* !defined(SWIG) */
+
+
 class romloader_eth_device
 {
 public:
@@ -40,7 +61,7 @@ public:
 	virtual bool Open(void) = 0;
 	virtual void Close(void) = 0;
 	virtual int ExecuteCommand(const unsigned char *aucCommand, size_t sizCommand, unsigned char *aucResponse, size_t sizResponse, size_t *psizResponse) = 0;
-	virtual romloader::TRANSPORTSTATUS_T SendPacket(const unsigned char *pucData, size_t sizData) = 0;
+	virtual romloader::TRANSPORTSTATUS_T SendPacket(const void *pvData, size_t sizData) = 0;
 	virtual romloader::TRANSPORTSTATUS_T RecvPacket(unsigned char *pucData, size_t sizData, unsigned long ulTimeout, size_t *psizPacket) = 0;
 
 

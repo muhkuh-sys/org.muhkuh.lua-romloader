@@ -53,7 +53,7 @@ public:
 	virtual void Close(void) = 0;
 	virtual bool Flush(void) = 0;
 	virtual unsigned long Peek(void) = 0;
-	virtual size_t SendRaw(const unsigned char *pucData, size_t sizData, unsigned long ulTimeout) = 0;
+	virtual size_t SendRaw(const void *pvData, size_t sizData, unsigned long ulTimeout) = 0;
 	virtual size_t RecvRaw(unsigned char *pucData, size_t sizData, unsigned long ulTimeout) = 0;
 	virtual bool Cancel(void) = 0;
 	virtual unsigned long GetMaxBlockSize(void) = 0;
