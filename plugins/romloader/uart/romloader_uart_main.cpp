@@ -232,6 +232,25 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 	}
 	else
 	{
+/* FIXME: I have one USB to UART adapter which sends one byte of 0x00 in front of the very first response of the netX.
+ * "lsusb" says: "ID 067b:2303 Prolific Technology, Inc. PL2303 Serial Port"
+ * Maybe it misinterprets the noise on the line when the netX activates its transmit drivers.
+ * Here is a diagram of the noise:
+ *
+ * _______________    ____    __
+ *                |__|    |__|  ...
+ * <---- 1 ------><2><3><--- 4 --->
+ *
+ *  1: Idle (netX TX triver is not active)
+ *  2: netX TX driver is activated. Does this produce the spurious 0x00 byte?
+ *  3: The start bit of the first data byte
+ *  4: The first data byte
+ *
+ * Right now only the first received character is evaluated.
+ * Maybe this works better:
+ * Wait for 1 ms after sending the knock response. Check how many characters were recived in this time.
+ * 1ms is more than enough for a complete knock response. Then search for a start character in the received data.
+ */
 		sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 1000);
 		if( sizTransfered!=1 )
 		{
@@ -240,7 +259,6 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 		}
 		else
 		{
-//			printf("received knock response: 0x%02x\n", aucData[0]);
 			/* Knock echoed -> this is the prompt or the machine interface. */
 			if( aucData[0]==MONITOR_STREAM_PACKET_START )
 			{
@@ -413,6 +431,7 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 			else
 			{
 				/* This seems to be the welcome message. */
+				printf("received a strange knock response: 0x%02x\n", aucData[0]);
 
 				/* The welcome message can be quite trashed depending on the driver. Just discard the characters until the first timeout and send enter. */
 
