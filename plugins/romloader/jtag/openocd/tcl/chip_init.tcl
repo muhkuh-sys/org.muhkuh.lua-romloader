@@ -258,8 +258,12 @@ proc init_chip {iChiptyp} {
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
 		setup_dcc_io $fEnableDCCOutput 0x08000100 dcc_netx10_50_51_52.bin arm 0x0400 0x04000e00 0x04000fe0
 		
-	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_RELAXED } {
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_RELAXED \
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_FULL \
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX4100_SMALL } {
+		
 		# debugmsgs on Cortex-R/A are not supported by openOCD 0.10.0
+		# Therefore, we always disable output on netx 4000.
 		setup_dcc_io false 0x0003fff0 netx4000cr7_dccout_05080000_05080e00.bin arm 0x05080000 0x05080e00 0x05080fe0
 		
 		#netx 4000 UART iovcectors: 0x04101445 0x04101479 0x04101449 0x0410144D 
