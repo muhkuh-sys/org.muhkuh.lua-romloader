@@ -39,7 +39,7 @@ struct __attribute__((__packed__)) MIV3_ETHERNET_DISCOVER_MAGIC_STRUCTURE
 	uint16_t usVersionMinor;
 	uint16_t usVersionMajor;
 	uint16_t usMaximumPacketSize;
-	uint32_t ulIP;
+	uint8_t aucIP[4];
 };
 
 typedef union MIV3_ETHERNET_DISCOVER_MAGIC_UNION

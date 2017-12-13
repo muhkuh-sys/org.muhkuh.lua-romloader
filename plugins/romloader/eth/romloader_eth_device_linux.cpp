@@ -220,7 +220,6 @@ size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 	socklen_t tAddrLen;
 	unsigned int uiVersionMaj;
 	unsigned int uiVersionMin;
-	unsigned long ulIp;
 	ssize_t ssizPacket;
 	size_t sizRefCnt;
 	size_t sizRefMax;
@@ -324,13 +323,12 @@ size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 								uiVersionMin = NETXTOH16(ptDiscoverResponse->s.usVersionMinor);
 								uiVersionMaj = NETXTOH16(ptDiscoverResponse->s.usVersionMajor);
 								sizMaxPacket = NETXTOH16(ptDiscoverResponse->s.usMaximumPacketSize);
-								ulIp = ptDiscoverResponse->s.ulIP;
 
 								ucMiStatus = ptDiscoverResponse->s.ucMiStatus;
 								if( ucMiStatus==0 )
 								{
 
-									printf("Found HBoot V%d.%d at 0x%08lx.\n", uiVersionMaj, uiVersionMin, ulIp);
+									printf("Found HBoot V%d.%d at %d.%d.%d.%d.\n", uiVersionMaj, uiVersionMin, ptDiscoverResponse->s.aucIP[3], ptDiscoverResponse->s.aucIP[2], ptDiscoverResponse->s.aucIP[1], ptDiscoverResponse->s.aucIP[0]);
 /*
 									{
 										char buf[32];
@@ -364,12 +362,12 @@ size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 									{
 										break;
 									}
-									snprintf(pcRef, sizEntry, "romloader_eth_%ld.%ld.%ld.%ld", ulIp&0xffU, (ulIp>>8U)&0xffU, (ulIp>>16U)&0xffU, (ulIp>>24U)&0xffU);
+									snprintf(pcRef, sizEntry, "romloader_eth_%d.%d.%d.%d", ptDiscoverResponse->s.aucIP[3], ptDiscoverResponse->s.aucIP[2], ptDiscoverResponse->s.aucIP[1], ptDiscoverResponse->s.aucIP[0]);
 									ppcRef[sizRefCnt++] = pcRef;
 								}
 								else
 								{
-									printf("Busy HBoot V%d.%d at 0x%08lx.\n", uiVersionMaj, uiVersionMin, ulIp);
+									printf("Busy HBoot V%d.%d at %d.%d.%d.%d.\n", uiVersionMaj, uiVersionMin, ptDiscoverResponse->s.aucIP[3], ptDiscoverResponse->s.aucIP[2], ptDiscoverResponse->s.aucIP[1], ptDiscoverResponse->s.aucIP[0]);
 								}
 							}
 						}
