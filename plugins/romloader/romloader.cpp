@@ -734,6 +734,8 @@ void romloader::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **ppcBU
 				if( tResult!=TRANSPORTSTATUS_OK )
 				{
 					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): %s!", m_pcName, this, get_error_message(tResult));
+					fOk = false;
+					break;
 				}
 				else
 				{
@@ -892,6 +894,7 @@ void romloader::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, siz
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): %s", m_pcName, this, get_error_message(tResult));
 				fOk = false;
+				break;
 			}
 			else
 			{
@@ -1008,14 +1011,17 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 							else
 							{
 								/* The netX sent an error. */
-								fprintf(stderr, "Status != call_finished received. Status %d.\n", ucStatus);
-								tResult = TRANSPORTSTATUS_NETX_ERROR;
+								MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): status != call_finished received. Status %d.", m_pcName, this, ucStatus);
+								fOk = false;
+								break;
 							}
 						}
 						else
 						{
 							/* The packet type is set to "status", but the size of the packet does not match a valid status packet. */
-							tResult = TRANSPORTSTATUS_INVALID_PACKET_SIZE;
+							MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): received a status packet with invalid size of %d bytes.", m_pcName, this, m_sizPacketInputBuffer);
+							fOk = false;
+							break;
 						}
 					}
 				}
