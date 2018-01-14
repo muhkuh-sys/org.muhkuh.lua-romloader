@@ -42,6 +42,12 @@ lxc file push build/build_ubuntu_1704_x86_lua5.3.tar.gz ${CONTAINER}/tmp/work/bu
 lxc file push build/build_ubuntu_1704_x86_64_lua5.1.tar.gz ${CONTAINER}/tmp/work/build/
 lxc file push build/build_ubuntu_1704_x86_64_lua5.2.tar.gz ${CONTAINER}/tmp/work/build/
 lxc file push build/build_ubuntu_1704_x86_64_lua5.3.tar.gz ${CONTAINER}/tmp/work/build/
+lxc file push build/build_ubuntu_1710_x86_lua5.1.tar.gz ${CONTAINER}/tmp/work/build/
+lxc file push build/build_ubuntu_1710_x86_lua5.2.tar.gz ${CONTAINER}/tmp/work/build/
+lxc file push build/build_ubuntu_1710_x86_lua5.3.tar.gz ${CONTAINER}/tmp/work/build/
+lxc file push build/build_ubuntu_1710_x86_64_lua5.1.tar.gz ${CONTAINER}/tmp/work/build/
+lxc file push build/build_ubuntu_1710_x86_64_lua5.2.tar.gz ${CONTAINER}/tmp/work/build/
+lxc file push build/build_ubuntu_1710_x86_64_lua5.3.tar.gz ${CONTAINER}/tmp/work/build/
 lxc file push build/build_windows_x86_lua5.1.tar.gz ${CONTAINER}/tmp/work/build/
 lxc file push build/build_windows_x86_lua5.2.tar.gz ${CONTAINER}/tmp/work/build/
 lxc file push build/build_windows_x86_lua5.3.tar.gz ${CONTAINER}/tmp/work/build/

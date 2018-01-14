@@ -14,6 +14,8 @@ SET(INSTALL_UBUNTU_1604_X86    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.
 SET(INSTALL_UBUNTU_1604_X86_64 "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/ubuntu_1604_x86_64")
 SET(INSTALL_UBUNTU_1704_X86    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/ubuntu_1704_x86")
 SET(INSTALL_UBUNTU_1704_X86_64 "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/ubuntu_1704_x86_64")
+SET(INSTALL_UBUNTU_1710_X86    "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/ubuntu_1710_x86")
+SET(INSTALL_UBUNTU_1710_X86_64 "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/lua5.3/ubuntu_1710_x86_64")
 
 
 SET(CPACK_OUTPUT_FILE_PREFIX targets/jonchki/repository/org/muhkuh/lua/romloader/${PROJECT_VERSION})
@@ -97,6 +99,23 @@ INSTALL(FILES ${INSTALL_UBUNTU_1704_X86}/lua_plugins/openocd/openocd.so
               ${INSTALL_UBUNTU_1704_X86}/lua_plugins/openocd/dcc_netx90_com.bin
         DESTINATION ubuntu_1704_x86/lua_plugins/openocd)
 
+INSTALL(FILES ${INSTALL_UBUNTU_1710_X86}/lua_plugins/romloader.so
+              ${INSTALL_UBUNTU_1710_X86}/lua_plugins/romloader_eth.so
+              ${INSTALL_UBUNTU_1710_X86}/lua_plugins/romloader_jtag.so
+              ${INSTALL_UBUNTU_1710_X86}/lua_plugins/romloader_papa_schlumpf.so
+              ${INSTALL_UBUNTU_1710_X86}/lua_plugins/romloader_uart.so
+              ${INSTALL_UBUNTU_1710_X86}/lua_plugins/romloader_usb.so
+        DESTINATION ubuntu_1710_x86/lua_plugins)
+
+INSTALL(FILES ${INSTALL_UBUNTU_1710_X86}/lua_plugins/openocd/openocd.so
+              ${INSTALL_UBUNTU_1710_X86}/lua_plugins/openocd/jtag_detect_init.tcl
+              ${INSTALL_UBUNTU_1710_X86}/lua_plugins/openocd/netx_swreset.tcl
+              ${INSTALL_UBUNTU_1710_X86}/lua_plugins/openocd/chip_init.tcl
+              ${INSTALL_UBUNTU_1710_X86}/lua_plugins/openocd/dcc_netx500.bin
+              ${INSTALL_UBUNTU_1710_X86}/lua_plugins/openocd/dcc_netx10_50_51_52.bin
+              ${INSTALL_UBUNTU_1710_X86}/lua_plugins/openocd/dcc_netx90_com.bin
+        DESTINATION ubuntu_1710_x86/lua_plugins/openocd)
+
 
 #-----------------------------------------------------------------------------
 #
@@ -169,6 +188,24 @@ INSTALL(FILES ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/openocd/openocd.so
               ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/openocd/dcc_netx10_50_51_52.bin
               ${INSTALL_UBUNTU_1704_X86_64}/lua_plugins/openocd/dcc_netx90_com.bin
         DESTINATION ubuntu_1704_x86_64/lua_plugins/openocd)
+
+INSTALL(FILES ${INSTALL_UBUNTU_1710_X86_64}/lua_plugins/romloader.so
+              ${INSTALL_UBUNTU_1710_X86_64}/lua_plugins/romloader_eth.so
+              ${INSTALL_UBUNTU_1710_X86_64}/lua_plugins/romloader_jtag.so
+              ${INSTALL_UBUNTU_1710_X86_64}/lua_plugins/romloader_papa_schlumpf.so
+              ${INSTALL_UBUNTU_1710_X86_64}/lua_plugins/romloader_uart.so
+              ${INSTALL_UBUNTU_1710_X86_64}/lua_plugins/romloader_usb.so
+        DESTINATION ubuntu_1710_x86_64/lua_plugins)
+
+INSTALL(FILES ${INSTALL_UBUNTU_1710_X86_64}/lua_plugins/openocd/openocd.so
+              ${INSTALL_UBUNTU_1710_X86_64}/lua_plugins/openocd/jtag_detect_init.tcl
+              ${INSTALL_UBUNTU_1710_X86_64}/lua_plugins/openocd/netx_swreset.tcl
+              ${INSTALL_UBUNTU_1710_X86_64}/lua_plugins/openocd/chip_init.tcl
+              ${INSTALL_UBUNTU_1710_X86_64}/lua_plugins/openocd/dcc_netx500.bin
+              ${INSTALL_UBUNTU_1710_X86_64}/lua_plugins/openocd/dcc_netx10_50_51_52.bin
+              ${INSTALL_UBUNTU_1710_X86_64}/lua_plugins/openocd/dcc_netx90_com.bin
+        DESTINATION ubuntu_1710_x86_64/lua_plugins/openocd)
+
 
 #-----------------------------------------------------------------------------
 

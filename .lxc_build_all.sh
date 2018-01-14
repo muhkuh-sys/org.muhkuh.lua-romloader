@@ -6,4 +6,6 @@
 . .lxc_build_ubuntu_1604_x86.sh
 . .lxc_build_ubuntu_1704_x64.sh
 . .lxc_build_ubuntu_1704_x86.sh
+. .lxc_build_ubuntu_1710_x64.sh
+. .lxc_build_ubuntu_1710_x86.sh
 . .lxc_build_artefacts.sh
