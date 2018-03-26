@@ -243,7 +243,27 @@ proc init_chip {iChiptyp} {
 		puts "Unknown chip type $iChiptyp"
 	}
 	
-
+	########################################
+	# Set IO compatibility mode on netx 51/52 
+	########################################
+	if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
+	
+	set ADDR_NX56_ASIC_CTRL_ACCESS_KEY                     0x1018c17c
+	set ADDR_NX56_ASIC_CTRL_SAMPLE_AT_NRES                 0x1018c150
+	set MSK_NX56_ASIC_CTRL_SAMPLE_AT_NRES_A19_A18          0x000c0000
+	set ADDR_NX56_ASIC_CTRL_MISC_ASIC_CTRL                 0x1018c140
+	
+		set ul_sample_at_nres [mread32 $ADDR_NX56_ASIC_CTRL_SAMPLE_AT_NRES]
+		if { $ul_sample_at_nres & $MSK_NX56_ASIC_CTRL_SAMPLE_AT_NRES_A19_A18 == 0 } {
+			puts "netX 51/52 in netx 50 compatibility mode"
+		} else {
+			puts "Disabling netx 50 IO compatibility mode"
+			set ul_misc_asic_ctrl [mread32 $ADDR_NX56_ASIC_CTRL_ACCESS_KEY]
+			mww $ADDR_NX56_ASIC_CTRL_ACCESS_KEY $ul_misc_asic_ctrl
+			mww $ADDR_NX56_ASIC_CTRL_MISC_ASIC_CTRL 0x61
+		}
+	}
+	
 	
 	########################################
 	# Set up DCC output or disable output
