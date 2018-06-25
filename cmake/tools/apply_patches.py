@@ -18,7 +18,7 @@ def apply_diffs(strWorkingFolder, strPatchFolder, uiStrip):
     # Sort the patches alphabetically.
     astrSortedPatches = sorted(astrPatches)
     for strPatch in astrSortedPatches:
-        print 'Apply patch "%s"...' % strPatch
+        print('Apply patch "%s"...' % strPatch)
 
         # Apply the patches.
         tPatch = patch.fromfile(strPatch)
@@ -54,8 +54,8 @@ def copy_files(strWorkingFolder, strCopyFolder):
         strWorkingSubFolder = os.path.join(strWorkingFolder, strCurrentRelPath)
 
         # Create the current subfolder in the working folder.
-        if os.path.exists(strWorkingSubFolder) != True:
-            print 'Create folder "%s".' % strWorkingSubFolder
+        if os.path.exists(strWorkingSubFolder) is not True:
+            print('Create folder "%s".' % strWorkingSubFolder)
             os.mkdir(strWorkingSubFolder)
 
         # Copy all files in the folder.
@@ -63,8 +63,8 @@ def copy_files(strWorkingFolder, strCopyFolder):
             strSourceFile = os.path.join(strDirname, strFilename)
             strDestinationFile = os.path.join(strWorkingSubFolder,
                                               strFilename)
-            print 'Copy file "%s" -> "%s".' % (strSourceFile,
-                                               strDestinationFile)
+            print('Copy file "%s" -> "%s".' % (strSourceFile,
+                                               strDestinationFile))
             __copy_file(strSourceFile, strDestinationFile)
 
 
@@ -79,15 +79,15 @@ def copy_list(strWorkingFolder, strCopyList):
         # Strip whitespace at the beginning and end of the file.
         strLine = string.strip(strLine)
         # Ignore empty lines or comments (starting with "#").
-        if len(strLine)!=0 and strLine[0]!='#':
+        if len(strLine) != 0 and strLine[0] != '#':
             # Split the line by commata. There should be 2 elements.
             astrArgs = string.split(strLine, ',')
-            if len(astrArgs)!=2:
+            if len(astrArgs) != 2:
                 raise Exception('Invalid entry in copy list "%s" line %d. Expected one comma.' % (strCopyList, uiLineCnt))
             # Strip whitespace from both arguments.
             strSrc = string.strip(astrArgs[0])
             strDst = string.strip(astrArgs[1])
-            print 'Copy file "%s" -> "%s".' % (strSrc, strDst)
+            print('Copy file "%s" -> "%s".' % (strSrc, strDst))
             __copy_file(strSrc, strDst)
     tFile.close()
 
@@ -139,7 +139,7 @@ def main():
     )
     aOptions = tParser.parse_args()
 
-    print 'Using patch %s by %s.' % (patch.__version__, patch.__author__)
+    print('Using patch %s by %s.' % (patch.__version__, patch.__author__))
 
     # verbosity levels = logging.WARNING, logging.INFO, logging.DEBUG
     logformat = "%(message)s"
@@ -148,12 +148,12 @@ def main():
     patch.setdebug()
 
     # Check if the working folder exists.
-    if os.path.exists(aOptions.strWorkingFolder) != True:
+    if os.path.exists(aOptions.strWorkingFolder) is not True:
         raise Exception(
             'The working folder "%s" does not exist or is not accessible.' %
             aOptions.strWorkingFolder
         )
-    if os.path.isdir(aOptions.strWorkingFolder) != True:
+    if os.path.isdir(aOptions.strWorkingFolder) is not True:
         raise Exception(
             'The working folder "%s" is no folder.' %
             aOptions.strWorkingFolder
@@ -161,12 +161,12 @@ def main():
 
     # Is the patch folder defined?
     if aOptions.strPatchFolder is not None:
-        if os.path.exists(aOptions.strPatchFolder) != True:
+        if os.path.exists(aOptions.strPatchFolder) is not True:
             raise Exception(
                 'The patch folder "%s" does not exist or is not accessible.' %
                 aOptions.strPatchFolder
             )
-        if os.path.isdir(aOptions.strPatchFolder) != True:
+        if os.path.isdir(aOptions.strPatchFolder) is not True:
             raise Exception(
                 'The patch folder "%s" is no folder.' %
                 aOptions.strPatchFolder
@@ -178,12 +178,12 @@ def main():
 
     # Is the copy folder defined?
     if aOptions.strCopyFolder is not None:
-        if os.path.exists(aOptions.strCopyFolder) != True:
+        if os.path.exists(aOptions.strCopyFolder) is not True:
             raise Exception(
                 'The copy folder "%s" does not exist or is not accessible.' %
                 aOptions.strCopyFolder
             )
-        if os.path.isdir(aOptions.strCopyFolder) != True:
+        if os.path.isdir(aOptions.strCopyFolder) is not True:
             raise Exception(
                 'The copy folder "%s" is no folder.' %
                 aOptions.strCopyFolder
@@ -193,12 +193,12 @@ def main():
 
     # Is the copy list defined?
     if aOptions.strCopyList is not None:
-        if os.path.exists(aOptions.strCopyList) != True:
+        if os.path.exists(aOptions.strCopyList) is not True:
             raise Exception(
                 'The copy list "%s" does not exist or is not accessible.' %
                 aOptions.strCopyList
             )
-        if os.path.isfile(aOptions.strCopyList) != True:
+        if os.path.isfile(aOptions.strCopyList) is not True:
             raise Exception(
                 'The copy list "%s" is no regular file.' %
                 aOptions.strCopyList
