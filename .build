@@ -1,0 +1,107 @@
+#! /bin/bash
+set -e
+
+TARGET=$1
+
+JONCHKI_VERSION=0.0.3.1
+JONCHKI_VERBOSE=info
+
+# Get the path to this script. Found here: https://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+	DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+	SOURCE="$(readlink "$SOURCE")"
+	[[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+PRJ_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+
+if [ "$TARGET" == "linux" ]; then
+	# Check for all build dependencies.
+	declare -a -r astrDeb=(
+		"libudev-dev"
+	)
+	declare -a astrInstall=()
+	for strDeb in "${astrDeb[@]}"
+	do
+		DPKG_STATUS=`dpkg-query -W -f='${Status}' ${strDeb} || echo 'unknown'`
+		if [ "$DPKG_STATUS" != "install ok installed" ]; then
+			astrInstall+=("${strDeb}")
+		fi
+	done
+	if [ ${#astrInstall[@]} -gt 0 ]; then
+		sudo apt-get update --assume-yes
+		sudo apt-get install --assume-yes ${astrInstall[@]}
+	fi
+
+	CMAKE_COMPILER=""
+	CMAKE_PLATFORM=""
+	JONCHKI_SYSTEM=""
+	TOOLS_PATH=${PATH}
+
+elif [ "$TARGET" == "windows32" ]; then
+	CMAKE_COMPILER="-DCMAKE_C_FLAGS=-m32 -DCMAKE_CXX_FLAGS=-m32 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_C_COMPILER=i686-w64-mingw32-gcc -DCMAKE_CXX_COMPILER=i686-w64-mingw32-g++ -DCMAKE_RC_COMPILER=i686-w64-mingw32-windres"
+	CMAKE_PLATFORM="-DJONCHKI_PLATFORM_DIST_ID=windows -DJONCHKI_PLATFORM_DIST_VERSION="" -DJONCHKI_PLATFORM_CPU_ARCH=x86"
+	JONCHKI_SYSTEM="--distribution-id windows --empty-distribution-version --cpu-architecture x86"
+	TOOLS_PATH=/usr/mingw-w64-i686/bin:${PATH}
+
+elif [ "$TARGET" == "windows64" ]; then
+	CMAKE_COMPILER="-DCMAKE_C_FLAGS=-m64 -DCMAKE_CXX_FLAGS=-m64 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres"
+	CMAKE_PLATFORM="-DJONCHKI_PLATFORM_DIST_ID=windows -DJONCHKI_PLATFORM_DIST_VERSION="" -DJONCHKI_PLATFORM_CPU_ARCH=x86_64"
+	JONCHKI_SYSTEM="--distribution-id windows --empty-distribution-version --cpu-architecture x86_64"
+	TOOLS_PATH=/usr/mingw-w64-x86_64/bin:${PATH}
+
+else
+	echo "Unknown build target: ${TARGET}"
+	exit -1
+fi
+
+BUILD_DIR=${PRJ_DIR}/build/${TARGET}
+mkdir -p ${BUILD_DIR}
+mkdir -p ${BUILD_DIR}/external
+mkdir -p ${BUILD_DIR}/lua5.1/build_requirements
+mkdir -p ${BUILD_DIR}/lua5.2/build_requirements
+mkdir -p ${BUILD_DIR}/lua5.3/build_requirements
+
+
+# Install jonchki.
+python2.7 jonchki/jonchkihere.py --jonchki-version ${JONCHKI_VERSION} --local-archives ${PRJ_DIR}/jonchki/local_archives ${PRJ_DIR}/build
+if [ -f ${PRJ_DIR}/build/.jonchki.cmd ]; then
+	JONCHKI=$(<${PRJ_DIR}/build/.jonchki.cmd)
+fi
+if [ "${JONCHKI}" == "" ]; then
+	echo "Failed to extract the jonchki command from the jonchkihere output."
+	exit 1
+fi
+
+COMMON_OPTIONS='-DBUILDCFG_LUA_USE_SYSTEM=OFF -DBUILDCFG_LUA_51=ON -DBUILDCFG_LUA_52=ON -DBUILDCFG_LUA_53=ON'
+
+# Get the build requirements for LUA5.1.
+pushd ${BUILD_DIR}/lua5.1/build_requirements
+rm -f lua5.1-romloader-*.xml
+PATH=${TOOLS_PATH} cmake -DBUILDCFG_ONLY_JONCHKI_CFG="ON" ${COMMON_OPTIONS} -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${CMAKE_PLATFORM} ${PRJ_DIR}
+PATH=${TOOLS_PATH} make
+${JONCHKI} install-dependencies --verbose ${JONCHKI_VERBOSE} --syscfg ${PRJ_DIR}/jonchki/jonchkisys.cfg --prjcfg ${PRJ_DIR}/jonchki/jonchkicfg.xml ${JONCHKI_SYSTEM} --build-dependencies lua5.1-romloader-*.xml
+popd
+
+# Get the build requirements for LUA5.2.
+pushd ${BUILD_DIR}/lua5.2/build_requirements
+rm -f lua5.2-romloader-*.xml
+PATH=${TOOLS_PATH} cmake -DBUILDCFG_ONLY_JONCHKI_CFG="ON" ${COMMON_OPTIONS} -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${CMAKE_PLATFORM} ${PRJ_DIR}
+PATH=${TOOLS_PATH} make
+${JONCHKI} install-dependencies --verbose ${JONCHKI_VERBOSE} --syscfg ${PRJ_DIR}/jonchki/jonchkisys.cfg --prjcfg ${PRJ_DIR}/jonchki/jonchkicfg.xml ${JONCHKI_SYSTEM} --build-dependencies lua5.2-romloader-*.xml
+popd
+
+# Get the build requirements for LUA5.3.
+pushd ${BUILD_DIR}/lua5.3/build_requirements
+rm -f lua5.3-romloader-*.xml
+PATH=${TOOLS_PATH} cmake -DBUILDCFG_ONLY_JONCHKI_CFG="ON" ${COMMON_OPTIONS} -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${CMAKE_PLATFORM} ${PRJ_DIR}
+PATH=${TOOLS_PATH} make
+${JONCHKI} install-dependencies --verbose ${JONCHKI_VERBOSE} --syscfg ${PRJ_DIR}/jonchki/jonchkisys.cfg --prjcfg ${PRJ_DIR}/jonchki/jonchkicfg.xml ${JONCHKI_SYSTEM} --build-dependencies lua5.3-romloader-*.xml
+popd
+
+# Build all versions.
+pushd ${BUILD_DIR}
+PATH=${TOOLS_PATH} cmake ${COMMON_OPTIONS} -DCMAKE_INSTALL_PREFIX="" ${CMAKE_COMPILER} ${CMAKE_PLATFORM} ${PRJ_DIR}
+PATH=${TOOLS_PATH} make
+popd
