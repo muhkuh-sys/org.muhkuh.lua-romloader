@@ -71,3 +71,68 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQU
 	SET_TARGET_PROPERTIES(TARGET_muhkuh_plugin_interface PROPERTIES COMPILE_FLAGS -fPIC)
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 
+
+#----------------------------------------------------------------------------
+#
+# Build a package for the selected platform.
+#
+SET(CPACK_OUTPUT_FILE_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/targets/jonchki/repository/org/muhkuh/lua/romloader/${PROJECT_VERSION})
+SET(CPACK_INCLUDE_TOPLEVEL_DIRECTORY FALSE)
+SET(CPACK_PACKAGE_FILE_NAME "lua${BUILDCFG_LUA_VERSION}-romloader-${PROJECT_VERSION}-${JONCHKI_PLATFORM}")
+
+SET(CPACK_GENERATOR "TXZ")
+INCLUDE(CPack)
+
+IF(${JONCHKI_PLATFORM_DIST_ID} STREQUAL "windows")
+        # Package a windows build.
+
+        # NOTE: No "INSTALL" here, they are in the sub folders.
+
+        CONFIGURE_FILE(installer/lua${BUILDCFG_LUA_VERSION}/install_windows.lua
+                       ${CMAKE_CURRENT_BINARY_DIR}/package/install.lua
+                       @ONLY)
+
+        INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/package/install.lua
+                DESTINATION .)
+ELSE(${JONCHKI_PLATFORM_DIST_ID} STREQUAL "windows")
+        # Package a linux build.
+
+        # NOTE: No "INSTALL" here, they are in the sub folders.
+
+        CONFIGURE_FILE(installer/lua${BUILDCFG_LUA_VERSION}/install_linux.lua
+                       ${CMAKE_CURRENT_BINARY_DIR}/package/install.lua
+                       @ONLY)
+
+        INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/package/install.lua
+                DESTINATION .)
+ENDIF(${JONCHKI_PLATFORM_DIST_ID} STREQUAL "windows")
+
+CONFIGURE_FILE(installer/lua${BUILDCFG_LUA_VERSION}/romloader.xml
+               ${CPACK_OUTPUT_FILE_PREFIX}/lua${BUILDCFG_LUA_VERSION}-romloader-${PROJECT_VERSION}-${JONCHKI_PLATFORM}.xml
+               @ONLY)
+
+
+#-----------------------------------------------------------------------------
+#
+# Create a custom target named "pack".
+# It builds the package and creates the hashes.
+#
+ADD_CUSTOM_TARGET(pack
+                  COMMAND ${CMAKE_MAKE_PROGRAM}
+                  COMMAND ${CMAKE_MAKE_PROGRAM} package
+                  COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tools/generate_hash.py ${CPACK_OUTPUT_FILE_PREFIX}/lua${BUILDCFG_LUA_VERSION}-romloader-${PROJECT_VERSION}-${JONCHKI_PLATFORM}.xml
+                  COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tools/generate_hash.py ${CPACK_OUTPUT_FILE_PREFIX}/lua${BUILDCFG_LUA_VERSION}-romloader-${PROJECT_VERSION}-${JONCHKI_PLATFORM}.tar.xz
+                  COMMENT "Pack the artifact and generate the hashes...")
+
+
+#-----------------------------------------------------------------------------
+#
+# Filter the pom.xml file.
+#
+SET(POM_ARTIFACT_ID  "romloader")
+SET(POM_GROUP_ID     "org.muhkuh.lua")
+SET(POM_VERSION      "${PROJECT_VERSION}")
+SET(POM_PACKAGING    "tar.xz")
+CONFIGURE_FILE(installer/lua${BUILDCFG_LUA_VERSION}/pom.xml
+               ${CPACK_OUTPUT_FILE_PREFIX}/lua${BUILDCFG_LUA_VERSION}-romloader-${PROJECT_VERSION}.pom
+               @ONLY)

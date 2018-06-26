@@ -5,7 +5,8 @@
 	      artifact="lua5.1-romloader"
 	      version="@PROJECT_VERSION@"
 	      vcs-id="@PROJECT_VERSION_VCS_LONG@"
-	      extension="tar.xz">
+	      extension="tar.xz"
+	      platform="@JONCHKI_PLATFORM@">
 		<license name="GPL-2.0"/>
 		<author name="Muhkuh team" url="https://github.com/muhkuh-sys" />
 		<description>
