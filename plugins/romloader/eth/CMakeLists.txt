@@ -42,9 +42,9 @@ ADD_LIBRARY(TARGET_romloader_eth_lib STATIC ${romloader_eth_SOURCES})
 TARGET_INCLUDE_DIRECTORIES(TARGET_romloader_eth_lib
                            PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${SWIG_RUNTIME_OUTPUT_PATH})
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
-IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+IF((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_SYSTEM_NAME STREQUAL "Linux"))
 	SET_TARGET_PROPERTIES(TARGET_romloader_eth_lib PROPERTIES COMPILE_FLAGS -fPIC)
-ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+ENDIF((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_SYSTEM_NAME STREQUAL "Linux"))
 
 SET_SOURCE_FILES_PROPERTIES(${ETH_FIRMWARE_SOURCES} ${ETH_FIRMWARE_HEADERS}
                             PROPERTIES GENERATED 1)
@@ -65,16 +65,16 @@ TARGET_INCLUDE_DIRECTORIES(TARGET_plugins_romloader_romloader_eth_LUA
 SET_TARGET_PROPERTIES(TARGET_plugins_romloader_romloader_eth_LUA PROPERTIES PREFIX "" OUTPUT_NAME "romloader_eth")
 
 # On mingw link all compiler libraries static.
-IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+IF((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 	set_property(TARGET TARGET_plugins_romloader_romloader_eth_LUA PROPERTY LINK_FLAGS "-static -static-libgcc -static-libstdc++")
-ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+ENDIF((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 
 # Install the lua module.
 INSTALL(TARGETS TARGET_plugins_romloader_romloader_eth_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
 
 # Add tests for this module.
-IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+IF((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 	# Here are the MinGW specific tests.
 	ADD_TEST(NAME romloader_eth_MinGW_DLL_dependencies
 	         COMMAND "${PYTHON_EXECUTABLE}" ${TEST_SCRIPT_DIR}/mingw_dll_dependencies.py -u lua5.1 -u lua5.2 -u lua5.3 $<TARGET_FILE:TARGET_plugins_romloader_romloader_eth_LUA>)
-ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+ENDIF((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
