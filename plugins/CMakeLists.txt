@@ -3,29 +3,23 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.7)
 PROJECT("muhkuh_plugin_interface")
 
 # Select the LUA version.
-INCLUDE(${CMAKE_HOME_DIRECTORY}/../cmake/muhkuh_lua.cmake)
+INCLUDE(${CMAKE_HOME_DIRECTORY}/cmake/muhkuh_lua.cmake)
 
 # Enable tests (see here for details: http://www.vtk.org/Wiki/CMake/Testing_With_CTest)
 ENABLE_TESTING()
 
 
 # Set some installation folders.
-INCLUDE(${CMAKE_HOME_DIRECTORY}/../cmake/muhkuh_installation_folders.cmake)
-
-# Get the VCS version for the jonchki configuration.
-#INCLUDE(${CMAKE_HOME_DIRECTORY}/../cmake/version.cmake)
-
-# Generate a version number from a file or VCS.
-#INCLUDE(${CMAKE_HOME_DIRECTORY}/../cmake/muhkuh_version.cmake)
+INCLUDE(${CMAKE_HOME_DIRECTORY}/cmake/muhkuh_installation_folders.cmake)
 
 # Detect the platform.
-INCLUDE(${CMAKE_HOME_DIRECTORY}/../cmake/platform.cmake)
+INCLUDE(${CMAKE_HOME_DIRECTORY}/cmake/platform.cmake)
 
 # Swig is required to generate the bindings.
 FIND_PACKAGE(SWIG REQUIRED)
 
 # Add a custom target for the swig runtime for LUA.
-INCLUDE(${CMAKE_HOME_DIRECTORY}/../cmake/muhkuh_swig_lua_runtime.cmake)
+INCLUDE(${CMAKE_HOME_DIRECTORY}/cmake/muhkuh_swig_lua_runtime.cmake)
 
 
 #---------------------------------------------------------------------
@@ -79,7 +73,7 @@ ENDIF((CMAKE_CXX_COMPILER_ID STREQUAL "GNU")  AND (CMAKE_SYSTEM_NAME STREQUAL "L
 #
 # Build a package for the selected platform.
 #
-SET(CPACK_OUTPUT_FILE_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/targets/jonchki/repository/org/muhkuh/lua/romloader/${PROJECT_VERSION})
+SET(CPACK_OUTPUT_FILE_PREFIX ${CMAKE_BINARY_DIR}/targets/jonchki/repository/org/muhkuh/lua/romloader/${PROJECT_VERSION})
 SET(CPACK_INCLUDE_TOPLEVEL_DIRECTORY FALSE)
 SET(CPACK_PACKAGE_FILE_NAME "lua${BUILDCFG_LUA_VERSION}-romloader-${PROJECT_VERSION}-${JONCHKI_PLATFORM}")
 

@@ -27,7 +27,6 @@ ENDIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
 ExternalProject_Add(TARGET_libusb
                     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libusb-${VERSION_EXTERNAL}
-                    EXCLUDE_FROM_ALL 1
                     URL ${CMAKE_CURRENT_SOURCE_DIR}/libusb-${VERSION_EXTERNAL}.tar.bz2
                     URL_HASH SHA1=54d71841542eb1a6f0b0420878a4d5434efe8d28
                     PATCH_COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/templates ${CMAKE_CURRENT_BINARY_DIR}/libusb-${VERSION_EXTERNAL}/src/TARGET_libusb

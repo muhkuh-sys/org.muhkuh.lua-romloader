@@ -29,10 +29,9 @@ ENDIF(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 ExternalProject_Add(TARGET_openocd
                     DEPENDS TARGET_libusb
                     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/openocd-${VERSION_EXTERNAL}
-                    EXCLUDE_FROM_ALL 1
                     URL ${CMAKE_CURRENT_SOURCE_DIR}/openocd-${VERSION_EXTERNAL}.tar.bz2
                     URL_HASH SHA1=3245d43d60a1a93f8b0f6b1ce20b53e38cab7a4a
-                    PATCH_COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/cmake/tools/apply_patches.py --working-folder ${CMAKE_CURRENT_BINARY_DIR}/openocd-${VERSION_EXTERNAL}/src/TARGET_openocd --patch-folder ${CMAKE_CURRENT_SOURCE_DIR}/patches --strip 1 --copy-folder ${CMAKE_CURRENT_SOURCE_DIR}/copy
+                    PATCH_COMMAND "${PYTHON_EXECUTABLE}" ${CMAKE_HOME_DIRECTORY}/../cmake/tools/apply_patches.py --working-folder ${CMAKE_CURRENT_BINARY_DIR}/openocd-${VERSION_EXTERNAL}/src/TARGET_openocd --patch-folder ${CMAKE_CURRENT_SOURCE_DIR}/patches --strip 1 --copy-folder ${CMAKE_CURRENT_SOURCE_DIR}/copy
                     CMAKE_ARGS ${OPENOCD_CMAKE_ARGS}
                     INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install DESTDIR=${CMAKE_CURRENT_BINARY_DIR}
 )

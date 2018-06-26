@@ -27,7 +27,7 @@
 }
 #endif
 
-%include muhkuh_typemaps.i
+%include plugins/muhkuh_typemaps.i
 
 /* The plugin provider's functions "ClaimInterface" and "ReleaseInterface"
  * are only used from the C++ side. "ClaimInterface" is called from the

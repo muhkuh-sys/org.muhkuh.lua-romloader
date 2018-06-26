@@ -12,7 +12,7 @@
 	#include "romloader.h"
 %}
 
-%include muhkuh_typemaps.i
+%include plugins/muhkuh_typemaps.i
 
 /* import interfaces */
 %include "../muhkuh_plugin_interface.h"

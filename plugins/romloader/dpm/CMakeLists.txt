@@ -32,7 +32,7 @@ IF(UNIX)
 
 	ADD_LIBRARY(TARGET_romloader_dpm_lib STATIC ${romloader_dpm_SOURCES})
 	TARGET_INCLUDE_DIRECTORIES(TARGET_romloader_dpm_lib
-	                           PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${SWIG_RUNTIME_OUTPUT_PATH} ${CMAKE_SOURCE_DIR}/../platform/src/ ../../../targets/plugins/romloader/dpm/netx/)
+	                           PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${SWIG_RUNTIME_OUTPUT_PATH} ${CMAKE_SOURCE_DIR}/platform/src/ ../../../targets/plugins/romloader/dpm/netx/)
 	# This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 	IF((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_SYSTEM_NAME STREQUAL "Linux"))
 		SET_TARGET_PROPERTIES(TARGET_romloader_dpm_lib PROPERTIES COMPILE_FLAGS -fPIC)
