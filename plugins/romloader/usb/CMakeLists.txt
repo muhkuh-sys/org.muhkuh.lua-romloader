@@ -15,13 +15,13 @@ FIND_PACKAGE(libusb REQUIRED)
 # Get the netX USB firmware binaries (in form of C data arrays) and headers.
 #
 
-SET(NETX_USB_FIRMWARE_SOURCES ../../../targets/plugins/romloader/usb/netx/usbmon_netx10.c
-                              ../../../targets/plugins/romloader/usb/netx/usbmon_netx56.c
-                              ../../../targets/plugins/romloader/usb/netx/usbmon_netx500.c)
+SET(NETX_USB_FIRMWARE_SOURCES ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx10.c
+                              ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx56.c
+                              ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx500.c)
 
-SET(NETX_USB_FIRMWARE_HEADERS ../../../targets/plugins/romloader/usb/netx/usbmon_netx10.h
-                              ../../../targets/plugins/romloader/usb/netx/usbmon_netx56.h
-                              ../../../targets/plugins/romloader/usb/netx/usbmon_netx500.h)
+SET(NETX_USB_FIRMWARE_HEADERS ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx10.h
+                              ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx56.h
+                              ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx500.h)
 
 
 #----------------------------------------------------------------------------
@@ -45,9 +45,10 @@ SET(romloader_usb_HEADERS
 
 
 ADD_LIBRARY(TARGET_romloader_usb_lib STATIC ${romloader_usb_SOURCES})
+ADD_DEPENDENCIES(TARGET_romloader_usb_lib TARGET_NETX_FIRMWARE)
 TARGET_LINK_LIBRARIES(TARGET_romloader_usb_lib libusb::TARGET_libusb)
 TARGET_INCLUDE_DIRECTORIES(TARGET_romloader_usb_lib
-                           PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${SWIG_RUNTIME_OUTPUT_PATH} ../../../targets/plugins/romloader/usb/netx/)
+                           PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${SWIG_RUNTIME_OUTPUT_PATH} ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/)
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_SYSTEM_NAME STREQUAL "Linux"))
 	SET_TARGET_PROPERTIES(TARGET_romloader_usb_lib PROPERTIES COMPILE_FLAGS -fPIC)

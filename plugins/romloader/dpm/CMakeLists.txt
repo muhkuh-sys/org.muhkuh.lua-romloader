@@ -16,8 +16,8 @@ INCLUDE(${SWIG_USE_FILE})
 # Maybe the future brings support for the NXHX-FTDI and companions which allows easy access on windows too.
 IF(UNIX)
 	SET(romloader_dpm_SOURCES
-		../../../targets/plugins/romloader/dpm/netx/dpmmon_netx56_monitor.c
-		../../../targets/plugins/romloader/dpm/netx/dpmmon_netx4000_monitor.c
+		${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/dpm/netx/dpmmon_netx56_monitor.c
+		${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/dpm/netx/dpmmon_netx4000_monitor.c
 		romloader_dpm_device_linux_uio.cpp
 		romloader_dpm_device.cpp
 		romloader_dpm_main.cpp
@@ -31,6 +31,7 @@ IF(UNIX)
 	)
 
 	ADD_LIBRARY(TARGET_romloader_dpm_lib STATIC ${romloader_dpm_SOURCES})
+	ADD_DEPENDENCIES(TARGET_romloader_dpm_lib TARGET_NETX_FIRMWARE)
 	TARGET_INCLUDE_DIRECTORIES(TARGET_romloader_dpm_lib
 	                           PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${SWIG_RUNTIME_OUTPUT_PATH} ${CMAKE_SOURCE_DIR}/platform/src/ ../../../targets/plugins/romloader/dpm/netx/)
 	# This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
