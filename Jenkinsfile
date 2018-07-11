@@ -1,7 +1,7 @@
 import groovy.json.JsonSlurperClassic
 
 node {
-    def ARTIFACTS_PATH = 'build/*/lua5.*/mhash/targets/jonchki/repository/org/muhkuh/lua/mhash/**'
+    def ARTIFACTS_PATH = 'build/*/lua5.*/mhash/targets/jonchki/repository/org/muhkuh/lua/romloader/**'
     def strBuilds = env.JENKINS_SELECT_BUILDS
     def atBuilds = new JsonSlurperClassic().parseText(strBuilds)
 
@@ -23,7 +23,7 @@ node {
                         ]
                     ],
                     submoduleCfg: [],
-                    userRemoteConfigs: [[url: 'https://github.com/muhkuh-sys/org.muhkuh.lua-lua51-romloader.git']]
+                    userRemoteConfigs: [[url: 'https://github.com/muhkuh-sys/org.muhkuh.lua-romloader.git']]
                 ])
 
                 /* Build the project. */
