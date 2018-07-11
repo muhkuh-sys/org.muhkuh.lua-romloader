@@ -1,7 +1,8 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.7)
 
 
-PROJECT("romloader_usb")
+PROJECT("romloader_usb"
+        VERSION ${MUHKUH_VERSION_ALL})
 
 
 FIND_PACKAGE(SWIG REQUIRED)

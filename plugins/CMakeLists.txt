@@ -1,6 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.7)
 
-PROJECT("muhkuh_plugin_interface")
+PROJECT("muhkuh_plugin_interface"
+        VERSION ${MUHKUH_VERSION_ALL})
 
 # Select the LUA version.
 INCLUDE(${CMAKE_HOME_DIRECTORY}/cmake/muhkuh_lua.cmake)

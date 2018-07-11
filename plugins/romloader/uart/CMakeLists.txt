@@ -1,7 +1,8 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.7)
 
 
-PROJECT("romloader_uart")
+PROJECT("romloader_uart"
+        VERSION ${MUHKUH_VERSION_ALL})
 
 INCLUDE(${SWIG_USE_FILE})
 

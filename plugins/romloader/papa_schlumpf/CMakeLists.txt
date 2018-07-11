@@ -1,7 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.7)
 
 
-PROJECT("romloader_papa_schlumpf")
+PROJECT("romloader_papa_schlumpf"
+        VERSION ${MUHKUH_VERSION_ALL})
 
 
 FIND_PACKAGE(SWIG REQUIRED)

@@ -1,7 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.7)
 
 
-PROJECT("romloader_dpm")
+PROJECT("romloader_dpm"
+        VERSION ${MUHKUH_VERSION_ALL})
 
 
 INCLUDE(${SWIG_USE_FILE})
