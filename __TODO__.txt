@@ -1,0 +1,7 @@
+ * Add a description to the UART devices.
+
+ * Log messages to a function instead of stdout/stderr
+
+ * Replace readdir_r  (see here for inspiration: https://github.com/rust-lang/rust/issues/34668 https://github.com/dotnet/corefx/issues/10712 )
+
+ * Replace PATH_MAX with fpathconf(dirfd(dp), _PC_NAME_MAX) (see here: https://lwn.net/Articles/696474/ )
