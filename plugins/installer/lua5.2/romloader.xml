@@ -16,5 +16,6 @@
 	<dependencies>
 		<build-dependency group="org.lua" module="lua" artifact="lua" version="5.2"/>
 		<dependency group="org.lua" module="lua" artifact="lua"/>
+		<dependency group="org.openocd" module="openocd" artifact="openocd" version="0.10.0"/>
 	</dependencies>
 </jonchki-artifact>

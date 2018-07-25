@@ -6,4 +6,3 @@ PROJECT("romloader_externals")
 FIND_PACKAGE(PythonInterp 2.7 REQUIRED)
 
 ADD_SUBDIRECTORY(libusb)
-ADD_SUBDIRECTORY(openocd)
