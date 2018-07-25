@@ -127,7 +127,7 @@ ADD_CUSTOM_TARGET(pack
 #
 # Filter the pom.xml file.
 #
-SET(POM_ARTIFACT_ID  "romloader")
+SET(POM_ARTIFACT_ID  "lua${BUILDCFG_LUA_VERSION}-romloader")
 SET(POM_GROUP_ID     "org.muhkuh.lua")
 SET(POM_VERSION      "${PROJECT_VERSION}")
 SET(POM_PACKAGING    "tar.xz")
