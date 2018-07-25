@@ -78,7 +78,6 @@ CONFIGURE_FILE(plugins/installer/lua${BUILDCFG_LUA_VERSION}/romloader.xml
 
 
 IF( NOT BUILDCFG_ONLY_JONCHKI_CFG STREQUAL "ON" )
-	SET(openocd_DIR "${CMAKE_CURRENT_BINARY_DIR}/../external/openocd/install/cmake")
 	SET(libusb_DIR "${CMAKE_CURRENT_BINARY_DIR}/../external/libusb/install/cmake")
 
 	ADD_SUBDIRECTORY(plugins)

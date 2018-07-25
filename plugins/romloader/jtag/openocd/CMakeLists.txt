@@ -2,10 +2,6 @@ cmake_minimum_required(VERSION 3.7)
 
 PROJECT("romloader_jtag_openocd")
 
-FIND_PACKAGE(openocd REQUIRED)
-GET_TARGET_PROPERTY(OPENOCD_INCLUDE_DIRECTORIES openocd::LIBRARY_libopenocd INTERFACE_INCLUDE_DIRECTORIES)
-GET_TARGET_PROPERTY(OPENOCD_LOCATION openocd::LIBRARY_libopenocd IMPORTED_LOCATION_NOCONFIG)
-
 #-----------------------------------------------------------------------------
 #
 # Build the openocd adaptor.
@@ -23,12 +19,6 @@ SET(romloader_jtag_openocd_HEADERS
 
 
 ADD_LIBRARY(TARGET_romloader_jtag_openocd_lib STATIC ${romloader_jtag_openocd_SOURCES})
-TARGET_INCLUDE_DIRECTORIES(TARGET_romloader_jtag_openocd_lib
-                           PRIVATE ${OPENOCD_INCLUDE_DIRECTORIES})
-
-# Install the openocd library to the same folder as the LUA module.
-INSTALL(FILES ${OPENOCD_LOCATION}
-        DESTINATION ${INSTALL_DIR_LUA_MODULES}/openocd)
 
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")

@@ -10,8 +10,6 @@ PROJECT("romloader_jtag"
 FIND_PACKAGE(SWIG REQUIRED)
 INCLUDE(${SWIG_USE_FILE})
 
-FIND_PACKAGE(openocd REQUIRED)
-
 
 #-----------------------------------------------------------------------------
 #
@@ -29,7 +27,6 @@ SET(romloader_jtag_HEADERS
 
 
 ADD_LIBRARY(TARGET_romloader_jtag_lib STATIC ${romloader_jtag_SOURCES})
-TARGET_LINK_LIBRARIES(TARGET_romloader_jtag_lib openocd::LIBRARY_libopenocd)
 TARGET_INCLUDE_DIRECTORIES(TARGET_romloader_jtag_lib
                            PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${SWIG_RUNTIME_OUTPUT_PATH})
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
