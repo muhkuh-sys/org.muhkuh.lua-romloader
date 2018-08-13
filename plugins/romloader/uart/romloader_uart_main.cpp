@@ -1771,7 +1771,6 @@ void romloader_uart::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLU
 							}
 							else if( ucStatus==MONITOR_STATUS_CallFinished )
 							{
-								fprintf(stderr, "%s(%p): Call has finished!", m_pcName, this);
 								fOk = true;
 								break;
 							}
