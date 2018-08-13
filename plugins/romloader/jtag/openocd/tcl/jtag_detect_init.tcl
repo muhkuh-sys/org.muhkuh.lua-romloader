@@ -95,6 +95,11 @@ proc setup_interface_jtagkey {} {
 proc setup_interface {strInterfaceID} {
 	echo "+setup_interface $strInterfaceID"
 
+	# Disable all servers.
+	gdb_port disabled
+	tcl_port disabled
+	telnet_port disabled
+
 	if       {$strInterfaceID == "NXJTAG-USB"}            {setup_interface_nxjtag_usb
 	} elseif {$strInterfaceID == "Olimex_ARM_USB_TINY_H"} {setup_interface_olimex_arm_usb_tiny_h
 	} elseif {$strInterfaceID == "Amontec_JTAGkey"}       {setup_interface_jtagkey
