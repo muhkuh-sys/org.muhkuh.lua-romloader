@@ -109,38 +109,41 @@ void romloader_eth_device_linux::Close(void)
 }
 
 
-int romloader_eth_device_linux::SendPacket(const unsigned char *pucData, size_t sizData)
+romloader::TRANSPORTSTATUS_T romloader_eth_device_linux::SendPacket(const unsigned char *pucData, size_t sizData)
 {
 	ssize_t ssizResult;
-	int iResult;
+	romloader::TRANSPORTSTATUS_T tResult;
 
 
 	/* Expect success. */
-	iResult = 0;
+	tResult = romloader::TRANSPORTSTATUS_OK;
 
 	/* Send a packet. */
 	ssizResult = sendto(m_iHbootServer_Socket, pucData, sizData, 0, &m_tHbootServer_Addr.tAddr, sizeof(m_tHbootServer_Addr));
 	if( ssizResult==-1 )
 	{
 		fprintf(stderr, "Failed to send packet: %d: %s\n", errno, strerror(errno));
-		iResult = -1;
+		tResult = romloader::TRANSPORTSTATUS_SEND_FAILED;
 	}
 	if( ssizResult!=sizData )
 	{
 		fprintf(stderr, "Failed to send packet. %ld requested, but only %ld sent.\n", sizData, ssizResult);
-		iResult = -1;
+		tResult = romloader::TRANSPORTSTATUS_SEND_FAILED;
 	}
 
-	return iResult;
+	return tResult;
 }
 
 
-int romloader_eth_device_linux::RecvPacket(unsigned char *pucData, size_t sizData, unsigned long ulTimeout, size_t *psizPacket)
+romloader::TRANSPORTSTATUS_T romloader_eth_device_linux::RecvPacket(unsigned char *pucData, size_t sizData, unsigned long ulTimeout, size_t *psizPacket)
 {
 	fd_set tRxFileDescSet;
 	struct timeval tTimeVal;
 	int iResult;
+	romloader::TRANSPORTSTATUS_T tResult;
 	ssize_t ssizPacket;
+//	struct sockaddr src_addr;
+//	socklen_t addrlen;
 
 
 	/* Watch the socket to see when it has input. */
@@ -158,22 +161,26 @@ int romloader_eth_device_linux::RecvPacket(unsigned char *pucData, size_t sizDat
 	if( iResult==0 )
 	{
 		/* Timeout and nothing received. */
+		tResult = romloader::TRANSPORTSTATUS_TIMEOUT;
 //		fprintf(stderr, "timeout\n");
 	}
 	else if( iResult==1 )
 	{
 		/* Receive the answer. */
+//		ssizPacket = recvfrom(m_iHbootServer_Socket, pucData, sizData, 0, &src_addr, &addrlen);
 		ssizPacket = recvfrom(m_iHbootServer_Socket, pucData, sizData, 0, NULL, 0);
 		if( ssizPacket<0 )
 		{
-			fprintf(stderr, "Failed to receive packet.\n");
+			fprintf(stderr, "Failed to receive packet: %s (%d)\n", strerror(errno), errno);
 			ssizPacket = 0;
-			iResult = -1;
+			tResult = romloader::TRANSPORTSTATUS_RECEIVE_FAILED;
 		}
 		else
 		{
 			/* All ok! */
-			iResult = 0;
+//			fprintf(stderr, "recv %d, %d, %d.%d.%d.%d\n", addrlen, src_addr.sa_family, src_addr.sa_data[0], src_addr.sa_data[1], src_addr.sa_data[2], src_addr.sa_data[3]);
+			fprintf(stderr, "recv %zd bytes\n", ssizPacket);
+			tResult = romloader::TRANSPORTSTATUS_OK;
 		}
 	}
 	else
@@ -184,7 +191,7 @@ int romloader_eth_device_linux::RecvPacket(unsigned char *pucData, size_t sizDat
 	/* Return the packet's size. */
 	*psizPacket = (size_t)ssizPacket;
 
-	return iResult;
+	return tResult;
 }
 
 
@@ -258,7 +265,8 @@ size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 			else
 			{
 				// use DEFAULT interface
-				iaddr.s_addr = INADDR_ANY;
+//				iaddr.s_addr = INADDR_ANY;
+				iaddr.s_addr = inet_addr("192.168.64.1");
 
 				// Set the outgoing interface to DEFAULT
 				setsockopt(tSocket, IPPROTO_IP, IP_MULTICAST_IF, &iaddr, sizeof(struct in_addr));
