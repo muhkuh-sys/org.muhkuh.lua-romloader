@@ -340,6 +340,18 @@ void romloader_papa_schlumpf::Disconnect(lua_State *ptClientData)
 
 
 
+romloader::TRANSPORTSTATUS_T romloader_papa_schlumpf::send_raw_packet(const void *pvPacket, size_t sizPacket)
+{
+}
+
+
+
+romloader::TRANSPORTSTATUS_T romloader_papa_schlumpf::receive_packet(void)
+{
+}
+
+
+
 uint8_t romloader_papa_schlumpf::read_data08(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
 	int iResult;

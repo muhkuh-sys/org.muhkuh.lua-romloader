@@ -389,17 +389,17 @@ bool romloader_usb::synchronize(void)
 		else if( sizInBuf!=sizExpectedResponse )
 		{
 			fprintf(stderr, "synchronize: Received knock sequence with invalid size of %ld. Expected: %ld.\n", sizInBuf, sizExpectedResponse);
-			hexdump(aucInBuf, sizInBuf, 0);
+			hexdump(aucInBuf, sizInBuf);
 		}
 		else if( memcmp(aucInBuf+1, aucMagicMooh, sizeof(aucMagicMooh))!=0 )
 		{
 			fprintf(stderr, "Received knock sequence has no magic.\n");
-			hexdump(aucInBuf, sizInBuf, 0);
+			hexdump(aucInBuf, sizInBuf);
 		}
 		else
 		{
 			fprintf(stderr, "Packet:\n");
-			hexdump(aucInBuf, sizInBuf, 0);
+			hexdump(aucInBuf, sizInBuf);
 
 			/* Get the sequence number from the status byte. */
 			ucSequence = (aucInBuf[0x00] & MONITOR_SEQUENCE_MSK) >> MONITOR_SEQUENCE_SRT;
@@ -583,6 +583,18 @@ romloader_usb::USBSTATUS_T romloader_usb::execute_command(uint8_t *aucCommand, s
 
 
 
+romloader::TRANSPORTSTATUS_T romloader_usb::send_raw_packet(const void *pvPacket, size_t sizPacket)
+{
+}
+
+
+
+romloader::TRANSPORTSTATUS_T romloader_usb::receive_packet(void)
+{
+}
+
+
+
 /* read a byte (8bit) from the netx to the pc */
 uint8_t romloader_usb::read_data08(lua_State *ptClientData, uint32_t ulNetxAddress)
 {
@@ -625,7 +637,7 @@ uint8_t romloader_usb::read_data08(lua_State *ptClientData, uint32_t ulNetxAddre
 			if( sizInBuf!=2 )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data08: answer has invalid size: %d", m_pcName, this, sizInBuf);
-				hexdump(m_aucPacketInputBuffer, sizInBuf, 0);
+				hexdump(m_aucPacketInputBuffer, sizInBuf);
 				fOk = false;
 			}
 			else
@@ -690,7 +702,7 @@ uint16_t romloader_usb::read_data16(lua_State *ptClientData, uint32_t ulNetxAddr
 			if( sizInBuf!=3 )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data16: answer has invalid size!", m_pcName, this);
-				hexdump(m_aucPacketInputBuffer, sizInBuf, 0);
+				hexdump(m_aucPacketInputBuffer, sizInBuf);
 				fOk = false;
 			}
 			else
@@ -756,7 +768,7 @@ uint32_t romloader_usb::read_data32(lua_State *ptClientData, uint32_t ulNetxAddr
 			if( sizInBuf!=5 )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): read_data32: answer has invalid size!", m_pcName, this);
-				hexdump(m_aucPacketInputBuffer, sizInBuf, 0);
+				hexdump(m_aucPacketInputBuffer, sizInBuf);
 				fOk = false;
 			}
 			else
@@ -858,7 +870,7 @@ void romloader_usb::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **p
 					if( sizInBuf!=sizChunk+1 )
 					{
 						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): read_image: answer has invalid size!", m_pcName, this);
-						hexdump(m_aucPacketInputBuffer, sizInBuf, 0);
+						hexdump(m_aucPacketInputBuffer, sizInBuf);
 						fOk = false;
 						break;
 					}
@@ -940,7 +952,7 @@ void romloader_usb::write_data08(lua_State *ptClientData, uint32_t ulNetxAddress
 		else if( sizInBuf!=1 )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data08: answer has invalid size!", m_pcName, this);
-			hexdump(m_aucPacketInputBuffer, sizInBuf, 0);
+			hexdump(m_aucPacketInputBuffer, sizInBuf);
 			fOk = false;
 		}
 		else
@@ -998,7 +1010,7 @@ void romloader_usb::write_data16(lua_State *ptClientData, uint32_t ulNetxAddress
 		else if( sizInBuf!=1 )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data16: answer has invalid size!", m_pcName, this);
-			hexdump(m_aucPacketInputBuffer, sizInBuf, 0);
+			hexdump(m_aucPacketInputBuffer, sizInBuf);
 			fOk = false;
 		}
 		else
@@ -1058,7 +1070,7 @@ void romloader_usb::write_data32(lua_State *ptClientData, uint32_t ulNetxAddress
 		else if( sizInBuf!=1 )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): write_data32: answer has invalid size!", m_pcName, this);
-			hexdump(m_aucPacketInputBuffer, sizInBuf, 0);
+			hexdump(m_aucPacketInputBuffer, sizInBuf);
 			fOk = false;
 		}
 		else
@@ -1131,7 +1143,7 @@ void romloader_usb::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN,
 			else if( sizInBuf!=1 )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): write_image: answer has invalid size!", m_pcName, this);
-				hexdump(m_aucPacketInputBuffer, sizInBuf, 0);
+				hexdump(m_aucPacketInputBuffer, sizInBuf);
 				fOk = false;
 				break;
 			}
@@ -1205,7 +1217,7 @@ void romloader_usb::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA
 		else if( sizInBuf!=1 )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: answer has invalid size!", m_pcName, this);
-			hexdump(m_aucPacketInputBuffer, sizInBuf, 0);
+			hexdump(m_aucPacketInputBuffer, sizInBuf);
 			fOk = false;
 		}
 		else
@@ -1237,14 +1249,14 @@ void romloader_usb::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA
 					else if( sizInBuf>=1 && ucStatus==MONITOR_STATUS_CallMessage )
 					{
 //						printf("Received message:\n");
-//						hexdump(aucInBuf+1, sizInBuf-1, 0);
+//						hexdump(aucInBuf+1, sizInBuf-1);
 						pcProgressData = (char*)m_aucPacketInputBuffer+1;
 						sizProgressData = sizInBuf-1;
 					}
 					else if( sizInBuf!=0 )
 					{
 						printf("Received invalid packet:\n");
-						hexdump(m_aucPacketInputBuffer, sizInBuf, 0);
+						hexdump(m_aucPacketInputBuffer, sizInBuf);
 
 						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): call: received invalid packet!", m_pcName, this);
 						fOk = false;
@@ -1276,45 +1288,6 @@ void romloader_usb::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA
 	if( fOk!=true )
 	{
 		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
-	}
-}
-
-
-void romloader_usb::hexdump(const uint8_t *pucData, uint32_t ulSize, uint32_t ulNetxAddress)
-{
-	const uint8_t *pucDumpCnt, *pucDumpEnd;
-	uint32_t ulAddressCnt;
-	size_t sizBytesLeft;
-	size_t sizChunkSize;
-	size_t sizChunkCnt;
-
-
-	// show a hexdump of the data
-	pucDumpCnt = pucData;
-	pucDumpEnd = pucData + ulSize;
-	ulAddressCnt = ulNetxAddress;
-	while( pucDumpCnt<pucDumpEnd )
-	{
-		// get number of bytes for the next line
-		sizChunkSize = 16;
-		sizBytesLeft = pucDumpEnd - pucDumpCnt;
-		if( sizChunkSize>sizBytesLeft )
-		{
-			sizChunkSize = sizBytesLeft;
-		}
-
-		// start a line in the dump with the address
-		printf("%08X: ", ulAddressCnt);
-		// append the data bytes
-		sizChunkCnt = sizChunkSize;
-		while( sizChunkCnt!=0 )
-		{
-			printf("%02X ", *(pucDumpCnt++));
-			--sizChunkCnt;
-		}
-		// next line
-		printf("\n");
-		ulAddressCnt += sizChunkSize;
 	}
 }
 

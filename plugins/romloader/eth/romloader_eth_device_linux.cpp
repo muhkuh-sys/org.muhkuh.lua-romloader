@@ -109,7 +109,7 @@ void romloader_eth_device_linux::Close(void)
 }
 
 
-romloader::TRANSPORTSTATUS_T romloader_eth_device_linux::SendPacket(const unsigned char *pucData, size_t sizData)
+romloader::TRANSPORTSTATUS_T romloader_eth_device_linux::SendPacket(const void *pvData, size_t sizData)
 {
 	ssize_t ssizResult;
 	romloader::TRANSPORTSTATUS_T tResult;
@@ -119,7 +119,7 @@ romloader::TRANSPORTSTATUS_T romloader_eth_device_linux::SendPacket(const unsign
 	tResult = romloader::TRANSPORTSTATUS_OK;
 
 	/* Send a packet. */
-	ssizResult = sendto(m_iHbootServer_Socket, pucData, sizData, 0, &m_tHbootServer_Addr.tAddr, sizeof(m_tHbootServer_Addr));
+	ssizResult = sendto(m_iHbootServer_Socket, pvData, sizData, 0, &m_tHbootServer_Addr.tAddr, sizeof(m_tHbootServer_Addr));
 	if( ssizResult==-1 )
 	{
 		fprintf(stderr, "Failed to send packet: %d: %s\n", errno, strerror(errno));
@@ -195,6 +195,7 @@ romloader::TRANSPORTSTATUS_T romloader_eth_device_linux::RecvPacket(unsigned cha
 }
 
 
+
 size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 {
 	char **ppcDeviceNames;
@@ -227,7 +228,9 @@ size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 	char **ppcRefNew;
 	size_t sizEntry;
 	char *pcRef;
-	const unsigned char aucMagic[5] = { 0x00, 'M', 'O', 'O', 'H' };
+	MIV3_ETHERNET_DISCOVER_MAGIC_T *ptDiscoverResponse;
+	unsigned char ucMiStatus;
+	const unsigned char aucMagic[4] = { 'M', 'O', 'O', 'H' };
 	size_t sizMaxPacket;
 
 
@@ -312,52 +315,63 @@ size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 							fprintf(stderr, "Failed to receive packet: %s (%d)\n", strerror(errno), errno);
 							iResult = -1;
 						}
-						else if(
-							ssizPacket>=9 &&
-							memcmp(aucBuffer, aucMagic, sizeof(aucMagic))==0
-						       )
+						else if( ssizPacket>=sizeof(MIV3_ETHERNET_DISCOVER_MAGIC_T) )
 						{
-							uiVersionMin = aucBuffer[5] | aucBuffer[6]<<8U;
-							uiVersionMaj = aucBuffer[7] | aucBuffer[8]<<8U;
-							sizMaxPacket = aucBuffer[9] | aucBuffer[10]<<8U;
-							ulIp = aucBuffer[14] | aucBuffer[13]<<8U  | aucBuffer[12]<<16U  | aucBuffer[11]<<24U;
-							
-							printf("Found HBoot V%d.%d at 0x%08lx.\n", uiVersionMaj, uiVersionMin, ulIp);
+							ptDiscoverResponse = (MIV3_ETHERNET_DISCOVER_MAGIC_T*)aucBuffer;
+
+							if( memcmp(ptDiscoverResponse->s.acMagic, aucMagic, sizeof(aucMagic))==0 )
+							{
+								uiVersionMin = NETXTOH16(ptDiscoverResponse->s.usVersionMinor);
+								uiVersionMaj = NETXTOH16(ptDiscoverResponse->s.usVersionMajor);
+								sizMaxPacket = NETXTOH16(ptDiscoverResponse->s.usMaximumPacketSize);
+								ulIp = ptDiscoverResponse->s.ulIP;
+
+								ucMiStatus = ptDiscoverResponse->s.ucMiStatus;
+								if( ucMiStatus==0 )
+								{
+
+									printf("Found HBoot V%d.%d at 0x%08lx.\n", uiVersionMaj, uiVersionMin, ulIp);
 /*
-							{
-								char buf[32];
-								inet_ntop(AF_INET, &uSrcAddr.tAddrIn.sin_addr.s_addr, buf, sizeof(buf));
-								printf("Found HBoot V%d.%d at %s .\n", uiVersionMaj, uiVersionMin, buf);
-							}
+									{
+										char buf[32];
+										inet_ntop(AF_INET, &uSrcAddr.tAddrIn.sin_addr.s_addr, buf, sizeof(buf));
+										printf("Found HBoot V%d.%d at %s .\n", uiVersionMaj, uiVersionMin, buf);
+									}
 */
-							/* Is enough space in the array for one more entry? */
-							if( sizRefCnt>=sizRefMax )
-							{
-								/* No -> expand the array. */
-								sizRefMax *= 2;
-								/* Detect overflow or limitation. */
-								if( sizRefMax<=sizRefCnt )
-								{
-									iResult = -1;
-									break;
+									/* Is enough space in the array for one more entry? */
+									if( sizRefCnt>=sizRefMax )
+									{
+										/* No -> expand the array. */
+										sizRefMax *= 2;
+										/* Detect overflow or limitation. */
+										if( sizRefMax<=sizRefCnt )
+										{
+											iResult = -1;
+											break;
+										}
+										/* Reallocate the array. */
+										ppcRefNew = (char**)realloc(ppcRef, sizRefMax*sizeof(char*));
+										if( ppcRefNew==NULL )
+										{
+											iResult = -1;
+											break;
+										}
+										ppcRef = ppcRefNew;
+									}
+									sizEntry = strlen("romloader_eth_xxx.xxx.xxx.xxx") + 1;
+									pcRef = (char*)malloc(sizEntry);
+									if( pcRef==NULL )
+									{
+										break;
+									}
+									snprintf(pcRef, sizEntry, "romloader_eth_%ld.%ld.%ld.%ld", ulIp&0xffU, (ulIp>>8U)&0xffU, (ulIp>>16U)&0xffU, (ulIp>>24U)&0xffU);
+									ppcRef[sizRefCnt++] = pcRef;
 								}
-								/* Reallocate the array. */
-								ppcRefNew = (char**)realloc(ppcRef, sizRefMax*sizeof(char*));
-								if( ppcRefNew==NULL )
+								else
 								{
-									iResult = -1;
-									break;
+									printf("Busy HBoot V%d.%d at 0x%08lx.\n", uiVersionMaj, uiVersionMin, ulIp);
 								}
-								ppcRef = ppcRefNew;
 							}
-							sizEntry = strlen("romloader_eth_xxx.xxx.xxx.xxx") + 1;
-							pcRef = (char*)malloc(sizEntry);
-							if( pcRef==NULL )
-							{
-								break;
-							}
-							snprintf(pcRef, sizEntry, "romloader_eth_%ld.%ld.%ld.%ld", ulIp&0xffU, (ulIp>>8U)&0xffU, (ulIp>>16U)&0xffU, (ulIp>>24U)&0xffU);
-							ppcRef[sizRefCnt++] = pcRef;
 						}
 					}
 

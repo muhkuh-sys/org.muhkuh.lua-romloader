@@ -75,6 +75,10 @@ public:
 	static int call_progress_data_static(void *pvUser, const char *pcProgressData, size_t sizProgressData);
 	int call_progress_data(const char *pcProgressData, size_t sizProgressData);
 
+protected:
+	virtual TRANSPORTSTATUS_T send_raw_packet(const void *pvPacket, size_t sizPacket);
+	virtual TRANSPORTSTATUS_T receive_packet(void);
+
 private:
 #ifndef SWIG
 	romloader_papa_schlumpf_device *m_ptDevice;

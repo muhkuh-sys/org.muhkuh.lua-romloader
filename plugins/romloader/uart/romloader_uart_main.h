@@ -49,33 +49,16 @@ public:
 	romloader_uart(const char *pcName, const char *pcTyp, romloader_uart_provider *ptProvider, const char *pcDeviceName);
 	~romloader_uart(void);
 
-// *** lua interface start ***
-	// open the connection to the device
+/* *** LUA interface start *** */
+	/* Open the connection to the device. */
 	virtual void Connect(lua_State *ptClientData);
-	// close the connection to the device
+	/* Close the connection to the device. */
 	virtual void Disconnect(lua_State *ptClientData);
+/* *** LUA interface end *** */
 
-	// read a byte (8bit) from the netx to the pc
-	virtual uint8_t read_data08(lua_State *ptClientData, uint32_t ulNetxAddress);
-	// read a word (16bit) from the netx to the pc
-	virtual uint16_t read_data16(lua_State *ptClientData, uint32_t ulNetxAddress);
-	// read a long (32bit) from the netx to the pc
-	virtual uint32_t read_data32(lua_State *ptClientData, uint32_t ulNetxAddress);
-	// read a byte array from the netx to the pc
-	virtual void read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData);
-
-	// write a byte (8bit) from the pc to the netx
-	virtual void write_data08(lua_State *ptClientData, uint32_t ulNetxAddress, uint8_t ucData);
-	// write a word (16bit) from the pc to the netx
-	virtual void write_data16(lua_State *ptClientData, uint32_t ulNetxAddress, uint16_t usData);
-	// write a long (32bit) from the pc to the netx
-	virtual void write_data32(lua_State *ptClientData, uint32_t ulNetxAddress, uint32_t ulData);
-	// write a byte array from the pc to the netx
-	virtual void write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData);
-
-	// call routine
-	virtual void call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
-// *** lua interface end ***
+protected:
+	virtual TRANSPORTSTATUS_T send_raw_packet(const void *pvPacket, size_t sizPacket);
+	virtual TRANSPORTSTATUS_T receive_packet(void);
 
 private:
 	typedef enum ROMLOADER_COMMANDSET_ENUM
@@ -87,39 +70,20 @@ private:
 		ROMLOADER_COMMANDSET_MI3              = 4
 	} ROMLOADER_COMMANDSET_T;
 
-	static const size_t sizMaxPacketSizeHost = 4096;
-	size_t m_sizMaxPacketSizeClient;
-	
-	void hexdump(const uint8_t *pucData, uint32_t ulSize);
-
 	bool identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet);
-	bool synchronize(void);
 
 	romloader_uart_device_platform *m_ptUartDev;
-
-	unsigned char m_ucMonitorSequence;
 
 	size_t m_sizPacketRingBufferHead;
 	size_t m_sizPacketRingBufferFill;
 	uint8_t m_aucPacketRingBuffer[sizMaxPacketSizeHost];
 
-	size_t m_sizPacketInputBuffer;
-	uint8_t m_aucPacketInputBuffer[sizMaxPacketSizeHost];
-
-
 	void packet_ringbuffer_init(void);
 	TRANSPORTSTATUS_T packet_ringbuffer_fill(size_t sizRequestedFillLevel);
 	uint8_t packet_ringbuffer_get(void);
 	int packet_ringbuffer_peek(size_t sizOffset);
+	void packet_ringbuffer_skip(size_t sizSkip);
 	void packet_ringbuffer_discard(void);
-
-	TRANSPORTSTATUS_T send_sync_command(void);
-	TRANSPORTSTATUS_T send_packet(const uint8_t *pucData, size_t sizData);
-	TRANSPORTSTATUS_T receive_packet(void);
-	TRANSPORTSTATUS_T send_ack(unsigned char ucSequenceToAck);
-	TRANSPORTSTATUS_T execute_command(const uint8_t *aucCommand, size_t sizCommand);
-	TRANSPORTSTATUS_T read_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, uint16_t sizDataInBytes);
-	TRANSPORTSTATUS_T write_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, const void *pvData, uint16_t sizDataInBytes);
 };
 
 /*-----------------------------------*/

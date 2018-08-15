@@ -470,6 +470,18 @@ void romloader_jtag::Disconnect(lua_State *ptClientData)
 
 
 
+romloader::TRANSPORTSTATUS_T romloader_jtag::send_raw_packet(const void *pvPacket, size_t sizPacket)
+{
+}
+
+
+
+romloader::TRANSPORTSTATUS_T romloader_jtag::receive_packet(void)
+{
+}
+
+
+
 /* Read a byte (8bit) from the netX. */
 uint8_t romloader_jtag::read_data08(lua_State *ptClientData, uint32_t ulNetxAddress)
 {

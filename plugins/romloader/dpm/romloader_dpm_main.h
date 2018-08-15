@@ -69,6 +69,10 @@ public:
 	virtual void call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 // *** lua interface end ***
 
+protected:
+	virtual TRANSPORTSTATUS_T send_raw_packet(const void *pvPacket, size_t sizPacket);
+	virtual TRANSPORTSTATUS_T receive_packet(void);
+
 private:
 	int synchronize(romloader_dpm_transfer *ptTransfer);
 	int execute_command(uint8_t aucCommand[], size_t sizAucCommand, uint8_t ** aucResponse, uint32_t * sizAucResponse);
