@@ -305,10 +305,11 @@ size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 					}
 					else if( iResult==1 )
 					{
+						tAddrLen = sizeof(uSrcAddr);
 						ssizPacket = recvfrom(tSocket, aucBuffer, MI_ETH_MAX_PACKET_SIZE, 0, &uSrcAddr.tAddr, &tAddrLen);
 						if( ssizPacket==-1 )
 						{
-							fprintf(stderr, "Failed to receive packet.\n");
+							fprintf(stderr, "Failed to receive packet: %s (%d)\n", strerror(errno), errno);
 							iResult = -1;
 						}
 						else if(
