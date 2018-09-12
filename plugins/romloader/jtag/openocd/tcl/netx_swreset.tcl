@@ -8,18 +8,19 @@ proc peek { strFmt ulAddr } {
 	return $ulVal
 }
 
-set ROMLOADER_CHIPTYP_UNKNOWN           0 
-set ROMLOADER_CHIPTYP_NETX500           1 
-set ROMLOADER_CHIPTYP_NETX100           2 
-set ROMLOADER_CHIPTYP_NETX50            3 
-set ROMLOADER_CHIPTYP_NETX5             4 
-set ROMLOADER_CHIPTYP_NETX10            5 
-set ROMLOADER_CHIPTYP_NETX56            6 
-set ROMLOADER_CHIPTYP_NETX56B           7 
-set ROMLOADER_CHIPTYP_NETX4000_RELAXED  8 
+set ROMLOADER_CHIPTYP_UNKNOWN            0
+set ROMLOADER_CHIPTYP_NETX500            1
+set ROMLOADER_CHIPTYP_NETX100            2
+set ROMLOADER_CHIPTYP_NETX50             3
+set ROMLOADER_CHIPTYP_NETX5              4
+set ROMLOADER_CHIPTYP_NETX10             5
+set ROMLOADER_CHIPTYP_NETX56             6
+set ROMLOADER_CHIPTYP_NETX56B            7
+set ROMLOADER_CHIPTYP_NETX4000_RELAXED   8
 set ROMLOADER_CHIPTYP_NETX90_MPW        10
 set ROMLOADER_CHIPTYP_NETX4000_FULL     11
 set ROMLOADER_CHIPTYP_NETX4100_SMALL    12
+set ROMLOADER_CHIPTYP_NETX90            13
 
 
 proc check_chiptyp { ulResetAddrRead ulResetAddr ulCheckAddr ulCheckVal } {
@@ -50,6 +51,7 @@ proc get_chiptyp { }  {
 	global ROMLOADER_CHIPTYP_NETX90_MPW
 	global ROMLOADER_CHIPTYP_NETX4000_FULL
 	global ROMLOADER_CHIPTYP_NETX4100_SMALL
+	global ROMLOADER_CHIPTYP_NETX90
 
 	set ulResetAddrRead [ mread32 0 ]
 	puts [ format "Reset vector: %x " $ulResetAddrRead ]
@@ -86,6 +88,9 @@ proc get_chiptyp { }  {
 	} elseif { [ check_chiptyp $ulResetAddrRead 0x2009fff0 0x00005110 0x1f13933b ] } { 
 		echo "netX 90MPW detected"
 		set iChiptyp $ROMLOADER_CHIPTYP_NETX90_MPW        
+	} elseif { [ check_chiptyp $ulResetAddrRead 0x2009fff0 0x00005110 0xe001200c ] } {
+		echo "netX 90 detected"
+		set iChiptyp $ROMLOADER_CHIPTYP_NETX90
 	} else {
 		set iChiptyp $ROMLOADER_CHIPTYP_UNKNOWN
 		echo "Unknown chiptyp"
@@ -150,6 +155,7 @@ proc reset_assert {} {
 	global ROMLOADER_CHIPTYP_NETX56B 
 	global ROMLOADER_CHIPTYP_NETX4000_RELAXED
 	global ROMLOADER_CHIPTYP_NETX90_MPW
+	global ROMLOADER_CHIPTYP_NETX90
 
 	# output (set according to chip type)
 	global ADDR_ACCESS_KEY       
@@ -230,8 +236,13 @@ proc reset_assert {} {
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_RELAXED } {
 		echo "netx 4000 relaxed not handled"
+		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW } {
 		echo "netx 90 MPW not handled"
+		
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90} {
+		echo "netx 90 not handled"
+		
 	} else {
 		echo "unknown chip type"
 	}

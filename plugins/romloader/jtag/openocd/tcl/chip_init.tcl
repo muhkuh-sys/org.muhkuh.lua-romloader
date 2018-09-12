@@ -1,17 +1,18 @@
 echo "Loading chip_init.tcl"
 
-set ROMLOADER_CHIPTYP_UNKNOWN   0 
-set ROMLOADER_CHIPTYP_NETX500   1 
-set ROMLOADER_CHIPTYP_NETX100   2 
-set ROMLOADER_CHIPTYP_NETX50    3 
-set ROMLOADER_CHIPTYP_NETX5     4 
-set ROMLOADER_CHIPTYP_NETX10    5 
-set ROMLOADER_CHIPTYP_NETX56    6 
-set ROMLOADER_CHIPTYP_NETX56B   7 
-set ROMLOADER_CHIPTYP_NETX4000_RELAXED  8 
-set ROMLOADER_CHIPTYP_NETX90_MPW 10
-set ROMLOADER_CHIPTYP_NETX4000_FULL  11
-set ROMLOADER_CHIPTYP_NETX4100_SMALL 12
+set ROMLOADER_CHIPTYP_UNKNOWN            0
+set ROMLOADER_CHIPTYP_NETX500            1
+set ROMLOADER_CHIPTYP_NETX100            2
+set ROMLOADER_CHIPTYP_NETX50             3
+set ROMLOADER_CHIPTYP_NETX5              4
+set ROMLOADER_CHIPTYP_NETX10             5
+set ROMLOADER_CHIPTYP_NETX56             6
+set ROMLOADER_CHIPTYP_NETX56B            7
+set ROMLOADER_CHIPTYP_NETX4000_RELAXED   8
+set ROMLOADER_CHIPTYP_NETX90_MPW        10
+set ROMLOADER_CHIPTYP_NETX4000_FULL     11
+set ROMLOADER_CHIPTYP_NETX4100_SMALL    12
+set ROMLOADER_CHIPTYP_NETX90            13
 
 # fEnableDCCOutput       true: download DCC code, set serial vectors and buffer, false: clear serial vectors
 # ulSerialVectorAddr     Address of serial vectors
@@ -78,7 +79,8 @@ proc init_chip {iChiptyp} {
 	global ROMLOADER_CHIPTYP_NETX90_MPW
 	global ROMLOADER_CHIPTYP_NETX4000_FULL
 	global ROMLOADER_CHIPTYP_NETX4100_SMALL
-	
+	global ROMLOADER_CHIPTYP_NETX90
+
 
 	puts "init_chip $iChiptyp"
 
@@ -176,7 +178,7 @@ proc init_chip {iChiptyp} {
 	
 		puts "Setting up registers for netx 90 MPW"
 
-		puts "Setting ananlog parameters"
+		puts "Setting analog parameters"
 		# d:\projekt\netx90\blinki_jtag\Blinki\scripts\netx90_analog_init.cfg
 		mww 0xff0016c0 0x00000000
 		mww 0xff0016c4 0x00000000
@@ -234,11 +236,76 @@ proc init_chip {iChiptyp} {
 		
 		
 		reg xPSR 0x01000000
-		# reg msp 0x00040000		
+		# reg msp 0x00040000
 		bp 0x00023ffd 2 hw
 		reg sp 0x2009ff80
 		reg lr 0x00023ffd
 		
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90 } {
+
+		puts "Setting up registers for netx 90"
+
+		puts "Setting analog parameters"
+		mww 0xff001680 0x00000000
+		mww 0xff001684 0x00000000
+		mww 0xff0016a8 0x00049f04
+
+		# Configure the PLL.
+		mww 0xff0016a8 0x00049f04
+
+		# Start the PLL.
+		mww 0xff0016a8 0x00049f05
+
+		# Release the PLL reset.
+		mww 0xff0016a8 0x00049f07
+
+		# Disable the PLL bypass.
+		mww 0xff0016a8 0x00049f03
+
+		# Switch to 100MHz clock by setting d_dcdc_use_clk to 1.
+		mww 0xff0016a8 0x01049f03
+
+		# Lock the analog parameter and hide the ROM.
+		mww 0xff0016cc 0x00000005
+
+
+
+		puts "Configuring pad ctrl for MMIO4-7 (input, disable pull-down)"
+		proc read_data32 {addr} {
+			set value(0) 0
+			mem2array value 32 $addr 1
+			return $value(0)
+		}
+
+		proc unlock_asic_ctrl {} {
+			set accesskey [read_data32 0xff4012c0]
+			mww 0xff4012c0 [expr $accesskey]
+		}
+
+		unlock_asic_ctrl
+		mww 0xff4010f0 0x00000000
+
+		unlock_asic_ctrl
+		mww 0xff4010f4 0x00000000
+
+		unlock_asic_ctrl
+		mww 0xff4010f8 0x00000000
+
+		unlock_asic_ctrl
+		mww 0xff4010fc 0x00000000
+
+		mdw 0
+		mdw 0xff4010f0
+		mdw 0xff4010f4
+		mdw 0xff4010f8
+		mdw 0xff4010fc
+
+
+		reg xPSR 0x01000000
+		bp 0x00023ffd 2 hw
+		reg sp 0x2009ff80
+		reg lr 0x00023ffd
+
 	} else {
 		puts "Unknown chip type $iChiptyp"
 	}
@@ -295,6 +362,10 @@ proc init_chip {iChiptyp} {
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW } {
 		setup_dcc_io $fEnableDCCOutput 0x2009fff0 dcc_netx90_com.bin thumb 0x00020400 0x00020e00 0x00020fe0
+		
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90 } {
+		# No DCC on netx90
+		setup_dcc_io false 0x2009fff0 dcc_netx90_com.bin thumb 0x00020400 0x00020e00 0x00020fe0
 		
 	} else {
 		puts "Unknown chip type $iChiptyp"
