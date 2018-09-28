@@ -341,13 +341,73 @@ function mbin_simple_run(tParentWindow, tPlugin, strFilename, aParameter)
 end
 
 --------------------------------------------------------------------------
+--  Get plugin
+--------------------------------------------------------------------------
+
+function getPluginByName(strName)
+	for iPluginClass, tPluginClass in ipairs(__MUHKUH_PLUGINS) do
+		local iDetected
+		local aDetectedInterfaces = {}
+		print(string.format("Detecting interfaces with plugin %s", tPluginClass:GetID()))
+		iDetected = tPluginClass:DetectInterfaces(aDetectedInterfaces)
+		print(string.format("Found %d interfaces with plugin %s", iDetected, tPluginClass:GetID()))
+		
+		for i,v in ipairs(aDetectedInterfaces) do
+			print(string.format("%d: %s (%s) Used: %s, Valid: %s", i, v:GetName(), v:GetTyp(), tostring(v:IsUsed()), tostring(v:IsValid())))
+			if strName == v:GetName() then
+				if not v:IsValid() then
+					return nil, "Plugin is not valid"
+				elseif v:IsUsed() then
+					return nil, "Plugin is in use"
+				else
+					print("found plugin")
+					local tPlugin = v:Create()
+					if tPlugin then 
+						return tPlugin
+					else
+						return nil, "Error creating plugin instance"
+					end
+				end
+			end
+		end
+	end
+	return nil, "plugin not found"
+end
+
+function getPlugin(strPluginName)
+	local tPlugin, strError
+	if strPluginName then
+		-- get the plugin by name
+		tPlugin, strError = getPluginByName(strPluginName)
+	else
+		-- Ask the user to pick a plugin.
+		tPlugin = select_plugin.SelectPlugin()
+		if tPlugin == nil then
+			strError = "No plugin selected!"
+		end
+	end
+	
+	return tPlugin, strError
+end
+
+--------------------------------------------------------------------------
 --  test main
 --------------------------------------------------------------------------
 
 
-tPlugin = select_plugin.SelectPlugin()
+if #arg == 0 then
+	strPluginName = nil
+elseif #arg == 2 and arg[1]=="-p" and type(arg[2])=="string" then
+	strPluginName = arg[2]
+else
+	print("Usage: lua test_romloader.lua [-p plugin_name]")
+	os.exit(2)
+end
+
+tPlugin, strError = getPlugin(strPluginName)
 if not tPlugin then
-	error("Test canceled!")
+	print(strError or "No plugin selected")
+	os.exit(3)
 end
 
 tPlugin:Connect()
