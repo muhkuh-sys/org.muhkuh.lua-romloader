@@ -157,9 +157,13 @@ class PlatformDetect:
         strEnvProcessorArchitecture = None
         strEnvProcessorArchiteW6432 = None
         if 'PROCESSOR_ARCHITECTURE' in os.environ:
-            strEnvProcessorArchitecture = os.environ['PROCESSOR_ARCHITECTURE']
+            strEnvProcessorArchitecture = string.lower(
+                os.environ['PROCESSOR_ARCHITECTURE']
+            )
         if 'PROCESSOR_ARCHITEW6432' in os.environ:
-            strEnvProcessorArchiteW6432 = os.environ['PROCESSOR_ARCHITEW6432']
+            strEnvProcessorArchiteW6432 = string.lower(
+                os.environ['PROCESSOR_ARCHITEW6432']
+            )
         # See here for details: https://blogs.msdn.microsoft.com/david.wang/
         # 2006/03/27/howto-detect-process-bitness/
         if((strEnvProcessorArchitecture == 'amd64') or
@@ -177,22 +181,6 @@ class PlatformDetect:
                   (str(strEnvProcessorArchiteW6432)))
 
         return strCpuArchitecture
-
-    # See here for the output of the "ver" command:
-    # https://en.wikipedia.org/wiki/Ver_(command)
-    def __windows_get_distribution_ver(self):
-        strDistributionId = None
-        strDistributionVersion = None
-
-        # Try to parse the output of the 'ver' command.
-        strOutput = subprocess.check_output(['ver'])
-        tMatch = re.search('\d+\.\d+\.\d+', strOutput)
-        if tMatch is None:
-            raise Exception('Failed to get the Windows version with "ver".')
-        strDistributionId = 'windows'
-        strDistributionVersion = tMatch.group(0)
-
-        return strDistributionId, strDistributionVersion
 
     def __linux_get_os_architecture_getconf(self):
         strCpuArchitecture = None
@@ -263,9 +251,9 @@ class PlatformDetect:
             self.strHostCpuArchitecture =\
                 self.__windows_get_cpu_architecture_env()
 
-            # Get the version with the 'ver' command.
-            self.strHostDistributionId, self.strHostDistributionVersion =\
-                self.__windows_get_distribution_ver()
+            # Set the distribution version and ID.
+            self.strHostDistributionId = 'windows'
+            self.strHostDistributionVersion = ''
 
             # Windows uses ZIP as standard archive format.
             self.strStandardArchiveFormat = 'zip'
@@ -339,6 +327,7 @@ def __check_jonchki_version(
     strCmdFile
 ):
     fFound = False
+    strCmd = None
     if os.path.isdir(strPath) is not True:
         logging.info('The %s path does not exist.' % strID)
     else:
@@ -388,9 +377,11 @@ def __check_jonchki_version(
                         strCmd = strTool
                     else:
                         strCmd = '%s %s' % (strLua, strTool)
-                    tFile = open(strCmdFile, 'w')
-                    tFile.write('%s\n' % strCmd)
-                    tFile.close()
+
+                    if strCmdFile is not None:
+                        tFile = open(strCmdFile, 'w')
+                        tFile.write('%s\n' % strCmd)
+                        tFile.close()
 
         if fFound is not True:
             logging.info('The path "%s" does not contain a useable %s '
@@ -400,7 +391,7 @@ def __check_jonchki_version(
             # Recursively delete the jonchki folder.
             shutil.rmtree(strPath)
 
-    return fFound
+    return fFound, strCmd
 
 
 def __extract_archive(tFile, strArchiveFormat, strOutputFolder):
@@ -432,233 +423,272 @@ def __extract_archive(tFile, strArchiveFormat, strOutputFolder):
         raise Exception('Unknown archive format: "%s".' % strArchiveFormat)
 
 
-tParser = argparse.ArgumentParser(
-    description='Install a jonchki version to a local folder.'
-)
-tParser.add_argument(
-    'strOutputFolder',
-    metavar='OUTPUT_FOLDER',
-    help='Install the jonchki tool to the folder OUTPUT_FOLDER.'
-)
-tParser.add_argument(
-    '-j', '--jonchki-version',
-    dest='strJonchkiVersion',
-    default=strDefaultJonchkiVersion,
-    metavar='VERSION',
-    help='Install version VERSION of the jonchki tool. '
-         '(default is %s)' % strDefaultJonchkiVersion
-)
-tParser.add_argument(
-    '-l', '--local-archives',
-    dest='strLocalArchivesFolder',
-    default=None,
-    metavar='PATH',
-    help='Look in PATH for the jonchki archives before downloading them.'
-)
-tParser.add_argument(
-    '-i', '--lua-interpreter',
-    dest='strLuaInterpreter',
-    default='lua5.1',
-    metavar='PATH',
-    help='Use the LUA interpreter in PATH to run the jonchki-light tool.'
-)
+def install(strCfg_JonchkiVersion, strCfg_OutputFolder, **kwargs):
+    strCfg_LocalArchivesFolder = None
+    strCfg_LuaInterpreter = 'lua5.1'
+    tCfg_LogLevel = logging.DEBUG
 
-atArgs = tParser.parse_args()
+    # Parse the kwargs.
+    for strKey, tValue in iter(kwargs.items()):
+        if strKey == 'LOCAL_ARCHIVES':
+            strCfg_LocalArchivesFolder = tValue
+        elif strKey == 'LOG_LEVEL':
+            tCfg_LogLevel = tValue
+        elif strKey == 'LUA_INTERPRETER':
+            strCfg_LuaInterpreter = tValue
 
-logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=tCfg_LogLevel)
 
-strCfg_OutputFolder = atArgs.strOutputFolder
-if(
-    ('JONCHKI_VERSION_OVERWRITE' in os.environ) and
-    (len(os.environ['JONCHKI_VERSION_OVERWRITE']) > 0)
-):
-    strCfg_JonchkiVersion = os.environ['JONCHKI_VERSION_OVERWRITE']
-    logging.info(
-        'Overwriting the jonchki version with the environment variable '
-        '"JONCHKI_VERSION_OVERWRITE" to "%s".' % strCfg_JonchkiVersion
+    if(
+        ('JONCHKI_VERSION_OVERWRITE' in os.environ) and
+        (len(os.environ['JONCHKI_VERSION_OVERWRITE']) > 0)
+    ):
+        strCfg_JonchkiVersion = os.environ['JONCHKI_VERSION_OVERWRITE']
+        logging.info(
+            'Overwriting the jonchki version with the environment variable '
+            '"JONCHKI_VERSION_OVERWRITE" to "%s".' % strCfg_JonchkiVersion
+        )
+
+    logging.info('Install jonchki v%s to %s.' %
+                 (strCfg_JonchkiVersion, strCfg_OutputFolder))
+
+    tPlatform = PlatformDetect()
+    tPlatform.detect()
+    logging.info('Host CPU architecture: %s' %
+                 tPlatform.strHostCpuArchitecture)
+    logging.info('Host distribution ID: %s' %
+                 tPlatform.strHostDistributionId)
+    logging.info('Host distribution version: %s' %
+                 tPlatform.strHostDistributionVersion)
+    logging.info('Standard archive format: %s' %
+                 tPlatform.strStandardArchiveFormat)
+
+    strJonchkiCmdFile = os.path.join(
+        strCfg_OutputFolder,
+        '.jonchki.cmd'
     )
-else:
-    strCfg_JonchkiVersion = atArgs.strJonchkiVersion
-strCfg_LocalArchivesFolder = atArgs.strLocalArchivesFolder
+    # Create the expected tool path.
+    fFoundJonchki = False
+    fFoundJonchkiLight = False
+    strJonchkiPath = os.path.join(
+        strCfg_OutputFolder,
+        'jonchki-%s' % (strCfg_JonchkiVersion)
+    )
 
-logging.info('Install jonchki v%s to %s.' %
-             (strCfg_JonchkiVersion, strCfg_OutputFolder))
+    if tPlatform.strHostDistributionId == 'windows':
+        strJonchkiTool = os.path.join(
+            strJonchkiPath,
+            'jonchki.bat'
+        )
+    else:
+        strJonchkiTool = os.path.join(
+            strJonchkiPath,
+            'jonchki'
+        )
 
-strJonchkiCmdFile = os.path.join(
-    strCfg_OutputFolder,
-    '.jonchki.cmd'
-)
-# Create the expected tool path.
-fFoundJonchki = False
-fFoundJonchkiLight = False
-strJonchkiPath = os.path.join(
-    strCfg_OutputFolder,
-    'jonchki-%s' % (strCfg_JonchkiVersion)
-)
-strJonchkiTool = os.path.join(
-    strJonchkiPath,
-    'jonchki'
-)
-strJonchkiLightPath = os.path.join(
-    strCfg_OutputFolder,
-    'jonchki-light-%s' % (strCfg_JonchkiVersion)
-)
-strJonchkiLightTool = os.path.join(
-    strJonchkiLightPath,
-    'jonchki.lua'
-)
-logging.debug('Jonchki path: %s' % strJonchkiPath)
-logging.debug('Jonchki tool: %s' % strJonchkiTool)
-logging.debug('Jonchki-light path: %s' % strJonchkiLightPath)
-logging.debug('Jonchki-light tool: %s' % strJonchkiLightTool)
-
-fFoundJonchki = __check_jonchki_version(
-    'jonchki',
-    None,
-    strJonchkiPath,
-    strJonchkiTool,
-    strCfg_JonchkiVersion,
-    strJonchkiCmdFile
-)
-if fFoundJonchki is not True:
-    fFoundJonchkiLight = __check_jonchki_version(
-        'jonchki-light',
-        atArgs.strLuaInterpreter,
+    strJonchkiLightPath = os.path.join(
+        strCfg_OutputFolder,
+        'jonchki-light-%s' % (strCfg_JonchkiVersion)
+    )
+    strJonchkiLightTool = os.path.join(
         strJonchkiLightPath,
-        strJonchkiLightTool,
+        'jonchki.lua'
+    )
+    logging.debug('Jonchki path: %s' % strJonchkiPath)
+    logging.debug('Jonchki tool: %s' % strJonchkiTool)
+    logging.debug('Jonchki-light path: %s' % strJonchkiLightPath)
+    logging.debug('Jonchki-light tool: %s' % strJonchkiLightTool)
+
+    fFoundJonchki, strJonchkiCmd = __check_jonchki_version(
+        'jonchki',
+        None,
+        strJonchkiPath,
+        strJonchkiTool,
         strCfg_JonchkiVersion,
         strJonchkiCmdFile
     )
-
-if (fFoundJonchki is not True) and (fFoundJonchkiLight is not True):
-    logging.info('The tool is not yet installed in the requested version.')
-
-    c = PlatformDetect()
-    c.detect()
-    logging.info('Host CPU architecture: %s' % c.strHostCpuArchitecture)
-    logging.info('Host distribution ID: %s' % c.strHostDistributionId)
-    logging.info('Host distribution version: %s' %
-                 c.strHostDistributionVersion)
-    logging.info('Standard archive format: %s' % c.strStandardArchiveFormat)
-
-    astrReplace = {
-        'HOST_CPU_ARCHITECTURE': c.strHostCpuArchitecture,
-        'HOST_DISTRIBUTION_ID': c.strHostDistributionId,
-        'HOST_DISTRIBUTION_VERSION': c.strHostDistributionVersion,
-        'JONCHKI_VERSION': strCfg_JonchkiVersion,
-        'ARCHIVE_EXTENSION': c.strStandardArchiveFormat
-    }
-    strLocalFileTemplate = (
-        'jonchki-{JONCHKI_VERSION}-{HOST_DISTRIBUTION_ID}'
-        '{HOST_DISTRIBUTION_VERSION}_{HOST_CPU_ARCHITECTURE}.'
-        '{ARCHIVE_EXTENSION}'
-    )
-    strLightLocalFileTemplate = 'jonchki-light-{JONCHKI_VERSION}.zip'
-    if(
-        ('JONCHKI_URL_OVERWRITE' in os.environ) and
-        (len(os.environ['JONCHKI_URL_OVERWRITE']) > 0)
-    ):
-        strUrlTemplate = os.environ['JONCHKI_URL_OVERWRITE']
-        logging.info(
-            'Overwriting the jonchki URL template with the environment '
-            'variable "JONCHKI_URL_OVERWRITE" to "%s".' % strUrlTemplate
-        )
-    else:
-        strUrlTemplate = (
-            'https://github.com/muhkuh-sys/org.muhkuh.lua-jonchki/releases/'
-            'download/v{JONCHKI_VERSION}/jonchki-{JONCHKI_VERSION}-'
-            '{HOST_DISTRIBUTION_ID}{HOST_DISTRIBUTION_VERSION}_'
-            '{HOST_CPU_ARCHITECTURE}.{ARCHIVE_EXTENSION}'
-        )
-    if(
-        ('JONCHKI_LIGHT_URL_OVERWRITE' in os.environ) and
-        (len(os.environ['JONCHKI_LIGHT_URL_OVERWRITE']) > 0)
-    ):
-        strLightUrlTemplate = os.environ['JONCHKI_LIGHT_URL_OVERWRITE']
-        logging.info(
-            'Overwriting the jonchki-light URL template with the environment '
-            'variable "JONCHKI_LIGHT_URL_OVERWRITE" to "%s".' %
-            strLightUrlTemplate
-        )
-    else:
-        strLightUrlTemplate = (
-            'https://github.com/muhkuh-sys/org.muhkuh.lua-jonchki/releases/'
-            'download/v{JONCHKI_VERSION}/jonchki-light-{JONCHKI_VERSION}.zip'
-        )
-    strLocalFile = strLocalFileTemplate.format(**astrReplace)
-    strUrl = strUrlTemplate.format(**astrReplace)
-    strLightLocalFile = strLightLocalFileTemplate.format(**astrReplace)
-    strLightUrl = strLightUrlTemplate.format(**astrReplace)
-
-    # Does the local file already exist?
-    tFile = None
-    strArchiveFormat = None
-    if strCfg_LocalArchivesFolder is not None:
-        # Search the full version first, then the light version.
-        strAbsFile = os.path.join(strCfg_LocalArchivesFolder, strLocalFile)
-        if os.path.exists(strAbsFile) is True:
-            logging.info('Found the requested version in the local files '
-                         'folder.')
-            tFile = open(strAbsFile, 'rb')
-            fFoundJonchki = True
-            strArchiveFormat = c.strStandardArchiveFormat
-        else:
-            strAbsFile = os.path.join(
-                strCfg_LocalArchivesFolder,
-                strLightLocalFile
-            )
-            if os.path.exists(strAbsFile) is True:
-                logging.info('Found the requested light version in the local '
-                             'files folder.')
-                tFile = open(strAbsFile, 'rb')
-                fFoundJonchkiLight = True
-                strArchiveFormat = 'zip'
-
-    if tFile is None:
-        # Download the archive to a temporary file.
-        logging.info('Trying to download "%s".' % strUrl)
-        tFile = tempfile.TemporaryFile()
-        tResult = download_to_file(strUrl, tFile)
-        if tResult is True:
-            tFile.seek(0, 0)
-            fFoundJonchki = True
-            strArchiveFormat = c.strStandardArchiveFormat
-        else:
-            # Close the old temporary file.
-            tFile.close()
-
-            logging.info('Trying to download "%s".' % strLightUrl)
-            tFile = tempfile.TemporaryFile()
-            tResult = download_to_file(strLightUrl, tFile)
-            if tResult is True:
-                tFile.seek(0, 0)
-                fFoundJonchkiLight = True
-                strArchiveFormat = 'zip'
-            else:
-                tFile.close()
-                raise Exception('Failed to download the full and the light '
-                                'version.')
-
-    # Extract the archive contents to the destination folder.
-    __extract_archive(tFile, strArchiveFormat, strCfg_OutputFolder)
-    tFile.close()
-
-    # Is the extracted version valid?
-    if fFoundJonchki is True:
-        fFoundJonchki = __check_jonchki_version(
-            'jonchki',
-            None,
-            strJonchkiPath,
-            strJonchkiTool,
-            strCfg_JonchkiVersion,
-            strJonchkiCmdFile
-        )
-    elif fFoundJonchkiLight is True:
-        fFoundJonchkiLight = __check_jonchki_version(
+    if fFoundJonchki is not True:
+        fFoundJonchkiLight, strJonchkiCmd = __check_jonchki_version(
             'jonchki-light',
-            atArgs.strLuaInterpreter,
+            strCfg_LuaInterpreter,
             strJonchkiLightPath,
             strJonchkiLightTool,
             strCfg_JonchkiVersion,
             strJonchkiCmdFile
         )
+
+    if (fFoundJonchki is not True) and (fFoundJonchkiLight is not True):
+        logging.info('The tool is not yet installed in the requested version.')
+
+        astrReplace = {
+            'HOST_CPU_ARCHITECTURE': tPlatform.strHostCpuArchitecture,
+            'HOST_DISTRIBUTION_ID': tPlatform.strHostDistributionId,
+            'HOST_DISTRIBUTION_VERSION': tPlatform.strHostDistributionVersion,
+            'JONCHKI_VERSION': strCfg_JonchkiVersion,
+            'ARCHIVE_EXTENSION': tPlatform.strStandardArchiveFormat
+        }
+        strLocalFileTemplate = (
+            'jonchki-{JONCHKI_VERSION}-{HOST_DISTRIBUTION_ID}'
+            '{HOST_DISTRIBUTION_VERSION}_{HOST_CPU_ARCHITECTURE}.'
+            '{ARCHIVE_EXTENSION}'
+        )
+        strLightLocalFileTemplate = 'jonchki-light-{JONCHKI_VERSION}.zip'
+        if(
+            ('JONCHKI_URL_OVERWRITE' in os.environ) and
+            (len(os.environ['JONCHKI_URL_OVERWRITE']) > 0)
+        ):
+            strUrlTemplate = os.environ['JONCHKI_URL_OVERWRITE']
+            logging.info(
+                'Overwriting the jonchki URL template with the environment '
+                'variable "JONCHKI_URL_OVERWRITE" to "%s".' % strUrlTemplate
+            )
+        else:
+            strUrlTemplate = (
+                'https://github.com/muhkuh-sys/org.muhkuh.lua-jonchki/'
+                'releases/download/v{JONCHKI_VERSION}/jonchki-'
+                '{JONCHKI_VERSION}-'
+                '{HOST_DISTRIBUTION_ID}{HOST_DISTRIBUTION_VERSION}_'
+                '{HOST_CPU_ARCHITECTURE}.{ARCHIVE_EXTENSION}'
+            )
+        if(
+            ('JONCHKI_LIGHT_URL_OVERWRITE' in os.environ) and
+            (len(os.environ['JONCHKI_LIGHT_URL_OVERWRITE']) > 0)
+        ):
+            strLightUrlTemplate = os.environ['JONCHKI_LIGHT_URL_OVERWRITE']
+            logging.info(
+                'Overwriting the jonchki-light URL template with the '
+                'environment variable "JONCHKI_LIGHT_URL_OVERWRITE" to "%s".' %
+                strLightUrlTemplate
+            )
+        else:
+            strLightUrlTemplate = (
+                'https://github.com/muhkuh-sys/org.muhkuh.lua-jonchki/'
+                'releases/download/v{JONCHKI_VERSION}/jonchki-light-'
+                '{JONCHKI_VERSION}.zip'
+            )
+        strLocalFile = strLocalFileTemplate.format(**astrReplace)
+        strUrl = strUrlTemplate.format(**astrReplace)
+        strLightLocalFile = strLightLocalFileTemplate.format(**astrReplace)
+        strLightUrl = strLightUrlTemplate.format(**astrReplace)
+
+        # Does the local file already exist?
+        tFile = None
+        strArchiveFormat = None
+        if strCfg_LocalArchivesFolder is not None:
+            # Search the full version first, then the light version.
+            strAbsFile = os.path.join(strCfg_LocalArchivesFolder, strLocalFile)
+            if os.path.exists(strAbsFile) is True:
+                logging.info('Found the requested version in the local files '
+                             'folder.')
+                tFile = open(strAbsFile, 'rb')
+                fFoundJonchki = True
+                strArchiveFormat = tPlatform.strStandardArchiveFormat
+            else:
+                strAbsFile = os.path.join(
+                    strCfg_LocalArchivesFolder,
+                    strLightLocalFile
+                )
+                if os.path.exists(strAbsFile) is True:
+                    logging.info('Found the requested light version in the '
+                                 'local files folder.')
+                    tFile = open(strAbsFile, 'rb')
+                    fFoundJonchkiLight = True
+                    strArchiveFormat = 'zip'
+
+        if tFile is None:
+            # Download the archive to a temporary file.
+            logging.info('Trying to download "%s".' % strUrl)
+            tFile = tempfile.TemporaryFile()
+            tResult = download_to_file(strUrl, tFile)
+            if tResult is True:
+                tFile.seek(0, 0)
+                fFoundJonchki = True
+                strArchiveFormat = tPlatform.strStandardArchiveFormat
+            else:
+                # Close the old temporary file.
+                tFile.close()
+
+                logging.info('Trying to download "%s".' % strLightUrl)
+                tFile = tempfile.TemporaryFile()
+                tResult = download_to_file(strLightUrl, tFile)
+                if tResult is True:
+                    tFile.seek(0, 0)
+                    fFoundJonchkiLight = True
+                    strArchiveFormat = 'zip'
+                else:
+                    tFile.close()
+                    raise Exception('Failed to download the full and the '
+                                    'light version.')
+
+        # Extract the archive contents to the destination folder.
+        __extract_archive(tFile, strArchiveFormat, strCfg_OutputFolder)
+        tFile.close()
+
+        # Is the extracted version valid?
+        if fFoundJonchki is True:
+            fFoundJonchki, strJonchkiCmd = __check_jonchki_version(
+                'jonchki',
+                None,
+                strJonchkiPath,
+                strJonchkiTool,
+                strCfg_JonchkiVersion,
+                strJonchkiCmdFile
+            )
+        elif fFoundJonchkiLight is True:
+            fFoundJonchkiLight, strJonchkiCmd = __check_jonchki_version(
+                'jonchki-light',
+                strCfg_LuaInterpreter,
+                strJonchkiLightPath,
+                strJonchkiLightTool,
+                strCfg_JonchkiVersion,
+                strJonchkiCmdFile
+            )
+
+    return strJonchkiCmd
+
+
+if __name__ == '__main__':
+    tParser = argparse.ArgumentParser(
+        description='Install a jonchki version to a local folder.'
+    )
+    tParser.add_argument(
+        'strOutputFolder',
+        metavar='OUTPUT_FOLDER',
+        help='Install the jonchki tool to the folder OUTPUT_FOLDER.'
+    )
+    tParser.add_argument(
+        '-j', '--jonchki-version',
+        dest='strJonchkiVersion',
+        default=strDefaultJonchkiVersion,
+        metavar='VERSION',
+        help='Install version VERSION of the jonchki tool. '
+             '(default is %s)' % strDefaultJonchkiVersion
+    )
+    tParser.add_argument(
+        '-l', '--local-archives',
+        dest='strLocalArchivesFolder',
+        default=None,
+        metavar='PATH',
+        help='Look in PATH for the jonchki archives before downloading them.'
+    )
+    tParser.add_argument(
+        '-i', '--lua-interpreter',
+        dest='strLuaInterpreter',
+        default='lua5.1',
+        metavar='PATH',
+        help='Use the LUA interpreter in PATH to run the jonchki-light tool.'
+    )
+
+    atArgs = tParser.parse_args()
+
+    strCfg_OutputFolder = atArgs.strOutputFolder
+    strCfg_JonchkiVersion = atArgs.strJonchkiVersion
+    strCfg_LocalArchivesFolder = atArgs.strLocalArchivesFolder
+    strCfg_LuaInterpreter = atArgs.strLuaInterpreter
+
+    install(
+        strCfg_JonchkiVersion,
+        strCfg_OutputFolder,
+        LOCAL_ARCHIVES=strCfg_LocalArchivesFolder,
+        LUA_INTERPRETER=strCfg_LuaInterpreter
+    )
