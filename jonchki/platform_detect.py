@@ -113,7 +113,7 @@ class PlatformDetect:
 
             # Set the distribution version and ID.
             self.strHostDistributionId = 'windows'
-            self.strHostDistributionVersion = ''
+            self.strHostDistributionVersion = None
 
             # Windows uses ZIP as standard archive format.
             self.strStandardArchiveFormat = 'zip'
