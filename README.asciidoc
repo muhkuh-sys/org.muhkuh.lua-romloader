@@ -33,3 +33,15 @@ Please note that this is done for each build, and not only tagged ones.
 Build results for every commit are also available on circleci if you are logged in: https://circleci.com/gh/muhkuh-sys/org.muhkuh.lua-lua51-romloader
 
 Build results from a tag are released on GitHub: https://github.com/muhkuh-sys/org.muhkuh.lua-lua51-romloader/releases
+
+== Build on Windows
+
+ * Install the latest Python 2.7 from https://www.python.org/ .
+ * Install the latest CMake from https://cmake.org/ .
+ * Download the latest MinGw-W64 from https://sourceforge.net/projects/mingw-w64/files/ . Use "x86_64-posix-seh" for 64bit builds, use "i686-posix-sjlj" for 32bit builds.
+ * Extract the "i686-posix-sjlj" MinGw-W64 to C:/MinGW/i686-8.1.0-release-posix-sjlj-rt_v6-rev0 .
+ * Extract the "x86_64-posix-seh" MinGw-W64 to C:/MinGW/x86_64-8.1.0-release-posix-seh-rt_v6-rev0 .
+ * Download the latest Swig version from http://www.swig.org/download.html .
+ * Extract the Swig archive to C:/Tools .
+ * Open a command prompt in the folder with this readme. Run the command "C:/Python27/python.exe build_artifact.py".
+ * The results of the build can be found in the subdirectory "build/repository".
