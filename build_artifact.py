@@ -5,6 +5,7 @@ from jonchki import filter
 from jonchki import jonchkihere
 from jonchki import vcs_id
 
+import glob
 import os
 import shutil
 import subprocess
@@ -13,12 +14,33 @@ import sys
 
 tPlatform = cli_args.parse()
 print('Building for %s' % tPlatform['platform_id'])
-strCfg_jonchkiVerbose = 'info'
 
 # --------------------------------------------------------------------------
 # -
 # - Configuration
 # -
+
+# Only if you are building on Ubuntu for Windows:
+# Select the path of the MinGW-w64 cross-compiler running on Ubuntu and
+# building for Windows 32bit.
+strCfg_CompilerPath_Ubuntu_MinGw_w64_i686 = '/usr/mingw-w64-i686/bin'
+
+# Only if you are building on Ubuntu for Windows:
+# Select the path of the MinGW-w64 cross-compiler running on Ubuntu and
+# building for Windows 64bit.
+strCfg_CompilerPath_Ubuntu_MinGw_w64_x86_64 = '/usr/mingw-w64-x86_64/bin'
+
+# Only if you are building on Windows:
+# Select the path of the compiler for Windows 32bit.
+strCfg_CompilerPath_Windows_MinGw_w64_i686 = 'C:/MinGW/i686-8.1.0-release-posix-sjlj-rt_v6-rev0/mingw32/bin'
+
+# Only if you are building on Windows:
+# Select the path of the compiler for Windows 64bit.
+strCfg_CompilerPath_Windows_MinGw_w64_x86_64 = 'C:/MinGW/x86_64-8.1.0-release-posix-seh-rt_v6-rev0/mingw64/bin'
+
+# Only if you are building on Windows:
+# Select the path and name of the swig exe.
+strCfg_SwigPath_Windows = 'C:/Tools/swigwin-3.0.12/swig.exe'
 
 # Get the project folder. This is the folder of this script.
 strCfg_projectFolder = os.path.dirname(os.path.realpath(__file__))
@@ -52,6 +74,10 @@ strCfg_jonchkiInstallationFolder = os.path.join(
     'build'
 )
 
+# Select the verbose level for jonchki.
+# Possible values are "debug", "info", "warning", "error" and "fatal".
+strCfg_jonchkiVerbose = 'info'
+
 strCfg_jonchkiSystemConfiguration = os.path.join(
     strCfg_projectFolder,
     'jonchki',
@@ -72,15 +98,15 @@ astrCMAKE_COMPILER = None
 astrCMAKE_PLATFORM = None
 astrJONCHKI_SYSTEM = None
 strMake = None
+astrEnv = None
 
 if tPlatform['host_distribution_id'] == 'ubuntu':
-    if (tPlatform['platform_id'] == 'local') or (tPlatform['distribution_id'] == 'ubuntu'):
+    if tPlatform['distribution_id'] == 'ubuntu':
         # Build on linux for linux.
         # It is currently not possible to build for another version or CPU architecture.
         if(
-            (tPlatform['platform_id'] != 'local') and
-            ((tPlatform['distribution_version'] != tPlatform['host_distribution_version']) or
-            (tPlatform['cpu_architecture'] != tPlatform['host_cpu_architecture']))
+            (tPlatform['distribution_version'] != tPlatform['host_distribution_version']) or
+            (tPlatform['cpu_architecture'] != tPlatform['host_cpu_architecture'])
         ):
             raise Exception('The target Ubuntu platform must match the build host.')
 
@@ -107,14 +133,13 @@ if tPlatform['host_distribution_id'] == 'ubuntu':
         # Cross build on linux for windows.
         if tPlatform['cpu_architecture'] == 'x86':
             # Build for 32bit windows.
-            strCompilerPath = '/usr/mingw-w64-i686/bin'
             astrCMAKE_COMPILER = [
                 '-DCMAKE_C_FLAGS=-m32',
                 '-DCMAKE_CXX_FLAGS=-m32',
                 '-DCMAKE_SYSTEM_NAME=Windows',
-                '-DCMAKE_C_COMPILER=%s/i686-w64-mingw32-gcc' % strCompilerPath,
-                '-DCMAKE_CXX_COMPILER=%s/i686-w64-mingw32-g++' % strCompilerPath,
-                '-DCMAKE_RC_COMPILER=%s/i686-w64-mingw32-windres' % strCompilerPath
+                '-DCMAKE_C_COMPILER=%s/i686-w64-mingw32-gcc' % strCfg_CompilerPath_Ubuntu_MinGw_w64_i686,
+                '-DCMAKE_CXX_COMPILER=%s/i686-w64-mingw32-g++' % strCfg_CompilerPath_Ubuntu_MinGw_w64_i686,
+                '-DCMAKE_RC_COMPILER=%s/i686-w64-mingw32-windres' % strCfg_CompilerPath_Ubuntu_MinGw_w64_i686
             ]
             astrCMAKE_PLATFORM = [
                 '-DJONCHKI_PLATFORM_DIST_ID=windows',
@@ -130,14 +155,13 @@ if tPlatform['host_distribution_id'] == 'ubuntu':
 
         elif tPlatform['cpu_architecture'] == 'x86_64':
             # Build for 64bit windows.
-            strCompilerPath = '/usr/mingw-w64-x86_64/bin'
             astrCMAKE_COMPILER = [
                 '-DCMAKE_C_FLAGS=-m64',
                 '-DCMAKE_CXX_FLAGS=-m64',
                 '-DCMAKE_SYSTEM_NAME=Windows',
-                '-DCMAKE_C_COMPILER=%s/x86_64-w64-mingw32-gcc' % strCompilerPath,
-                '-DCMAKE_CXX_COMPILER=%s/x86_64-w64-mingw32-g++' % strCompilerPath,
-                '-DCMAKE_RC_COMPILER=%s/x86_64-w64-mingw32-windres' % strCompilerPath
+                '-DCMAKE_C_COMPILER=%s/x86_64-w64-mingw32-gcc' % strCfg_CompilerPath_Ubuntu_MinGw_w64_x86_64,
+                '-DCMAKE_CXX_COMPILER=%s/x86_64-w64-mingw32-g++' % strCfg_CompilerPath_Ubuntu_MinGw_w64_x86_64,
+                '-DCMAKE_RC_COMPILER=%s/x86_64-w64-mingw32-windres' % strCfg_CompilerPath_Ubuntu_MinGw_w64_x86_64
             ]
             astrCMAKE_PLATFORM = [
                 '-DJONCHKI_PLATFORM_DIST_ID=windows',
@@ -157,6 +181,78 @@ if tPlatform['host_distribution_id'] == 'ubuntu':
     else:
         raise Exception('Unknown distribution: "%s"' % tPlatform['distribution_id'])
 
+elif tPlatform['host_distribution_id'] == 'windows':
+    if tPlatform['distribution_id'] == 'windows':
+        # Build on windows for windows.
+        if tPlatform['cpu_architecture'] == 'x86':
+            # Build for 32bit windows.
+            astrCMAKE_COMPILER = [
+                '-DCMAKE_C_FLAGS=-m32',
+                '-DCMAKE_CXX_FLAGS=-m32',
+                '-DCMAKE_SYSTEM_NAME=Windows',
+                '-DCMAKE_AR=%s/ar.exe' % strCfg_CompilerPath_Windows_MinGw_w64_i686,
+                '-DCMAKE_C_COMPILER=%s/i686-w64-mingw32-gcc.exe' % strCfg_CompilerPath_Windows_MinGw_w64_i686,
+                '-DCMAKE_CXX_COMPILER=%s/i686-w64-mingw32-g++.exe' % strCfg_CompilerPath_Windows_MinGw_w64_i686,
+                '-DCMAKE_RC_COMPILER=%s/i686-w64-mingw32-windres.exe' % strCfg_CompilerPath_Windows_MinGw_w64_i686,
+                '-DSWIG_EXECUTABLE=%s' % strCfg_SwigPath_Windows,
+                '-G "MinGW Makefiles"'
+            ]
+            astrCMAKE_PLATFORM = [
+                '-DJONCHKI_PLATFORM_DIST_ID=windows',
+                '-DJONCHKI_PLATFORM_DIST_VERSION=""',
+                '-DJONCHKI_PLATFORM_CPU_ARCH=x86'
+            ]
+            astrJONCHKI_SYSTEM = [
+                '--distribution-id windows',
+                '--empty-distribution-version',
+                '--cpu-architecture x86'
+            ]
+            strMake = '%s/mingw32-make.exe' % strCfg_CompilerPath_Windows_MinGw_w64_i686
+            astrEnv = dict(
+                os.environ,
+                PATH='%s;%s' % (
+                    strCfg_CompilerPath_Windows_MinGw_w64_i686,
+                    os.environ['PATH']
+                )
+            )
+
+        elif tPlatform['cpu_architecture'] == 'x86_64':
+            # Build for 64bit windows.
+            astrCMAKE_COMPILER = [
+                '-DCMAKE_C_FLAGS=-m64',
+                '-DCMAKE_CXX_FLAGS=-m64',
+                '-DCMAKE_SYSTEM_NAME=Windows',
+                '-DCMAKE_AR=%s/ar.exe' % strCfg_CompilerPath_Windows_MinGw_w64_x86_64,
+                '-DCMAKE_C_COMPILER=%s/x86_64-w64-mingw32-gcc.exe' % strCfg_CompilerPath_Windows_MinGw_w64_x86_64,
+                '-DCMAKE_CXX_COMPILER=%s/x86_64-w64-mingw32-g++.exe' % strCfg_CompilerPath_Windows_MinGw_w64_x86_64,
+                '-DCMAKE_RC_COMPILER=%s/x86_64-w64-mingw32-windres.exe' % strCfg_CompilerPath_Windows_MinGw_w64_x86_64,
+                '-DSWIG_EXECUTABLE=%s' % strCfg_SwigPath_Windows,
+                '-G "MinGW Makefiles"'
+            ]
+            astrCMAKE_PLATFORM = [
+                '-DJONCHKI_PLATFORM_DIST_ID=windows',
+                '-DJONCHKI_PLATFORM_DIST_VERSION=""',
+                '-DJONCHKI_PLATFORM_CPU_ARCH=x86_64'
+            ]
+            astrJONCHKI_SYSTEM = [
+                '--distribution-id windows',
+                '--empty-distribution-version',
+                '--cpu-architecture x86_64'
+            ]
+            strMake = '%s/mingw32-make.exe' % strCfg_CompilerPath_Windows_MinGw_w64_x86_64
+            astrEnv = dict(
+                os.environ,
+                PATH='%s;%s' % (
+                    strCfg_CompilerPath_Windows_MinGw_w64_x86_64,
+                    os.environ['PATH']
+                )
+            )
+
+        else:
+            raise Exception('Unknown CPU architecture: "%s"' % tPlatform['cpu_architecture'])
+
+else:
+    raise Exception('Unknown host distribution: "%s"' % tPlatform['host_distribution_id'])
 
 # Create the folders if they do not exist yet.
 astrFolders = [
@@ -198,13 +294,16 @@ astrCmd = [
 astrCmd.extend(astrCMAKE_COMPILER)
 astrCmd.append(os.path.join(strCfg_projectFolder, 'external'))
 strCwd = os.path.join(strCfg_workingFolder, 'external')
-subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd)
-subprocess.check_call(strMake, shell=True, cwd=strCwd)
+subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
+subprocess.check_call(strMake, shell=True, cwd=strCwd, env=astrEnv)
 
 # ---------------------------------------------------------------------------
 #
 # Get the build requirements for LUA5.1.
 #
+for strMatch in glob.iglob(os.path.join(strCwd, 'lua5.1-romloader-*.xml')):
+    os.remove(strMatch)
+
 astrCmd = [
     'cmake',
     '-DCMAKE_INSTALL_PREFIX=""',
@@ -216,8 +315,12 @@ astrCmd.extend(astrCMAKE_COMPILER)
 astrCmd.extend(astrCMAKE_PLATFORM)
 astrCmd.append(strCfg_projectFolder)
 strCwd = os.path.join(strCfg_workingFolder, 'lua5.1', 'build_requirements')
-subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd)
-subprocess.check_call(strMake, shell=True, cwd=strCwd)
+subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
+subprocess.check_call(strMake, shell=True, cwd=strCwd, env=astrEnv)
+
+astrMatch = glob.glob(os.path.join(strCwd, 'lua5.1-romloader-*.xml'))
+if len(astrMatch)!=1:
+    raise Exception('No match found for "lua5.1-romloader-*.xml".')
 
 astrCmd = [
     strJonchki,
@@ -228,9 +331,8 @@ astrCmd = [
 ]
 astrCmd.extend(astrJONCHKI_SYSTEM)
 astrCmd.append('--build-dependencies')
-astrCmd.append('lua5.1-romloader-*.xml')
-subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd)
-
+astrCmd.append(astrMatch[0])
+subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
 
 # ---------------------------------------------------------------------------
 #
@@ -246,13 +348,16 @@ astrCmd.extend(astrCMAKE_COMPILER)
 astrCmd.extend(astrCMAKE_PLATFORM)
 astrCmd.append(strCfg_projectFolder)
 strCwd = os.path.join(strCfg_workingFolder, 'lua5.1')
-subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd)
-subprocess.check_call('%s pack' % strMake, shell=True, cwd=strCwd)
+subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
+subprocess.check_call('%s pack' % strMake, shell=True, cwd=strCwd, env=astrEnv)
 
 # ---------------------------------------------------------------------------
 #
 # Get the build requirements for LUA5.2.
 #
+for strMatch in glob.iglob(os.path.join(strCwd, 'lua5.2-romloader-*.xml')):
+    os.remove(strMatch)
+
 astrCmd = [
     'cmake',
     '-DCMAKE_INSTALL_PREFIX=""',
@@ -264,8 +369,12 @@ astrCmd.extend(astrCMAKE_COMPILER)
 astrCmd.extend(astrCMAKE_PLATFORM)
 astrCmd.append(strCfg_projectFolder)
 strCwd = os.path.join(strCfg_workingFolder, 'lua5.2', 'build_requirements')
-subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd)
-subprocess.check_call(strMake, shell=True, cwd=strCwd)
+subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
+subprocess.check_call(strMake, shell=True, cwd=strCwd, env=astrEnv)
+
+astrMatch = glob.glob(os.path.join(strCwd, 'lua5.2-romloader-*.xml'))
+if len(astrMatch)!=1:
+    raise Exception('No match found for "lua5.2-romloader-*.xml".')
 
 astrCmd = [
     strJonchki,
@@ -276,8 +385,8 @@ astrCmd = [
 ]
 astrCmd.extend(astrJONCHKI_SYSTEM)
 astrCmd.append('--build-dependencies')
-astrCmd.append('lua5.2-romloader-*.xml')
-subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd)
+astrCmd.append(astrMatch[0])
+subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
 
 
 # ---------------------------------------------------------------------------
@@ -294,13 +403,16 @@ astrCmd.extend(astrCMAKE_COMPILER)
 astrCmd.extend(astrCMAKE_PLATFORM)
 astrCmd.append(strCfg_projectFolder)
 strCwd = os.path.join(strCfg_workingFolder, 'lua5.2')
-subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd)
-subprocess.check_call('%s pack' % strMake, shell=True, cwd=strCwd)
+subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
+subprocess.check_call('%s pack' % strMake, shell=True, cwd=strCwd, env=astrEnv)
 
 # ---------------------------------------------------------------------------
 #
 # Get the build requirements for LUA5.3.
 #
+for strMatch in glob.iglob(os.path.join(strCwd, 'lua5.3-romloader-*.xml')):
+    os.remove(strMatch)
+
 astrCmd = [
     'cmake',
     '-DCMAKE_INSTALL_PREFIX=""',
@@ -312,8 +424,12 @@ astrCmd.extend(astrCMAKE_COMPILER)
 astrCmd.extend(astrCMAKE_PLATFORM)
 astrCmd.append(strCfg_projectFolder)
 strCwd = os.path.join(strCfg_workingFolder, 'lua5.3', 'build_requirements')
-subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd)
-subprocess.check_call(strMake, shell=True, cwd=strCwd)
+subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
+subprocess.check_call(strMake, shell=True, cwd=strCwd, env=astrEnv)
+
+astrMatch = glob.glob(os.path.join(strCwd, 'lua5.3-romloader-*.xml'))
+if len(astrMatch)!=1:
+    raise Exception('No match found for "lua5.3-romloader-*.xml".')
 
 astrCmd = [
     strJonchki,
@@ -324,8 +440,8 @@ astrCmd = [
 ]
 astrCmd.extend(astrJONCHKI_SYSTEM)
 astrCmd.append('--build-dependencies')
-astrCmd.append('lua5.3-romloader-*.xml')
-subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd)
+astrCmd.append(astrMatch[0])
+subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
 
 
 # ---------------------------------------------------------------------------
@@ -342,5 +458,5 @@ astrCmd.extend(astrCMAKE_COMPILER)
 astrCmd.extend(astrCMAKE_PLATFORM)
 astrCmd.append(strCfg_projectFolder)
 strCwd = os.path.join(strCfg_workingFolder, 'lua5.3')
-subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd)
-subprocess.check_call('%s pack' % strMake, shell=True, cwd=strCwd)
+subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
+subprocess.check_call('%s pack' % strMake, shell=True, cwd=strCwd, env=astrEnv)
