@@ -635,13 +635,14 @@ int romloader_jtag_openocd::initialize(void)
 
 /* FIXME: read this from some kind of configuration file. */
 
-const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::atInterfaceCfg[] =
+const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::atInterfaceCfg[6] =
 {
 	{"NXJTAG-USB",             "setup_interface NXJTAG-USB",            "probe_interface"},
 	{"Amontec_JTAGkey",        "setup_interface Amontec_JTAGkey",       "probe_interface"},
 	{"Olimex_ARM_USB_TINY_H",  "setup_interface Olimex_ARM_USB_TINY_H", "probe_interface"},
 	{"NXHX_500/50/51/10",      "setup_interface NXHX_500_50_51_10",     "probe_interface"},
-	{"NXHX_90-JTAG",           "setup_interface NXHX_90-JTAG",          "probe_interface"}, 
+	{"NXHX_90-JTAG",           "setup_interface NXHX_90-JTAG",          "probe_interface"},
+	{"NXJTAG-4000-USB",        "setup_interface NXJTAG-4000-USB",       "probe_interface"},
 };
 
 
@@ -662,12 +663,12 @@ const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTa
 		"netX4000_R7",
 		"probe_cpu netX4000_R7"
 	},
-	
+
 	{
 		"netX90_MPW_COM",
 		"probe_cpu netX90_MPW_COM"
 	},
-	
+
 	{
 		"netX90_COM",
 		"probe_cpu netX90_COM"

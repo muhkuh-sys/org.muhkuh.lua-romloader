@@ -16,6 +16,21 @@ set _USE_SOFT_RESET_ false
 #   Init/probe for JTAG interfaces
 # ###################################################################
 
+proc setup_interface_nxjtag_4000_usb {} {
+	interface ftdi
+	transport select jtag
+	ftdi_device_desc "NXJTAG-4000-USB"
+	ftdi_vid_pid 0x1939 0x0301
+	adapter_khz 1000
+
+	ftdi_layout_init 0x1B08 0x1F0B
+	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
+	ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200
+	ftdi_layout_signal JSEL1 -data 0x0400 -oe 0x0400
+	ftdi_layout_signal VODIS -data 0x0800 -oe 0x0800
+	ftdi_layout_signal VOSWI -data 0x1000 -oe 0x1000
+}
+
 proc setup_interface_nxhx_generic {} {
 	interface ftdi
 	transport select jtag
@@ -105,8 +120,9 @@ proc setup_interface {strInterfaceID} {
 	} elseif {$strInterfaceID == "Amontec_JTAGkey"}       {setup_interface_jtagkey
 	} elseif {$strInterfaceID == "NXHX_500_50_51_10"}     {setup_interface_nxhx_generic
 	} elseif {$strInterfaceID == "NXHX_90-JTAG"}          {setup_interface_nxhx90_jtag
-	} 
-	
+	} elseif {$strInterfaceID == "NXJTAG-4000-USB"}       {setup_interface_nxjtag_4000_usb
+	}
+
 	echo "-setup_interface $strInterfaceID"
 }
 
