@@ -20,7 +20,7 @@ proc setup_interface_nxjtag_4000_usb {} {
 	interface ftdi
 	transport select jtag
 	ftdi_device_desc "NXJTAG-4000-USB"
-	ftdi_vid_pid 0x1939 0x002F
+	ftdi_vid_pid 0x1939 0x0301
 	adapter_khz 1000
 
 	ftdi_layout_init 0x1B08 0x1F0B
