@@ -43,5 +43,12 @@ Build results from a tag are released on GitHub: https://github.com/muhkuh-sys/o
  * Extract the "x86_64-posix-seh" MinGw-W64 to C:/MinGW/x86_64-8.1.0-release-posix-seh-rt_v6-rev0 .
  * Download the latest Swig version from http://www.swig.org/download.html .
  * Extract the Swig archive to C:/Tools .
- * Open a command prompt in the folder with this readme. Run the command "C:/Python27/python.exe build_artifact.py".
+ 
+ * Open a command prompt in the folder with this readme. Run the command "C:/Python27/python.exe build_artifact.py". 
+   To build for Windows:
+   python build_artifact.py windows <cpu_architecture>
+   To build for Ubuntu:
+   python build_artifact.py ubuntu <ubuntu_distribution_version> <cpu_architecture>
+   <cpu_architecture> is x86 or x86_64
+ 
  * The results of the build can be found in the subdirectory "build/repository".
