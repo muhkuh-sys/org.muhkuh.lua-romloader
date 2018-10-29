@@ -716,7 +716,7 @@ int romloader_papa_schlumpf_device::receivePacket(uint8_t* aucInBuf, uint32_t* p
 
 
 
-int romloader_papa_schlumpf_device::send_start_packet(void)
+int romloader_papa_schlumpf_device::send_start_packet(libusb_device_handle *ptDevHandle)
 {
 	int iResult;
 	int iLibUsbResult;
@@ -743,7 +743,7 @@ int romloader_papa_schlumpf_device::send_start_packet(void)
 
 	/* Send data to endpoint 1. */
 	iLength = sizeof(PAPA_SCHLUMPF_PARAMETER_T);
-	iLibUsbResult = libusb_bulk_transfer(m_ptLibUsbDeviceHandle, 0x01, uData.auc, iLength, &iTransfered, uiTimeoutMs);
+	iLibUsbResult = libusb_bulk_transfer(ptDevHandle, 0x01, uData.auc, iLength, &iTransfered, uiTimeoutMs);
 	if( iLibUsbResult==LIBUSB_SUCCESS )
 	{
 		/* Were all bytes transfered? */
@@ -766,7 +766,7 @@ int romloader_papa_schlumpf_device::send_start_packet(void)
 
 
 /* Receive the print messages and the final result.  */
-int romloader_papa_schlumpf_device::receive_report(char **ppcResponse, size_t *psizResponse, uint32_t *pulStatus)
+int romloader_papa_schlumpf_device::receive_report(libusb_device_handle *ptDevHandle, char **ppcResponse, size_t *psizResponse, uint32_t *pulStatus)
 {
 	int iResult;
 	int iLibUsbResult;
@@ -801,7 +801,7 @@ int romloader_papa_schlumpf_device::receive_report(char **ppcResponse, size_t *p
 		/* Receive data packets in 4096 byte chunks. */
 		iLength = 4096;
 		uiTimeoutMs = 10000;
-		iLibUsbResult = libusb_bulk_transfer(m_ptLibUsbDeviceHandle, 0x81,(unsigned char *) uData.ac, iLength, &iTransfered, uiTimeoutMs);
+		iLibUsbResult = libusb_bulk_transfer(ptDevHandle, 0x81,(unsigned char *) uData.ac, iLength, &iTransfered, uiTimeoutMs);
 		if( iLibUsbResult==LIBUSB_SUCCESS )
 		{
 			/* Is this the special end packet? */
@@ -946,12 +946,9 @@ int romloader_papa_schlumpf_device::Connect(unsigned int uiBusNr, unsigned int u
 							iLibUsbResult = libusb_claim_interface(ptDevHandle, m_iUsbInterfaceIndex);
 							if( iLibUsbResult==LIBUSB_SUCCESS )
 							{
-								/* The handle to the device is now open. */
-								m_ptLibUsbDeviceHandle = ptDevHandle;
-
 								/* Test the PCIe connection. */
 								/* Send a packet. */
-								iResult = send_start_packet();
+								iResult = send_start_packet(ptDevHandle);
 								if( iResult!=0 )
 								{
 									fprintf(stderr, "failed to send the start package\n");
@@ -961,7 +958,7 @@ int romloader_papa_schlumpf_device::Connect(unsigned int uiBusNr, unsigned int u
 								else
 								{
 									/* Receive the response. */
-									iResult = receive_report(&pcResponse, &sizResponse, &ulStatus);
+									iResult = receive_report(ptDevHandle, &pcResponse, &sizResponse, &ulStatus);
 									if( iResult!=0 )
 									{
 										fprintf(stderr, "failed to receive the report\n");
@@ -977,7 +974,12 @@ int romloader_papa_schlumpf_device::Connect(unsigned int uiBusNr, unsigned int u
 											fwrite(pcResponse, sizResponse, 1, stderr);
 											libusb_release_interface(ptDevHandle, 0);
 											libusb_close(ptDevHandle);
-											iResult = 0;
+											iResult = -1;
+										}
+										else
+										{
+											/* The handle to the device is now open. */
+											m_ptLibUsbDeviceHandle = ptDevHandle;
 										}
 									}
 								}

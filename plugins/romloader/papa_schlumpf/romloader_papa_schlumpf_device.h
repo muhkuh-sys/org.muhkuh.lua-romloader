@@ -88,8 +88,8 @@ private:
 	libusb_device_handle *m_ptLibUsbDeviceHandle;
 	libusb_context       *m_ptLibUsbContext;
 
-	int send_start_packet(void);
-	int receive_report(char **ppcResponse, size_t *psizResponse, uint32_t *pulStatus);
+	int send_start_packet(libusb_device_handle *ptDevHandle);
+	int receive_report(libusb_device_handle *ptDevHandle, char **ppcResponse, size_t *psizResponse, uint32_t *pulStatus);
 
 	int sendAndReceivePackets(uint8_t *aucOutBuf, uint32_t sizOutBuf, uint8_t *aucInBuf, uint32_t *sizInBuf);
 	int sendPacket(uint8_t *aucOutBuf, uint32_t sizOutBuf);
