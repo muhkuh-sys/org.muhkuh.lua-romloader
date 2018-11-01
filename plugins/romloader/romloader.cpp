@@ -68,7 +68,7 @@ bool romloader::synchronize(void)
 	size_t sizMaxPacketSize;
 
 
-	fprintf(stderr, "synchronize\n");
+//	fprintf(stderr, "synchronize\n");
 	fResult = false;
 
 	uiRetryCnt = 10;
