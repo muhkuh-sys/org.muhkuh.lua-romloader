@@ -35,7 +35,6 @@ montest_sources = """
 	src/header.S
 	src/init_netx_test.S
 	src/main.c
-	src/netx_consoleapp.c
 """
 
 astrCppPath = ['#platform/src', '#platform/src/lib']
@@ -76,7 +75,15 @@ src_netx10 = env_netx10.SetBuildPath(os.path.join(strTargetPath, 'netx10'), 'src
 elf_netx10 = env_netx10.Elf(os.path.join(strTargetPath, 'montest_netx10.elf'), src_netx10 + env_netx10['PLATFORM_LIBRARY'])
 bin_netx10 = env_netx10.ObjCopy(os.path.join(strTargetPath, 'montest_netx10.bin'), elf_netx10)
 
-env_netx90 = atEnv.NETX90_MPW.Clone()
+env_netx90_mpw = atEnv.NETX90_MPW.Clone()
+env_netx90_mpw.Append(CPPPATH = astrCppPath)
+env_netx90_mpw.Replace(LDFILE = File('src/netx90/netx90.ld'))
+src_netx90_mpw = env_netx90_mpw.SetBuildPath(os.path.join(strTargetPath, 'netx90_mpw'), 'src', montest_sources)
+elf_netx90_mpw = env_netx90_mpw.Elf(os.path.join(strTargetPath, 'montest_netx90_mpw.elf'), src_netx90_mpw + env_netx90_mpw['PLATFORM_LIBRARY'])
+bin_netx90_mpw = env_netx90_mpw.ObjCopy(os.path.join(strTargetPath, 'montest_netx90_mpw.bin'), elf_netx90_mpw)
+txt_netx90_mpw = env_netx90_mpw.ObjDump(os.path.join(strTargetPath, 'montest_netx90_mpw.txt'), elf_netx90_mpw, OBJDUMP_FLAGS=['--disassemble', '--source', '--all-headers', '--wide'])
+
+env_netx90 = atEnv.NETX90.Clone()
 env_netx90.Append(CPPPATH = astrCppPath)
 env_netx90.Replace(LDFILE = File('src/netx90/netx90.ld'))
 src_netx90 = env_netx90.SetBuildPath(os.path.join(strTargetPath, 'netx90'), 'src', montest_sources)
