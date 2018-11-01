@@ -23,6 +23,8 @@
 #define __ROMLOADER_USB_DEVICE_LIBUSB_H__
 
 
+#include "romloader_usb_device.h"
+
 #include <errno.h>
 
 /* NOTE: the header is in 'libusb-1.0' for linux and 'libusb-1.0' for windows. */
@@ -32,12 +34,8 @@
 #       error "This plugin needs at least libusb 1.0.16."
 #endif
 
-
-#include "romloader_usb_device.h"
-
-
 #if defined(WIN32)
-#	include <windows.h>
+#       include <windows.h>
 #endif
 
 
