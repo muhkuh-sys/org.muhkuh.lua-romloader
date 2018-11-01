@@ -734,6 +734,8 @@ void romloader::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **ppcBU
 				if( tResult!=TRANSPORTSTATUS_OK )
 				{
 					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): %s!", m_pcName, this, get_error_message(tResult));
+					fOk = false;
+					break;
 				}
 				else
 				{
@@ -892,6 +894,7 @@ void romloader::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, siz
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): %s", m_pcName, this, get_error_message(tResult));
 				fOk = false;
+				break;
 			}
 			else
 			{
