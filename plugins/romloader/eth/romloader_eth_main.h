@@ -62,7 +62,6 @@ protected:
 	virtual TRANSPORTSTATUS_T receive_packet(void);
 
 private:
-	bool m_fIsConnected;
 	romloader_eth_device_platform *m_ptEthDev;
 };
 
