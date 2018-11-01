@@ -222,6 +222,10 @@ void romloader_eth::Connect(lua_State *ptClientData)
 				m_fIsConnected = true;
 				iResult = 0;
 			}
+			else
+			{
+				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to synchronize!", m_pcName, this);
+			}
 		}
 
 		if( iResult!=0 )
