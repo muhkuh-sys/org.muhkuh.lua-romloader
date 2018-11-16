@@ -245,6 +245,11 @@ proc init_chip {iChiptyp} {
 
 		puts "Setting up registers for netx 90"
 
+		puts "Stopping xPEC/xPIC"
+		mww 0xff111d70 0x00ff0000 ;# xc_start_stop_ctrl
+		mww 0xff184080 1          ;# xpic_hold_pc (com)
+		mww 0xff884080 1          ;# xpic_hold_pc (app)
+
 		puts "Setting analog parameters"
 		mww 0xff001680 0x00000000
 		mww 0xff001684 0x00000000
@@ -265,10 +270,11 @@ proc init_chip {iChiptyp} {
 		# Switch to 100MHz clock by setting d_dcdc_use_clk to 1.
 		mww 0xff0016a8 0x01049f03
 
-		# Lock the analog parameter and hide the ROM.
-		mww 0xff0016cc 0x00000005
+		# Lock the analog parameters.
+		mww 0xff0016cc 0x00000004
 
-
+		# PLL is now set up.
+		adapter_khz 1000
 
 		puts "Configuring pad ctrl for MMIO4-7 (input, disable pull-down)"
 		proc read_data32 {addr} {
@@ -299,7 +305,6 @@ proc init_chip {iChiptyp} {
 		mdw 0xff4010f4
 		mdw 0xff4010f8
 		mdw 0xff4010fc
-
 
 		reg xPSR 0x01000000
 		bp 0x00023ffd 2 hw
