@@ -255,6 +255,7 @@ proc probe_cpu {strCpuID} {
 	# netx 90
 	} elseif { $strCpuID == "netX90_COM" } {
 		echo "+ probe_cpu netX90_COM"
+		adapter_khz 50
 		jtag newtap netx90 dap -expected-id 0x6ba00477 -irlen 4
 		jtag newtap netx90 tap -expected-id 0x10a046ad -irlen 4
 		jtag configure netx90.dap -event setup { global SC_CFG_RESULT ; echo {Yay - setup netx 90} ; set SC_CFG_RESULT {OK} }
@@ -300,12 +301,24 @@ proc reset_netx90_MPW_COM {} {
 	reset init
 }
 
+# Reset netX90 and stop before the parameters are locked by ROM code
 proc reset_netx90_COM {} {
+	init
+	
+	# set break point to first point after debugging is enabled, if ROM code debugging is allowed
+	bp 0x170 2 hw
+	
+	# remove reset vector catch
+	cortex_m vector_catch hard_err int_err bus_err state_err chk_err nocp_err mm_err
+
 	# if srst is not fitted use SYSRESETREQ to perform a soft reset
 	cortex_m reset_config sysresetreq
 	
-	init
-	halt
+	reset init
+
+	echo "Stopped at breakpoint"
+	# optional remove breakpoint if no longer required
+	rbp 0x170
 }
 
 proc reset_netX_ARM926_ARM966 {} {
