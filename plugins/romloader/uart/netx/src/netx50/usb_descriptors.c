@@ -136,11 +136,11 @@ void sendDescriptor(unsigned int reqiredLength, unsigned int descriptorLength, c
 packet_handler_stall_req_t getDescriptor(setupPacket_t *pPacket)
 {
 	USB_DescriptorType_t descriptorType;
-	unsigned int descriptorIndex;
+/*  unsigned int descriptorIndex; */
 	unsigned int uiLength;
 
 
-	descriptorIndex = (pPacket->tHeader.wValue&0x0f);
+/*  descriptorIndex = (pPacket->tHeader.wValue&0x0f); */
 	descriptorType = (USB_DescriptorType_t)(pPacket->tHeader.wValue>>8);
 	uiLength = pPacket->tHeader.wLength;
 
