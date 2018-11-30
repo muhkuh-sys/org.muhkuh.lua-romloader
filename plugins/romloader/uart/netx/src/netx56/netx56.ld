@@ -61,9 +61,7 @@ SECTIONS
 		load_address = . ;
 
 		*(.header)
-		*(.init_code)
-		*(.text*)
-		*(.rodata*)
+		*(.init_code .text* .rodata*)
 	} >INTRAM_MON
 	end_address = LOADADDR(.code) + SIZEOF(.code);
 
@@ -72,8 +70,7 @@ SECTIONS
 		/* zero-initialized data */
 		__bss_start__ = . ;
 
-		*(.bss)
-		*(COMMON)
+		*(.bss COMMON)
 
 		__bss_end__ = . ;
 	} >INTRAM_MON

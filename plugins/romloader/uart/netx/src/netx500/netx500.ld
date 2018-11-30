@@ -25,7 +25,8 @@ MEMORY
 	ASSERT_EMPTY(rwx) :     ORIGIN = 0x00000000, LENGTH = 0
 
 	INTRAM0_MON(rwx) :      ORIGIN = 0x00000100, LENGTH = 0x00003f00
-	DTCM(rw) :              ORIGIN = 0x10000000, LENGTH = 0x00002000
+	DTCM(rw) :              ORIGIN = 0x10000000, LENGTH = 0x00001ff0
+	DTCM_VECTORS(rw) :      ORIGIN = 0x10001ff0, LENGTH = 0x00000010
 }
 
 
@@ -51,10 +52,8 @@ SECTIONS
 		load_address = . ;
 
 		*(.header)
-		*(.init_code)
-		*(.text*)
-		*(.rodata*)
-		
+		*(.init_code .text* .rodata*)
+
 		end_address = . ;
 	} >INTRAM0_MON
 
@@ -65,18 +64,17 @@ SECTIONS
 
 		__bss_start__ = . ;
 
-		*(.bss)
-		*(COMMON)
+		*(.bss COMMON)
 
 		__bss_end__ = . ;
 	} >DTCM
 
 
-	.serialvectors ORIGIN(DTCM)+LENGTH(DTCM)-0x10 :
+	.serialvectors ORIGIN(DTCM_VECTORS) :
 	{
 		tSerialV2Vectors = . ;
 		. = . + 0x10;
-	} >DTCM
+	} >DTCM_VECTORS
 
 
 	/* set the top of the stack to the end of INTRAM1 */
