@@ -311,6 +311,9 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 							}
 							else
 							{
+								fprintf(stderr, "Got %zd bytes.\n", sizPacket+2);
+								hexdump(aucData, sizPacket+2);
+
 								ucStatus = aucData[3];
 								if( ucStatus!=MONITOR_STATUS_Ok )
 								{

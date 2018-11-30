@@ -50,53 +50,32 @@ typedef void (*PFN_MONITOR_CALL_T)(unsigned long ulR0);
 /*-----------------------------------*/
 
 
-static const unsigned char aucMagic[8] =
-{
-	/* Magic */
-	'M', 'O', 'O', 'H',
-
-	/* Version */
-	MONITOR_VERSION_MINOR & 0xff,
-	MONITOR_VERSION_MINOR >> 8,
-	MONITOR_VERSION_MAJOR & 0xff,
-	MONITOR_VERSION_MAJOR >> 8
-
-	/* NOTE: The next 3 bytes define the chip type and the maximum packet size. */
-	/* Chip type */
-	/* MaxPacketSize 0..7 */
-	/* MaxPacketSize 8..15 */
-};
-
 static unsigned char ucChiptype;
 
-static unsigned char ucSequenceCurrent;
-static unsigned char ucSequenceLast;
+//static unsigned char ucSequenceCurrent;
+//static unsigned char ucSequenceLast;
 
 /*-----------------------------------*/
 
 
 static void send_status(MONITOR_STATUS_T tStatus)
 {
-	unsigned char ucStatus;
-
-
 	/* Write the status to the FIFO. */
-	ucStatus  = (unsigned char)tStatus;
-	ucStatus |= (unsigned char)(ucSequenceCurrent << MONITOR_SEQUENCE_SRT);
-	transport_send_byte(ucStatus);
+	transport_send_byte(MONITOR_PACKET_TYP_Status);
+	transport_send_byte(tStatus);
 
 	/* Send the packet. */
-	transport_send_packet();
+	transport_send_packet(TRANSPORT_SEND_PACKET_WITH_ACK);
 }
 
 
 static void command_read_memory(unsigned long ulAddress, unsigned long ulSize, MONITOR_ACCESSSIZE_T tAccessSize)
 {
-	unsigned char ucStatus;
 	ADR_T uAdrCnt;
 	ADR_T uAdrEnd;
+	unsigned char ucValue;
+	unsigned short usValue;
 	unsigned long ulValue;
-	int iCnt;
 
 
 	/* Get the start address. */
@@ -104,88 +83,134 @@ static void command_read_memory(unsigned long ulAddress, unsigned long ulSize, M
 	/* Get the end address. */
 	uAdrEnd.ul = ulAddress + ulSize;
 
-	/* Write status "OK" to the FIFO. */
-	ucStatus  = (unsigned char)MONITOR_STATUS_Ok;
-	ucStatus |= (unsigned char)(ucSequenceCurrent << MONITOR_SEQUENCE_SRT);
-	transport_send_byte(ucStatus);
+	/* Skip...
+	 *   1 byte packet type
+	 *   2 bytes data size
+	 *   4 bytes source address
+	 *   2 bytes CRC
+	 */
+	transport_buffer_skip(9U);
+
+	transport_send_byte(MONITOR_PACKET_TYP_ReadData);
 
 	/* Write data bytes to the FIFO. */
-	do
+	switch(tAccessSize)
 	{
-		/* Initialize the output value. */
-		ulValue = 0;
-
-		/* Get the next data element in the requested access width. */
-		switch(tAccessSize)
+	case MONITOR_ACCESSSIZE_Byte:
+		while( uAdrCnt.ul<uAdrEnd.ul)
 		{
-		case MONITOR_ACCESSSIZE_Byte:
-			ulValue = *(uAdrCnt.puc++);
-			break;
-
-		case MONITOR_ACCESSSIZE_Word:
-			ulValue = *(uAdrCnt.pus++);
-			break;
-
-		case MONITOR_ACCESSSIZE_Long:
-			ulValue = *(uAdrCnt.pul++);
-			break;
+			ucValue = *(uAdrCnt.puc++);
+			transport_send_byte(ucValue);
 		}
+		break;
 
-		/* Add the data byte-by-byte to the FIFO. */
-		iCnt = 1<<tAccessSize;
-		do
+	case MONITOR_ACCESSSIZE_Word:
+		while( uAdrCnt.ul<uAdrEnd.ul)
 		{
-			transport_send_byte((unsigned char)(ulValue & 0xffU));
-			ulValue >>= 8;
-			--iCnt;
-		} while( iCnt>0 );
-	} while( uAdrCnt.ul<uAdrEnd.ul);
+			usValue = *(uAdrCnt.pus++);
+			transport_send_byte((unsigned char)( usValue       & 0xffU));
+			transport_send_byte((unsigned char)((usValue>> 8U) & 0xffU));
+		}
+		break;
+
+	case MONITOR_ACCESSSIZE_Long:
+		while( uAdrCnt.ul<uAdrEnd.ul)
+		{
+			ulValue = *(uAdrCnt.pul++);
+			transport_send_byte((unsigned char)( ulValue       & 0xffU));
+			transport_send_byte((unsigned char)((ulValue>> 8U) & 0xffU));
+			transport_send_byte((unsigned char)((ulValue>>16U) & 0xffU));
+			transport_send_byte((unsigned char)((ulValue>>24U) & 0xffU));
+		}
+		break;
+
+	case MONITOR_ACCESSSIZE_Any:
+		transport_send_bytes(uAdrCnt.puc, ulSize);
+		break;
+	}
 
 	/* Send the packet. */
-	transport_send_packet();
+	transport_send_packet(TRANSPORT_SEND_PACKET_WITH_ACK);
 }
 
 
-static void command_write_memory(const unsigned char *pucData, unsigned long ulAddress, unsigned long ulDataSize, MONITOR_ACCESSSIZE_T tAccessSize)
+
+static void command_write_memory(unsigned long ulAddress, unsigned long ulDataSize, MONITOR_ACCESSSIZE_T tAccessSize)
 {
-	const unsigned char *pucCnt;
-	const unsigned char *pucEnd;
+	unsigned int uiOffsetCnt;
+	unsigned int uiOffsetEnd;
 	ADR_T uAdrDst;
+	unsigned char ucValue;
+	unsigned short usValue;
 	unsigned long ulValue;
 
 
-	/* Get the source start address. */
-	pucCnt = pucData;
-	/* Get the source end address. */
-	pucEnd = pucData + ulDataSize;
+	/* Skip...
+	 *   1 byte packet type
+	 *   2 bytes data size
+	 *   4 bytes destination address
+	 */
+	transport_buffer_skip(7U);
+
+	/* Get the start offset in the receive buffer. */
+	uiOffsetCnt = 0U;
+	/* Get the end offset in the receive buffer. */
+	uiOffsetEnd = ulDataSize;
 	/* Get the destination end address. */
 	uAdrDst.ul = ulAddress;
 
-	/* Write data bytes to memory. */
-	do
+	/* Map the "ANY" access to the best fitting. */
+	if( tAccessSize==MONITOR_ACCESSSIZE_Any )
 	{
-		/* Get the next data element in the requested access width. */
-		switch(tAccessSize)
+		if( (ulAddress&3U)==0U )
 		{
-		case MONITOR_ACCESSSIZE_Byte:
-			*(uAdrDst.puc++) = *(pucCnt++);
-			break;
-
-		case MONITOR_ACCESSSIZE_Word:
-			ulValue  = *(pucCnt++);
-			ulValue |= (unsigned long)(*(pucCnt++) << 8U);
-			*(uAdrDst.pus++) = (unsigned short)ulValue;
-			break;
-
-		case MONITOR_ACCESSSIZE_Long:
-			ulValue  = *(pucCnt++);
-			ulValue |= (unsigned long)(*(pucCnt++) << 8U);
-			ulValue |= (unsigned long)(*(pucCnt++) << 16U);
-			ulValue |= (unsigned long)(*(pucCnt++) << 24U);
-			*(uAdrDst.pul++) = ulValue;
-			break;
+			tAccessSize = MONITOR_ACCESSSIZE_Long;
 		}
-	} while( pucCnt<pucEnd);
+		else if( (ulAddress&1U)==0U )
+		{
+			tAccessSize = MONITOR_ACCESSSIZE_Word;
+		}
+		else
+		{
+			tAccessSize = MONITOR_ACCESSSIZE_Byte;
+		}
+	}
+
+	/* Write data bytes to memory. */
+	switch(tAccessSize)
+	{
+	case MONITOR_ACCESSSIZE_Byte:
+	case MONITOR_ACCESSSIZE_Any:
+		while( uiOffsetCnt<uiOffsetEnd )
+		{
+			ucValue = transport_buffer_peek(uiOffsetCnt++);
+			*(uAdrDst.puc++) = ucValue;
+		}
+		break;
+
+	case MONITOR_ACCESSSIZE_Word:
+		while( uiOffsetCnt<uiOffsetEnd )
+		{
+			usValue  =                  transport_buffer_peek(uiOffsetCnt++);
+			usValue |= (unsigned short)(transport_buffer_peek(uiOffsetCnt++) << 8U);
+			*(uAdrDst.pus++) = usValue;
+		}
+		break;
+
+	case MONITOR_ACCESSSIZE_Long:
+		while( uiOffsetCnt<uiOffsetEnd )
+		{
+			ulValue  =                 transport_buffer_peek(uiOffsetCnt++);
+			ulValue |= (unsigned long)(transport_buffer_peek(uiOffsetCnt++) <<  8U);
+			ulValue |= (unsigned long)(transport_buffer_peek(uiOffsetCnt++) << 16U);
+			ulValue |= (unsigned long)(transport_buffer_peek(uiOffsetCnt++) << 24U);
+			*(uAdrDst.pul++) = ulValue;
+		}
+		break;
+	}
+
+	/* Skip the data and CRC. */
+	transport_buffer_skip(ulDataSize + 2U);
 
 	/* Send the status packet. */
 	send_status(MONITOR_STATUS_Ok);
@@ -200,45 +225,42 @@ static void command_call(unsigned long ulAddress, unsigned long ulR0)
 
 	ptCall = (PFN_MONITOR_CALL_T)ulAddress;
 
+	/* Skip...
+	 *  1 byte packet type
+	 *  4 bytes address
+	 *  4 bytes r0 value
+	 *  2 bytes CRC
+	 */
+	transport_buffer_skip(11U);
+
 	/* Send the status packet. */
 	send_status(MONITOR_STATUS_Ok);
 
-	while(!transport_is_ready_to_execute());
-
 	/* Start the new message packet. */
-	transport_send_byte(MONITOR_STATUS_CallMessage);
+	transport_send_byte(MONITOR_PACKET_TYP_CallMessage);
 
 	/* Call the routine. */
 	ptCall(ulR0);
 
 	/* Flush any remaining bytes in the FIFO. */
-	transport_send_packet();
-
-	while(!transport_is_ready_to_execute());
+	transport_send_packet(TRANSPORT_SEND_PACKET_WITH_ACK);
 
 	/* The call finished, notify the PC. */
 	send_status(MONITOR_STATUS_CallFinished);
 }
 
 
-static unsigned long get_unaligned_dword(const unsigned char *pucBuffer)
+static unsigned long get_unaligned_dword(unsigned int uiOffset)
 {
 	unsigned long ulValue;
 
 
-	ulValue  = pucBuffer[0];
-	ulValue |= (unsigned long)(pucBuffer[1]<<8U);
-	ulValue |= (unsigned long)(pucBuffer[2]<<16U);
-	ulValue |= (unsigned long)(pucBuffer[3]<<24U);
+	ulValue  =                 transport_buffer_peek(uiOffset);
+	ulValue |= (unsigned long)(transport_buffer_peek(uiOffset+1)<< 8U);
+	ulValue |= (unsigned long)(transport_buffer_peek(uiOffset+2)<<16U);
+	ulValue |= (unsigned long)(transport_buffer_peek(uiOffset+3)<<24U);
 
 	return ulValue;
-}
-
-
-static void next_sequence_number(void)
-{
-	ucSequenceLast = ucSequenceCurrent;
-	ucSequenceCurrent = (unsigned char)((ucSequenceCurrent + 1U) & (MONITOR_SEQUENCE_MSK>>MONITOR_SEQUENCE_SRT));
 }
 
 
@@ -254,16 +276,16 @@ static const SERIAL_V2_COMM_UI_FN_T tCallConsole =
 	}
 };
 
-#define ADR_NETX_VERSION_56       		0x080f0008
-#define VAL_NETX_VERSION_56A      		0x00006003
-#define VAL_NETX_VERSION_56B      		0x00106003
-#define ADR_NETX_VERSION_4000     		0x04100020
+#define ADR_NETX_VERSION_56             0x080f0008
+#define VAL_NETX_VERSION_56A            0x00006003
+#define VAL_NETX_VERSION_56B            0x00106003
+#define ADR_NETX_VERSION_4000           0x04100020
 #define VAL_NETX_VERSION_4000_RELAXED   0x00108004
 #define VAL_NETX_VERSION_4000_FULL      0x0010b004
 
-#define ADR_NETX_VERSION_500_100  		0x00200008
-#define VAL_NETX_VERSION_500      		0x00001000
-#define VAL_NETX_VERSION_100      		0x00003002
+#define ADR_NETX_VERSION_500_100        0x00200008
+#define VAL_NETX_VERSION_500            0x00001000
+#define VAL_NETX_VERSION_100            0x00003002
 
 void monitor_init(void)
 {
@@ -274,10 +296,6 @@ void monitor_init(void)
 
 	/* Set the vectors. */
 	memcpy(&tSerialV2Vectors, &tCallConsole, sizeof(SERIAL_V2_COMM_UI_FN_T));
-
-	/* Initialize the sequence numbers. */
-	ucSequenceCurrent = 0x00U;
-	ucSequenceLast = 0xffU;
 
 	/* Set the chip type */
 #if ASIC_TYP==ASIC_TYP_NETX500
@@ -321,7 +339,7 @@ void monitor_init(void)
 		else
 		{
 			ucChiptype = (unsigned char)ROMLOADER_CHIPTYP_NETX4100_SMALL;
-		}		
+		}
 	}
 #else
 #       error "Unknown ASIC type!"
@@ -329,59 +347,61 @@ void monitor_init(void)
 }
 
 
-void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPacketSize, unsigned short usMaxpacketSize)
+void monitor_process_packet(unsigned long ulPacketSize, unsigned short usMaxpacketSize)
 {
 	unsigned char ucCommand;
-	MONITOR_COMMAND_T tCmd;
+	MONITOR_PACKET_TYP_T tPacketTyp;
 	unsigned long ulDataSize;
 	unsigned long ulAddress;
 	MONITOR_ACCESSSIZE_T tAccessSize;
-	unsigned char ucSequence;
+//	unsigned char ucSequence;
 	unsigned long ulR0;
 
 
-	ucCommand = pucPacket[0];
-	if( ucCommand==MONITOR_COMMAND_Magic )
+	ucCommand = transport_buffer_peek(0);
+	if( ucCommand==MONITOR_PACKET_TYP_CommandMagic )
 	{
 		monitor_send_magic(usMaxpacketSize);
 	}
 	else
 	{
-		/* Get the command and the data size from the first byte. */
-		tCmd = (MONITOR_COMMAND_T)((ucCommand&MONITOR_COMMAND_MSK)>>MONITOR_COMMAND_SRT);
-		tAccessSize = (MONITOR_ACCESSSIZE_T)((ucCommand&MONITOR_ACCESSSIZE_MSK)>>MONITOR_ACCESSSIZE_SRT);
-		ucSequence = (ucCommand&MONITOR_SEQUENCE_MSK)>>MONITOR_SEQUENCE_SRT;
-		ulDataSize  = ((unsigned long)pucPacket[1]);
-		ulDataSize |= ((unsigned long)pucPacket[2]) << 8U;
+		/* Get the packet type from the first byte. */
+		tPacketTyp = (MONITOR_PACKET_TYP_T)((ucCommand&MONITOR_PACKET_TYP_MSK)>>MONITOR_PACKET_TYP_SRT);
 
-
-		if( ucSequence==ucSequenceCurrent )
+		if( tPacketTyp==MONITOR_PACKET_TYP_CommandExecute )
 		{
-			if( tCmd==MONITOR_COMMAND_Execute )
+			if( ulPacketSize!=9U )
 			{
-				/* Get the address. */
-				ulAddress = get_unaligned_dword(pucPacket + 1);
-
-				if( ulPacketSize!=9U )
-				{
-					send_status(MONITOR_STATUS_InvalidPacketSize);
-				}
-				else
-				{
-					ulR0 = get_unaligned_dword(pucPacket + 5);
-					command_call(ulAddress, ulR0);
-				}
+				send_status(MONITOR_STATUS_InvalidPacketSize);
 			}
-			else if( tCmd==MONITOR_COMMAND_Read )
+			else
 			{
 				/* Get the address. */
-				ulAddress = get_unaligned_dword(pucPacket + 3U);
+				ulAddress = get_unaligned_dword(1U);
 
-				if( ulPacketSize!=7 )
+				ulR0 = get_unaligned_dword(5U);
+				command_call(ulAddress, ulR0);
+			}
+		}
+		else
+		{
+			/* Get the access size. */
+			tAccessSize = (MONITOR_ACCESSSIZE_T)((ucCommand&MONITOR_ACCESSSIZE_MSK)>>MONITOR_ACCESSSIZE_SRT);
+
+			/* Read the data size. */
+			ulDataSize  =  (unsigned long)transport_buffer_peek(1);
+			ulDataSize |= ((unsigned long)transport_buffer_peek(2)) << 8U;
+
+			/* Get the address. */
+			ulAddress = get_unaligned_dword(3U);
+
+			if( tPacketTyp==MONITOR_PACKET_TYP_CommandRead )
+			{
+				if( ulPacketSize!=7U )
 				{
 					send_status(MONITOR_STATUS_InvalidPacketSize);
 				}
-				else if( ulDataSize>usMaxpacketSize-1U )
+				else if( ulDataSize>(usMaxpacketSize-1U) )
 				{
 					send_status(MONITOR_STATUS_InvalidSizeParameter);
 				}
@@ -390,62 +410,52 @@ void monitor_process_packet(const unsigned char *pucPacket, unsigned long ulPack
 					command_read_memory(ulAddress, ulDataSize, tAccessSize);
 				}
 			}
-			else if( tCmd==MONITOR_COMMAND_Write )
+			else if( tPacketTyp==MONITOR_PACKET_TYP_CommandWrite )
 			{
-				/* Get the address. */
-				ulAddress = get_unaligned_dword(pucPacket + 3U);
-
 				if( ulPacketSize!=(7U+ulDataSize) )
 				{
 					send_status(MONITOR_STATUS_InvalidPacketSize);
 				}
 				else
 				{
-					command_write_memory(pucPacket+7U, ulAddress, ulDataSize, tAccessSize);
+					command_write_memory(ulAddress, ulDataSize, tAccessSize);
 				}
 			}
-			else if(tCmd == MONITOR_COMMAND_Escape){
-				while(1); // halt here to see if its working.
-				// clear buffer etc.
-			}else
+			else
 			{
 				send_status(MONITOR_STATUS_InvalidCommand);
 			}
-
-			next_sequence_number();
-		}
-		else if( ucSequence==ucSequenceLast )
-		{
-			/* This is the last transfer's sequence number.
-			 * Send the last packet again.
-			 */
-			transport_resend_packet();
-		}
-		else
-		{
-			send_status(MONITOR_STATUS_InvalidSequenceNumber);
 		}
 	}
 }
 
 
 
+static const unsigned char aucMagic[9] =
+{
+	MONITOR_STATUS_Ok,
+
+	/* Magic */
+	'M', 'O', 'O', 'H',
+
+	/* Version */
+	MONITOR_VERSION_MINOR & 0xff,
+	MONITOR_VERSION_MINOR >> 8,
+	MONITOR_VERSION_MAJOR & 0xff,
+	MONITOR_VERSION_MAJOR >> 8
+
+	/* NOTE: The next 3 bytes define the chip type and the maximum packet size. */
+	/* Chip type */
+	/* MaxPacketSize 0..7 */
+	/* MaxPacketSize 8..15 */
+};
+
+
+
 void monitor_send_magic(unsigned short usMaxpacketSize)
 {
-	unsigned char ucStatus;
-	size_t sizCnt;
-
-
-	/* Send the status "OK". */
-	ucStatus  = (unsigned char)MONITOR_STATUS_Ok;
-	ucStatus |= (unsigned char)(ucSequenceCurrent << MONITOR_SEQUENCE_SRT);
-	transport_send_byte(ucStatus);
-
-	/* Send the complete magic sequence. */
-	for(sizCnt=0; sizCnt<sizeof(aucMagic); ++sizCnt)
-	{
-		transport_send_byte(aucMagic[sizCnt]);
-	}
+	/* Send the fixed part of the magic sequence. */
+	transport_send_bytes(aucMagic, sizeof(aucMagic));
 
 	/* Add the chip type */
 	transport_send_byte(ucChiptype);
@@ -455,8 +465,6 @@ void monitor_send_magic(unsigned short usMaxpacketSize)
 	transport_send_byte((unsigned char)((usMaxpacketSize>>8U)&0xffU));
 
 	/* Send the packet. */
-	transport_send_packet();
-
-	next_sequence_number();
+	transport_send_packet(TRANSPORT_SEND_PACKET_WITHOUT_ACK);
 }
 

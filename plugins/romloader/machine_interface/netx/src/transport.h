@@ -23,30 +23,29 @@
 #ifndef __TRANSPORT_H__
 #define __TRANSPORT_H__
 
-void queue_init(void);
+
+typedef enum TRANSPORT_SEND_PACKET_ACK_ENUM
+{
+	TRANSPORT_SEND_PACKET_WITHOUT_ACK = 0,
+	TRANSPORT_SEND_PACKET_WITH_ACK = 1
+} TRANSPORT_SEND_PACKET_ACK_T;
+
+
 void transport_init(void);
 void transport_loop(void);
 
-uint8_t transport_dequeue(void);
-void transport_enqueue(unsigned char ucData);
-
 void transport_send_byte(unsigned char ucData);
-void transport_send_packet(void);
-int transport_acknowledge_escape_command(void);
-void transport_resend_packet(void);
+void transport_send_bytes(const unsigned char *pucData, unsigned int sizData);
+int transport_send_packet(TRANSPORT_SEND_PACKET_ACK_T tRequireAck);
+
+unsigned char transport_buffer_get(void);
+unsigned char transport_buffer_peek(unsigned int sizOffset);
+void transport_buffer_skip(unsigned int sizSkip);
 
 unsigned char transport_call_console_get(void);
 void transport_call_console_put(unsigned int uiChar);
 unsigned int transport_call_console_peek(void);
 void transport_call_console_flush(void);
-int transport_is_ready_to_execute(void);
-
-
-#define QUEUE_LENGTH 0x20
-uint8_t ucQueue[QUEUE_LENGTH];
-uint32_t uiStartPoint;
-uint32_t uiEndPoint;
-uint32_t uiSize;
 
 
 #endif  /* __TRANSPORT_H__ */

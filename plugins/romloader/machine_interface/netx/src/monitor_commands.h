@@ -25,56 +25,40 @@
 
 #define MONITOR_STREAM_PACKET_START 0x2a
 
-#define MONITOR_VERSION_MAJOR 2
+#define MONITOR_VERSION_MAJOR 3
 #define MONITOR_VERSION_MINOR 0
 
-#define MONITOR_COMMAND_MSK     0x0fU
-#define MONITOR_COMMAND_SRT     0U
-#define MONITOR_ACCESSSIZE_MSK  0xc0U
+#define MONITOR_PACKET_TYP_MSK  0x3fU
+#define MONITOR_PACKET_TYP_SRT  0U
+#define MONITOR_ACCESSSIZE_MSK  0xC0U
 #define MONITOR_ACCESSSIZE_SRT  6U
-#define MONITOR_STATUS_MSK      0x3fU
-#define MONITOR_STATUS_SRT      0U
-#define MONITOR_SEQUENCE_MSK    0xc0U
-#define MONITOR_SEQUENCE_SRT    6U
 
 
 typedef enum MONITOR_PACKET_TYP
 {
-	MONITOR_PACKET_TYP_Command_Read          = 0x00,
-	MONITOR_PACKET_TYP_Command_Write         = 0x01,
-	MONITOR_PACKET_TYP_Command_Execute       = 0x02,
+	MONITOR_PACKET_TYP_CommandRead           = 0x00,
+	MONITOR_PACKET_TYP_CommandWrite          = 0x01,
+	MONITOR_PACKET_TYP_CommandExecute        = 0x02,
 	MONITOR_PACKET_TYP_Status                = 0x03,
-	MONITOR_PACKET_TYP_Read_Data             = 0x04,
-	MONITOR_PACKET_TYP_Call_Message          = 0x05,
+	MONITOR_PACKET_TYP_ReadData              = 0x04,
+	MONITOR_PACKET_TYP_CallMessage           = 0x05,
 	MONITOR_PACKET_TYP_ACK                   = 0x06,
 	MONITOR_PACKET_TYP_CancelOperation       = 0x07,
 	MONITOR_PACKET_TYP_MagicData             = 0x4d,
-	MONITOR_PACKET_TYP_Command_Magic         = 0xff
+	MONITOR_PACKET_TYP_CommandMagic          = 0xff
 } MONITOR_PACKET_TYP_T;
 
 
 typedef enum
 {
-	MONITOR_COMMAND_Read                    = 0x00,
-	MONITOR_COMMAND_Write                   = 0x01,
-	MONITOR_COMMAND_Execute                 = 0x02,
-	MONITOR_COMMAND_Escape					= 0x2b,
-	MONITOR_COMMAND_Talk                    = 0x03,
-	MONITOR_COMMAND_Magic                   = 0xff
-} MONITOR_COMMAND_T;
-
-typedef enum
-{
 	MONITOR_STATUS_Ok                        = 0x00,
-	MONITOR_STATUS_CallMessage               = 0x01,
-	MONITOR_STATUS_CallFinished              = 0x02,
-	MONITOR_STATUS_InvalidCommand            = 0x03,
-	MONITOR_STATUS_InvalidPacketSize         = 0x04,
-	MONITOR_STATUS_InvalidSizeParameter      = 0x05,
-	MONITOR_STATUS_ReddyToExecute			 = 0x07,
-	MONITOR_STATUS_InvalidSequenceNumber     = 0x06
+	MONITOR_STATUS_CallFinished              = 0x01,
+	MONITOR_STATUS_InvalidCommand            = 0x02,
+	MONITOR_STATUS_InvalidPacketSize         = 0x03,
+	MONITOR_STATUS_InvalidSizeParameter      = 0x04,
+	MONITOR_STATUS_InvalidSequenceNumber     = 0x05
 } MONITOR_STATUS_T;
-#define MONITOR_STATUS_Call_Finished 1
+
 
 typedef enum
 {
