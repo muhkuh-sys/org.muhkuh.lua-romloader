@@ -314,36 +314,37 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 								fprintf(stderr, "Got %zd bytes.\n", sizPacket+2);
 								hexdump(aucData, sizPacket+2);
 
-								ucStatus = aucData[3];
-								if( ucStatus!=MONITOR_STATUS_Ok )
+								/* Is this a V1/V2 code? */
+								if( memcmp(aucData+3, aucMagicMooh, sizeof(aucMagicMooh))==0 )
 								{
-									fprintf(stderr, "The status of the response is not OK but 0x%02x.\n", ucStatus);
-								}
-								else
-								{
-									/* The complete size of the packet includes the 2 bytes of size information. */
-									sizPacket += 2;
-									
-									/* Build the CRC for the packet. */
-									usCrc = 0;
-									for(sizCnt=0; sizCnt<sizPacket; ++sizCnt)
+									ucStatus = aucData[2];
+									if( ucStatus!=MONITOR_STATUS_Ok )
 									{
-										usCrc = crc16(usCrc, aucData[sizCnt]);
-									}
-									if( usCrc!=0 )
-									{
-										fprintf(stderr, "CRC of version packet is invalid!\n");
-										hexdump(aucData, sizPacket);
+										fprintf(stderr, "The status of the response is not OK but 0x%02x.\n", ucStatus);
 									}
 									else
 									{
-										if( memcmp(aucData+3, aucMagicMooh, sizeof(aucMagicMooh))==0 )
+										/* The complete size of the packet includes the 2 bytes of size information. */
+										sizPacket += 2;
+
+										/* Build the CRC for the packet. */
+										usCrc = 0;
+										for(sizCnt=0; sizCnt<sizPacket; ++sizCnt)
+										{
+											usCrc = crc16(usCrc, aucData[sizCnt]);
+										}
+										if( usCrc!=0 )
+										{
+											fprintf(stderr, "CRC of version packet is invalid!\n");
+											hexdump(aucData, sizPacket);
+										}
+										else
 										{
 											hexdump(aucData, sizPacket);
 											ulMiVersionMin = (uint32_t)(aucData[7] | (aucData[8]<<8));
 											ulMiVersionMaj = (uint32_t)(aucData[9] | (aucData[10]<<8));
 											printf("Found new machine interface V%d.%d.\n", ulMiVersionMaj, ulMiVersionMin);
-											
+
 											if( ulMiVersionMaj==1 )
 											{
 												tCmdSet = ROMLOADER_COMMANDSET_MI1;
@@ -366,7 +367,32 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 												fprintf(stderr, "Unknown machine interface version %d.%d\n", ulMiVersionMaj, ulMiVersionMin);
 											}
 										}
-										else if( memcmp(aucData+4, aucMagicMooh, sizeof(aucMagicMooh))==0 )
+									}
+								}
+								else if( memcmp(aucData+4, aucMagicMooh, sizeof(aucMagicMooh))==0 )
+								{
+									ucStatus = aucData[3];
+									if( ucStatus!=MONITOR_STATUS_Ok )
+									{
+										fprintf(stderr, "The status of the response is not OK but 0x%02x.\n", ucStatus);
+									}
+									else
+									{
+										/* The complete size of the packet includes the 2 bytes of size information. */
+										sizPacket += 2;
+
+										/* Build the CRC for the packet. */
+										usCrc = 0;
+										for(sizCnt=0; sizCnt<sizPacket; ++sizCnt)
+										{
+											usCrc = crc16(usCrc, aucData[sizCnt]);
+										}
+										if( usCrc!=0 )
+										{
+											fprintf(stderr, "CRC of version packet is invalid!\n");
+											hexdump(aucData, sizPacket);
+										}
+										else
 										{
 											ulMiVersionMin = (uint32_t)(aucData[8] | (aucData[9]<<8));
 											ulMiVersionMaj = (uint32_t)(aucData[10] | (aucData[11]<<8));
@@ -395,11 +421,11 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 												fprintf(stderr, "Unknown machine interface version %d.%d\n", ulMiVersionMaj, ulMiVersionMin);
 											}
 										}
-										else
-										{
-											fprintf(stderr, "The response packet has no MOOH magic!\n");
-										}
 									}
+								}
+								else
+								{
+									fprintf(stderr, "The response packet has no MOOH magic!\n");
 								}
 							}
 						}
