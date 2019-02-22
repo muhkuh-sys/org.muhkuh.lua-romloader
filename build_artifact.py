@@ -128,18 +128,48 @@ if tPlatform['host_distribution_id'] == 'ubuntu':
         astrCMAKE_PLATFORM = []
         astrJONCHKI_SYSTEM = []
         strMake = 'make'
+    
+    elif tPlatform['distribution_id'] == 'raspberry':
+	# Build on linux for raspebrry.
+	if tPlatform['cpu_architecture'] == 'arm64':
+	    # Create the folder if it does not exist yet.
+	    # Create the folders if they do not exist yet.
+	    astrFolders = [
+        	strCfg_workingFolder,
+		os.path.join(strCfg_workingFolder, 'packages'),
+	    ]
+	    for strPath in astrFolders:
+		if os.path.exists(strPath) is not True:
+		    os.makedirs(strPath)
 
+	    packagesPath = os.path.join(strCfg_workingFolder, 'packages')
+	    os.chdir(packagesPath)
+	    subProcessPath = os.path.join(strCfg_projectFolder, 'cmake', 'tools')
+	    subProcessCall = '%s/get_dependencies.sh libudev-dev:arm64' % subProcessPath
+	    print(subProcessCall)
+	    subprocess.check_call(subProcessCall, shell=True)
+	    os.chdir(strCfg_workingFolder)
+	    astrCMAKE_COMPILER = [
+		'-DCMAKE_TOOLCHAIN_FILE=%s/cmake/toolchainfiles/toolchain_ubuntu_arm64.cmake' % strCfg_projectFolder
+	    ]
+	    astrCMAKE_PLATFORM = [
+		'-DJONCHKI_PLATFORM_DIST_ID=ubuntu',
+		'-DJONCHKI_PLATFORM_DIST_VERSION=18.04',
+		'-DJONCHKI_PLATFORM_CPU_ARCH=arm64'
+	    ]
+	    astrJONCHKI_SYSTEM = [
+		'--distribution-id ubuntu',
+		'--distribution-version 18.04',
+		'--cpu-architecture arm64'
+	    ]
+	    strMake = 'make'
+    
     elif tPlatform['distribution_id'] == 'windows':
         # Cross build on linux for windows.
         if tPlatform['cpu_architecture'] == 'x86':
             # Build for 32bit windows.
             astrCMAKE_COMPILER = [
-                '-DCMAKE_C_FLAGS=-m32',
-                '-DCMAKE_CXX_FLAGS=-m32',
-                '-DCMAKE_SYSTEM_NAME=Windows',
-                '-DCMAKE_C_COMPILER=%s/i686-w64-mingw32-gcc' % strCfg_CompilerPath_Ubuntu_MinGw_w64_i686,
-                '-DCMAKE_CXX_COMPILER=%s/i686-w64-mingw32-g++' % strCfg_CompilerPath_Ubuntu_MinGw_w64_i686,
-                '-DCMAKE_RC_COMPILER=%s/i686-w64-mingw32-windres' % strCfg_CompilerPath_Ubuntu_MinGw_w64_i686
+		'-DCMAKE_TOOLCHAIN_FILE=%s/cmake/toolchainfiles/toolchain_windows_32.cmake' % strCfg_projectFolder
             ]
             astrCMAKE_PLATFORM = [
                 '-DJONCHKI_PLATFORM_DIST_ID=windows',
@@ -156,12 +186,7 @@ if tPlatform['host_distribution_id'] == 'ubuntu':
         elif tPlatform['cpu_architecture'] == 'x86_64':
             # Build for 64bit windows.
             astrCMAKE_COMPILER = [
-                '-DCMAKE_C_FLAGS=-m64',
-                '-DCMAKE_CXX_FLAGS=-m64',
-                '-DCMAKE_SYSTEM_NAME=Windows',
-                '-DCMAKE_C_COMPILER=%s/x86_64-w64-mingw32-gcc' % strCfg_CompilerPath_Ubuntu_MinGw_w64_x86_64,
-                '-DCMAKE_CXX_COMPILER=%s/x86_64-w64-mingw32-g++' % strCfg_CompilerPath_Ubuntu_MinGw_w64_x86_64,
-                '-DCMAKE_RC_COMPILER=%s/x86_64-w64-mingw32-windres' % strCfg_CompilerPath_Ubuntu_MinGw_w64_x86_64
+		'-DCMAKE_TOOLCHAIN_FILE=%s/cmake/toolchainfiles/toolchain_windows_64.cmake' % strCfg_projectFolder
             ]
             astrCMAKE_PLATFORM = [
                 '-DJONCHKI_PLATFORM_DIST_ID=windows',
