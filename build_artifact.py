@@ -314,7 +314,8 @@ print(strProjectVersionVcs, strProjectVersionVcsLong)
 #
 astrCmd = [
     'cmake',
-    '-DCMAKE_INSTALL_PREFIX=""'
+    '-DCMAKE_INSTALL_PREFIX=""',
+    '-DPRJ_DIR=%s' % strCfg_projectFolder
 ]
 astrCmd.extend(astrCMAKE_COMPILER)
 astrCmd.append(os.path.join(strCfg_projectFolder, 'external'))
@@ -332,6 +333,7 @@ for strMatch in glob.iglob(os.path.join(strCwd, 'lua5.1-romloader-*.xml')):
 astrCmd = [
     'cmake',
     '-DCMAKE_INSTALL_PREFIX=""',
+    '-DPRJ_DIR=%s' % strCfg_projectFolder,
     '-DBUILDCFG_ONLY_JONCHKI_CFG="ON"',
     '-DBUILDCFG_LUA_USE_SYSTEM="OFF"',
     '-DBUILDCFG_LUA_VERSION="5.1"'
@@ -366,6 +368,7 @@ subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
 astrCmd = [
     'cmake',
     '-DCMAKE_INSTALL_PREFIX=""',
+    '-DPRJ_DIR=%s' % strCfg_projectFolder,
     '-DBUILDCFG_LUA_USE_SYSTEM="OFF"',
     '-DBUILDCFG_LUA_VERSION="5.1"'
 ]
@@ -386,6 +389,7 @@ for strMatch in glob.iglob(os.path.join(strCwd, 'lua5.2-romloader-*.xml')):
 astrCmd = [
     'cmake',
     '-DCMAKE_INSTALL_PREFIX=""',
+    '-DPRJ_DIR=%s' % strCfg_projectFolder,
     '-DBUILDCFG_ONLY_JONCHKI_CFG="ON"',
     '-DBUILDCFG_LUA_USE_SYSTEM="OFF"',
     '-DBUILDCFG_LUA_VERSION="5.2"'
@@ -421,6 +425,7 @@ subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
 astrCmd = [
     'cmake',
     '-DCMAKE_INSTALL_PREFIX=""',
+    '-DPRJ_DIR=%s' % strCfg_projectFolder,
     '-DBUILDCFG_LUA_USE_SYSTEM="OFF"',
     '-DBUILDCFG_LUA_VERSION="5.2"'
 ]
@@ -441,6 +446,7 @@ for strMatch in glob.iglob(os.path.join(strCwd, 'lua5.3-romloader-*.xml')):
 astrCmd = [
     'cmake',
     '-DCMAKE_INSTALL_PREFIX=""',
+    '-DPRJ_DIR=%s' % strCfg_projectFolder,
     '-DBUILDCFG_ONLY_JONCHKI_CFG="ON"',
     '-DBUILDCFG_LUA_USE_SYSTEM="OFF"',
     '-DBUILDCFG_LUA_VERSION="5.3"'
@@ -476,6 +482,7 @@ subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
 astrCmd = [
     'cmake',
     '-DCMAKE_INSTALL_PREFIX=""',
+    '-DPRJ_DIR=%s' % strCfg_projectFolder,
     '-DBUILDCFG_LUA_USE_SYSTEM="OFF"',
     '-DBUILDCFG_LUA_VERSION="5.3"'
 ]

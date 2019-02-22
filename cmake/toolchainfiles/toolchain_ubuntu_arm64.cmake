@@ -5,7 +5,6 @@ set(CMAKE_SYSTEM_PROCESSOR arm)
 # Source https://stackoverflow.com/questions/2670121/using-cmake-with-gnu-make-how-can-i-see-the-exact-commands
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-set(PRJ_DIR ${CMAKE_HOME_DIRECTORY})
 set(PKGBASE ${PRJ_DIR}/build/raspberry_arm64/packages)
 
 set(tools /usr/bin)
