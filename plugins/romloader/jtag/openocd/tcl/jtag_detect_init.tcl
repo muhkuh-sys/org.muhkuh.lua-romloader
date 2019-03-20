@@ -16,8 +16,9 @@ set _USE_SOFT_RESET_ false
 #   Init/probe for JTAG interfaces
 # ###################################################################
 
-proc setup_interface_nxjtag_4000_usb {} {
+proc setup_interface_nxjtag_4000_usb {strLocation} {
 	interface ftdi
+	ftdi_location $strLocation
 	transport select jtag
 	ftdi_device_desc "NXJTAG-4000-USB"
 	ftdi_vid_pid 0x1939 0x0301
@@ -31,8 +32,9 @@ proc setup_interface_nxjtag_4000_usb {} {
 	ftdi_layout_signal VOSWI -data 0x1000 -oe 0x1000
 }
 
-proc setup_interface_nxhx_generic {} {
+proc setup_interface_nxhx_generic {strLocation} {
 	interface ftdi
+	ftdi_location $strLocation
 	transport select jtag
 	ftdi_vid_pid 0x0640 0x0028
 	adapter_khz 1000
@@ -51,8 +53,9 @@ proc setup_interface_nxhx_generic {} {
 #ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200
 
 
-proc setup_interface_nxhx90_jtag {} {
+proc setup_interface_nxhx90_jtag {strLocation} {
 	interface ftdi
+	ftdi_location $strLocation
 	transport select jtag
 	ftdi_device_desc "NXHX 90-JTAG"
 	ftdi_vid_pid 0x1939 0x002C
@@ -64,8 +67,9 @@ proc setup_interface_nxhx90_jtag {} {
 }
 
 
-proc setup_interface_nxjtag_usb {} {
+proc setup_interface_nxjtag_usb {strLocation} {
 	interface ftdi
+	ftdi_location $strLocation
 	transport select jtag
 	ftdi_device_desc "NXJTAG-USB"
 	ftdi_vid_pid 0x1939 0x0023
@@ -80,8 +84,9 @@ proc setup_interface_nxjtag_usb {} {
 # Olimex OpenOCD JTAG TINY
 # Device description from bus:
 # Olimex OpenOCD JTAG ARM-USB-TINY-H
-proc setup_interface_olimex_arm_usb_tiny_h {} {
+proc setup_interface_olimex_arm_usb_tiny_h {strLocation} {
 	interface ftdi
+	ftdi_location $strLocation
 	transport select jtag
 	ftdi_device_desc "Olimex OpenOCD JTAG ARM-USB-TINY-H"
 	ftdi_vid_pid 0x15ba 0x002a
@@ -94,8 +99,9 @@ proc setup_interface_olimex_arm_usb_tiny_h {} {
 }
 
 # Amontec_JTAGkey
-proc setup_interface_jtagkey {} {
+proc setup_interface_jtagkey {strLocation} {
 	interface ftdi
+	ftdi_location $strLocation
 	transport select jtag
 	ftdi_device_desc "Amontec JTAGkey"
 	ftdi_vid_pid 0x0403 0xcff8
@@ -107,20 +113,20 @@ proc setup_interface_jtagkey {} {
 }
 
 # Configure an interface.
-proc setup_interface {strInterfaceID} {
-	echo "+setup_interface $strInterfaceID"
+proc setup_interface {strInterfaceID strLocation} {
+	echo "+setup_interface $strInterfaceID $strLocation"
 
 	# Disable all servers.
 	gdb_port disabled
 	tcl_port disabled
 	telnet_port disabled
 
-	if       {$strInterfaceID == "NXJTAG-USB"}            {setup_interface_nxjtag_usb
-	} elseif {$strInterfaceID == "Olimex_ARM_USB_TINY_H"} {setup_interface_olimex_arm_usb_tiny_h
-	} elseif {$strInterfaceID == "Amontec_JTAGkey"}       {setup_interface_jtagkey
-	} elseif {$strInterfaceID == "NXHX_500_50_51_10"}     {setup_interface_nxhx_generic
-	} elseif {$strInterfaceID == "NXHX_90-JTAG"}          {setup_interface_nxhx90_jtag
-	} elseif {$strInterfaceID == "NXJTAG-4000-USB"}       {setup_interface_nxjtag_4000_usb
+	if       {$strInterfaceID == "NXJTAG-USB"}            {setup_interface_nxjtag_usb $strLocation
+	} elseif {$strInterfaceID == "Olimex_ARM_USB_TINY_H"} {setup_interface_olimex_arm_usb_tiny_h $strLocation
+	} elseif {$strInterfaceID == "Amontec_JTAGkey"}       {setup_interface_jtagkey $strLocation
+	} elseif {$strInterfaceID == "NXHX_500_50_51_10"}     {setup_interface_nxhx_generic $strLocation
+	} elseif {$strInterfaceID == "NXHX_90-JTAG"}          {setup_interface_nxhx90_jtag $strLocation
+	} elseif {$strInterfaceID == "NXJTAG-4000-USB"}       {setup_interface_nxjtag_4000_usb $strLocation
 	}
 
 	echo "-setup_interface $strInterfaceID"

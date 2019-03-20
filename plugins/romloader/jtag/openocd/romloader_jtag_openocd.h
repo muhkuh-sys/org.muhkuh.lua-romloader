@@ -6,7 +6,21 @@
 
 #include "../../romloader_def.h"
 
+#include <libusb.h>
+#if (!defined(LIBUSB_API_VERSION)) || (defined(LIBUSB_API_VERSION) && LIBUSB_API_VERSION<0x01000102)
+#       error "This plugin needs at least libusb 1.0.16."
+#endif
+
 /*-------------------------------------------------------------------------*/
+
+/* This is the maximum USB path size. For USB3.0 it is 7. */
+#define USB_MAX_PATH_ELEMENTS 8
+/* This is the maximum number of USB devices.
+ * The possible maximum is 127 devices per bus, which would make a total number of 127*256.
+ * The limit of 128 seems to be quite reasonable.
+ */
+#define USB_MAX_DEVICES 128
+
 
 typedef int (*PFN_MUHKUH_CALL_PRINT_CALLBACK) (void *pvCallbackUserData, uint8_t *pucData, unsigned long ulDataSize);
 
@@ -28,6 +42,8 @@ public:
 		const char *pcID;
 		const char *pcCode_Setup;
 		const char *pcCode_Probe;
+		unsigned short usUsbVendorId;
+		unsigned short usUsbDeviceId;
 	} INTERFACE_SETUP_STRUCT_T;
 
 	typedef struct TARGET_SETUP_STRUCT
@@ -88,15 +104,24 @@ public:
 	{
 		char *pcInterface;
 		char *pcTarget;
+		char *pcLocation;
 	} ROMLOADER_JTAG_DETECT_ENTRY_T;
 
+	typedef struct ROMLOADER_JTAG_MATCHING_USB_LOCATIONS_STRUCT
+	{
+		const INTERFACE_SETUP_STRUCT_T *ptIfSetup;
+		unsigned char ucUsbBusNumber;
+		size_t sizUsbPortNumbers;
+		unsigned char aucUsbPortNumbers[USB_MAX_PATH_ELEMENTS];
+		char acPathString[USB_MAX_PATH_ELEMENTS * 4 + 4] = {0};
+	} ROMLOADER_JTAG_MATCHING_USB_LOCATIONS_T;
 
 	int initialize(void);
 	int detect(ROMLOADER_JTAG_DETECT_ENTRY_T **pptEntries, size_t *psizEntries);
 	void uninit(void);
 
 	/* Open the connection to the device. */
-	int connect(const char *pcInterfaceName, const char *pcTargetName);
+	int connect(const char *pcInterfaceName, const char *pcTargetName, const char *pcLocation);
 
 	/* initialize the chip. */
 	int init_chip(ROMLOADER_CHIPTYP tChiptyp);
@@ -157,22 +182,23 @@ private:
 	size_t m_sizDetectedCnt;
 	size_t m_sizDetectedMax;
 
+	libusb_context *m_ptLibUsbContext;
 
 	void get_plugin_path(void);
 	void get_openocd_path(void);
 
 	void free_detect_entries(void);
-	int add_detected_entry(const char *pcInterface, const char *pcTarget);
+	int add_detected_entry(const char *pcInterface, const char *pcTarget, const char *pcLocation);
 
 	int openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice);
 	void openocd_close(ROMLOADER_JTAG_DEVICE_T *ptDevice);
 	int romloader_jtag_openocd_init(void);
 
-	int setup_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg);
-	int probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg);
+	int setup_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg, const char *pcLocation);
+	int probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, ROMLOADER_JTAG_MATCHING_USB_LOCATIONS_T *ptLocation);
 	const INTERFACE_SETUP_STRUCT_T *find_interface(const char *pcInterfaceName);
-	int probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg, const TARGET_SETUP_STRUCT_T *ptTargetCfg);
-	int detect_target(const INTERFACE_SETUP_STRUCT_T *ptIfCfg);
+	int probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfSetup, const char *pcLocation, const TARGET_SETUP_STRUCT_T *ptTargetCfg);
+	int detect_target(ROMLOADER_JTAG_MATCHING_USB_LOCATIONS_T *ptLocation);
 	const TARGET_SETUP_STRUCT_T *find_target(const char *pcTargetName);
 };
 

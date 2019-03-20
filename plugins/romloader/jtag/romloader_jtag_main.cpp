@@ -81,7 +81,7 @@ private:
 
 /*-------------------------------------*/
 
-const char *romloader_jtag_provider::m_pcPluginNamePattern = "romloader_jtag_%s@%s";
+const char *romloader_jtag_provider::m_pcPluginNamePattern = "romloader_jtag_%s@%s@%s";
 
 romloader_jtag_provider::romloader_jtag_provider(swig_type_info *p_romloader_jtag, swig_type_info *p_romloader_jtag_reference)
  : muhkuh_plugin_provider("romloader_jtag")
@@ -160,7 +160,7 @@ int romloader_jtag_provider::DetectInterfaces(lua_State *ptLuaStateForTableAcces
 			{
 				/* create the new instance */
 				memset(strId, 0, sizeof(strId));
-				snprintf(strId, sizeof(strId)-1, m_pcPluginNamePattern, ptEntriesCnt->pcTarget, ptEntriesCnt->pcInterface);
+				snprintf(strId, sizeof(strId)-1, m_pcPluginNamePattern, ptEntriesCnt->pcTarget, ptEntriesCnt->pcInterface, ptEntriesCnt->pcLocation);
 				fIsBusy = false;
 				ptRef = new romloader_jtag_reference(strId, m_pcPluginId, fIsBusy, this);
 				if( ptRef!=NULL )
@@ -190,10 +190,13 @@ romloader_jtag *romloader_jtag_provider::ClaimInterface(const muhkuh_plugin_refe
 	size_t sizTargetName;
 	const char *pcInterfaceName;
 	size_t sizInterfaceName;
+	const char *pcLocation;
+	size_t sizLocation;
 	const char *pcNamePrefix = "romloader_jtag_";
 	const size_t sizNamePrefix = 15; /* size of pcNamePrefix without terminating 0. */
 	char acInterface[1024];
 	char acTarget[1024];
+	char acLocation[1024];
 
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag_provider::ClaimInterface(): ptReference=%p\n", ptReference));
@@ -226,7 +229,7 @@ romloader_jtag *romloader_jtag_provider::ClaimInterface(const muhkuh_plugin_refe
 			}
 			else
 			{
-				/* Split the rest by "@". */
+				/* Split the rest by the first "@". */
 				pcTargetName = pcName + sizNamePrefix;
 				pcInterfaceName = pcTargetName;
 				while( *pcInterfaceName!='@' )
@@ -257,32 +260,71 @@ romloader_jtag *romloader_jtag_provider::ClaimInterface(const muhkuh_plugin_refe
 					{
 						/* pcInterfaceName points to the '@' right now. Move one forward to get to the interface name. */
 						++pcInterfaceName;
-						/* Get the length of the interface name. */
-						sizInterfaceName = strlen(pcName) - (pcInterfaceName - pcName);
-						if( sizInterfaceName==0 )
+
+						/* Split the rest by the first "@". */
+						pcLocation = pcInterfaceName;
+						while( *pcLocation!='@' )
 						{
-							fprintf(stderr, "%s(%p): claim_interface(): no interface name after the '@': %s\n", m_pcPluginId, this, pcName);
+							if( *pcLocation=='\0' )
+							{
+								pcLocation = NULL;
+								break;
+							}
+							else
+							{
+								++pcLocation;
+							}
 						}
-						else if( sizTargetName>(sizeof(acTarget)-1) )
+
+						if( pcLocation==NULL )
 						{
-							fprintf(stderr, "%s(%p): claim_interface(): the target name is too long: %s\n", m_pcPluginId, this, pcName);
-						}
-						else if( sizInterfaceName>(sizeof(acInterface)-1) )
-						{
-							fprintf(stderr, "%s(%p): claim_interface(): the interface name is too long: %s\n", m_pcPluginId, this, pcName);
+							fprintf(stderr, "%s(%p): claim_interface(): the name contains no second '@': %s\n", m_pcPluginId, this, pcName);
 						}
 						else
 						{
-							memset(acInterface, 0, sizeof(acInterface));
-							memset(acTarget, 0, sizeof(acTarget));
-							memcpy(acInterface, pcInterfaceName, sizInterfaceName);
-							memcpy(acTarget, pcTargetName, sizTargetName);
+							/* Get the length of the interface name. */
+							sizInterfaceName = pcLocation - pcInterfaceName;
+							/* pcLocation points to the '@' right now. Move one forward to get to the location. */
+							++pcLocation;
+							/* Get the size of the location. */
+							sizLocation = strlen(pcLocation);
 
-							fprintf(stderr, "Interface name: %s\n", acInterface);
-							fprintf(stderr, "Target name: %s\n", acTarget);
+							if( sizInterfaceName==0 )
+							{
+								fprintf(stderr, "%s(%p): claim_interface(): no interface name after the '@': %s\n", m_pcPluginId, this, pcName);
+							}
+							else if( sizLocation==0 )
+							{
+								fprintf(stderr, "%s(%p): claim_interface(): no location after the second '@': %s\n", m_pcPluginId, this, pcName);
+							}
+							else if( sizTargetName>(sizeof(acTarget)-1) )
+							{
+								fprintf(stderr, "%s(%p): claim_interface(): the target name is too long: %s\n", m_pcPluginId, this, pcName);
+							}
+							else if( sizInterfaceName>(sizeof(acInterface)-1) )
+							{
+								fprintf(stderr, "%s(%p): claim_interface(): the interface name is too long: %s\n", m_pcPluginId, this, pcName);
+							}
+							else if( sizLocation>(sizeof(acLocation)-1) )
+							{
+								fprintf(stderr, "%s(%p): claim_interface(): the location is too long: %s\n", m_pcPluginId, this, pcName);
+							}
+							else
+							{
+								memset(acInterface, 0, sizeof(acInterface));
+								memset(acTarget, 0, sizeof(acTarget));
+								memset(acLocation, 0, sizeof(acLocation));
+								memcpy(acInterface, pcInterfaceName, sizInterfaceName);
+								memcpy(acTarget, pcTargetName, sizTargetName);
+								memcpy(acLocation, pcLocation, sizLocation);
 
-							ptPlugin = new romloader_jtag(pcName, m_pcPluginId, this, acInterface, acTarget);
-							printf("%s(%p): claim_interface(): claimed interface %s.\n", m_pcPluginId, this, pcName);
+								fprintf(stderr, "Interface name: %s\n", acInterface);
+								fprintf(stderr, "Target name: %s\n", acTarget);
+								fprintf(stderr, "Location: %s\n", acLocation);
+
+								ptPlugin = new romloader_jtag(pcName, m_pcPluginId, this, acInterface, acTarget, acLocation);
+								printf("%s(%p): claim_interface(): claimed interface %s.\n", m_pcPluginId, this, pcName);
+							}
 						}
 					}
 				}
@@ -340,13 +382,14 @@ bool romloader_jtag_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
    Tries to load the openOCD library.
    Stores the interface/target name strings.
  */
-romloader_jtag::romloader_jtag(const char *pcName, const char *pcTyp, romloader_jtag_provider *ptProvider, const char *pcInterfaceName, const char *pcTargetName)
+romloader_jtag::romloader_jtag(const char *pcName, const char *pcTyp, romloader_jtag_provider *ptProvider, const char *pcInterfaceName, const char *pcTargetName, const char *pcLocation)
  : romloader(pcName, pcTyp, ptProvider)
  , m_ptJtagProvider(ptProvider)
  , m_fIsInitialized(false)
  , m_ptJtagDevice(NULL)
  , m_pcInterfaceName(NULL)
  , m_pcTargetName(NULL)
+ , m_pcLocation(NULL)
 {
 	int iResult;
 
@@ -363,6 +406,7 @@ romloader_jtag::romloader_jtag(const char *pcName, const char *pcTyp, romloader_
 			/* Create a copy of the interface and target names. */
 			m_pcInterfaceName = clone_string(pcInterfaceName, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 			m_pcTargetName = clone_string(pcTargetName, SIZ_MAX_MUHKUH_PLUGIN_STRING);
+			m_pcLocation = clone_string(pcLocation, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 
 			m_fIsInitialized = true;
 		}
@@ -384,6 +428,10 @@ romloader_jtag::~romloader_jtag(void)
 	if( m_pcTargetName!=NULL )
 	{
 		delete[] m_pcTargetName;
+	}
+	if( m_pcLocation!=NULL )
+	{
+		delete[] m_pcLocation;
 	}
 	if( m_ptJtagDevice!=NULL )
 	{
@@ -411,7 +459,7 @@ void romloader_jtag::Connect(lua_State *ptClientData)
 	{
 		/* TODO: add the connect method. */
 
-		iResult = m_ptJtagDevice->connect(m_pcInterfaceName, m_pcTargetName);
+		iResult = m_ptJtagDevice->connect(m_pcInterfaceName, m_pcTargetName, m_pcLocation);
 		if( iResult!=0 )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to connect to device", m_pcName, this);

@@ -41,7 +41,7 @@ class romloader_jtag_provider;
 class romloader_jtag : public romloader
 {
 public:
-	romloader_jtag(const char *pcName, const char *pcTyp, romloader_jtag_provider *ptProvider, const char *pcInterfaceName, const char *pcTargetName);
+	romloader_jtag(const char *pcName, const char *pcTyp, romloader_jtag_provider *ptProvider, const char *pcInterfaceName, const char *pcTargetName, const char *pcLocation);
 	~romloader_jtag(void);
 
 // *** lua interface start ***
@@ -85,6 +85,7 @@ private:
 
 	char *m_pcInterfaceName;
 	char *m_pcTargetName;
+	char *m_pcLocation;
 };
 
 /*-----------------------------------*/

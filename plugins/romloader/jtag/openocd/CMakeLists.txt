@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.7)
 
 PROJECT("romloader_jtag_openocd")
 
+FIND_PACKAGE(libusb REQUIRED)
+
+
 #-----------------------------------------------------------------------------
 #
 # Build the openocd adaptor.
@@ -19,6 +22,7 @@ SET(romloader_jtag_openocd_HEADERS
 
 
 ADD_LIBRARY(TARGET_romloader_jtag_openocd_lib STATIC ${romloader_jtag_openocd_SOURCES})
+TARGET_LINK_LIBRARIES(TARGET_romloader_jtag_openocd_lib libusb::TARGET_libusb)
 
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  AND  "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")

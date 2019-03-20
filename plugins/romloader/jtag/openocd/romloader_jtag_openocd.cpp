@@ -29,8 +29,12 @@ romloader_jtag_openocd::romloader_jtag_openocd(void)
  , m_pcPluginPath(NULL)
  , m_pcOpenocdDataPath(NULL)
  , m_pcOpenocdSharedObjectPath(NULL)
+ , m_ptLibUsbContext(NULL)
 {
 	memset(&m_tJtagDevice, 0, sizeof(ROMLOADER_JTAG_DEVICE_T));
+
+	libusb_init(&m_ptLibUsbContext);
+	libusb_set_debug(m_ptLibUsbContext, LIBUSB_LOG_LEVEL_INFO);
 
 	get_plugin_path();
 	get_openocd_path();
@@ -56,6 +60,11 @@ romloader_jtag_openocd::~romloader_jtag_openocd(void)
 	{
 		free(m_pcOpenocdSharedObjectPath);
 		m_pcOpenocdSharedObjectPath = NULL;
+	}
+
+	if( m_ptLibUsbContext!=NULL )
+	{
+		libusb_exit(m_ptLibUsbContext);
 	}
 }
 
@@ -414,6 +423,10 @@ void romloader_jtag_openocd::free_detect_entries(void)
 			{
 				free(ptCnt->pcTarget);
 			}
+			if( ptCnt->pcLocation!=NULL )
+			{
+				free(ptCnt->pcLocation);
+			}
 
 			++ptCnt;
 		}
@@ -427,7 +440,7 @@ void romloader_jtag_openocd::free_detect_entries(void)
 
 
 
-int romloader_jtag_openocd::add_detected_entry(const char *pcInterface, const char *pcTarget)
+int romloader_jtag_openocd::add_detected_entry(const char *pcInterface, const char *pcTarget, const char *pcLocation)
 {
 	int iResult;
 	ROMLOADER_JTAG_DETECT_ENTRY_T *ptDetectedNew;
@@ -465,6 +478,7 @@ int romloader_jtag_openocd::add_detected_entry(const char *pcInterface, const ch
 	{
 		m_ptDetected[m_sizDetectedCnt].pcInterface = strdup(pcInterface);
 		m_ptDetected[m_sizDetectedCnt].pcTarget = strdup(pcTarget);
+		m_ptDetected[m_sizDetectedCnt].pcLocation = strdup(pcLocation);
 		++m_sizDetectedCnt;
 	}
 
@@ -637,12 +651,12 @@ int romloader_jtag_openocd::initialize(void)
 
 const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::atInterfaceCfg[6] =
 {
-	{"NXJTAG-USB",             "setup_interface NXJTAG-USB",            "probe_interface"},
-	{"Amontec_JTAGkey",        "setup_interface Amontec_JTAGkey",       "probe_interface"},
-	{"Olimex_ARM_USB_TINY_H",  "setup_interface Olimex_ARM_USB_TINY_H", "probe_interface"},
-	{"NXHX_500/50/51/10",      "setup_interface NXHX_500_50_51_10",     "probe_interface"},
-	{"NXHX_90-JTAG",           "setup_interface NXHX_90-JTAG",          "probe_interface"},
-	{"NXJTAG-4000-USB",        "setup_interface NXJTAG-4000-USB",       "probe_interface"},
+	{"NXJTAG-USB",             "setup_interface NXJTAG-USB %s",            "probe_interface", 0x1939, 0x0023 },
+	{"Amontec_JTAGkey",        "setup_interface Amontec_JTAGkey %s",       "probe_interface", 0x0403, 0xcff8 },
+	{"Olimex_ARM_USB_TINY_H",  "setup_interface Olimex_ARM_USB_TINY_H %s", "probe_interface", 0x15ba, 0x002a },
+	{"NXHX_500/50/51/10",      "setup_interface NXHX_500_50_51_10 %s",     "probe_interface", 0x0640, 0x0028 },
+	{"NXHX_90-JTAG",           "setup_interface NXHX_90-JTAG %s",          "probe_interface", 0x1939, 0x002c },
+	{"NXJTAG-4000-USB",        "setup_interface NXJTAG-4000-USB %s",       "probe_interface", 0x1939, 0x0301 },
 };
 
 
@@ -679,17 +693,22 @@ const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTa
 
 
 
-int romloader_jtag_openocd::setup_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg)
+int romloader_jtag_openocd::setup_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg, const char *pcLocation)
 {
 	int iResult;
+	char acCommand[256];
 
+
+	/* Combine the command with the path. */
+	snprintf(acCommand, sizeof(acCommand)-1, ptIfCfg->pcCode_Setup, pcLocation);
 
 	/* Run the command chunk. */
 	fprintf(stderr, "Run setup chunk for interface %s.\n", ptIfCfg->pcID);
-	iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, ptIfCfg->pcCode_Setup);
+	iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, acCommand);
 	if( iResult!=0 )
 	{
 		fprintf(stderr, "Failed to run the chunk: %d\n", iResult);
+		fprintf(stderr, "Failed command: %s\n", acCommand);
 	}
 
 	return iResult;
@@ -697,15 +716,18 @@ int romloader_jtag_openocd::setup_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, c
 
 
 /* Probe for a single interface. */
-int romloader_jtag_openocd::probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg)
+int romloader_jtag_openocd::probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, ROMLOADER_JTAG_MATCHING_USB_LOCATIONS_T *ptLocation)
 {
 	int iResult;
 	int sizResult;
+	const INTERFACE_SETUP_STRUCT_T *ptIfCfg;
 	char strResult[256];
 
 
+	ptIfCfg = ptLocation->ptIfSetup;
+
 	/* Try to setup the interface. */
-	iResult = setup_interface(ptDevice, ptIfCfg);
+	iResult = setup_interface(ptDevice, ptIfCfg, ptLocation->acPathString);
 	if( iResult!=0 )
 	{
 		/* This is no fatal error. It just means that this interface can not be used. */
@@ -783,14 +805,14 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T *romloader_jtag_openocd::
 
 
 /* Probe for a single interface/target combination. */
-int romloader_jtag_openocd::probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfCfg, const TARGET_SETUP_STRUCT_T *ptTargetCfg)
+int romloader_jtag_openocd::probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice, const INTERFACE_SETUP_STRUCT_T *ptIfSetup, const char *pcLocation, const TARGET_SETUP_STRUCT_T *ptTargetCfg)
 {
 	int iResult;
 	int sizResult;
 	char strResult[256];
 
 
-	iResult = setup_interface(ptDevice, ptIfCfg);
+	iResult = setup_interface(ptDevice, ptIfSetup, pcLocation);
 	if( iResult!=0 )
 	{
 		/* This is always a fatal error here as the interface has been used before. */
@@ -837,8 +859,9 @@ int romloader_jtag_openocd::probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice, cons
 
 
 /* Try all available targets with a given interface. */
-int romloader_jtag_openocd::detect_target(const INTERFACE_SETUP_STRUCT_T *ptIfCfg)
+int romloader_jtag_openocd::detect_target(ROMLOADER_JTAG_MATCHING_USB_LOCATIONS_T *ptLocation)
 {
+	const INTERFACE_SETUP_STRUCT_T *ptIfCfg;
 	const TARGET_SETUP_STRUCT_T *ptCnt;
 	const TARGET_SETUP_STRUCT_T *ptEnd;
 	int iResult;
@@ -862,7 +885,7 @@ int romloader_jtag_openocd::detect_target(const INTERFACE_SETUP_STRUCT_T *ptIfCf
 		else
 		{
 			fprintf(stderr, "Detecting target %s\n", ptCnt->pcID);
-			iResult = probe_target(&tDevice, ptIfCfg, ptCnt);
+			iResult = probe_target(&tDevice, ptLocation->ptIfSetup, ptLocation->acPathString, ptCnt);
 
 			openocd_close(&tDevice);
 		}
@@ -870,7 +893,7 @@ int romloader_jtag_openocd::detect_target(const INTERFACE_SETUP_STRUCT_T *ptIfCf
 		if( iResult==0 )
 		{
 			/* Found an entry! */
-			iResult = add_detected_entry(ptIfCfg->pcID, ptCnt->pcID);
+			iResult = add_detected_entry(ptLocation->ptIfSetup->pcID, ptCnt->pcID, ptLocation->acPathString);
 			break;
 		}
 		else if( iResult<0 )
@@ -924,74 +947,185 @@ const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T *romloader_jtag_openocd::fin
  */
 int romloader_jtag_openocd::detect(ROMLOADER_JTAG_DETECT_ENTRY_T **pptEntries, size_t *psizEntries)
 {
-	const INTERFACE_SETUP_STRUCT_T *ptCnt;
-	const INTERFACE_SETUP_STRUCT_T *ptEnd;
 	int iResult;
+	size_t sizLocations;
+	ssize_t ssizDevList;
+	libusb_device **ptDeviceList;
+	libusb_device **ptDevCnt, **ptDevEnd;
+	libusb_device *ptDev;
+	unsigned short usUsbVendorId;
+	unsigned short usUsbDeviceId;
+	int iLibUsbResult;
+	int iCnt;
+	unsigned char ucUsbBusNumber;
+	char *pcPathString;
+	const INTERFACE_SETUP_STRUCT_T *ptIfSetupCnt;
+	const INTERFACE_SETUP_STRUCT_T *ptIfSetupEnd;
+	const INTERFACE_SETUP_STRUCT_T *ptIfSetupHit;
+	struct libusb_device_descriptor tDeviceDescriptor;
 	ROMLOADER_JTAG_DEVICE_T tDevice;
+	ROMLOADER_JTAG_MATCHING_USB_LOCATIONS_T atUsbLocations[USB_MAX_DEVICES];
+	ROMLOADER_JTAG_MATCHING_USB_LOCATIONS_T *ptUsbLocationCnt;
+	ROMLOADER_JTAG_MATCHING_USB_LOCATIONS_T *ptUsbLocationEnd;
 
 
 	/* Be pessimistic... */
 	iResult = -1;
 
+	/* Clear all locations. */
+	memset(atUsbLocations, 0, sizeof(atUsbLocations));
+
 	/* Clear any old results. */
 	free_detect_entries();
 
-	/* Initialize the result array. */
-	m_sizDetectedCnt = 0;
-	m_sizDetectedMax = 16;
-	m_ptDetected = (ROMLOADER_JTAG_DETECT_ENTRY_T*)malloc(m_sizDetectedMax*sizeof(ROMLOADER_JTAG_DETECT_ENTRY_T));
-	if( m_ptDetected==NULL )
+	/* Get a list of all connected USB devices. */
+	sizLocations = 0;
+	ptDeviceList = NULL;
+	ssizDevList = libusb_get_device_list(m_ptLibUsbContext, &ptDeviceList);
+	if( ssizDevList<0 )
 	{
-		fprintf(stderr, "Failed to allocate %zd bytes of memory for the detection results!\n", m_sizDetectedMax*sizeof(ROMLOADER_JTAG_DETECT_ENTRY_T));
+		/* failed to detect devices */
+		fprintf(stderr, "romloader_jtag_openocd(%p): failed to detect usb devices: %ld:%s\n", this, ssizDevList, libusb_strerror((libusb_error)ssizDevList));
+		iResult = -1;
 	}
 	else
 	{
-		/* Try to run all command chunks to see which interfaces are present. */
-		ptCnt = atInterfaceCfg;
-		ptEnd = atInterfaceCfg + (sizeof(atInterfaceCfg)/sizeof(atInterfaceCfg[0]));
-		while( ptCnt<ptEnd )
+		/* loop over all devices */
+		ptDevCnt = ptDeviceList;
+		ptDevEnd = ptDevCnt + ssizDevList;
+		while( ptDevCnt<ptDevEnd )
 		{
-			fprintf(stderr, "Detecting interface %s\n", ptCnt->pcID);
+			ptDev = *ptDevCnt;
 
-			/* Open the shared library. */
-			iResult = openocd_open(&tDevice);
-			if( iResult!=0 )
+			iLibUsbResult = libusb_get_device_descriptor(ptDev, &tDeviceDescriptor);
+			if( iLibUsbResult==0 )
 			{
-				/* This is a fatal error. */
-				iResult = -1;
-				break;
+				/* Get the vendor and device ID. */
+				usUsbVendorId = tDeviceDescriptor.idVendor;
+				usUsbDeviceId = tDeviceDescriptor.idProduct;
+
+				/* Is this one of the known JTAG interfaces? */
+				ptIfSetupCnt = atInterfaceCfg;
+				ptIfSetupEnd = atInterfaceCfg + (sizeof(atInterfaceCfg)/sizeof(INTERFACE_SETUP_STRUCT_T));
+				ptIfSetupHit = NULL;
+				while( ptIfSetupCnt<ptIfSetupEnd )
+				{
+					if( ptIfSetupCnt->usUsbVendorId==usUsbVendorId && ptIfSetupCnt->usUsbDeviceId==usUsbDeviceId )
+					{
+						ptIfSetupHit = ptIfSetupCnt;
+						break;
+					}
+					else
+					{
+						++ptIfSetupCnt;
+					}
+				}
+				if( ptIfSetupHit!=NULL )
+				{
+					/* Create a new location entry. */
+					ptUsbLocationCnt = &(atUsbLocations[sizLocations]);
+					iLibUsbResult = libusb_get_port_numbers(ptDev, ptUsbLocationCnt->aucUsbPortNumbers, sizeof(ptUsbLocationCnt->aucUsbPortNumbers));
+					if( iLibUsbResult>0 )
+					{
+						ptUsbLocationCnt->ptIfSetup = ptIfSetupHit;
+						ptUsbLocationCnt->sizUsbPortNumbers = (size_t)iLibUsbResult;
+
+						/* Get the bus number. */
+						ucUsbBusNumber = libusb_get_bus_number(ptDev);
+						ptUsbLocationCnt->ucUsbBusNumber = ucUsbBusNumber;
+
+						/* Build the path string. */
+						pcPathString = ptUsbLocationCnt->acPathString;
+						sprintf(pcPathString, "%d:", ucUsbBusNumber);
+						while( (*pcPathString)!=0 )
+						{
+							++pcPathString;
+						}
+						for(iCnt=0; iCnt<iLibUsbResult; ++iCnt)
+						{
+							sprintf(pcPathString, "%d,", ptUsbLocationCnt->aucUsbPortNumbers[iCnt]);
+							while( (*pcPathString)!=0 )
+							{
+								++pcPathString;
+							}
+						}
+						/* pcPathString points to the terminating 0 now. Remove the last ":" or ",". */
+						--pcPathString;
+						*pcPathString = 0;
+
+						printf("Found '%s' (VID%04x/PID%04x) at %s.\n", ptIfSetupHit->pcID, usUsbVendorId, usUsbDeviceId, ptUsbLocationCnt->acPathString);
+
+						++sizLocations;
+						if( sizLocations>=(sizeof(atUsbLocations)/sizeof(ROMLOADER_JTAG_MATCHING_USB_LOCATIONS_T)) )
+						{
+							break;
+						}
+					}
+				}
 			}
-			else
+
+			++ptDevCnt;
+		}
+
+		libusb_free_device_list(ptDeviceList, 1);
+
+		/* Initialize the result array. */
+		m_sizDetectedCnt = 0;
+		m_sizDetectedMax = sizLocations;
+		m_ptDetected = (ROMLOADER_JTAG_DETECT_ENTRY_T*)malloc(m_sizDetectedMax*sizeof(ROMLOADER_JTAG_DETECT_ENTRY_T));
+		if( m_ptDetected==NULL )
+		{
+			fprintf(stderr, "Failed to allocate %zd bytes of memory for the detection results!\n", m_sizDetectedMax*sizeof(ROMLOADER_JTAG_DETECT_ENTRY_T));
+		}
+		else
+		{
+			/* Run the command chunks of all locations to see which interfaces are present. */
+			ptUsbLocationCnt = atUsbLocations;
+			ptUsbLocationEnd = atUsbLocations + sizLocations;
+			while( ptUsbLocationCnt<ptUsbLocationEnd )
 			{
-				/* Detect the interface. */
-				iResult = probe_interface(&tDevice, ptCnt);
+				fprintf(stderr, "Detecting interface '%s' on path %s.\n", ptUsbLocationCnt->ptIfSetup->pcID, ptUsbLocationCnt->acPathString);
 
-				/* Clean up after the detection. */
-				openocd_close(&tDevice);
-
-				if( iResult==0 )
-				{
-					/* Detect the CPU on this interface. */
-					iResult = detect_target(ptCnt);
-				}
-
-				/* Ignore non-fatal errors.
-				 * They indicate that the current interface could not be detected.
-				 */
-				if( iResult>0 )
-				{
-					iResult = 0;
-				}
-				/* Do not continue with other interfaces if a fatal error occurred. */
-				else if( iResult<0 )
+				/* Open the shared library. */
+				iResult = openocd_open(&tDevice);
+				if( iResult!=0 )
 				{
 					/* This is a fatal error. */
+					iResult = -1;
 					break;
 				}
-			}
+				else
+				{
+					/* Detect the interface. */
+					iResult = probe_interface(&tDevice, ptUsbLocationCnt);
 
-			/* Move to the next configuration. */
-			++ptCnt;
+					/* Clean up after the detection. */
+					openocd_close(&tDevice);
+
+					if( iResult==0 )
+					{
+						/* Detect the CPU on this interface. */
+						iResult = detect_target(ptUsbLocationCnt);
+					}
+
+					/* Ignore non-fatal errors.
+					 * They indicate that the current interface could not be detected.
+					 */
+					if( iResult>0 )
+					{
+						iResult = 0;
+					}
+					/* Do not continue with other interfaces if a fatal error occurred. */
+					else if( iResult<0 )
+					{
+						/* This is a fatal error. */
+						break;
+					}
+				}
+
+				/* Move to the next location. */
+				++ptUsbLocationCnt;
+			}
 		}
 	}
 
@@ -1011,7 +1145,7 @@ int romloader_jtag_openocd::detect(ROMLOADER_JTAG_DETECT_ENTRY_T **pptEntries, s
 
 /* Open a connection to a given target on a given interface. */
 /* Open the connection to the device. */
-int romloader_jtag_openocd::connect(const char *pcInterfaceName, const char *pcTargetName)
+int romloader_jtag_openocd::connect(const char *pcInterfaceName, const char *pcTargetName, const char *pcLocation)
 {
 	int iResult;
 	const INTERFACE_SETUP_STRUCT_T *ptInterface;
@@ -1042,7 +1176,7 @@ int romloader_jtag_openocd::connect(const char *pcInterfaceName, const char *pcT
 				iResult = openocd_open(&m_tJtagDevice);
 				if( iResult==0 )
 				{
-					iResult = probe_target(&m_tJtagDevice, ptInterface, ptTarget);
+					iResult = probe_target(&m_tJtagDevice, ptInterface, pcLocation, ptTarget);
 					if( iResult==0 )
 					{
 						/* Stop the target. */
