@@ -13,6 +13,7 @@ set ROMLOADER_CHIPTYP_NETX90_MPW        10
 set ROMLOADER_CHIPTYP_NETX4000_FULL     11
 set ROMLOADER_CHIPTYP_NETX4100_SMALL    12
 set ROMLOADER_CHIPTYP_NETX90            13
+set ROMLOADER_CHIPTYP_NETX90B           14
 
 # fEnableDCCOutput       true: download DCC code, set serial vectors and buffer, false: clear serial vectors
 # ulSerialVectorAddr     Address of serial vectors
@@ -80,6 +81,7 @@ proc init_chip {iChiptyp} {
 	global ROMLOADER_CHIPTYP_NETX4000_FULL
 	global ROMLOADER_CHIPTYP_NETX4100_SMALL
 	global ROMLOADER_CHIPTYP_NETX90
+	global ROMLOADER_CHIPTYP_NETX90B
 
 
 	puts "init_chip $iChiptyp"
@@ -241,9 +243,10 @@ proc init_chip {iChiptyp} {
 		reg sp 0x2009ff80
 		reg lr 0x00023ffd
 		
-	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90 } {
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90 
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B } {
 
-		puts "Setting up registers for netx 90"
+		puts "Setting up registers for netx 90/netx 90 Rev 1"
 
 		puts "Stopping xPEC/xPIC"
 		mww 0xff111d70 0x00ff0000 ;# xc_start_stop_ctrl
@@ -368,7 +371,8 @@ proc init_chip {iChiptyp} {
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW } {
 		setup_dcc_io $fEnableDCCOutput 0x2009fff0 dcc_netx90_com.bin thumb 0x00020400 0x00020e00 0x00020fe0
 		
-	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90 } {
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90 \
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B } {
 		# No DCC on netx90
 		setup_dcc_io false 0x2009fff0 dcc_netx90_com.bin thumb 0x00020400 0x00020e00 0x00020fe0
 		
