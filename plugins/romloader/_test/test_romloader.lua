@@ -42,6 +42,7 @@ atTestAreas = {
 	[romloader.ROMLOADER_CHIPTYP_NETX4100_SMALL]    = {ulTestAreaStart = 0x04010000, ulTestAreaSize  = 0x000f0000},
 	[romloader.ROMLOADER_CHIPTYP_NETX90_MPW]        = {ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},
 	[romloader.ROMLOADER_CHIPTYP_NETX90]            = {ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},
+	[romloader.ROMLOADER_CHIPTYP_NETX90B]           = {ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},    
 }
 
 -- print date/time in every line, useful when it stops in the middle of the night
@@ -604,7 +605,8 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 	or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX4100_SMALL then
 		uiAsicType = 4000
 	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX90_MPW 
-	or  tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX90 then
+	or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX90 
+	or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX90B then
 		uiAsicType = 90
 	end
 
