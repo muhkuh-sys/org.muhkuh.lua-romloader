@@ -952,7 +952,7 @@ uint8_t romloader_eth::read_data08(lua_State *ptClientData, uint32_t ulNetxAddre
 	}
 	else
 	{
-		ucValue = m_aucPacketInputBuffer[4];
+		ucValue = m_aucPacketInputBuffer[5];
 		fOk = true;
 	}
 
@@ -983,8 +983,8 @@ uint16_t romloader_eth::read_data16(lua_State *ptClientData, uint32_t ulNetxAddr
 	}
 	else
 	{
-		usValue  = ((uint16_t)(m_aucPacketInputBuffer[4]));
-		usValue |= ((uint16_t)(m_aucPacketInputBuffer[5]))<< 8U;
+		usValue  = ((uint16_t)(m_aucPacketInputBuffer[5]));
+		usValue |= ((uint16_t)(m_aucPacketInputBuffer[6]))<< 8U;
 		fOk = true;
 	}
 
@@ -1015,10 +1015,10 @@ uint32_t romloader_eth::read_data32(lua_State *ptClientData, uint32_t ulNetxAddr
 	}
 	else
 	{
-		ulValue  = ((uint32_t)(m_aucPacketInputBuffer[4]));
-		ulValue |= ((uint32_t)(m_aucPacketInputBuffer[5]))<< 8U;
-		ulValue |= ((uint32_t)(m_aucPacketInputBuffer[6]))<<16U;
-		ulValue |= ((uint32_t)(m_aucPacketInputBuffer[7]))<<24U;
+		ulValue  = ((uint32_t)(m_aucPacketInputBuffer[5]));
+		ulValue |= ((uint32_t)(m_aucPacketInputBuffer[6]))<< 8U;
+		ulValue |= ((uint32_t)(m_aucPacketInputBuffer[7]))<<16U;
+		ulValue |= ((uint32_t)(m_aucPacketInputBuffer[8]))<<24U;
 		fOk = true;
 	}
 
