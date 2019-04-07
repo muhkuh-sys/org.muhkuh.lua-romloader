@@ -143,19 +143,37 @@ typedef union MIV3_PACKET_CANCEL_CALL_UNION
 
 
 
-/* This is either a complete read packet or the start of a write packet. */
-struct __attribute__((__packed__)) MIV3_PACKET_COMMAND_READWRITE_DATA_STRUCT
+/* This is a complete read packet. */
+struct __attribute__((__packed__)) MIV3_PACKET_COMMAND_READ_DATA_STRUCT
+{
+	MIV3_PACKET_HEADER_T tHeader;
+	uint16_t usDataSize;
+	uint32_t ulAddress;
+	uint8_t  ucCrcHi;
+	uint8_t  ucCrcLo;
+};
+
+typedef union MIV3_PACKET_COMMAND_READ_DATA_UNION
+{
+	struct MIV3_PACKET_COMMAND_READ_DATA_STRUCT s;
+	uint8_t auc[13];
+} MIV3_PACKET_COMMAND_READ_DATA_T;
+
+
+
+/* This is the start of a write packet. */
+struct __attribute__((__packed__)) MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
 	uint16_t usDataSize;
 	uint32_t ulAddress;
 };
 
-typedef union MIV3_PACKET_COMMAND_READWRITE_DATA_UNION
+typedef union MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_UNION
 {
-	struct MIV3_PACKET_COMMAND_READWRITE_DATA_STRUCT s;
+	struct MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_STRUCT s;
 	uint8_t auc[11];
-} MIV3_PACKET_COMMAND_READWRITE_DATA_T;
+} MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T;
 
 
 

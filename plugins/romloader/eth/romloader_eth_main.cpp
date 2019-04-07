@@ -738,9 +738,8 @@ romloader::TRANSPORTSTATUS_T romloader_eth::execute_command(MIV3_PACKET_HEADER_T
 
 romloader::TRANSPORTSTATUS_T romloader_eth::read_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, uint16_t sizDataInBytes)
 {
-	MIV3_PACKET_COMMAND_READWRITE_DATA_T tPacketReadData;
+	MIV3_PACKET_COMMAND_READ_DATA_T tPacketReadData;
 	TRANSPORTSTATUS_T tResult;
-	size_t sizPacket;
 	uint8_t ucPacketTyp;
 	int iResult;
 	MIV3_PACKET_HEADER_T *ptPacketHeader;
@@ -759,9 +758,7 @@ romloader::TRANSPORTSTATUS_T romloader_eth::read_data(uint32_t ulNetxAddress, MO
 		tPacketReadData.s.usDataSize = HTONETX16(sizDataInBytes);
 		tPacketReadData.s.ulAddress = HTONETX32(ulNetxAddress);
 
-		/* The size of the packet is the "read" header with 2 bytes of CRC. */
-		sizPacket = sizeof(tPacketReadData) + 2U;
-		tResult = execute_command(&(tPacketReadData.s.tHeader), sizPacket);
+		tResult = execute_command(&(tPacketReadData.s.tHeader), sizeof(MIV3_PACKET_COMMAND_READ_DATA_T));
 		if( tResult==TRANSPORTSTATUS_OK )
 		{
 			/* Receive the data. */
@@ -845,8 +842,8 @@ romloader::TRANSPORTSTATUS_T romloader_eth::write_data(uint32_t ulNetxAddress, M
 	{
 		struct WRITE_DATA_STRUCT
 		{
-			MIV3_PACKET_COMMAND_READWRITE_DATA_T s;
-			uint8_t auc[sizMaxPacketSizeHost - sizeof(MIV3_PACKET_COMMAND_READWRITE_DATA_T)];
+			MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T s;
+			uint8_t auc[sizMaxPacketSizeHost - sizeof(MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T)];
 		} __attribute__ ((packed)) s;
 		uint8_t auc[sizMaxPacketSizeHost];
 	} __attribute__ ((packed)) uWriteData;
@@ -875,7 +872,7 @@ romloader::TRANSPORTSTATUS_T romloader_eth::write_data(uint32_t ulNetxAddress, M
 		memcpy(uWriteData.s.auc, pvData, sizDataInBytes);
 
 		/* The size of the packet is the "write" header with the data and 2 bytes of CRC. */
-		sizPacket = sizeof(MIV3_PACKET_COMMAND_READWRITE_DATA_T) + sizDataInBytes + 2U;
+		sizPacket = sizeof(MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T) + sizDataInBytes + 2U;
 		tResult = execute_command(&(uWriteData.s.s.s.tHeader), sizPacket);
 		if( tResult==TRANSPORTSTATUS_OK )
 		{
