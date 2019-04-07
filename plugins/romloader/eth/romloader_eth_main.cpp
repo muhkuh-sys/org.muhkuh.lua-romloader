@@ -283,7 +283,7 @@ romloader::TRANSPORTSTATUS_T romloader_eth::receive_packet(void)
 	MIV3_PACKET_HEADER_T *ptPacket;
 
 
-	fprintf(stderr, "receive_packet\n");
+//	fprintf(stderr, "receive_packet\n");
 	uiRetries = 8;
 	do
 	{

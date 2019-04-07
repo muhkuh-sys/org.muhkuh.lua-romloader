@@ -179,7 +179,7 @@ romloader::TRANSPORTSTATUS_T romloader_eth_device_linux::RecvPacket(unsigned cha
 		{
 			/* All ok! */
 //			fprintf(stderr, "recv %d, %d, %d.%d.%d.%d\n", addrlen, src_addr.sa_family, src_addr.sa_data[0], src_addr.sa_data[1], src_addr.sa_data[2], src_addr.sa_data[3]);
-			fprintf(stderr, "recv %zd bytes\n", ssizPacket);
+//			fprintf(stderr, "recv %zd bytes\n", ssizPacket);
 			tResult = romloader::TRANSPORTSTATUS_OK;
 		}
 	}
