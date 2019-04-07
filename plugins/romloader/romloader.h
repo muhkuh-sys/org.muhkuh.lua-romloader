@@ -326,14 +326,14 @@ protected:
 	 * NOTE: This has nothing to do with the maximum packet size
 	 * for a HBOOT packet.
 	 */
-	static const size_t sizMaxPacketSizeHost = 4096;
+	static const size_t m_sizMaxPacketSizeHost = 4096;
 	size_t m_sizMaxPacketSizeClient;
 
 	uint8_t m_ucMonitorSequence;
 
 	size_t m_sizPacketInputBuffer;
-	uint8_t m_aucPacketInputBuffer[sizMaxPacketSizeHost];
-	uint8_t aucTxBuffer[sizMaxPacketSizeHost];
+	uint8_t m_aucPacketInputBuffer[m_sizMaxPacketSizeHost];
+	uint8_t aucTxBuffer[m_sizMaxPacketSizeHost];
 
 private:
 

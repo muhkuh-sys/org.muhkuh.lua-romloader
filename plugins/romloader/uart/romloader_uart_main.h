@@ -77,7 +77,7 @@ private:
 
 	size_t m_sizPacketRingBufferHead;
 	size_t m_sizPacketRingBufferFill;
-	uint8_t m_aucPacketRingBuffer[sizMaxPacketSizeHost];
+	uint8_t m_aucPacketRingBuffer[m_sizMaxPacketSizeHost];
 
 	void packet_ringbuffer_init(void);
 	TRANSPORTSTATUS_T packet_ringbuffer_fill(size_t sizRequestedFillLevel);

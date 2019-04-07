@@ -673,14 +673,14 @@ romloader::TRANSPORTSTATUS_T romloader_uart::packet_ringbuffer_fill(size_t sizRe
 		{
 			/* Get the write position. */
 			sizWritePosition = m_sizPacketRingBufferHead + m_sizPacketRingBufferFill;
-			if( sizWritePosition>=sizMaxPacketSizeHost )
+			if( sizWritePosition>=m_sizMaxPacketSizeHost )
 			{
-				sizWritePosition -= sizMaxPacketSizeHost;
+				sizWritePosition -= m_sizMaxPacketSizeHost;
 			}
 
 			/* Get the size of the remaining continuous buffer space. */
 			/* This is the maximum chunk which can be read in one piece. */
-			sizChunk = sizMaxPacketSizeHost - sizWritePosition;
+			sizChunk = m_sizMaxPacketSizeHost - sizWritePosition;
 			/* Limit the chunk size to the requested size. */
 			if( sizChunk>sizReceiveCnt )
 			{
@@ -715,9 +715,9 @@ uint8_t romloader_uart::packet_ringbuffer_get(void)
 	ucByte = m_aucPacketRingBuffer[m_sizPacketRingBufferHead];
 
 	++m_sizPacketRingBufferHead;
-	if( m_sizPacketRingBufferHead>=sizMaxPacketSizeHost )
+	if( m_sizPacketRingBufferHead>=m_sizMaxPacketSizeHost )
 	{
-		m_sizPacketRingBufferHead -= sizMaxPacketSizeHost;
+		m_sizPacketRingBufferHead -= m_sizMaxPacketSizeHost;
 	}
 
 	--m_sizPacketRingBufferFill;
@@ -733,9 +733,9 @@ int romloader_uart::packet_ringbuffer_peek(size_t sizOffset)
 
 
 	sizReadPosition = m_sizPacketRingBufferHead + sizOffset;
-	if( sizReadPosition>=sizMaxPacketSizeHost )
+	if( sizReadPosition>=m_sizMaxPacketSizeHost )
 	{
-		sizReadPosition -= sizMaxPacketSizeHost;
+		sizReadPosition -= m_sizMaxPacketSizeHost;
 	}
 
 	return m_aucPacketRingBuffer[sizReadPosition];
@@ -759,9 +759,9 @@ void romloader_uart::packet_ringbuffer_skip(size_t sizSkip)
 
 	/* Move the read position and wrap around at the end of the buffer. */
 	sizReadPosition = m_sizPacketRingBufferHead + sizSkip;
-	if( sizReadPosition>=sizMaxPacketSizeHost )
+	if( sizReadPosition>=m_sizMaxPacketSizeHost )
 	{
-		sizReadPosition -= sizMaxPacketSizeHost;
+		sizReadPosition -= m_sizMaxPacketSizeHost;
 	}
 	m_sizPacketRingBufferHead = sizReadPosition;
 

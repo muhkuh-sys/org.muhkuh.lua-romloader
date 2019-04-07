@@ -142,9 +142,9 @@ bool romloader::synchronize(void)
 			sizMaxPacketSize = NETXTOH16(ptSyncPacket->s.usMaximumPacketSize);
 			printf("Maximum packet size: 0x%04lx\n", sizMaxPacketSize);
 			/* Limit the packet size to the buffer size. */
-			if( sizMaxPacketSize>sizMaxPacketSizeHost )
+			if( sizMaxPacketSize>m_sizMaxPacketSizeHost )
 			{
-				sizMaxPacketSize = sizMaxPacketSizeHost;
+				sizMaxPacketSize = m_sizMaxPacketSizeHost;
 				printf("Limit maximum packet size to 0x%04lx\n", sizMaxPacketSize);
 			}
 
@@ -477,9 +477,9 @@ romloader::TRANSPORTSTATUS_T romloader::write_data(uint32_t ulNetxAddress, MONIT
 		struct WRITE_DATA_STRUCT
 		{
 			MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T s;
-			uint8_t auc[sizMaxPacketSizeHost - sizeof(MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T)];
+			uint8_t auc[m_sizMaxPacketSizeHost - sizeof(MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T)];
 		} __attribute__ ((packed)) s;
-		uint8_t auc[sizMaxPacketSizeHost];
+		uint8_t auc[m_sizMaxPacketSizeHost];
 	} __attribute__ ((packed)) uWriteData;
 	TRANSPORTSTATUS_T tResult;
 	size_t sizPacket;
