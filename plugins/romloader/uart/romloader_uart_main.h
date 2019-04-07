@@ -22,6 +22,7 @@
 #include "../romloader.h"
 
 #include "../machine_interface/netx/src/monitor_commands.h"
+#include "romloader_uart_read_functinoid_mi2.h"
 
 
 #ifndef __ROMLOADER_UART_MAIN_H__
@@ -70,7 +71,7 @@ private:
 		ROMLOADER_COMMANDSET_MI3              = 4
 	} ROMLOADER_COMMANDSET_T;
 
-	bool identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet);
+	bool identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader_uart_read_functinoid_mi2 *ptFnMi2);
 
 	romloader_uart_device_platform *m_ptUartDev;
 

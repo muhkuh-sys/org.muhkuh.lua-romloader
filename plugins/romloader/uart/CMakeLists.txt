@@ -16,6 +16,7 @@ SET(UART_FIRMWARE_SOURCES ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart
                           ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx50_monitor.c
                           ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx56_monitor.c
                           ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx500_monitor.c
+                          ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx4000_monitor.c
                           ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx10_bootstrap.c
                           ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx50_bootstrap.c)
 
@@ -27,6 +28,8 @@ SET(UART_FIRMWARE_HEADERS ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart
                           ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx56_monitor_run.h
                           ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx500_monitor.h
                           ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx500_monitor_run.h
+                          ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx4000_monitor.h
+                          ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx4000_monitor_run.h
                           ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx10_bootstrap.h
                           ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx10_bootstrap_run.h
                           ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx50_bootstrap.h
@@ -57,6 +60,7 @@ SET(romloader_uart_SOURCES
 	romloader_uart_read_functinoid_aboot.cpp
 	romloader_uart_read_functinoid_hboot1.cpp
 	romloader_uart_read_functinoid_mi1.cpp
+	romloader_uart_read_functinoid_mi2.cpp
 	${romloader_uart_platform_SOURCES}
 	${UART_FIRMWARE_SOURCES}
 )
@@ -67,6 +71,7 @@ SET(romloader_uart_HEADERS
 	romloader_uart_read_functinoid_aboot.h
 	romloader_uart_read_functinoid_hboot1.h
 	romloader_uart_read_functinoid_mi1.h
+	romloader_uart_read_functinoid_mi2.h
 	${romloader_uart_platform_HEADERS}
 	${UART_FIRMWARE_HEADERS}
 )

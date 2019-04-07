@@ -26,6 +26,7 @@
 #include "romloader_uart_read_functinoid_aboot.h"
 #include "romloader_uart_read_functinoid_hboot1.h"
 #include "romloader_uart_read_functinoid_mi1.h"
+#include "romloader_uart_read_functinoid_mi2.h"
 
 #define UART_BASE_TIMEOUT_MS 500
 #define UART_CHAR_TIMEOUT_MS 50
@@ -200,7 +201,7 @@ romloader_uart::~romloader_uart(void)
 }
 
 
-bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
+bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader_uart_read_functinoid_mi2 *ptFnMi2)
 {
 	bool fResult = false;
 	const uint8_t aucKnock[5] = { '*', 0x00, 0x00, '*', '#' };
@@ -214,6 +215,8 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 	size_t sizPacket;
 	uint8_t aucData[32];
 	uint8_t ucStatus;
+	unsigned int uiSequence;
+	size_t sizMaxPacketSizeClient;
 
 
 	/* The command set is unknown by default. */
@@ -314,7 +317,7 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 								fprintf(stderr, "Got %zd bytes.\n", sizPacket+2);
 								hexdump(aucData, sizPacket+2);
 
-								/* Is this a V1/V2 code? */
+								/* Is this a MI V1 sync packet? */
 								if( memcmp(aucData+3, aucMagicMooh, sizeof(aucMagicMooh))==0 )
 								{
 									ucStatus = aucData[2];
@@ -353,6 +356,16 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 											else if( ulMiVersionMaj==2 )
 											{
 												tCmdSet = ROMLOADER_COMMANDSET_MI2;
+
+												/* Get the sequence number. */
+												uiSequence = aucData[2];
+
+												/* Get the maximum packet size. */
+												sizMaxPacketSizeClient = (size_t)(aucData[12] | (aucData[13]<<8U));;
+
+												ptFnMi2->set_sync_data(uiSequence, sizMaxPacketSizeClient);
+
+
 												fResult = true;
 											}
 /* This is an invalid combination.
@@ -369,6 +382,7 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet)
 										}
 									}
 								}
+								/* Is this a MI V2 sync packet? */
 								else if( memcmp(aucData+4, aucMagicMooh, sizeof(aucMagicMooh))==0 )
 								{
 									ucStatus = aucData[3];
@@ -472,6 +486,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 	romloader_uart_read_functinoid_aboot tFnABoot(m_ptUartDev, m_pcName);
 	romloader_uart_read_functinoid_hboot1 tFnHBoot1(m_ptUartDev, m_pcName);
 	romloader_uart_read_functinoid_mi1 tFnMi1(m_ptUartDev, m_pcName);
+	romloader_uart_read_functinoid_mi2 tFnMi2(m_ptUartDev, m_pcName);
 	bool fResult;
 	ROMLOADER_COMMANDSET_T tCmdSet;
 	int iResult;
@@ -495,7 +510,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 		}
 		else
 		{
-			fResult = identify_loader(&tCmdSet);
+			fResult = identify_loader(&tCmdSet, &tFnMi2);
 			if( fResult!=true )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to identify loader!", m_pcName, this);
@@ -543,7 +558,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 					/* Try to detect the chip type with the old MI command set. */
 					ptFn = &tFnMi1;
 					fResult = detect_chiptyp(ptFn);
-					if( fResult==true && ptFn!=NULL )
+					if( fResult==true )
 					{
 						iResult = ptFn->update_device(m_tChiptyp);
 						if( iResult!=0 )
@@ -560,8 +575,22 @@ void romloader_uart::Connect(lua_State *ptClientData)
 
 
 				case ROMLOADER_COMMANDSET_MI2:
-					fprintf(stderr, "TODO: Update the V2 device to V3.\n");
-					fResult = false;
+					fprintf(stderr, "Command set MI2.\n");
+					ptFn = &tFnMi2;
+					fResult = detect_chiptyp(ptFn);
+					if( fResult==true )
+					{
+						iResult = ptFn->update_device(m_tChiptyp);
+						if( iResult!=0 )
+						{
+							fResult = false;
+							MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to update the device!", m_pcName, this);
+						}
+					}
+					else
+					{
+						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chip type!", m_pcName, this);
+					}
 					break;
 
 

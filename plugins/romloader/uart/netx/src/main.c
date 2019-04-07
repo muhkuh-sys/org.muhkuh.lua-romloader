@@ -30,7 +30,7 @@
 #include "transport.h"
 #include "uart.h"
 
-#if ASIC_TYP==ASIC_TYP_NETX50 || ASIC_TYP==ASIC_TYP_NETX56
+#if ASIC_TYP==ASIC_TYP_NETX50 || ASIC_TYP==ASIC_TYP_NETX56 || ASIC_TYP==ASIC_TYP_NETX4000_RELAXED || ASIC_TYP==ASIC_TYP_NETX4000
 #       include "transport_extension.h"
 #endif
 
@@ -62,6 +62,23 @@
 
 #       define ROM_CODE_ID_NETX56  0x00006003
 #       define ROM_CODE_ID_NETX56B 0x00106003
+
+#elif ASIC_TYP==ASIC_TYP_NETX4000_RELAXED || ASIC_TYP==ASIC_TYP_NETX4000
+typedef enum ENUM_CONSOLE_DEVICE
+{
+	CONSOLE_DEVICE_NONE             = 0,
+	CONSOLE_DEVICE_UART0            = 1,
+	CONSOLE_DEVICE_UART1            = 2,
+	CONSOLE_DEVICE_UART2            = 3,
+	CONSOLE_DEVICE_USBDEV           = 4,
+	CONSOLE_DEVICE_ETH              = 5,
+	CONSOLE_DEVICE_DCC              = 6,
+	CONSOLE_DEVICE_RAPUART0         = 7,
+	CONSOLE_DEVICE_RAPUART1         = 8,
+	CONSOLE_DEVICE_RAPUART2         = 9,
+	CONSOLE_DEVICE_RAPUART3         = 10
+} CONSOLE_DEVICE_T;
+
 #endif
 
 
@@ -95,6 +112,13 @@ void uart_monitor(void)
 	unsigned long ulConsoleDevice;
 #endif
 #if ASIC_TYP==ASIC_TYP_NETX50
+	unsigned long ulConsoleDevice;
+#endif
+#if ASIC_TYP==ASIC_TYP_NETX4000_RELAXED || ASIC_TYP==ASIC_TYP_NETX4000
+	const unsigned long * const pulRomId = (const unsigned long * const)(0x04100020U);
+	const unsigned long * const pulConsoleDeviceRC4 = (const unsigned long * const)(0x000226c8U);
+	const unsigned long * const pulConsoleDeviceRC5 = (const unsigned long * const)(0x00023400U);
+	unsigned long ulValue;
 	unsigned long ulConsoleDevice;
 #endif
 
@@ -167,6 +191,37 @@ void uart_monitor(void)
 		while(1) {};
 	}
 	transport_set_vectors(ulConsoleDevice);
+#elif ASIC_TYP==ASIC_TYP_NETX4000_RELAXED || ASIC_TYP==ASIC_TYP_NETX4000
+	ulConsoleDevice = CONSOLE_DEVICE_NONE;
+	ulValue = *pulRomId;
+	if( ulValue==0x00108004U )
+	{
+		/* Get the current console device. */
+		ulConsoleDevice = *pulConsoleDeviceRC4;
+	}
+	else if( ulValue==0x0010b004U )
+	{
+		ulConsoleDevice = *pulConsoleDeviceRC5;
+	}
+
+	/* This update code is working with a UART or a virtual COM port.
+	 * If the ROM console device is something different, something
+	 * terrible happened.
+	 */
+	if( ulConsoleDevice!=CONSOLE_DEVICE_UART0 &&
+	    ulConsoleDevice!=CONSOLE_DEVICE_UART1 &&
+	    ulConsoleDevice!=CONSOLE_DEVICE_UART2 &&
+	    ulConsoleDevice!=CONSOLE_DEVICE_USBDEV &&
+	    ulConsoleDevice!=CONSOLE_DEVICE_RAPUART0 &&
+	    ulConsoleDevice!=CONSOLE_DEVICE_RAPUART1 &&
+	    ulConsoleDevice!=CONSOLE_DEVICE_RAPUART2 &&
+	    ulConsoleDevice!=CONSOLE_DEVICE_RAPUART3 )
+	{
+		while(1) {};
+	}
+
+	transport_set_vectors(ulConsoleDevice);
+
 #else
 #       error "Unknown ASIC_TYP!"
 #endif

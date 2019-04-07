@@ -25,7 +25,7 @@
 # Import the default compiler environments and the platform libraries.
 #
 Import('atEnv')
-Import('libmi_netx500', 'libmi_netx56', 'libmi_netx50', 'libmi_netx10')
+Import('libmi_netx500', 'libmi_netx56', 'libmi_netx50', 'libmi_netx10', 'libmi_netx4000')
 import os.path
 
 
@@ -66,6 +66,11 @@ sources_monitor_netx50 = """
 sources_monitor_netx10 = """
 	src/transport.c
 """
+
+sources_monitor_netx4000 = """
+	src/netx4000/transport.c
+"""
+
 
 strTargetPath = Dir('#targets/plugins/romloader/uart/netx').get_path()
 
@@ -140,3 +145,15 @@ bin_netx10_bootstrap = env_netx10_bootstrap.ObjCopy(os.path.join(strTargetPath, 
 arr_netx10_bootstrap = env_netx10_bootstrap.DataArray(os.path.join(strTargetPath, 'uartmon_netx10_bootstrap.c'), bin_netx10_bootstrap, DATAARRAY_NAME='auc_uartmon_netx10_bootstrap')
 sym_netx10_bootstrap = env_netx10_bootstrap.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx10_bootstrap_run.h'), elf_netx10_bootstrap, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx10_bootstrap_run.h'))
 
+#----------------------------------------------------------------------------
+#
+# Build the netX4000 files.
+#
+env_netx4000_monitor = atEnv.NETX4000.Clone()
+env_netx4000_monitor.Append(CPPPATH = ['src', '../../machine_interface/netx/src', '#platform/src', '#platform/src/lib'])
+env_netx4000_monitor.Replace(LDFILE = File('src/netx4000/netx4000.ld'))
+src_netx4000_monitor = env_netx4000_monitor.SetBuildPath(os.path.join(strTargetPath, 'netx4000_monitor'), 'src', sources_monitor + sources_monitor_netx4000)
+elf_netx4000_monitor = env_netx4000_monitor.Elf(os.path.join(strTargetPath, 'uartmon_netx4000_monitor.elf'), src_netx4000_monitor + env_netx4000_monitor['PLATFORM_LIBRARY'] + libmi_netx4000)
+bin_netx4000_monitor = env_netx4000_monitor.ObjCopy(os.path.join(strTargetPath, 'uartmon_netx4000_monitor.bin'), elf_netx4000_monitor)
+arr_netx4000_monitor = env_netx4000_monitor.DataArray(os.path.join(strTargetPath, 'uartmon_netx4000_monitor.c'), bin_netx4000_monitor, DATAARRAY_NAME='auc_uartmon_netx4000_monitor')
+sym_netx4000_monitor = env_netx4000_monitor.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx4000_monitor_run.h'), elf_netx4000_monitor, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx4000_monitor_run.h'))
