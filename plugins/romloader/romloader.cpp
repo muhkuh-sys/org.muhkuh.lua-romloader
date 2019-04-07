@@ -739,7 +739,7 @@ void romloader::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **ppcBU
 				}
 				else
 				{
-					memcpy(pcBuffer, m_aucPacketInputBuffer+5, sizChunk);
+					memcpy(pcBuffer, m_aucPacketInputBuffer+sizeof(MIV3_PACKET_HEADER_T), sizChunk);
 					pcBuffer += sizChunk;
 					ulSize -= sizChunk;
 					ulNetxAddress += sizChunk;
@@ -987,8 +987,9 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 						++m_ucMonitorSequence;
 
 						/* NOTE: Do not check the size of the user data here. It should be possible to send 0 bytes. */
-						pcProgressData = ((char*)m_aucPacketInputBuffer) + 4U;
-						sizProgressData = m_sizPacketInputBuffer - 6U;
+						pcProgressData = ((char*)m_aucPacketInputBuffer) + sizeof(MIV3_PACKET_HEADER_T);
+						/* The size of the user data is the size of the packet - the header size - 2 bytes for the CRC16. */
+						sizProgressData = m_sizPacketInputBuffer - (sizeof(MIV3_PACKET_HEADER_T) + 2U);
 					}
 					else if( ucPacketTyp==MONITOR_PACKET_TYP_Status )
 					{
