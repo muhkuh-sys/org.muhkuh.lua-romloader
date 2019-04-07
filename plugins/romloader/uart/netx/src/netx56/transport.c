@@ -657,8 +657,9 @@ static int transport_send_packet_usb(TRANSPORT_SEND_PACKET_ACK_T tRequireAck)
 	const unsigned char *pucCnt;
 	unsigned char ucData;
 	unsigned short usCrc;
+	unsigned int sizData;
 	unsigned long ulChunk;
-	size_t sizDataLeft;
+	unsigned int sizDataLeft;
 	ACK_RESULT_T tResult;
 	int iResult;
 
@@ -676,11 +677,14 @@ static int transport_send_packet_usb(TRANSPORT_SEND_PACKET_ACK_T tRequireAck)
 		/* Send the start character. */
 		ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = MONITOR_STREAM_PACKET_START;
 
+		/* The data size includes the sequence number. */
+		sizData = sizPacketOutputFill + 1U;
+
 		/* Send the size. */
-		ucData = (unsigned char)( sizPacketOutputFill        & 0xffU);
+		ucData = (unsigned char)( sizData        & 0xffU);
 		ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned long)ucData;
 		usCrc = crc16(0, ucData);
-		ucData = (unsigned char)((sizPacketOutputFill >> 8U) & 0xffU);
+		ucData = (unsigned char)((sizData >> 8U) & 0xffU);
 		ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned long)ucData;
 		usCrc = crc16(usCrc, ucData);
 
@@ -768,6 +772,7 @@ static int transport_send_packet_uart(TRANSPORT_SEND_PACKET_ACK_T tRequireAck)
 	const unsigned char *pucEnd;
 	unsigned char ucData;
 	unsigned short usCrc;
+	unsigned int sizData;
 	ACK_RESULT_T tResult;
 	int iResult;
 
@@ -782,8 +787,11 @@ static int transport_send_packet_uart(TRANSPORT_SEND_PACKET_ACK_T tRequireAck)
 		} while( ulValue!=0 );
 		ptUart0Area->ulUartdr = MONITOR_STREAM_PACKET_START;
 
+		/* The data size includes the sequence number. */
+		sizData = sizPacketOutputFill + 1U;
+
 		/* Send the size. */
-		ucData = (unsigned char)( sizPacketOutputFill        & 0xffU);
+		ucData = (unsigned char)( sizData        & 0xffU);
 		do
 		{
 			ulValue  = ptUart0Area->ulUartfr;
@@ -791,7 +799,7 @@ static int transport_send_packet_uart(TRANSPORT_SEND_PACKET_ACK_T tRequireAck)
 		} while( ulValue!=0 );
 		ptUart0Area->ulUartdr = (unsigned long)ucData;
 		usCrc = crc16(0, ucData);
-		ucData = (unsigned char)((sizPacketOutputFill >> 8U) & 0xffU);
+		ucData = (unsigned char)((sizData >> 8U) & 0xffU);
 		do
 		{
 			ulValue  = ptUart0Area->ulUartfr;
