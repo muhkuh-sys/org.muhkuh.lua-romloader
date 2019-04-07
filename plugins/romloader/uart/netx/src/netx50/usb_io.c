@@ -52,8 +52,8 @@ void usb_io_write_fifo(unsigned int uiDwOffset, unsigned int uiByteCount, const 
 	uiByteCnt = 0;
 	ulValue = 0;
 	while( pulDc<pulDe ) {
-		ulValue >>= 8;
-		ulValue  |= (*pucSc++)<<24;
+		ulValue >>= 8U;
+		ulValue  |= ((unsigned long)(*pucSc++)) << 24U;
 		uiByteCnt++;
 		if( (uiByteCnt&3)==0 ) {
 			*pulDc++ = ulValue;
