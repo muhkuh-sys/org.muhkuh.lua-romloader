@@ -477,7 +477,6 @@ size_t romloader_uart_device_linux::scanSysFs(char ***pppcPortNames)
 	const char *pcPluginName = "romloader_uart_%s";
 	struct stat tStatBuf;
 	DIR *ptDir;
-	struct dirent tDirEntry;
 	struct dirent *ptDirEntry;
 	char strDevicePath[PATH_MAX];
 
@@ -522,63 +521,60 @@ size_t romloader_uart_device_linux::scanSysFs(char ***pppcPortNames)
 				/* Directory is open, loop over all entries. */
 				do
 				{
-					iResult = readdir_r(ptDir, &tDirEntry, &ptDirEntry);
-					if( iResult==0 )
+					ptDirEntry = readdir(ptDir);
+					/* Reached the end of the directory? */
+					if( ptDirEntry==NULL )
 					{
-						/* Reached the end of the directory? */
-						if( ptDirEntry==NULL )
+						/* Yes -> stop searching for devices. */
+						break;
+					}
+					/* Is the entry a folder or a link? */
+					else if( ptDirEntry->d_type==DT_DIR || ptDirEntry->d_type==DT_LNK || ptDirEntry->d_type==DT_UNKNOWN )
+					{
+						/* Is this not the '.' or '..' entry? */
+						if( strcmp(".", ptDirEntry->d_name)!=0 && strcmp("..", ptDirEntry->d_name)!=0 )
 						{
-							/* Yes -> stop searching for devices. */
-							break;
-						}
-						/* Is the entry a folder or a link? */
-						else if( tDirEntry.d_type==DT_DIR || tDirEntry.d_type==DT_LNK || tDirEntry.d_type==DT_UNKNOWN )
-						{
-							/* Is this not the '.' or '..' entry? */
-							if( strcmp(".", tDirEntry.d_name)!=0 && strcmp("..", tDirEntry.d_name)!=0 )
+							/* Construct the full path to the device. */
+							snprintf(strDevicePath, PATH_MAX-1, "/dev/%s", ptDirEntry->d_name);
+							/* Is the device a real serial port? */
+							iNonFatalResult = isDeviceRealSerialPort(strDevicePath);
+							if( iNonFatalResult==0 )
 							{
-								/* Construct the full path to the device. */
-								snprintf(strDevicePath, PATH_MAX-1, "/dev/%s", tDirEntry.d_name);
-								/* Is the device a real serial port? */
-								iNonFatalResult = isDeviceRealSerialPort(strDevicePath);
-								if( iNonFatalResult==0 )
-								{
-									/* Yes -> this is a real serial port. */
+								/* Yes -> this is a real serial port. */
 
-									/* Is enough space in the array for one more entry? */
-									if( sizRefCnt>=sizRefMax )
-									{
-										/* No -> expand the array. */
-										sizRefMax *= 2;
-										/* Detect overflow or limitation. */
-										if( sizRefMax<=sizRefCnt )
-										{
-											iResult = -1;
-											break;
-										}
-										/* Reallocate the array. */
-										ppcRefNew = (char**)realloc(ppcRef, sizRefMax*sizeof(char*));
-										if( ppcRefNew==NULL )
-										{
-											iResult = -1;
-											break;
-										}
-										ppcRef = ppcRefNew;
-									}
-									sizEntry = strlen(pcPluginName)-2 + strlen(tDirEntry.d_name) + 1;
-									pcRef = (char*)malloc(sizEntry);
-									if( pcRef==NULL )
+								/* Is enough space in the array for one more entry? */
+								if( sizRefCnt>=sizRefMax )
+								{
+									/* No -> expand the array. */
+									sizRefMax *= 2;
+									/* Detect overflow or limitation. */
+									if( sizRefMax<=sizRefCnt )
 									{
 										iResult = -1;
 										break;
 									}
-									snprintf(pcRef, sizEntry, pcPluginName, tDirEntry.d_name);
-									ppcRef[sizRefCnt++] = pcRef;
+									/* Reallocate the array. */
+									ppcRefNew = (char**)realloc(ppcRef, sizRefMax*sizeof(char*));
+									if( ppcRefNew==NULL )
+									{
+										iResult = -1;
+										break;
+									}
+									ppcRef = ppcRefNew;
 								}
+								sizEntry = strlen(pcPluginName)-2 + strlen(ptDirEntry->d_name) + 1;
+								pcRef = (char*)malloc(sizEntry);
+								if( pcRef==NULL )
+								{
+									iResult = -1;
+									break;
+								}
+								snprintf(pcRef, sizEntry, pcPluginName, ptDirEntry->d_name);
+								ppcRef[sizRefCnt++] = pcRef;
 							}
 						}
 					}
-				} while( iResult==0 );
+				} while( ptDirEntry!=NULL );
 
 				closedir(ptDir);
 			}
