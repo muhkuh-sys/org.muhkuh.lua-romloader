@@ -376,7 +376,7 @@ bool romloader_usb::synchronize(void)
 	}
 	else
 	{
-		ucData = MONITOR_COMMAND_Magic;
+		ucData = MONITOR_PACKET_TYP_Command_Magic;
 		iResult = m_ptUsbDevice->execute_command(&ucData, 1, aucInBuf, sizeof(aucInBuf), &sizInBuf);
 		if( iResult!=0 )
 		{
@@ -505,9 +505,6 @@ romloader_usb::USBSTATUS_T romloader_usb::execute_command(uint8_t *aucCommand, s
 				case MONITOR_STATUS_Ok:
 					fprintf(stderr, "OK\n");
 					break;
-				case MONITOR_STATUS_CallMessage:
-					fprintf(stderr, "CallMessage\n");
-					break;
 				case MONITOR_STATUS_CallFinished:
 					fprintf(stderr, "CallFinished\n");
 					break;
@@ -617,7 +614,7 @@ uint8_t romloader_usb::read_data08(lua_State *ptClientData, uint32_t ulNetxAddre
 	else
 	{
 		/* Construct the command packet. */
-		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Read |
+		m_aucPacketOutputBuffer[0x00] = MONITOR_PACKET_TYP_Command_Read |
 		                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT);
 		m_aucPacketOutputBuffer[0x01] = 1;  /* Read 8 bit -> 1 byte. */
 		m_aucPacketOutputBuffer[0x02] = 0x00;
@@ -682,7 +679,7 @@ uint16_t romloader_usb::read_data16(lua_State *ptClientData, uint32_t ulNetxAddr
 	else
 	{
 		/* Construct the command packet. */
-		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Read |
+		m_aucPacketOutputBuffer[0x00] = MONITOR_PACKET_TYP_Command_Read |
 		                                (MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT);
 		m_aucPacketOutputBuffer[0x01] = 2;  /* Read 16 bits -> 2 bytes. */
 		m_aucPacketOutputBuffer[0x02] = 0;
@@ -748,7 +745,7 @@ uint32_t romloader_usb::read_data32(lua_State *ptClientData, uint32_t ulNetxAddr
 	else
 	{
 		/* Construct the command packet. */
-		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Read |
+		m_aucPacketOutputBuffer[0x00] = MONITOR_PACKET_TYP_Command_Read |
 		                                (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT);
 		m_aucPacketOutputBuffer[0x01] = 4;  /* Read 32 bits -> 4 bytes. */
 		m_aucPacketOutputBuffer[0x02] = 0;
@@ -849,7 +846,7 @@ void romloader_usb::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **p
 				}
 
 				/* Construct the command packet. */
-				m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Read |
+				m_aucPacketOutputBuffer[0x00] = MONITOR_PACKET_TYP_Command_Read |
 				                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT);
 				m_aucPacketOutputBuffer[0x01] = (uint8_t)( sizChunk       & 0xffU);
 				m_aucPacketOutputBuffer[0x02] = (uint8_t)((sizChunk>> 8U) & 0xffU);
@@ -933,7 +930,7 @@ void romloader_usb::write_data08(lua_State *ptClientData, uint32_t ulNetxAddress
 	else
 	{
 		/* Construct the command packet. */
-		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Write |
+		m_aucPacketOutputBuffer[0x00] = MONITOR_PACKET_TYP_Command_Write |
 		                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT);
 		m_aucPacketOutputBuffer[0x01] = 1;  /* Write 8 bit -> 1 byte. */
 		m_aucPacketOutputBuffer[0x02] = 0;
@@ -990,7 +987,7 @@ void romloader_usb::write_data16(lua_State *ptClientData, uint32_t ulNetxAddress
 	else
 	{
 		/* Construct the command packet. */
-		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Write |
+		m_aucPacketOutputBuffer[0x00] = MONITOR_PACKET_TYP_Command_Write |
 		                                (MONITOR_ACCESSSIZE_Word<<MONITOR_ACCESSSIZE_SRT);
 		m_aucPacketOutputBuffer[0x01] = 2;  /* Write 16 bit -> 2 bytes. */
 		m_aucPacketOutputBuffer[0x02] = 0;
@@ -1048,7 +1045,7 @@ void romloader_usb::write_data32(lua_State *ptClientData, uint32_t ulNetxAddress
 	else
 	{
 		/* Construct the command packet. */
-		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Write |
+		m_aucPacketOutputBuffer[0x00] = MONITOR_PACKET_TYP_Command_Write |
 		                                (MONITOR_ACCESSSIZE_Long<<MONITOR_ACCESSSIZE_SRT);
 		m_aucPacketOutputBuffer[0x01] = 4;  /* Write 32 bit -> 4 bytes. */
 		m_aucPacketOutputBuffer[0x02] = 0;
@@ -1123,7 +1120,7 @@ void romloader_usb::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN,
 			}
 
 			/* Construct the command packet. */
-			m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Write |
+			m_aucPacketOutputBuffer[0x00] = MONITOR_PACKET_TYP_Command_Write |
 			                                (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT);
 			m_aucPacketOutputBuffer[0x01] = (uint8_t)( sizChunk       & 0xffU);
 			m_aucPacketOutputBuffer[0x02] = (uint8_t)((sizChunk>> 8U) & 0xffU);
@@ -1198,7 +1195,7 @@ void romloader_usb::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA
 	else
 	{
 		/* Construct the command packet. */
-		m_aucPacketOutputBuffer[0x00] = MONITOR_COMMAND_Execute;
+		m_aucPacketOutputBuffer[0x00] = MONITOR_PACKET_TYP_Command_Execute;
 		m_aucPacketOutputBuffer[0x01] = (uint8_t)( ulNetxAddress      & 0xff);
 		m_aucPacketOutputBuffer[0x02] = (uint8_t)((ulNetxAddress>>8 ) & 0xff);
 		m_aucPacketOutputBuffer[0x03] = (uint8_t)((ulNetxAddress>>16) & 0xff);

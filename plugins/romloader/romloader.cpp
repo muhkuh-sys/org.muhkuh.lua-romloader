@@ -387,7 +387,7 @@ romloader::TRANSPORTSTATUS_T romloader::read_data(uint32_t ulNetxAddress, MONITO
 	}
 	else
 	{
-		tPacketReadData.s.tHeader.s.ucPacketType =  MONITOR_PACKET_TYP_Command_Read |
+		tPacketReadData.s.tHeader.s.ucPacketType =  MONITOR_PACKET_TYP_CommandRead |
 		                                         (tAccessSize<<MONITOR_ACCESSSIZE_SRT);
 		tPacketReadData.s.usDataSize = HTONETX16(sizDataInBytes);
 		tPacketReadData.s.ulAddress = HTONETX32(ulNetxAddress);
@@ -413,7 +413,7 @@ romloader::TRANSPORTSTATUS_T romloader::read_data(uint32_t ulNetxAddress, MONITO
 					ptPacketHeader = (MIV3_PACKET_HEADER_T*)m_aucPacketInputBuffer;
 					ucPacketTyp = ptPacketHeader->s.ucPacketType;
 
-					if( ucPacketTyp==MONITOR_PACKET_TYP_Read_Data )
+					if( ucPacketTyp==MONITOR_PACKET_TYP_ReadData )
 					{
 						/* The expected packet size is...
 						 *   the packet header
@@ -497,7 +497,7 @@ romloader::TRANSPORTSTATUS_T romloader::write_data(uint32_t ulNetxAddress, MONIT
 	else
 	{
 		/* Set the header fields. */
-		uWriteData.s.s.s.tHeader.s.ucPacketType =  MONITOR_PACKET_TYP_Command_Write |
+		uWriteData.s.s.s.tHeader.s.ucPacketType =  MONITOR_PACKET_TYP_CommandWrite |
 		                                          (tAccessSize<<MONITOR_ACCESSSIZE_SRT);
 		uWriteData.s.s.s.usDataSize = HTONETX16(sizDataInBytes);
 		uWriteData.s.s.s.ulAddress = HTONETX32(ulNetxAddress);
@@ -945,7 +945,7 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 	}
 	else
 	{
-		tCallCommand.s.tHeader.s.ucPacketType = MONITOR_COMMAND_Execute;
+		tCallCommand.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_CommandExecute;
 		tCallCommand.s.ulAddress = HTONETX32(ulNetxAddress);
 		tCallCommand.s.ulR0 = HTONETX32(ulParameterR0);
 		tResult = execute_command(&(tCallCommand.s.tHeader), sizeof(tCallCommand));
@@ -979,7 +979,7 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 					/* Get the packet type. */
 					ucPacketTyp = ptPacketHeader->s.ucPacketType;
 
-					if( ucPacketTyp==MONITOR_PACKET_TYP_Call_Message )
+					if( ucPacketTyp==MONITOR_PACKET_TYP_CallMessage )
 					{
 						/* Acknowledge the packet. */
 						send_ack(m_ucMonitorSequence);
@@ -1004,7 +1004,7 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 							++m_ucMonitorSequence;
 
 							ucStatus = ptPacketStatus->s.ucStatus;
-							if( ucStatus==MONITOR_STATUS_Call_Finished )
+							if( ucStatus==MONITOR_STATUS_CallFinished )
 							{
 								fOk = true;
 								break;
@@ -1030,7 +1030,7 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 					if( fIsRunning!=true )
 					{
 						/* Send a cancel request to the device. */
-						tCancelCallPacket.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_Call_Message;
+						tCancelCallPacket.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_CallMessage;
 						tCancelCallPacket.s.ucData = 0x2b;
 						tResult = send_packet(&(tCancelCallPacket.s.tHeader), sizeof(MIV3_PACKET_CANCEL_CALL_T));
 

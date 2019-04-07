@@ -943,7 +943,7 @@ int romloader_usb_device_libusb::netx56_load_code(libusb_device_handle* ptDevHan
 			}
 
 			/* Construct the command packet. */
-			aucTxBuf[0x00] = MONITOR_COMMAND_Write |
+			aucTxBuf[0x00] = MONITOR_PACKET_TYP_CommandWrite |
 			                 (MONITOR_ACCESSSIZE_Byte<<MONITOR_ACCESSSIZE_SRT);
 			aucTxBuf[0x01] = (unsigned char)sizChunk;
 			aucTxBuf[0x02] = (unsigned char)( ulNetxAddress       & 0xffU);
@@ -1073,7 +1073,7 @@ int romloader_usb_device_libusb::netx56_start_code(libusb_device_handle *ptDevHa
 	ulExecAddress |= ((unsigned long)(pucNetxCode[0x0b])) << 24U;
 
 	/* Construct the command packet. */
-	aucTxBuf[0x00] = MONITOR_COMMAND_Execute;
+	aucTxBuf[0x00] = MONITOR_PACKET_TYP_CommandExecute;
 	aucTxBuf[0x01] = (unsigned char)( ulExecAddress       & 0xffU);
 	aucTxBuf[0x02] = (unsigned char)((ulExecAddress>> 8U) & 0xffU);
 	aucTxBuf[0x03] = (unsigned char)((ulExecAddress>>16U) & 0xffU);

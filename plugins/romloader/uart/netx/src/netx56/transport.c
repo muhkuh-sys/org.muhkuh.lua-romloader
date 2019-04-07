@@ -23,6 +23,7 @@
 #include "transport_extension.h"
 
 #include <stddef.h>
+#include <string.h>
 
 #include "monitor.h"
 #include "monitor_commands.h"
@@ -35,8 +36,13 @@
 
 #define MONITOR_MAX_PACKET_SIZE_UART 2048
 
+/* Resend a packet after 1000ms if no ACK was received. */
+#define UART_RESEND_TIMEOUT_MS 1000
+
+
 typedef int (*PFN_TRANSPORT_FILL_BUFFER_T)(size_t sizRequestedFillLevel, unsigned int uiTimeoutFlag);
-typedef void (*PFN_TRANSPORT_SEND_PACKET_T)(void);
+typedef int (*PFN_TRANSPORT_SEND_PACKET_T)(TRANSPORT_SEND_PACKET_ACK_T tRequireAck);
+typedef void (*PFN_TRANSPORT_SEND_ACK_T)(void);
 
 
 unsigned char aucStreamBuffer[MONITOR_MAX_PACKET_SIZE_UART];
@@ -44,7 +50,7 @@ size_t sizStreamBufferHead;
 size_t sizStreamBufferFill;
 
 /* FIXME: remove this buffer and get the data with some functions. */
-unsigned char aucPacketInputBuffer[MONITOR_MAX_PACKET_SIZE_UART];
+//unsigned char aucPacketInputBuffer[MONITOR_MAX_PACKET_SIZE_UART];
 
 unsigned char aucPacketOutputBuffer[MONITOR_MAX_PACKET_SIZE_UART];
 size_t sizPacketOutputFill;
@@ -53,7 +59,9 @@ size_t sizPacketOutputFillLast;
 
 static PFN_TRANSPORT_FILL_BUFFER_T s_pfnFillBuffer;
 static PFN_TRANSPORT_SEND_PACKET_T s_pfnSendPacket;
+static PFN_TRANSPORT_SEND_ACK_T s_pfnSendAck;
 
+static unsigned char ucSequence;
 
 
 /* This is a very nice routine for the CITT XModem CRC from
@@ -84,10 +92,12 @@ void transport_init(void)
 
 	sizPacketOutputFill = 0;
 	sizPacketOutputFillLast = 0;
+
+	ucSequence = 0;
 }
 
 
-static int transport_buffer_fill_usb_cdc(size_t sizRequestedFillLevel, unsigned int uiTimeoutFlag)
+static int transport_buffer_fill_usb(size_t sizRequestedFillLevel, unsigned int uiTimeoutFlag)
 {
 	size_t sizWritePosition;
 	int iResult;
@@ -275,7 +285,93 @@ static int transport_buffer_fill_uart(size_t sizRequestedFillLevel, unsigned int
 
 
 
-static unsigned char uart_buffer_get(void)
+static void transport_send_ack_uart(void)
+{
+	HOSTDEF(ptUart0Area);
+	unsigned int uiCnt;
+	unsigned long ulValue;
+	unsigned short usCrc16;
+	unsigned char aucACK[7];
+
+
+	aucACK[0] = MONITOR_STREAM_PACKET_START;
+	aucACK[1] = 2U;  /* The low byte of the data size. */
+	aucACK[2] = 0U;  /* The high byte of the data size. */
+	aucACK[3] = ucSequence;
+	aucACK[4] = MONITOR_PACKET_TYP_ACK;
+
+	/* Generate the CRC for the packet. */
+	usCrc16 = 0;
+	for(uiCnt=1; uiCnt<5; ++uiCnt)
+	{
+		usCrc16 = crc16(usCrc16, aucACK[uiCnt]);
+	}
+	aucACK[5] = (unsigned char)(usCrc16 >> 8U);
+	aucACK[6] = (unsigned char)(usCrc16 & 0xff);
+
+	for(uiCnt=0; uiCnt<sizeof(aucACK); ++uiCnt)
+	{
+		do
+		{
+			ulValue  = ptUart0Area->ulUartfr;
+			ulValue &= HOSTMSK(uartfr_TXFE);
+		} while( ulValue==0 );
+		ptUart0Area->ulUartdr = aucACK[uiCnt];
+	}
+
+	/* Wait until the ACK is out. */
+	do
+	{
+		ulValue  = ptUart0Area->ulUartfr;
+		ulValue &= HOSTMSK(uartfr_TXFE);
+	} while( ulValue==0 );
+}
+
+
+
+static void transport_send_ack_usb(void)
+{
+	HOSTDEF(ptUsbDevFifoArea);
+	HOSTDEF(ptUsbDevFifoCtrlArea);
+	unsigned long ulFillLevel;
+	unsigned short usCrc16;
+	unsigned int uiCnt;
+	unsigned char aucACK[7];
+
+
+	aucACK[0] = MONITOR_STREAM_PACKET_START;
+	aucACK[1] = 2U;  /* The low byte of the data size. */
+	aucACK[2] = 0U;  /* The high byte of the data size. */
+	aucACK[3] = ucSequence;
+	aucACK[4] = MONITOR_PACKET_TYP_ACK;
+
+	/* Generate the CRC for the packet. */
+	usCrc16 = 0;
+	for(uiCnt=1; uiCnt<5; ++uiCnt)
+	{
+		usCrc16 = crc16(usCrc16, aucACK[uiCnt]);
+	}
+	aucACK[5] = (unsigned char)(usCrc16 >> 8U);
+	aucACK[6] = (unsigned char)(usCrc16 & 0xff);
+
+	/* Wait until 7 bytes fit into the FIFO. */
+	do
+	{
+		ulFillLevel   = ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_uart_ep_tx_stat;
+		ulFillLevel  &= HOSTMSK(usb_dev_fifo_ctrl_uart_ep_tx_stat_fill_level);
+		ulFillLevel >>= HOSTSRT(usb_dev_fifo_ctrl_uart_ep_tx_stat_fill_level);
+	} while( ulFillLevel>=(64-7) );
+
+	/* Send the packet. */
+	for(uiCnt=0; uiCnt<7; ++uiCnt)
+	{
+		ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = aucACK[uiCnt];
+	}
+}
+
+
+
+unsigned char transport_buffer_get(void)
 {
 	unsigned char ucByte;
 
@@ -294,7 +390,8 @@ static unsigned char uart_buffer_get(void)
 }
 
 
-static unsigned char uart_buffer_peek(size_t sizOffset)
+
+unsigned char transport_buffer_peek(size_t sizOffset)
 {
 	size_t sizReadPosition;
 	unsigned char ucByte;
@@ -312,7 +409,8 @@ static unsigned char uart_buffer_peek(size_t sizOffset)
 }
 
 
-static void uart_buffer_skip(size_t sizSkip)
+
+void transport_buffer_skip(size_t sizSkip)
 {
 	sizStreamBufferHead += sizSkip;
 	if( sizStreamBufferHead>=MONITOR_MAX_PACKET_SIZE_UART )
@@ -324,6 +422,109 @@ static void uart_buffer_skip(size_t sizSkip)
 }
 
 
+
+typedef enum ACK_RESULT_ENUM
+{
+	ACK_RESULT_SequenceAckd       =  0,
+	ACK_RESULT_OperationCanceled  = -1,
+	ACK_RESULT_Timeout            = -2
+} ACK_RESULT_T;
+
+
+
+static ACK_RESULT_T transport_wait_for_ack(unsigned char ucRequiredSequenceNumber, unsigned long ulTimeoutMs)
+{
+	ACK_RESULT_T tResult;
+	int iResult;
+	unsigned long ulTimerHandle;
+	unsigned char ucByte;
+	unsigned int sizPacket;
+	unsigned short usCrc;
+	unsigned int sizCrcPosition;
+	MONITOR_PACKET_TYP_T tPacketTyp;
+	unsigned char ucSequenceNumber;
+	int iIsElapsed;
+
+
+	tResult = ACK_RESULT_Timeout;
+
+	ulTimerHandle = systime_get_ms();
+	do
+	{
+		/* Wait for the start character. */
+		iResult = s_pfnFillBuffer(1, UART_BUFFER_TIMEOUT);
+		if( iResult==0 )
+		{
+			ucByte = transport_buffer_get();
+			if( ucByte==MONITOR_STREAM_PACKET_START )
+			{
+				/* Wait for the size. */
+				iResult = s_pfnFillBuffer(2, UART_BUFFER_TIMEOUT);
+				if( iResult==0 )
+				{
+					sizPacket  = transport_buffer_peek(0);
+					sizPacket |= (unsigned int)(transport_buffer_peek(1) << 8U);
+					if( sizPacket!=0 && sizPacket<=MONITOR_MAX_PACKET_SIZE_UART-4)
+					{
+						/* Get the size, data and CRC16.
+						 * The complete data has this structure:
+						 *   2 bytes for the size of the packet
+						 *   sizPacket bytes of data
+						 *   2 bytes for the CRC16
+						 */
+						iResult = s_pfnFillBuffer(2+sizPacket+2, UART_BUFFER_TIMEOUT);
+						if( iResult==0 )
+						{
+							/* Loop over all bytes and build the CRC16 checksum. */
+							usCrc = 0;
+							sizCrcPosition = 0;
+							while( sizCrcPosition<sizPacket+4 )
+							{
+								ucByte = transport_buffer_peek(sizCrcPosition);
+								usCrc = crc16(usCrc, ucByte);
+								++sizCrcPosition;
+							}
+
+							if( usCrc==0 )
+							{
+								/* OK, the CRC matches! */
+
+								/* Get the packet type. */
+								tPacketTyp = (MONITOR_PACKET_TYP_T)transport_buffer_peek(3);
+
+								/* Is this an ACK packet with the correct sequence number? */
+								if( sizPacket==2 && tPacketTyp==MONITOR_PACKET_TYP_ACK )
+								{
+									ucSequenceNumber = transport_buffer_peek(2);
+									if( ucSequenceNumber==ucRequiredSequenceNumber )
+									{
+										tResult = ACK_RESULT_SequenceAckd;
+										break;
+									}
+								}
+								else if( sizPacket==2 && tPacketTyp==MONITOR_PACKET_TYP_CancelOperation )
+								{
+									tResult = ACK_RESULT_OperationCanceled;
+									break;
+								}
+
+								/* Skip the complete packet. It is processed or ignored now. */
+								transport_buffer_skip(2+sizPacket+2);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		iIsElapsed = systime_elapsed(ulTimerHandle, ulTimeoutMs);
+	} while( iIsElapsed==0 );
+
+	return tResult;
+}
+
+
+
 void transport_loop(void)
 {
 	unsigned char ucByte;
@@ -331,7 +532,7 @@ void transport_loop(void)
 	unsigned short usCrc16;
 	size_t sizCrcPosition;
 	int iResult;
-	unsigned char *pucBuffer;
+	unsigned char ucPacketSequenceNumber;
 
 
 	/* Collect a complete packet. */
@@ -340,25 +541,25 @@ void transport_loop(void)
 	do
 	{
 		s_pfnFillBuffer(1, UART_BUFFER_NO_TIMEOUT);
-		ucByte = uart_buffer_get();
+		ucByte = transport_buffer_get();
 	} while( ucByte!=MONITOR_STREAM_PACKET_START );
 
 	/* Get the size of the data packet in bytes. */
 	s_pfnFillBuffer(2, UART_BUFFER_NO_TIMEOUT);
-	sizPacket  = uart_buffer_peek(0);
-	sizPacket |= (size_t)(uart_buffer_peek(1) << 8U);
+	sizPacket  = transport_buffer_peek(0);
+	sizPacket |= (size_t)(transport_buffer_peek(1) << 8U);
 
 	/* Is the packet's size valid? */
 	if( sizPacket==0 )
 	{
 		/* Get the magic "*#". This is the knock sequence of the old ROM code. */
 		iResult = s_pfnFillBuffer(4, UART_BUFFER_TIMEOUT);
-		if( iResult==0 && uart_buffer_peek(2)=='*' && uart_buffer_peek(3)=='#' )
+		if( iResult==0 && transport_buffer_peek(2)=='*' && transport_buffer_peek(3)=='#' )
 		{
 			/* Discard the size and magic. */
 			for(sizCrcPosition=0; sizCrcPosition<4; ++sizCrcPosition)
 			{
-				uart_buffer_get();
+				transport_buffer_get();
 			}
 
 			/* Send magic cookie and version info. */
@@ -375,14 +576,11 @@ void transport_loop(void)
 		{
 			/* Loop over all bytes and build the CRC16 checksum. */
 			/* NOTE: the size is just for the user data, but the CRC16 includes the size. */
-			usCrc16 = crc16(0, uart_buffer_peek(0));
-			usCrc16 = crc16(usCrc16, uart_buffer_peek(1));
-			pucBuffer = aucPacketInputBuffer;
-			sizCrcPosition = 2;
+			usCrc16 = 0;
+			sizCrcPosition = 0;
 			while( sizCrcPosition<sizPacket+4 )
 			{
-				ucByte = uart_buffer_peek(sizCrcPosition);
-				*(pucBuffer++) = ucByte;
+				ucByte = transport_buffer_peek(sizCrcPosition);
 				usCrc16 = crc16(usCrc16, ucByte);
 				++sizCrcPosition;
 			}
@@ -391,10 +589,31 @@ void transport_loop(void)
 			{
 				/* OK, the CRC matches! */
 
-				/* Skip over the complete packet. It is already copied. */
-				uart_buffer_skip(sizPacket+4);
+				ucPacketSequenceNumber = transport_buffer_peek(2);
+				if( ucSequence==ucPacketSequenceNumber )
+				{
+					/* Send an ACK packet here. */
+					s_pfnSendAck();
 
-				monitor_process_packet(aucPacketInputBuffer, sizPacket, MONITOR_MAX_PACKET_SIZE_UART-5U);
+					/* Increase the sequence number. */
+					++ucSequence;
+
+					/* Skip the size and the sequence. */
+					transport_buffer_skip(2+1);
+
+					/* The maximum packet size is reduced by 6 bytes:
+					 *  1 start char
+					 *  2 size bytes
+					 *  1 sequence number
+					 *  2 CRC bytes
+					 */
+					monitor_process_packet(sizPacket-1U, MONITOR_MAX_PACKET_SIZE_UART-6U);
+				}
+				else
+				{
+					/* Skip over the complete packet. It is already copied. */
+					transport_buffer_skip(sizPacket+4);
+				}
 			}
 		}
 	}
@@ -413,7 +632,24 @@ void transport_send_byte(unsigned char ucData)
 
 
 
-static void transport_send_packet_usb_cdc(void)
+void transport_send_bytes(const unsigned char *pucData, unsigned int sizData)
+{
+	/* Does the data still fit into the output buffer? */
+	if( (sizPacketOutputFill+sizData)>MONITOR_MAX_PACKET_SIZE_UART )
+	{
+		/* No -> copy only what still fits. */
+		sizData = MONITOR_MAX_PACKET_SIZE_UART - sizPacketOutputFill;
+	}
+
+	/* Copy the data to the buffer. */
+	memcpy(aucPacketOutputBuffer + sizPacketOutputFill, pucData, sizData);
+
+	sizPacketOutputFill += sizData;
+}
+
+
+
+static int transport_send_packet_usb(TRANSPORT_SEND_PACKET_ACK_T tRequireAck)
 {
 	HOSTDEF(ptUsbDevFifoArea);
 	HOSTDEF(ptUsbDevFifoCtrlArea);
@@ -423,77 +659,108 @@ static void transport_send_packet_usb_cdc(void)
 	unsigned short usCrc;
 	unsigned long ulChunk;
 	size_t sizDataLeft;
+	ACK_RESULT_T tResult;
+	int iResult;
 
 
-	/* Wait until 3 bytes fit into the FIFO. */
 	do
 	{
-		ulFillLevel   = ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_uart_ep_tx_stat;
-		ulFillLevel  &= HOSTMSK(usb_dev_fifo_ctrl_uart_ep_tx_stat_fill_level);
-		ulFillLevel >>= HOSTSRT(usb_dev_fifo_ctrl_uart_ep_tx_stat_fill_level);
-	} while( ulFillLevel>=(64-3) );
-
-	/* Send the start character. */
-	ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = MONITOR_STREAM_PACKET_START;
-
-	/* Send the size. */
-	ucData = (unsigned char)( sizPacketOutputFill        & 0xffU);
-	ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned long)ucData;
-	usCrc = crc16(0, ucData);
-	ucData = (unsigned char)((sizPacketOutputFill >> 8U) & 0xffU);
-	ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned long)ucData;
-	usCrc = crc16(usCrc, ucData);
-
-
-	/* Send the packet and build the CRC16. */
-	pucCnt = aucPacketOutputBuffer;
-	sizDataLeft = sizPacketOutputFill;
-	while( sizDataLeft!=0 )
-	{
-		ulFillLevel   = ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_uart_ep_tx_stat;
-		ulFillLevel  &= HOSTMSK(usb_dev_fifo_ctrl_uart_ep_tx_stat_fill_level);
-		ulFillLevel >>= HOSTSRT(usb_dev_fifo_ctrl_uart_ep_tx_stat_fill_level);
-		if( ulFillLevel<64 )
+		/* Wait until 4 bytes fit into the FIFO. */
+		do
 		{
-			ulChunk = 64 - ulFillLevel;
-			if( ulChunk>sizDataLeft )
+			ulFillLevel   = ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_uart_ep_tx_stat;
+			ulFillLevel  &= HOSTMSK(usb_dev_fifo_ctrl_uart_ep_tx_stat_fill_level);
+			ulFillLevel >>= HOSTSRT(usb_dev_fifo_ctrl_uart_ep_tx_stat_fill_level);
+		} while( ulFillLevel>=(64-4) );
+
+		/* Send the start character. */
+		ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = MONITOR_STREAM_PACKET_START;
+
+		/* Send the size. */
+		ucData = (unsigned char)( sizPacketOutputFill        & 0xffU);
+		ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned long)ucData;
+		usCrc = crc16(0, ucData);
+		ucData = (unsigned char)((sizPacketOutputFill >> 8U) & 0xffU);
+		ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned long)ucData;
+		usCrc = crc16(usCrc, ucData);
+
+		/* Send the sequence number. */
+		ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned long)ucSequence;
+		usCrc = crc16(usCrc, ucSequence);
+
+		/* Send the packet and build the CRC16. */
+		pucCnt = aucPacketOutputBuffer;
+		sizDataLeft = sizPacketOutputFill;
+		while( sizDataLeft!=0 )
+		{
+			ulFillLevel   = ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_uart_ep_tx_stat;
+			ulFillLevel  &= HOSTMSK(usb_dev_fifo_ctrl_uart_ep_tx_stat_fill_level);
+			ulFillLevel >>= HOSTSRT(usb_dev_fifo_ctrl_uart_ep_tx_stat_fill_level);
+			if( ulFillLevel<64 )
 			{
-				ulChunk = sizDataLeft;
+				ulChunk = 64 - ulFillLevel;
+				if( ulChunk>sizDataLeft )
+				{
+					ulChunk = sizDataLeft;
+				}
+				sizDataLeft -= ulChunk;
+				do
+				{
+					ucData = *(pucCnt++);
+					ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned long)ucData;
+					usCrc = crc16(usCrc, ucData);
+					--ulChunk;
+				} while( ulChunk!=0 );
 			}
-			sizDataLeft -= ulChunk;
-			do
-			{
-				ucData = *(pucCnt++);
-				ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned long)ucData;
-				usCrc = crc16(usCrc, ucData);
-				--ulChunk;
-			} while( ulChunk!=0 );
 		}
-	}
 
-	/* Wait until 2 bytes fit into the FIFO. */
-	do
-	{
-		ulFillLevel   = ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_uart_ep_tx_stat;
-		ulFillLevel  &= HOSTMSK(usb_dev_fifo_ctrl_uart_ep_tx_stat_fill_level);
-		ulFillLevel >>= HOSTSRT(usb_dev_fifo_ctrl_uart_ep_tx_stat_fill_level);
-	} while( ulFillLevel>=(64-2) );
+		/* Wait until 2 bytes fit into the FIFO. */
+		do
+		{
+			ulFillLevel   = ptUsbDevFifoCtrlArea->ulUsb_dev_fifo_ctrl_uart_ep_tx_stat;
+			ulFillLevel  &= HOSTMSK(usb_dev_fifo_ctrl_uart_ep_tx_stat_fill_level);
+			ulFillLevel >>= HOSTSRT(usb_dev_fifo_ctrl_uart_ep_tx_stat_fill_level);
+		} while( ulFillLevel>=(64-2) );
 
-	/* Send the CRC16. */
-	ucData = (unsigned char)(usCrc>>8U);
-	ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned long)ucData;
-	ucData = (unsigned char)(usCrc&0xffU);
-	ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned long)ucData;
+		/* Send the CRC16. */
+		ucData = (unsigned char)(usCrc>>8U);
+		ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned long)ucData;
+		ucData = (unsigned char)(usCrc&0xffU);
+		ptUsbDevFifoArea->ulUsb_dev_uart_tx_data = (unsigned long)ucData;
 
-	/* Remember the packet size for resends. */
-	sizPacketOutputFillLast = sizPacketOutputFill;
+		if( tRequireAck==TRANSPORT_SEND_PACKET_WITHOUT_ACK )
+		{
+			tResult = ACK_RESULT_SequenceAckd;
+		}
+		else
+		{
+			/* Wait for ACK. */
+			tResult = transport_wait_for_ack(ucSequence, UART_RESEND_TIMEOUT_MS);
+			if( tResult==ACK_RESULT_SequenceAckd )
+			{
+				/* Increase the sequence number. */
+				++ucSequence;
+			}
+		}
+	} while( tResult==ACK_RESULT_Timeout );
 
 	sizPacketOutputFill = 0;
+
+	if( tResult==ACK_RESULT_SequenceAckd )
+	{
+		iResult = 0;
+	}
+	else
+	{
+		iResult = -1;
+	}
+
+	return iResult;
 }
 
 
 
-static void transport_send_packet_uart(void)
+static int transport_send_packet_uart(TRANSPORT_SEND_PACKET_ACK_T tRequireAck)
 {
 	HOSTDEF(ptUart0Area);
 	unsigned long ulValue;
@@ -501,96 +768,114 @@ static void transport_send_packet_uart(void)
 	const unsigned char *pucEnd;
 	unsigned char ucData;
 	unsigned short usCrc;
+	ACK_RESULT_T tResult;
+	int iResult;
 
 
-	/* Send the start character. */
 	do
 	{
-		ulValue  = ptUart0Area->ulUartfr;
-		ulValue &= HOSTMSK(uartfr_TXFF);
-	} while( ulValue!=0 );
-	ptUart0Area->ulUartdr = MONITOR_STREAM_PACKET_START;
-
-	/* Send the size. */
-	ucData = (unsigned char)( sizPacketOutputFill        & 0xffU);
-	do
-	{
-		ulValue  = ptUart0Area->ulUartfr;
-		ulValue &= HOSTMSK(uartfr_TXFF);
-	} while( ulValue!=0 );
-	ptUart0Area->ulUartdr = (unsigned long)ucData;
-	usCrc = crc16(0, ucData);
-	ucData = (unsigned char)((sizPacketOutputFill >> 8U) & 0xffU);
-	do
-	{
-		ulValue  = ptUart0Area->ulUartfr;
-		ulValue &= HOSTMSK(uartfr_TXFF);
-	} while( ulValue!=0 );
-	ptUart0Area->ulUartdr = (unsigned long)ucData;
-	usCrc = crc16(usCrc, ucData);
-
-
-	/* Send the packet and build the CRC16. */
-	pucCnt = aucPacketOutputBuffer;
-	pucEnd = aucPacketOutputBuffer + sizPacketOutputFill;
-	while( pucCnt<pucEnd )
-	{
+		/* Send the start character. */
 		do
 		{
 			ulValue  = ptUart0Area->ulUartfr;
 			ulValue &= HOSTMSK(uartfr_TXFF);
 		} while( ulValue!=0 );
+		ptUart0Area->ulUartdr = MONITOR_STREAM_PACKET_START;
 
-		ucData = *(pucCnt++);
+		/* Send the size. */
+		ucData = (unsigned char)( sizPacketOutputFill        & 0xffU);
+		do
+		{
+			ulValue  = ptUart0Area->ulUartfr;
+			ulValue &= HOSTMSK(uartfr_TXFF);
+		} while( ulValue!=0 );
+		ptUart0Area->ulUartdr = (unsigned long)ucData;
+		usCrc = crc16(0, ucData);
+		ucData = (unsigned char)((sizPacketOutputFill >> 8U) & 0xffU);
+		do
+		{
+			ulValue  = ptUart0Area->ulUartfr;
+			ulValue &= HOSTMSK(uartfr_TXFF);
+		} while( ulValue!=0 );
 		ptUart0Area->ulUartdr = (unsigned long)ucData;
 		usCrc = crc16(usCrc, ucData);
-	}
 
-	/* Send the CRC16. */
-	ucData = (unsigned char)(usCrc>>8U);
-	do
-	{
-		ulValue  = ptUart0Area->ulUartfr;
-		ulValue &= HOSTMSK(uartfr_TXFF);
-	} while( ulValue!=0 );
-	ptUart0Area->ulUartdr = (unsigned long)ucData;
-	ucData = (unsigned char)(usCrc&0xffU);
-	do
-	{
-		ulValue  = ptUart0Area->ulUartfr;
-		ulValue &= HOSTMSK(uartfr_TXFF);
-	} while( ulValue!=0 );
-	ptUart0Area->ulUartdr = (unsigned long)ucData;
+		/* Send the sequence number. */
+		do
+		{
+			ulValue  = ptUart0Area->ulUartfr;
+			ulValue &= HOSTMSK(uartfr_TXFF);
+		} while( ulValue!=0 );
+		ptUart0Area->ulUartdr = (unsigned long)ucSequence;
+		usCrc = crc16(usCrc, ucSequence);
 
-	/* Remember the packet size for resends. */
-	sizPacketOutputFillLast = sizPacketOutputFill;
+		/* Send the packet and build the CRC16. */
+		pucCnt = aucPacketOutputBuffer;
+		pucEnd = aucPacketOutputBuffer + sizPacketOutputFill;
+		while( pucCnt<pucEnd )
+		{
+			do
+			{
+				ulValue  = ptUart0Area->ulUartfr;
+				ulValue &= HOSTMSK(uartfr_TXFF);
+			} while( ulValue!=0 );
+
+			ucData = *(pucCnt++);
+			ptUart0Area->ulUartdr = (unsigned long)ucData;
+			usCrc = crc16(usCrc, ucData);
+		}
+
+		/* Send the CRC16. */
+		ucData = (unsigned char)(usCrc>>8U);
+		do
+		{
+			ulValue  = ptUart0Area->ulUartfr;
+			ulValue &= HOSTMSK(uartfr_TXFF);
+		} while( ulValue!=0 );
+		ptUart0Area->ulUartdr = (unsigned long)ucData;
+		ucData = (unsigned char)(usCrc&0xffU);
+		do
+		{
+			ulValue  = ptUart0Area->ulUartfr;
+			ulValue &= HOSTMSK(uartfr_TXFF);
+		} while( ulValue!=0 );
+		ptUart0Area->ulUartdr = (unsigned long)ucData;
+
+		if( tRequireAck==TRANSPORT_SEND_PACKET_WITHOUT_ACK )
+		{
+			tResult = ACK_RESULT_SequenceAckd;
+		}
+		else
+		{
+			/* Wait for ACK. */
+			tResult = transport_wait_for_ack(ucSequence, UART_RESEND_TIMEOUT_MS);
+			if( tResult==ACK_RESULT_SequenceAckd )
+			{
+				/* Increase the sequence number. */
+				++ucSequence;
+			}
+		}
+	} while( tResult==ACK_RESULT_Timeout );
 
 	sizPacketOutputFill = 0;
+
+	if( tResult==ACK_RESULT_SequenceAckd )
+	{
+		iResult = 0;
+	}
+	else
+	{
+		iResult = -1;
+	}
+
+	return iResult;
 }
 
 
 
-void transport_send_packet(void)
+int transport_send_packet(TRANSPORT_SEND_PACKET_ACK_T tRequireAck)
 {
-	s_pfnSendPacket();
-}
-
-
-
-int transport_is_ready_to_execute(void)
-{
-	return 1;
-}
-
-
-
-void transport_resend_packet(void)
-{
-	/* Restore the last packet size. */
-	sizPacketOutputFill = sizPacketOutputFillLast;
-
-	/* Send the buffer again. */
-	transport_send_packet();
+	return s_pfnSendPacket(tRequireAck);
 }
 
 
@@ -598,6 +883,17 @@ void transport_resend_packet(void)
 unsigned char transport_call_console_get(void)
 {
 	return 0;
+}
+
+
+
+void transport_call_console_flush(void)
+{
+	/* Send the packet. */
+	transport_send_packet(TRANSPORT_SEND_PACKET_WITH_ACK);
+
+	/* Start a new packet. */
+	transport_send_byte(MONITOR_PACKET_TYP_CallMessage);
 }
 
 
@@ -610,11 +906,7 @@ void transport_call_console_put(unsigned int uiChar)
 	/* Reached the maximum packet size? */
 	if( sizPacketOutputFill>=MONITOR_MAX_PACKET_SIZE_UART-5 )
 	{
-		/* Yes -> send the packet. */
-		transport_send_packet();
-
-		/* Start a new packet. */
-		transport_send_byte(MONITOR_STATUS_CallMessage);
+		transport_call_console_flush();
 	}
 
 }
@@ -628,27 +920,18 @@ unsigned int transport_call_console_peek(void)
 
 
 
-void transport_call_console_flush(void)
-{
-	/* Send the packet. */
-	transport_send_packet();
-
-	/* Start a new packet. */
-	transport_send_byte(MONITOR_STATUS_CallMessage);
-}
-
-
 void transport_set_vectors(unsigned long ulDevice)
 {
 	if( ulDevice==3 )
 	{
-		s_pfnFillBuffer = transport_buffer_fill_usb_cdc;
-		s_pfnSendPacket = transport_send_packet_usb_cdc;
+		s_pfnFillBuffer = transport_buffer_fill_usb;
+		s_pfnSendPacket = transport_send_packet_usb;
+		s_pfnSendAck = transport_send_ack_usb;
 	}
 	else if( ulDevice==1 )
 	{
 		s_pfnFillBuffer = transport_buffer_fill_uart;
 		s_pfnSendPacket = transport_send_packet_uart;
+		s_pfnSendAck = transport_send_ack_uart;
 	}
 }
-
