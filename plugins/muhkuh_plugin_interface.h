@@ -20,6 +20,7 @@
 
 
 #include <string.h>
+#include <stddef.h>
 
 #ifndef __MUHKUH_PLUGIN_INTERFACE__
 #define __MUHKUH_PLUGIN_INTERFACE__

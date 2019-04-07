@@ -27,6 +27,7 @@
 #ifndef __ROMLOADER_H__
 #define __ROMLOADER_H__
 
+
 /*-----------------------------------*/
 
 class MUHKUH_EXPORT romloader_read_functinoid
@@ -79,6 +80,28 @@ public:
 	virtual const char *get_romcode_name(unsigned int tRomcode) const;
 
 // *** lua interface end ***
+
+	typedef enum
+	{
+		TRANSPORTSTATUS_OK                        = 0,
+		TRANSPORTSTATUS_TIMEOUT                   = 1,
+		TRANSPORTSTATUS_PACKET_TOO_LARGE          = 2,
+		TRANSPORTSTATUS_RECEIVE_FAILED            = 3,
+		TRANSPORTSTATUS_SEND_FAILED               = 4,
+		TRANSPORTSTATUS_FAILED_TO_SYNC            = 5,
+		TRANSPORTSTATUS_CRC_MISMATCH              = 6,
+		TRANSPORTSTATUS_MISSING_USERDATA          = 7,
+		TRANSPORTSTATUS_COMMAND_EXECUTION_FAILED  = 8,
+		TRANSPORTSTATUS_SEQUENCE_MISMATCH         = 9,
+		TRANSPORTSTATUS_NOT_CONNECTED             = 10,
+		TRANSPORTSTATUS_NETX_ERROR                = 11,  /* The netX returned a status != OK. */
+		TRANSPORTSTATUS_PACKET_TOO_SMALL          = 12,  /* The packet does not have enough data for 1 byte of user data. */
+		TRANSPORTSTATUS_INVALID_PACKET_SIZE       = 13,  /* The packet size does not match the expected size for the packet type. */
+		TRANSPORTSTATUS_UNEXPECTED_PACKET_SIZE    = 14,  /* The packet size does not match the number of requested bytes (usually a "read_data" response to a read command). */
+		TRANSPORTSTATUS_UNEXPECTED_PACKET_TYP     = 15   /* The netX sent an unexpected answer. */
+	} TRANSPORTSTATUS_T;
+
+	const char *get_error_message(TRANSPORTSTATUS_T tStatus);
 
 protected:
 	/* Do not include this into the SWIG bindings. */

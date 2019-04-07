@@ -21,7 +21,8 @@
 
 #include "../romloader.h"
 
-#include "machine_interface_commands.h"
+//#include "machine_interface_commands.h"
+#include "../machine_interface/netx/src/monitor_commands.h"
 
 
 #ifndef __ROMLOADER_ETH_MAIN_H__
@@ -39,23 +40,148 @@
 
 /*-----------------------------------*/
 
-class romloader_eth_provider;
+/* Endianness macros translating 16 and 32bit from the host to the netX byte order.
+ * FIXME: Detect the host endianness. More infos here:
+ *          http://www.boost.org/doc/libs/1_43_0/boost/detail/endian.hpp
+ *          https://cmake.org/cmake/help/v3.5/module/TestBigEndian.html
+ */
+#define HTONETX16(a) (a)
+#define HTONETX32(a) (a)
+
+#define NETXTOH16(a) (a)
+#define NETXTOH32(a) (a)
+
+
+/* This is a packet header up to the packet type. */
+struct MIV3_PACKET_HEADER_STRUCT
+{
+	uint8_t  ucStreamStart;
+	uint16_t usDataSize;
+	uint8_t  ucSequenceNumber;
+	uint8_t  ucPacketType;
+} __attribute__ ((packed));
+
+typedef union MIV3_PACKET_HEADER_UNION
+{
+	struct MIV3_PACKET_HEADER_STRUCT s;
+	uint8_t auc[5];
+} MIV3_PACKET_HEADER_T;
+
+
+
+/* This is a complete sync packet. */
+struct MIV3_PACKET_SYNC_STRUCT
+{
+	MIV3_PACKET_HEADER_T tHeader;
+	uint8_t  aucMacic[4];
+	uint16_t  usVersionMinor;
+	uint16_t  usVersionMajor;
+	uint8_t   ucChipType;
+	uint16_t  usMaximumPacketSize;
+	uint8_t   ucCrcHi;
+	uint8_t   ucCrcLo;
+} __attribute__ ((packed));
+
+typedef union MIV3_PACKET_SYNC_UNION
+{
+	struct MIV3_PACKET_SYNC_STRUCT s;
+	uint8_t auc[18];
+} MIV3_PACKET_SYNC_T;
+
+
+
+/* This is a complete acknowledge packet. */
+struct MIV3_PACKET_ACK_STRUCT
+{
+	MIV3_PACKET_HEADER_T tHeader;
+	uint8_t  ucCrcHi;
+	uint8_t  ucCrcLo;
+} __attribute__ ((packed));
+
+typedef union MIV3_PACKET_ACK_UNION
+{
+	struct MIV3_PACKET_ACK_STRUCT s;
+	uint8_t auc[7];
+} MIV3_PACKET_ACK_T;
+
+
+
+/* This is a complete status packet. */
+struct MIV3_PACKET_STATUS_STRUCT
+{
+	MIV3_PACKET_HEADER_T tHeader;
+	uint8_t  ucStatus;
+	uint8_t  ucCrcHi;
+	uint8_t  ucCrcLo;
+} __attribute__ ((packed));
+
+typedef union MIV3_PACKET_STATUS_UNION
+{
+	struct MIV3_PACKET_STATUS_STRUCT s;
+	uint8_t auc[8];
+} MIV3_PACKET_STATUS_T;
+
+
+
+/* This is a complete status packet. */
+struct MIV3_PACKET_CANCEL_CALL_STRUCT
+{
+	MIV3_PACKET_HEADER_T tHeader;
+	uint8_t  ucData;
+	uint8_t  ucCrcHi;
+	uint8_t  ucCrcLo;
+} __attribute__ ((packed));
+
+typedef union MIV3_PACKET_CANCEL_CALL_UNION
+{
+	struct MIV3_PACKET_CANCEL_CALL_STRUCT s;
+	uint8_t auc[8];
+} MIV3_PACKET_CANCEL_CALL_T;
+
+
+
+/* This is either a complete read packet or the start of a write packet. */
+struct MIV3_PACKET_COMMAND_READWRITE_DATA_STRUCT
+{
+	MIV3_PACKET_HEADER_T tHeader;
+	uint16_t usDataSize;
+	uint32_t ulAddress;
+} __attribute__ ((packed));
+
+typedef union MIV3_PACKET_COMMAND_READWRITE_DATA_UNION
+{
+	struct MIV3_PACKET_COMMAND_READWRITE_DATA_STRUCT s;
+	uint8_t auc[11];
+} __attribute__ ((packed)) MIV3_PACKET_COMMAND_READWRITE_DATA_T;
+
+
+
+/* This is a complete call package. */
+struct MIV3_PACKET_COMMAND_CALL_STRUCT
+{
+	MIV3_PACKET_HEADER_T tHeader;
+	uint32_t ulAddress;
+	uint32_t ulR0;
+} __attribute__ ((packed));
+
+typedef union MIV3_PACKET_COMMAND_CALL_UNION
+{
+	struct MIV3_PACKET_COMMAND_CALL_STRUCT s;
+	uint8_t auc[13];
+} __attribute__ ((packed)) MIV3_PACKET_COMMAND_CALL_T;
+
 
 /*-----------------------------------*/
 
-/* This is the maximum size for a packet buffer in bytes.
- * NOTE: This has nothing to do with the maximum packet size
- * for a hboot backet.
- */
-#define ETH_MAX_PACKET_SIZE 4096
+class romloader_eth_provider;
+
+/*-----------------------------------*/
 
 class romloader_eth : public romloader
 {
 public:
 	romloader_eth(const char *pcName, const char *pcTyp, romloader_eth_provider *ptProvider, const char *pcServerName);
 	~romloader_eth(void);
-
-	void set_serial_vectors(lua_State *ptClientData);
 
 // *** lua interface start ***
 	// open the connection to the device
@@ -86,13 +212,31 @@ public:
 // *** lua interface end ***
 
 private:
+	/* This is the maximum size for a packet buffer in bytes.
+	 * NOTE: This has nothing to do with the maximum packet size
+	 * for a hboot backet.
+	 */
+	static const size_t sizMaxPacketSizeHost = 4096;
+	size_t m_sizMaxPacketSizeClient;
+
 	void hexdump(const uint8_t *pucData, uint32_t ulSize);
+	romloader::TRANSPORTSTATUS_T send_packet(MIV3_PACKET_HEADER_T *ptPacket, size_t sizData);
+	romloader::TRANSPORTSTATUS_T receive_packet(void);
+	TRANSPORTSTATUS_T send_sync_command(void);
+	bool synchronize(void);
+	TRANSPORTSTATUS_T send_ack(unsigned char ucSequenceToAck);
+	TRANSPORTSTATUS_T execute_command(MIV3_PACKET_HEADER_T *ptPacket, size_t sizPacket);
+	TRANSPORTSTATUS_T read_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, uint16_t sizDataInBytes);
+	TRANSPORTSTATUS_T write_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, const void *pvData, uint16_t sizDataInBytes);
 
 	bool m_fIsConnected;
 	romloader_eth_device_platform *m_ptEthDev;
 
-	uint8_t aucRxBuffer[ETH_MAX_PACKET_SIZE];
-	uint8_t aucTxBuffer[ETH_MAX_PACKET_SIZE];
+	uint8_t m_ucMonitorSequence;
+
+	size_t m_sizPacketInputBuffer;
+	uint8_t m_aucPacketInputBuffer[sizMaxPacketSizeHost];
+	uint8_t aucTxBuffer[sizMaxPacketSizeHost];
 };
 
 /*-----------------------------------*/

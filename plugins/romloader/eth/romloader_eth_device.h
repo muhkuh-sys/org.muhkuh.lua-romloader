@@ -40,13 +40,13 @@ public:
 	virtual bool Open(void) = 0;
 	virtual void Close(void) = 0;
 	virtual int ExecuteCommand(const unsigned char *aucCommand, size_t sizCommand, unsigned char *aucResponse, size_t sizResponse, size_t *psizResponse) = 0;
-	virtual int SendPacket(const unsigned char *pucData, size_t sizData) = 0;
-	virtual int RecvPacket(unsigned char *pucData, size_t sizData, unsigned long ulTimeout, size_t *psizPacket) = 0;
+	virtual romloader::TRANSPORTSTATUS_T SendPacket(const unsigned char *pucData, size_t sizData) = 0;
+	virtual romloader::TRANSPORTSTATUS_T RecvPacket(unsigned char *pucData, size_t sizData, unsigned long ulTimeout, size_t *psizPacket) = 0;
 
 
 protected:
 	char *m_pcServerName;
-	static const unsigned short m_usHBootServerPort = 53280;
+	static const unsigned short m_usHBootServerPort = 53281;
 
 
 private:

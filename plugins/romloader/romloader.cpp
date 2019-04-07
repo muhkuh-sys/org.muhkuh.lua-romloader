@@ -423,3 +423,80 @@ bool romloader::callback_common(SWIGLUA_REF *ptLuaFn, long lCallbackUserData, in
 	return fStillRunning;
 }
 
+
+
+const char *romloader::get_error_message(TRANSPORTSTATUS_T tStatus)
+{
+	const char *pcMessage = "Unknown error code";
+
+
+	switch(tStatus)
+	{
+	case TRANSPORTSTATUS_OK:
+		pcMessage = "OK";
+		break;
+
+	case TRANSPORTSTATUS_TIMEOUT:
+		pcMessage = "timeout";
+		break;
+
+	case TRANSPORTSTATUS_PACKET_TOO_LARGE:
+		pcMessage = "packet too large";
+		break;
+
+	case TRANSPORTSTATUS_RECEIVE_FAILED:
+		pcMessage = "receive failed";
+		break;
+
+	case TRANSPORTSTATUS_SEND_FAILED:
+		pcMessage = "send failed";
+		break;
+
+	case TRANSPORTSTATUS_FAILED_TO_SYNC:
+		pcMessage = "failed to sync";
+		break;
+
+	case TRANSPORTSTATUS_CRC_MISMATCH:
+		pcMessage = "CRC mismatch";
+		break;
+
+	case TRANSPORTSTATUS_MISSING_USERDATA:
+		pcMessage = "missing user data";
+		break;
+
+	case TRANSPORTSTATUS_COMMAND_EXECUTION_FAILED:
+		pcMessage = "command execution failed";
+		break;
+
+	case TRANSPORTSTATUS_SEQUENCE_MISMATCH:
+		pcMessage = "sequence mismatch";
+		break;
+
+	case TRANSPORTSTATUS_NOT_CONNECTED:
+		pcMessage = "not connected";
+		break;
+
+	case TRANSPORTSTATUS_NETX_ERROR:
+		pcMessage = "the netX returned an error code";
+		break;
+
+	case TRANSPORTSTATUS_PACKET_TOO_SMALL:
+		pcMessage = "the packet does not have enough data for 1 byte of user data";
+		break;
+
+	case TRANSPORTSTATUS_INVALID_PACKET_SIZE:
+		pcMessage = "the packet size does not match the expected size for the packet type";
+		break;
+
+	case TRANSPORTSTATUS_UNEXPECTED_PACKET_SIZE:
+		pcMessage = "the packet size does not match the number of requested bytes";
+		break;
+
+	case TRANSPORTSTATUS_UNEXPECTED_PACKET_TYP:
+		pcMessage = "unexpected packet type";
+		break;
+	}
+
+	return pcMessage;
+}
+
