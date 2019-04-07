@@ -39,7 +39,7 @@ public:
 	bool Open(void);
 	void Close(void);
 	int ExecuteCommand(const unsigned char *aucCommand, size_t sizCommand, unsigned char *aucResponse, size_t sizResponse, size_t *psizResponse);
-	romloader::TRANSPORTSTATUS_T SendPacket(const unsigned char *pucData, size_t sizData);
+	romloader::TRANSPORTSTATUS_T SendPacket(const void *pvData, size_t sizData);
 	romloader::TRANSPORTSTATUS_T RecvPacket(unsigned char *pucData, size_t sizData, unsigned long ulTimeout, size_t *psizPacket);
 
 	static size_t ScanForServers(char ***pppcPortNames);

@@ -428,7 +428,7 @@ DWORD romloader_uart_device_win::CheckComState()
 *    \param ulTimeout Timeout in ms to wait for send complete
 *    \return Number of bytes that have been sent                             */
 /*****************************************************************************/
-size_t romloader_uart_device_win::SendRaw(const unsigned char *pucData, size_t sizData, unsigned long ulTimeout)
+size_t romloader_uart_device_win::SendRaw(const void *pvData, size_t sizData, unsigned long ulTimeout)
 {
 	bool  fRet;
 	DWORD dwBytesWritten;
@@ -446,7 +446,7 @@ size_t romloader_uart_device_win::SendRaw(const unsigned char *pucData, size_t s
 	tOverlapWrite.hEvent = m_hEventSendData;
 
 	/* Write the data to the port. */
-	fResult = ::WriteFile(m_hPort, pucData, sizData, NULL, &tOverlapWrite);
+	fResult = ::WriteFile(m_hPort, pvData, sizData, NULL, &tOverlapWrite);
 //	fprintf(stderr, "%s(%d): WriteFile returned %d.\n", __FILE__, __LINE__, fResult);
 	if( fResult!=0 )
 	{

@@ -47,7 +47,7 @@ public:
 	virtual bool Open(void);
 	virtual void Close(void);
 
-	size_t SendRaw(const unsigned char *pucData, size_t sizData, unsigned long ulTimeout);
+	size_t SendRaw(const void *pvData, size_t sizData, unsigned long ulTimeout);
 	bool Cancel(void);
 	size_t RecvRaw(unsigned char *pucData, size_t sizData, unsigned long ulTimeout);
 	bool Flush(void);

@@ -288,8 +288,9 @@ void romloader_uart_device_linux::Close(void)
 }
 
 
-size_t romloader_uart_device_linux::SendRaw(const unsigned char *pucData, size_t sizData, unsigned long ulTimeout)
+size_t romloader_uart_device_linux::SendRaw(const void *pvData, size_t sizData, unsigned long ulTimeout)
 {
+	const unsigned char *pucData;
 	ssize_t ssizBytesWritten;
 	size_t sizChunk;
 	size_t sizBytesWritten;
@@ -297,6 +298,7 @@ size_t romloader_uart_device_linux::SendRaw(const unsigned char *pucData, size_t
 
 
 	sizBytesWritten = 0;
+	pucData = (const unsigned char*)pvData;
 	do
 	{
 		sizChunk = sizData - sizBytesWritten;

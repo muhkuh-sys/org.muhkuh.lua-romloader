@@ -40,164 +40,6 @@
 
 /*-----------------------------------*/
 
-/* Do not use these structures in Swig. */
-#if !defined(SWIG)
-
-/* Endianness macros translating 16 and 32bit from the host to the netX byte order.
- * FIXME: Detect the host endianness. More infos here:
- *          http://www.boost.org/doc/libs/1_43_0/boost/detail/endian.hpp
- *          https://cmake.org/cmake/help/v3.5/module/TestBigEndian.html
- */
-#define HTONETX16(a) (a)
-#define HTONETX32(a) (a)
-
-#define NETXTOH16(a) (a)
-#define NETXTOH32(a) (a)
-
-
-/* This is a packet header up to the packet type. */
-struct __attribute__((__packed__)) MIV3_PACKET_HEADER_STRUCT
-{
-	uint8_t  ucStreamStart;
-	uint16_t usDataSize;
-	uint8_t  ucSequenceNumber;
-	uint8_t  ucPacketType;
-};
-
-typedef union MIV3_PACKET_HEADER_UNION
-{
-	struct MIV3_PACKET_HEADER_STRUCT s;
-	uint8_t auc[5];
-} MIV3_PACKET_HEADER_T;
-
-
-
-/* This is a complete sync packet. */
-struct __attribute__((__packed__)) MIV3_PACKET_SYNC_STRUCT
-{
-	MIV3_PACKET_HEADER_T tHeader;
-	uint8_t  aucMacic[4];
-	uint16_t  usVersionMinor;
-	uint16_t  usVersionMajor;
-	uint8_t   ucChipType;
-	uint16_t  usMaximumPacketSize;
-	uint8_t   ucCrcHi;
-	uint8_t   ucCrcLo;
-};
-
-typedef union MIV3_PACKET_SYNC_UNION
-{
-	struct MIV3_PACKET_SYNC_STRUCT s;
-	uint8_t auc[18];
-} MIV3_PACKET_SYNC_T;
-
-
-
-/* This is a complete acknowledge packet. */
-struct __attribute__((__packed__)) MIV3_PACKET_ACK_STRUCT
-{
-	MIV3_PACKET_HEADER_T tHeader;
-	uint8_t  ucCrcHi;
-	uint8_t  ucCrcLo;
-};
-
-typedef union MIV3_PACKET_ACK_UNION
-{
-	struct MIV3_PACKET_ACK_STRUCT s;
-	uint8_t auc[7];
-} MIV3_PACKET_ACK_T;
-
-
-
-/* This is a complete status packet. */
-struct __attribute__((__packed__)) MIV3_PACKET_STATUS_STRUCT
-{
-	MIV3_PACKET_HEADER_T tHeader;
-	uint8_t  ucStatus;
-	uint8_t  ucCrcHi;
-	uint8_t  ucCrcLo;
-};
-
-typedef union MIV3_PACKET_STATUS_UNION
-{
-	struct MIV3_PACKET_STATUS_STRUCT s;
-	uint8_t auc[8];
-} MIV3_PACKET_STATUS_T;
-
-
-
-/* This is a complete status packet. */
-struct __attribute__((__packed__)) MIV3_PACKET_CANCEL_CALL_STRUCT
-{
-	MIV3_PACKET_HEADER_T tHeader;
-	uint8_t  ucData;
-	uint8_t  ucCrcHi;
-	uint8_t  ucCrcLo;
-};
-
-typedef union MIV3_PACKET_CANCEL_CALL_UNION
-{
-	struct MIV3_PACKET_CANCEL_CALL_STRUCT s;
-	uint8_t auc[8];
-} MIV3_PACKET_CANCEL_CALL_T;
-
-
-
-/* This is a complete read packet. */
-struct __attribute__((__packed__)) MIV3_PACKET_COMMAND_READ_DATA_STRUCT
-{
-	MIV3_PACKET_HEADER_T tHeader;
-	uint16_t usDataSize;
-	uint32_t ulAddress;
-	uint8_t  ucCrcHi;
-	uint8_t  ucCrcLo;
-};
-
-typedef union MIV3_PACKET_COMMAND_READ_DATA_UNION
-{
-	struct MIV3_PACKET_COMMAND_READ_DATA_STRUCT s;
-	uint8_t auc[13];
-} MIV3_PACKET_COMMAND_READ_DATA_T;
-
-
-
-/* This is the start of a write packet. */
-struct __attribute__((__packed__)) MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_STRUCT
-{
-	MIV3_PACKET_HEADER_T tHeader;
-	uint16_t usDataSize;
-	uint32_t ulAddress;
-};
-
-typedef union MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_UNION
-{
-	struct MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_STRUCT s;
-	uint8_t auc[11];
-} MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T;
-
-
-
-/* This is a complete call package. */
-struct __attribute__((__packed__)) MIV3_PACKET_COMMAND_CALL_STRUCT
-{
-	MIV3_PACKET_HEADER_T tHeader;
-	uint32_t ulAddress;
-	uint32_t ulR0;
-	uint8_t  ucCrcHi;
-	uint8_t  ucCrcLo;
-};
-
-typedef union MIV3_PACKET_COMMAND_CALL_UNION
-{
-	struct MIV3_PACKET_COMMAND_CALL_STRUCT s;
-	uint8_t auc[15];
-} MIV3_PACKET_COMMAND_CALL_T;
-
-#endif  /* !defined(SWIG) */
-
-
-/*-----------------------------------*/
-
 class romloader_eth_provider;
 
 /*-----------------------------------*/
@@ -208,60 +50,20 @@ public:
 	romloader_eth(const char *pcName, const char *pcTyp, romloader_eth_provider *ptProvider, const char *pcServerName);
 	~romloader_eth(void);
 
-// *** lua interface start ***
-	// open the connection to the device
+/* *** LUA interface start *** */
+	/* Open the connection to the device. */
 	virtual void Connect(lua_State *ptClientData);
-	// close the connection to the device
+	/* Close the connection to the device. */
 	virtual void Disconnect(lua_State *ptClientData);
+/* *** LUA interface end *** */
 
-	// read a byte (8bit) from the netx to the pc
-	virtual uint8_t read_data08(lua_State *ptClientData, uint32_t ulNetxAddress);
-	// read a word (16bit) from the netx to the pc
-	virtual uint16_t read_data16(lua_State *ptClientData, uint32_t ulNetxAddress);
-	// read a long (32bit) from the netx to the pc
-	virtual uint32_t read_data32(lua_State *ptClientData, uint32_t ulNetxAddress);
-	// read a byte array from the netx to the pc
-	virtual void read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData);
-
-	// write a byte (8bit) from the pc to the netx
-	virtual void write_data08(lua_State *ptClientData, uint32_t ulNetxAddress, uint8_t ucData);
-	// write a word (16bit) from the pc to the netx
-	virtual void write_data16(lua_State *ptClientData, uint32_t ulNetxAddress, uint16_t usData);
-	// write a long (32bit) from the pc to the netx
-	virtual void write_data32(lua_State *ptClientData, uint32_t ulNetxAddress, uint32_t ulData);
-	// write a byte array from the pc to the netx
-	virtual void write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData);
-
-	// call routine
-	virtual void call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
-// *** lua interface end ***
+protected:
+	virtual TRANSPORTSTATUS_T send_raw_packet(const void *pvPacket, size_t sizPacket);
+	virtual TRANSPORTSTATUS_T receive_packet(void);
 
 private:
-	/* This is the maximum size for a packet buffer in bytes.
-	 * NOTE: This has nothing to do with the maximum packet size
-	 * for a hboot backet.
-	 */
-	static const size_t sizMaxPacketSizeHost = 4096;
-	size_t m_sizMaxPacketSizeClient;
-
-	void hexdump(const uint8_t *pucData, uint32_t ulSize);
-	romloader::TRANSPORTSTATUS_T send_packet(MIV3_PACKET_HEADER_T *ptPacket, size_t sizData);
-	romloader::TRANSPORTSTATUS_T receive_packet(void);
-	TRANSPORTSTATUS_T send_sync_command(void);
-	bool synchronize(void);
-	TRANSPORTSTATUS_T send_ack(unsigned char ucSequenceToAck);
-	TRANSPORTSTATUS_T execute_command(MIV3_PACKET_HEADER_T *ptPacket, size_t sizPacket);
-	TRANSPORTSTATUS_T read_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, uint16_t sizDataInBytes);
-	TRANSPORTSTATUS_T write_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, const void *pvData, uint16_t sizDataInBytes);
-
 	bool m_fIsConnected;
 	romloader_eth_device_platform *m_ptEthDev;
-
-	uint8_t m_ucMonitorSequence;
-
-	size_t m_sizPacketInputBuffer;
-	uint8_t m_aucPacketInputBuffer[sizMaxPacketSizeHost];
-	uint8_t aucTxBuffer[sizMaxPacketSizeHost];
 };
 
 /*-----------------------------------*/

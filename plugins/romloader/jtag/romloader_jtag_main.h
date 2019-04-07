@@ -78,6 +78,11 @@ public:
 
     // public wrapper for romloader::callback_string
     bool callback_string_public(SWIGLUA_REF *ptLuaFn, const char *pcProgressData, size_t sizProgressData, long lCallbackUserData);
+
+protected:
+	virtual TRANSPORTSTATUS_T send_raw_packet(const void *pvPacket, size_t sizPacket);
+	virtual TRANSPORTSTATUS_T receive_packet(void);
+
 private:
 	bool m_fIsInitialized;
 	romloader_jtag_provider *m_ptJtagProvider;
