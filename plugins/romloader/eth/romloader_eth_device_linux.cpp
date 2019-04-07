@@ -364,7 +364,7 @@ size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 									{
 										break;
 									}
-									snprintf(pcRef, sizEntry, "romloader_eth_%ld.%ld.%ld.%ld", ulIp&0xffU, (ulIp>>8U)&0xffU, (ulIp>>16U)&0xffU, (ulIp>>24U)&0xffU);
+									snprintf(pcRef, sizEntry, "romloader_eth_%ld.%ld.%ld.%ld", (ulIp>>24U)&0xffU, (ulIp>>16U)&0xffU, (ulIp>>8U)&0xffU, ulIp&0xffU);
 									ppcRef[sizRefCnt++] = pcRef;
 								}
 								else
