@@ -737,7 +737,7 @@ void romloader::read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **ppcBU
 				}
 				else
 				{
-					memcpy(pcBuffer, m_aucPacketInputBuffer+4, sizChunk);
+					memcpy(pcBuffer, m_aucPacketInputBuffer+5, sizChunk);
 					pcBuffer += sizChunk;
 					ulSize -= sizChunk;
 					ulNetxAddress += sizChunk;
