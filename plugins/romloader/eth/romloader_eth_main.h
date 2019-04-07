@@ -183,12 +183,14 @@ struct __attribute__((__packed__)) MIV3_PACKET_COMMAND_CALL_STRUCT
 	MIV3_PACKET_HEADER_T tHeader;
 	uint32_t ulAddress;
 	uint32_t ulR0;
+	uint8_t  ucCrcHi;
+	uint8_t  ucCrcLo;
 };
 
 typedef union MIV3_PACKET_COMMAND_CALL_UNION
 {
 	struct MIV3_PACKET_COMMAND_CALL_STRUCT s;
-	uint8_t auc[13];
+	uint8_t auc[15];
 } MIV3_PACKET_COMMAND_CALL_T;
 
 #endif  /* !defined(SWIG) */
