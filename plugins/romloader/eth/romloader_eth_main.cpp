@@ -175,7 +175,6 @@ bool romloader_eth_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 
 romloader_eth::romloader_eth(const char *pcName, const char *pcTyp, romloader_eth_provider *ptProvider, const char *pcServerName)
  : romloader(pcName, pcTyp, ptProvider)
- , m_fIsConnected(false)
  , m_ptEthDev(NULL)
 {
 	printf("%s(%p): created in romloader_eth\n", m_pcName, this);
