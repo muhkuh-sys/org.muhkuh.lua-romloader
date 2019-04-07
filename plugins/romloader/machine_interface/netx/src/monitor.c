@@ -354,7 +354,6 @@ void monitor_process_packet(unsigned long ulPacketSize, unsigned short usMaxpack
 	unsigned long ulDataSize;
 	unsigned long ulAddress;
 	MONITOR_ACCESSSIZE_T tAccessSize;
-//	unsigned char ucSequence;
 	unsigned long ulR0;
 
 
