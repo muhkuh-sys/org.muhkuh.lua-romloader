@@ -283,6 +283,10 @@ proc probe_cpu {strCpuID} {
 	return $SC_CFG_RESULT
 }
 
+# ###################################################################
+#    Reset board
+# ###################################################################
+
 # todo: pass target name from plugin 
 proc reset_board {} {
 	global strTarget
@@ -307,13 +311,6 @@ proc reset_netx90_MPW_COM {} {
 	reset init
 }
 
-proc reset_netx90_COM {} {
-	# if srst is not fitted use SYSRESETREQ to perform a soft reset
-	cortex_m reset_config sysresetreq
-	
-	init
-	halt
-}
 
 proc reset_netX_ARM926_ARM966 {} {
 	global _USE_SOFT_RESET_
@@ -486,7 +483,6 @@ proc reset_netx90_COM {}  {
                 
                 # We assume that the PLL is configured. Set the JTAG frequency to 1 MHz.
                 adapter_khz 1000
-            
 
             } else {
                 # The COM CPU wasn't halted.
@@ -498,7 +494,6 @@ proc reset_netx90_COM {}  {
             }
         }
     }
-    
 }
 
 # ###################################################################
