@@ -34,7 +34,7 @@ static packet_handler_stall_req_t getStatus(setupPacket_t *pPacket)
 	unsigned int uiReqTyp;
 	int iSendStatus;
 	unsigned short usStatus;
-	unsigned int uiEndpoint;
+//	unsigned int uiEndpoint;
 	unsigned char aucBuffer[2];
 
 
@@ -62,7 +62,7 @@ static packet_handler_stall_req_t getStatus(setupPacket_t *pPacket)
 
 	case 3:
 		/* Get the end point status. */
-		uiEndpoint = pPacket->tHeader.wIndex & 0xffU;
+//		uiEndpoint = pPacket->tHeader.wIndex & 0xffU;
 		iSendStatus = 1;
 		usStatus = 0x0000;
 	}

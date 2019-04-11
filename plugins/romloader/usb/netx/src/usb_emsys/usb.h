@@ -26,14 +26,17 @@
 #include <stddef.h>
 
 
-#define MONITOR_USB_MAX_PACKET_SIZE 2048
+#define MONITOR_MAX_PACKET_SIZE_USB 2048
 
+extern unsigned char aucPacketRx[MONITOR_MAX_PACKET_SIZE_USB];
+extern unsigned int sizPacketRxFill;
 
 void usb_deinit(void);
 void usb_init(void);
 
 void usb_loop(void);
 void usb_send_packet(const unsigned char *pucPacket, size_t sizPacket);
+void usb_received_packet_is_processed(void);
 unsigned long usb_get_rx_fill_level(void);
 //unsigned long usb_get_tx_fill_level(void);
 unsigned char usb_get_byte(void);

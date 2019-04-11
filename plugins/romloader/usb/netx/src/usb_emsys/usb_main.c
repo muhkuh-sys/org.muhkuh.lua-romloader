@@ -28,9 +28,10 @@
 
 /*-------------------------------------------------------------------------*/
 
-static unsigned char aucPacketBufferRx[MONITOR_USB_MAX_PACKET_SIZE];
-size_t sizPacketBufferRxFilled;
 
+unsigned char aucPacketRx[MONITOR_MAX_PACKET_SIZE_USB];
+unsigned int sizPacketRxFill;
+unsigned int sizPacketReceived;
 
 
 void usb_activateInputPipe(void)
@@ -190,7 +191,7 @@ void usb_pingpong(void)
 				if( ulPacketSize<=Usb_Ep2_PacketSize )
 				{
 					/* Is enough space left in the buffer? */
-					if( (sizPacketBufferRxFilled+ulPacketSize)>MONITOR_USB_MAX_PACKET_SIZE )
+					if( (sizPacketReceived+ulPacketSize)>MONITOR_MAX_PACKET_SIZE_USB )
 					{
 						/* No.
 						 * TODO: discard the packet.
@@ -201,18 +202,20 @@ void usb_pingpong(void)
 					{
 						if( ulPacketSize>0 )
 						{
-							usb_io_read_fifo((Usb_Ep2_Buffer>>2), ulPacketSize, aucPacketBufferRx+sizPacketBufferRxFilled);
-							sizPacketBufferRxFilled += ulPacketSize;
+							usb_io_read_fifo((Usb_Ep2_Buffer>>2), ulPacketSize, aucPacketRx+sizPacketReceived);
+							sizPacketReceived += ulPacketSize;
 						}
 
 						if( ulPacketSize<64 )
 						{
-							monitor_process_packet(aucPacketBufferRx, sizPacketBufferRxFilled, MONITOR_USB_MAX_PACKET_SIZE);
-							sizPacketBufferRxFilled = 0;
+							sizPacketRxFill = sizPacketReceived;
+							sizPacketReceived = 0;
 						}
-
-						/* Ready for new commands. Reactivate the input pipe. */
-						usb_activateInputPipe();
+						else
+						{
+							/* Ready for more data. Reactivate the input pipe. */
+							usb_activateInputPipe();
+						}
 					}
 				}
 			}

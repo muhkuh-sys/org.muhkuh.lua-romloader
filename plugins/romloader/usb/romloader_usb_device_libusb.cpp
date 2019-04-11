@@ -730,7 +730,7 @@ int romloader_usb_device_libusb::netx500_load_code(libusb_device_handle *ptDevHa
 //		printf("Load 0x%08x bytes to 0x%08x.\n", sizNetxCode, ulLoadAddress);
 
 		/* Generate crc16 checksum. */
-		usCrc = crc16(pucNetxCode, sizNetxCode);
+		usCrc = netx500_crc16(pucNetxCode, sizNetxCode);
 
 		/* Generate load command. */
 		sizLine = snprintf((char*)(aucOutBuffer+1), sizeof(aucOutBuffer)-1, "load %lx %lx %04X\n", ulLoadAddress, sizNetxCode, usCrc);
@@ -1310,21 +1310,25 @@ int romloader_usb_device_libusb::netx56_upgrade_romcode(libusb_device *ptDevice,
 
 
 
-int romloader_usb_device_libusb::send_packet(const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned int uiTimeoutMs)
+romloader::TRANSPORTSTATUS_T romloader_usb_device_libusb::send_packet(const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned int uiTimeoutMs)
 {
+	romloader::TRANSPORTSTATUS_T tResult;
 	int iResult;
 	int iProcessed;
 
+
+	tResult = romloader::TRANSPORTSTATUS_OK;
 
 	iResult = libusb_bulk_transfer(m_ptDevHandle, m_tDeviceId.ucEndpoint_Out, (unsigned char*)aucOutBuf, sizOutBuf, &iProcessed, uiTimeoutMs);
 	if( iResult!=0 )
 	{
 		fprintf(stderr, "%s(%p): Failed to send data: %s  iProcessed == %d \n", m_pcPluginId, this, libusb_strerror(iResult), iProcessed);
+		tResult = romloader::TRANSPORTSTATUS_SEND_FAILED;
 	}
 	else if( sizOutBuf!=iProcessed )
 	{
 		fprintf(stderr, "%s(%p): Requested to send %ld bytes, but only %d were processed!\n", m_pcPluginId, this, sizOutBuf, iProcessed);
-		iResult = 1;
+		iResult = romloader::TRANSPORTSTATUS_SEND_FAILED;
 	}
 	/* The commands are transfered as transactions. This means data is grouped by packets smaller than 64 bytes.
 	 * Does the transfer fill the last packet completely? */
@@ -1335,24 +1339,31 @@ int romloader_usb_device_libusb::send_packet(const unsigned char *aucOutBuf, siz
 		if( iResult!=0 )
 		{
 			fprintf(stderr, "%s(%p): Failed to send the terminating empty packet: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
+			iResult = romloader::TRANSPORTSTATUS_SEND_FAILED;
 		}
 	}
 
-	return iResult;
+	return tResult;
 }
 
 
 
-int romloader_usb_device_libusb::receive_packet(unsigned char *aucInBuf, size_t sizInBuf, size_t *psizInBuf, unsigned int uiTimeoutMs)
+romloader::TRANSPORTSTATUS_T romloader_usb_device_libusb::receive_packet(unsigned char *aucInBuf, size_t sizInBuf, size_t *psizInBuf, unsigned int uiTimeoutMs)
 {
+	romloader::TRANSPORTSTATUS_T tResult;
 	int iResult;
 	int iProcessed;
 	unsigned char *pucBuffer;
 	size_t sizTotal;
 	size_t sizChunk;
+	size_t sizData;
+	uint16_t usCrc;
+	uint8_t *pucCnt;
+	uint8_t *pucEnd;
 
 
 	/* Receive the data. */
+	tResult = romloader::TRANSPORTSTATUS_OK;
 	pucBuffer = aucInBuf;
 	sizTotal = 0;
 	do
@@ -1363,21 +1374,26 @@ int romloader_usb_device_libusb::receive_packet(unsigned char *aucInBuf, size_t 
 			if( iProcessed<0 )
 			{
 				fprintf(stderr, "Strange number of processed bytes from libusb_bulk_transfer: %d\n", iProcessed);
-				iResult = -1;
+				tResult = romloader::TRANSPORTSTATUS_RECEIVE_FAILED;
 			}
 			else if( iProcessed==0 )
 			{
 				/* Received a zero length packet. This is the end of the transaction. */
 				break;
 			}
+			/* The first packet must start with a "*". */
+			else if( sizTotal==0 && pucBuffer[0]!=MONITOR_STREAM_PACKET_START )
+			{
+				/* No stream start. This is not the start of a packet. */
+			}
 			else
 			{
 				/* Now it is safe to cast the signed integer to size_t. */
 				sizChunk = (size_t)iProcessed;
-				
+
 				sizTotal += sizChunk;
 				pucBuffer += sizChunk;
-				
+
 				if( m_tDeviceId.fDeviceSupportsTransactions==true )
 				{
 					if( sizChunk<64 )
@@ -1390,7 +1406,7 @@ int romloader_usb_device_libusb::receive_packet(unsigned char *aucInBuf, size_t 
 					{
 						/* No -> do not continue! */
 						fprintf(stderr, "Too much data, not enough space for another packet after 0x%08lx bytes.\n", sizTotal);
-						iResult = -1;
+						iResult = romloader::TRANSPORTSTATUS_PACKET_TOO_LARGE;
 					}
 				}
 				else
@@ -1399,49 +1415,48 @@ int romloader_usb_device_libusb::receive_packet(unsigned char *aucInBuf, size_t 
 				}
 			}
 		}
-	} while( iResult==0 );
-
-	if( iResult==0 )
-	{
-		*psizInBuf = sizTotal;
-	}
-	
-	return iResult;
-}
-
-
-int romloader_usb_device_libusb::execute_command(const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned char *aucInBuf, size_t sizInBufMax, size_t *psizInBuf)
-{
-	int iResult;
-	size_t sizProcessed;
-	unsigned int uiTimeoutMs;
-
-
-	uiTimeoutMs = 500; // 100
-
-	iResult = send_packet(aucOutBuf, sizOutBuf, uiTimeoutMs);
-	if( iResult!=0 )
-	{
-		fprintf(stderr, "%s(%p): Failed to send data: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
-	}
-	else
-	{
-
-		iResult = receive_packet(aucInBuf, sizInBufMax, &sizProcessed, uiTimeoutMs);
-		if( iResult!=0 )
+		else
 		{
-			fprintf(stderr, "%s(%p): Failed to receive data: %s\n", m_pcPluginId, this, libusb_strerror(iResult));
+			tResult = romloader::TRANSPORTSTATUS_RECEIVE_FAILED;
+		}
+	} while( tResult==romloader::TRANSPORTSTATUS_OK );
+
+	if( tResult==romloader::TRANSPORTSTATUS_OK )
+	{
+		/* Get the size of the data block. */
+		sizData = aucInBuf[1] | (aucInBuf[2]<<8U);
+		/* Is the data size valid? */
+		if( (sizData+5)!=sizTotal )
+		{
+			fprintf(stderr, "Invalid packet size: %zd / %zd\n", sizData, sizTotal);
+			tResult = romloader::TRANSPORTSTATUS_INVALID_PACKET_SIZE;
 		}
 		else
 		{
-//			printf("received:\n");
-//			hexdump(aucInBuf, iProcessed);
-			*psizInBuf = sizProcessed;
+			/* Build the CRC16. */
+			usCrc = 0;
+			pucCnt = aucInBuf + offsetof(struct MIV3_PACKET_HEADER_STRUCT, usDataSize);
+			pucEnd = aucInBuf + sizTotal;
+			while( pucCnt<pucEnd )
+			{
+				usCrc = crc16(usCrc, *(pucCnt++));
+			}
+			if( usCrc!=0 )
+			{
+				fprintf(stderr, "CRC does not match.\n");
+				hexdump(aucInBuf, sizTotal);
+				tResult = romloader::TRANSPORTSTATUS_CRC_MISMATCH;
+			}
+			else
+			{
+				*psizInBuf = sizTotal;
+			}
 		}
 	}
 
-	return iResult;
+	return tResult;
 }
+
 
 
 int romloader_usb_device_libusb::update_old_netx_device(libusb_device *ptNetxDevice, libusb_device **pptUpdatedNetxDevice)
@@ -1508,7 +1523,7 @@ int romloader_usb_device_libusb::update_old_netx_device(libusb_device *ptNetxDev
 }
 
 
-unsigned short romloader_usb_device_libusb::crc16(const unsigned char *pucData, size_t sizData)
+unsigned short romloader_usb_device_libusb::netx500_crc16(const unsigned char *pucData, size_t sizData)
 {
 	const unsigned char *pucDataCnt;
 	const unsigned char *pucDataEnd;

@@ -192,3 +192,15 @@ void romloader_usb_device::hexdump(const unsigned char *pucData, unsigned long u
 	}
 }
 
+
+
+uint16_t romloader_usb_device::crc16(uint16_t usCrc, uint8_t ucData)
+{
+	usCrc  = (usCrc >> 8) | ((usCrc & 0xff) << 8);
+	usCrc ^= ucData;
+	usCrc ^= (usCrc & 0xff) >> 4;
+	usCrc ^= (usCrc & 0x0f) << 12;
+	usCrc ^= ((usCrc & 0xff) << 4) << 1;
+
+	return usCrc;
+}

@@ -51,27 +51,6 @@ public:
 	virtual void Connect(lua_State *ptClientData);
 	// close the connection to the device
 	virtual void Disconnect(lua_State *ptClientData);
-
-	// read a byte (8bit) from the netx to the pc
-	virtual uint8_t read_data08(lua_State *ptClientData, uint32_t ulNetxAddress);
-	// read a word (16bit) from the netx to the pc
-	virtual uint16_t read_data16(lua_State *ptClientData, uint32_t ulNetxAddress);
-	// read a long (32bit) from the netx to the pc
-	virtual uint32_t read_data32(lua_State *ptClientData, uint32_t ulNetxAddress);
-	// read a byte array from the netx to the pc
-	virtual void read_image(uint32_t ulNetxAddress, uint32_t ulSize, char **ppcBUFFER_OUT, size_t *psizBUFFER_OUT, SWIGLUA_REF tLuaFn, long lCallbackUserData);
-
-	// write a byte (8bit) from the pc to the netx
-	virtual void write_data08(lua_State *ptClientData, uint32_t ulNetxAddress, uint8_t ucData);
-	// write a word (16bit) from the pc to the netx
-	virtual void write_data16(lua_State *ptClientData, uint32_t ulNetxAddress, uint16_t usData);
-	// write a long (32bit) from the pc to the netx
-	virtual void write_data32(lua_State *ptClientData, uint32_t ulNetxAddress, uint32_t ulData);
-	// write a byte array from the pc to the netx
-	virtual void write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData);
-
-	// call routine
-	virtual void call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 // *** lua interface end ***
 
 protected:
@@ -80,39 +59,12 @@ protected:
 
 private:
 #ifndef SWIG
-	typedef struct
-	{
-		uint8_t *pucData;
-		size_t sizData;
-		size_t sizPos;
-	} DATA_BUFFER_T;
+//	static const size_t m_sizMaxPacketSizeHost = 8192+64;
+//	size_t m_sizMaxPacketSizeClient;
+//	uint8_t m_aucPacketOutputBuffer[m_sizMaxPacketSizeHost];
+//	uint8_t m_aucPacketInputBuffer[m_sizMaxPacketSizeHost];
 
-	typedef enum USBSTATUS_ENUM
-	{
-		USBSTATUS_OK                        = 0,
-		USBSTATUS_TIMEOUT                   = 1,
-		USBSTATUS_PACKET_TOO_LARGE          = 2,
-		USBSTATUS_SEND_FAILED               = 3,
-		USBSTATUS_RECEIVE_FAILED            = 4,
-		USBSTATUS_FAILED_TO_SYNC            = 5,
-		USBSTATUS_CRC_MISMATCH              = 6,
-		USBSTATUS_MISSING_USERDATA          = 7,
-		USBSTATUS_COMMAND_EXECUTION_FAILED  = 8,
-		USBSTATUS_SEQUENCE_MISMATCH         = 9
-	} USBSTATUS_T;
-
-	static const size_t m_sizMaxPacketSizeHost = 8192+64;
-	size_t m_sizMaxPacketSizeClient;
-	uint8_t m_aucPacketOutputBuffer[m_sizMaxPacketSizeHost];
-	uint8_t m_aucPacketInputBuffer[m_sizMaxPacketSizeHost];
-
-	unsigned int m_uiMonitorSequence;
-
-	bool synchronize(void);
-	void next_sequence_number();
-	void packet_update_sequence_number(uint8_t *aucCommand);
-
-	USBSTATUS_T execute_command(uint8_t *aucCommand, size_t sizCommand, size_t *psizReceivePacket);
+//	unsigned int m_uiMonitorSequence;
 
 	romloader_usb_provider *m_ptUsbProvider;
 

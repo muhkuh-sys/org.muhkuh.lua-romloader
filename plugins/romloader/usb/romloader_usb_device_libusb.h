@@ -58,9 +58,11 @@ public:
 	int Connect(unsigned int uiBusNr, unsigned int uiDeviceAdr);
 	void Disconnect(void);
 
-	int send_packet(const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned int uiTimeoutMs);
-	int receive_packet(unsigned char *aucInBuf, size_t sizInBuf, size_t *psizInBuf, unsigned int uiTimeoutMs);
+	romloader::TRANSPORTSTATUS_T send_packet(const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned int uiTimeoutMs);
+	romloader::TRANSPORTSTATUS_T receive_packet(unsigned char *aucInBuf, size_t sizInBuf, size_t *psizInBuf, unsigned int uiTimeoutMs);
+#if 0
 	int execute_command(const unsigned char *aucOutBuf, size_t sizOutBuf, unsigned char *aucInBuf, size_t sizInBufMax, size_t *psizInBuf);
+#endif
 
 protected:
 	NETX_USB_DEVICE_T m_tDeviceId;
@@ -77,13 +79,13 @@ private:
 
 	/* General update routines. */
 	int update_old_netx_device(libusb_device *ptNetxDevice, libusb_device **pptUpdatedNetxDevice);
-	unsigned short crc16(const unsigned char *pucData, size_t sizData);
 	/* netx10 update routines. */
 	int netx10_discard_until_timeout(libusb_device_handle *ptDevHandle);
 	int netx10_load_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode, size_t sizNetxCode);
 	int netx10_start_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode);
 	int netx10_upgrade_romcode(libusb_device *ptDevice, libusb_device **pptUpdatedNetxDevice);
 	/* netx500 update routines. */
+	unsigned short netx500_crc16(const unsigned char *pucData, size_t sizData);
 	int netx500_exchange_data(libusb_device_handle *ptDevHandle, const unsigned char *pucOutBuffer, unsigned char *pucInBuffer);
 	int netx500_discard_until_timeout(libusb_device_handle *ptDevHandle);
 	int netx500_load_code(libusb_device_handle *ptDevHandle, const unsigned char *pucNetxCode, size_t sizNetxCode);
@@ -112,5 +114,5 @@ private:
 };
 
 
-#endif	/* __ROMLOADER_USB_DEVICE_LIBUSB_H__ */
+#endif  /* __ROMLOADER_USB_DEVICE_LIBUSB_H__ */
 

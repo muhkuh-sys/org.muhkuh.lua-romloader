@@ -53,14 +53,12 @@ sources_custom_netx500 = """
 sources_custom_netx10 = """
 	src/options.c
 	src/usb_hsoc_v1/transport.c
-	src/usb_hsoc_v1/usb.c
 """
 
 
 sources_custom_netx56 = """
 	src/options.c
 	src/usb_hsoc_v2/transport.c
-	src/usb_hsoc_v2/usb.c
 """
 
 strTargetPath = Dir('#targets/plugins/romloader/usb/netx').get_path()

@@ -31,6 +31,8 @@ void usb_activateInputPipe(void);
 void usb_pingpong(void);
 void usb_handleReset(void);
 
+extern unsigned int sizPacketReceived;
+
 /*-------------------------------------------------------------------------*/
 
 #endif  /* __USB_MAIN_H__ */

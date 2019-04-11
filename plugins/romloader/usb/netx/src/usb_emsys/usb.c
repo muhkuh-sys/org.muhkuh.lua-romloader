@@ -86,12 +86,10 @@ void usb_init(void)
 	tOutTransactionNeeded = USB_SetupTransaction_NoOutTransaction;
 	tReceiveEpState = USB_ReceiveEndpoint_Running;
 	tSendEpState = USB_SendEndpoint_Idle;
+	sizPacketReceived = 0;
 
 	usb_descriptors_init();
 	usb_activateInputPipe();
-
-	/* Reset the fill level for the receive buffer. */
-	sizPacketBufferRxFilled = 0;
 }
 
 
@@ -170,6 +168,13 @@ void usb_send_packet(const unsigned char *pucPacket, size_t sizPacket)
 		/* Clear the event. */
 		ptUsbCoreArea->ulPIPE_EV = (1<<1);
 	}
+}
+
+
+void usb_received_packet_is_processed(void)
+{
+	/* Ready to receive a new transaction. */
+	usb_activateInputPipe();
 }
 
 

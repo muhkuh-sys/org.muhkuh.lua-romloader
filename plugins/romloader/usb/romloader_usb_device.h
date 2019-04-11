@@ -62,9 +62,9 @@ protected:
 
 	void hexdump(const unsigned char *pucData, unsigned long ulSize);
 
+	uint16_t crc16(uint16_t usCrc, uint8_t ucData);
 private:
 };
 
 
-#endif	/* __ROMLOADER_USB_DEVICE_H__ */
-
+#endif  /* __ROMLOADER_USB_DEVICE_H__ */
