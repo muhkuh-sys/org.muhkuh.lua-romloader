@@ -698,7 +698,7 @@ static int transport_send_packet_usbcdc(TRANSPORT_SEND_PACKET_ACK_T tRequireAck)
 		ucData = (unsigned char)(usCrc&0xffU);
 		ulValue |= ((unsigned long)ucData) << uiBitPos;
 		*(pulUsbFifo++) = ulValue;
-		sizUsbTransferLength = sizPacketOutputFill + 5;
+		sizUsbTransferLength = sizPacketOutputFill + 6U;
 
 
 		/* Send the packet in the FIFO. */
