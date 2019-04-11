@@ -261,6 +261,7 @@ proc probe_cpu {strCpuID} {
 	# netx 90
 	} elseif { $strCpuID == "netX90_COM" } {
 		echo "+ probe_cpu netX90_COM"
+		adapter_khz 50
 		jtag newtap netx90 dap -expected-id 0x6ba00477 -irlen 4
 		jtag newtap netx90 tap -expected-id 0x10a046ad -irlen 4
 		jtag configure netx90.dap -event setup { global SC_CFG_RESULT ; echo {Yay - setup netx 90} ; set SC_CFG_RESULT {OK} }
@@ -373,7 +374,7 @@ proc netx90_stop_xpec_xpic {} {
 	puts "Stopping xPEC/xPIC"
 	mww 0xff111d70 0x00ff0000 ;# xc_start_stop_ctrl
 	mww 0xff184080 1          ;# xpic_hold_pc (com)
-	mww 0xff884080 1          ;# xpic_hold_pc (app)
+	# mww 0xff884080 1          ;# xpic_hold_pc (app) - not reachable via COM CPU
 }
 
 proc reset_netx90_COM {}  {
