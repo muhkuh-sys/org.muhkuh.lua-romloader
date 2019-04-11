@@ -875,8 +875,7 @@ void romloader::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, siz
 	 *  4 byte netX address
 	 *  2 byte CRC
 	 */
-//	sizChunkMaxSize = m_sizMaxPacketSizeClient - 13U;
-	sizChunkMaxSize = m_sizMaxPacketSizeClient - 256U;
+	sizChunkMaxSize = m_sizMaxPacketSizeClient - 13U;
 
 	if( sizBUFFER_IN!=0 )
 	{
