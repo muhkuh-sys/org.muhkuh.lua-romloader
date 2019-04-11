@@ -287,6 +287,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 	TRANSPORTSTATUS_T tResult;
 	unsigned char ucStatus;
 	unsigned char ucPacketSequence;
+	unsigned char ucLastMonitorSequence;
 	unsigned int uiRetryCnt;
 	int iResult;
 	MIV3_PACKET_ACK_T *ptAckPacket;
@@ -339,10 +340,28 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 				}
 				else
 				{
-					fprintf(stderr, "! execute_command: expected an ACK packet with %zd bytes, but received %zd bytes:\n", sizeof(MIV3_PACKET_ACK_T), m_sizPacketInputBuffer);
-					hexdump(m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+					/* Is this a re-send of the last packet from the netX? */
+					ucPacketSequence = ptAckPacket->s.tHeader.s.ucSequenceNumber;
+					ucLastMonitorSequence = m_ucMonitorSequence - 1U;
+					if( ucLastMonitorSequence==ucPacketSequence )
+					{
+						/* The netX sent the last packet again.
+						 * This is the case if the last ACK from the PC got lost.
+						 * Re-transmit an ACK packet for the last sequence number.
+						 */
+						fprintf(stderr, "Re-sending ACK for sequence number 0x%02x.\n", ucLastMonitorSequence);
+						send_ack(ucLastMonitorSequence);
+
 /* FIXME: change the result. */
-					tResult = TRANSPORTSTATUS_MISSING_USERDATA;
+						tResult = TRANSPORTSTATUS_MISSING_USERDATA;
+					}
+					else
+					{
+						fprintf(stderr, "! execute_command: expected an ACK packet with %zd bytes, but received %zd bytes:\n", sizeof(MIV3_PACKET_ACK_T), m_sizPacketInputBuffer);
+						hexdump(m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+/* FIXME: change the result. */
+						tResult = TRANSPORTSTATUS_MISSING_USERDATA;
+					}
 				}
 			}
 		}
