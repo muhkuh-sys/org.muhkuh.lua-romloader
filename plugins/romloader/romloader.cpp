@@ -250,6 +250,7 @@ romloader::TRANSPORTSTATUS_T romloader::send_ack(unsigned char ucSequenceToAck)
 	tPacketAck.s.tHeader.s.usDataSize = 2;
 
 	/* Set the sequence number. */
+//	fprintf(stderr, "ACK 0x%02x\n", ucSequenceToAck);
 	tPacketAck.s.tHeader.s.ucSequenceNumber = ucSequenceToAck;
 
 	/* Set the packet type. */
@@ -270,7 +271,7 @@ romloader::TRANSPORTSTATUS_T romloader::send_ack(unsigned char ucSequenceToAck)
 
 	/* Send the buffer. */
 //	hexdump(tPacketAck.auc, sizPacket);
-	tResult = send_packet(&(tPacketAck.s.tHeader), sizeof(MIV3_PACKET_ACK_T));
+	tResult = send_raw_packet(tPacketAck.auc, sizeof(MIV3_PACKET_ACK_T));
 	if( tResult!=TRANSPORTSTATUS_OK )
 	{
 		fprintf(stderr, "! send_packet: failed to send the ACK packet!\n");
