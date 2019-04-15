@@ -68,7 +68,7 @@ romloader_papa_schlumpf_device::romloader_papa_schlumpf_device(const char *pcPlu
 	else
 	{
 		/* Set the debug level to a bit more verbose. */
-		libusb_set_debug(m_ptLibUsbContext, LIBUSB_LOG_LEVEL_INFO);
+		libusb_set_option(m_ptLibUsbContext, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
 	}
 }
 
