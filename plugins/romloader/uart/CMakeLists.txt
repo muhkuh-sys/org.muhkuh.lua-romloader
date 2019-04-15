@@ -89,7 +89,10 @@ ENDIF((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_SYSTEM_NAME STREQUAL "Li
 #
 SET_SOURCE_FILES_PROPERTIES(romloader_uart.i PROPERTIES CPLUSPLUS ON)
 SET_PROPERTY(SOURCE romloader_uart.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY} -I${CMAKE_BINARY_DIR}/version_information)
-SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_uart_LUA lua romloader_uart.i)
+SWIG_ADD_LIBRARY(TARGET_plugins_romloader_romloader_uart_LUA
+                 TYPE MODULE
+                 LANGUAGE LUA
+                 SOURCES romloader_uart.i)
 SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_uart_LUA TARGET_romloader_uart_lib ${LUA_LIBRARIES} TARGET_plugins_romloader_LIB)
 TARGET_INCLUDE_DIRECTORIES(TARGET_plugins_romloader_romloader_uart_LUA
                            PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
