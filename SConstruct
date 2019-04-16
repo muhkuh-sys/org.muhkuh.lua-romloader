@@ -79,7 +79,7 @@ SConscript('plugins/romloader/usb/netx/SConscript')
 #
 # Build the DPM monitor code.
 #
-SConscript('plugins/romloader/dpm/netx/SConscript')
+#SConscript('plugins/romloader/dpm/netx/SConscript')
 
 
 #----------------------------------------------------------------------------
