@@ -470,11 +470,11 @@ static ACK_RESULT_T transport_wait_for_ack(unsigned char ucRequiredSequenceNumbe
 								tResult = ACK_RESULT_SequenceAckd;
 								break;
 							}
-						}
-						else if( ulFillLevel==2 && tPacketTyp==MONITOR_PACKET_TYP_CancelOperation )
-						{
-							tResult = ACK_RESULT_OperationCanceled;
-							break;
+							else if( ulFillLevel==2 && tPacketTyp==MONITOR_PACKET_TYP_CancelOperation )
+							{
+								tResult = ACK_RESULT_OperationCanceled;
+								break;
+							}
 						}
 					}
 				}
