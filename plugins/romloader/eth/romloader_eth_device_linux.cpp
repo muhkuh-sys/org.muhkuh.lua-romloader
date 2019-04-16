@@ -186,6 +186,7 @@ romloader::TRANSPORTSTATUS_T romloader_eth_device_linux::RecvPacket(unsigned cha
 	else
 	{
 		fprintf(stderr, "Failed to wait for data.\n");
+		tResult = romloader::TRANSPORTSTATUS_RECEIVE_FAILED;
 	}
 
 	/* Return the packet's size. */
