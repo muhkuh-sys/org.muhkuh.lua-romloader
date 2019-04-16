@@ -57,10 +57,14 @@ SET_SOURCE_FILES_PROPERTIES(${ETH_FIRMWARE_SOURCES} ${ETH_FIRMWARE_HEADERS}
 #
 SET_SOURCE_FILES_PROPERTIES(romloader_eth.i PROPERTIES CPLUSPLUS ON)
 SET_PROPERTY(SOURCE romloader_eth.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY} -I${CMAKE_BINARY_DIR}/version_information)
-SWIG_ADD_LIBRARY(TARGET_plugins_romloader_romloader_eth_LUA
-                 TYPE MODULE
-                 LANGUAGE LUA
-                 SOURCES romloader_eth.i)
+IF(CMAKE_VERSION VERSION_LESS 3.8.0)
+	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_eth_LUA lua romloader_eth.i)
+ELSE(CMAKE_VERSION VERSION_LESS 3.8.0)
+	SWIG_ADD_LIBRARY(TARGET_plugins_romloader_romloader_eth_LUA
+	                 TYPE MODULE
+	                 LANGUAGE LUA
+	                 SOURCES romloader_eth.i)
+ENDIF(CMAKE_VERSION VERSION_LESS 3.8.0)
 SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_eth_LUA TARGET_romloader_eth_lib ${LUA_LIBRARIES} ${romloader_eth_platform_LIBS} TARGET_plugins_romloader_LIB)
 TARGET_INCLUDE_DIRECTORIES(TARGET_plugins_romloader_romloader_eth_LUA
                            PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
