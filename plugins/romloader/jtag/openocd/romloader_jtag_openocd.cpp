@@ -34,7 +34,7 @@ romloader_jtag_openocd::romloader_jtag_openocd(void)
 	memset(&m_tJtagDevice, 0, sizeof(ROMLOADER_JTAG_DEVICE_T));
 
 	libusb_init(&m_ptLibUsbContext);
-	libusb_set_debug(m_ptLibUsbContext, LIBUSB_LOG_LEVEL_INFO);
+	libusb_set_option(m_ptLibUsbContext, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
 
 	get_plugin_path();
 	get_openocd_path();
