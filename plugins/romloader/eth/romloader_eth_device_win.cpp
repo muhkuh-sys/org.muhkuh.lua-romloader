@@ -128,36 +128,38 @@ void romloader_eth_device_win::Close(void)
 }
 
 
-int romloader_eth_device_win::SendPacket(const void *pvData, size_t sizData)
+romloader::TRANSPORTSTATUS_T romloader_eth_device_win::SendPacket(const void *pvData, size_t sizData)
 {
-	int iResult;
+	romloader::TRANSPORTSTATUS_T tResult;
 	int iSendResult;
 
 
 	/* Expect success. */
-	iResult = 0;
+	tResult = romloader::TRANSPORTSTATUS_OK;
 
 	/* Send a packet. */
 	iSendResult = sendto(m_tHbootServer_Socket, (const char*)pvData, sizData, 0, (SOCKADDR *)&m_tHbootServer_Addr.tAddr, sizeof(m_tHbootServer_Addr));
 	if( iSendResult==SOCKET_ERROR )
 	{
 		fprintf(stderr, "Failed to send packet: %d: %s\n", errno, strerror(errno));
+		tResult = romloader::TRANSPORTSTATUS_SEND_FAILED;
 	}
 	else if( iSendResult!=sizData )
 	{
-		fprintf(stderr, "Failed to send packet. %d requested, but only %d sent.\n", sizData, iResult);
-		iResult = -1;
+		fprintf(stderr, "Failed to send packet. %d requested, but only %d sent.\n", sizData, iSendResult);
+		tResult = romloader::TRANSPORTSTATUS_SEND_FAILED;
 	}
 
-	return iResult;
+	return tResult;
 }
 
 
-int romloader_eth_device_win::RecvPacket(unsigned char *pucData, size_t sizData, unsigned long ulTimeout, size_t *psizPacket)
+romloader::TRANSPORTSTATUS_T romloader_eth_device_win::RecvPacket(unsigned char *pucData, size_t sizData, unsigned long ulTimeout, size_t *psizPacket)
 {
 	fd_set tRxFileDescSet;
 	struct timeval tTimeVal;
 	int iResult;
+	romloader::TRANSPORTSTATUS_T tResult;
 	int iPacketSize;
 
 
@@ -177,6 +179,7 @@ int romloader_eth_device_win::RecvPacket(unsigned char *pucData, size_t sizData,
 	{
 		/* Timeout and nothing received. */
 		fprintf(stderr, "timeout\n");
+		tResult = romloader::TRANSPORTSTATUS_TIMEOUT;
 	}
 	else if( iResult==1 )
 	{
@@ -186,23 +189,24 @@ int romloader_eth_device_win::RecvPacket(unsigned char *pucData, size_t sizData,
 		{
 			fprintf(stderr, "Failed to receive packet.\n");
 			iPacketSize = 0;
-			iResult = -1;
+			tResult = romloader::TRANSPORTSTATUS_RECEIVE_FAILED;
 		}
 		else
 		{
 			/* All ok! */
-			iResult = 0;
+			tResult = romloader::TRANSPORTSTATUS_OK;
 		}
 	}
 	else
 	{
 		fprintf(stderr, "Failed to wait for data.\n");
+		tResult = romloader::TRANSPORTSTATUS_RECEIVE_FAILED;
 	}
 
 	/* Return the packet's size. */
 	*psizPacket = (size_t)iPacketSize;
 
-	return iResult;
+	return tResult;
 }
 
 
