@@ -403,9 +403,6 @@ static ACK_RESULT_T transport_wait_for_ack(unsigned char ucRequiredSequenceNumbe
 	MONITOR_PACKET_TYP_T tPacketTyp;
 	int iIsElapsed;
 
-	static unsigned int uiDebug_CallCount = 0;
-	volatile unsigned int uiDebug_Dummy;
-
 
 	tResult = ACK_RESULT_Timeout;
 
@@ -441,12 +438,6 @@ static ACK_RESULT_T transport_wait_for_ack(unsigned char ucRequiredSequenceNumbe
 					{
 						*(pucCnt++) = (unsigned char)ptUsbDevFifoArea->aulUsb_dev_fifo[USB_FIFO_Uart_RX];
 					} while( pucCnt<pucEnd );
-
-					++uiDebug_CallCount;
-					if( uiDebug_CallCount==1U )
-					{
-						uiDebug_Dummy = 1U;
-					}
 
 					/* Does the packet start with the identifier? */
 					if( aucPacketRx[0]==MONITOR_STREAM_PACKET_START )
