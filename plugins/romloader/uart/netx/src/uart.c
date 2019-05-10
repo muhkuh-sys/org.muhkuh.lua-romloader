@@ -28,10 +28,10 @@
 #if ASIC_TYP==ASIC_TYP_NETX10 || ASIC_TYP==ASIC_TYP_NETX50 || ASIC_TYP==ASIC_TYP_NETX56
 typedef struct
 {
-	MMIO_CFG_T tMmioRx;
-	MMIO_CFG_T tMmioTx;
-	MMIO_CFG_T tMmioRts;
-	MMIO_CFG_T tMmioCts;
+	HOSTMMIODEF tMmioRx;
+	HOSTMMIODEF tMmioTx;
+	HOSTMMIODEF tMmioRts;
+	HOSTMMIODEF tMmioCts;
 } UART_INSTANCE_T;
 #endif
 
@@ -39,26 +39,26 @@ typedef struct
 #if ASIC_TYP==ASIC_TYP_NETX10
 static const UART_INSTANCE_T tUartInstance =
 {
-	MMIO_CFG_uart0_rxd,
-	MMIO_CFG_uart0_txd,
-	MMIO_CFG_uart0_rtsn,
-	MMIO_CFG_uart0_ctsn
+	NX10_MMIO_CFG_uart0_rxd,
+	NX10_MMIO_CFG_uart0_txd,
+	NX10_MMIO_CFG_uart0_rtsn,
+	NX10_MMIO_CFG_uart0_ctsn
 };
 #elif ASIC_TYP==ASIC_TYP_NETX50
 static const UART_INSTANCE_T tUartInstance =
 {
-	MMIO_CFG_uart0_rxd,
-	MMIO_CFG_uart0_txd,
-	MMIO_CFG_uart0_rts,
-	MMIO_CFG_uart0_cts
+	NX50_MMIO_CFG_uart0_rxd,
+	NX50_MMIO_CFG_uart0_txd,
+	NX50_MMIO_CFG_uart0_rts,
+	NX50_MMIO_CFG_uart0_cts
 };
 #elif ASIC_TYP==ASIC_TYP_NETX56
 static const UART_INSTANCE_T tUartInstance =
 {
-	MMIO_CFG_uart0_rxd,
-	MMIO_CFG_uart0_txd,
-	MMIO_CFG_uart0_rtsn,
-	MMIO_CFG_uart0_ctsn
+	NX56_MMIO_CFG_uart0_rxd,
+	NX56_MMIO_CFG_uart0_txd,
+	NX56_MMIO_CFG_uart0_rtsn,
+	NX56_MMIO_CFG_uart0_ctsn
 };
 #endif
 
