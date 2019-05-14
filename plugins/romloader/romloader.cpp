@@ -492,15 +492,21 @@ romloader::TRANSPORTSTATUS_T romloader::read_data(uint32_t ulNetxAddress, MONITO
 
 romloader::TRANSPORTSTATUS_T romloader::write_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, const void *pvData, uint16_t sizDataInBytes)
 {
+/* NOTE: Use "pragma pack" instead of "attribute packed" as the latter does not work on MinGW.
+ *       See here for details: https://sourceforge.net/p/mingw-w64/bugs/588/
+ */
+#pragma pack(push, 1)
 	union WRITE_DATA_UNION
 	{
 		struct WRITE_DATA_STRUCT
 		{
 			MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T s;
 			uint8_t auc[m_sizMaxPacketSizeHost - sizeof(MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T)];
-		} __attribute__ ((packed)) s;
+		} s;
 		uint8_t auc[m_sizMaxPacketSizeHost];
-	} __attribute__ ((packed)) uWriteData;
+	} uWriteData;
+static_assert( sizeof(uWriteData)==m_sizMaxPacketSizeHost, "Packing of WRITE_DATA_UNION does not work.");
+#pragma pack(pop)
 	TRANSPORTSTATUS_T tResult;
 	size_t sizPacket;
 	uint8_t ucPacketTyp;

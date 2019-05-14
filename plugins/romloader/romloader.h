@@ -67,9 +67,13 @@
 #endif
 
 
+/* NOTE: Use "pragma pack" instead of "attribute packed" as the latter does not work on MinGW.
+ *       See here for details: https://sourceforge.net/p/mingw-w64/bugs/588/
+ */
+#pragma pack(push, 1)
 
 /* This is a packet header up to the packet type. */
-struct __attribute__((__packed__)) MIV3_PACKET_HEADER_STRUCT
+struct MIV3_PACKET_HEADER_STRUCT
 {
 	uint8_t  ucStreamStart;
 	uint16_t usDataSize;
@@ -88,7 +92,7 @@ static_assert( sizeof(MIV3_PACKET_HEADER_T)==5, "Packing of MIV3_PACKET_HEADER_T
 
 
 /* This is a complete sync packet. */
-struct __attribute__((__packed__)) MIV3_PACKET_SYNC_STRUCT
+struct MIV3_PACKET_SYNC_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
 	uint8_t  aucMagic[4];
@@ -111,7 +115,7 @@ static_assert( sizeof(MIV3_PACKET_SYNC_T)==18, "Packing of MIV3_PACKET_SYNC_T do
 
 
 /* This is a complete acknowledge packet. */
-struct __attribute__((__packed__)) MIV3_PACKET_ACK_STRUCT
+struct MIV3_PACKET_ACK_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
 	uint8_t  ucCrcHi;
@@ -129,7 +133,7 @@ static_assert( sizeof(MIV3_PACKET_ACK_T)==7, "Packing of MIV3_PACKET_ACK_T does 
 
 
 /* This is a complete status packet. */
-struct __attribute__((__packed__)) MIV3_PACKET_STATUS_STRUCT
+struct MIV3_PACKET_STATUS_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
 	uint8_t  ucStatus;
@@ -148,7 +152,7 @@ static_assert( sizeof(MIV3_PACKET_STATUS_T)==8, "Packing of MIV3_PACKET_STATUS_T
 
 
 /* This is a complete status packet. */
-struct __attribute__((__packed__)) MIV3_PACKET_CANCEL_CALL_STRUCT
+struct MIV3_PACKET_CANCEL_CALL_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
 	uint8_t  ucData;
@@ -167,7 +171,7 @@ static_assert( sizeof(MIV3_PACKET_CANCEL_CALL_T)==8, "Packing of MIV3_PACKET_CAN
 
 
 /* This is a complete read packet. */
-struct __attribute__((__packed__)) MIV3_PACKET_COMMAND_READ_DATA_STRUCT
+struct MIV3_PACKET_COMMAND_READ_DATA_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
 	uint16_t usDataSize;
@@ -187,7 +191,7 @@ static_assert( sizeof(MIV3_PACKET_COMMAND_READ_DATA_T)==13, "Packing of MIV3_PAC
 
 
 /* This is the start of a write packet. */
-struct __attribute__((__packed__)) MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_STRUCT
+struct MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
 	uint16_t usDataSize;
@@ -205,7 +209,7 @@ static_assert( sizeof(MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T)==11, "Packing of 
 
 
 /* This is a complete call package. */
-struct __attribute__((__packed__)) MIV3_PACKET_COMMAND_CALL_STRUCT
+struct MIV3_PACKET_COMMAND_CALL_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
 	uint32_t ulAddress;
@@ -221,6 +225,9 @@ typedef union MIV3_PACKET_COMMAND_CALL_UNION
 	uint8_t auc[15];
 } MIV3_PACKET_COMMAND_CALL_T;
 static_assert( sizeof(MIV3_PACKET_COMMAND_CALL_T)==15, "Packing of MIV3_PACKET_COMMAND_CALL_T does not work.");
+
+#pragma pack(pop)
+
 
 #endif  /* !defined(SWIG) */
 

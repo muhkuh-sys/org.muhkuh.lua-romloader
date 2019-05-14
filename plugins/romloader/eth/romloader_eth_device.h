@@ -32,7 +32,12 @@
 
 #if !defined(SWIG)
 
-struct __attribute__((__packed__)) MIV3_ETHERNET_DISCOVER_MAGIC_STRUCTURE
+/* NOTE: Use "pragma pack" instead of "attribute packed" as the latter does not work on MinGW.
+ *       See here for details: https://sourceforge.net/p/mingw-w64/bugs/588/
+ */
+#pragma pack(push, 1)
+
+struct MIV3_ETHERNET_DISCOVER_MAGIC_STRUCTURE
 {
 	uint8_t ucMiStatus;
 	char acMagic[4];
@@ -41,12 +46,16 @@ struct __attribute__((__packed__)) MIV3_ETHERNET_DISCOVER_MAGIC_STRUCTURE
 	uint16_t usMaximumPacketSize;
 	uint32_t ulIP;
 };
+static_assert( sizeof(struct MIV3_ETHERNET_DISCOVER_MAGIC_STRUCTURE)==15, "Packing of MIV3_ETHERNET_DISCOVER_MAGIC_STRUCTURE does not work.");
 
 typedef union MIV3_ETHERNET_DISCOVER_MAGIC_UNION
 {
 	struct MIV3_ETHERNET_DISCOVER_MAGIC_STRUCTURE s;
 	unsigned char auc[15];
 } MIV3_ETHERNET_DISCOVER_MAGIC_T;
+static_assert( sizeof(MIV3_ETHERNET_DISCOVER_MAGIC_T)==15, "Packing of MIV3_ETHERNET_DISCOVER_MAGIC_T does not work.");
+
+#pragma pack(pop)
 
 #endif  /* !defined(SWIG) */
 
