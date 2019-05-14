@@ -6,7 +6,7 @@
 #if defined(__cpp_static_assert)
 #       define MUHKUH_STATIC_ASSERT(CONDITION, MESSAGE) static_assert(CONDITION, MESSAGE)
 #else
-#       define MUHKUH_STATIC_ASSERT(CONDITION, MESSAGE) ((void)0)
+#       define MUHKUH_STATIC_ASSERT(CONDITION, MESSAGE)
 #endif
 
 #endif  /* __MUHKUH_STATIC_ASSERT_H__ */
