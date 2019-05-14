@@ -505,7 +505,7 @@ romloader::TRANSPORTSTATUS_T romloader::write_data(uint32_t ulNetxAddress, MONIT
 		} s;
 		uint8_t auc[m_sizMaxPacketSizeHost];
 	} uWriteData;
-static_assert( sizeof(uWriteData)==m_sizMaxPacketSizeHost, "Packing of WRITE_DATA_UNION does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(uWriteData)==m_sizMaxPacketSizeHost, "Packing of WRITE_DATA_UNION does not work.");
 #pragma pack(pop)
 	TRANSPORTSTATUS_T tResult;
 	size_t sizPacket;

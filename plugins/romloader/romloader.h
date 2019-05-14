@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #include "../muhkuh_plugin_interface.h"
+#include "../muhkuh_static_assert.h"
 #include "machine_interface/netx/src/monitor_commands.h"
 #include "romloader_def.h"
 
@@ -80,14 +81,14 @@ struct MIV3_PACKET_HEADER_STRUCT
 	uint8_t  ucSequenceNumber;
 	uint8_t  ucPacketType;
 };
-static_assert( sizeof(struct MIV3_PACKET_HEADER_STRUCT)==5, "Packing of MIV3_PACKET_HEADER_STRUCT does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_HEADER_STRUCT)==5, "Packing of MIV3_PACKET_HEADER_STRUCT does not work.");
 
 typedef union MIV3_PACKET_HEADER_UNION
 {
 	struct MIV3_PACKET_HEADER_STRUCT s;
 	uint8_t auc[5];
 } MIV3_PACKET_HEADER_T;
-static_assert( sizeof(MIV3_PACKET_HEADER_T)==5, "Packing of MIV3_PACKET_HEADER_T does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_HEADER_T)==5, "Packing of MIV3_PACKET_HEADER_T does not work.");
 
 
 
@@ -103,14 +104,14 @@ struct MIV3_PACKET_SYNC_STRUCT
 	uint8_t   ucCrcHi;
 	uint8_t   ucCrcLo;
 };
-static_assert( sizeof(struct MIV3_PACKET_SYNC_STRUCT)==18, "Packing of MIV3_PACKET_SYNC_STRUCT does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_SYNC_STRUCT)==18, "Packing of MIV3_PACKET_SYNC_STRUCT does not work.");
 
 typedef union MIV3_PACKET_SYNC_UNION
 {
 	struct MIV3_PACKET_SYNC_STRUCT s;
 	uint8_t auc[18];
 } MIV3_PACKET_SYNC_T;
-static_assert( sizeof(MIV3_PACKET_SYNC_T)==18, "Packing of MIV3_PACKET_SYNC_T does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_SYNC_T)==18, "Packing of MIV3_PACKET_SYNC_T does not work.");
 
 
 
@@ -121,14 +122,14 @@ struct MIV3_PACKET_ACK_STRUCT
 	uint8_t  ucCrcHi;
 	uint8_t  ucCrcLo;
 };
-static_assert( sizeof(struct MIV3_PACKET_ACK_STRUCT)==7, "Packing of MIV3_PACKET_ACK_STRUCT does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_ACK_STRUCT)==7, "Packing of MIV3_PACKET_ACK_STRUCT does not work.");
 
 typedef union MIV3_PACKET_ACK_UNION
 {
 	struct MIV3_PACKET_ACK_STRUCT s;
 	uint8_t auc[7];
 } MIV3_PACKET_ACK_T;
-static_assert( sizeof(MIV3_PACKET_ACK_T)==7, "Packing of MIV3_PACKET_ACK_T does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_ACK_T)==7, "Packing of MIV3_PACKET_ACK_T does not work.");
 
 
 
@@ -140,14 +141,14 @@ struct MIV3_PACKET_STATUS_STRUCT
 	uint8_t  ucCrcHi;
 	uint8_t  ucCrcLo;
 };
-static_assert( sizeof(struct MIV3_PACKET_STATUS_STRUCT)==8, "Packing of MIV3_PACKET_STATUS_STRUCT does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_STATUS_STRUCT)==8, "Packing of MIV3_PACKET_STATUS_STRUCT does not work.");
 
 typedef union MIV3_PACKET_STATUS_UNION
 {
 	struct MIV3_PACKET_STATUS_STRUCT s;
 	uint8_t auc[8];
 } MIV3_PACKET_STATUS_T;
-static_assert( sizeof(MIV3_PACKET_STATUS_T)==8, "Packing of MIV3_PACKET_STATUS_T does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_STATUS_T)==8, "Packing of MIV3_PACKET_STATUS_T does not work.");
 
 
 
@@ -159,14 +160,14 @@ struct MIV3_PACKET_CANCEL_CALL_STRUCT
 	uint8_t  ucCrcHi;
 	uint8_t  ucCrcLo;
 };
-static_assert( sizeof(struct MIV3_PACKET_CANCEL_CALL_STRUCT)==8, "Packing of MIV3_PACKET_CANCEL_CALL_STRUCT does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_CANCEL_CALL_STRUCT)==8, "Packing of MIV3_PACKET_CANCEL_CALL_STRUCT does not work.");
 
 typedef union MIV3_PACKET_CANCEL_CALL_UNION
 {
 	struct MIV3_PACKET_CANCEL_CALL_STRUCT s;
 	uint8_t auc[8];
 } MIV3_PACKET_CANCEL_CALL_T;
-static_assert( sizeof(MIV3_PACKET_CANCEL_CALL_T)==8, "Packing of MIV3_PACKET_CANCEL_CALL_T does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_CANCEL_CALL_T)==8, "Packing of MIV3_PACKET_CANCEL_CALL_T does not work.");
 
 
 
@@ -179,14 +180,14 @@ struct MIV3_PACKET_COMMAND_READ_DATA_STRUCT
 	uint8_t  ucCrcHi;
 	uint8_t  ucCrcLo;
 };
-static_assert( sizeof(struct MIV3_PACKET_COMMAND_READ_DATA_STRUCT)==13, "Packing of MIV3_PACKET_COMMAND_READ_DATA_STRUCT does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_COMMAND_READ_DATA_STRUCT)==13, "Packing of MIV3_PACKET_COMMAND_READ_DATA_STRUCT does not work.");
 
 typedef union MIV3_PACKET_COMMAND_READ_DATA_UNION
 {
 	struct MIV3_PACKET_COMMAND_READ_DATA_STRUCT s;
 	uint8_t auc[13];
 } MIV3_PACKET_COMMAND_READ_DATA_T;
-static_assert( sizeof(MIV3_PACKET_COMMAND_READ_DATA_T)==13, "Packing of MIV3_PACKET_COMMAND_READ_DATA_T does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_COMMAND_READ_DATA_T)==13, "Packing of MIV3_PACKET_COMMAND_READ_DATA_T does not work.");
 
 
 
@@ -197,14 +198,14 @@ struct MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_STRUCT
 	uint16_t usDataSize;
 	uint32_t ulAddress;
 };
-static_assert( sizeof(struct MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_STRUCT)==11, "Packing of MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_STRUCT does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_STRUCT)==11, "Packing of MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_STRUCT does not work.");
 
 typedef union MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_UNION
 {
 	struct MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_STRUCT s;
 	uint8_t auc[11];
 } MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T;
-static_assert( sizeof(MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T)==11, "Packing of MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T)==11, "Packing of MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T does not work.");
 
 
 
@@ -217,14 +218,14 @@ struct MIV3_PACKET_COMMAND_CALL_STRUCT
 	uint8_t  ucCrcHi;
 	uint8_t  ucCrcLo;
 };
-static_assert( sizeof(struct MIV3_PACKET_COMMAND_CALL_STRUCT)==15, "Packing of MIV3_PACKET_COMMAND_CALL_STRUCT does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_COMMAND_CALL_STRUCT)==15, "Packing of MIV3_PACKET_COMMAND_CALL_STRUCT does not work.");
 
 typedef union MIV3_PACKET_COMMAND_CALL_UNION
 {
 	struct MIV3_PACKET_COMMAND_CALL_STRUCT s;
 	uint8_t auc[15];
 } MIV3_PACKET_COMMAND_CALL_T;
-static_assert( sizeof(MIV3_PACKET_COMMAND_CALL_T)==15, "Packing of MIV3_PACKET_COMMAND_CALL_T does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_COMMAND_CALL_T)==15, "Packing of MIV3_PACKET_COMMAND_CALL_T does not work.");
 
 #pragma pack(pop)
 
