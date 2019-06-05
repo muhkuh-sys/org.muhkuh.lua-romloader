@@ -92,10 +92,10 @@ proc get_chiptyp { }  {
 		set iChiptyp $ROMLOADER_CHIPTYP_NETX90_MPW        
 	# The check for netx 90 Rev. 1 must precede the one for Rev. 0
 	} elseif { [ check_chiptyp $ulResetAddrRead 0x2009fff0 0x000000c0 0x0010d005 ] } {
-		echo "netX 90 Rev1 detected"
+		echo "netX 90 Rev.1 detected"
 		set iChiptyp $ROMLOADER_CHIPTYP_NETX90B
 	} elseif { [ check_chiptyp $ulResetAddrRead 0x2009fff0 0x00005110 0xe001200c ] } {
-		echo "netX 90 detected"
+		echo "netX 90 Rev.0 detected"
 		set iChiptyp $ROMLOADER_CHIPTYP_NETX90
 	} else {
 		set iChiptyp $ROMLOADER_CHIPTYP_UNKNOWN
@@ -248,10 +248,10 @@ proc reset_assert {} {
 		echo "netx 90 MPW not handled"
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90} {
-		echo "netx 90 not handled"
+		echo "netx 90 Rev.0 not handled"
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B} {
-		echo "netx 90 Rev1 not handled"
+		echo "netx 90 Rev.1 not handled"
 		
 	} else {
 		echo "unknown chip type"
