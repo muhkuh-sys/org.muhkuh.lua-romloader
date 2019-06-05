@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="mbs/setup2html.xsl"?>
 
 <muhkuh_buildsystem project="muhkuh">
-	<project_version>2.4.0</project_version>
+	<project_version>2.4.1</project_version>
 
 	<scons>
 		<group>org.scons</group>
@@ -20,6 +20,7 @@
 			<version>8.6.8_3</version>
 			<typ>tar.bz2</typ>
 		</tool>
+		<!-- For netX 500/100/50/10/51/52. -->
 		<tool>
 			<group>org.gnu.gcc</group>
 			<name>gcc-arm-none-eabi</name>
@@ -27,11 +28,20 @@
 			<version>4.7.2_2</version>
 			<typ>tar.bz2</typ>
 		</tool>
+		<!-- For netx 4000/90. -->
 		<tool>
 			<group>org.gnu.gcc</group>
 			<name>gcc-arm-none-eabi</name>
 			<package>gcc-arm-none-eabi_${platform}_${machine}</package>
 			<version>4.9.3_3</version>
+			<typ>tar.bz2</typ>
+		</tool>
+		<!-- For netIOL. -->
+		<tool>
+			<group>com.github.gnu-mcu-eclipse</group>
+			<name>gcc-riscv-none-embed</name>
+			<package>gcc-riscv-none-embed_${platform}_${machine}</package>
+			<version>7.2.0.4_1</version>
 			<typ>tar.bz2</typ>
 		</tool>
 	</tools>
