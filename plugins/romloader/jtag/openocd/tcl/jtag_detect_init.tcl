@@ -400,7 +400,7 @@ proc reset_netx90_COM {}  {
     set iChiptyp [ get_chiptyp ]
         
     if {$iChiptyp == $ROMLOADER_CHIPTYP_NETX90} {
-        puts "netx 90"
+        puts "netx 90 Rev.0"
         set BP_ADDR_APP_JTAG_ENABLED $BP_ADDR_APP_JTAG_ENABLED_RC5
     } elseif {$iChiptyp == $ROMLOADER_CHIPTYP_NETX90B} {
         puts "netx 90 Rev.1"

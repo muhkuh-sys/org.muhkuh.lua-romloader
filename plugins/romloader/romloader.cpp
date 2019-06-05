@@ -1309,7 +1309,7 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[12] =
 		0xffffffff,
 		0xe001200c,
 		ROMLOADER_CHIPTYP_NETX90,
-		"netX90"
+		"netX90 Rev0"
 	},
 
 	{

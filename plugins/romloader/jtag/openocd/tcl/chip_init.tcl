@@ -246,7 +246,7 @@ proc init_chip {iChiptyp} {
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90 
 			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B } {
 
-		puts "Setting up registers for netx 90/netx 90 Rev 1"
+		puts "Setting up registers for netx 90 Rev.0/Rev.1"
 
 		reg xPSR 0x01000000
 		bp 0x00023ffd 2 hw
