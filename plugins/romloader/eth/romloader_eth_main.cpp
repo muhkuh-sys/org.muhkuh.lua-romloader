@@ -63,7 +63,7 @@ int romloader_eth_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 
 	/* detect all interfaces */
 	sizDeviceNames = romloader_eth_device_platform::ScanForServers(&ppcDeviceNames);
-	printf("found %ld devs, %p\n", sizDeviceNames, ppcDeviceNames);
+	m_ptLog->debug("found %ld devs, %p", sizDeviceNames, ppcDeviceNames);
 
 	if( ppcDeviceNames!=NULL )
 	{
@@ -76,7 +76,7 @@ int romloader_eth_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 			fDeviceIsBusy = false;
 
 			/* create the new instance */
-			printf("create instance '%s'\n", *ppcDeviceNamesCnt);
+			m_ptLog->debug("create instance '%s'", *ppcDeviceNamesCnt);
 
 			ptReference = new romloader_eth_reference(*ppcDeviceNamesCnt, m_pcPluginId, fDeviceIsBusy, this);
 			add_reference_to_table(ptLuaStateForTableAccess, ptReference);
@@ -109,23 +109,23 @@ romloader_eth *romloader_eth_provider::ClaimInterface(const muhkuh_plugin_refere
 
 	if( ptReference==NULL )
 	{
-		fprintf(stderr, "%s(%p): claim_interface(): missing reference!\n", m_pcPluginId, this);
+		m_ptLog->error("claim_interface(): missing reference!");
 	}
 	else
 	{
 		pcName = ptReference->GetName();
 		if( pcName==NULL )
 		{
-			fprintf(stderr, "%s(%p): claim_interface(): missing name!\n", m_pcPluginId, this);
+			m_ptLog->error("claim_interface(): missing name!");
 		}
 		else if( sscanf(pcName, m_pcPluginNamePattern, acDevice)!=1 )
 		{
-			fprintf(stderr, "%s(%p): claim_interface(): invalid name: %s\n", m_pcPluginId, this, pcName);
+			m_ptLog->error("claim_interface(): invalid name: %s", pcName);
 		}
 		else
 		{
 			ptPlugin = new romloader_eth(pcName, m_pcPluginId, this, acDevice);
-			printf("%s(%p): claim_interface(): claimed interface %s.\n", m_pcPluginId, this, pcName);
+			m_ptLog->debug("claim_interface(): claimed interface %s.", pcName);
 		}
 	}
 
@@ -146,22 +146,22 @@ bool romloader_eth_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 
 	if( ptPlugin==NULL )
 	{
-		fprintf(stderr, "%s(%p): release_interface(): missing plugin!\n", m_pcPluginId, this);
+		m_ptLog->error("release_interface(): missing plugin!");
 	}
 	else
 	{
 		pcName = ptPlugin->GetName();
 		if( pcName==NULL )
 		{
-			fprintf(stderr, "%s(%p): release_interface(): missing name!\n", m_pcPluginId, this);
+			m_ptLog->error("release_interface(): missing name!");
 		}
 		else if( sscanf(pcName, m_pcPluginNamePattern, acDevice)!=1 )
 		{
-			fprintf(stderr, "%s(%p): release_interface(): invalid name: %s\n", m_pcPluginId, this, pcName);
+			m_ptLog->error("release_interface(): invalid name: %s", pcName);
 		}
 		else
 		{
-			printf("%s(%p): released interface %s.\n", m_pcPluginId, this, pcName);
+			m_ptLog->debug("released interface %s.", pcName);
 			fOk = true;
 		}
 	}
@@ -177,7 +177,7 @@ romloader_eth::romloader_eth(const char *pcName, const char *pcTyp, romloader_et
  : romloader(pcName, pcTyp, ptProvider)
  , m_ptEthDev(NULL)
 {
-	printf("%s(%p): created in romloader_eth\n", m_pcName, this);
+	m_ptLog->trace("created in romloader_eth");
 
 	m_ptEthDev = new romloader_eth_device_platform(pcServerName);
 }
@@ -185,7 +185,7 @@ romloader_eth::romloader_eth(const char *pcName, const char *pcTyp, romloader_et
 
 romloader_eth::~romloader_eth(void)
 {
-	printf("%s(%p): deleted in romloader_uart\n", m_pcName, this);
+	m_ptLog->trace("deleted in romloader_eth");
 
 	if( m_ptEthDev!=NULL )
 	{
@@ -204,7 +204,7 @@ void romloader_eth::Connect(lua_State *ptClientData)
 	/* Expect error. */
 	iResult = -1;
 
-	printf("%s(%p): connect\n", m_pcName, this);
+	m_ptLog->debug("connect");
 
 	if( m_ptEthDev!=NULL && m_fIsConnected==false )
 	{
@@ -239,7 +239,7 @@ void romloader_eth::Connect(lua_State *ptClientData)
 
 void romloader_eth::Disconnect(lua_State *ptClientData)
 {
-	printf("%s(%p): disconnect\n", m_pcName, this);
+	m_ptLog->debug("disconnect");
 
 	if( m_ptEthDev!=NULL )
 	{
@@ -265,7 +265,7 @@ romloader::TRANSPORTSTATUS_T romloader_eth::send_raw_packet(const void *pvPacket
 		tResult = m_ptEthDev->SendPacket(pvPacket, sizPacket);
 		if( tResult!=TRANSPORTSTATUS_OK )
 		{
-			fprintf(stderr, "! send_packet: failed to send the packet!\n");
+			m_ptLog->error("send_packet: failed to send the packet!");
 		}
 	}
 
@@ -296,13 +296,13 @@ romloader::TRANSPORTSTATUS_T romloader_eth::receive_packet(void)
 			/* The ACK packet is the smallest packet possible. */
 			if( m_sizPacketInputBuffer<sizeof(MIV3_PACKET_ACK_T) )
 			{
-				fprintf(stderr, "Packet too small. Packet size: %zd, minimum packet size: %zd.\n", m_sizPacketInputBuffer, sizeof(MIV3_PACKET_ACK_T));
+				m_ptLog->error("Packet too small. Packet size: %zd, minimum packet size: %zd.", m_sizPacketInputBuffer, sizeof(MIV3_PACKET_ACK_T));
 				tResult = TRANSPORTSTATUS_PACKET_TOO_SMALL;
 			}
 			/* The packet size must not exceed the negotiated maximum. */
 			else if( m_sizPacketInputBuffer>m_sizMaxPacketSizeClient )
 			{
-				fprintf(stderr, "Packet too large. Packet size: %zd, maximum packet size: %zd.\n", m_sizPacketInputBuffer, m_sizMaxPacketSizeClient);
+				m_ptLog->error("Packet too large. Packet size: %zd, maximum packet size: %zd.", m_sizPacketInputBuffer, m_sizMaxPacketSizeClient);
 				tResult = TRANSPORTSTATUS_PACKET_TOO_LARGE;
 			}
 			else
@@ -313,7 +313,7 @@ romloader::TRANSPORTSTATUS_T romloader_eth::receive_packet(void)
 				ucData = ptPacket->s.ucStreamStart;
 				if( ucData!=MONITOR_STREAM_PACKET_START )
 				{
-					fprintf(stderr, "receive_packet: no start char found!\n");
+					m_ptLog->error("receive_packet: no start char found!");
 					tResult = TRANSPORTSTATUS_FAILED_TO_SYNC;
 				}
 				else
@@ -330,8 +330,8 @@ romloader::TRANSPORTSTATUS_T romloader_eth::receive_packet(void)
 					sizCompletePacket = sizData + 5U;
 					if( m_sizPacketInputBuffer<sizCompletePacket )
 					{
-						fprintf(stderr, "The size information in the packet does not match the number of received bytes.\n");
-						fprintf(stderr, "Received %zd bytes. Expected packet size: %zd bytes\n", m_sizPacketInputBuffer, sizCompletePacket);
+						m_ptLog->error("The size information in the packet does not match the number of received bytes.");
+						m_ptLog->error("Received %zd bytes. Expected packet size: %zd bytes", m_sizPacketInputBuffer, sizCompletePacket);
 						tResult = TRANSPORTSTATUS_INVALID_PACKET_SIZE;
 					}
 					else
@@ -350,13 +350,13 @@ romloader::TRANSPORTSTATUS_T romloader_eth::receive_packet(void)
 						}
 						else
 						{
-							fprintf(stderr, "! receive_packet: CRC failed.\n");
+							m_ptLog->error("receive_packet: CRC failed.");
 
 							/* Debug: get the complete packet and dump it.
 							 * NOTE: Do not remove the data from the buffer.
 							 */
-							fprintf(stderr, "raw packet size: 0x%08lx bytes\n", m_sizPacketInputBuffer);
-							hexdump(m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+							m_ptLog->debug("raw packet size: 0x%08lx bytes", m_sizPacketInputBuffer);
+							m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
 
 							tResult = TRANSPORTSTATUS_CRC_MISMATCH;
 						}
@@ -366,7 +366,7 @@ romloader::TRANSPORTSTATUS_T romloader_eth::receive_packet(void)
 		}
 		else
 		{
-			fprintf(stderr, "receive_packet: Failed to receive a packet: %d\n", tResult);
+			m_ptLog->error("receive_packet: Failed to receive a packet: %d", tResult);
 		}
 
 		if( tResult!=TRANSPORTSTATUS_OK )
@@ -375,13 +375,13 @@ romloader::TRANSPORTSTATUS_T romloader_eth::receive_packet(void)
 			if( uiRetries==0 )
 			{
 				/* No more retries... */
-				fprintf(stderr, "No more retries left, giving up.\n");
+				m_ptLog->error("No more retries left, giving up.");
 				break;
 			}
 			else
 			{
 				--uiRetries;
-				fprintf(stderr, "Retry\n");
+				m_ptLog->debug("Retry");
 			}
 		}
 	} while( tResult!=TRANSPORTSTATUS_OK );

@@ -40,11 +40,13 @@ ADD_SUBDIRECTORY(romloader)
 #-----------------------------------------------------------------------------
 
 SET(muhkuh_plugin_interface_SOURCES
+	muhkuh_log.cpp
 	muhkuh_plugin_interface.cpp
 )
 
 SET(muhkuh_plugin_interface_HEADERS
 	swigluarun.h
+	muhkuh_log.h
 	muhkuh_plugin_interface.h
 )
 

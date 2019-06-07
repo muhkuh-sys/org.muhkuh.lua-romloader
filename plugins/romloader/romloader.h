@@ -308,9 +308,6 @@ public:
 	} TRANSPORTSTATUS_T;
 
 	const char *get_error_message(TRANSPORTSTATUS_T tStatus);
-
-	/* This is only for debug messages. */
-	static void hexdump(const uint8_t *pucData, uint32_t ulSize);
 #endif
 
 #if !defined(SWIG)
