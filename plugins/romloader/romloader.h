@@ -328,7 +328,7 @@ protected:
 	virtual TRANSPORTSTATUS_T send_raw_packet(const void *pvPacket, size_t sizPacket) = 0;
 	virtual TRANSPORTSTATUS_T receive_packet(void) = 0;
 
-	virtual bool synchronize(void);
+	virtual bool synchronize(ROMLOADER_CHIPTYP *ptChiptyp);
 	virtual TRANSPORTSTATUS_T send_packet(MIV3_PACKET_HEADER_T *ptPacket, size_t sizData);
 	virtual TRANSPORTSTATUS_T execute_command(MIV3_PACKET_HEADER_T *ptPacket, size_t sizPacket);
 
@@ -337,6 +337,8 @@ protected:
 	virtual TRANSPORTSTATUS_T write_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, const void *pvData, uint16_t sizDataInBytes);
 
 	bool detect_chiptyp(romloader_read_functinoid *ptFn);
+	bool __read_data32(uint32_t ulNetxAddress, uint32_t *pulData);
+	bool detect_chiptyp(void);
 	uint16_t crc16(uint16_t usCrc, uint8_t ucData);
 	bool callback_long(SWIGLUA_REF *ptLuaFn, long lProgressData, long lCallbackUserData);
 	bool callback_string(SWIGLUA_REF *ptLuaFn, const char *pcProgressData, size_t sizProgressData, long lCallbackUserData);

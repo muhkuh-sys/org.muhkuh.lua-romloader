@@ -53,7 +53,7 @@ romloader::~romloader(void)
 
 
 
-bool romloader::synchronize(void)
+bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp)
 {
 	const uint8_t aucKnock[5] = { '*', 0x00, 0x00, '*', '#' };
 	const uint8_t aucMagicMooh[4] = { 0x4d, 0x4f, 0x4f, 0x48 };
@@ -150,7 +150,10 @@ bool romloader::synchronize(void)
 
 			/* Set the new values. */
 			m_ucMonitorSequence = ucSequence;
-			m_tChiptyp = tChipType;
+			if( ptChiptyp!=NULL )
+			{
+				*ptChiptyp = tChipType;
+			}
 			m_sizMaxPacketSizeClient = sizMaxPacketSize;
 
 			fResult = true;
@@ -323,7 +326,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 					if( ucPacketSequence!=m_ucMonitorSequence )
 					{
 						m_ptLog->error("execute_command: the sequence does not match: %d / %d", ucPacketSequence, m_ucMonitorSequence);
-						synchronize();
+						synchronize(NULL);
 						tResult = TRANSPORTSTATUS_SEQUENCE_MISMATCH;
 					}
 					else
@@ -1183,6 +1186,121 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 //
 //		pcChiptypName = GetChiptypName(tChiptyp);
 //		printf("%s(%p): found chip %s.\n", m_pcName, this, pcChiptypName);
+	}
+
+	return fResult;
+}
+
+
+bool romloader::__read_data32(uint32_t ulNetxAddress, uint32_t *pulData)
+{
+	TRANSPORTSTATUS_T tResult;
+	uint32_t ulValue;
+	bool fOk;
+
+
+	/* Expect error. */
+	fOk = false;
+
+	tResult = read_data(ulNetxAddress, MONITOR_ACCESSSIZE_Long, 4);
+	if( tResult==TRANSPORTSTATUS_OK )
+	{
+		ulValue  = ((uint32_t)(m_aucPacketInputBuffer[5]));
+		ulValue |= ((uint32_t)(m_aucPacketInputBuffer[6]))<< 8U;
+		ulValue |= ((uint32_t)(m_aucPacketInputBuffer[7]))<<16U;
+		ulValue |= ((uint32_t)(m_aucPacketInputBuffer[8]))<<24U;
+		*pulData = ulValue;
+		fOk = true;
+	}
+
+	return fOk;
+}
+
+
+bool romloader::detect_chiptyp(void)
+{
+	TRANSPORTSTATUS_T tResult;
+	uint32_t ulResetVector;
+	const ROMLOADER_RESET_ID_T *ptRstCnt, *ptRstEnd;
+	uint32_t ulVersionAddr;
+	uint32_t ulVersion;
+	uint32_t ulCheckAddr;
+	uint32_t ulCheckVal;
+	uint32_t ulCheckValMasked;
+	bool fResult;
+	ROMLOADER_CHIPTYP tChiptyp;
+
+
+	tChiptyp = ROMLOADER_CHIPTYP_UNKNOWN;
+
+	/* Read the reset vector at 0x00000000. */
+	fResult = __read_data32(0, &ulResetVector);
+	if( fResult!=true )
+	{
+		m_ptLog->error("Failed to read the reset vector.");
+	}
+	else
+	{
+		m_ptLog->debug("reset vector: 0x%08X", ulResetVector);
+
+		/* Compare the reset vector to all known chip families. */
+		ptRstCnt = atResIds;
+		ptRstEnd = ptRstCnt + (sizeof(atResIds)/sizeof(atResIds[0]));
+		ulVersionAddr = 0xffffffff;
+		while( ptRstCnt<ptRstEnd )
+		{
+			if( ptRstCnt->ulResetVector==ulResetVector )
+			{
+				ulVersionAddr = ptRstCnt->ulVersionAddress;
+				/* Read the version address. */
+				fResult = __read_data32(ulVersionAddr, &ulVersion);
+				if( fResult!=true )
+				{
+					m_ptLog->error("Failed to read the version data at 0x%08x.", ulVersionAddr);
+					break;
+				}
+				else
+				{
+					m_ptLog->debug("version value: 0x%08X", ulVersion);
+					if( ptRstCnt->ulVersionValue==ulVersion )
+					{
+						ulCheckAddr = ptRstCnt->ulCheckAddress;
+						ulCheckVal = 0;
+
+						if (ulCheckAddr != 0)
+						{
+							fResult = __read_data32(ulCheckAddr, &ulCheckVal);
+							if( fResult!=true )
+							{
+								m_ptLog->error("Failed to read the check data at 0x%08x.", ulCheckAddr);
+								break;
+							}
+							else
+							{
+								ulCheckValMasked = ulCheckVal & ptRstCnt->ulCheckMask;
+								m_ptLog->debug("check address: 0x%08X  value: 0x%08X masked: 0x%08X", ulCheckAddr, ulCheckVal, ulCheckValMasked);
+							}
+						}
+
+						if ((ulCheckAddr==0) || (ulCheckValMasked==ptRstCnt->ulCheckCmpValue))
+						{
+							/* Found chip! */
+							tChiptyp = ptRstCnt->tChiptyp;
+							m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
+							break;
+						}
+					}
+				}
+			}
+			++ptRstCnt;
+		}
+	}
+
+	/* Found something? */
+	if( fResult==true && tChiptyp!=ROMLOADER_CHIPTYP_UNKNOWN )
+	{
+		/* Accept the new chip type. */
+		m_tChiptyp = tChiptyp;
 	}
 
 	return fResult;

@@ -490,6 +490,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 	bool fResult;
 	ROMLOADER_COMMANDSET_T tCmdSet;
 	int iResult;
+	ROMLOADER_CHIPTYP tChiptyp;
 
 
 	/* Expect error. */
@@ -607,7 +608,23 @@ void romloader_uart::Connect(lua_State *ptClientData)
 					 *   sequence number
 					 *   maximum packet size
 					 */
-					fResult = synchronize();
+					fResult = synchronize(&tChiptyp);
+					if( fResult==true )
+					{
+						/* Do not trust the chip type "NETX90_MPW" on this interface.
+						 * The ROM code of the netX90 rev0 and rev1 also report this
+						 * value instead of their own ID.
+						 */
+						if( tChiptyp==ROMLOADER_CHIPTYP_NETX90_MPW )
+						{
+							m_ptLog->debug("Got suspicious chip type %d, detecting chip type.", tChiptyp);
+							fResult = detect_chiptyp();
+						}
+						else
+						{
+							m_tChiptyp = tChiptyp;
+						}
+					}
 					if( fResult!=true )
 					{
 						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to synchronize with the client!", m_pcName, this);
