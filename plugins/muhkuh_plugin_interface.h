@@ -22,6 +22,8 @@
 #include <string.h>
 #include <stddef.h>
 
+#include "muhkuh_log.h"
+
 #ifndef __MUHKUH_PLUGIN_INTERFACE__
 #define __MUHKUH_PLUGIN_INTERFACE__
 
@@ -114,6 +116,7 @@ protected:
 	char *m_pcLocation;
 
 	muhkuh_plugin_provider *m_ptProvider;
+	muhkuh_log *m_ptLog;
 
 	bool m_fIsConnected;
 };
@@ -147,6 +150,8 @@ protected:
 	muhkuh_plugin_version m_tVersion;
 	swig_type_info *m_ptPluginTypeInfo;
 	swig_type_info *m_ptReferenceTypeInfo;
+
+	muhkuh_log *m_ptLog;
 };
 
 

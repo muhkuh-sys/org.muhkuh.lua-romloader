@@ -43,13 +43,16 @@ muhkuh_plugin::muhkuh_plugin(const char *pcName, const char *pcTyp, muhkuh_plugi
  , m_pcTyp(NULL)
  , m_pcLocation(NULL)
  , m_ptProvider(ptProvider)
+ , m_ptLog(NULL)
  , m_fIsConnected(false)
 {
 	// clone name and typ
 	m_pcName = clone_string(pcName, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 	m_pcTyp = clone_string(pcTyp, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 
-	printf("%s(%p): created\n", m_pcName, this);
+	m_ptLog = new muhkuh_log();
+
+	m_ptLog->trace("created");
 }
 
 
@@ -58,14 +61,17 @@ muhkuh_plugin::muhkuh_plugin(const char *pcName, const char *pcTyp, const char *
  , m_pcTyp(NULL)
  , m_pcLocation(NULL)
  , m_ptProvider(ptProvider)
+ , m_ptLog(NULL)
  , m_fIsConnected(false)
 {
 	/* Clone name, typ and location. */
 	m_pcName = clone_string(pcName, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 	m_pcTyp = clone_string(pcTyp, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 	m_pcLocation = clone_string(pcLocation, SIZ_MAX_MUHKUH_PLUGIN_STRING);
-	
-	printf("%s(%p): created\n", m_pcName, this);
+
+	m_ptLog = new muhkuh_log();
+
+	m_ptLog->trace("created");
 }
 
 
@@ -79,11 +85,16 @@ muhkuh_plugin::~muhkuh_plugin(void)
 		fOk = m_ptProvider->ReleaseInterface(this);
 		if( fOk!=true )
 		{
-			printf("%s(%p): failed to release interface!\n", m_pcName, this);
+			m_ptLog->error("failed to release interface!");
 		}
 	}
 
-	printf("%s(%p): deleted\n", m_pcName, this);
+	m_ptLog->debug("deleted");
+
+	if( m_ptLog!=NULL )
+	{
+		delete m_ptLog;
+	}
 
 	if( m_pcName!=NULL )
 	{
@@ -100,7 +111,7 @@ muhkuh_plugin::~muhkuh_plugin(void)
 // returns the connection state of the device
 bool muhkuh_plugin::IsConnected(void) const
 {
-	printf("%s(%p): is_connected() = %s\n", m_pcName, this, (m_fIsConnected?"true":"false"));
+	m_ptLog->debug("is_connected() = %s", (m_fIsConnected?"true":"false"));
 
 	return m_fIsConnected;
 }
@@ -311,24 +322,27 @@ char *muhkuh_plugin_reference::clone_string(const char *pcStr, size_t sizMax)
 
 
 muhkuh_plugin_provider::muhkuh_plugin_provider(const char *pcPluginId)
+ : m_pcPluginName(NULL)
+ , m_pcPluginId(NULL)
+ , m_tVersion({0,0,0})
+ , m_ptPluginTypeInfo(NULL)
+ , m_ptReferenceTypeInfo(NULL)
+ , m_ptLog(NULL)
 {
-	// init the plugin description with default values
-	m_pcPluginName = NULL;
-	m_pcPluginId = NULL;
-	m_tVersion.uiVersionMajor = 0;
-	m_tVersion.uiVersionMinor = 0;
-	m_tVersion.uiVersionSub = 0;
-
-	// copy the id
+	/* Copy the ID. */
 	m_pcPluginId = clone_string(pcPluginId, SIZ_MAX_MUHKUH_PLUGIN_STRING);
 
-	/* init the lua type info */
-	m_ptPluginTypeInfo = NULL;
+	m_ptLog = new muhkuh_log();
 }
 
 
 muhkuh_plugin_provider::~muhkuh_plugin_provider(void)
 {
+	if( m_ptLog!=NULL )
+	{
+		delete m_ptLog;
+	}
+
 	if( m_pcPluginName!=NULL )
 	{
 		delete[] m_pcPluginName;

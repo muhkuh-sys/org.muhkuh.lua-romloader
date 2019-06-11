@@ -114,18 +114,18 @@ romloader_uart *romloader_uart_provider::ClaimInterface(const muhkuh_plugin_refe
 
 	if( ptReference==NULL )
 	{
-		fprintf(stderr, "%s(%p): claim_interface(): missing reference!\n", m_pcPluginId, this);
+		m_ptLog->error("claim_interface(): missing reference!");
 	}
 	else
 	{
 		pcName = ptReference->GetName();
 		if( pcName==NULL )
 		{
-			fprintf(stderr, "%s(%p): claim_interface(): missing name!\n", m_pcPluginId, this);
+			m_ptLog->error("claim_interface(): missing name!");
 		}
 		else if( sscanf(pcName, m_pcPluginNamePattern, acDevice)!=1 )
 		{
-			fprintf(stderr, "%s(%p): claim_interface(): invalid name: %s\n", m_pcPluginId, this, pcName);
+			m_ptLog->error("claim_interface(): invalid name: %s", pcName);
 		}
 		else
 		{
@@ -152,22 +152,22 @@ bool romloader_uart_provider::ReleaseInterface(muhkuh_plugin *ptPlugin)
 
 	if( ptPlugin==NULL )
 	{
-		fprintf(stderr, "%s(%p): release_interface(): missing plugin!\n", m_pcPluginId, this);
+		m_ptLog->error("release_interface(): missing plugin!");
 	}
 	else
 	{
 		pcName = ptPlugin->GetName();
 		if( pcName==NULL )
 		{
-			fprintf(stderr, "%s(%p): release_interface(): missing name!\n", m_pcPluginId, this);
+			m_ptLog->error("release_interface(): missing name!");
 		}
 		else if( sscanf(pcName, m_pcPluginNamePattern, acDevice)!=1 )
 		{
-			fprintf(stderr, "%s(%p): release_interface(): invalid name: %s\n", m_pcPluginId, this, pcName);
+			m_ptLog->error("release_interface(): invalid name: %s", pcName);
 		}
 		else
 		{
-			printf("%s(%p): released interface %s.\n", m_pcPluginId, this, pcName);
+			m_ptLog->debug("released interface %s.", pcName);
 			fOk = true;
 		}
 	}
@@ -226,12 +226,12 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 	if( m_ptUartDev->SendRaw(aucKnock, sizeof(aucKnock), 500)!=sizeof(aucKnock) )
 	{
 		/* Failed to send knock sequence to device. */
-		fprintf(stderr, "Failed to send knock sequence to device.\n");
+		m_ptLog->error("Failed to send knock sequence to device.");
 	}
 	else if( m_ptUartDev->Flush()!=true )
 	{
 		/* Failed to flush the knock sequence. */
-		fprintf(stderr, "Failed to flush the knock sequence.\n");
+		m_ptLog->error("Failed to flush the knock sequence.");
 	}
 	else
 	{
@@ -239,7 +239,7 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 		if( sizTransfered!=1 )
 		{
 			/* Failed to receive first char of knock response. */
-			fprintf(stderr, "Failed to receive first char of knock response: %ld.\n", sizTransfered);
+			m_ptLog->error("Failed to receive first char of knock response: %ld.", sizTransfered);
 		}
 		else
 		{
@@ -250,13 +250,13 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 				sizTransfered = m_ptUartDev->RecvRaw(aucData, 2, 500);
 				if( sizTransfered!=2 )
 				{
-					fprintf(stderr, "Failed to receive the size information after the stream packet start!\n");
+					m_ptLog->error("Failed to receive the size information after the stream packet start!");
 				}
 				else
 				{
 					if( aucData[0]=='*' && aucData[1]=='#' )
 					{
-						printf("OK, received '*#'!\n");
+						m_ptLog->debug("OK, received '*#'!");
 						fResult = m_ptUartDev->SendBlankLineAndDiscardResponse();
 						if( fResult==true )
 						{
@@ -268,11 +268,11 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 						sizTransfered = m_ptUartDev->RecvRaw(aucData+2, 2, 500);
 						if( sizTransfered!=2 )
 						{
-							fprintf(stderr, "Failed to receive the rest of the knock response after 0x00 0x00!\n");
+							m_ptLog->error("Failed to receive the rest of the knock response after 0x00 0x00!");
 						}
 						else if( aucData[2]=='*' && aucData[3]=='#' )
 						{
-							printf("OK, received '<null><null>*#'!\n");
+							m_ptLog->debug("OK, received '<null><null>*#'!");
 							fResult = m_ptUartDev->SendBlankLineAndDiscardResponse();
 							if( fResult==true )
 							{
@@ -281,8 +281,8 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 						}
 						else
 						{
-							fprintf(stderr, "Received strange response after 0x00 0x00:\n");
-							hexdump(aucData+2, 2);
+							m_ptLog->error("Received strange response after 0x00 0x00.");
+							m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData+2, 2);
 						}
 					}
 					else
@@ -297,12 +297,12 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 						/* Is the size OK? */
 						if( sizPacket<11 )
 						{
-							fprintf(stderr, "The received packet is too small. It must be at least 11 bytes, but it is %ld bytes.\n", sizPacket);
-							hexdump(aucData, sizPacket);
+							m_ptLog->error("The received packet is too small. It must be at least 11 bytes, but it is %ld bytes.", sizPacket);
+							m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData, sizPacket);
 						}
 						else if( sizPacket>(sizeof(aucData)-2) )
 						{
-							fprintf(stderr, "The received packet is too big for a buffer of %ld bytes. It has %ld bytes.\n", sizeof(aucData)-2, sizPacket);
+							m_ptLog->error("The received packet is too big for a buffer of %ld bytes. It has %ld bytes.", sizeof(aucData)-2, sizPacket);
 						}
 						else
 						{
@@ -310,12 +310,12 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 							sizTransfered = m_ptUartDev->RecvRaw(aucData+2, sizPacket, 500);
 							if( sizTransfered!=sizPacket )
 							{
-								fprintf(stderr, "Failed to receive the rest of the packet after the size information!\n");
+								m_ptLog->error("Failed to receive the rest of the packet after the size information!");
 							}
 							else
 							{
-								fprintf(stderr, "Got %zd bytes.\n", sizPacket+2);
-								hexdump(aucData, sizPacket+2);
+								m_ptLog->debug("Got %zd bytes.", sizPacket+2);
+								m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData, sizPacket+2);
 
 								/* Is this a MI V1 sync packet? */
 								if( memcmp(aucData+3, aucMagicMooh, sizeof(aucMagicMooh))==0 )
@@ -323,7 +323,7 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 									ucStatus = aucData[2];
 									if( ucStatus!=MONITOR_STATUS_Ok )
 									{
-										fprintf(stderr, "The status of the response is not OK but 0x%02x.\n", ucStatus);
+										m_ptLog->error("The status of the response is not OK but 0x%02x.", ucStatus);
 									}
 									else
 									{
@@ -338,15 +338,15 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 										}
 										if( usCrc!=0 )
 										{
-											fprintf(stderr, "CRC of version packet is invalid!\n");
-											hexdump(aucData, sizPacket);
+											m_ptLog->error("CRC of version packet is invalid!");
+											m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData, sizPacket);
 										}
 										else
 										{
-											hexdump(aucData, sizPacket);
+											m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData, sizPacket);
 											ulMiVersionMin = (uint32_t)(aucData[7] | (aucData[8]<<8));
 											ulMiVersionMaj = (uint32_t)(aucData[9] | (aucData[10]<<8));
-											printf("Found new machine interface V%d.%d.\n", ulMiVersionMaj, ulMiVersionMin);
+											m_ptLog->debug("Found new machine interface V%d.%d.\n", ulMiVersionMaj, ulMiVersionMin);
 
 											if( ulMiVersionMaj==1 )
 											{
@@ -377,7 +377,7 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 */
 											else
 											{
-												fprintf(stderr, "Unknown machine interface version %d.%d\n", ulMiVersionMaj, ulMiVersionMin);
+												m_ptLog->error("Unknown machine interface version %d.%d", ulMiVersionMaj, ulMiVersionMin);
 											}
 										}
 									}
@@ -388,7 +388,7 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 									ucStatus = aucData[3];
 									if( ucStatus!=MONITOR_STATUS_Ok )
 									{
-										fprintf(stderr, "The status of the response is not OK but 0x%02x.\n", ucStatus);
+										m_ptLog->error("The status of the response is not OK but 0x%02x.", ucStatus);
 									}
 									else
 									{
@@ -403,14 +403,14 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 										}
 										if( usCrc!=0 )
 										{
-											fprintf(stderr, "CRC of version packet is invalid!\n");
-											hexdump(aucData, sizPacket);
+											m_ptLog->error("CRC of version packet is invalid!");
+											m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData, sizPacket);
 										}
 										else
 										{
 											ulMiVersionMin = (uint32_t)(aucData[8] | (aucData[9]<<8));
 											ulMiVersionMaj = (uint32_t)(aucData[10] | (aucData[11]<<8));
-											printf("Found new machine interface V%d.%d.\n", ulMiVersionMaj, ulMiVersionMin);
+											m_ptLog->debug("Found new machine interface V%d.%d.", ulMiVersionMaj, ulMiVersionMin);
 
 /* These combinations are invalid.
 											if( ulMiVersionMaj==1 )
@@ -432,14 +432,14 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 											}
 											else
 											{
-												fprintf(stderr, "Unknown machine interface version %d.%d\n", ulMiVersionMaj, ulMiVersionMin);
+												m_ptLog->error("Unknown machine interface version %d.%d", ulMiVersionMaj, ulMiVersionMin);
 											}
 										}
 									}
 								}
 								else
 								{
-									fprintf(stderr, "The response packet has no MOOH magic!\n");
+									m_ptLog->error("The response packet has no MOOH magic!");
 								}
 							}
 						}
@@ -448,7 +448,7 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 			}
 			else if( aucData[0]=='#' )
 			{
-				printf("OK, received hash!\n");
+				m_ptLog->debug("OK, received hash!");
 
 				tCmdSet = ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1;
 				fResult = true;
@@ -490,6 +490,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 	bool fResult;
 	ROMLOADER_COMMANDSET_T tCmdSet;
 	int iResult;
+	ROMLOADER_CHIPTYP tChiptyp;
 
 
 	/* Expect error. */
@@ -520,13 +521,13 @@ void romloader_uart::Connect(lua_State *ptClientData)
 				switch(tCmdSet)
 				{
 				case ROMLOADER_COMMANDSET_UNKNOWN:
-					fprintf(stderr, "Unknown command set.\n");
+					m_ptLog->error("Unknown command set.");
 					fResult = false;
 					break;
 
 
 				case ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1:
-					fprintf(stderr, "ABOOT or HBOOT1.\n");
+					m_ptLog->debug("ABOOT or HBOOT1.");
 					/* Try to detect the chip type with the old command set ("DUMP"). */
 					ptFn = &tFnABoot;
 					fResult = detect_chiptyp(ptFn);
@@ -554,7 +555,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 
 
 				case ROMLOADER_COMMANDSET_MI1:
-					fprintf(stderr, "Command set MI1.\n");
+					m_ptLog->debug("Command set MI1.");
 					/* Try to detect the chip type with the old MI command set. */
 					ptFn = &tFnMi1;
 					fResult = detect_chiptyp(ptFn);
@@ -575,7 +576,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 
 
 				case ROMLOADER_COMMANDSET_MI2:
-					fprintf(stderr, "Command set MI2.\n");
+					m_ptLog->debug("Command set MI2.");
 					ptFn = &tFnMi2;
 					fResult = detect_chiptyp(ptFn);
 					if( fResult==true )
@@ -595,7 +596,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 
 
 				case ROMLOADER_COMMANDSET_MI3:
-					fprintf(stderr, "The device does not need an update.\n");
+					m_ptLog->debug("The device does not need an update.");
 					fResult = true;
 					break;
 				}
@@ -607,7 +608,23 @@ void romloader_uart::Connect(lua_State *ptClientData)
 					 *   sequence number
 					 *   maximum packet size
 					 */
-					fResult = synchronize();
+					fResult = synchronize(&tChiptyp);
+					if( fResult==true )
+					{
+						/* Do not trust the chip type "NETX90_MPW" on this interface.
+						 * The ROM code of the netX90 rev0 and rev1 also report this
+						 * value instead of their own ID.
+						 */
+						if( tChiptyp==ROMLOADER_CHIPTYP_NETX90_MPW )
+						{
+							m_ptLog->debug("Got suspicious chip type %d, detecting chip type.", tChiptyp);
+							fResult = detect_chiptyp();
+						}
+						else
+						{
+							m_tChiptyp = tChiptyp;
+						}
+					}
 					if( fResult!=true )
 					{
 						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to synchronize with the client!", m_pcName, this);
@@ -628,7 +645,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 
 void romloader_uart::Disconnect(lua_State *ptClientData)
 {
-	printf("%s(%p): disconnect\n", m_pcName, this);
+	m_ptLog->debug("disconnect");
 
 	if( m_ptUartDev!=NULL )
 	{
@@ -776,7 +793,7 @@ void romloader_uart::packet_ringbuffer_discard(void)
 {
 	if( m_sizPacketRingBufferFill>0 )
 	{
-		printf("Warning: discarding %ld bytes in ring buffer!\n", m_sizPacketRingBufferFill);
+		m_ptLog->warning("discarding %ld bytes in ring buffer!", m_sizPacketRingBufferFill);
 	}
 	packet_ringbuffer_init();
 }
@@ -802,7 +819,7 @@ romloader::TRANSPORTSTATUS_T romloader_uart::send_raw_packet(const void *pvPacke
 		}
 		else
 		{
-			fprintf(stderr, "! send_raw_packet: failed to send the packet!\n");
+			m_ptLog->error("send_raw_packet: failed to send the packet!");
 			tResult = TRANSPORTSTATUS_SEND_FAILED;
 		}
 	}
@@ -843,7 +860,7 @@ romloader::TRANSPORTSTATUS_T romloader_uart::receive_packet(void)
 			}
 			else
 			{
-				fprintf(stderr, "WARNING: Skipping char 0x%02x.\n", ucData);
+				m_ptLog->warning("Skipping char 0x%02x.", ucData);
 			}
 		}
 		else if( tResult==TRANSPORTSTATUS_TIMEOUT )
@@ -856,7 +873,7 @@ romloader::TRANSPORTSTATUS_T romloader_uart::receive_packet(void)
 
 	if( fFound!=true )
 	{
-		fprintf(stderr, "receive_packet: no start char found!\n");
+		m_ptLog->debug("receive_packet: no start char found!");
 		tResult = TRANSPORTSTATUS_FAILED_TO_SYNC;
 	}
 	else
@@ -912,26 +929,26 @@ romloader::TRANSPORTSTATUS_T romloader_uart::receive_packet(void)
 				}
 				else
 				{
-					fprintf(stderr, "! receive_packet: CRC failed.\n");
+					m_ptLog->error("receive_packet: CRC failed.");
 
 					/* Debug: get the complete packet and dump it.
 					 * NOTE: Do not remove the data from the buffer.
 					 */
-					printf("packet size: 0x%08lx bytes\n", sizPacket);
-					printf("Packet data:\n");
-					hexdump(m_aucPacketInputBuffer, sizPacket);
+					m_ptLog->debug("packet size: 0x%08lx bytes", sizPacket);
+					m_ptLog->debug("Packet data:");
+					m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, sizPacket);
 
 					tResult = TRANSPORTSTATUS_CRC_MISMATCH;
 				}
 			}
 			else
 			{
-				fprintf(stderr, "receive_packet: Failed to get 0x%02lx bytes of packet data info: %d\n", sizPacket, tResult);
+				m_ptLog->error("receive_packet: Failed to get 0x%02lx bytes of packet data info: %d", sizPacket, tResult);
 			}
 		}
 		else
 		{
-			fprintf(stderr, "receive_packet: Failed to get size info: %d\n", tResult);
+			m_ptLog->error("receive_packet: Failed to get size info: %d", tResult);
 		}
 	}
 

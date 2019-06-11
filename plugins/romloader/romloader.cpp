@@ -31,7 +31,7 @@ romloader::romloader(const char *pcName, const char *pcTyp, muhkuh_plugin_provid
  , m_sizPacketInputBuffer(0)
  , m_ucMonitorSequence(0)
 {
-/*	printf("%s(%p): created in romloader\n", m_pcName, this); */
+/*	m_ptLog->trace("created in romloader"); */
 }
 
 
@@ -53,7 +53,7 @@ romloader::~romloader(void)
 
 
 
-bool romloader::synchronize(void)
+bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp)
 {
 	const uint8_t aucKnock[5] = { '*', 0x00, 0x00, '*', '#' };
 	const uint8_t aucMagicMooh[4] = { 0x4d, 0x4f, 0x4f, 0x48 };
@@ -77,14 +77,14 @@ bool romloader::synchronize(void)
 		tResult = send_raw_packet(aucKnock, sizeof(aucKnock));
 		if( tResult!=TRANSPORTSTATUS_OK )
 		{
-			fprintf(stderr, "! send_sync_command: failed to send the packet!\n");
+			m_ptLog->error("send_sync_command: failed to send the packet!");
 		}
 		else
 		{
 			tResult = receive_packet();
 			if( tResult!=TRANSPORTSTATUS_OK )
 			{
-				fprintf(stderr, "! send_sync_command: receive_packet failed with error code %d\n", tResult);
+				m_ptLog->error("send_sync_command: receive_packet failed with error code %d", tResult);
 			}
 			else
 			{
@@ -97,16 +97,16 @@ bool romloader::synchronize(void)
 			--uiRetryCnt;
 			if( uiRetryCnt==0 )
 			{
-				fprintf(stderr, "! send_sync_command: Retried 10 times and nothing happened. Giving up!\n");
+				m_ptLog->error("send_sync_command: Retried 10 times and nothing happened. Giving up!");
 				break;
 			}
 			else
 			{
-				fprintf(stderr, "***************************************\n");
-				fprintf(stderr, "*                                     *\n");
-				fprintf(stderr, "*            retry                    *\n");
-				fprintf(stderr, "*                                     *\n");
-				fprintf(stderr, "***************************************\n");
+				m_ptLog->error("***************************************");
+				m_ptLog->error("*                                     *");
+				m_ptLog->error("*            retry                    *");
+				m_ptLog->error("*                                     *");
+				m_ptLog->error("***************************************");
 			}
 		}
 
@@ -115,7 +115,7 @@ bool romloader::synchronize(void)
 	if( tResult!=TRANSPORTSTATUS_OK )
 	{
 		/* Failed to send knock sequence to device. */
-		fprintf(stderr, "Failed to send knock sequence to device.\n");
+		m_ptLog->error("Failed to send knock sequence to device.");
 	}
 	else
 	{
@@ -124,41 +124,44 @@ bool romloader::synchronize(void)
 
 		if( m_sizPacketInputBuffer==sizeof(MIV3_PACKET_SYNC_T) && memcmp(ptSyncPacket->s.aucMagic, aucMagicMooh, sizeof(aucMagicMooh))==0 )
 		{
-			fprintf(stderr, "Packet:\n");
-			hexdump(m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+			m_ptLog->debug("Packet:");
+			m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
 
 			/* Get the sequence number. */
 			ucSequence = ptSyncPacket->s.tHeader.s.ucSequenceNumber;
-			fprintf(stderr, "Sequence number: 0x%02x\n", ucSequence);
+			m_ptLog->debug("Sequence number: 0x%02x", ucSequence);
 
 			ulMiVersionMin = NETXTOH16(ptSyncPacket->s.usVersionMinor);
 			ulMiVersionMaj = NETXTOH16(ptSyncPacket->s.usVersionMajor);
-			printf("Machine interface V%d.%d.\n", ulMiVersionMaj, ulMiVersionMin);
+			m_ptLog->debug("Machine interface V%d.%d .", ulMiVersionMaj, ulMiVersionMin);
 
 			tChipType = (ROMLOADER_CHIPTYP)(ptSyncPacket->s.ucChipType);
-			printf("Chip type : %d\n", tChipType);
+			m_ptLog->debug("Chip type : %d", tChipType);
 
 			/* sizMaxPacketSizeClient = min(max. packet size from response, sizMaxPacketSizeHost) */
 			sizMaxPacketSize = NETXTOH16(ptSyncPacket->s.usMaximumPacketSize);
-			printf("Maximum packet size: 0x%04lx\n", sizMaxPacketSize);
+			m_ptLog->debug("Maximum packet size: 0x%04lx", sizMaxPacketSize);
 			/* Limit the packet size to the buffer size. */
 			if( sizMaxPacketSize>m_sizMaxPacketSizeHost )
 			{
 				sizMaxPacketSize = m_sizMaxPacketSizeHost;
-				printf("Limit maximum packet size to 0x%04lx\n", sizMaxPacketSize);
+				m_ptLog->debug("Limit maximum packet size to 0x%04lx", sizMaxPacketSize);
 			}
 
 			/* Set the new values. */
 			m_ucMonitorSequence = ucSequence;
-			m_tChiptyp = tChipType;
+			if( ptChiptyp!=NULL )
+			{
+				*ptChiptyp = tChipType;
+			}
 			m_sizMaxPacketSizeClient = sizMaxPacketSize;
 
 			fResult = true;
 		}
 		else
 		{
-			fprintf(stderr, "Received an invalid knock response.\n");
-			hexdump(m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+			m_ptLog->error("Received an invalid knock response.");
+			m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
 
 			/* TODO: Send a "Cancel Operation" packet here and retry. */
 		}
@@ -181,12 +184,12 @@ romloader::TRANSPORTSTATUS_T romloader::send_packet(MIV3_PACKET_HEADER_T *ptPack
 	/* The maximum packet size must not exceed the maximum size negotiated with the client. */
 	if( sizPacket>m_sizMaxPacketSizeClient )
 	{
-		fprintf(stderr, "! send_packet: packet too large: %zd bytes! Maximum size is %zd.\n", m_sizMaxPacketSizeClient, m_sizMaxPacketSizeClient);
+		m_ptLog->error("send_packet: packet too large: %zd bytes! Maximum size is %zd.", m_sizMaxPacketSizeClient, m_sizMaxPacketSizeClient);
 		tResult = TRANSPORTSTATUS_PACKET_TOO_LARGE;
 	}
 	else if( sizPacket<sizeof(MIV3_PACKET_HEADER_T) )
 	{
-		fprintf(stderr, "! send_packet: packet too small: %zd bytes! Minimum size is %zd.\n", m_sizMaxPacketSizeClient, sizeof(MIV3_PACKET_HEADER_T));
+		m_ptLog->error("send_packet: packet too small: %zd bytes! Minimum size is %zd.", m_sizMaxPacketSizeClient, sizeof(MIV3_PACKET_HEADER_T));
 		tResult = TRANSPORTSTATUS_PACKET_TOO_SMALL;
 	}
 	else
@@ -223,7 +226,7 @@ romloader::TRANSPORTSTATUS_T romloader::send_packet(MIV3_PACKET_HEADER_T *ptPack
 		tResult = send_raw_packet(ptPacket->auc, sizPacket);
 		if( tResult!=TRANSPORTSTATUS_OK )
 		{
-			fprintf(stderr, "! send_packet: failed to send the packet!\n");
+			m_ptLog->error("send_packet: failed to send the packet!");
 		}
 	}
 
@@ -274,7 +277,7 @@ romloader::TRANSPORTSTATUS_T romloader::send_ack(unsigned char ucSequenceToAck)
 	tResult = send_raw_packet(tPacketAck.auc, sizeof(MIV3_PACKET_ACK_T));
 	if( tResult!=TRANSPORTSTATUS_OK )
 	{
-		fprintf(stderr, "! send_packet: failed to send the ACK packet!\n");
+		m_ptLog->error("send_packet: failed to send the ACK packet!");
 	}
 
 	return tResult;
@@ -301,7 +304,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 		tResult = send_packet(ptPacket, sizPacket);
 		if( tResult!=TRANSPORTSTATUS_OK )
 		{
-			fprintf(stderr, "! execute_command: send_packet failed with error code %d\n", tResult);
+			m_ptLog->error("execute_command: send_packet failed with error code %d", tResult);
 		}
 		else
 		{
@@ -310,7 +313,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 			tResult = receive_packet();
 			if( tResult!=TRANSPORTSTATUS_OK )
 			{
-				fprintf(stderr, "! execute_command: receive_packet failed with error code %d\n", tResult);
+				m_ptLog->error("execute_command: receive_packet failed with error code %d", tResult);
 			}
 			else
 			{
@@ -322,8 +325,8 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 					ucPacketSequence = ptAckPacket->s.tHeader.s.ucSequenceNumber;
 					if( ucPacketSequence!=m_ucMonitorSequence )
 					{
-						fprintf(stderr, "! execute_command: the sequence does not match: %d / %d\n", ucPacketSequence, m_ucMonitorSequence);
-						synchronize();
+						m_ptLog->error("execute_command: the sequence does not match: %d / %d", ucPacketSequence, m_ucMonitorSequence);
+						synchronize(NULL);
 						tResult = TRANSPORTSTATUS_SEQUENCE_MISMATCH;
 					}
 					else
@@ -349,7 +352,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 						 * This is the case if the last ACK from the PC got lost.
 						 * Re-transmit an ACK packet for the last sequence number.
 						 */
-						fprintf(stderr, "Re-sending ACK for sequence number 0x%02x.\n", ucLastMonitorSequence);
+						m_ptLog->debug("Re-sending ACK for sequence number 0x%02x.", ucLastMonitorSequence);
 						send_ack(ucLastMonitorSequence);
 
 /* FIXME: change the result. */
@@ -357,8 +360,8 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 					}
 					else
 					{
-						fprintf(stderr, "! execute_command: expected an ACK packet with %zd bytes, but received %zd bytes:\n", sizeof(MIV3_PACKET_ACK_T), m_sizPacketInputBuffer);
-						hexdump(m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+						m_ptLog->error("execute_command: expected an ACK packet with %zd bytes, but received %zd bytes:", sizeof(MIV3_PACKET_ACK_T), m_sizPacketInputBuffer);
+						m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
 /* FIXME: change the result. */
 						tResult = TRANSPORTSTATUS_MISSING_USERDATA;
 					}
@@ -371,16 +374,16 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 			--uiRetryCnt;
 			if( uiRetryCnt==0 )
 			{
-				fprintf(stderr, "! execute_command: Retried 10 times and nothing happened. Giving up!\n");
+				m_ptLog->error("execute_command: Retried 10 times and nothing happened. Giving up!");
 				break;
 			}
 			else
 			{
-				fprintf(stderr, "***************************************\n");
-				fprintf(stderr, "*                                     *\n");
-				fprintf(stderr, "*            retry                    *\n");
-				fprintf(stderr, "*                                     *\n");
-				fprintf(stderr, "***************************************\n");
+				m_ptLog->debug("***************************************");
+				m_ptLog->debug("*                                     *");
+				m_ptLog->debug("*            retry                    *");
+				m_ptLog->debug("*                                     *");
+				m_ptLog->debug("***************************************");
 			}
 		}
 
@@ -462,7 +465,7 @@ romloader::TRANSPORTSTATUS_T romloader::read_data(uint32_t ulNetxAddress, MONITO
 						if( m_sizPacketInputBuffer==sizeof(MIV3_PACKET_STATUS_T) )
 						{
 							/* The netX sent a status code in response to the read command. */
-							fprintf(stderr, "Status package received. Status %d.\n", ptPacketStatus->s.ucStatus);
+							m_ptLog->debug("Status package received. Status %d.", ptPacketStatus->s.ucStatus);
 							send_ack(m_ucMonitorSequence);
 							/* Increase the sequence number. */
 							++m_ucMonitorSequence;
@@ -476,8 +479,8 @@ romloader::TRANSPORTSTATUS_T romloader::read_data(uint32_t ulNetxAddress, MONITO
 					}
 					else
 					{
-						hexdump(m_aucPacketInputBuffer, m_sizPacketInputBuffer);
-						fprintf(stderr, "Answer to read_data has unexpected packet type 0x%02x!\n", ucPacketTyp);
+						m_ptLog->error("Answer to read_data has unexpected packet type 0x%02x!", ucPacketTyp);
+						m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
 						tResult = TRANSPORTSTATUS_UNEXPECTED_PACKET_TYP;
 					}
 				}
@@ -546,7 +549,7 @@ MUHKUH_STATIC_ASSERT( sizeof(uWriteData)==m_sizMaxPacketSizeHost, "Packing of WR
 				if( m_sizPacketInputBuffer<sizeof(MIV3_PACKET_ACK_T) )
 				{
 					/* The packet is too small. */
-					fprintf(stderr, "the packet is too small: %zd\n", m_sizPacketInputBuffer);
+					m_ptLog->error("the packet is too small: %zd", m_sizPacketInputBuffer);
 					tResult = TRANSPORTSTATUS_PACKET_TOO_SMALL;
 				}
 				else
@@ -569,33 +572,33 @@ MUHKUH_STATIC_ASSERT( sizeof(uWriteData)==m_sizMaxPacketSizeHost, "Packing of WR
 							if( ucStatus!=MONITOR_STATUS_Ok )
 							{
 								/* The netX sent an error. */
-								fprintf(stderr, "Status != OK received. Status %d.\n", ucStatus);
+								m_ptLog->error("Status != OK received. Status %d.", ucStatus);
 								tResult = TRANSPORTSTATUS_NETX_ERROR;
 							}
 						}
 						else
 						{
 							/* The packet type is set to "status", but the size of the packet does not match a valid status packet. */
-							fprintf(stderr, "invalid size: %zd\n", m_sizPacketInputBuffer);
+							m_ptLog->error("invalid size: %zd", m_sizPacketInputBuffer);
 							tResult = TRANSPORTSTATUS_INVALID_PACKET_SIZE;
 						}
 					}
 					else
 					{
-						hexdump(m_aucPacketInputBuffer, m_sizPacketInputBuffer);
-						fprintf(stderr, "Answer to read_data has unexpected packet typ 0x%02x!", ucPacketTyp);
+						m_ptLog->error("Answer to read_data has unexpected packet typ 0x%02x!", ucPacketTyp);
+						m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
 						tResult = TRANSPORTSTATUS_UNEXPECTED_PACKET_TYP;
 					}
 				}
 			}
 			else
 			{
-				fprintf(stderr, "receive_packet failed with %d\n", tResult);
+				m_ptLog->error("receive_packet failed with %d", tResult);
 			}
 		}
 		else
 		{
-			fprintf(stderr, "execute_command failed with %d\n", tResult);
+			m_ptLog->error("execute_command failed with %d", tResult);
 		}
 	}
 
@@ -1037,7 +1040,7 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 							else
 							{
 								/* The netX sent an error. */
-								fprintf(stderr, "Status != call_finished received. Status %d.\n", ucStatus);
+								m_ptLog->error("Status != call_finished received. Status %d.", ucStatus);
 								tResult = TRANSPORTSTATUS_NETX_ERROR;
 							}
 						}
@@ -1135,7 +1138,7 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 
 	// read the reset vector at 0x00000000
 	ulResetVector = ptFn->read_data32(0);
-	printf("%s(%p): reset vector: 0x%08X\n", m_pcName, this, ulResetVector);
+	m_ptLog->debug("reset vector: 0x%08X", ulResetVector);
 
 	// match the reset vector to all known chipfamilies
 	ptRstCnt = atResIds;
@@ -1148,7 +1151,7 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 			ulVersionAddr = ptRstCnt->ulVersionAddress;
 			// read version address
 			ulVersion = ptFn->read_data32(ulVersionAddr);
-			printf("%s(%p): version value: 0x%08X\n", m_pcName, this, ulVersion);
+			m_ptLog->debug("version value: 0x%08X", ulVersion);
 			if( ptRstCnt->ulVersionValue==ulVersion )
 			{
 				ulCheckAddr = ptRstCnt->ulCheckAddress;
@@ -1158,14 +1161,14 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 				{
 					ulCheckVal = ptFn->read_data32(ulCheckAddr);
 					ulCheckValMasked = ulCheckVal & ptRstCnt->ulCheckMask;
-					printf("%s(%p): check address: 0x%08X  value: 0x%08X masked: 0x%08X \n", m_pcName, this, ulCheckAddr, ulCheckVal, ulCheckValMasked);
+					m_ptLog->debug("check address: 0x%08X  value: 0x%08X masked: 0x%08X", ulCheckAddr, ulCheckVal, ulCheckValMasked);
 				}
 					
 				if ((ulCheckAddr==0) || (ulCheckValMasked==ptRstCnt->ulCheckCmpValue))
 				{
 					// found chip!
 					tChiptyp = ptRstCnt->tChiptyp;
-					printf("%s(%p): found chip %s.\n", m_pcName, this, ptRstCnt->pcChiptypName);
+					m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
 					break;
 				}
 			}
@@ -1183,6 +1186,121 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 //
 //		pcChiptypName = GetChiptypName(tChiptyp);
 //		printf("%s(%p): found chip %s.\n", m_pcName, this, pcChiptypName);
+	}
+
+	return fResult;
+}
+
+
+bool romloader::__read_data32(uint32_t ulNetxAddress, uint32_t *pulData)
+{
+	TRANSPORTSTATUS_T tResult;
+	uint32_t ulValue;
+	bool fOk;
+
+
+	/* Expect error. */
+	fOk = false;
+
+	tResult = read_data(ulNetxAddress, MONITOR_ACCESSSIZE_Long, 4);
+	if( tResult==TRANSPORTSTATUS_OK )
+	{
+		ulValue  = ((uint32_t)(m_aucPacketInputBuffer[5]));
+		ulValue |= ((uint32_t)(m_aucPacketInputBuffer[6]))<< 8U;
+		ulValue |= ((uint32_t)(m_aucPacketInputBuffer[7]))<<16U;
+		ulValue |= ((uint32_t)(m_aucPacketInputBuffer[8]))<<24U;
+		*pulData = ulValue;
+		fOk = true;
+	}
+
+	return fOk;
+}
+
+
+bool romloader::detect_chiptyp(void)
+{
+	TRANSPORTSTATUS_T tResult;
+	uint32_t ulResetVector;
+	const ROMLOADER_RESET_ID_T *ptRstCnt, *ptRstEnd;
+	uint32_t ulVersionAddr;
+	uint32_t ulVersion;
+	uint32_t ulCheckAddr;
+	uint32_t ulCheckVal;
+	uint32_t ulCheckValMasked;
+	bool fResult;
+	ROMLOADER_CHIPTYP tChiptyp;
+
+
+	tChiptyp = ROMLOADER_CHIPTYP_UNKNOWN;
+
+	/* Read the reset vector at 0x00000000. */
+	fResult = __read_data32(0, &ulResetVector);
+	if( fResult!=true )
+	{
+		m_ptLog->error("Failed to read the reset vector.");
+	}
+	else
+	{
+		m_ptLog->debug("reset vector: 0x%08X", ulResetVector);
+
+		/* Compare the reset vector to all known chip families. */
+		ptRstCnt = atResIds;
+		ptRstEnd = ptRstCnt + (sizeof(atResIds)/sizeof(atResIds[0]));
+		ulVersionAddr = 0xffffffff;
+		while( ptRstCnt<ptRstEnd )
+		{
+			if( ptRstCnt->ulResetVector==ulResetVector )
+			{
+				ulVersionAddr = ptRstCnt->ulVersionAddress;
+				/* Read the version address. */
+				fResult = __read_data32(ulVersionAddr, &ulVersion);
+				if( fResult!=true )
+				{
+					m_ptLog->error("Failed to read the version data at 0x%08x.", ulVersionAddr);
+					break;
+				}
+				else
+				{
+					m_ptLog->debug("version value: 0x%08X", ulVersion);
+					if( ptRstCnt->ulVersionValue==ulVersion )
+					{
+						ulCheckAddr = ptRstCnt->ulCheckAddress;
+						ulCheckVal = 0;
+
+						if (ulCheckAddr != 0)
+						{
+							fResult = __read_data32(ulCheckAddr, &ulCheckVal);
+							if( fResult!=true )
+							{
+								m_ptLog->error("Failed to read the check data at 0x%08x.", ulCheckAddr);
+								break;
+							}
+							else
+							{
+								ulCheckValMasked = ulCheckVal & ptRstCnt->ulCheckMask;
+								m_ptLog->debug("check address: 0x%08X  value: 0x%08X masked: 0x%08X", ulCheckAddr, ulCheckVal, ulCheckValMasked);
+							}
+						}
+
+						if ((ulCheckAddr==0) || (ulCheckValMasked==ptRstCnt->ulCheckCmpValue))
+						{
+							/* Found chip! */
+							tChiptyp = ptRstCnt->tChiptyp;
+							m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
+							break;
+						}
+					}
+				}
+			}
+			++ptRstCnt;
+		}
+	}
+
+	/* Found something? */
+	if( fResult==true && tChiptyp!=ROMLOADER_CHIPTYP_UNKNOWN )
+	{
+		/* Accept the new chip type. */
+		m_tChiptyp = tChiptyp;
 	}
 
 	return fResult;
@@ -1356,46 +1474,6 @@ uint16_t romloader::crc16(uint16_t usCrc, uint8_t ucData)
 	usCrc ^= ((usCrc & 0xff) << 4) << 1;
 
 	return usCrc;
-}
-
-
-
-void romloader::hexdump(const uint8_t *pucData, uint32_t ulSize)
-{
-	const uint8_t *pucDumpCnt, *pucDumpEnd;
-	uint32_t ulAddressCnt;
-	size_t sizBytesLeft;
-	size_t sizChunkSize;
-	size_t sizChunkCnt;
-
-
-	// show a hexdump of the data
-	pucDumpCnt = pucData;
-	pucDumpEnd = pucData + ulSize;
-	ulAddressCnt = 0;
-	while( pucDumpCnt<pucDumpEnd )
-	{
-		// get number of bytes for the next line
-		sizChunkSize = 16;
-		sizBytesLeft = pucDumpEnd - pucDumpCnt;
-		if( sizChunkSize>sizBytesLeft )
-		{
-			sizChunkSize = sizBytesLeft;
-		}
-
-		// start a line in the dump with the address
-		printf("%08X: ", ulAddressCnt);
-		// append the data bytes
-		sizChunkCnt = sizChunkSize;
-		while( sizChunkCnt!=0 )
-		{
-			printf("%02X ", *(pucDumpCnt++));
-			--sizChunkCnt;
-		}
-		// next line
-		printf("\n");
-		ulAddressCnt += sizChunkSize;
-	}
 }
 
 
