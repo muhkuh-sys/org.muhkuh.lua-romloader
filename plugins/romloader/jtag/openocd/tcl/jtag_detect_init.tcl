@@ -275,9 +275,26 @@ proc probe_cpu {strCpuID} {
 			global strTarget
 			set strTarget netx90_COM
 		}
+	
+	# netIOL
+	} elseif { $strCpuID == "netIOL_MPW" || $strCpuID == "netIOL_rev0"} {
+		echo "+ probe_cpu netIOL"
+		adapter_khz 1000
+		
+		jtag newtap netIOL cpu -expected-id 0x101026ad -irlen 4 -ircapture 0x1 -irmask 0xf 
+		jtag configure netIOL.cpu -event setup { global SC_CFG_RESULT ; echo {Yay - setup netIOL} ; set SC_CFG_RESULT {OK} }
+		jtag init
+
+		if { $SC_CFG_RESULT=={OK} } {
+			target create netIOL.cpu hinetiol -endian little -chain-position netIOL.cpu
+			netIOL.cpu configure -event reset-init { halt }
+			# netIOL.cpu configure -work-area-phys 0x00040000 -work-area-size 0x4000 -work-area-backup 1
+			# netiol.cpu configure -work-area-virt 0x6000 -work-area-phys 0x6000 -work-area-size 0x2000 -work-area-backup 1
+			
+			global strTarget
+			set strTarget netIOL
+		}
 	}
-	
-	
 	
 	echo "- probe_cpu $SC_CFG_RESULT"
 	return $SC_CFG_RESULT
@@ -297,10 +314,21 @@ proc reset_board {} {
 		reset_netx90_MPW_COM
 	} elseif { $strTarget == "netx90_COM" } then {
 		reset_netx90_COM
+	} elseif { $strTarget == "netIOL" } then {
+		reset_netIOL
 	} else {
 		reset_netX_ARM926_ARM966
 	}
 	echo "- reset_board "
+}
+
+proc reset_netIOL {} {
+	reset_config trst_and_srst
+	#reset_config trst
+	adapter_nsrst_delay 500
+	jtag_ntrst_delay 500
+	init 
+	halt
 }
 
 proc reset_netx90_MPW_COM {} {

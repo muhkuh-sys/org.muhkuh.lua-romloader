@@ -66,7 +66,7 @@ NETX_CONSOLEAPP_RESULT_T netx_consoleapp_main(NETX_CONSOLEAPP_PARAMETER_T *ptTes
 	/* Init all modules. */
 	systime_init();
 
-	/* the input parameter is  */
+	/* The input parameter is a plain number. */
 	ulParameter = (unsigned long)ptTestParam->pvInitParams;
 
 	/* say hi */

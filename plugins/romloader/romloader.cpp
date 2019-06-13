@@ -1307,7 +1307,7 @@ bool romloader::detect_chiptyp(void)
 }
 
 
-const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[12] =
+const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[14] =
 {
 	{
 		0xea080001,
@@ -1439,7 +1439,29 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[12] =
 		0,
 		ROMLOADER_CHIPTYP_NETX90B,
 		"netX90 Rev1"
-	}
+	},
+	
+	{
+		0x00000000, /* reserved location 0 reads as 0 */
+		0x2000, 
+		0x0, /* should be 0x7c80006f, can't read rom */
+		0, 
+		0,
+		0,
+		ROMLOADER_CHIPTYP_NETIOLA,
+		"netIOL MPW"
+	},
+	
+	{
+		0x00000000, /* reserved location 0 reads as 0 */
+		0x2000, 
+		0x64b0006f,
+		0, 
+		0,
+		0,
+		ROMLOADER_CHIPTYP_NETIOLB,
+		"netIOL Rev0"
+	} 
 };
 
 

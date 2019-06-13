@@ -40,7 +40,9 @@ typedef enum
 	ROMLOADER_CHIPTYP_NETX4000_FULL        = 11,
 	ROMLOADER_CHIPTYP_NETX4100_SMALL       = 12,
 	ROMLOADER_CHIPTYP_NETX90               = 13,
-	ROMLOADER_CHIPTYP_NETX90B              = 14
+	ROMLOADER_CHIPTYP_NETX90B              = 14,
+	ROMLOADER_CHIPTYP_NETIOLA              = 15,
+	ROMLOADER_CHIPTYP_NETIOLB              = 16
 } ROMLOADER_CHIPTYP;
 
 /*-----------------------------------*/

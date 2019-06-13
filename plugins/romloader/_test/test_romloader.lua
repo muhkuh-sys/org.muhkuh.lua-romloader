@@ -31,18 +31,20 @@ require("bit")
 
 -- The usable intram when MI 2.0 is running
 atTestAreas = {
-	[romloader.ROMLOADER_CHIPTYP_NETX500]           = {ulTestAreaStart = 0x00004000, ulTestAreaSize  = 0x0001c000},
-	[romloader.ROMLOADER_CHIPTYP_NETX100]           = {ulTestAreaStart = 0x00004000, ulTestAreaSize  = 0x0001c000},
-	[romloader.ROMLOADER_CHIPTYP_NETX56]            = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0009c000},
-	[romloader.ROMLOADER_CHIPTYP_NETX56B]           = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0009c000},
-	[romloader.ROMLOADER_CHIPTYP_NETX50]            = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x00014000},
-	[romloader.ROMLOADER_CHIPTYP_NETX10]            = {ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0002c000},
-	[romloader.ROMLOADER_CHIPTYP_NETX4000_RELAXED]  = {ulTestAreaStart = 0x04010000, ulTestAreaSize  = 0x000f0000},
-	[romloader.ROMLOADER_CHIPTYP_NETX4000_FULL]     = {ulTestAreaStart = 0x04010000, ulTestAreaSize  = 0x000f0000},
-	[romloader.ROMLOADER_CHIPTYP_NETX4100_SMALL]    = {ulTestAreaStart = 0x04010000, ulTestAreaSize  = 0x000f0000},
-	[romloader.ROMLOADER_CHIPTYP_NETX90_MPW]        = {ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},
-	[romloader.ROMLOADER_CHIPTYP_NETX90]            = {ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},
-	[romloader.ROMLOADER_CHIPTYP_NETX90B]           = {ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},    
+	[romloader.ROMLOADER_CHIPTYP_NETX500]           = {strName = "netx500",    ulTestAreaStart = 0x00004000, ulTestAreaSize  = 0x0001c000},
+	[romloader.ROMLOADER_CHIPTYP_NETX100]           = {strName = "netx500",    ulTestAreaStart = 0x00004000, ulTestAreaSize  = 0x0001c000},
+	[romloader.ROMLOADER_CHIPTYP_NETX56]            = {strName = "netx56",     ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0009c000},
+	[romloader.ROMLOADER_CHIPTYP_NETX56B]           = {strName = "netx56",     ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0009c000},
+	[romloader.ROMLOADER_CHIPTYP_NETX50]            = {strName = "netx50",     ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x00014000},
+	[romloader.ROMLOADER_CHIPTYP_NETX10]            = {strName = "netx10",     ulTestAreaStart = 0x08004000, ulTestAreaSize  = 0x0002c000},
+	[romloader.ROMLOADER_CHIPTYP_NETX4000_RELAXED]  = {strName = "netx4000",   ulTestAreaStart = 0x04010000, ulTestAreaSize  = 0x000f0000},
+	[romloader.ROMLOADER_CHIPTYP_NETX4000_FULL]     = {strName = "netx4000",   ulTestAreaStart = 0x04010000, ulTestAreaSize  = 0x000f0000},
+	[romloader.ROMLOADER_CHIPTYP_NETX4100_SMALL]    = {strName = "netx4000",   ulTestAreaStart = 0x04010000, ulTestAreaSize  = 0x000f0000},
+	[romloader.ROMLOADER_CHIPTYP_NETX90_MPW]        = {strName = "netx90",     ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},
+	[romloader.ROMLOADER_CHIPTYP_NETX90]            = {strName = "netx90",     ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},
+	[romloader.ROMLOADER_CHIPTYP_NETX90B]           = {strName = "netx90",     ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},
+	[romloader.ROMLOADER_CHIPTYP_NETIOLA]           = {strName = "netiol",     ulTestAreaStart = 0x00009000, ulTestAreaSize  = 0x00005000},
+	[romloader.ROMLOADER_CHIPTYP_NETIOLB]           = {strName = "netiol",     ulTestAreaStart = 0x00009000, ulTestAreaSize  = 0x00005000},
 }
 
 -- print date/time in every line, useful when it stops in the middle of the night
@@ -64,283 +66,31 @@ function tobool(x, fDefault)
 end
 
 -- get the test parameters
-local ulTestSize           -- max. size of the memory area to test
-local uiParameterLoops     -- 0 = endless
-local fCheckExpectedOutput -- enable output checking
-local fCheckOutputEnd      -- enable checking of the output at the return from a call   
+local ulTestSize           = 0x1000 -- max. size of the memory area to test
+local uiParameterLoops     = 1      -- 0 = endless
+local fDoMemTest           = true   -- memory read/write test
+local fDoCallTest          = true   -- call/output message test
+local fCheckOutput         = true   -- check messages from call test program 
+                                    -- Set to false for JTAG without DCC support (netX 4000, 90, netIOL)
+local fCheckOutputEnd      = true   -- check the output at the return from a call   
+local USB_BLOCK_SIZE       = 63     -- max. USB block size
 
 if __MUHKUH_TEST_PARAMETER then
 	ulTestSize           = tonumber(__MUHKUH_TEST_PARAMETER.testsize)             
 	uiParameterLoops     = tonumber(__MUHKUH_TEST_PARAMETER.loops)                
-	fCheckExpectedOutput = tobool(  __MUHKUH_TEST_PARAMETER.checkoutput, true)    
+	fCheckOutput         = tobool(  __MUHKUH_TEST_PARAMETER.checkoutput, true)    
 	fCheckOutputEnd      = tobool(  __MUHKUH_TEST_PARAMETER.checkoutputend, true) 
-else
-	ulTestSize           = 0x1000
-	uiParameterLoops     = 1     
-	fCheckExpectedOutput = true 
-	fCheckOutputEnd      = true 
 end
 
 local function printf(...) print(string.format(...)) end
 printf("ulTestSize           0x%08x", ulTestSize)
 printf("uiParameterLoops     %d",     uiParameterLoops)
-printf("fCheckExpectedOutput %s",     tostring(fCheckExpectedOutput))
+printf("fDoMemTest           %s",     tostring(fDoMemTest))
+printf("fDoCallTest          %s",     tostring(fDoCallTest))
+printf("fCheckOutput         %s",     tostring(fCheckOutput))
 printf("fCheckOutputEnd      %s",     tostring(fCheckOutputEnd))
+printf("USB_BLOCK_SIZE       %d",     USB_BLOCK_SIZE)
 
-
---------------------------------------------------------------------------
--- test memory access
---------------------------------------------------------------------------
-
-local function get_rnd_data(len)
-	local data = ""
-	for i=1,len do
-		data = data .. string.char(math.random(0,255))
-	end
-	return data
-end
-
-local function test32(tPlugin, address, value)
-	local readback
-
-
-	print(string.format("write data:    0x%08X = 0x%08X", address, value))
-	tPlugin:write_data32(address, value)
-	readback = tPlugin:read_data32(address)
-	print(string.format("readback data: 0x%08X = 0x%08X", address, readback))
-	if value~=readback then
-		error("*** Error: Readback does not match written value ***")
-	end
-end
-
-local function test16(tPlugin, address, value)
-	local readback
-
-
-	print(string.format("write data:    0x%08X = 0x%04X", address, value))
-	tPlugin:write_data16(address, value)
-	readback = tPlugin:read_data16(address)
-	print(string.format("readback data: 0x%08X = 0x%04X", address, readback))
-	if value~=readback then
-		error("*** Error: Readback does not match written value ***")
-	end
-end
-
-local function test08(tPlugin, address, value)
-	local readback
-
-
-	print(string.format("write data:    0x%08X = 0x%02X", address, value))
-	tPlugin:write_data08(address, value)
-	readback = tPlugin:read_data08(address)
-	print(string.format("readback data: 0x%08X = 0x%02X", address, readback))
-	if value~=readback then
-		error("*** Error: Readback does not match written value ***")
-	end
-end
-
-
-COMPARE_MAX_ERRORS = 10
-local function compare_readback(strData, strData_readback)
-	print("Readback data:")
-	tester.hexdump(data_readback,16)
-	
-	local iLenData = strData:len()
-	local iLenData_readback = strData_readback:len()
-	if iLenData~=iLenData_readback then
-		error(string.format("Data and readback data differ in length: %d <-> %d", iLenData, iLenData_readback))
-	end
-	
-	local iCompErrs = 0
-	for i=1, iLenData do
-		local bData = strData:byte(i)
-		local bData_readback = strData_readback:byte(i)
-		if bData~=bData_readback then
-			print(string.format("Readback data does not match - offset 0x%08x, data:0x%02x, readback: 0x%02x", i-1, bData, bData_readback))
-			iCompErrs = iCompErrs + 1
-			if iCompErrs >= COMPARE_MAX_ERRORS then
-				print("Too many errors, stopping")
-				break
-			end
-		end
-	end
-	
-	if iCompErrs>0 then
-		error("Readback data does not match written values!")
-	else
-		print("Ok!")
-		print(" ")
-		return true
-	end
-end
---------------------------------------------------------------------------
--- execute binary, check output in message callback against expected output
---------------------------------------------------------------------------
-
--- [netX 0] . *** test skeleton start ***
--- 
--- [netX 0] . Parameter Address: 0x08018880
--- 
--- [netX 0] . Parameter: 0x12345678
--- 
--- [netX 0] 012345678901234567890123456789012345678901234567890123456789012
--- [netX 0] 345678901234567
--- 
--- [netX 0] 000000000011111111112222222222333333333344444444445555555555666
--- [netX 0] 666666677777777
--- 
--- [netX 0] . counting from 0 to 100 and 0ms delay.
--- ...
--- [netX 0] % 97/100
--- [netX 0] % 98/100
--- [netX 0] % 99/100
--- [netX 0] . counting from 0 to 8 and 500ms delay.
--- [netX 0] % 0/8
--- [netX 0] % 1/8
--- [netX 0] % 2/8
--- [netX 0] % 3/8
--- [netX 0] % 4/8
--- [netX 0] % 5/8
--- [netX 0] % 6/8
--- [netX 0] % 7/8
--- [netX 0] . counting from 0 to 4 and 1000ms delay.
--- [netX 0] % 0/4
--- [netX 0] % 1/4
--- [netX 0] % 2/4
--- [netX 0] % 3/4
--- [netX 0] . counting from 0 to 2 and 2000ms delay.
--- [netX 0] % 0/2
-
-astrExpectedOutput = {}
-
-function addExpectedOutput(str)
-	table.insert(astrExpectedOutput, str)
-end
-
-function addExpectedOutputLoop(n, iMsDelay)
-	addExpectedOutput(string.format(". counting from 0 to %d and %dms delay.%s", n, iMsDelay, strNetxCR))
-	for i=0, n-1 do
-		addExpectedOutput(string.format("%% %d/%d%s", i, n, strNetxCR))
-	end
-end
-
--- Construct the expected output
-strNetxCR = "\r\n" 
-addExpectedOutput(". *** test skeleton start ***" .. strNetxCR)
---addExpectedOutput(". Parameter Address: 0x08018880" .. strNetxCR)
-addExpectedOutput("skip")
-addExpectedOutput(". Parameter: 0x12345678" .. strNetxCR)
-addExpectedOutput("012345678901234567890123456789012345678901234567890123456789012345678901234567" .. strNetxCR)
-addExpectedOutput("000000000011111111112222222222333333333344444444445555555555666666666677777777" .. strNetxCR)
-addExpectedOutputLoop(100, 0)
-addExpectedOutputLoop(8, 500)
-addExpectedOutputLoop(4, 1000)
-addExpectedOutputLoop(2, 2000)
-
-
-
--- Get the next piece of expected output.
--- If the Plugin is USB and the chip type is not netx 100/500, 
--- split the current line into 63 byte segments
--- Uses:
--- astrExpectedOutput    array of expected output lines
--- iExpectedOutputLine   index into astrExpectedOutput
--- iLinePos              1-based position in iExpectedOutputLine
--- tPlugin               plugin, used to check we're using USB
-USB_BLOCK_SIZE = 63
-
-function getExpectedOutput()
-	local strLine = astrExpectedOutput[iExpectedOutputLine]
-	assert((not fCheckExpectedOutput) or strLine, "Expected output exhausted")
-	local strExpected
-	
-	local tPluginTyp = tPlugin:GetTyp()
-	local tAsicTyp = tPlugin:GetChiptyp()
-	if tPluginTyp=="romloader_usb" 
-	and tAsicTyp~=romloader.ROMLOADER_CHIPTYP_NETX100 and tAsicTyp~=romloader.ROMLOADER_CHIPTYP_NETX500 then
-		local iLen = strLine:len()
-		strExpected = strLine:sub(iLinePos, iLinePos + USB_BLOCK_SIZE - 1)
-		iLinePos = iLinePos + USB_BLOCK_SIZE
-		if iLinePos > iLen then
-			iLinePos = 1
-			iExpectedOutputLine = iExpectedOutputLine + 1
-		end
-	elseif tPluginTyp=="romloader_jtag" then
-		strExpected = strLine:gsub(string.char(13, 10), string.char(13, 10, 10))
-		iExpectedOutputLine = iExpectedOutputLine + 1
-		
-	else
-		strExpected = strLine
-		iExpectedOutputLine = iExpectedOutputLine + 1
-	end
-
-		return strExpected
-end
-
-function isOutputComplete()
-	--return true 
-	return iExpectedOutputLine == #astrExpectedOutput + 1
-end
-
-fOutputMissing = false
-
-function fnCallbackCheckOutput(a,b)
-	print(string.format("[netX %d] %s", b, a))
-	
-	-- error if a is not a string
-	if type(a)~="string" then
-		print("Message callback called with non-string:", type(a))
-		
-	-- allow a to be an empty string (due to timeout?)
-	elseif a == "" then
-		print("Message callback called with empty string")
-		
-	-- check if a is the expected string
-	else
-		local strExpected = getExpectedOutput()
-		if a == strExpected or strExpected=="skip" then
-			-- ok
-		else
-			print("Unexpected output")
-			print("Expected:")
-			print(strExpected)
-			print("Received:")
-			print(a)
-			if a then
-				print(string.format("%d bytes", a:len()))
-				tester.hexdump(a,16)
-			end
-			fOutputMissing = true
-			if fCheckExpectedOutput then
-				error("Unexpected output")
-			end
-		end
-	end
-	return true
-end
-
-
-function mbin_simple_run(tParentWindow, tPlugin, strFilename, aParameter)
-	local aAttr
-	aAttr = tester.mbin_open(strFilename)
-	tester.mbin_debug(aAttr)
-	tester.mbin_write(tParentWindow, tPlugin, aAttr)
-	tester.mbin_set_parameter(tPlugin, aAttr, aParameter)
-	iExpectedOutputLine = 1
-	iLinePos = 1
-
-	-- function mbin_execute(tParentWindow, tPlugin, aAttr, aParameter, fnCallback, ulUserData)
-	local result = tester.mbin_execute(tParentWindow, tPlugin, aAttr, aParameter, fnCallbackCheckOutput, 0)
-	if fCheckOutputEnd and not isOutputComplete() then
-		error("did not receive all expected output")
-	end
-	
-	if fOutputMissing then
-		print("** Missing output **")
-	end
-	
-	return result
-end
 
 --------------------------------------------------------------------------
 --  Get plugin
@@ -392,63 +142,54 @@ function getPlugin(strPluginName)
 	return tPlugin, strError
 end
 
+
+
 --------------------------------------------------------------------------
---  test main
+--  short memory access test
 --------------------------------------------------------------------------
 
 
-if #arg == 0 then
-	strPluginName = nil
-elseif #arg == 2 and arg[1]=="-p" and type(arg[2])=="string" then
-	strPluginName = arg[2]
-else
-	print("Usage: lua test_romloader.lua [-p plugin_name]")
-	os.exit(2)
+function test32(tPlugin, address, value)
+	local readback
+	
+	print(string.format("write data:    0x%08X = 0x%08X", address, value))
+	tPlugin:write_data32(address, value)
+	readback = tPlugin:read_data32(address)
+	print(string.format("readback data: 0x%08X = 0x%08X", address, readback))
+	if value~=readback then
+		error("*** Error: Readback does not match written value ***")
+	end
 end
 
-tPlugin, strError = getPlugin(strPluginName)
-if not tPlugin then
-	print(strError or "No plugin selected")
-	os.exit(3)
+function test16(tPlugin, address, value)
+	local readback
+	
+	print(string.format("write data:    0x%08X = 0x%04X", address, value))
+	tPlugin:write_data16(address, value)
+	readback = tPlugin:read_data16(address)
+	print(string.format("readback data: 0x%08X = 0x%04X", address, readback))
+	if value~=readback then
+		error("*** Error: Readback does not match written value ***")
+	end
 end
 
-tPlugin:Connect()
-
-
--- Get the maximum test area for the current chip.
-local tAsicTyp = tPlugin:GetChiptyp()
-local tTestArea = atTestAreas[tAsicTyp]
-if tTestArea then
-	ulTestAreaStart = tTestArea.ulTestAreaStart
-	ulTestAreaSize  = tTestArea.ulTestAreaSize
-else
-	error("Unknown chiptyp! " .. tostring(tAsicTyp))
-end
- 
-
--- Limit the test size to the size of the test area.
-if ulTestSize>ulTestAreaSize then
-	ulTestSize = ulTestAreaSize
+function test08(tPlugin, address, value)
+	local readback
+	
+	print(string.format("write data:    0x%08X = 0x%02X", address, value))
+	tPlugin:write_data08(address, value)
+	readback = tPlugin:read_data08(address)
+	print(string.format("readback data: 0x%08X = 0x%02X", address, readback))
+	if value~=readback then
+		error("*** Error: Readback does not match written value ***")
+	end
 end
 
 
-
-
-
-
-local uiLoopCounter = 0
--- If the "loops" parameter is 0, loop forever (or until an error occurs).
-local fLoopEndless = (uiParameterLoops==0)
-
-while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
-	print("***************************************")
-	print("***************************************")
-	print("**                                   **")
-	print(string.format("** Loop %08d                     **", uiLoopCounter))
-	print("**                                   **")
-	print("***************************************")
-	print("***************************************")
-
+function basic_access_test(args)
+	local tPlugin = args.tPlugin 
+	local ulTestAreaStart = args.ulTestAreaStart
+	
 	print("---------------------------------------")
 	print(" test 32 bit access")
 	test32(tPlugin, ulTestAreaStart, 0x00000000)
@@ -473,7 +214,64 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 	test08(tPlugin, ulTestAreaStart, 0xFF)
 	print("Ok!")
 	print(" ")
+	
+	return true
+end 
 
+
+
+--------------------------------------------------------------------------
+-- test memory access
+--------------------------------------------------------------------------
+
+local function get_rnd_data(len)
+	local data = ""
+	for i=1,len do
+		data = data .. string.char(math.random(0,255))
+	end
+	return data
+end
+
+COMPARE_MAX_ERRORS = 10
+local function compare_readback(strData, strData_readback)
+	print("Readback data:")
+	tester.hexdump(data_readback,16)
+	
+	local iLenData = strData:len()
+	local iLenData_readback = strData_readback:len()
+	if iLenData~=iLenData_readback then
+		error(string.format("Data and readback data differ in length: %d <-> %d", iLenData, iLenData_readback))
+	end
+	
+	local iCompErrs = 0
+	for i=1, iLenData do
+		local bData = strData:byte(i)
+		local bData_readback = strData_readback:byte(i)
+		if bData~=bData_readback then
+			print(string.format("Readback data does not match - offset 0x%08x, data:0x%02x, readback: 0x%02x", i-1, bData, bData_readback))
+			iCompErrs = iCompErrs + 1
+			if iCompErrs >= COMPARE_MAX_ERRORS then
+				print("Too many errors, stopping")
+				break
+			end
+		end
+	end
+	
+	if iCompErrs>0 then
+		error("Readback data does not match written values!")
+	else
+		print("Ok!")
+		print(" ")
+		return true
+	end
+end
+
+function mem_test(tArgs)
+	local tPlugin = tArgs.tPlugin
+	local ulTestAreaStart = tArgs.ulTestAreaStart
+	local ulTestSize = tArgs.ulTestSize
+	local uiLoopCounter = tArgs.uiLoopCounter
+	
 	print("---------------------------------------")
 	print(string.format("** Loop %d **", uiLoopCounter))
 	print(" range test, write32")
@@ -582,47 +380,314 @@ while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
 		data_readback = data_readback .. string.char( bit.band(            value,      0xff) )
 	end
 	assert(compare_readback(data, data_readback))
+end
 
+
+
+
+--------------------------------------------------------------------------
+-- execute binary, check output in message callback against expected output
+--------------------------------------------------------------------------
+
+-- [netX 0] . *** test skeleton start ***
+-- 
+-- [netX 0] . Parameter Address: 0x08018880
+-- 
+-- [netX 0] . Parameter: 0x12345678
+-- 
+-- [netX 0] 012345678901234567890123456789012345678901234567890123456789012
+-- [netX 0] 345678901234567
+-- 
+-- [netX 0] 000000000011111111112222222222333333333344444444445555555555666
+-- [netX 0] 666666677777777
+-- 
+-- [netX 0] . counting from 0 to 100 and 0ms delay.
+-- ...
+-- [netX 0] % 97/100
+-- [netX 0] % 98/100
+-- [netX 0] % 99/100
+-- [netX 0] . counting from 0 to 8 and 500ms delay.
+-- [netX 0] % 0/8
+-- [netX 0] % 1/8
+-- [netX 0] % 2/8
+-- [netX 0] % 3/8
+-- [netX 0] % 4/8
+-- [netX 0] % 5/8
+-- [netX 0] % 6/8
+-- [netX 0] % 7/8
+-- [netX 0] . counting from 0 to 4 and 1000ms delay.
+-- [netX 0] % 0/4
+-- [netX 0] % 1/4
+-- [netX 0] % 2/4
+-- [netX 0] % 3/4
+-- [netX 0] . counting from 0 to 2 and 2000ms delay.
+-- [netX 0] % 0/2
+
+astrExpectedOutput = {}
+
+function addExpectedOutput(str)
+	table.insert(astrExpectedOutput, str)
+end
+
+function addExpectedOutputLoop(n, iMsDelay)
+	addExpectedOutput(string.format(". counting from 0 to %d and %dms delay.%s", n, iMsDelay, strNetxCR))
+	for i=0, n-1 do
+		addExpectedOutput(string.format("%% %d/%d%s", i, n, strNetxCR))
+	end
+end
+
+-- Construct the expected output
+strNetxCR = "\r\n" 
+addExpectedOutput(". *** test skeleton start ***" .. strNetxCR)
+--addExpectedOutput(". Parameter Address: 0x08018880" .. strNetxCR)
+addExpectedOutput("skip")
+addExpectedOutput(". Parameter: 0x12345678" .. strNetxCR)
+addExpectedOutput("012345678901234567890123456789012345678901234567890123456789012345678901234567" .. strNetxCR)
+addExpectedOutput("000000000011111111112222222222333333333344444444445555555555666666666677777777" .. strNetxCR)
+addExpectedOutputLoop(100, 0)
+addExpectedOutputLoop(8, 500)
+addExpectedOutputLoop(4, 1000)
+addExpectedOutputLoop(2, 2000)
+
+
+-- Get the next piece of expected output.
+-- If the Plugin is USB and the chip type is not netx 100/500, 
+-- split the current line into 63 byte segments
+-- Uses:
+-- astrExpectedOutput    array of expected output lines
+-- iExpectedOutputLine   index into astrExpectedOutput
+-- iLinePos              1-based position in iExpectedOutputLine
+-- tPlugin               plugin, used to check we're using USB
+
+function getExpectedOutput()
+	local strLine = astrExpectedOutput[iExpectedOutputLine]
+	assert((not fCheckOutput) or strLine, "Expected output exhausted")
+	local strExpected
+	
+	local tPluginTyp = tPlugin:GetTyp()
+	local tAsicTyp = tPlugin:GetChiptyp()
+	if tPluginTyp=="romloader_usb" 
+	and tAsicTyp~=romloader.ROMLOADER_CHIPTYP_NETX100 and tAsicTyp~=romloader.ROMLOADER_CHIPTYP_NETX500 then
+		local iLen = strLine:len()
+		strExpected = strLine:sub(iLinePos, iLinePos + USB_BLOCK_SIZE - 1)
+		iLinePos = iLinePos + USB_BLOCK_SIZE
+		if iLinePos > iLen then
+			iLinePos = 1
+			iExpectedOutputLine = iExpectedOutputLine + 1
+		end
+	elseif tPluginTyp=="romloader_jtag" then
+		strExpected = strLine:gsub(string.char(13, 10), string.char(13, 10, 10))
+		iExpectedOutputLine = iExpectedOutputLine + 1
+		
+	else
+		strExpected = strLine
+		iExpectedOutputLine = iExpectedOutputLine + 1
+	end
+
+		return strExpected
+end
+
+function isOutputComplete()
+	--return true 
+	return iExpectedOutputLine == #astrExpectedOutput + 1
+end
+
+function showOutputHex(str)
+		print(str)
+		if str then
+			print(string.format("%d bytes", str:len()))
+			tester.hexdump(str,16)
+		end
+end
+
+function fnCallbackCheckOutput(a,b)
+	print(string.format("[netX %d] %s", b, a))
+	
+	-- error if a is not a string
+	if type(a)~="string" then
+		print("Message callback called with non-string:", type(a))
+		
+	-- allow a to be an empty string (due to timeout?)
+	elseif a == "" then
+		print("Message callback called with empty string")
+		
+	-- check if a is the expected string
+	elseif fCheckOutput then
+		local strExpected = getExpectedOutput()
+		if a == strExpected or strExpected=="skip" then
+			-- ok
+		else
+			print("Unexpected output")
+			print("Expected:")
+			print(strExpected)
+			print("Received:")
+			print(a)
+			if a then
+				print(string.format("%d bytes", a:len()))
+				tester.hexdump(a,16)
+			end
+			fOutputMissing = true
+			error("Unexpected output")
+		end
+	else 
+		print("Received:")
+		print(a)
+		if a then
+			print(string.format("%d bytes", a:len()))
+			tester.hexdump(a,16)
+		end
+	end
+	
+	iCallbackCount = iCallbackCount + 1
+	if iCallbackCount == iMaxCallbackCount then 
+		print("Lua callback: stopping call")
+		return false
+	else 
+		return true
+	end
+end
+
+
+function mbin_simple_run(tParentWindow, tPlugin, strFilename, aParameter)
+	local aAttr
+	aAttr = tester.mbin_open(strFilename)
+	tester.mbin_debug(aAttr)
+	tester.mbin_write(tParentWindow, tPlugin, aAttr)
+	tester.mbin_set_parameter(tPlugin, aAttr, aParameter)
+	
+	-- function mbin_execute(tParentWindow, tPlugin, aAttr, aParameter, fnCallback, ulUserData)
+	local ulResult = tester.mbin_execute(tParentWindow, tPlugin, aAttr, aParameter, fnCallbackCheckOutput, 0)
+	local ulInitParam = tPlugin:read_data32(aAttr.ulParameterStartAddress+4)
+	local ulReturnMessage = tPlugin:read_data32(aAttr.ulParameterStartAddress+8)
+	
+	return ulResult, ulInitParam, ulReturnMessage
+end
+
+
+
+
+function call_test(tArgs)
+	local tPlugin = tArgs.tPlugin
+	local strAsicName = tArgs.strAsicName
+	local uiLoopCounter = tArgs.uiLoopCounter
+	
 	print("---------------------------------------")
 	print(string.format("** Loop %d **", uiLoopCounter))
 	print(" call test")
-	-- Get the chiptyp.
-	local tAsicTyp = tPlugin:GetChiptyp()
-	local ulSerialVectorAddr
-	-- Get the binary for the ASIC.
-	print(string.format("detected chip type: %d %s", tAsicTyp, tPlugin:GetChiptypName(tAsicTyp)))
-	local uiAsicType = nil
-	if tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX50 then
-		uiAsicType = 50
-	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX100 or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX500 then
-		uiAsicType = 500
-	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX10 then
-		uiAsicType = 10
-	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX56 or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX56B then
-		uiAsicType = 56
-	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX4000_RELAXED
-	or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX4000_FULL
-	or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX4100_SMALL then
-		uiAsicType = 4000
-	elseif tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX90_MPW 
-	or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX90 
-	or tAsicTyp==romloader.ROMLOADER_CHIPTYP_NETX90B then
-		uiAsicType = 90
-	end
-
-	if uiAsicType==nil then
-		error("Unknown chiptyp! " .. tostring(tAsicTyp))
-	end
-
-	local strBinaryName = string.format("netx/montest_netx%d.bin", uiAsicType)
-
+	
+	iExpectedOutputLine = 1
+	iLinePos = 1
+	
+	iMaxCallbackCount = 0
+	iCallbackCount = 0
+	
+	local strBinaryName = string.format("netx/montest_%s.bin", strAsicName)
 	ulMagic = 0x12345678
-	ulResult = mbin_simple_run(nil, tPlugin, strBinaryName, ulMagic)
+	local ulResult, ulInitParam, ulReturnMessage = mbin_simple_run(nil, tPlugin, strBinaryName, ulMagic)
+	
 	if ulResult~=0 then
 		error(string.format("The code returned an error code: 0x%08x", ulResult))
 	end
+	
+	if ulReturnMessage ~= ulMagic then
+		error(string.format("The return message value is not correct: 0x%08x, expected: 0x%086x", ulReturnMessage, ulMagic))
+	end
+	
+	if fCheckOutput then
+		if fCheckOutputEnd and not isOutputComplete() then
+			error("did not receive all expected output")
+		end
+		
+		if fOutputMissing then
+			print("** Missing output **")
+		end
+	end
+end
+
+	
+
+--------------------------------------------------------------------------
+--  test main
+--------------------------------------------------------------------------
 
 
+if #arg == 0 then
+	strPluginName = nil
+elseif #arg == 2 and arg[1]=="-p" and type(arg[2])=="string" then
+	strPluginName = arg[2]
+else
+	print("Usage: lua test_romloader.lua [-p plugin_name]")
+	os.exit(2)
+end
+
+tPlugin, strError = getPlugin(strPluginName)
+if not tPlugin then
+	print(strError or "No plugin selected")
+	os.exit(3)
+end
+
+tPlugin:Connect()
+
+local tAsicTyp = tPlugin:GetChiptyp()
+local tPluginTyp = tPlugin:GetTyp()
+
+-- Get the maximum test area for the current chip.
+local tTestArea = atTestAreas[tAsicTyp]
+assert(tTestArea, "Unknown chiptyp! " .. tostring(tAsicTyp))
+
+-- Limit the test size to the size of the test area.
+if ulTestSize>tTestArea.ulTestAreaSize then
+	ulTestSize = ulTestAreaSize
+end
+
+-- Disable output checks when using a JTAG connection without DCC message support.
+local fNoDCCSupport = 
+	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX4000_RELAXED or
+	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX4000_FULL or
+	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX4100_SMALL or
+	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90_MPW or
+	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90 or
+	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90B or
+	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETIOLA or
+	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETIOLB
+
+if tPluginTyp=="romloader_jtag" and fNoDCCSupport then
+	print("No DCC support - disabling output checks")
+	fCheckOutput = false 
+end
+
+local tArgs = {
+	tPlugin         = tPlugin,
+	tAsicTyp        = tAsicTyp,
+	strAsicName     = tTestArea.strName,
+	ulTestAreaStart = tTestArea.ulTestAreaStart,
+	ulTestAreaSize  = tTestArea.ulTestAreaSize,
+	uiLoopCounter   = 0,
+	ulTestSize      = ulTestSize,
+}
+
+
+local uiLoopCounter = 0
+-- If the "loops" parameter is 0, loop forever (or until an error occurs).
+local fLoopEndless = (uiParameterLoops==0)
+
+while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
+	print("***************************************")
+	print("***************************************")
+	print("**                                   **")
+	print(string.format("** Loop %08d                     **", uiLoopCounter))
+	print("**                                   **")
+	print("***************************************")
+	print("***************************************")
+
+	tArgs.uiLoopCounter = uiLoopCounter
+	basic_access_test(tArgs)
+	if fDoMemTest then
+		mem_test(tArgs)
+	end 
+	if fDoCallTest then
+		call_test(tArgs)
+	end
 	uiLoopCounter = uiLoopCounter + 1
 end
 

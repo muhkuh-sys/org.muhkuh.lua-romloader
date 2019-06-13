@@ -24,14 +24,14 @@
 	.extern load_address
 	.extern start
 
-@--------------------------------------
+/* -------------------------------------- */
 
 	.ascii "mooh"
 	.word 0x00010000
 
 	.word load_address
 #if ASIC_TYP==ASIC_TYP_NETX90_MPW
-	@ start address in thumb mode.
+	/* start address in thumb mode. */
 	.word start+1
 #else
 	.word start
@@ -39,7 +39,7 @@
 	.word parameter_start_address
 	.word parameter_end_address
 
-@--------------------------------------
+/* -------------------------------------- */
 
   .end
 

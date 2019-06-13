@@ -14,6 +14,8 @@ set ROMLOADER_CHIPTYP_NETX4000_FULL     11
 set ROMLOADER_CHIPTYP_NETX4100_SMALL    12
 set ROMLOADER_CHIPTYP_NETX90            13
 set ROMLOADER_CHIPTYP_NETX90B           14
+set ROMLOADER_CHIPTYP_NETIOLA           15
+set ROMLOADER_CHIPTYP_NETIOLB           16
 
 # fEnableDCCOutput       true: download DCC code, set serial vectors and buffer, false: clear serial vectors
 # ulSerialVectorAddr     Address of serial vectors
@@ -82,6 +84,8 @@ proc init_chip {iChiptyp} {
 	global ROMLOADER_CHIPTYP_NETX4100_SMALL
 	global ROMLOADER_CHIPTYP_NETX90
 	global ROMLOADER_CHIPTYP_NETX90B
+	global ROMLOADER_CHIPTYP_NETIOLA
+	global ROMLOADER_CHIPTYP_NETIOLB
 
 
 	puts "init_chip $iChiptyp"
@@ -243,7 +247,7 @@ proc init_chip {iChiptyp} {
 		reg sp 0x2009ff80
 		reg lr 0x00023ffd
 		
-	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90 
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90
 			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B } {
 
 		puts "Setting up registers for netx 90 Rev.0/Rev.1"
@@ -252,7 +256,17 @@ proc init_chip {iChiptyp} {
 		bp 0x00023ffd 2 hw
 		reg sp 0x2009ff80
 		reg lr 0x00023ffd
-
+		
+		
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETIOLA
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETIOLB } {
+			
+		puts "Init netIOL (preliminary)"
+		
+		# bp 0x00007ffc 4 hw
+		# reg sp 0x00007ff8
+		# reg ra 0x00007ffc # return address
+		
 	} else {
 		puts "Unknown chip type $iChiptyp"
 	}
@@ -315,6 +329,11 @@ proc init_chip {iChiptyp} {
 		# No DCC on netx90
 		setup_dcc_io false 0x2009fff0 dcc_netx90_com.bin thumb 0x00020400 0x00020e00 0x00020fe0
 		
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETIOLA \
+		|| $iChiptyp == $ROMLOADER_CHIPTYP_NETIOLB } {
+		# no DCC on netIOL for now
+		setup_dcc_io false 0x00004000
+		
 	} else {
 		puts "Unknown chip type $iChiptyp"
 		
@@ -327,7 +346,6 @@ proc init_chip {iChiptyp} {
 	}
 	
 	adapter_khz 1000
-	
 }
 
 
