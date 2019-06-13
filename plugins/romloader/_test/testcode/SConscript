@@ -91,12 +91,10 @@ elf_netx90 = env_netx90.Elf(os.path.join(strTargetPath, 'montest_netx90.elf'), s
 bin_netx90 = env_netx90.ObjCopy(os.path.join(strTargetPath, 'montest_netx90.bin'), elf_netx90)
 txt_netx90 = env_netx90.ObjDump(os.path.join(strTargetPath, 'montest_netx90.txt'), elf_netx90, OBJDUMP_FLAGS=['--disassemble', '--source', '--all-headers', '--wide'])
 
-
-
-
 env_netiol = atEnv.NETIOL.Clone()
 env_netiol.Append(CPPPATH = astrCppPath)
 env_netiol.Replace(LDFILE = File('src/netiol/netiol.ld'))
+env_netiol.Replace(LIBS = ['c'])  # default library selection for RiscV is incorrect
 src_netiol = env_netiol.SetBuildPath(os.path.join(strTargetPath, 'netiol'), 'src', montest_sources)
 elf_netiol = env_netiol.Elf(os.path.join(strTargetPath, 'montest_netiol.elf'), src_netiol + env_netiol['PLATFORM_LIBRARY'])
 bin_netiol = env_netiol.ObjCopy(os.path.join(strTargetPath, 'montest_netiol.bin'), elf_netiol)
