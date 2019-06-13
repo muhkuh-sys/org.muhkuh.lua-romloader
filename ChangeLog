@@ -5,15 +5,12 @@ Change log/Release notes
 V 2.4.2
 ========
 
-This version is derived from V 2.4.0, not 2.4.1 (which is a separate branch at the moment).
-
-* Fix the chip type detection of the netX 90 MPW, Rev. 0 and Rev. 1 when using the UART or ethernet interfaces.
-* Change the name string for the netX90 Rev. 0 from "netX90" to "netX90 Rev0".
-* Fix structure packing (caused errors in Windows builds)
-
+* Fix the chip type detection on the netX 90 MPW, Rev. 0 and Rev. 1 when
+  using the serial or ethernet console mode.
 
 V 2.4.1
 ========
 
 * Support JTAG on the netIOL MPW.
 * Fix structure packing (caused errors in Windows builds)
+* Change the name string for the netX90 Rev. 0 from "netX90" to "netX90 Rev0".
