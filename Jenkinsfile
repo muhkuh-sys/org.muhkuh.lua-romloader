@@ -12,7 +12,7 @@ node {
                 sh 'rm -rf .[^.] .??* *'
 
                 checkout([$class: 'GitSCM',
-                    branches: [[name: '*/master']],
+                    branches: [[name: '*/build_v2.4.2']],
                     doGenerateSubmoduleConfigurations: false,
                     extensions: [
                         [$class: 'SubmoduleOption',
