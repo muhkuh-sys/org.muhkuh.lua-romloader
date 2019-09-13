@@ -25,7 +25,24 @@ set ROMLOADER_CHIPTYP_NETIOLB           16
 # ulDccBufferAddr        Address of DCC buffer
 # ulDccBufferPointerAddr Address of DCC buffer pointer
 
-proc setup_dcc_io {fEnableDCCOutput {ulSerialVectorAddr 0} {strDccCodeFile ""} {strArmThumb "arm"} {ulDccCodeAddr 0}  {ulDccBufferAddr 0} {ulDccBufferPointerAddr 0}} {
+proc setup_dcc_io {fEnableDCCOutput iChiptyp {ulSerialVectorAddr 0} {strDccCodeFile ""} {strArmThumb "arm"} {ulDccCodeAddr 0}  {ulDccBufferAddr 0} {ulDccBufferPointerAddr 0}} {
+	global ROMLOADER_CHIPTYP_UNKNOWN 
+	global ROMLOADER_CHIPTYP_NETX500 
+	global ROMLOADER_CHIPTYP_NETX100 
+	global ROMLOADER_CHIPTYP_NETX50  
+	global ROMLOADER_CHIPTYP_NETX5   
+	global ROMLOADER_CHIPTYP_NETX10  
+	global ROMLOADER_CHIPTYP_NETX56  
+	global ROMLOADER_CHIPTYP_NETX56B 
+	global ROMLOADER_CHIPTYP_NETX4000_RELAXED
+	global ROMLOADER_CHIPTYP_NETX90_MPW
+	global ROMLOADER_CHIPTYP_NETX4000_FULL
+	global ROMLOADER_CHIPTYP_NETX4100_SMALL
+	global ROMLOADER_CHIPTYP_NETX90
+	global ROMLOADER_CHIPTYP_NETX90B
+	global ROMLOADER_CHIPTYP_NETIOLA
+	global ROMLOADER_CHIPTYP_NETIOLB
+
 	if { $fEnableDCCOutput == "true" } {
 		puts "Setting up DCC output"
 
@@ -50,6 +67,12 @@ proc setup_dcc_io {fEnableDCCOutput {ulSerialVectorAddr 0} {strDccCodeFile ""} {
 		puts "Setting buffer pointer"
 		mww $ulDccBufferPointerAddr  $ulDccBufferAddr
 
+		if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW \
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90 \
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B } {
+			puts "Init cm4_scs_dcrdr"
+			mww 0xe000edf8 0  
+		}
 		target_request debugmsgs enable
 		
 	} else {
@@ -298,13 +321,13 @@ proc init_chip {iChiptyp} {
 	########################################
 	
 	if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX500 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX100 } {
-		setup_dcc_io $fEnableDCCOutput 0x10001ff0 dcc_netx500.bin arm 0x0400 0x10001e00 0x10001fe0 
+		setup_dcc_io $fEnableDCCOutput $iChiptyp 0x10001ff0 dcc_netx500.bin arm 0x0400 0x10001e00 0x10001fe0 
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX50 } {
-		setup_dcc_io $fEnableDCCOutput 0x04000ff0 dcc_netx10_50_51_52.bin arm 0x0400 0x04000e00 0x04000fe0 
+		setup_dcc_io $fEnableDCCOutput $iChiptyp 0x04000ff0 dcc_netx10_50_51_52.bin arm 0x0400 0x04000e00 0x04000fe0 
 			
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
-		setup_dcc_io $fEnableDCCOutput 0x08000100 dcc_netx10_50_51_52.bin arm 0x0400 0x04000e00 0x04000fe0
+		setup_dcc_io $fEnableDCCOutput $iChiptyp 0x08000100 dcc_netx10_50_51_52.bin arm 0x0400 0x04000e00 0x04000fe0
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_RELAXED \
 			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_FULL \
@@ -312,7 +335,7 @@ proc init_chip {iChiptyp} {
 		
 		# debugmsgs on Cortex-R/A are not supported by openOCD 0.10.0
 		# Therefore, we always disable output on netx 4000.
-		setup_dcc_io false 0x0003fff0 netx4000cr7_dccout_05080000_05080e00.bin arm 0x05080000 0x05080e00 0x05080fe0
+		setup_dcc_io false $iChiptyp 0x0003fff0 netx4000cr7_dccout_05080000_05080e00.bin arm 0x05080000 0x05080e00 0x05080fe0
 		
 		#netx 4000 UART iovcectors: 0x04101445 0x04101479 0x04101449 0x0410144D 
 		#puts "Debug: setting UART vectors on netx 4000"
@@ -321,18 +344,16 @@ proc init_chip {iChiptyp} {
 		#mww 0x0003fff8 0x04101449 ; # Peek
 		#mww 0x0003fffc 0x0410144D ; # Flush
 		
-	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW } {
-		setup_dcc_io $fEnableDCCOutput 0x2009fff0 dcc_netx90_com.bin thumb 0x00020400 0x00020e00 0x00020fe0
-		
-	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90 \
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW \
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90 \
 			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B } {
-		# No DCC on netx90
-		setup_dcc_io false 0x2009fff0 dcc_netx90_com.bin thumb 0x00020400 0x00020e00 0x00020fe0
+			
+		setup_dcc_io $fEnableDCCOutput $iChiptyp 0x2009fff0 dcc_netx90_com.bin thumb 0x00020400 0x00020e00 0x00020fe0
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETIOLA \
 		|| $iChiptyp == $ROMLOADER_CHIPTYP_NETIOLB } {
 		# no DCC on netIOL for now
-		setup_dcc_io false 0x00004000
+		setup_dcc_io false $iChiptyp 0x00004000
 		
 	} else {
 		puts "Unknown chip type $iChiptyp"
