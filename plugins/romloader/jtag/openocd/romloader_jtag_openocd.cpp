@@ -662,7 +662,7 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::a
 
 
 /* FIXME: read this from some kind of configuration file. */
-const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTargetCfg[7] =
+const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTargetCfg[6] =
 {
 	{
 		"netX_ARM966",
@@ -690,13 +690,8 @@ const romloader_jtag_openocd::TARGET_SETUP_STRUCT_T romloader_jtag_openocd::atTa
 	},
 
 	{
-		"netIOL_MPW",
-		"probe_cpu netIOL_MPW"
-	},
-
-	{
-		"netIOL_Rev0",
-		"probe_cpu netIOL_Rev0"
+		"netIOL",
+		"probe_cpu netIOL"
 	},
 };
 

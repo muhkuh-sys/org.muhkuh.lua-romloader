@@ -291,7 +291,7 @@ proc probe_cpu {strCpuID} {
 		}
 	
 	# netIOL
-	} elseif { $strCpuID == "netIOL_MPW" || $strCpuID == "netIOL_rev0"} {
+	} elseif { $strCpuID == "netIOL"} {
 		echo "+ probe_cpu netIOL"
 		adapter_khz 1000
 		
