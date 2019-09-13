@@ -1137,43 +1137,64 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 	tChiptyp = ROMLOADER_CHIPTYP_UNKNOWN;
 
 	// read the reset vector at 0x00000000
-	ulResetVector = ptFn->read_data32(0);
-	m_ptLog->debug("reset vector: 0x%08X", ulResetVector);
-
-	// match the reset vector to all known chipfamilies
-	ptRstCnt = atResIds;
-	ptRstEnd = ptRstCnt + (sizeof(atResIds)/sizeof(atResIds[0]));
-	ulVersionAddr = 0xffffffff;
-	while( ptRstCnt<ptRstEnd )
+	fResult = ptFn->read_data32(0, &ulResetVector);
+	if (fResult!=true)
 	{
-		if( ptRstCnt->ulResetVector==ulResetVector )
+		m_ptLog->debug("Failed to read reset vector!");
+	}
+	else
+	{
+		m_ptLog->debug("reset vector: 0x%08X", ulResetVector);
+	
+		// match the reset vector to all known chipfamilies
+		ptRstCnt = atResIds;
+		ptRstEnd = ptRstCnt + (sizeof(atResIds)/sizeof(atResIds[0]));
+		ulVersionAddr = 0xffffffff;
+		while( ptRstCnt<ptRstEnd )
 		{
-			ulVersionAddr = ptRstCnt->ulVersionAddress;
-			// read version address
-			ulVersion = ptFn->read_data32(ulVersionAddr);
-			m_ptLog->debug("version value: 0x%08X", ulVersion);
-			if( ptRstCnt->ulVersionValue==ulVersion )
+			if( ptRstCnt->ulResetVector==ulResetVector )
 			{
-				ulCheckAddr = ptRstCnt->ulCheckAddress;
-				ulCheckVal = 0;
-
-				if (ulCheckAddr != 0)
+				ulVersionAddr = ptRstCnt->ulVersionAddress;
+				// read version address
+				fResult = ptFn->read_data32(ulVersionAddr, &ulVersion);
+				if (fResult!=true)
 				{
-					ulCheckVal = ptFn->read_data32(ulCheckAddr);
-					ulCheckValMasked = ulCheckVal & ptRstCnt->ulCheckMask;
-					m_ptLog->debug("check address: 0x%08X  value: 0x%08X masked: 0x%08X", ulCheckAddr, ulCheckVal, ulCheckValMasked);
+					m_ptLog->debug("Failed to read version info!");
 				}
-					
-				if ((ulCheckAddr==0) || (ulCheckValMasked==ptRstCnt->ulCheckCmpValue))
+				else
 				{
-					// found chip!
-					tChiptyp = ptRstCnt->tChiptyp;
-					m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
-					break;
+					m_ptLog->debug("version value: 0x%08X", ulVersion);
+					if( ptRstCnt->ulVersionValue==ulVersion )
+					{
+						ulCheckAddr = ptRstCnt->ulCheckAddress;
+						ulCheckVal = 0;
+		
+						if (ulCheckAddr != 0)
+						{
+							fResult = ptFn->read_data32(ulCheckAddr, &ulCheckVal);
+							if (fResult!=true)
+							{
+								m_ptLog->debug("Failed to read 3rd check value!");
+							}
+							else
+							{
+								ulCheckValMasked = ulCheckVal & ptRstCnt->ulCheckMask;
+								m_ptLog->debug("check address: 0x%08X  value: 0x%08X masked: 0x%08X", ulCheckAddr, ulCheckVal, ulCheckValMasked);
+							}
+						}
+							
+						if ((ulCheckAddr==0) || (ulCheckValMasked==ptRstCnt->ulCheckCmpValue))
+						{
+							// found chip!
+							tChiptyp = ptRstCnt->tChiptyp;
+							m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
+							break;
+						}
+					}
 				}
 			}
+			++ptRstCnt;
 		}
-		++ptRstCnt;
 	}
 
 	/* Found something? */

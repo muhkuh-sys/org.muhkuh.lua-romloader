@@ -13,7 +13,7 @@ class romloader_uart_read_functinoid : public romloader_read_functinoid
 public:
 	romloader_uart_read_functinoid(void) {}
 
-	virtual uint32_t read_data32(uint32_t ulAddress) = 0;
+	virtual bool read_data32(uint32_t ulAddress, uint32_t *pulData) = 0;
 	virtual int update_device(ROMLOADER_CHIPTYP tChiptyp) = 0;
 
 protected:

@@ -62,14 +62,16 @@ public:
 		m_ptJtagDevice = ptDevice;
 		m_ptClientData = ptClientData;
 	}
-
-	uint32_t read_data32(uint32_t ulAddress)
+	
+	/* always returns true, because m_ptJtagDevice->read_data32 raises an error if the read fails. */
+	bool read_data32(uint32_t ulAddress, uint32_t *pulValue)
 	{
 		uint32_t ulValue;
 
 		ulValue = m_ptJtagDevice->read_data32(m_ptClientData, ulAddress);
-
-		return ulValue;
+		*pulValue = ulValue;
+		
+		return true;
 	}
 
 private:

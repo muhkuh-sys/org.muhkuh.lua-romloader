@@ -48,22 +48,7 @@ romloader_uart_read_functinoid_aboot::romloader_uart_read_functinoid_aboot(romlo
 }
 
 
-uint32_t romloader_uart_read_functinoid_aboot::read_data32(uint32_t ulAddress)
-{
-	bool fOk;
-	uint32_t ulValue;
-
-
-	fOk = legacy_read_v1(ulAddress, &ulValue);
-	if( fOk!=true )
-	{
-		ulValue = 0;
-	}
-	return ulValue;
-}
-
-
-bool romloader_uart_read_functinoid_aboot::legacy_read_v1(uint32_t ulAddress, uint32_t *pulValue)
+bool romloader_uart_read_functinoid_aboot::read_data32(uint32_t ulAddress, uint32_t *pulValue)
 {
 	union
 	{

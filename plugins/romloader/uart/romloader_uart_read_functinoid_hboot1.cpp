@@ -44,23 +44,7 @@ romloader_uart_read_functinoid_hboot1::romloader_uart_read_functinoid_hboot1(rom
 	m_pcPortName = 	pcPortName;
 }
 
-
-uint32_t romloader_uart_read_functinoid_hboot1::read_data32(uint32_t ulAddress)
-{
-	bool fOk;
-	uint32_t ulValue;
-
-
-	fOk = legacy_read_v2(ulAddress, &ulValue);
-	if( fOk!=true )
-	{
-		ulValue = 0;
-	}
-	return ulValue;
-}
-
-
-bool romloader_uart_read_functinoid_hboot1::legacy_read_v2(uint32_t ulAddress, uint32_t *pulValue)
+bool romloader_uart_read_functinoid_hboot1::read_data32(uint32_t ulAddress, uint32_t *pulValue)
 {
 	union
 	{

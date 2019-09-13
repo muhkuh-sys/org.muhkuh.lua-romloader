@@ -79,8 +79,7 @@ romloader_uart_read_functinoid_mi1::romloader_uart_read_functinoid_mi1(romloader
 }
 
 
-
-uint32_t romloader_uart_read_functinoid_mi1::read_data32(uint32_t ulNetxAddress)
+bool romloader_uart_read_functinoid_mi1::read_data32(uint32_t ulNetxAddress, uint32_t *pulValue)
 {
 	uint8_t aucCommand[6];
 	UARTSTATUS_T tResult;
@@ -108,11 +107,13 @@ uint32_t romloader_uart_read_functinoid_mi1::read_data32(uint32_t ulNetxAddress)
 			          ((uint32_t)(m_aucPacketInputBuffer[4]))<< 8 |
 			          ((uint32_t)(m_aucPacketInputBuffer[5]))<<16 |
 			          ((uint32_t)(m_aucPacketInputBuffer[6]))<<24;
+			*pulValue = ulValue;
 			fOk = true;
 		}
 	}
 
-	return ulValue;
+	return fOk;
+	
 }
 
 

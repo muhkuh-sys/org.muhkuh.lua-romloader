@@ -32,8 +32,7 @@ class romloader_uart_read_functinoid_mi1 : public romloader_uart_read_functinoid
 {
 public:
 	romloader_uart_read_functinoid_mi1(romloader_uart_device *ptDevice, char *pcPortName);
-
-	uint32_t read_data32(uint32_t ulNetxAddress);
+	bool read_data32(uint32_t ulAddress, uint32_t *pulValue);
 	int update_device(ROMLOADER_CHIPTYP tChiptyp);
 
 private:

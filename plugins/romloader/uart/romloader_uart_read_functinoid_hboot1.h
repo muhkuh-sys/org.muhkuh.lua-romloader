@@ -31,11 +31,10 @@ class romloader_uart_read_functinoid_hboot1 : public romloader_uart_read_functin
 {
 public:
 	romloader_uart_read_functinoid_hboot1(romloader_uart_device *ptDevice, char *pcPortName);
-	uint32_t read_data32(uint32_t ulAddress);
+	bool read_data32(uint32_t ulAddress, uint32_t *pulValue);
 	int update_device(ROMLOADER_CHIPTYP tChiptyp);
 
 private:
-	bool legacy_read_v2(uint32_t ulAddress, uint32_t *pulValue);
 	void hexdump(const uint8_t *pucData, uint32_t ulSize);
 
 	bool netx10_load_code(const uint8_t *pucNetxCode, size_t sizNetxCode);

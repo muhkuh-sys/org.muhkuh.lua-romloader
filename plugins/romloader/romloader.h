@@ -240,7 +240,8 @@ class MUHKUH_EXPORT romloader_read_functinoid
 public:
 	romloader_read_functinoid(void) {}
 
-	virtual uint32_t read_data32(uint32_t ulAddress) = 0;
+	//virtual uint32_t read_data32(uint32_t ulAddress) = 0;
+	virtual bool read_data32(uint32_t ulAddress, uint32_t *ulData) = 0;
 };
 
 
