@@ -2,6 +2,12 @@
 Change log/Release notes
 =========================
 
+V 2.4.5
+=======
+
+* Fix DCC messaging on netx 90.
+* Fix chip type detection of netx 10.
+
 V 2.4.4
 =======
 
