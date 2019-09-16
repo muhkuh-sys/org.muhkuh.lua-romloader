@@ -32,11 +32,12 @@ extern char ab_buffer;
 extern char buffer_end;
 extern char *pch_buffer_ptr;
 
-#if ASIC_TYP==ASIC_TYP_NETX90_MPW
+#if ASIC_TYP==ASIC_TYP_NETX90_MPW || ASIC_TYP==ASIC_TYP_NETX90
 
 #if 0
-#define NVIC_DBG_DATA_R		(*((volatile unsigned short *)0xE000EDF8))
-#define	BUSY	1
+/* C version */
+#define NVIC_DBG_DATA_R (*((volatile unsigned short *)0xE000EDF8))
+#define BUSY 1
 void __attribute__ ((noinline)) dbg_write(unsigned long dcc_data);
 
 void dbg_write(unsigned long dcc_data)
@@ -57,33 +58,36 @@ void dbg_write(unsigned long dcc_data)
 
 void dbg_write(unsigned long dcc_data);
 
-void __attribute__ ((noinline))  dbg_write(unsigned long dcc_data)
+void __attribute__ ((noinline))  dbg_write(unsigned long ulDccData)
 {
 __asm__("\n"
 "ldr     r2, =0xe000edf8\n"
 "mov     r3, #4\n"
+"mov     r4, %[dcc_data]\n"
 
-"@ wait until NVIC_DBG_DATA_R bit 0 (busy) is 0 \n"
+"@ wait until DCRDR bit 0 (busy) is 0 \n"
 "1:\n"
 "ldrh    r1, [r2] \n"
 "tst	 r1, #1\n"
 "bne     1b\n"
 
-"@ put next 8 data bits into NVIC_DBG_DATA_R\n"
-"mov     r1, %[dcc_data], LSL#8\n"
-"and     r1, #0xff00\n"
+"@ put next 8 data bits into DCRDR\n"
+"and     r1, r4, #0xff\n"
+"lsl     r1, #8\n"
 "orr     r1, #1\n"
 "strh    r1, [r2]\n"
 
-"lsr     r0, #8\n"
+"lsr     r4, #8\n"
 "subs    r3, #1\n"
-"bne     1b\n" : : [dcc_data] "r" (dcc_data));
+"bne     1b\n" 
+: /* no outputs */
+: [dcc_data] "r" (ulDccData) : "r1", "r2", "r3", "r4", "cc");
 }
-
 #else
 extern void dbg_write(unsigned long dcc_data);
 
 #endif
+
 
 void dcc_buffer_flush()
 {

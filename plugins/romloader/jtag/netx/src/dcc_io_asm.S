@@ -4,7 +4,7 @@
 	.section .dcc_out_s, "ax"
 
 
-#if ASIC_TYP==ASIC_TYP_NETX90_MPW
+#if ASIC_TYP==ASIC_TYP_NETX90_MPW || ASIC_TYP==ASIC_TYP_NETX90
 	.thumb
 	.syntax unified
 #else
@@ -30,7 +30,7 @@ dbg_write:
 	mcr     p14, 0, r0, c0, c5, 0
 	bx      lr
 
-#elif ASIC_TYP==ASIC_TYP_NETX90_MPW
+#elif ASIC_TYP==ASIC_TYP_NETX90_MPW  || ASIC_TYP==ASIC_TYP_NETX90
 
 /*
 @ r0: data to send (32 bit)
