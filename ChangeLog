@@ -7,6 +7,9 @@ V 2.4.5
 
 * Fix DCC messaging on netx 90.
 * Fix chip type detection of netx 10.
+* Improved reset handling on netx 90, when SRST is not present/not connected.
+  If _USE_SOFT_RESET_ in jtag_detect_init.tcl is false (default), use SRST (hardware reset).
+  If _USE_SOFT_RESET_ is true, use sysresetreq (via JTAG).
 
 V 2.4.4
 =======
