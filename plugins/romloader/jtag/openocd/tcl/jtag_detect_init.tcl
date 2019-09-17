@@ -318,6 +318,12 @@ proc probe_cpu {strCpuID} {
 #    Reset board
 # ###################################################################
 
+proc mread32 {addr} {
+  set value(0) 0
+  mem2array value 32 $addr 1
+  return $value(0)
+}
+
 # todo: pass target name from plugin 
 proc reset_board {} {
 	global strTarget
@@ -337,10 +343,7 @@ proc reset_board {} {
 }
 
 proc reset_netIOL {} {
-	reset_config trst_and_srst
-	#reset_config trst
-	adapter_nsrst_delay 500
-	jtag_ntrst_delay 500
+	reset_config none
 	init 
 	halt
 }
@@ -381,6 +384,11 @@ proc reset_netX_ARM926_ARM966 {} {
 #    Init/reset netX 90
 # ###################################################################
 
+proc netx90_unlock_write_reg {addr value} {
+  set accesskey [mread32 0xff4012c0]
+  mww 0xff4012c0 [expr $accesskey]
+  mww [expr $addr] [expr $value]
+}
 
 # Set the analog parameters to default values.
 proc netx90_setup_analog {}  {
@@ -417,6 +425,24 @@ proc netx90_stop_xpec_xpic {} {
 }
 
 proc reset_netx90_COM {}  {
+    puts "+reset_netx90_COM"
+    global _USE_SOFT_RESET_
+    if $_USE_SOFT_RESET_ {
+        echo "Using software reset"
+        reset_config none
+        #reset_config trst_only
+        jtag_ntrst_delay 500
+        cortex_m reset_config sysresetreq
+    } else {
+        echo "Using hardware reset"
+        #reset_config trst_and_srst
+        reset_config srst_only 
+        #reset_config trst_only
+        adapter_nsrst_delay 500
+        jtag_ntrst_delay 500
+    }
+    
+
     # This breakpoint should be hit when the ROM code enables debugging, 
     # either when processing an exec chunk or when entering the console mode.
     set BP_ADDR_APP_JTAG_ENABLED_RC5 0x1729e
@@ -429,12 +455,6 @@ proc reset_netx90_COM {}  {
     # Wait for 2000 ms for a breakpoint to be hit.
     set HBOOT_BP_TIMEOUT 2000
 
-    #reset_config trst_and_srst
-    reset_config srst_only 
-    #reset_config trst_only
-    #reset_config none
-    cortex_m reset_config sysresetreq
-    
     init
     
     global ROMLOADER_CHIPTYP_NETX90
@@ -451,6 +471,11 @@ proc reset_netx90_COM {}  {
         puts "reset_netx90_COM: Invalid chip type"
     }
     
+    halt
+    puts "Clear reset_ctrl"
+    netx90_unlock_write_reg 0xff0016b0 0x1ff
+    mdw 0xff0016b0
+    resume
     
     puts "Trying to halt the CPU in ROM breakpoint 1"
     bp $BP_ADDR_APP_JTAG_ENABLED 2 hw
@@ -536,17 +561,15 @@ proc reset_netx90_COM {}  {
             }
         }
     }
+    
+    puts "reset_ctrl:"
+    mdw 0xff0016b0
+    puts "-reset_netx90_COM"
 }
 
 # ###################################################################
 #    Init/reset netx 4000
 # ###################################################################
-
-proc mread32 {addr} {
-  set value(0) 0
-  mem2array value 32 $addr 1
-  return $value(0)
-}
 
 proc set_firewall {addr value} {
   set accesskey [mread32 0xF408017C]
