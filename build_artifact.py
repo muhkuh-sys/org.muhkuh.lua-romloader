@@ -1,15 +1,12 @@
 #! /usr/bin/python2.7
 
 from jonchki import cli_args
-from jonchki import filter
 from jonchki import jonchkihere
 from jonchki import vcs_id
 
 import glob
 import os
-import shutil
 import subprocess
-import sys
 
 
 tPlatform = cli_args.parse()
@@ -103,7 +100,8 @@ astrEnv = None
 if tPlatform['host_distribution_id'] == 'ubuntu':
     if tPlatform['distribution_id'] == 'ubuntu':
         # Build on linux for linux.
-        # It is currently not possible to build for another version or CPU architecture.
+        # It is currently not possible to build for another version or CPU
+        # architecture.
         if(
             (tPlatform['distribution_version'] != tPlatform['host_distribution_version']) or
             (tPlatform['cpu_architecture'] != tPlatform['host_cpu_architecture'])
@@ -128,48 +126,48 @@ if tPlatform['host_distribution_id'] == 'ubuntu':
         astrCMAKE_PLATFORM = []
         astrJONCHKI_SYSTEM = []
         strMake = 'make'
-    
-    elif tPlatform['distribution_id'] == 'raspberry':
-	# Build on linux for raspebrry.
-	if tPlatform['cpu_architecture'] == 'arm64':
-	    # Create the folder if it does not exist yet.
-	    # Create the folders if they do not exist yet.
-	    astrFolders = [
-        	strCfg_workingFolder,
-		os.path.join(strCfg_workingFolder, 'packages'),
-	    ]
-	    for strPath in astrFolders:
-		if os.path.exists(strPath) is not True:
-		    os.makedirs(strPath)
 
-	    packagesPath = os.path.join(strCfg_workingFolder, 'packages')
-	    os.chdir(packagesPath)
-	    subProcessPath = os.path.join(strCfg_projectFolder, 'cmake', 'tools')
-	    subProcessCall = '%s/get_dependencies.sh libudev-dev:arm64' % subProcessPath
-	    print(subProcessCall)
-	    subprocess.check_call(subProcessCall, shell=True)
-	    os.chdir(strCfg_workingFolder)
-	    astrCMAKE_COMPILER = [
-		'-DCMAKE_TOOLCHAIN_FILE=%s/cmake/toolchainfiles/toolchain_ubuntu_arm64.cmake' % strCfg_projectFolder
-	    ]
-	    astrCMAKE_PLATFORM = [
-		'-DJONCHKI_PLATFORM_DIST_ID=ubuntu',
-		'-DJONCHKI_PLATFORM_DIST_VERSION=18.04',
-		'-DJONCHKI_PLATFORM_CPU_ARCH=arm64'
-	    ]
-	    astrJONCHKI_SYSTEM = [
-		'--distribution-id ubuntu',
-		'--distribution-version 18.04',
-		'--cpu-architecture arm64'
-	    ]
-	    strMake = 'make'
-    
+    elif tPlatform['distribution_id'] == 'raspberry':
+        # Build on linux for raspebrry.
+        if tPlatform['cpu_architecture'] == 'arm64':
+            # Create the folder if it does not exist yet.
+            # Create the folders if they do not exist yet.
+            astrFolders = [
+                strCfg_workingFolder,
+                os.path.join(strCfg_workingFolder, 'packages'),
+            ]
+            for strPath in astrFolders:
+                if os.path.exists(strPath) is not True:
+                    os.makedirs(strPath)
+
+            packagesPath = os.path.join(strCfg_workingFolder, 'packages')
+            os.chdir(packagesPath)
+            subProcessPath = os.path.join(strCfg_projectFolder, 'cmake', 'tools')
+            subProcessCall = '%s/get_dependencies.sh libudev-dev:arm64' % subProcessPath
+            print(subProcessCall)
+            subprocess.check_call(subProcessCall, shell=True)
+            os.chdir(strCfg_workingFolder)
+            astrCMAKE_COMPILER = [
+                '-DCMAKE_TOOLCHAIN_FILE=%s/cmake/toolchainfiles/toolchain_ubuntu_arm64.cmake' % strCfg_projectFolder
+            ]
+            astrCMAKE_PLATFORM = [
+                '-DJONCHKI_PLATFORM_DIST_ID=ubuntu',
+                '-DJONCHKI_PLATFORM_DIST_VERSION=18.04',
+                '-DJONCHKI_PLATFORM_CPU_ARCH=arm64'
+            ]
+            astrJONCHKI_SYSTEM = [
+                '--distribution-id ubuntu',
+                '--distribution-version 18.04',
+                '--cpu-architecture arm64'
+            ]
+            strMake = 'make'
+
     elif tPlatform['distribution_id'] == 'windows':
         # Cross build on linux for windows.
         if tPlatform['cpu_architecture'] == 'x86':
             # Build for 32bit windows.
             astrCMAKE_COMPILER = [
-		'-DCMAKE_TOOLCHAIN_FILE=%s/cmake/toolchainfiles/toolchain_windows_32.cmake' % strCfg_projectFolder
+                '-DCMAKE_TOOLCHAIN_FILE=%s/cmake/toolchainfiles/toolchain_windows_32.cmake' % strCfg_projectFolder
             ]
             astrCMAKE_PLATFORM = [
                 '-DJONCHKI_PLATFORM_DIST_ID=windows',
@@ -186,7 +184,7 @@ if tPlatform['host_distribution_id'] == 'ubuntu':
         elif tPlatform['cpu_architecture'] == 'x86_64':
             # Build for 64bit windows.
             astrCMAKE_COMPILER = [
-		'-DCMAKE_TOOLCHAIN_FILE=%s/cmake/toolchainfiles/toolchain_windows_64.cmake' % strCfg_projectFolder
+                '-DCMAKE_TOOLCHAIN_FILE=%s/cmake/toolchainfiles/toolchain_windows_64.cmake' % strCfg_projectFolder
             ]
             astrCMAKE_PLATFORM = [
                 '-DJONCHKI_PLATFORM_DIST_ID=windows',
@@ -274,10 +272,16 @@ elif tPlatform['host_distribution_id'] == 'windows':
             )
 
         else:
-            raise Exception('Unknown CPU architecture: "%s"' % tPlatform['cpu_architecture'])
+            raise Exception(
+                'Unknown CPU architecture: "%s"' %
+                tPlatform['cpu_architecture']
+            )
 
 else:
-    raise Exception('Unknown host distribution: "%s"' % tPlatform['host_distribution_id'])
+    raise Exception(
+        'Unknown host distribution: "%s"' %
+        tPlatform['host_distribution_id']
+    )
 
 # Create the folders if they do not exist yet.
 astrFolders = [
@@ -346,7 +350,7 @@ subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
 subprocess.check_call(strMake, shell=True, cwd=strCwd, env=astrEnv)
 
 astrMatch = glob.glob(os.path.join(strCwd, 'lua5.1-romloader-*.xml'))
-if len(astrMatch)!=1:
+if len(astrMatch) != 1:
     raise Exception('No match found for "lua5.1-romloader-*.xml".')
 
 astrCmd = [
@@ -402,7 +406,7 @@ subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
 subprocess.check_call(strMake, shell=True, cwd=strCwd, env=astrEnv)
 
 astrMatch = glob.glob(os.path.join(strCwd, 'lua5.2-romloader-*.xml'))
-if len(astrMatch)!=1:
+if len(astrMatch) != 1:
     raise Exception('No match found for "lua5.2-romloader-*.xml".')
 
 astrCmd = [
@@ -459,7 +463,7 @@ subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
 subprocess.check_call(strMake, shell=True, cwd=strCwd, env=astrEnv)
 
 astrMatch = glob.glob(os.path.join(strCwd, 'lua5.3-romloader-*.xml'))
-if len(astrMatch)!=1:
+if len(astrMatch) != 1:
     raise Exception('No match found for "lua5.3-romloader-*.xml".')
 
 astrCmd = [
