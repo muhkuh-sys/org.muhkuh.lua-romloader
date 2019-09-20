@@ -645,9 +645,9 @@ local fNoDCCSupport =
 	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX4000_RELAXED or
 	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX4000_FULL or
 	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX4100_SMALL or
-	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90_MPW or
-	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90 or
-	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90B or
+	-- tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90_MPW or
+	-- tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90 or
+	-- tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90B or
 	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETIOLA or
 	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETIOLB
 
