@@ -75,11 +75,11 @@ build_elf_bin(buildpars)
 
 
 # build netx 4000/R7 binary
-#buildpars.env         = atEnv.NETX4000_RELAXED
-#buildpars.ldfile      = 'src/netx4000.ld'
-#buildpars.target_dir  = strTargetPath + '/netx4000'
-#buildpars.target_name = 'netx4000cr7_dccout_05080000_05080e00' 
-#build_elf_bin(buildpars)
+buildpars.env         = atEnv.NETX4000
+buildpars.ldfile      = 'src/netx4000.ld'
+buildpars.target_dir  = strTargetPath + '/netx4000'
+buildpars.target_name = 'dcc_netx4000_cr7' 
+build_elf_bin(buildpars)
 
 # build netx 90 COM binary
 buildpars.env         = atEnv.NETX90

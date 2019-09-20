@@ -336,6 +336,7 @@ proc init_chip {iChiptyp} {
 		# debugmsgs on Cortex-R/A are not supported by openOCD 0.10.0
 		# Therefore, we always disable output on netx 4000.
 		setup_dcc_io false $iChiptyp 0x0003fff0 netx4000cr7_dccout_05080000_05080e00.bin arm 0x05080000 0x05080e00 0x05080fe0
+		#setup_dcc_io $fEnableDCCOutput $iChiptyp 0x0003fff0 dcc_netx4000_cr7.bin arm 0x04000400 0x0003fe00 0x0003ffe0
 		
 		#netx 4000 UART iovcectors: 0x04101445 0x04101479 0x04101449 0x0410144D 
 		#puts "Debug: setting UART vectors on netx 4000"
