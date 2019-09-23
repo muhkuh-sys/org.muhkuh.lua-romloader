@@ -4,12 +4,14 @@ Change log/Release notes
 
 V 2.4.5
 =======
-
 * Fix DCC messaging on netx 90.
 * Fix chip type detection of netx 10.
 * Improved reset handling on netx 90, when SRST is not present/not connected.
   If _USE_SOFT_RESET_ in jtag_detect_init.tcl is false (default), use SRST (hardware reset).
   If _USE_SOFT_RESET_ is true, use sysresetreq (via JTAG).
+* Build DCC output code for netx 4000 (preliminary).
+* Romloader Test:
+  Move montest binary for netx 4000 to 0x04004000 to prevent overwriting UART monitor.  
 
 V 2.4.4
 =======
