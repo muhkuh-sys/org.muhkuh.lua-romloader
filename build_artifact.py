@@ -1,15 +1,12 @@
 #! /usr/bin/python2.7
 
 from jonchki import cli_args
-from jonchki import filter
 from jonchki import jonchkihere
 from jonchki import vcs_id
 
 import glob
 import os
-import shutil
 import subprocess
-import sys
 
 
 tPlatform = cli_args.parse()
@@ -59,7 +56,7 @@ strCfg_jonchkiHerePath = os.path.join(
     'jonchki'
 )
 # This is the Jonchki version to use.
-strCfg_jonchkiVersion = '0.0.3.1'
+strCfg_jonchkiVersion = '0.0.4.1'
 # Look in this folder for Jonchki archives before downloading them.
 strCfg_jonchkiLocalArchives = os.path.join(
     strCfg_projectFolder,
@@ -103,7 +100,8 @@ astrEnv = None
 if tPlatform['host_distribution_id'] == 'ubuntu':
     if tPlatform['distribution_id'] == 'ubuntu':
         # Build on linux for linux.
-        # It is currently not possible to build for another version or CPU architecture.
+        # It is currently not possible to build for another version or CPU
+        # architecture.
         if(
             (tPlatform['distribution_version'] != tPlatform['host_distribution_version']) or
             (tPlatform['cpu_architecture'] != tPlatform['host_cpu_architecture'])
@@ -128,48 +126,48 @@ if tPlatform['host_distribution_id'] == 'ubuntu':
         astrCMAKE_PLATFORM = []
         astrJONCHKI_SYSTEM = []
         strMake = 'make'
-    
-    elif tPlatform['distribution_id'] == 'raspberry':
-	# Build on linux for raspebrry.
-	if tPlatform['cpu_architecture'] == 'arm64':
-	    # Create the folder if it does not exist yet.
-	    # Create the folders if they do not exist yet.
-	    astrFolders = [
-        	strCfg_workingFolder,
-		os.path.join(strCfg_workingFolder, 'packages'),
-	    ]
-	    for strPath in astrFolders:
-		if os.path.exists(strPath) is not True:
-		    os.makedirs(strPath)
 
-	    packagesPath = os.path.join(strCfg_workingFolder, 'packages')
-	    os.chdir(packagesPath)
-	    subProcessPath = os.path.join(strCfg_projectFolder, 'cmake', 'tools')
-	    subProcessCall = '%s/get_dependencies.sh libudev-dev:arm64' % subProcessPath
-	    print(subProcessCall)
-	    subprocess.check_call(subProcessCall, shell=True)
-	    os.chdir(strCfg_workingFolder)
-	    astrCMAKE_COMPILER = [
-		'-DCMAKE_TOOLCHAIN_FILE=%s/cmake/toolchainfiles/toolchain_ubuntu_arm64.cmake' % strCfg_projectFolder
-	    ]
-	    astrCMAKE_PLATFORM = [
-		'-DJONCHKI_PLATFORM_DIST_ID=ubuntu',
-		'-DJONCHKI_PLATFORM_DIST_VERSION=18.04',
-		'-DJONCHKI_PLATFORM_CPU_ARCH=arm64'
-	    ]
-	    astrJONCHKI_SYSTEM = [
-		'--distribution-id ubuntu',
-		'--distribution-version 18.04',
-		'--cpu-architecture arm64'
-	    ]
-	    strMake = 'make'
-    
+    elif tPlatform['distribution_id'] == 'raspberry':
+        # Build on linux for raspebrry.
+        if tPlatform['cpu_architecture'] == 'arm64':
+            # Create the folder if it does not exist yet.
+            # Create the folders if they do not exist yet.
+            astrFolders = [
+                strCfg_workingFolder,
+                os.path.join(strCfg_workingFolder, 'packages'),
+            ]
+            for strPath in astrFolders:
+                if os.path.exists(strPath) is not True:
+                    os.makedirs(strPath)
+
+            packagesPath = os.path.join(strCfg_workingFolder, 'packages')
+            os.chdir(packagesPath)
+            subProcessPath = os.path.join(strCfg_projectFolder, 'cmake', 'tools')
+            subProcessCall = '%s/get_dependencies.sh libudev-dev:arm64' % subProcessPath
+            print(subProcessCall)
+            subprocess.check_call(subProcessCall, shell=True)
+            os.chdir(strCfg_workingFolder)
+            astrCMAKE_COMPILER = [
+                '-DCMAKE_TOOLCHAIN_FILE=%s/cmake/toolchainfiles/toolchain_ubuntu_arm64.cmake' % strCfg_projectFolder
+            ]
+            astrCMAKE_PLATFORM = [
+                '-DJONCHKI_PLATFORM_DIST_ID=ubuntu',
+                '-DJONCHKI_PLATFORM_DIST_VERSION=18.04',
+                '-DJONCHKI_PLATFORM_CPU_ARCH=arm64'
+            ]
+            astrJONCHKI_SYSTEM = [
+                '--distribution-id ubuntu',
+                '--distribution-version 18.04',
+                '--cpu-architecture arm64'
+            ]
+            strMake = 'make'
+
     elif tPlatform['distribution_id'] == 'windows':
         # Cross build on linux for windows.
         if tPlatform['cpu_architecture'] == 'x86':
             # Build for 32bit windows.
             astrCMAKE_COMPILER = [
-		'-DCMAKE_TOOLCHAIN_FILE=%s/cmake/toolchainfiles/toolchain_windows_32.cmake' % strCfg_projectFolder
+                '-DCMAKE_TOOLCHAIN_FILE=%s/cmake/toolchainfiles/toolchain_windows_32.cmake' % strCfg_projectFolder
             ]
             astrCMAKE_PLATFORM = [
                 '-DJONCHKI_PLATFORM_DIST_ID=windows',
@@ -186,7 +184,7 @@ if tPlatform['host_distribution_id'] == 'ubuntu':
         elif tPlatform['cpu_architecture'] == 'x86_64':
             # Build for 64bit windows.
             astrCMAKE_COMPILER = [
-		'-DCMAKE_TOOLCHAIN_FILE=%s/cmake/toolchainfiles/toolchain_windows_64.cmake' % strCfg_projectFolder
+                '-DCMAKE_TOOLCHAIN_FILE=%s/cmake/toolchainfiles/toolchain_windows_64.cmake' % strCfg_projectFolder
             ]
             astrCMAKE_PLATFORM = [
                 '-DJONCHKI_PLATFORM_DIST_ID=windows',
@@ -274,10 +272,16 @@ elif tPlatform['host_distribution_id'] == 'windows':
             )
 
         else:
-            raise Exception('Unknown CPU architecture: "%s"' % tPlatform['cpu_architecture'])
+            raise Exception(
+                'Unknown CPU architecture: "%s"' %
+                tPlatform['cpu_architecture']
+            )
 
 else:
-    raise Exception('Unknown host distribution: "%s"' % tPlatform['host_distribution_id'])
+    raise Exception(
+        'Unknown host distribution: "%s"' %
+        tPlatform['host_distribution_id']
+    )
 
 # Create the folders if they do not exist yet.
 astrFolders = [
@@ -285,10 +289,8 @@ astrFolders = [
     os.path.join(strCfg_workingFolder, 'external'),
     os.path.join(strCfg_workingFolder, 'lua5.1'),
     os.path.join(strCfg_workingFolder, 'lua5.1', 'build_requirements'),
-    os.path.join(strCfg_workingFolder, 'lua5.2'),
-    os.path.join(strCfg_workingFolder, 'lua5.2', 'build_requirements'),
-    os.path.join(strCfg_workingFolder, 'lua5.3'),
-    os.path.join(strCfg_workingFolder, 'lua5.3', 'build_requirements')
+    os.path.join(strCfg_workingFolder, 'lua5.4'),
+    os.path.join(strCfg_workingFolder, 'lua5.4', 'build_requirements'),
 ]
 for strPath in astrFolders:
     if os.path.exists(strPath) is not True:
@@ -346,7 +348,7 @@ subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
 subprocess.check_call(strMake, shell=True, cwd=strCwd, env=astrEnv)
 
 astrMatch = glob.glob(os.path.join(strCwd, 'lua5.1-romloader-*.xml'))
-if len(astrMatch)!=1:
+if len(astrMatch) != 1:
     raise Exception('No match found for "lua5.1-romloader-*.xml".')
 
 astrCmd = [
@@ -381,9 +383,9 @@ subprocess.check_call('%s pack' % strMake, shell=True, cwd=strCwd, env=astrEnv)
 
 # ---------------------------------------------------------------------------
 #
-# Get the build requirements for LUA5.2.
+# Get the build requirements for LUA5.4.
 #
-for strMatch in glob.iglob(os.path.join(strCwd, 'lua5.2-romloader-*.xml')):
+for strMatch in glob.iglob(os.path.join(strCwd, 'lua5.4-romloader-*.xml')):
     os.remove(strMatch)
 
 astrCmd = [
@@ -392,18 +394,18 @@ astrCmd = [
     '-DPRJ_DIR=%s' % strCfg_projectFolder,
     '-DBUILDCFG_ONLY_JONCHKI_CFG="ON"',
     '-DBUILDCFG_LUA_USE_SYSTEM="OFF"',
-    '-DBUILDCFG_LUA_VERSION="5.2"'
+    '-DBUILDCFG_LUA_VERSION="5.4"'
 ]
 astrCmd.extend(astrCMAKE_COMPILER)
 astrCmd.extend(astrCMAKE_PLATFORM)
 astrCmd.append(strCfg_projectFolder)
-strCwd = os.path.join(strCfg_workingFolder, 'lua5.2', 'build_requirements')
+strCwd = os.path.join(strCfg_workingFolder, 'lua5.4', 'build_requirements')
 subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
 subprocess.check_call(strMake, shell=True, cwd=strCwd, env=astrEnv)
 
-astrMatch = glob.glob(os.path.join(strCwd, 'lua5.2-romloader-*.xml'))
-if len(astrMatch)!=1:
-    raise Exception('No match found for "lua5.2-romloader-*.xml".')
+astrMatch = glob.glob(os.path.join(strCwd, 'lua5.4-romloader-*.xml'))
+if len(astrMatch) != 1:
+    raise Exception('No match found for "lua5.4-romloader-*.xml".')
 
 astrCmd = [
     strJonchki,
@@ -420,75 +422,18 @@ subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
 
 # ---------------------------------------------------------------------------
 #
-# Build the LUA5.2 version.
+# Build the LUA5.4 version.
 #
 astrCmd = [
     'cmake',
     '-DCMAKE_INSTALL_PREFIX=""',
     '-DPRJ_DIR=%s' % strCfg_projectFolder,
     '-DBUILDCFG_LUA_USE_SYSTEM="OFF"',
-    '-DBUILDCFG_LUA_VERSION="5.2"'
+    '-DBUILDCFG_LUA_VERSION="5.4"'
 ]
 astrCmd.extend(astrCMAKE_COMPILER)
 astrCmd.extend(astrCMAKE_PLATFORM)
 astrCmd.append(strCfg_projectFolder)
-strCwd = os.path.join(strCfg_workingFolder, 'lua5.2')
-subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
-subprocess.check_call('%s pack' % strMake, shell=True, cwd=strCwd, env=astrEnv)
-
-# ---------------------------------------------------------------------------
-#
-# Get the build requirements for LUA5.3.
-#
-for strMatch in glob.iglob(os.path.join(strCwd, 'lua5.3-romloader-*.xml')):
-    os.remove(strMatch)
-
-astrCmd = [
-    'cmake',
-    '-DCMAKE_INSTALL_PREFIX=""',
-    '-DPRJ_DIR=%s' % strCfg_projectFolder,
-    '-DBUILDCFG_ONLY_JONCHKI_CFG="ON"',
-    '-DBUILDCFG_LUA_USE_SYSTEM="OFF"',
-    '-DBUILDCFG_LUA_VERSION="5.3"'
-]
-astrCmd.extend(astrCMAKE_COMPILER)
-astrCmd.extend(astrCMAKE_PLATFORM)
-astrCmd.append(strCfg_projectFolder)
-strCwd = os.path.join(strCfg_workingFolder, 'lua5.3', 'build_requirements')
-subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
-subprocess.check_call(strMake, shell=True, cwd=strCwd, env=astrEnv)
-
-astrMatch = glob.glob(os.path.join(strCwd, 'lua5.3-romloader-*.xml'))
-if len(astrMatch)!=1:
-    raise Exception('No match found for "lua5.3-romloader-*.xml".')
-
-astrCmd = [
-    strJonchki,
-    'install-dependencies',
-    '--verbose', strCfg_jonchkiVerbose,
-    '--syscfg', strCfg_jonchkiSystemConfiguration,
-    '--prjcfg', strCfg_jonchkiProjectConfiguration
-]
-astrCmd.extend(astrJONCHKI_SYSTEM)
-astrCmd.append('--build-dependencies')
-astrCmd.append(astrMatch[0])
-subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
-
-
-# ---------------------------------------------------------------------------
-#
-# Build the LUA5.3 version.
-#
-astrCmd = [
-    'cmake',
-    '-DCMAKE_INSTALL_PREFIX=""',
-    '-DPRJ_DIR=%s' % strCfg_projectFolder,
-    '-DBUILDCFG_LUA_USE_SYSTEM="OFF"',
-    '-DBUILDCFG_LUA_VERSION="5.3"'
-]
-astrCmd.extend(astrCMAKE_COMPILER)
-astrCmd.extend(astrCMAKE_PLATFORM)
-astrCmd.append(strCfg_projectFolder)
-strCwd = os.path.join(strCfg_workingFolder, 'lua5.3')
+strCwd = os.path.join(strCfg_workingFolder, 'lua5.4')
 subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
 subprocess.check_call('%s pack' % strMake, shell=True, cwd=strCwd, env=astrEnv)

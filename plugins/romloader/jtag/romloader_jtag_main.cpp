@@ -26,7 +26,7 @@
 
 /*-------------------------------------*/
 
-#define CFG_DEBUGMSG 1
+#define CFG_DEBUGMSG 0
 #if CFG_DEBUGMSG!=0
 	/* show all messages by default */
 	static unsigned long s_ulCurSettings = 0xffffffff;
