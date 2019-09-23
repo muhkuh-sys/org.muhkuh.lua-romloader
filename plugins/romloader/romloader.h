@@ -152,7 +152,7 @@ MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_STATUS_T)==8, "Packing of MIV3_PACKET_S
 
 
 
-/* This is a complete status packet. */
+/* This is a complete cancel call packet. */
 struct MIV3_PACKET_CANCEL_CALL_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
@@ -209,7 +209,7 @@ MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T)==11, "Pack
 
 
 
-/* This is a complete call package. */
+/* This is a complete call packet. */
 struct MIV3_PACKET_COMMAND_CALL_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
