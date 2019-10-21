@@ -367,7 +367,13 @@ proc init_chip {iChiptyp} {
 		arm7_9 fast_memory_access enable
 	}
 	
-	adapter_khz 1000
+	
+	# Set the adapter speed: 1 MHz for netIOL, 6 MHz for other netXes.
+	if { $iChiptyp == $ROMLOADER_CHIPTYP_NETIOLA || $iChiptyp == $ROMLOADER_CHIPTYP_NETIOLB } {
+		adapter_khz 1000
+	} else {
+		adapter_khz 6000
+	}
 }
 
 
@@ -382,5 +388,3 @@ proc init_chip {iChiptyp} {
 # Serial Vectors netX50         0ff0 - 0fff (netX 50: DTCM 0x04000ff0)
 
 echo "Done loading chip_init.tcl"
-
-
