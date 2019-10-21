@@ -458,14 +458,14 @@ addExpectedOutputLoop(2, 2000)
 -- iExpectedOutputLine   index into astrExpectedOutput
 -- iLinePos              1-based position in iExpectedOutputLine
 -- tPlugin               plugin, used to check we're using USB
+-- tPluginTyp            the interface used, e.g. UART, USB, JTAG
+-- tAsicTyp              the netx type, e.g. netx 500.
 
 function getExpectedOutput()
 	local strLine = astrExpectedOutput[iExpectedOutputLine]
 	assert((not fCheckOutput) or strLine, "Expected output exhausted")
 	local strExpected
 	
-	local tPluginTyp = tPlugin:GetTyp()
-	local tAsicTyp = tPlugin:GetChiptyp()
 	if tPluginTyp=="romloader_usb" 
 	and tAsicTyp~=romloader.ROMLOADER_CHIPTYP_NETX100 and tAsicTyp~=romloader.ROMLOADER_CHIPTYP_NETX500 then
 		local iLen = strLine:len()
@@ -604,102 +604,164 @@ function call_test(tArgs)
 	end
 end
 
-	
 
 --------------------------------------------------------------------------
 --  test main
 --------------------------------------------------------------------------
 
 
+function test_main(tPlugin)
+	-- set global variables, because they're needed by the output checker
+	tPluginTyp = tPlugin:GetTyp()
+	tAsicTyp = tPlugin:GetChiptyp()
+				
+	-- Get the maximum test area for the current chip.
+	local tTestArea = atTestAreas[tAsicTyp]
+	assert(tTestArea, "Unknown chiptyp! " .. tostring(tAsicTyp))
+	
+	-- Limit the test size to the size of the test area.
+	if ulTestSize>tTestArea.ulTestAreaSize then
+		ulTestSize = ulTestAreaSize
+	end
+	
+	-- Disable output checks when using a JTAG connection without DCC message support.
+	local fNoDCCSupport = 
+		tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX4000_RELAXED or
+		tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX4000_FULL or
+		tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX4100_SMALL or
+		-- tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90_MPW or
+		-- tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90 or
+		-- tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90B or
+		tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETIOLA or
+		tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETIOLB
+	
+	if tPluginTyp=="romloader_jtag" and fNoDCCSupport then
+		print("No DCC support - disabling output checks")
+		fCheckOutput = false 
+	end
+	
+	local tArgs = {
+		tPlugin         = tPlugin,
+		tAsicTyp        = tAsicTyp,
+		strAsicName     = tTestArea.strName,
+		ulTestAreaStart = tTestArea.ulTestAreaStart,
+		ulTestAreaSize  = tTestArea.ulTestAreaSize,
+		uiLoopCounter   = 0,
+		ulTestSize      = ulTestSize,
+	}
+	
+	
+	local uiLoopCounter = 0
+	-- If the "loops" parameter is 0, loop forever (or until an error occurs).
+	local fLoopEndless = (uiParameterLoops==0)
+	
+	while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
+		print("***************************************")
+		print("***************************************")
+		print("**                                   **")
+		print(string.format("** Loop %08d                     **", uiLoopCounter))
+		print("**                                   **")
+		print("***************************************")
+		print("***************************************")
+	
+		tArgs.uiLoopCounter = uiLoopCounter
+		basic_access_test(tArgs)
+		if fDoMemTest then
+			mem_test(tArgs)
+		end 
+		if fDoCallTest then
+			call_test(tArgs)
+		end
+		uiLoopCounter = uiLoopCounter + 1
+	end
+	
+	tPlugin:Disconnect()
+	
+end 
+
+
+
+
+E_OK             = 0
+E_ERROR          = 1
+E_INCORRECT_ARGS = 2
+E_NO_PLUGIN      = 3
+
+function error_handler(e)
+	 print(debug.traceback(e))
+end
+
+
+local iRet
+
 if #arg == 0 then
 	strPluginName = nil
+	iRet = E_OK
 elseif #arg == 2 and arg[1]=="-p" and type(arg[2])=="string" then
 	strPluginName = arg[2]
+	iRet = E_OK
 else
 	print("Usage: lua test_romloader.lua [-p plugin_name]")
-	os.exit(2)
+	iRet = E_INCORRECT_ARGS
 end
 
-tPlugin, strError = getPlugin(strPluginName)
-if not tPlugin then
-	print(strError or "No plugin selected")
-	os.exit(3)
-end
 
-tPlugin:Connect()
-
-local tAsicTyp = tPlugin:GetChiptyp()
-local tPluginTyp = tPlugin:GetTyp()
-
--- Get the maximum test area for the current chip.
-local tTestArea = atTestAreas[tAsicTyp]
-assert(tTestArea, "Unknown chiptyp! " .. tostring(tAsicTyp))
-
--- Limit the test size to the size of the test area.
-if ulTestSize>tTestArea.ulTestAreaSize then
-	ulTestSize = ulTestAreaSize
-end
-
--- Disable output checks when using a JTAG connection without DCC message support.
-local fNoDCCSupport = 
-	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX4000_RELAXED or
-	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX4000_FULL or
-	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX4100_SMALL or
-	-- tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90_MPW or
-	-- tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90 or
-	-- tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90B or
-	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETIOLA or
-	tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETIOLB
-
-if tPluginTyp=="romloader_jtag" and fNoDCCSupport then
-	print("No DCC support - disabling output checks")
-	fCheckOutput = false 
-end
-
-local tArgs = {
-	tPlugin         = tPlugin,
-	tAsicTyp        = tAsicTyp,
-	strAsicName     = tTestArea.strName,
-	ulTestAreaStart = tTestArea.ulTestAreaStart,
-	ulTestAreaSize  = tTestArea.ulTestAreaSize,
-	uiLoopCounter   = 0,
-	ulTestSize      = ulTestSize,
-}
-
-
-local uiLoopCounter = 0
--- If the "loops" parameter is 0, loop forever (or until an error occurs).
-local fLoopEndless = (uiParameterLoops==0)
-
-while fLoopEndless==true or uiLoopCounter<uiParameterLoops do
-	print("***************************************")
-	print("***************************************")
-	print("**                                   **")
-	print(string.format("** Loop %08d                     **", uiLoopCounter))
-	print("**                                   **")
-	print("***************************************")
-	print("***************************************")
-
-	tArgs.uiLoopCounter = uiLoopCounter
-	basic_access_test(tArgs)
-	if fDoMemTest then
-		mem_test(tArgs)
-	end 
-	if fDoCallTest then
-		call_test(tArgs)
+if iRet == E_OK then
+	local fOk, tPlugin, strError = xpcall(
+		function () 
+			local tPlugin, strError = getPlugin(strPluginName)
+			if tPlugin ~= nil then
+				tPlugin:Connect()
+			end
+			return tPlugin, strError
+		end,
+		error_handler
+		)
+		
+	if fOk~=true or tPlugin==nil then
+		iRet = E_NO_PLUGIN
+		print(strError or "Failed to open plugin.")
+		
+	else
+		fOk = xpcall(
+			function () return test_main(tPlugin) end, 
+			error_handler
+			)
+		
+		tPlugin:Disconnect()
+		
+		if fOk~=true then
+			iRet = E_ERROR 
+		else 
+			iRet = E_OK
+		end
 	end
-	uiLoopCounter = uiLoopCounter + 1
 end
 
+if iRet == E_OK then
+
 print("")
-print(" #######  ##    ## ")
-print("##     ## ##   ##  ")
-print("##     ## ##  ##   ")
-print("##     ## #####    ")
-print("##     ## ##  ##   ")
-print("##     ## ##   ##  ")
-print(" #######  ##    ## ")
+print(" #######  ##    ##")
+print("##     ## ##   ## ")
+print("##     ## ##  ##  ")
+print("##     ## #####   ")
+print("##     ## ##  ##  ")
+print("##     ## ##   ## ")
+print(" #######  ##    ##")
 print("")
 
--- disconnect the plugin
-tPlugin:Disconnect()
+else
+
+print("")
+print("######## #######  #######   ######  ####### ")
+print("##       ##    ## ##    ## ##    ## ##    ##")
+print("##       ##    ## ##    ## ##    ## ##    ##")
+print("#######  #######  #######  ##    ## ####### ")
+print("##       ## ##    ## ##    ##    ## ## ##   ")
+print("##       ##  ##   ##  ##   ##    ## ##  ##  ")
+print("######## ##   ##  ##   ##   ######  ##   ## ")
+print("")
+
+end
+
+os.exit(iRet)
