@@ -2,8 +2,15 @@
 Change log/Release notes
 =========================
 
+V 2.4.6
+=======
+
+* JTAG: Set the adapter speed to 6 MHz at the end of chip_init; 1 MHz for netIOL.
+* Romloader test: Catch errors during the test (wrap in xpcall) and print OK/Error at the end.
+
 V 2.4.5
 =======
+
 * Fix DCC messaging on netx 90.
 * Fix chip type detection of netx 10.
 * Improved reset handling on netx 90, when SRST is not present/not connected.
