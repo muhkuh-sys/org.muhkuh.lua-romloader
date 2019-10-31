@@ -712,6 +712,12 @@ if iRet == E_OK then
 			local tPlugin, strError = getPlugin(strPluginName)
 			if tPlugin ~= nil then
 				tPlugin:Connect()
+				
+				strPluginName = tPlugin:GetName()
+				strPluginType = tPlugin:GetTyp()
+				iChipType = tPlugin:GetChiptyp()
+				strChipType = tPlugin:GetChiptypName(iChipType)
+				
 			end
 			return tPlugin, strError
 		end,
@@ -737,6 +743,10 @@ if iRet == E_OK then
 		end
 	end
 end
+
+print()
+printf("Plugin: %s (%s)", strPluginName or "None", strPluginType or "None")
+printf("Chip type: %s (%d)", strChipType or "None", iChipType or 0)
 
 if iRet == E_OK then
 
