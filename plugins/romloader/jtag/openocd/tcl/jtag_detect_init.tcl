@@ -16,6 +16,9 @@ set _USE_SOFT_RESET_ false
 #   Init/probe for JTAG interfaces
 # ###################################################################
 
+# By default, configure the adapter to 6 MHz eventually.
+set ADAPTER_MAX_KHZ 6000
+
 proc setup_interface_nxjtag_4000_usb {strLocation} {
 	interface ftdi
 	ftdi_location $strLocation
@@ -38,6 +41,9 @@ proc setup_interface_nxhx_generic {strLocation} {
 	transport select jtag
 	ftdi_vid_pid 0x0640 0x0028
 	adapter_khz 1000
+	
+	global ADAPTER_MAX_KHZ
+	set ADAPTER_MAX_KHZ 2000
 	
 	ftdi_layout_init 0x0108 0x010b
 	ftdi_layout_signal nTRST -data 0x0100
@@ -119,6 +125,9 @@ proc setup_interface_jtagkey {strLocation} {
 	ftdi_device_desc "Amontec JTAGkey"
 	ftdi_vid_pid 0x0403 0xcff8
 	adapter_khz 1000
+	
+	global ADAPTER_MAX_KHZ
+	set ADAPTER_MAX_KHZ 2000
 	
 	ftdi_layout_init 0x0c08 0x0f1b
 	ftdi_layout_signal nTRST -data 0x0100 -noe 0x0400

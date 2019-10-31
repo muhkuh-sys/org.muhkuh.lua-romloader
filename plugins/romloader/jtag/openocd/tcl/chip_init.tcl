@@ -90,6 +90,10 @@ proc setup_dcc_io {fEnableDCCOutput iChiptyp {ulSerialVectorAddr 0} {strDccCodeF
 	mdw $ulDccBufferPointerAddr
 }
 
+proc min {a b} {
+	return [expr $a < $b ? $a : $b]
+}
+
 proc init_chip {iChiptyp} {
 	set fEnableDCCOutput true
 
@@ -110,7 +114,12 @@ proc init_chip {iChiptyp} {
 	global ROMLOADER_CHIPTYP_NETIOLA
 	global ROMLOADER_CHIPTYP_NETIOLB
 
-
+	# Get the maximum adapter speed
+	global ADAPTER_MAX_KHZ
+	
+	# By default, use max. 6 MHz JTAG speed
+	set JTAG_MAX_KHZ 6000
+	
 	puts "init_chip $iChiptyp"
 
 
@@ -290,6 +299,8 @@ proc init_chip {iChiptyp} {
 		# reg sp 0x00007ff8
 		# reg ra 0x00007ffc # return address
 		
+		set JTAG_MAX_KHZ 1000
+		
 	} else {
 		puts "Unknown chip type $iChiptyp"
 	}
@@ -367,13 +378,9 @@ proc init_chip {iChiptyp} {
 		arm7_9 fast_memory_access enable
 	}
 	
-	
-	# Set the adapter speed: 1 MHz for netIOL, 6 MHz for other netXes.
-	if { $iChiptyp == $ROMLOADER_CHIPTYP_NETIOLA || $iChiptyp == $ROMLOADER_CHIPTYP_NETIOLB } {
-		adapter_khz 1000
-	} else {
-		adapter_khz 6000
-	}
+	puts "Max. frequency for adapter:  $ADAPTER_MAX_KHZ kHz"
+	puts "Max. JTAG frequency for CPU: $JTAG_MAX_KHZ kHz"
+	adapter_khz [min $JTAG_MAX_KHZ $ADAPTER_MAX_KHZ]
 }
 
 
