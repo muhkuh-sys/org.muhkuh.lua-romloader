@@ -73,7 +73,7 @@ local fDoCallTest          = true   -- call/output message test
 local fCheckOutput         = true   -- check messages from call test program 
                                     -- Set to false for JTAG without DCC support (netX 4000, 90, netIOL)
 local fCheckOutputEnd      = true   -- check the output at the return from a call   
-local USB_BLOCK_SIZE       = 63     -- max. USB block size
+local USB_BLOCK_SIZE       = 0x800  -- max. USB block size
 
 if __MUHKUH_TEST_PARAMETER then
 	ulTestSize           = tonumber(__MUHKUH_TEST_PARAMETER.testsize)             
