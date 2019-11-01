@@ -2,6 +2,20 @@
 Change log/Release notes
 =========================
 
+V 2.4.7
+=======
+
+* Romloader_test assumes that all messages up to 2048 bytes are transmitted 
+  in full, not split into multiple messages.
+* Romloader_test includes the chip type and plugin/interface name in the test 
+  result. 
+* Define max. frequencies for the JTAG adapter and the CPU, and set the adapter 
+  speed to the minimum of the two at the end of chip init. 
+  Generally, the JTAG speed (adapter_khz) is set to 6 MHz. 
+  When the netIOL is accessed, it is set to 1 MHz. 
+  When the onboard JTAG port of the NXHX boards with the FT2232D or the 
+  Amontec JTAGkey mini is used, it is set to 2 MHz.
+  
 V 2.4.6
 =======
 
