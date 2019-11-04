@@ -56,7 +56,7 @@ romloader_uart_provider::~romloader_uart_provider(void)
 
 
 
-int romloader_uart_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess)
+int romloader_uart_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess, lua_State *ptLuaStateForTableAccessOptional)
 {
 	size_t sizDeviceNames;
 	char **ppcDeviceNames;
@@ -65,6 +65,12 @@ int romloader_uart_provider::DetectInterfaces(lua_State *ptLuaStateForTableAcces
 	romloader_uart_reference *ptReference;
 	bool fDeviceIsBusy;
 
+
+	/* Process the plugin options. */
+	if( ptLuaStateForTableAccessOptional!=NULL )
+	{
+		processOptions(ptLuaStateForTableAccessOptional, 3);
+	}
 
 	/* detect all interfaces */
 	sizDeviceNames = romloader_uart_device_platform::ScanForPorts(&ppcDeviceNames);

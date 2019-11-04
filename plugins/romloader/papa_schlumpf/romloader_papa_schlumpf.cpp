@@ -94,7 +94,7 @@ romloader_papa_schlumpf_provider::~romloader_papa_schlumpf_provider(void)
 }
 
 
-int romloader_papa_schlumpf_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess)
+int romloader_papa_schlumpf_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess, lua_State *ptLuaStateForTableAccessOptional)
 {
 	int iResult;
 	romloader_papa_schlumpf_device::PAPA_SCHLUMPF_ERROR_T tResult;
@@ -114,6 +114,12 @@ int romloader_papa_schlumpf_provider::DetectInterfaces(lua_State *ptLuaStateForT
 
 	if( m_ptDevice!=NULL )
 	{
+		/* Process the plugin options. */
+		if( ptLuaStateForTableAccessOptional!=NULL )
+		{
+			processOptions(ptLuaStateForTableAccessOptional, 3);
+		}
+
 		/* Detect all devices. */
 		ptIf = NULL;
 		tResult = m_ptDevice->detect_interfaces(&ptIf, &sizIf);

@@ -51,7 +51,13 @@
 %{
 	$1 = L;
 %}
-
+%typemap(default) (lua_State *ptLuaStateForTableAccessOptional) {
+	$1 = NULL;
+}
+%typemap(in,checkfn="lua_istable") (lua_State *ptLuaStateForTableAccessOptional)
+%{
+	$1 = L;
+%}
 
 /* This typemap passes Lua state to the function. The function must create one
  * lua object on the stack. This is passes as the return value to lua.

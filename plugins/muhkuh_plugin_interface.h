@@ -78,6 +78,24 @@ typedef struct
 /*-----------------------------------*/
 
 
+class muhkuh_plugin_options
+{
+public:
+	muhkuh_plugin_options(muhkuh_log *ptLog);
+	muhkuh_plugin_options(const muhkuh_plugin_options *ptCloneMe);
+	~muhkuh_plugin_options(void);
+
+	void setLog(muhkuh_log *ptLog);
+	virtual void set_option(const char *pcKey, lua_State *ptLuaState, int iIndex) = 0;
+
+protected:
+	muhkuh_log *m_ptLog;
+};
+
+
+/*-----------------------------------*/
+
+
 class MUHKUH_EXPORT muhkuh_plugin
 {
 public:
@@ -117,6 +135,7 @@ protected:
 
 	muhkuh_plugin_provider *m_ptProvider;
 	muhkuh_log *m_ptLog;
+	muhkuh_plugin_options *m_ptPluginOptions;
 
 	bool m_fIsConnected;
 };
@@ -131,12 +150,12 @@ public:
 	muhkuh_plugin_provider(const char *pcPluginId);
 	~muhkuh_plugin_provider(void);
 
-	const char *GetName(void) const;
 	const char *GetID(void) const;
 	const muhkuh_plugin_version *GetVersion(void) const;
 	swig_type_info *GetTypeInfo(void) const;
+	virtual muhkuh_plugin_options *GetOptions(void);
 
-	virtual int DetectInterfaces(lua_State *ptLuaStateForTableAccess) = 0;
+	virtual int DetectInterfaces(lua_State *ptLuaStateForTableAccess, lua_State *ptLuaStateForTableAccessOptional) = 0;
 	virtual muhkuh_plugin *ClaimInterface(const muhkuh_plugin_reference *ptReference) = 0;
 	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin) = 0;
 
@@ -145,13 +164,15 @@ protected:
 
 	void add_reference_to_table(lua_State *ptLuaState, muhkuh_plugin_reference *ptReference);
 
-	const char *m_pcPluginName;
+	void processOptions(lua_State *ptLuaState, int iIndex);
+
 	const char *m_pcPluginId;
 	muhkuh_plugin_version m_tVersion;
 	swig_type_info *m_ptPluginTypeInfo;
 	swig_type_info *m_ptReferenceTypeInfo;
 
 	muhkuh_log *m_ptLog;
+	muhkuh_plugin_options *m_ptPluginOptions;
 };
 
 

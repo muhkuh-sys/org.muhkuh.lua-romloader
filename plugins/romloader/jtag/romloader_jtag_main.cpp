@@ -62,7 +62,7 @@ public:
 		m_ptJtagDevice = ptDevice;
 		m_ptClientData = ptClientData;
 	}
-	
+
 	/* always returns true, because m_ptJtagDevice->read_data32 raises an error if the read fails. */
 	bool read_data32(uint32_t ulAddress, uint32_t *pulValue)
 	{
@@ -83,6 +83,114 @@ private:
 
 /*-------------------------------------*/
 
+
+romloader_jtag_options::romloader_jtag_options(muhkuh_log *ptLog)
+ : muhkuh_plugin_options(ptLog)
+ , m_tOption_jtagReset(JTAG_RESET_HardReset)
+ , m_tOption_jtagFrequencyKhz(0)
+{
+}
+
+
+romloader_jtag_options::romloader_jtag_options(const romloader_jtag_options *ptCloneMe)
+ : muhkuh_plugin_options(ptCloneMe)
+ , m_tOption_jtagReset(ptCloneMe->m_tOption_jtagReset)
+ , m_tOption_jtagFrequencyKhz(ptCloneMe->m_tOption_jtagFrequencyKhz)
+{
+}
+
+
+romloader_jtag_options::~romloader_jtag_options(void)
+{
+}
+
+
+void romloader_jtag_options::set_option(const char *pcKey, lua_State *ptLuaState, int iIndex)
+{
+	int iType;
+	const char *pcValue;
+	lua_Number dValue;
+	unsigned long ulValue;
+	const JTAG_RESET_TO_NAME_T *ptCnt;
+	const JTAG_RESET_TO_NAME_T *ptEnd;
+	const JTAG_RESET_TO_NAME_T *ptHit;
+
+
+	if( strcmp(pcKey, "jtag_reset")==0 )
+	{
+		/* The value for the JTAG reset must be a string. */
+		iType = lua_type(ptLuaState, iIndex);
+		if( iType!=LUA_TSTRING )
+		{
+			m_ptLog->debug("Ignoring option '%s': the value must be a string, but it is a %s.", pcKey, lua_typename(ptLuaState, iType));
+		}
+		else
+		{
+			pcValue = lua_tostring(ptLuaState, iIndex);
+			ptCnt = atJtagResetToName;
+			ptEnd = atJtagResetToName + (sizeof(atJtagResetToName)/sizeof(atJtagResetToName[0]));
+			ptHit = NULL;
+			while( ptCnt<ptEnd )
+			{
+				if( strcmp(pcValue, ptCnt->pcName)==0 )
+				{
+					ptHit = ptCnt;
+					break;
+				}
+				else
+				{
+					++ptCnt;
+				}
+			}
+			if( ptHit==NULL )
+			{
+				m_ptLog->debug("Ignoring option '%s': the value '%s' is invalid.", pcKey, pcValue);
+			}
+			else
+			{
+				m_tOption_jtagReset = ptHit->tJtagReset;
+				m_ptLog->debug("Setting option '%s' to '%s'.", pcKey, pcValue);
+			}
+		}
+	}
+	else if( strcmp(pcKey, "jtag_frequency_khz")==0 )
+	{
+		/* The value for the JTAG frequency must be a number. */
+		iType = lua_type(ptLuaState, iIndex);
+		if( iType!=LUA_TNUMBER )
+		{
+			m_ptLog->debug("Ignoring option '%s': the value must be a number, but it is a %s.", pcKey, lua_typename(ptLuaState, iType));
+		}
+		else
+		{
+			dValue = lua_tonumber(ptLuaState, iIndex);
+			ulValue = (unsigned long)dValue;
+			m_tOption_jtagFrequencyKhz = ulValue;
+			m_ptLog->debug("Setting option '%s' to %d.", pcKey, ulValue);
+		}
+	}
+	else
+	{
+		m_ptLog->debug("Ignoring unknown option '%s'.", pcKey);
+	}
+}
+
+
+romloader_jtag_options::JTAG_RESET_T romloader_jtag_options::getOption_jtagReset(void)
+{
+	return m_tOption_jtagReset;
+}
+
+
+unsigned long romloader_jtag_options::getOption_jtagFrequencyKhz(void)
+{
+	return m_tOption_jtagFrequencyKhz;
+}
+
+
+/*-------------------------------------*/
+
+
 const char *romloader_jtag_provider::m_pcPluginNamePattern = "romloader_jtag_%s@%s@%s";
 
 romloader_jtag_provider::romloader_jtag_provider(swig_type_info *p_romloader_jtag, swig_type_info *p_romloader_jtag_reference)
@@ -98,6 +206,9 @@ romloader_jtag_provider::romloader_jtag_provider(swig_type_info *p_romloader_jta
 	/* Get the romloader_jtag LUA type. */
 	m_ptPluginTypeInfo = p_romloader_jtag;
 	m_ptReferenceTypeInfo = p_romloader_jtag_reference;
+
+	/* Create a new options container. */
+	m_ptPluginOptions = new romloader_jtag_options(m_ptLog);
 
 	m_ptJtagDevice = new romloader_jtag_openocd();
 	if( m_ptJtagDevice!=NULL )
@@ -128,12 +239,17 @@ romloader_jtag_provider::~romloader_jtag_provider(void)
 }
 
 
+romloader_jtag_options *romloader_jtag_provider::GetOptions(void)
+{
+	return (romloader_jtag_options*)m_ptPluginOptions;
+}
+
 /*
    Detect interfaces and targets.
    Calls romloader_jtag_openocd::detect.
    For each interface/target combination found, a romloader_jtag_reference is created and added to ptLuaStateForTableAccess.
  */
-int romloader_jtag_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess)
+int romloader_jtag_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess, lua_State *ptLuaStateForTableAccessOptional)
 {
 	int iResult;
 	romloader_jtag_openocd::ROMLOADER_JTAG_DETECT_ENTRY_T *ptEntries;
@@ -151,6 +267,12 @@ int romloader_jtag_provider::DetectInterfaces(lua_State *ptLuaStateForTableAcces
 
 	if( m_fIsInitialized==true && m_ptJtagDevice!=NULL )
 	{
+		/* Process the plugin options. */
+		if( ptLuaStateForTableAccessOptional!=NULL )
+		{
+			processOptions(ptLuaStateForTableAccessOptional, 3);
+		}
+
 		/* detect devices */
 		ptEntries = NULL;
 		iResult = m_ptJtagDevice->detect(&ptEntries, &sizEntries);
@@ -394,9 +516,14 @@ romloader_jtag::romloader_jtag(const char *pcName, const char *pcTyp, romloader_
  , m_pcLocation(NULL)
 {
 	int iResult;
+	romloader_jtag_options *ptOptions;
 
 
 	DEBUGMSG(ZONE_FUNCTION, ("+romloader_jtag::romloader_jtag(): pcName='%s', pcTyp='%s', ptProvider=%p, pcInterfaceName=%s, pcTargetName=%s\n", pcName, pcTyp, ptProvider, pcInterfaceName, pcTargetName));
+
+	/* Show the options. */
+	ptOptions = m_ptJtagProvider->GetOptions();
+	m_ptLog->debug("Options: jtag_reset=%d, jtag_frequency=%d", ptOptions->getOption_jtagReset(), ptOptions->getOption_jtagFrequencyKhz());
 
 	m_ptJtagDevice = new romloader_jtag_openocd();
 	if( m_ptJtagDevice!=NULL )
@@ -1019,7 +1146,7 @@ void romloader_jtag::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLU
 			tCallbackData.ptLuaFn = &tLuaFn;
 			tCallbackData.lCallbackUserData = lCallbackUserData;
 
- 			iResult = m_ptJtagDevice->call(ulNetxAddress, ulParameterR0, (PFN_MUHKUH_CALL_PRINT_CALLBACK) &romloader_jtag_callback_string_c, &tCallbackData);
+			iResult = m_ptJtagDevice->call(ulNetxAddress, ulParameterR0, (PFN_MUHKUH_CALL_PRINT_CALLBACK) &romloader_jtag_callback_string_c, &tCallbackData);
 			if (iResult == 0)
 			{
 				fOk = true;

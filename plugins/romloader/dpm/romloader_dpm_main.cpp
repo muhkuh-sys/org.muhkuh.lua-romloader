@@ -41,7 +41,7 @@ romloader_dpm_provider::~romloader_dpm_provider(void)
 {
 }
 
-int romloader_dpm_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess)
+int romloader_dpm_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess, lua_State *ptLuaStateForTableAccessOptional)
 {
 	size_t sizDeviceNames;
 	char **ppcDeviceNames;

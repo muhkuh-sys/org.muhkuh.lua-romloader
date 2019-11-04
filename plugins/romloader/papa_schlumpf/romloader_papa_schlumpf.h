@@ -101,7 +101,7 @@ public:
 	romloader_papa_schlumpf_provider(swig_type_info *p_romloader_papa_schlumpf, swig_type_info *p_romloader_papa_schlumpf_reference);
 	~romloader_papa_schlumpf_provider(void);
 
-	int DetectInterfaces(lua_State *ptLuaStateForTableAccess);
+	int DetectInterfaces(lua_State *ptLuaStateForTableAccess, lua_State *ptLuaStateForTableAccessOptional);
 
 	virtual romloader_papa_schlumpf *ClaimInterface(const muhkuh_plugin_reference *ptReference);
 	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin);

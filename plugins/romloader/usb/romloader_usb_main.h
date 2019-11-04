@@ -84,7 +84,7 @@ public:
 	romloader_usb_provider(swig_type_info *p_romloader_usb, swig_type_info *p_romloader_usb_reference);
 	~romloader_usb_provider(void);
 
-	int DetectInterfaces(lua_State *ptLuaStateForTableAccess);
+	int DetectInterfaces(lua_State *ptLuaStateForTableAccess, lua_State *ptLuaStateForTableAccessOptional);
 
 	virtual romloader_usb *ClaimInterface(const muhkuh_plugin_reference *ptReference);
 	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin);

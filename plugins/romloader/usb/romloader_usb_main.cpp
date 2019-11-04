@@ -95,7 +95,7 @@ romloader_usb_provider::~romloader_usb_provider(void)
 }
 
 
-int romloader_usb_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess)
+int romloader_usb_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess, lua_State *ptLuaStateForTableAccessOptional)
 {
 	int iResult;
 	romloader_usb_reference **pptReferences;
@@ -117,6 +117,12 @@ int romloader_usb_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 	}
 	else
 	{
+		/* Process the plugin options. */
+		if( ptLuaStateForTableAccessOptional!=NULL )
+		{
+			processOptions(ptLuaStateForTableAccessOptional, 3);
+		}
+
 		/* detect devices */
 		pptReferences = NULL;
 		iResult = m_ptUsbDevice->detect_interfaces(&pptReferences, &sizReferences, this);

@@ -115,7 +115,7 @@ public:
 	romloader_dpm_provider(swig_type_info *p_romloader_dpm, swig_type_info *p_romloader_dpm_reference);
 	~romloader_dpm_provider(void);
 
-	int DetectInterfaces(lua_State *ptLuaStateForTableAccess);
+	int DetectInterfaces(lua_State *ptLuaStateForTableAccess, lua_State *ptLuaStateForTableAccessOptional);
 
 	virtual romloader_dpm *ClaimInterface(const muhkuh_plugin_reference *ptReference);
 	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin);

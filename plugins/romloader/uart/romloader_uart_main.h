@@ -95,7 +95,7 @@ public:
 	romloader_uart_provider(swig_type_info *p_romloader_uart, swig_type_info *p_romloader_uart_reference);
 	~romloader_uart_provider(void);
 
-	int DetectInterfaces(lua_State *ptLuaStateForTableAccess);
+	int DetectInterfaces(lua_State *ptLuaStateForTableAccess, lua_State *ptLuaStateForTableAccessOptional);
 
 	virtual romloader_uart *ClaimInterface(const muhkuh_plugin_reference *ptReference);
 	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin);

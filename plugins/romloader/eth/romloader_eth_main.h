@@ -73,7 +73,7 @@ public:
 	romloader_eth_provider(swig_type_info *p_romloader_eth, swig_type_info *p_romloader_eth_reference);
 	~romloader_eth_provider(void);
 
-	int DetectInterfaces(lua_State *ptLuaStateForTableAccess);
+	int DetectInterfaces(lua_State *ptLuaStateForTableAccess, lua_State *ptLuaStateForTableAccessOptional);
 
 	virtual romloader_eth *ClaimInterface(const muhkuh_plugin_reference *ptReference);
 	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin);

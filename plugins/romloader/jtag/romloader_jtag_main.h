@@ -33,6 +33,47 @@ int romloader_jtag_callback_string_c(void *pvCallbackUserData, uint8_t *pucData,
 
 /*-----------------------------------*/
 
+
+class romloader_jtag_options : public muhkuh_plugin_options
+{
+public:
+	romloader_jtag_options(muhkuh_log *ptLog);
+	romloader_jtag_options(const romloader_jtag_options *ptCloneMe);
+	~romloader_jtag_options(void);
+
+	virtual void set_option(const char *pcKey, lua_State *ptLuaState, int iIndex);
+
+	typedef enum JTAG_RESET_ENUM
+	{
+		JTAG_RESET_HardReset = 0,
+		JTAG_RESET_SoftReset = 1,
+		JTAG_RESET_Attach = 2
+	} JTAG_RESET_T;
+
+	JTAG_RESET_T getOption_jtagReset(void);
+	unsigned long getOption_jtagFrequencyKhz(void);
+
+private:
+	typedef struct JTAG_RESET_TO_NAME_STRUCT
+	{
+		JTAG_RESET_T tJtagReset;
+		const char *pcName;
+	} JTAG_RESET_TO_NAME_T;
+
+	const JTAG_RESET_TO_NAME_T atJtagResetToName[3] =
+	{
+		{ JTAG_RESET_HardReset, "HardReset" },
+		{ JTAG_RESET_SoftReset, "SoftReset" },
+		{ JTAG_RESET_Attach,    "Attach" }
+	};
+
+	JTAG_RESET_T m_tOption_jtagReset;
+	unsigned long m_tOption_jtagFrequencyKhz;
+};
+
+
+/*-----------------------------------*/
+
 class romloader_jtag_provider;
 
 /*-----------------------------------*/
@@ -101,7 +142,8 @@ public:
 	romloader_jtag_provider(swig_type_info *p_romloader_jtag, swig_type_info *p_romloader_jtag_reference);
 	~romloader_jtag_provider(void);
 
-	int DetectInterfaces(lua_State *ptLuaStateForTableAccess);
+	virtual romloader_jtag_options *GetOptions(void);
+	int DetectInterfaces(lua_State *ptLuaStateForTableAccess, lua_State *ptLuaStateForTableAccessOptional);
 
 	virtual romloader_jtag *ClaimInterface(const muhkuh_plugin_reference *ptReference);
 	virtual bool ReleaseInterface(muhkuh_plugin *ptPlugin);

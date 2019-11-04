@@ -45,6 +45,7 @@ muhkuh_plugin::muhkuh_plugin(const char *pcName, const char *pcTyp, muhkuh_plugi
  , m_ptProvider(ptProvider)
  , m_ptLog(NULL)
  , m_fIsConnected(false)
+ , m_ptPluginOptions(NULL)
 {
 	// clone name and typ
 	m_pcName = clone_string(pcName, SIZ_MAX_MUHKUH_PLUGIN_STRING);
@@ -63,6 +64,7 @@ muhkuh_plugin::muhkuh_plugin(const char *pcName, const char *pcTyp, const char *
  , m_ptProvider(ptProvider)
  , m_ptLog(NULL)
  , m_fIsConnected(false)
+ , m_ptPluginOptions(NULL)
 {
 	/* Clone name, typ and location. */
 	m_pcName = clone_string(pcName, SIZ_MAX_MUHKUH_PLUGIN_STRING);
@@ -105,6 +107,10 @@ muhkuh_plugin::~muhkuh_plugin(void)
 		delete[] m_pcTyp;
 	}
 	delete[] m_pcLocation;
+	if( m_ptPluginOptions!=NULL )
+	{
+		delete m_ptPluginOptions;
+	}
 }
 
 
@@ -322,12 +328,12 @@ char *muhkuh_plugin_reference::clone_string(const char *pcStr, size_t sizMax)
 
 
 muhkuh_plugin_provider::muhkuh_plugin_provider(const char *pcPluginId)
- : m_pcPluginName(NULL)
- , m_pcPluginId(NULL)
+ : m_pcPluginId(NULL)
  , m_tVersion({0,0,0})
  , m_ptPluginTypeInfo(NULL)
  , m_ptReferenceTypeInfo(NULL)
  , m_ptLog(NULL)
+ , m_ptPluginOptions(NULL)
 {
 	/* Copy the ID. */
 	m_pcPluginId = clone_string(pcPluginId, SIZ_MAX_MUHKUH_PLUGIN_STRING);
@@ -342,21 +348,14 @@ muhkuh_plugin_provider::~muhkuh_plugin_provider(void)
 	{
 		delete m_ptLog;
 	}
-
-	if( m_pcPluginName!=NULL )
-	{
-		delete[] m_pcPluginName;
-	}
 	if( m_pcPluginId!=NULL )
 	{
 		delete[] m_pcPluginId;
 	}
-}
-
-
-const char *muhkuh_plugin_provider::GetName(void) const
-{
-	return m_pcPluginName;
+	if( m_ptPluginOptions!=NULL )
+	{
+		delete m_ptPluginOptions;
+	}
 }
 
 
@@ -375,6 +374,12 @@ const muhkuh_plugin_version *muhkuh_plugin_provider::GetVersion(void) const
 swig_type_info *muhkuh_plugin_provider::GetTypeInfo(void) const
 {
 	return m_ptPluginTypeInfo;
+}
+
+
+muhkuh_plugin_options *muhkuh_plugin_provider::GetOptions(void)
+{
+	return m_ptPluginOptions;
 }
 
 
@@ -415,5 +420,94 @@ void muhkuh_plugin_provider::add_reference_to_table(lua_State *ptLuaState, muhku
 	SWIG_NewPointerObj(ptLuaState, ptReference, m_ptReferenceTypeInfo, 1);
 	/* add the pointer object to the table */
 	lua_rawseti(ptLuaState, 2, sizTable+1);
+}
+
+
+void muhkuh_plugin_provider::processOptions(lua_State *ptLuaState, int iIndex)
+{
+	const char *pcId;
+	int iType;
+	const char *pcKey;
+	const char *pcValue;
+	lua_Number dValue;
+
+
+	/* Check if the state is not NULL and the element at the index is a
+	 * table. These checks should have been done already in the wrapper,
+	 * but it does not hurt to check here again.
+	 */
+	if( ptLuaState!=NULL && lua_istable(ptLuaState, iIndex)!=0 )
+	{
+		pcId = GetID();
+
+		lua_pushstring(ptLuaState, GetID());
+		lua_gettable(ptLuaState, iIndex);
+		iType = lua_type(ptLuaState, iIndex+1);
+		if( iType==LUA_TNIL )
+		{
+			m_ptLog->debug("No options for %s.", pcId);
+		}
+		else if( iType!=LUA_TTABLE )
+		{
+			m_ptLog->debug("Invalid options for %s. The value of the table entry ['%s'] must be a table, but here it is a %s.", pcId, pcId, lua_typename(ptLuaState, iType));
+		}
+		else
+		{
+			m_ptLog->debug("Found options for %s.", pcId);
+
+			/* Iterate over all elements in the table. */
+			/* table is in the stack at index 't' */
+			lua_pushnil(ptLuaState);
+			while( lua_next(ptLuaState, iIndex+1)!=0 )
+			{
+				/* The key must be a string. */
+				iType = lua_type(ptLuaState, -2);
+				if( iType==LUA_TSTRING )
+				{
+					/* Get the key as a string. */
+					pcKey = lua_tostring(ptLuaState, -2);
+
+					if( m_ptPluginOptions==NULL )
+					{
+						m_ptLog->debug("  Ignoring unsupported option %s (this plugin supports no options).", pcKey);
+					}
+					else
+					{
+						m_ptPluginOptions->set_option(pcKey, ptLuaState, -1);
+					}
+				}
+				else
+				{
+					m_ptLog->debug("Ignoring key of the type %s.", lua_typename(ptLuaState, iType));
+				}
+				lua_pop(ptLuaState, 1);
+			}
+		}
+
+		lua_pop(ptLuaState, 1);
+	}
+}
+
+
+/*-----------------------------------*/
+
+
+muhkuh_plugin_options::muhkuh_plugin_options(muhkuh_log *ptLog)
+ : m_ptLog(ptLog)
+{}
+
+
+muhkuh_plugin_options::muhkuh_plugin_options(const muhkuh_plugin_options *ptCloneMe)
+ : m_ptLog(ptCloneMe->m_ptLog)
+{}
+
+
+muhkuh_plugin_options::~muhkuh_plugin_options(void)
+{}
+
+
+void muhkuh_plugin_options::setLog(muhkuh_log *ptLog)
+{
+	m_ptLog = ptLog;
 }
 
