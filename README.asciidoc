@@ -1,54 +1,6 @@
-org.muhkuh.lua-lua51-romloader
-==============================
-
-== Status
-
-TravisCI: image:https://travis-ci.org/muhkuh-sys/org.muhkuh.lua-lua51-romloader.svg?branch=master["TravisCI build status", link="https://travis-ci.org/muhkuh-sys/org.muhkuh.lua-lua51-romloader"]
-
-AppVeyor: image:https://ci.appveyor.com/api/projects/status/github/muhkuh-sys/org.muhkuh.lua-lua51-romloader?svg=true["AppVeyor build status", link="https://ci.appveyor.com/project/docbacardi/org-muhkuh-lua-lua51-romloader"]
-
-circleci: image:https://circleci.com/gh/muhkuh-sys/org.muhkuh.lua-lua51-romloader.svg?style=shield["circleci build status", link="https://circleci.com/gh/muhkuh-sys/org.muhkuh.lua-lua51-romloader"]
+org.muhkuh.lua-romloader
+========================
 
 == About
 
-The romloader plugins provide access to netX based hardware to LUA scripts.
-
-== Infrastructure
-
-This chapter describes the current infrastructure of the project.
-
-The source code is hosted on GitHub: https://github.com/muhkuh-sys/org.muhkuh.lua-lua51-romloader
-
-Issues are collected here: https://github.com/muhkuh-sys/org.muhkuh.lua-lua51-romloader/issues
-
-Each push to the GitHub repository triggers a build on these services:
-
- * TravisCI using a Ubuntu 12.04 64bit VM: https://travis-ci.org/muhkuh-sys/org.muhkuh.lua-lua51-romloader
- * AppVeyor running on 32bit and 64bit Windows: https://ci.appveyor.com/project/docbacardi/org-muhkuh-lua-lua51-romloader
- * circleci running on Ubuntu 12.04 64bit VM: https://circleci.com/gh/muhkuh-sys/org.muhkuh.lua-lua51-romloader
-
-The build results from TravisCI are copied after auccess to Bintray: https://bintray.com/muhkuh/Muhkuh/lua51-romloader/view
-Please note that this is done for each build, and not only tagged ones.
-
-Build results for every commit are also available on circleci if you are logged in: https://circleci.com/gh/muhkuh-sys/org.muhkuh.lua-lua51-romloader
-
-Build results from a tag are released on GitHub: https://github.com/muhkuh-sys/org.muhkuh.lua-lua51-romloader/releases
-
-== Build on Windows
-
- * Install the latest Python 2.7 from https://www.python.org/ .
- * Install the latest CMake from https://cmake.org/ .
- * Download the latest MinGw-W64 from https://sourceforge.net/projects/mingw-w64/files/ . Use "x86_64-posix-seh" for 64bit builds, use "i686-posix-sjlj" for 32bit builds.
- * Extract the "i686-posix-sjlj" MinGw-W64 to C:/MinGW/i686-8.1.0-release-posix-sjlj-rt_v6-rev0 .
- * Extract the "x86_64-posix-seh" MinGw-W64 to C:/MinGW/x86_64-8.1.0-release-posix-seh-rt_v6-rev0 .
- * Download the latest Swig version from http://www.swig.org/download.html .
- * Extract the Swig archive to C:/Tools .
- 
- * Open a command prompt in the folder with this readme. Run the command "C:/Python27/python.exe build_artifact.py". 
-   To build for Windows:
-   python build_artifact.py windows <cpu_architecture>
-   To build for Ubuntu:
-   python build_artifact.py ubuntu <ubuntu_distribution_version> <cpu_architecture>
-   <cpu_architecture> is x86 or x86_64
- 
- * The results of the build can be found in the subdirectory "build/repository".
+The romloader plugins provide access to netX based hardware to LUA scripts. This is the version used in production tests.
