@@ -5,7 +5,7 @@ set(CMAKE_SYSTEM_PROCESSOR arm)
 # Source https://stackoverflow.com/questions/2670121/using-cmake-with-gnu-make-how-can-i-see-the-exact-commands
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-set(PKGBASE ${PRJ_DIR}/build/raspberry_arm64/packages)
+set(PKGBASE ${WORKING_DIR}/packages)
 
 set(tools /usr/bin)
 set(CMAKE_C_COMPILER ${tools}/aarch64-linux-gnu-gcc)
