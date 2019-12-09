@@ -295,6 +295,47 @@ proc init_chip {iChiptyp} {
 			
 		puts "Init netIOL (preliminary)"
 		
+		proc read_data32 {addr} {
+			set value(0) 0
+			mem2array value 32 $addr 1
+			return $value(0)
+		}
+
+		# Initialize the PLL.
+		if { [read_data32 0x000003b4] == 3 } {
+			puts "The PLL seems to be running already."
+		} else {
+			# Assume a reference clock of 8 MHz.
+
+			set pll_rd 0
+			set pll_fd 98
+			set pll_od 0
+			set sysclk_div 1
+
+			mwh 0x000003ac [expr {0x6c00 + $pll_fd}]
+			set ulValue [read_data32 0x000003ac]
+			puts "0x000003ac $ulValue"
+
+			mwh 0x000003b0 [expr {0x6802 + 4*$pll_rd + 256*$pll_od}]
+			set ulValue [read_data32 0x000003b0]
+			puts "0x000003b0 $ulValue"
+			after 500
+
+			mwh 0x000003b0 [expr {0x6800 + 4*$pll_rd + 256*$pll_od}]
+			set ulValue [read_data32 0x000003b0]
+			puts "0x000003b0 $ulValue"
+			after 500
+
+			mwh 0x000003b4 [expr {0xad80 + 2*$sysclk_div}]
+			set ulValue [read_data32 0x000003b4]
+			puts "0x000003b4 $ulValue"
+
+			mwh 0x000003b4 [expr {0xad81 + 2*$sysclk_div}]
+			set ulValue [read_data32 0x000003b4]
+			puts "0x000003b4 $ulValue"
+
+		}
+
 		# bp 0x00007ffc 4 hw
 		# reg sp 0x00007ff8
 		# reg ra 0x00007ffc # return address
