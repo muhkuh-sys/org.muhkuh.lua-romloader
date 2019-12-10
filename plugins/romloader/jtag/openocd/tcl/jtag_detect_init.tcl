@@ -2,9 +2,12 @@ puts "loading script jtag_detect_init.tcl"
 
 source [find netx_swreset.tcl]
 
-set _USE_SOFT_RESET_ false
-# Uncomment the following line if SRST is not present on the JTAG adapter or not connected to the target.
-#  set _USE_SOFT_RESET_ true
+# HardReset
+#set __JTAG_RESET__ 0
+# SoftReset
+#set __JTAG_RESET__ 1
+# Attach
+set __JTAG_RESET__ 2
 
 
 # todo/wishlist:
@@ -215,7 +218,7 @@ proc probe_interface {} {
 proc probe_cpu {strCpuID} {
 	echo "+probe_cpu $strCpuID"
 	global SC_CFG_RESULT
-	global _USE_SOFT_RESET_
+	global __JTAG_RESET__
 	set SC_CFG_RESULT 0
 	
 	if { $strCpuID == "netX_ARM966" } {
@@ -232,7 +235,7 @@ proc probe_cpu {strCpuID} {
 		if { $SC_CFG_RESULT=={OK} } {
 			echo {creating target netX_ARM966.cpu}
 			target create netX_ARM966.cpu arm966e -endian little -chain-position netX_ARM966.cpu
-			if $_USE_SOFT_RESET_ {
+			if { $__JTAG_RESET__==1 } {
 				netX_ARM966.cpu configure -event reset-assert { reset_assert }
 				netX_ARM966.cpu configure -event reset-deassert-post { reset_deassert_post }
 			}
@@ -253,7 +256,7 @@ proc probe_cpu {strCpuID} {
 		
 		if { $SC_CFG_RESULT=={OK} } {
 			target create netX_ARM926.cpu arm926ejs -endian little -chain-position netX_ARM926.cpu
-			if $_USE_SOFT_RESET_ {
+			if { $__JTAG_RESET__==1 } {
 				netX_ARM926.cpu configure -event reset-assert { reset_assert }
 				netX_ARM926.cpu configure -event reset-deassert-post { reset_deassert_post }
 			}
@@ -276,7 +279,7 @@ proc probe_cpu {strCpuID} {
 			target create netx4000.r7 cortex_r4 -chain-position netx4000.dap -coreid 0 -dbgbase 0x80130000
 			netx4000.r7 configure -work-area-phys 0x05080000 -work-area-size 0x4000 -work-area-backup 1
 			netx4000.r7 configure -event reset-assert-post "cortex_r4 dbginit"
-			if $_USE_SOFT_RESET_ {
+			if { $__JTAG_RESET__==1 } {
 				netx4000.r7 configure -event reset-assert { reset_assert_netx4000 }
 				netx4000.r7 configure -event reset-deassert-post { reset_deassert_post_netx4000 }
 			}			
@@ -398,35 +401,48 @@ proc reset_netIOL {} {
 }
 
 proc reset_netx90_MPW_COM {} {
-	# if srst is not fitted use SYSRESETREQ to perform a soft reset
-	cortex_m reset_config sysresetreq
-	
-	init
-	reset init
+	global __JTAG_RESET__
+
+
+	if { $__JTAG_RESET__==2 } {
+		init
+		halt
+	} else {
+		# if srst is not fitted use SYSRESETREQ to perform a soft reset
+		cortex_m reset_config sysresetreq
+
+		init
+		reset init
+	}
 }
 
 
 proc reset_netX_ARM926_ARM966 {} {
-	global _USE_SOFT_RESET_
+	global __JTAG_RESET__
 
-	if $_USE_SOFT_RESET_ {
-		echo "Using software reset"
-		reset_config trst_only
-		jtag_ntrst_delay 500
-	} else {
-		echo "Using hardware reset (SRST)"
-		reset_config trst_and_srst
-		adapter_nsrst_delay 500
-		jtag_ntrst_delay 500
+	switch $__JTAG_RESET__ {
+		0 {
+			echo "Using hardware reset (SRST)"
+			reset_config trst_and_srst
+			adapter_nsrst_delay 500
+			jtag_ntrst_delay 500
+
+			init
+			reset init
+		}
+		1 {
+			echo "Using software reset"
+			reset_config trst_only
+			jtag_ntrst_delay 500
+
+			init
+			reset init
+		}
+		2 {
+			init
+			halt
+		}
 	}
-	
-	echo {+init}
-	init
-	echo {-init}
-	
-	echo {+reset init}
-	reset init
-	echo {-reset init}
 }
 
 # ###################################################################
@@ -474,146 +490,151 @@ proc netx90_stop_xpec_xpic {} {
 }
 
 proc reset_netx90_COM {}  {
-    puts "+reset_netx90_COM"
-    global _USE_SOFT_RESET_
-    if $_USE_SOFT_RESET_ {
-        echo "Using software reset"
-        reset_config none
-        #reset_config trst_only
-        jtag_ntrst_delay 500
-        cortex_m reset_config sysresetreq
+    global __JTAG_RESET__
+    if { $__JTAG_RESET__==2 } {
+        init
+        halt
     } else {
-        echo "Using hardware reset"
-        #reset_config trst_and_srst
-        reset_config srst_only 
-        #reset_config trst_only
-        adapter_nsrst_delay 500
-        jtag_ntrst_delay 500
-    }
-    
-
-    # This breakpoint should be hit when the ROM code enables debugging, 
-    # either when processing an exec chunk or when entering the console mode.
-    set BP_ADDR_APP_JTAG_ENABLED_RC5 0x1729e
-    set BP_ADDR_APP_JTAG_ENABLED_RC6 0x170a2
-
-    # The ROM code always hits this breakpoint, but it is before any initializations have been made. 
-    # We want to use this one only when the netX 90 is in test mode.
-    set BP_ADDR_ROM_START 0x170;  # Same for RC5 and RC6
-
-    # Wait for 2000 ms for a breakpoint to be hit.
-    set HBOOT_BP_TIMEOUT 2000
-
-    init
-    
-    global ROMLOADER_CHIPTYP_NETX90
-    global ROMLOADER_CHIPTYP_NETX90B
-    set iChiptyp [ get_chiptyp ]
-        
-    if {$iChiptyp == $ROMLOADER_CHIPTYP_NETX90} {
-        puts "netx 90 Rev.0"
-        set BP_ADDR_APP_JTAG_ENABLED $BP_ADDR_APP_JTAG_ENABLED_RC5
-    } elseif {$iChiptyp == $ROMLOADER_CHIPTYP_NETX90B} {
-        puts "netx 90 Rev.1"
-        set BP_ADDR_APP_JTAG_ENABLED $BP_ADDR_APP_JTAG_ENABLED_RC6
-    } else {
-        puts "reset_netx90_COM: Invalid chip type"
-    }
-    
-    halt
-    puts "Clear reset_ctrl"
-    netx90_unlock_write_reg 0xff0016b0 0x1ff
-    mdw 0xff0016b0
-    resume
-    
-    puts "Trying to halt the CPU in ROM breakpoint 1"
-    bp $BP_ADDR_APP_JTAG_ENABLED 2 hw
-    reset
-    
-    if {[catch {wait_halt $HBOOT_BP_TIMEOUT} err] == 0} {
-        # The COM CPU is now halted.
-        # Remove the breakpoint.
-        # We assume that 
-        # - the chip has been reset and all other masters (xPEC, xPIC...) are stopped
-        # - the analog parameters have been configured by the ROM code.
-        # Therefore, we don't need to do any further initialization here.
-        puts "CPU halted in ROM breakpoint 1"
-        rbp $BP_ADDR_APP_JTAG_ENABLED
-        
-        # The PLL is configured. Set the JTAG frequency to 1 MHz.
-        adapter_khz 1000
-
-    } else {
-  
-        # The COM CPU wasn't halted.
-        puts "Timed out while waiting for ROM breakpoint 1."
-        puts "Trying ROM breakpoint 2 (early startup)."
-        
-        # Remove the breakpoint.
-        # Set a new one to be hit when the chip is in test mode and reset.
-        rbp $BP_ADDR_APP_JTAG_ENABLED
-        bp $BP_ADDR_ROM_START 2 hw
-        
-        reset
-        
-        if {[catch {wait_halt $HBOOT_BP_TIMEOUT} err] == 0} {
-    
-            # The COM CPU is now halted.
-            # Remove the breakpoint and initialize the chip.
-            # We assume that
-            # - the chip has been reset and all other masters (xPEC, xPIC...) are stopped
-            # - However, the analog parameters have not been set, so we do that here.
-            puts "CPU halted in ROM breakpoint 2"
-            rbp $BP_ADDR_ROM_START
-            netx90_setup_analog
-    
-            # The PLL is configured now. Set the JTAG frequency to 1 MHz.
-            adapter_khz 1000
-            
+        puts "+reset_netx90_COM"
+        if { $__JTAG_RESET__==1 } {
+            echo "Using software reset"
+            reset_config none
+            #reset_config trst_only
+            jtag_ntrst_delay 500
+            cortex_m reset_config sysresetreq
         } else {
+            echo "Using hardware reset"
+            #reset_config trst_and_srst
+            reset_config srst_only 
+            #reset_config trst_only
+            adapter_nsrst_delay 500
+            jtag_ntrst_delay 500
+        }
     
-            # The COM CPU has not reached either of the breakpoints.
-            # We try to halt it anyway.
-            puts "===================================================================="
-            puts "WARNING: Timed out while waiting for ROM breakpoint 2 (early startup)."
-            puts "===================================================================="
-            puts "Trying to halt the CPU"
-            
+
+        # This breakpoint should be hit when the ROM code enables debugging, 
+        # either when processing an exec chunk or when entering the console mode.
+        set BP_ADDR_APP_JTAG_ENABLED_RC5 0x1729e
+        set BP_ADDR_APP_JTAG_ENABLED_RC6 0x170a2
+
+        # The ROM code always hits this breakpoint, but it is before any initializations have been made. 
+        # We want to use this one only when the netX 90 is in test mode.
+        set BP_ADDR_ROM_START 0x170;  # Same for RC5 and RC6
+
+        # Wait for 2000 ms for a breakpoint to be hit.
+        set HBOOT_BP_TIMEOUT 2000
+
+        init
+    
+        global ROMLOADER_CHIPTYP_NETX90
+        global ROMLOADER_CHIPTYP_NETX90B
+        set iChiptyp [ get_chiptyp ]
+        
+        if {$iChiptyp == $ROMLOADER_CHIPTYP_NETX90} {
+            puts "netx 90 Rev.0"
+            set BP_ADDR_APP_JTAG_ENABLED $BP_ADDR_APP_JTAG_ENABLED_RC5
+        } elseif {$iChiptyp == $ROMLOADER_CHIPTYP_NETX90B} {
+            puts "netx 90 Rev.1"
+            set BP_ADDR_APP_JTAG_ENABLED $BP_ADDR_APP_JTAG_ENABLED_RC6
+        } else {
+            puts "reset_netx90_COM: Invalid chip type"
+        }
+    
+        halt
+        puts "Clear reset_ctrl"
+        netx90_unlock_write_reg 0xff0016b0 0x1ff
+        mdw 0xff0016b0
+        resume
+    
+        puts "Trying to halt the CPU in ROM breakpoint 1"
+        bp $BP_ADDR_APP_JTAG_ENABLED 2 hw
+        reset
+    
+        if {[catch {wait_halt $HBOOT_BP_TIMEOUT} err] == 0} {
+            # The COM CPU is now halted.
             # Remove the breakpoint.
-            rbp $BP_ADDR_ROM_START
-            
-            puts "Trying to halt the CPU."
-            if {[catch {halt $HBOOT_BP_TIMEOUT} err] == 0} {
+            # We assume that 
+            # - the chip has been reset and all other masters (xPEC, xPIC...) are stopped
+            # - the analog parameters have been configured by the ROM code.
+            # Therefore, we don't need to do any further initialization here.
+            puts "CPU halted in ROM breakpoint 1"
+            rbp $BP_ADDR_APP_JTAG_ENABLED
+        
+            # The PLL is configured. Set the JTAG frequency to 1 MHz.
+            adapter_khz 1000
 
+        } else {
+  
+            # The COM CPU wasn't halted.
+            puts "Timed out while waiting for ROM breakpoint 1."
+            puts "Trying ROM breakpoint 2 (early startup)."
+        
+            # Remove the breakpoint.
+            # Set a new one to be hit when the chip is in test mode and reset.
+            rbp $BP_ADDR_APP_JTAG_ENABLED
+            bp $BP_ADDR_ROM_START 2 hw
+        
+            reset
+        
+            if {[catch {wait_halt $HBOOT_BP_TIMEOUT} err] == 0} {
+    
                 # The COM CPU is now halted.
-                # Initialize the chip.
+                # Remove the breakpoint and initialize the chip.
                 # We assume that
-                # - The analog parameters have been set up 
-                # - some xpec/xPIC units may be running, so we stop them.
-                puts "===================================================================="
-                puts "ERROR: CPU halted in undefined state. This is not reliable."
-                puts "       Notice: Use console mode if possible."
-                puts "===================================================================="
-                netx90_stop_xpec_xpic
-                # netx90_setup_analog
-                
-                # We assume that the PLL is configured. Set the JTAG frequency to 1 MHz.
+                # - the chip has been reset and all other masters (xPEC, xPIC...) are stopped
+                # - However, the analog parameters have not been set, so we do that here.
+                puts "CPU halted in ROM breakpoint 2"
+                rbp $BP_ADDR_ROM_START
+                netx90_setup_analog
+    
+                # The PLL is configured now. Set the JTAG frequency to 1 MHz.
                 adapter_khz 1000
-
+            
             } else {
-                # The COM CPU wasn't halted.
+    
+                # The COM CPU has not reached either of the breakpoints.
+                # We try to halt it anyway.
                 puts "===================================================================="
-                puts "Timed out while waiting for halt."
-                puts "ERROR: Failed to halt the CPU"
+                puts "WARNING: Timed out while waiting for ROM breakpoint 2 (early startup)."
                 puts "===================================================================="
+                puts "Trying to halt the CPU"
+            
+                # Remove the breakpoint.
+                rbp $BP_ADDR_ROM_START
+            
+                puts "Trying to halt the CPU."
+                if {[catch {halt $HBOOT_BP_TIMEOUT} err] == 0} {
 
+                    # The COM CPU is now halted.
+                    # Initialize the chip.
+                    # We assume that
+                    # - The analog parameters have been set up 
+                    # - some xpec/xPIC units may be running, so we stop them.
+                    puts "===================================================================="
+                    puts "ERROR: CPU halted in undefined state. This is not reliable."
+                    puts "       Notice: Use console mode if possible."
+                    puts "===================================================================="
+                    netx90_stop_xpec_xpic
+                    # netx90_setup_analog
+                
+                    # We assume that the PLL is configured. Set the JTAG frequency to 1 MHz.
+                    adapter_khz 1000
+
+                } else {
+                    # The COM CPU wasn't halted.
+                    puts "===================================================================="
+                    puts "Timed out while waiting for halt."
+                    puts "ERROR: Failed to halt the CPU"
+                    puts "===================================================================="
+
+                }
             }
         }
-    }
     
-    puts "reset_ctrl:"
-    mdw 0xff0016b0
-    puts "-reset_netx90_COM"
+        puts "reset_ctrl:"
+        mdw 0xff0016b0
+        puts "-reset_netx90_COM"
+    }
 }
 
 # ###################################################################
@@ -648,59 +669,66 @@ proc disable_firewalls { } {
 }
 
 proc reset_netx4000 {} {
-	global _USE_SOFT_RESET_
-
-	puts "+reset_netx4000"
-	
-	if $_USE_SOFT_RESET_ {
-		echo "Using software reset"
-		reset_config trst_only
-	} else {
-		echo "Using hardware reset (SRST)"
-		reset_config trst_and_srst separate
-		adapter_nsrst_delay 500
-		#adapter_nsrst_delay 0
-		adapter_nsrst_assert_width 50
-	}
-
-
-	netx4000.r7 configure -event reset-init {
-		puts "Halt R7"
+	global __JTAG_RESET__
+	if { $__JTAG_RESET__==2 } {
+		init
 		halt
-		# firewalls must be disabled, otherwise reading address 0 (chip type identification) will fail.
-		disable_firewalls
+
+		dap memaccess
+		dap apcsw 1
+	} else {
+		puts "+reset_netx4000"
+	
+		if { $__JTAG_RESET__==1 } {
+			echo "Using software reset"
+			reset_config trst_only
+		} else {
+			echo "Using hardware reset (SRST)"
+			reset_config trst_and_srst separate
+			adapter_nsrst_delay 500
+			#adapter_nsrst_delay 0
+			adapter_nsrst_assert_width 50
+		}
+
+
+		netx4000.r7 configure -event reset-init {
+			puts "Halt R7"
+			halt
+			# firewalls must be disabled, otherwise reading address 0 (chip type identification) will fail.
+			disable_firewalls
+		}
+	
+		# netx4000.a9_0 configure -event reset-init {
+		# 	puts "Halt A9/0"
+		# 	halt
+		# }
+	
+		# netx4000.a9_1 configure -event reset-init {
+		# 	puts "Halt A9/1"
+		# 	halt
+		# }
+	
+		puts "init"
+		init
+	
+		# puts "dap apid 0"
+		# dap apid 0
+		# puts "dap apid 1"
+		# dap apid 1
+		# puts "dap apid 2"
+		# dap apid 2
+	
+		# puts "dap info"
+		# dap info
+		puts "dap memaccess"
+		dap memaccess
+		puts "dap apcsw 1"
+		dap apcsw 1
+	
+		puts "reset init"
+		reset init
 	}
-	
-	# netx4000.a9_0 configure -event reset-init {
-	# 	puts "Halt A9/0"
-	# 	halt
-	# }
-	
-	# netx4000.a9_1 configure -event reset-init {
-	# 	puts "Halt A9/1"
-	# 	halt
-	# }
-	
-	puts "init"
-	init
-	
-	# puts "dap apid 0"
-	# dap apid 0
-	# puts "dap apid 1"
-	# dap apid 1
-	# puts "dap apid 2"
-	# dap apid 2
-	
-	# puts "dap info"
-	# dap info
-	puts "dap memaccess"
-	dap memaccess
-	puts "dap apcsw 1"
-	dap apcsw 1
-	
-	puts "reset init"
-	reset init
-	
+
 	targets netx4000.r7
 	
 	netx4000_enable_tcm	
