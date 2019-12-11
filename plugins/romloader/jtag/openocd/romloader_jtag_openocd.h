@@ -5,6 +5,7 @@
 #define __ROMLOADER_JTAG_OPENOCD_H__
 
 #include "../../romloader_def.h"
+#include "../../../muhkuh_log.h"
 
 #include <libusb.h>
 #if (!defined(LIBUSB_API_VERSION)) || (defined(LIBUSB_API_VERSION) && LIBUSB_API_VERSION<0x01000102)
@@ -27,7 +28,7 @@ typedef int (*PFN_MUHKUH_CALL_PRINT_CALLBACK) (void *pvCallbackUserData, uint8_t
 class romloader_jtag_openocd
 {
 public:
-	romloader_jtag_openocd(void);
+	romloader_jtag_openocd(muhkuh_log *ptLog);
 	~romloader_jtag_openocd(void);
 
 
@@ -52,7 +53,9 @@ public:
 		const char *pcCode;
 	} TARGET_SETUP_STRUCT_T;
 
-	typedef void * (*PFN_MUHKUH_OPENOCD_INIT_T) (const char *pcScriptSearchDir);
+	typedef void (*PFN_MUHKUH_OPENOCD_OUTPUT_HANDLER_T) (void *pvUser, const char *pcLine, size_t sizLine);
+
+	typedef void * (*PFN_MUHKUH_OPENOCD_INIT_T) (const char *pcScriptSearchDir, PFN_MUHKUH_OPENOCD_OUTPUT_HANDLER_T pfnOutputHandler, void *pvOutputHanderData);
 	typedef int (*PFN_MUHKUH_OPENOCD_GET_RESULT_T) (void *pvContext, char *pcBuffer, size_t sizBufferMax);
 	typedef int (*PFN_MUHKUH_OPENOCD_COMMAND_RUN_LINE_T) (void *pvContext, const char *pcLine);
 	typedef void (*PFN_MUHKUH_OPENOCD_UNINIT_T) (void *pvContext);
@@ -118,7 +121,6 @@ public:
 
 	int initialize(void);
 	int detect(ROMLOADER_JTAG_DETECT_ENTRY_T **pptEntries, size_t *psizEntries);
-	void uninit(void);
 
 	/* Open the connection to the device. */
 	int connect(const char *pcInterfaceName, const char *pcTargetName, const char *pcLocation);
@@ -153,6 +155,10 @@ public:
 	/* Get the suggested chunk size for read_image and write_image. */
 	uint32_t get_image_chunk_size(void);
 
+	static void openocd_output_handler(void *pvUser, const char *pcLine, size_t sizLine);
+	void local_openocd_output_handler(const char *pcLine, size_t sizLine);
+
+
 private:
 	static const OPENOCD_NAME_RESOLVE_T atOpenOcdResolve[13];
 
@@ -183,6 +189,8 @@ private:
 	size_t m_sizDetectedMax;
 
 	libusb_context *m_ptLibUsbContext;
+
+	muhkuh_log *m_ptLog;
 
 	void get_plugin_path(void);
 	void get_openocd_path(void);

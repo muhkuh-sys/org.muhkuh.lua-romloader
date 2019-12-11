@@ -210,7 +210,7 @@ romloader_jtag_provider::romloader_jtag_provider(swig_type_info *p_romloader_jta
 	/* Create a new options container. */
 	m_ptPluginOptions = new romloader_jtag_options(m_ptLog);
 
-	m_ptJtagDevice = new romloader_jtag_openocd();
+	m_ptJtagDevice = new romloader_jtag_openocd(m_ptLog);
 	if( m_ptJtagDevice!=NULL )
 	{
 		/* Try to initialize the JTAG driver. */
@@ -525,7 +525,7 @@ romloader_jtag::romloader_jtag(const char *pcName, const char *pcTyp, romloader_
 	ptOptions = m_ptJtagProvider->GetOptions();
 	m_ptLog->debug("Options: jtag_reset=%d, jtag_frequency=%d", ptOptions->getOption_jtagReset(), ptOptions->getOption_jtagFrequencyKhz());
 
-	m_ptJtagDevice = new romloader_jtag_openocd();
+	m_ptJtagDevice = new romloader_jtag_openocd(m_ptLog);
 	if( m_ptJtagDevice!=NULL )
 	{
 		/* Try to initialize the JTAG driver. */

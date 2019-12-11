@@ -21,7 +21,7 @@
 
 
 
-romloader_jtag_openocd::romloader_jtag_openocd(void)
+romloader_jtag_openocd::romloader_jtag_openocd(muhkuh_log *ptLog)
  : fJtagDeviceIsConnected(false)
  , m_ptDetected(NULL)
  , m_sizDetectedCnt(0)
@@ -30,8 +30,11 @@ romloader_jtag_openocd::romloader_jtag_openocd(void)
  , m_pcOpenocdDataPath(NULL)
  , m_pcOpenocdSharedObjectPath(NULL)
  , m_ptLibUsbContext(NULL)
+ , m_ptLog(NULL)
 {
 	memset(&m_tJtagDevice, 0, sizeof(ROMLOADER_JTAG_DEVICE_T));
+
+	m_ptLog = ptLog;
 
 	libusb_init(&m_ptLibUsbContext);
 	libusb_set_option(m_ptLibUsbContext, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
@@ -94,7 +97,7 @@ void romloader_jtag_openocd::get_plugin_path(void)
 	fResult = GetModuleHandleEx(dwFlags, pfnMember, &hModule);
 	if( fResult==0 )
 	{
-		fprintf(stderr, "Failed to get the module handle: %d\n", GetLastError());
+		m_ptLog->fatal("Failed to get the module handle: %d", GetLastError());
 	}
 	else
 	{
@@ -102,7 +105,7 @@ void romloader_jtag_openocd::get_plugin_path(void)
 		pcPath = (char*)malloc(dwBufferSize);
 		if( pcPath==NULL )
 		{
-			fprintf(stderr, "Failed to allocate %d bytes for the path buffer.\n", dwBufferSize);
+			m_ptLog->fatal("Failed to allocate %d bytes for the path buffer.", dwBufferSize);
 		}
 		else
 		{
@@ -114,13 +117,13 @@ void romloader_jtag_openocd::get_plugin_path(void)
 			 */
 			if( dwResult>0 && dwResult<dwBufferSize )
 			{
-				fprintf(stderr, "Module path: '%s'\n", pcPath);
+				m_ptLog->debug("Module path: '%s'", pcPath);
 
 				/* Find the last backslash in the path. */
 				pcSlash = strrchr(pcPath, '\\');
 				if( pcSlash==NULL )
 				{
-					fprintf(stderr, "Failed to find the end of the path!\n");
+					m_ptLog->fatal("Failed to find the end of the path!");
 					free(pcPath);
 					pcPath = NULL;
 				}
@@ -134,7 +137,7 @@ void romloader_jtag_openocd::get_plugin_path(void)
 					m_pcPluginPath = (char*)malloc(sizPath + 1);
 					if( m_pcPluginPath==NULL )
 					{
-						fprintf(stderr, "Failed to allocate a buffer for the plugin path.\n");
+						m_ptLog->fatal("Failed to allocate a buffer for the plugin path.");
 					}
 					else
 					{
@@ -147,7 +150,7 @@ void romloader_jtag_openocd::get_plugin_path(void)
 			}
 			else
 			{
-				fprintf(stderr, "Failed to get the module file name: %d\n", dwResult);
+				m_ptLog->fatal("Failed to get the module file name: %d", dwResult);
 				free(pcPath);
 				pcPath = NULL;
 			}
@@ -168,13 +171,13 @@ void romloader_jtag_openocd::get_plugin_path(void)
 	iResult = dladdr(romloader_jtag_openocd::atOpenOcdResolve, &tDlInfo);
 	if( iResult==0 )
 	{
-		fprintf(stderr, "Failed to get information about the shared object.\n");
+		m_ptLog->fatal("Failed to get information about the shared object.");
 	}
 	else
 	{
 		if( tDlInfo.dli_fname!=NULL )
 		{
-			fprintf(stderr, "Path to the shared object: '%s'\n", tDlInfo.dli_fname);
+			m_ptLog->debug("Path to the shared object: '%s'", tDlInfo.dli_fname);
 
 			/* Is this an absolute path? */
 			iResult = -1;
@@ -193,14 +196,14 @@ void romloader_jtag_openocd::get_plugin_path(void)
 				pcCwd = (char*)malloc(sizCwdBufferSize);
 				if( pcCwd==NULL )
 				{
-					fprintf(stderr, "Failed to allocate a buffer for the current working folder.\n");
+					m_ptLog->fatal("Failed to allocate a buffer for the current working folder.");
 				}
 				else
 				{
 					pcGetCwdResult = getcwd(pcCwd, sizCwdBufferSize);
 					if( pcGetCwdResult==NULL )
 					{
-						fprintf(stderr, "Failed to get the current working folder.\n");
+						m_ptLog->fatal("Failed to get the current working folder.");
 					}
 					else
 					{
@@ -221,7 +224,7 @@ void romloader_jtag_openocd::get_plugin_path(void)
 				pcSlash = strrchr(tDlInfo.dli_fname, '/');
 				if( pcSlash==NULL )
 				{
-					fprintf(stderr, "Failed to find the end of the path!\n");
+					m_ptLog->fatal("Failed to find the end of the path!");
 					if( pcCwd!=NULL )
 					{
 						free(pcCwd);
@@ -235,7 +238,7 @@ void romloader_jtag_openocd::get_plugin_path(void)
 					m_pcPluginPath = (char*)malloc(sizCwd + iCwdAddSlash + sizPath + 1);
 					if( m_pcPluginPath==NULL )
 					{
-						fprintf(stderr, "Failed to allocate a buffer for the path.\n");
+						m_ptLog->fatal("Failed to allocate a buffer for the path.");
 						if( pcCwd!=NULL )
 						{
 							free(pcCwd);
@@ -333,12 +336,12 @@ void romloader_jtag_openocd::get_openocd_path(void)
 
 	if( m_pcOpenocdDataPath!=NULL && m_pcOpenocdSharedObjectPath!=NULL )
 	{
-		fprintf(stderr, "The path to the OpenOCD data files is:    '%s'\n", m_pcOpenocdDataPath);
-		fprintf(stderr, "The path to the OpenOCD shared object is: '%s'\n", m_pcOpenocdSharedObjectPath);
+		m_ptLog->debug("The path to the OpenOCD data files is:    '%s'", m_pcOpenocdDataPath);
+		m_ptLog->debug("The path to the OpenOCD shared object is: '%s'", m_pcOpenocdSharedObjectPath);
 	}
 	else
 	{
-		fprintf(stderr, "Failed to get the path to the OpenOCD shared object.\n");
+		m_ptLog->fatal("Failed to get the path to the OpenOCD shared object.");
 	}
 }
 
@@ -509,8 +512,7 @@ int romloader_jtag_openocd::openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 	{
 		/* Failed to open the shared library. */
 		sharedlib_get_error(acError, sizeof(acError));
-		fprintf(stderr, "Failed to open the shared library %s.\n", m_pcOpenocdSharedObjectPath);
-		fprintf(stderr, "Error: %s\n", acError);
+		m_ptLog->fatal("Failed to open the shared library %s: %s", m_pcOpenocdSharedObjectPath, acError);
 		iResult = -1;
 	}
 	else
@@ -538,25 +540,23 @@ int romloader_jtag_openocd::openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 		if( iResult==0 )
 		{
 			/* Call the init function and pass the data path as a search path for scripts. */
-			pvOpenocdContext = ptDevice->tFunctions.tFn.pfnInit(m_pcOpenocdDataPath);
+			pvOpenocdContext = ptDevice->tFunctions.tFn.pfnInit(m_pcOpenocdDataPath, romloader_jtag_openocd::openocd_output_handler, this);
 			if( pvOpenocdContext==NULL )
 			{
-				fprintf(stderr, "Failed to initialize the OpenOCD device context.\n");
+				m_ptLog->fatal("Failed to initialize the OpenOCD device context.");
 				iResult = -1;
 			}
 			else
 			{
 				ptDevice->pvOpenocdContext = pvOpenocdContext;
 
-				fprintf(stderr, "Loading script.\n");
+				m_ptLog->debug("Loading script.");
 				iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, "source [find jtag_detect_init.tcl]");
 				if( iResult!=0 )
 				{
-					fprintf(stderr, "Failed to load the script: %d\n", iResult);
+					m_ptLog->fatal("Failed to load the script: %d", iResult);
 					iResult = -1;
 				}
-
-
 			}
 		}
 
@@ -613,18 +613,18 @@ int romloader_jtag_openocd::initialize(void)
 		iResult = tDevice.tFunctions.tFn.pfnCommandRunLine(tDevice.pvOpenocdContext, "version\n");
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "Failed to run the version command!\n");
+			m_ptLog->fatal("Failed to run the version command!");
 		}
 		else
 		{
 			iResult = tDevice.tFunctions.tFn.pfnGetResult(tDevice.pvOpenocdContext, acResult, sizeof(acResult));
 			if( iResult!=0 )
 			{
-				fprintf(stderr, "Failed to get the result for the version command.\n");
+				m_ptLog->fatal("Failed to get the result for the version command.");
 			}
 			else
 			{
-				fprintf(stderr, "OpenOCD version %s\n", acResult);
+				m_ptLog->debug("OpenOCD version %s", acResult);
 			}
 		}
 
@@ -712,12 +712,12 @@ int romloader_jtag_openocd::setup_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, c
 	snprintf(acCommand, sizeof(acCommand)-1, ptIfCfg->pcCode_Setup, pcLocation);
 
 	/* Run the command chunk. */
-	fprintf(stderr, "Run setup chunk for interface %s.\n", ptIfCfg->pcID);
+	m_ptLog->debug("Run setup chunk for interface %s.", ptIfCfg->pcID);
 	iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, acCommand);
 	if( iResult!=0 )
 	{
-		fprintf(stderr, "Failed to run the chunk: %d\n", iResult);
-		fprintf(stderr, "Failed command: %s\n", acCommand);
+		m_ptLog->debug("Failed to run the chunk: %d", iResult);
+		m_ptLog->debug("Failed command: %s", acCommand);
 	}
 
 	return iResult;
@@ -745,12 +745,12 @@ int romloader_jtag_openocd::probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, R
 	else
 	{
 		/* Run the probe chunk. */
-		fprintf(stderr, "Run probe chunk for interface %s.\n", ptIfCfg->pcID);
+		m_ptLog->debug("Run probe chunk for interface %s.", ptIfCfg->pcID);
 		iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, ptIfCfg->pcCode_Probe);
 		if( iResult!=0 )
 		{
 			/* This is no fatal error. It just means that this interface can not be used. */
-			fprintf(stderr, "Failed to run the chunk: %d\n", iResult);
+			m_ptLog->debug("Failed to run the chunk: %d", iResult);
 			iResult = 1;
 		}
 		else
@@ -759,12 +759,12 @@ int romloader_jtag_openocd::probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, R
 			if( iResult!=0 )
 			{
 				/* This is a fatal error. */
-				fprintf(stderr, "Failed to get the result.\n");
+				m_ptLog->error("Failed to get the result.");
 				iResult = -1;
 			}
 			else
 			{
-				fprintf(stderr, "Result from probe: %s\n", strResult);
+				m_ptLog->debug("Result from probe: %s", strResult);
 				iResult = strncmp(strResult, "OK", 3);
 				if( iResult!=0 )
 				{
@@ -773,7 +773,7 @@ int romloader_jtag_openocd::probe_interface(ROMLOADER_JTAG_DEVICE_T *ptDevice, R
 				}
 				else
 				{
-					fprintf(stderr, "Found interface %s!\n", ptIfCfg->pcID);
+					m_ptLog->debug("Found interface %s!", ptIfCfg->pcID);
 				}
 			}
 		}
@@ -829,12 +829,12 @@ int romloader_jtag_openocd::probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice, cons
 	}
 	else
 	{
-		fprintf(stderr, "Running detect code for target %s!\n", ptTargetCfg->pcID);
+		m_ptLog->debug("Running detect code for target %s!", ptTargetCfg->pcID);
 		iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, ptTargetCfg->pcCode);
 		if( iResult!=0 )
 		{
 			/* This is no fatal error. It just means that this CPU is not present. */
-			fprintf(stderr, "Failed to run the command chunk: %d\n", iResult);
+			m_ptLog->debug("Failed to run the command chunk: %d", iResult);
 			iResult = 1;
 		}
 		else
@@ -843,12 +843,12 @@ int romloader_jtag_openocd::probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice, cons
 			if( iResult!=0 )
 			{
 				/* This is a fatal error. */
-				fprintf(stderr, "Failed to get the result for the code.\n");
+				m_ptLog->error("Failed to get the result for the code.");
 				iResult = -1;
 			}
 			else
 			{
-				fprintf(stderr, "Result from detect: %s\n", strResult);
+				m_ptLog->debug("Result from detect: %s", strResult);
 				iResult = strncmp(strResult, "OK", 3);
 				if( iResult!=0 )
 				{
@@ -857,7 +857,7 @@ int romloader_jtag_openocd::probe_target(ROMLOADER_JTAG_DEVICE_T *ptDevice, cons
 				}
 				else
 				{
-					fprintf(stderr, "Found target %s!\n", ptTargetCfg->pcID);
+					m_ptLog->debug("Found target %s!", ptTargetCfg->pcID);
 				}
 			}
 		}
@@ -893,7 +893,7 @@ int romloader_jtag_openocd::detect_target(ROMLOADER_JTAG_MATCHING_USB_LOCATIONS_
 		}
 		else
 		{
-			fprintf(stderr, "Detecting target %s\n", ptCnt->pcID);
+			m_ptLog->debug("Detecting target %s", ptCnt->pcID);
 			iResult = probe_target(&tDevice, ptLocation->ptIfSetup, ptLocation->acPathString, ptCnt);
 
 			openocd_close(&tDevice);
@@ -994,7 +994,7 @@ int romloader_jtag_openocd::detect(ROMLOADER_JTAG_DETECT_ENTRY_T **pptEntries, s
 	if( ssizDevList<0 )
 	{
 		/* failed to detect devices */
-		fprintf(stderr, "romloader_jtag_openocd(%p): failed to detect usb devices: %ld:%s\n", this, ssizDevList, libusb_strerror((libusb_error)ssizDevList));
+		m_ptLog->fatal("romloader_jtag_openocd(%p): failed to detect usb devices: %ld:%s", this, ssizDevList, libusb_strerror((libusb_error)ssizDevList));
 		iResult = -1;
 	}
 	else
@@ -1062,7 +1062,7 @@ int romloader_jtag_openocd::detect(ROMLOADER_JTAG_DETECT_ENTRY_T **pptEntries, s
 						--pcPathString;
 						*pcPathString = 0;
 
-						printf("Found '%s' (VID%04x/PID%04x) at %s.\n", ptIfSetupHit->pcID, usUsbVendorId, usUsbDeviceId, ptUsbLocationCnt->acPathString);
+						m_ptLog->debug("Found '%s' (VID%04x/PID%04x) at %s.", ptIfSetupHit->pcID, usUsbVendorId, usUsbDeviceId, ptUsbLocationCnt->acPathString);
 
 						++sizLocations;
 						if( sizLocations>=(sizeof(atUsbLocations)/sizeof(ROMLOADER_JTAG_MATCHING_USB_LOCATIONS_T)) )
@@ -1084,7 +1084,7 @@ int romloader_jtag_openocd::detect(ROMLOADER_JTAG_DETECT_ENTRY_T **pptEntries, s
 		m_ptDetected = (ROMLOADER_JTAG_DETECT_ENTRY_T*)malloc(m_sizDetectedMax*sizeof(ROMLOADER_JTAG_DETECT_ENTRY_T));
 		if( m_ptDetected==NULL )
 		{
-			fprintf(stderr, "Failed to allocate %zd bytes of memory for the detection results!\n", m_sizDetectedMax*sizeof(ROMLOADER_JTAG_DETECT_ENTRY_T));
+			m_ptLog->fatal("Failed to allocate %zd bytes of memory for the detection results!", m_sizDetectedMax*sizeof(ROMLOADER_JTAG_DETECT_ENTRY_T));
 		}
 		else
 		{
@@ -1093,7 +1093,7 @@ int romloader_jtag_openocd::detect(ROMLOADER_JTAG_DETECT_ENTRY_T **pptEntries, s
 			ptUsbLocationEnd = atUsbLocations + sizLocations;
 			while( ptUsbLocationCnt<ptUsbLocationEnd )
 			{
-				fprintf(stderr, "Detecting interface '%s' on path %s.\n", ptUsbLocationCnt->ptIfSetup->pcID, ptUsbLocationCnt->acPathString);
+				m_ptLog->debug("Detecting interface '%s' on path %s.", ptUsbLocationCnt->ptIfSetup->pcID, ptUsbLocationCnt->acPathString);
 
 				/* Open the shared library. */
 				iResult = openocd_open(&tDevice);
@@ -1163,21 +1163,21 @@ int romloader_jtag_openocd::connect(const char *pcInterfaceName, const char *pcT
 
 	if( fJtagDeviceIsConnected==true )
 	{
-		fprintf(stderr, "romloader_jtag_openocd::connect: Already connected.\n");
+		m_ptLog->error("romloader_jtag_openocd::connect: Already connected.");
 	}
 	else
 	{
 		ptInterface = find_interface(pcInterfaceName);
 		if( ptInterface==NULL )
 		{
-			fprintf(stderr, "Could not find interface %s!\n", pcInterfaceName);
+			m_ptLog->error("Could not find interface %s!", pcInterfaceName);
 		}
 		else
 		{
 			ptTarget = find_target(pcTargetName);
 			if( ptTarget==NULL )
 			{
-				fprintf(stderr, "Could not find target %s!\n", pcTargetName);
+				m_ptLog->error("Could not find target %s!", pcTargetName);
 			}
 			else
 			{
@@ -1189,11 +1189,11 @@ int romloader_jtag_openocd::connect(const char *pcInterfaceName, const char *pcT
 					if( iResult==0 )
 					{
 						/* Stop the target. */
-						fprintf(stderr, "Running reset code.\n");
+						m_ptLog->debug("Running reset code.");
 						iResult = m_tJtagDevice.tFunctions.tFn.pfnCommandRunLine(m_tJtagDevice.pvOpenocdContext, "reset_board");
 						if( iResult!=0 )
 						{
-							fprintf(stderr, "Failed to run the reset code: %d\n", iResult);
+							m_ptLog->error("Failed to run the reset code: %d", iResult);
 							iResult = -1;
 						}
 						else
@@ -1220,30 +1220,29 @@ int romloader_jtag_openocd::init_chip(ROMLOADER_CHIPTYP tChiptyp)
 	int iResult;
 	char strCmd[32];
 
-	fprintf(stderr, "Loading chip init script.\n");
+	m_ptLog->debug("Loading chip init script.");
 	iResult = m_tJtagDevice.tFunctions.tFn.pfnCommandRunLine(m_tJtagDevice.pvOpenocdContext, "source [find chip_init.tcl]");
 	if( iResult!=0 )
 	{
-		fprintf(stderr, "Failed to load the chip init script: %d\n", iResult);
+		m_ptLog->fatal("Failed to load the chip init script: %d", iResult);
 		iResult = -1;
 	}
 	else
 	{
-		fprintf(stderr, "Running init_chip script.\n");
+		m_ptLog->debug("Running init_chip script.");
 		memset(strCmd, 0, sizeof(strCmd));
 		snprintf(strCmd, sizeof(strCmd)-1, "init_chip %d", tChiptyp);
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnCommandRunLine(m_tJtagDevice.pvOpenocdContext, strCmd);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "Failed to run the init_chip script: %d\n", iResult);
+			m_ptLog->debug("Failed to run the init_chip script: %d", iResult);
 			iResult = -1;
 		}
 		else
 		{
-			fprintf(stderr, "Chip init complete.\n");
+			m_ptLog->debug("Chip init complete.");
 			iResult = 0;
 		}
-
 	}
 
 	return iResult;
@@ -1274,7 +1273,7 @@ int romloader_jtag_openocd::read_data08(uint32_t ulNetxAddress, uint8_t *pucData
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnReadData08(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, pucData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "read_data08: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			m_ptLog->error("read_data08: Failed to read address 0x%08x: %d", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
@@ -1299,7 +1298,7 @@ int romloader_jtag_openocd::read_data16(uint32_t ulNetxAddress, uint16_t *pusDat
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnReadData16(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, pusData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "read_data16: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			m_ptLog->error("read_data16: Failed to read address 0x%08x: %d", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
@@ -1324,7 +1323,7 @@ int romloader_jtag_openocd::read_data32(uint32_t ulNetxAddress, uint32_t *pulDat
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnReadData32(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, pulData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "read_data32: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			m_ptLog->error("read_data32: Failed to read address 0x%08x: %d", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
@@ -1349,7 +1348,7 @@ int romloader_jtag_openocd::read_image(uint32_t ulNetxAddress, uint8_t *pucData,
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnReadImage(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, pucData, sizData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "read_image: Failed to read address 0x%08x: %d\n", ulNetxAddress, iResult);
+			m_ptLog->error("read_image: Failed to read address 0x%08x: %d", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
@@ -1374,7 +1373,7 @@ int romloader_jtag_openocd::write_data08(uint32_t ulNetxAddress, uint8_t ucData)
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnWriteData08(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, ucData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "write_data08: Failed to write address 0x%08x: %d\n", ulNetxAddress, iResult);
+			m_ptLog->error("write_data08: Failed to write address 0x%08x: %d", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
@@ -1399,7 +1398,7 @@ int romloader_jtag_openocd::write_data16(uint32_t ulNetxAddress, uint16_t usData
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnWriteData16(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, usData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "write_data16: Failed to write address 0x%08x: %d\n", ulNetxAddress, iResult);
+			m_ptLog->error("write_data16: Failed to write address 0x%08x: %d", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
@@ -1424,7 +1423,7 @@ int romloader_jtag_openocd::write_data32(uint32_t ulNetxAddress, uint32_t ulData
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnWriteData32(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, ulData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "write_data32: Failed to write address 0x%08x: %d\n", ulNetxAddress, iResult);
+			m_ptLog->error("write_data32: Failed to write address 0x%08x: %d", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
@@ -1449,13 +1448,15 @@ int romloader_jtag_openocd::write_image(uint32_t ulNetxAddress, const uint8_t *p
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnWriteImage(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, pucData, sizData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "write_image: Failed to write address 0x%08x: %d\n", ulNetxAddress, iResult);
+			m_ptLog->error("write_image: Failed to write address 0x%08x: %d", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
 
 	return iResult;
 }
+
+
 
 /* int muhkuh_openocd_call(void *pvContext, uint32_t ulNetxAddress, uint32_t ulR0, PFN_MUHKUH_CALL_PRINT_CALLBACK pfnCallback, void *pvCallbackUserData) */
 int romloader_jtag_openocd::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, PFN_MUHKUH_CALL_PRINT_CALLBACK pfnCallback, void *pvCallbackUserData)
@@ -1472,14 +1473,14 @@ int romloader_jtag_openocd::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnCall(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, ulParameterR0, pfnCallback, pvCallbackUserData);
 		if( iResult!=0 )
 		{
-			fprintf(stderr, "call: Failed to call code at address 0x%08x: %d\n", ulNetxAddress, iResult);
+			m_ptLog->error("call: Failed to call code at address 0x%08x: %d", ulNetxAddress, iResult);
 			iResult = -1;
 		}
 	}
 
-
 	return iResult;
 }
+
 
 
 uint32_t romloader_jtag_openocd::get_image_chunk_size(void)
@@ -1493,27 +1494,22 @@ uint32_t romloader_jtag_openocd::get_image_chunk_size(void)
 
 
 
-void romloader_jtag_openocd::uninit(void)
+void romloader_jtag_openocd::openocd_output_handler(void *pvUser, const char *pcLine, size_t sizLine)
 {
-#if 0
-	struct command_context *ptCmdCtx;
+	romloader_jtag_openocd *ptThis;
 
 
-	if( ptJtagDevice!=NULL )
-	{
-		ptCmdCtx = (struct command_context *)(ptJtagDevice->pvOpenocdContext);
-		if( ptCmdCtx!=NULL )
-		{
-			unregister_all_commands(ptCmdCtx, NULL);
-
-			/* free commandline interface */
-			command_done(ptCmdCtx);
-
-			adapter_quit();
-
-			ptJtagDevice->pvOpenocdContext = NULL;
-		}
-	}
-#endif
+	ptThis = (romloader_jtag_openocd*)pvUser;
+	ptThis->local_openocd_output_handler(pcLine, sizLine);
 }
 
+
+
+void romloader_jtag_openocd::local_openocd_output_handler(const char *pcLine, size_t sizLine)
+{
+	char acFormat[16];
+
+
+	snprintf(acFormat, sizeof(acFormat), "%%%zds", sizLine);
+	m_ptLog->debug(acFormat, pcLine);
+}
