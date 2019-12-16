@@ -14,5 +14,5 @@ set(CMAKE_CXX_COMPILER ${tools}/aarch64-linux-gnu-g++)
 # Source: https://stackoverflow.com/questions/11423313/cmake-cross-compiling-c-flags-from-toolchain-file-ignored
 UNSET(CMAKE_C_FLAGS CACHE)
 UNSET(CMAKE_CXX_FLAGS CACHE)
-set(CMAKE_C_FLAGS "-I${PKGBASE}/usr/include/ -L${PKGBASE}/lib/aarch64-linux-gnu/ -Xlinker -rpath=${PKGBASE}/lib/aarch64-linux-gnu/" CACHE STRING "" FORCE)
-set(CMAKE_CXX_FLAGS "-I${PKGBASE}/usr/include/ -L${PKGBASE}/lib/aarch64-linux-gnu/ -Xlinker -rpath=${PKGBASE}/lib/aarch64-linux-gnu/" CACHE STRING "" FORCE)
+set(CMAKE_C_FLAGS "-I${PKGBASE}/usr/include/ -L${PKGBASE}/usr/lib/aarch64-linux-gnu/ -L${PKGBASE}/lib/aarch64-linux-gnu/ -Xlinker -rpath=${PKGBASE}/lib/aarch64-linux-gnu/" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS "-I${PKGBASE}/usr/include/ -L${PKGBASE}/usr/lib/aarch64-linux-gnu/ -L${PKGBASE}/lib/aarch64-linux-gnu/ -Xlinker -rpath=${PKGBASE}/lib/aarch64-linux-gnu/" CACHE STRING "" FORCE)
