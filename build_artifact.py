@@ -227,7 +227,8 @@ print(strProjectVersionVcs, strProjectVersionVcsLong)
 astrCmd = [
     'cmake',
     '-DCMAKE_INSTALL_PREFIX=""',
-    '-DPRJ_DIR=%s' % strCfg_projectFolder
+    '-DPRJ_DIR=%s' % strCfg_projectFolder,
+    '-DWORKING_DIR=%s' % strCfg_workingFolder
 ]
 astrCmd.extend(astrCMAKE_COMPILER)
 astrCmd.append(os.path.join(strCfg_projectFolder, 'external'))
