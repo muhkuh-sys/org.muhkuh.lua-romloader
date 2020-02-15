@@ -51,7 +51,7 @@ public:
 	romloader::TRANSPORTSTATUS_T SendPacket(const void *pvData, size_t sizData);
 	romloader::TRANSPORTSTATUS_T RecvPacket(unsigned char *pucData, size_t sizData, unsigned long ulTimeout, size_t *psizPacket);
 
-	static size_t ScanForServers(char ***pppcPortNames);
+	static size_t ScanForServers(char ***pppcPortNames, const char *pcInterface);
 
 
 private:

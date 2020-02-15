@@ -34,6 +34,79 @@
 
 /*-------------------------------------*/
 
+
+romloader_eth_options::romloader_eth_options(muhkuh_log *ptLog)
+ : muhkuh_plugin_options(ptLog)
+ , m_pcInterface(NULL)
+{
+}
+
+
+romloader_eth_options::romloader_eth_options(const romloader_eth_options *ptCloneMe)
+ : muhkuh_plugin_options(ptCloneMe)
+ , m_pcInterface(NULL)
+{
+	if( ptCloneMe->m_pcInterface!=NULL )
+	{
+		m_pcInterface = strdup(ptCloneMe->m_pcInterface);
+	}
+}
+
+
+romloader_eth_options::~romloader_eth_options(void)
+{
+	if( m_pcInterface!=NULL )
+	{
+		free(m_pcInterface);
+		m_pcInterface = NULL;
+	}
+}
+
+
+void romloader_eth_options::set_option(const char *pcKey, lua_State *ptLuaState, int iIndex)
+{
+	int iType;
+	const char *pcValue;
+
+
+	if( strcmp(pcKey, "interface")==0 )
+	{
+		/* The value for the Ethernet interface must be a string. */
+		iType = lua_type(ptLuaState, iIndex);
+		if( iType!=LUA_TSTRING )
+		{
+			m_ptLog->debug("Ignoring option '%s': the value must be a string, but it is a %s.", pcKey, lua_typename(ptLuaState, iType));
+		}
+		else
+		{
+			/* Discard any old settings. */
+			if( m_pcInterface!=NULL )
+			{
+				free(m_pcInterface);
+				m_pcInterface = NULL;
+			}
+
+			/* Copy the settings. */
+			pcValue = lua_tostring(ptLuaState, iIndex);
+			m_pcInterface = strdup(pcValue);
+			m_ptLog->debug("Setting option '%s' to '%s'.", pcKey, pcValue);
+		}
+	}
+	else
+	{
+		m_ptLog->debug("Ignoring unknown option '%s'.", pcKey);
+	}
+}
+
+
+const char *romloader_eth_options::getOption_interface(void)
+{
+	return m_pcInterface;
+}
+
+
+/*-------------------------------------*/
+
 const char *romloader_eth_provider::m_pcPluginNamePattern = "romloader_eth_%s";
 
 romloader_eth_provider::romloader_eth_provider(swig_type_info *p_romloader_eth, swig_type_info *p_romloader_eth_reference)
@@ -42,6 +115,9 @@ romloader_eth_provider::romloader_eth_provider(swig_type_info *p_romloader_eth, 
 	/* get the romloader_eth lua type */
 	m_ptPluginTypeInfo = p_romloader_eth;
 	m_ptReferenceTypeInfo = p_romloader_eth_reference;
+
+	/* Create a new options container. */
+	m_ptPluginOptions = new romloader_eth_options(m_ptLog);
 }
 
 
@@ -59,6 +135,8 @@ int romloader_eth_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 	char **ppcDeviceNamesEnd;
 	romloader_eth_reference *ptReference;
 	bool fDeviceIsBusy;
+	romloader_eth_options *ptPluginOptions;
+	const char *pcInterface;
 
 
 	/* Process the plugin options. */
@@ -68,7 +146,9 @@ int romloader_eth_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess
 	}
 
 	/* detect all interfaces */
-	sizDeviceNames = romloader_eth_device_platform::ScanForServers(&ppcDeviceNames);
+	ptPluginOptions = (romloader_eth_options*)m_ptPluginOptions;
+	pcInterface = ptPluginOptions->getOption_interface();
+	sizDeviceNames = romloader_eth_device_platform::ScanForServers(&ppcDeviceNames, pcInterface);
 	m_ptLog->debug("found %ld devs, %p", sizDeviceNames, ppcDeviceNames);
 
 	if( ppcDeviceNames!=NULL )

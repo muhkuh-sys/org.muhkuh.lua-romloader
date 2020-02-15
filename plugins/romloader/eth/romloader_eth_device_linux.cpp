@@ -197,7 +197,7 @@ romloader::TRANSPORTSTATUS_T romloader_eth_device_linux::RecvPacket(unsigned cha
 
 
 
-size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
+size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames, const char *pcInterface)
 {
 	char **ppcDeviceNames;
 	char *pcDeviceName;
@@ -268,9 +268,15 @@ size_t romloader_eth_device_linux::ScanForServers(char ***pppcDeviceNames)
 			}
 			else
 			{
-				// use DEFAULT interface
-				iaddr.s_addr = INADDR_ANY;
-//				iaddr.s_addr = inet_addr("192.168.64.1");
+				if( pcInterface!=NULL && strlen(pcInterface)!=0 )
+				{
+					iaddr.s_addr = inet_addr("192.168.64.1");
+				}
+				else
+				{
+					/* Use the default interface. */
+					iaddr.s_addr = INADDR_ANY;
+				}
 
 				// Set the outgoing interface to DEFAULT
 				setsockopt(tSocket, IPPROTO_IP, IP_MULTICAST_IF, &iaddr, sizeof(struct in_addr));

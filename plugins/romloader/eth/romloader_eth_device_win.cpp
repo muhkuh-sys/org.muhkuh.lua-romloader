@@ -432,7 +432,7 @@ void romloader_eth_device_win::ScanAdapter(ROMLOADER_ETH_REFLIST_T* ptRefList, u
 }
 
 
-size_t romloader_eth_device_win::ScanForServers(char ***pppcDeviceNames)
+size_t romloader_eth_device_win::ScanForServers(char ***pppcDeviceNames, const char *pcInterface __attribute__((unused)))
 {
 
 	IP_ADAPTER_INFO *pAdaptersInfoList = NULL;

@@ -40,6 +40,24 @@
 
 /*-----------------------------------*/
 
+
+class romloader_eth_options : public muhkuh_plugin_options
+{
+public:
+	romloader_eth_options(muhkuh_log *ptLog);
+	romloader_eth_options(const romloader_eth_options *ptCloneMe);
+	~romloader_eth_options(void);
+
+	virtual void set_option(const char *pcKey, lua_State *ptLuaState, int iIndex);
+
+	const char *getOption_interface(void);
+
+private:
+	char *m_pcInterface;
+};
+
+/*-----------------------------------*/
+
 class romloader_eth_provider;
 
 /*-----------------------------------*/
