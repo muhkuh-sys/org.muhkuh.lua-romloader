@@ -5,7 +5,7 @@ Change log/Release notes
 V 2.4.8
 =======
 
-* Add the onboard JTAG interface of the NXHX 90-DRIVE board (VID 0x1939 PID 0x0031).
+* Add the onboard USB-JTAG interface of the NXHX 90-DRIVE board (VID 0x1939 PID 0x0031).
 
 V 2.4.7
 =======
