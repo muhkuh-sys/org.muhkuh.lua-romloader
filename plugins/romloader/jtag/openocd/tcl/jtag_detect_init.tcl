@@ -307,7 +307,7 @@ proc probe_cpu {strCpuID} {
 		if { $SC_CFG_RESULT=={OK} } {
 			target create netx90.comm cortex_m -chain-position netx90.dap -coreid 0 -ap-num 2
 			netx90.comm configure -event reset-init { halt }
-			netx90.comm configure -work-area-phys 0x00040000 -work-area-size 0x4000 -work-area-backup 1
+			netx90.comm configure -work-area-phys 0x0003C000 -work-area-size 0x4000 -work-area-backup 1
 
 			global strTarget
 			set strTarget netx90_COM

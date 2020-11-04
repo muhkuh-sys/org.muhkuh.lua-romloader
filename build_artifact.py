@@ -89,6 +89,7 @@ strCfg_jonchkiProjectConfiguration = os.path.join(
 # -
 # --------------------------------------------------------------------------
 
+print("platform:")
 print(tPlatform)
 
 astrCMAKE_COMPILER = None
@@ -144,7 +145,7 @@ if tPlatform['host_distribution_id'] == 'ubuntu':
             os.chdir(packagesPath)
             subProcessPath = os.path.join(strCfg_projectFolder, 'cmake', 'tools')
             subProcessCall = '%s/get_dependencies.sh libudev-dev:arm64' % subProcessPath
-            print(subProcessCall)
+            print("subProcessCall: %s" % subProcessCall)
             subprocess.check_call(subProcessCall, shell=True)
             os.chdir(strCfg_workingFolder)
             astrCMAKE_COMPILER = [

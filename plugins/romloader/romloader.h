@@ -114,6 +114,41 @@ typedef union MIV3_PACKET_SYNC_UNION
 MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_SYNC_T)==18, "Packing of MIV3_PACKET_SYNC_T does not work.");
 
 
+struct MIV3_PACKET_INFO_DATA_STRUCT
+{
+	MIV3_PACKET_HEADER_T tHeader;
+	uint32_t  ulNetxVersion;
+	uint32_t  ulInfoFlags;
+	uint8_t  ucCrcHi;
+	uint8_t  ucCrcLo;
+
+};
+MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_INFO_DATA_STRUCT)==15, "Packing of MIV3_PACKET_INFO_DATA_STRUCT does not work.");
+
+typedef union MIV3_PACKET_INFO_DATA
+{
+	struct MIV3_PACKET_INFO_DATA_STRUCT s;
+	uint8_t auc[15];
+} MIV3_PACKET_INFO_DATA_T;
+MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_INFO_DATA_T)==15, "Packing of MIV3_PACKET_INFO_DATA_T does not work.");
+
+struct MIV3_PACKET_INFO_COMMAND_STRUCT
+{
+	MIV3_PACKET_HEADER_T tHeader;
+	uint8_t  ucCrcHi;
+	uint8_t  ucCrcLo;
+
+};
+MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_INFO_COMMAND_STRUCT)==7, "Packing of MIV3_PACKET_INFO_COMMAND_STRUCT does not work.");
+
+typedef union MIV3_PACKET_COMMAND_DATA
+{
+	struct MIV3_PACKET_INFO_COMMAND_STRUCT s;
+	uint8_t auc[7];
+} MIV3_PACKET_INFO_COMMAND_T;
+MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_INFO_COMMAND_T)==7, "Packing of MIV3_PACKET_COMMAND_DATA does not work.");
+
+
 
 /* This is a complete acknowledge packet. */
 struct MIV3_PACKET_ACK_STRUCT
@@ -274,7 +309,9 @@ public:
 
 	/* Call a routine on the netX. */
 	virtual void call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
-
+	
+	virtual uint32_t get_info(void);
+	
 	/* Get the chip type. */
 	virtual ROMLOADER_CHIPTYP GetChiptyp(void) const;
 	virtual const char *GetChiptypName(ROMLOADER_CHIPTYP tChiptyp) const;
@@ -336,6 +373,8 @@ protected:
 	virtual TRANSPORTSTATUS_T send_ack(unsigned char ucSequenceToAck);
 	virtual TRANSPORTSTATUS_T read_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, uint16_t sizDataInBytes);
 	virtual TRANSPORTSTATUS_T write_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, const void *pvData, uint16_t sizDataInBytes);
+
+
 
 	bool detect_chiptyp(romloader_read_functinoid *ptFn);
 	bool __read_data32(uint32_t ulNetxAddress, uint32_t *pulData);

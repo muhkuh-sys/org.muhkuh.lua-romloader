@@ -234,7 +234,6 @@ romloader::TRANSPORTSTATUS_T romloader::send_packet(MIV3_PACKET_HEADER_T *ptPack
 }
 
 
-
 romloader::TRANSPORTSTATUS_T romloader::send_ack(unsigned char ucSequenceToAck)
 {
 	TRANSPORTSTATUS_T tResult;
@@ -492,6 +491,60 @@ romloader::TRANSPORTSTATUS_T romloader::read_data(uint32_t ulNetxAddress, MONITO
 }
 
 
+uint32_t romloader::get_info()
+{
+	MIV3_PACKET_INFO_COMMAND_T tPacketInfo;
+	MIV3_PACKET_INFO_DATA_T* ptRecPacketInfo;
+	uint32_t tResult;
+	uint8_t ucPacketTyp;
+	int iResult;
+	MIV3_PACKET_HEADER_T *ptPacketHeader;
+	MIV3_PACKET_STATUS_T *ptPacketStatus;
+	uint32_t  ulNetxVersion;
+	uint32_t  ulInfoFlags;
+
+
+	if( m_fIsConnected==false )
+	{
+		tResult = TRANSPORTSTATUS_NOT_CONNECTED;
+	}
+	else
+	{
+		m_ptLog->info("use MONITOR_PACKET_TYP_Command_Info");
+		tPacketInfo.s.tHeader.s.ucPacketType =  MONITOR_PACKET_TYP_Command_Info;
+
+		tResult = execute_command(&(tPacketInfo.s.tHeader), sizeof(MIV3_PACKET_INFO_DATA_T));
+		if( tResult==TRANSPORTSTATUS_OK )
+		{
+			/* Receive the data. */
+			tResult = receive_packet();
+			
+			if( tResult!=TRANSPORTSTATUS_OK )
+			{
+				/* Failed to send knock sequence to device. */
+				m_ptLog->error("Failed to send knock sequence to device.");
+			}
+			else
+			{
+				/* Get the received packet as a sync packet for later. */
+				ptRecPacketInfo = (MIV3_PACKET_INFO_DATA_T*)m_aucPacketInputBuffer;
+				
+				m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+				
+				ulNetxVersion = NETXTOH32(ptRecPacketInfo->s.ulNetxVersion);
+				ulInfoFlags = NETXTOH32(ptRecPacketInfo->s.ulInfoFlags);
+	
+				printf("ulNetxVersion: 0x%08x\n", ptRecPacketInfo->s.ulNetxVersion);
+				printf("ulInfoFlags: 0x%08x\n", ptRecPacketInfo->s.ulInfoFlags);
+				m_ptLog->info("ulNetxVersion: 0x%08x", ulNetxVersion);
+				m_ptLog->info("ulInfoFlags: 0x%08x", ulInfoFlags);
+									
+			}
+		}
+	}
+
+	return tResult;
+}
 
 romloader::TRANSPORTSTATUS_T romloader::write_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, const void *pvData, uint16_t sizDataInBytes)
 {
@@ -972,8 +1025,9 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 		fOk = false;
 	}
 	else
-	{
-		tCallCommand.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_CommandExecute;
+	{	
+		m_ptLog->info("use MONITOR_PACKET_TYP_Command_Start_Hboot");
+		tCallCommand.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_Command_Start_Hboot;
 		tCallCommand.s.ulAddress = HTONETX32(ulNetxAddress);
 		tCallCommand.s.ulR0 = HTONETX32(ulParameterR0);
 		tResult = execute_command(&(tCallCommand.s.tHeader), sizeof(tCallCommand));
@@ -991,6 +1045,7 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 				sizProgressData = 0;
 
 				tResult = receive_packet();
+				printf("result: %s ", tResult);
 				if( tResult==TRANSPORTSTATUS_TIMEOUT )
 				{
 					/* Do nothing in case of timeout. The application is just running quietly. */
@@ -1058,7 +1113,7 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 					if( fIsRunning!=true )
 					{
 						/* Send a cancel request to the device. */
-						tCancelCallPacket.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_CallMessage;
+						tCancelCallPacket.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_Command_Start_Hboot;
 						tCancelCallPacket.s.ucData = 0x2b;
 						tResult = send_packet(&(tCancelCallPacket.s.tHeader), sizeof(MIV3_PACKET_CANCEL_CALL_T));
 
