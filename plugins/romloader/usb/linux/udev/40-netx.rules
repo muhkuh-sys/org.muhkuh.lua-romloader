@@ -1,38 +1,48 @@
-ACTION!="add|change", GOTO="netx_rules_end"
+ACTION!="add|change|move|bind", GOTO="netx_rules_end"
 
 #-----------------------------------------------------------------------------
 #
-# USB rules
+# rules for USB infterface of netX SoC
 #
 SUBSYSTEM!="usb", GOTO="netx_usb_rules_end"
 ENV{DEVTYPE}!="usb_device", GOTO="netx_usb_rules_end"
 
 # netX100/500 ABoot V1.0
-ATTRS{idVendor}=="0cc4", ATTRS{idProduct}=="0815", MODE="664", GROUP="plugdev"
+ATTRS{idVendor}=="0cc4", ATTRS{idProduct}=="0815", MODE="660", GROUP="plugdev" TAG+="uaccess" ENV{ID_MM_TTY_BLACKLIST}="1"
 
 # netX50
-ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0002", MODE="664", GROUP="plugdev"
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0002", MODE="660", GROUP="plugdev" TAG+="uaccess"
 
 # netX10
-ATTRS{idVendor}=="1939", ATTRS{idProduct}=="000c", MODE="664", GROUP="plugdev"
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="000c", MODE="660", GROUP="plugdev" TAG+="uaccess"
 
 # HBoot2 Soft
-ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0015", MODE="664", GROUP="plugdev"
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0015", MODE="660", GROUP="plugdev" TAG+="uaccess"
 
 # netX51
-ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0018", MODE="664", GROUP="plugdev"
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0018", MODE="660", GROUP="plugdev" TAG+="uaccess"
 
 # netX52
-ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0019", MODE="664", GROUP="plugdev"
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0019", MODE="660", GROUP="plugdev" TAG+="uaccess"
 
 # NXIO_Cert Test
-ATTRS{idVendor}=="1939", ATTRS{idProduct}=="1234", MODE="664", GROUP="plugdev"
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="1234", MODE="660", GROUP="plugdev" TAG+="uaccess"
 
-# NXJTAG
-ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0023", MODE="664", GROUP="plugdev"
+# blacklist all Hilscher devices for ModemManager
+ATTRS{idVendor}=="1939", ENV{ID_MM_TTY_BLACKLIST}="1"
 
 LABEL="netx_usb_rules_end"
 
+
+#-----------------------------------------------------------------------------
+#
+# Serial rules
+#
+SUBSYSTEM!="tty", GOTO="netx_serial_rules_end"
+KERNEL!="ttyUSB[0-9]*|ttyACM[0-9]*", GOTO="netx_serial_rules_end"
+ATTRS{idVendor}=="1939", MODE="660", GROUP="plugdev" TAG+="uaccess"
+
+LABEL="netx_serial_rules_end"
 
 #-----------------------------------------------------------------------------
 #
@@ -41,8 +51,8 @@ LABEL="netx_usb_rules_end"
 SUBSYSTEM!="uio", GOTO="netx_uio_rules_end"
 
 # Hilscher PLX
-ATTR{name}=="netx_plx", MODE="664", GROUP="plugdev"
-ATTR{name}=="netx4000", MODE="664", GROUP="plugdev"
+ATTR{name}=="netx_plx", MODE="660", GROUP="plugdev" TAG+="uaccess"
+ATTR{name}=="netx4000", MODE="660", GROUP="plugdev" TAG+="uaccess"
 
 LABEL="netx_uio_rules_end"
 

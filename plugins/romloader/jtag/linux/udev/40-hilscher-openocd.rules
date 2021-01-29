@@ -1,0 +1,29 @@
+ACTION!="add|change|move|bind", GOTO="hilscher_openocd_rules_end"
+
+#-----------------------------------------------------------------------------
+#
+# rules for debug adapter suppoted by muhkuh.lua-romloader
+#
+SUBSYSTEM!="usb", ENV{DEVTYPE}!="usb_device", GOTO="hilscher_openocd_rules_end"
+
+# blacklist all Hilscher devices for ModemManager
+ATTRS{idVendor}=="1939", ENV{ID_MM_TTY_BLACKLIST}="1"
+
+# Amontec JTAGkey and JTAGkey-tiny
+ATTRS{idVendor}=="0403", ATTRS{idProduct}=="cff8", MODE="660", GROUP="plugdev", TAG+="uaccess"
+
+# Hilscher pre netX 90 NXHX Boards with Hitex vendor ID
+ATTRS{idVendor}=="0640", ATTRS{idProduct}=="0028", MODE="660", GROUP="plugdev", TAG+="uaccess"
+
+# Olimex ARM-USB-OCD-TINY-H
+ATTRS{idVendor}=="15ba", ATTRS{idProduct}=="002a", MODE="660", GROUP="plugdev", TAG+="uaccess"
+
+# Hilscher NXJTAG-USB and new NXHX on-board debugger
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0023", MODE="660", GROUP="plugdev", TAG+="uaccess"
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0029", MODE="660", GROUP="plugdev", TAG+="uaccess"
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="002c", MODE="660", GROUP="plugdev", TAG+="uaccess"
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0031", MODE="660", GROUP="plugdev", TAG+="uaccess"
+ATTRS{idVendor}=="1939", ATTRS{idProduct}=="0301", MODE="660", GROUP="plugdev", TAG+="uaccess"
+
+LABEL="hilscher_openocd_rules_end"
+
