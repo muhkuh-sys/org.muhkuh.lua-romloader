@@ -70,5 +70,5 @@ INSTALL(TARGETS TARGET_PapaSchlumpf_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
 IF((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 	# Here are the MinGW specific tests.
 	ADD_TEST(NAME romloader_usb_MinGW_DLL_dependencies
-	         COMMAND "${PYTHON_EXECUTABLE}" ${TEST_SCRIPT_DIR}/mingw_dll_dependencies.py -u lua5.1 -u lua5.2 -u lua5.3 -u lua5.4 $<TARGET_FILE:TARGET_PapaSchlumpf_LUA>)
+	         COMMAND "${Python3_EXECUTABLE}" ${TEST_SCRIPT_DIR}/mingw_dll_dependencies.py -u lua5.1 -u lua5.2 -u lua5.3 -u lua5.4 $<TARGET_FILE:TARGET_PapaSchlumpf_LUA>)
 ENDIF((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))

@@ -13,7 +13,7 @@ def parse():
         strJonchkiDistributionVersion = tPlatform.strHostDistributionVersion
         strJonchkiCPUArchitecture = tPlatform.strHostCpuArchitecture
 
-        if strJonchkiDistributionVersion == None:
+        if strJonchkiDistributionVersion is None:
             strJonchkiPlatformID = '%s_%s' % (
                 strJonchkiDistributionID,
                 strJonchkiCPUArchitecture
@@ -31,8 +31,9 @@ def parse():
         strJonchkiDistributionID = sys.argv[1]
         strJonchkiDistributionVersion = None
         strJonchkiCPUArchitecture = sys.argv[2]
-        if strJonchkiDistributionID != 'windows' and strJonchkiDistributionID != 'raspberry':
-            raise Exception('No distribution version specified. This is only possible for windows and raspebrry.')
+        if strJonchkiDistributionID != 'windows':
+            raise Exception('No distribution version specified. '
+                            'This is only possible for windows.')
 
         strJonchkiPlatformID = '%s_%s' % (
             strJonchkiDistributionID,

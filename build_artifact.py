@@ -1,9 +1,8 @@
-#! /usr/bin/python2.7
+#! /usr/bin/python3
 
 from jonchki import cli_args
 from jonchki import install
 from jonchki import jonchkihere
-from jonchki import vcs_id
 
 import glob
 import os
@@ -12,6 +11,7 @@ import subprocess
 
 tPlatform = cli_args.parse()
 print('Building for %s' % tPlatform['platform_id'])
+
 
 # --------------------------------------------------------------------------
 # -
@@ -107,6 +107,7 @@ if tPlatform['host_distribution_id'] == 'ubuntu':
         if tPlatform['cpu_architecture'] == tPlatform['host_cpu_architecture']:
             # Build for the build host.
 
+            # Check for all system dependencies.
             astrDeb = [
                 'libudev-dev'
             ]
@@ -120,6 +121,7 @@ if tPlatform['host_distribution_id'] == 'ubuntu':
         elif tPlatform['cpu_architecture'] == 'arm64':
             # Build on linux for raspebrry.
 
+            # Install the build dependencies.
             astrDeb = [
                 'libudev-dev:arm64'
             ]
@@ -212,12 +214,6 @@ strJonchki = jonchkihere.install(
     strCfg_jonchkiInstallationFolder,
     LOCAL_ARCHIVES=strCfg_jonchkiLocalArchives
 )
-
-# Try to get the VCS ID.
-strProjectVersionVcs, strProjectVersionVcsLong = vcs_id.get(
-    strCfg_projectFolder
-)
-print(strProjectVersionVcs, strProjectVersionVcsLong)
 
 
 # ---------------------------------------------------------------------------
