@@ -8,9 +8,6 @@ PROJECT("romloader_usb"
 FIND_PACKAGE(SWIG REQUIRED)
 INCLUDE(${SWIG_USE_FILE})
 
-FIND_PACKAGE(libusb REQUIRED)
-
-
 #----------------------------------------------------------------------------
 #
 # Get the netX USB firmware binaries (in form of C data arrays) and headers.
@@ -47,9 +44,9 @@ SET(romloader_usb_HEADERS
 
 ADD_LIBRARY(TARGET_romloader_usb_lib STATIC ${romloader_usb_SOURCES})
 ADD_DEPENDENCIES(TARGET_romloader_usb_lib TARGET_NETX_FIRMWARE)
-TARGET_LINK_LIBRARIES(TARGET_romloader_usb_lib libusb::TARGET_libusb)
+TARGET_LINK_LIBRARIES(TARGET_romloader_usb_lib ${LIBUSB_LIBRARIES})
 TARGET_INCLUDE_DIRECTORIES(TARGET_romloader_usb_lib
-                           PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${SWIG_RUNTIME_OUTPUT_PATH} ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/)
+                           PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${SWIG_RUNTIME_OUTPUT_PATH} ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/ ${LIBUSB_INCLUDE_PATH})
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_SYSTEM_NAME STREQUAL "Linux"))
 	SET_TARGET_PROPERTIES(TARGET_romloader_usb_lib PROPERTIES COMPILE_FLAGS -fPIC)
@@ -72,7 +69,7 @@ ELSE(CMAKE_VERSION VERSION_LESS 3.8.0)
 ENDIF(CMAKE_VERSION VERSION_LESS 3.8.0)
 SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_usb_LUA TARGET_romloader_usb_lib ${LUA_LIBRARIES} TARGET_plugins_romloader_LIB)
 TARGET_INCLUDE_DIRECTORIES(TARGET_plugins_romloader_romloader_usb_LUA
-                           PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+                           PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${LIBUSB_INCLUDE_PATH})
 
 # Set the name of the output file to "romloader_usb".
 SET_TARGET_PROPERTIES(TARGET_plugins_romloader_romloader_usb_LUA PROPERTIES PREFIX "" OUTPUT_NAME "romloader_usb")
