@@ -41,7 +41,6 @@ env_arm9.CreateCompilerEnv('NETX10', ['arch=armv5te', 'thumb'], name='NETX10_THU
 
 # Create a build environment for the Cortex-R7 and Cortex-A9 based netX chips.
 env_cortexR7 = atEnv.DEFAULT.CreateEnvironment(['gcc-arm-none-eabi-4.9', 'asciidoc'])
-env_cortexR7.CreateCompilerEnv('NETX4000_RELAXED', ['arch=armv7', 'thumb'], ['arch=armv7-r', 'thumb'])
 env_cortexR7.CreateCompilerEnv('NETX4000', ['arch=armv7', 'thumb'], ['arch=armv7-r', 'thumb'])
 
 # Create a build environment for the Cortex-M4 based netX chips.

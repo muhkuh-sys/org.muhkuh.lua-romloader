@@ -57,7 +57,7 @@ sym_netx56_monitor = env_netx56_monitor.GccSymbolTemplate(os.path.join(strTarget
 #
 # Build the netX4000 files.
 #
-env_netx4000_monitor = atEnv.NETX4000_RELAXED.Clone()
+env_netx4000_monitor = atEnv.NETX4000.Clone()
 env_netx4000_monitor.Replace(BOOTBLOCK_CHIPTYPE = 4000)
 env_netx4000_monitor.Append(CPPPATH = ['src', '../../machine_interface/netx/src', '#platform/src', '#platform/src/lib'])
 env_netx4000_monitor.Replace(LDFILE = File('src/netx4000/netx4000.ld'))
