@@ -72,11 +72,14 @@ proc setup_interface_nxhx90_jtag {strLocation} {
 	ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200 
 }
 
-proc setup_interface_nxhx90_drive {strLocation} {
+proc setup_interface_nxhx90_mc {strLocation} {
 	interface ftdi
 	ftdi_location $strLocation
 	transport select jtag
-	ftdi_device_desc "NXHX 90-DRIVE"
+	# Skip the device_desc check. It is not necessary
+	# and this way, exisiting boards with the string 
+	# "NXHX 90-DRIVE" will be recognized as well.
+	# ftdi_device_desc "NXHX 90-MC"
 	ftdi_vid_pid 0x1939 0x0031
 	adapter_khz 1000
 	
@@ -161,7 +164,7 @@ proc setup_interface {strInterfaceID strLocation} {
 	} elseif {$strInterfaceID == "Amontec_JTAGkey"}       {setup_interface_jtagkey $strLocation
 	} elseif {$strInterfaceID == "NXHX_500_50_51_10"}     {setup_interface_nxhx_generic $strLocation
 	} elseif {$strInterfaceID == "NXHX_90-JTAG"}          {setup_interface_nxhx90_jtag $strLocation
-	} elseif {$strInterfaceID == "NXHX_90-DRIVE"}         {setup_interface_nxhx90_drive $strLocation
+	} elseif {$strInterfaceID == "NXHX_90-MC"}            {setup_interface_nxhx90_mc $strLocation
 	} elseif {$strInterfaceID == "NXJTAG-4000-USB"}       {setup_interface_nxjtag_4000_usb $strLocation
 	} elseif {$strInterfaceID == "NRPEB_H90-RE"}          {setup_interface_nrpeb_h90_re $strLocation
 	}

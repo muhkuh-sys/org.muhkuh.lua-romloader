@@ -656,7 +656,7 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::a
 	{"Olimex_ARM_USB_TINY_H",  "setup_interface Olimex_ARM_USB_TINY_H %s", "probe_interface", 0x15ba, 0x002a },
 	{"NXHX_500/50/51/10",      "setup_interface NXHX_500_50_51_10 %s",     "probe_interface", 0x0640, 0x0028 },
 	{"NXHX_90-JTAG",           "setup_interface NXHX_90-JTAG %s",          "probe_interface", 0x1939, 0x002c },
-	{"NXHX_90-DRIVE",          "setup_interface NXHX_90-DRIVE %s",         "probe_interface", 0x1939, 0x0031 },
+	{"NXHX_90-MC",             "setup_interface NXHX_90-MC %s",            "probe_interface", 0x1939, 0x0031 },
 	{"NRPEB_H90-RE",           "setup_interface NRPEB_H90-RE %s",          "probe_interface", 0x1939, 0x0029 },
 	{"NXJTAG-4000-USB",        "setup_interface NXJTAG-4000-USB %s",       "probe_interface", 0x1939, 0x0301 },
 };
