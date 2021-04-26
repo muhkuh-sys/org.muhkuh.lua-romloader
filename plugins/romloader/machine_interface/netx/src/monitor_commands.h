@@ -47,6 +47,7 @@ typedef enum MONITOR_PACKET_TYP
 	MONITOR_PACKET_TYP_Command_Start_Hboot   = 0x08,
 	MONITOR_PACKET_TYP_Command_Info          = 0x09,
 	MONITOR_PACKET_TYP_Info_Data			 = 0x0a,
+	MONITOR_PACKET_TYP_Command_Start_USIP    = 0x0b,
 	MONITOR_PACKET_TYP_MagicData             = 0x4d,
 	MONITOR_PACKET_TYP_CommandMagic          = 0xff
 } MONITOR_PACKET_TYP_T;
