@@ -67,8 +67,7 @@ bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp)
 	ROMLOADER_CHIPTYP tChipType;
 	size_t sizMaxPacketSize;
 
-
-//	fprintf(stderr, "synchronize\n");
+	m_ptLog->info("synchronize!");
 	fResult = false;
 
 	uiRetryCnt = 10;
@@ -488,6 +487,142 @@ romloader::TRANSPORTSTATUS_T romloader::read_data(uint32_t ulNetxAddress, MONITO
 	}
 
 	return tResult;
+}
+
+void romloader::cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData)
+{
+	bool fOk;
+	TRANSPORTSTATUS_T tResult;
+	MIV3_PACKET_INFO_COMMAND_USIP_T tCommandUsip;
+	
+//	MIV3_PACKET_COMMAND_CALL_T tCallCommand;
+	MIV3_PACKET_CANCEL_CALL_T tCancelCallPacket;
+//	const uint8_t aucCancelBuf[1] = { 0x2b };
+	uint8_t ucStatus;
+	bool fIsRunning;
+	char *pcProgressData;
+	size_t sizProgressData;
+	uint8_t ucPacketTyp;
+	MIV3_PACKET_HEADER_T *ptPacketHeader;
+	MIV3_PACKET_STATUS_T *ptPacketStatus;
+	int i = 10;
+
+	if( m_fIsConnected==false )
+	{
+		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
+		fOk = false;
+	}
+	else
+	{	
+		m_ptLog->info("use MONITOR_PACKET_TYP_Command_Start_USIP");
+		tCommandUsip.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_Command_Start_USIP;
+		tResult = execute_command(&(tCommandUsip.s.tHeader), sizeof(tCommandUsip));
+		if( tResult!=TRANSPORTSTATUS_OK )
+		{
+			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
+			fOk = false;
+		}
+		else
+		{
+			/* Receive message packets. */
+			while(i>1)
+			{
+				pcProgressData = NULL;
+				sizProgressData = 0;
+
+				tResult = receive_packet();
+				printf("result: %s ", tResult);
+				if( tResult==TRANSPORTSTATUS_TIMEOUT )
+				{
+					/* Do nothing in case of timeout. The application is just running quietly. */
+				}
+				else if( tResult!=TRANSPORTSTATUS_OK )
+				{
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): Failed to receive a call message packet: %s (%d)", m_pcName, this, get_error_message(tResult), tResult);
+					fOk = false;
+				}
+				else
+				{
+					ptPacketHeader = (MIV3_PACKET_HEADER_T*)m_aucPacketInputBuffer;
+
+					/* Get the packet type. */
+					ucPacketTyp = ptPacketHeader->s.ucPacketType;
+
+					if( ucPacketTyp==MONITOR_PACKET_TYP_CallMessage )
+					{
+						/* Acknowledge the packet. */
+						send_ack(m_ucMonitorSequence);
+						/* Increase the sequence number. */
+						++m_ucMonitorSequence;
+
+						/* NOTE: Do not check the size of the user data here. It should be possible to send 0 bytes. */
+						pcProgressData = ((char*)m_aucPacketInputBuffer) + sizeof(MIV3_PACKET_HEADER_T);
+						/* The size of the user data is the size of the packet - the header size - 2 bytes for the CRC16. */
+						sizProgressData = m_sizPacketInputBuffer - (sizeof(MIV3_PACKET_HEADER_T) + 2U);
+					}
+					else if( ucPacketTyp==MONITOR_PACKET_TYP_Status )
+					{
+						ptPacketStatus = (MIV3_PACKET_STATUS_T*)m_aucPacketInputBuffer;
+						if( m_sizPacketInputBuffer==sizeof(MIV3_PACKET_STATUS_T) )
+						{
+							/* The netX sent a status code. */
+
+							/* Acknowledge the packet. */
+							send_ack(m_ucMonitorSequence);
+							/* Increase the sequence number. */
+							++m_ucMonitorSequence;
+
+							ucStatus = ptPacketStatus->s.ucStatus;
+							if( ucStatus==MONITOR_STATUS_CallFinished )
+							{
+								fOk = true;
+								break;
+							}
+							else if(ucStatus==MONITOR_STATUS_Ok)
+							{
+								m_ptLog->info("Status: MONITOR_STATUS_Ok");
+								fOk = true;
+								break;
+							}
+							else
+							{
+								/* The netX sent an error. */
+								m_ptLog->error("Status != call_finished received. Status %d.", ucStatus);
+								tResult = TRANSPORTSTATUS_NETX_ERROR;
+							}
+						}
+						else
+						{
+							/* The packet type is set to "status", but the size of the packet does not match a valid status packet. */
+							tResult = TRANSPORTSTATUS_INVALID_PACKET_SIZE;
+						}
+					}
+				}
+
+				if (pcProgressData != NULL)
+				{
+					fIsRunning = callback_string(&tLuaFn, pcProgressData, sizProgressData, lCallbackUserData);
+					if( fIsRunning!=true )
+					{
+						/* Send a cancel request to the device. */
+						tCancelCallPacket.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_Command_Start_USIP;
+						tCancelCallPacket.s.ucData = 0x2b;
+						tResult = send_packet(&(tCancelCallPacket.s.tHeader), sizeof(MIV3_PACKET_CANCEL_CALL_T));
+
+						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): the call was canceled!", m_pcName, this);
+						fOk = false;
+						break;
+					}
+				}
+				i--;
+			}
+		}
+	}
+
+	if( fOk!=true )
+	{
+		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
+	}
 }
 
 
@@ -1002,7 +1137,6 @@ void romloader::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, siz
 }
 
 
-
 void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	bool fOk;
@@ -1018,6 +1152,136 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 	MIV3_PACKET_HEADER_T *ptPacketHeader;
 	MIV3_PACKET_STATUS_T *ptPacketStatus;
 
+
+	if( m_fIsConnected==false )
+	{
+		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
+		fOk = false;
+	}
+	else
+	{
+		tCallCommand.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_CommandExecute;
+		tCallCommand.s.ulAddress = HTONETX32(ulNetxAddress);
+		tCallCommand.s.ulR0 = HTONETX32(ulParameterR0);
+		tResult = execute_command(&(tCallCommand.s.tHeader), sizeof(tCallCommand));
+		if( tResult!=TRANSPORTSTATUS_OK )
+		{
+			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
+			fOk = false;
+		}
+		else
+		{
+			/* Receive message packets. */
+			while(1)
+			{
+				pcProgressData = NULL;
+				sizProgressData = 0;
+
+				tResult = receive_packet();
+				if( tResult==TRANSPORTSTATUS_TIMEOUT )
+				{
+					/* Do nothing in case of timeout. The application is just running quietly. */
+				}
+				else if( tResult!=TRANSPORTSTATUS_OK )
+				{
+					MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): Failed to receive a call message packet: %s (%d)", m_pcName, this, get_error_message(tResult), tResult);
+					fOk = false;
+				}
+				else
+				{
+					ptPacketHeader = (MIV3_PACKET_HEADER_T*)m_aucPacketInputBuffer;
+
+					/* Get the packet type. */
+					ucPacketTyp = ptPacketHeader->s.ucPacketType;
+
+					if( ucPacketTyp==MONITOR_PACKET_TYP_CallMessage )
+					{
+						/* Acknowledge the packet. */
+						send_ack(m_ucMonitorSequence);
+						/* Increase the sequence number. */
+						++m_ucMonitorSequence;
+
+						/* NOTE: Do not check the size of the user data here. It should be possible to send 0 bytes. */
+						pcProgressData = ((char*)m_aucPacketInputBuffer) + sizeof(MIV3_PACKET_HEADER_T);
+						/* The size of the user data is the size of the packet - the header size - 2 bytes for the CRC16. */
+						sizProgressData = m_sizPacketInputBuffer - (sizeof(MIV3_PACKET_HEADER_T) + 2U);
+					}
+					else if( ucPacketTyp==MONITOR_PACKET_TYP_Status )
+					{
+						ptPacketStatus = (MIV3_PACKET_STATUS_T*)m_aucPacketInputBuffer;
+						if( m_sizPacketInputBuffer==sizeof(MIV3_PACKET_STATUS_T) )
+						{
+							/* The netX sent a status code. */
+
+							/* Acknowledge the packet. */
+							send_ack(m_ucMonitorSequence);
+							/* Increase the sequence number. */
+							++m_ucMonitorSequence;
+
+							ucStatus = ptPacketStatus->s.ucStatus;
+							if( ucStatus==MONITOR_STATUS_CallFinished )
+							{
+								fOk = true;
+								break;
+							}
+							else
+							{
+								/* The netX sent an error. */
+								m_ptLog->error("Status != call_finished received. Status %d.", ucStatus);
+								tResult = TRANSPORTSTATUS_NETX_ERROR;
+							}
+						}
+						else
+						{
+							/* The packet type is set to "status", but the size of the packet does not match a valid status packet. */
+							tResult = TRANSPORTSTATUS_INVALID_PACKET_SIZE;
+						}
+					}
+				}
+
+				if (pcProgressData != NULL)
+				{
+					fIsRunning = callback_string(&tLuaFn, pcProgressData, sizProgressData, lCallbackUserData);
+					if( fIsRunning!=true )
+					{
+						/* Send a cancel request to the device. */
+						tCancelCallPacket.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_CallMessage;
+						tCancelCallPacket.s.ucData = 0x2b;
+						tResult = send_packet(&(tCancelCallPacket.s.tHeader), sizeof(MIV3_PACKET_CANCEL_CALL_T));
+
+						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): the call was canceled!", m_pcName, this);
+						fOk = false;
+						break;
+					}
+				}
+
+			}
+		}
+	}
+
+	if( fOk!=true )
+	{
+		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
+	}
+}
+
+
+
+void romloader::call_hboot(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+{
+	bool fOk;
+	TRANSPORTSTATUS_T tResult;
+	MIV3_PACKET_COMMAND_CALL_T tCallCommand;
+	MIV3_PACKET_CANCEL_CALL_T tCancelCallPacket;
+//	const uint8_t aucCancelBuf[1] = { 0x2b };
+	uint8_t ucStatus;
+	bool fIsRunning;
+	char *pcProgressData;
+	size_t sizProgressData;
+	uint8_t ucPacketTyp;
+	MIV3_PACKET_HEADER_T *ptPacketHeader;
+	MIV3_PACKET_STATUS_T *ptPacketStatus;
+//	int i = 10;
 
 	if( m_fIsConnected==false )
 	{
@@ -1092,6 +1356,10 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 								fOk = true;
 								break;
 							}
+							else if(ucStatus==MONITOR_STATUS_Ok)
+							{
+								m_ptLog->info("Status: MONITOR_STATUS_Ok");
+							}
 							else
 							{
 								/* The netX sent an error. */
@@ -1122,7 +1390,7 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 						break;
 					}
 				}
-
+//				i--;
 			}
 		}
 	}
@@ -1191,7 +1459,7 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 
 	tChiptyp = ROMLOADER_CHIPTYP_UNKNOWN;
 
-	// read the reset vector at 0x00000000
+	/* Read the reset vector at 0x00000000. */
 	fResult = ptFn->read_data32(0, &ulResetVector);
 	if (fResult!=true)
 	{
@@ -1310,9 +1578,11 @@ bool romloader::detect_chiptyp(void)
 	tChiptyp = ROMLOADER_CHIPTYP_UNKNOWN;
 
 	/* Read the reset vector at 0x00000000. */
-	fResult = __read_data32(0, &ulResetVector);
+	fResult = __read_data32(0x40000, &ulResetVector);
+	
 	if( fResult!=true )
 	{
+
 		m_ptLog->error("Failed to read the reset vector.");
 	}
 	else
@@ -1325,6 +1595,7 @@ bool romloader::detect_chiptyp(void)
 		ulVersionAddr = 0xffffffff;
 		while( ptRstCnt<ptRstEnd )
 		{
+			m_ptLog->debug("ptRstCnt->ulVersionAddress: 0x%08X", ptRstCnt->ulVersionAddress);
 			if( ptRstCnt->ulResetVector==ulResetVector )
 			{
 				ulVersionAddr = ptRstCnt->ulVersionAddress;
@@ -1383,8 +1654,9 @@ bool romloader::detect_chiptyp(void)
 }
 
 
-const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[14] =
+const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[16] =
 {
+
 	{
 		0xea080001,
 		0x00200008,
@@ -1505,7 +1777,26 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[14] =
 		ROMLOADER_CHIPTYP_NETX90,
 		"netX90 Rev0"
 	},
-
+	{
+		0x2009fff0,
+		0x000400c0,
+		0x0010d005,
+		0xff401298,
+		0x1981020d,
+		0,
+		ROMLOADER_CHIPTYP_NETX90C_INTRAM,
+		"netX90 Rev2 intram"
+	},
+	{
+		0x2009fff0,
+		0x000000c0,
+		0x0010d005,
+		0xff401298,
+		0x0981020d,
+		0,
+		ROMLOADER_CHIPTYP_NETX90C,
+		"netX90 Rev2"
+	},
 	{
 		0x2009fff0,
 		0x000000c0,
@@ -1516,7 +1807,6 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[14] =
 		ROMLOADER_CHIPTYP_NETX90B,
 		"netX90 Rev1"
 	},
-	
 	{
 		0x00000000, /* reserved location 0 reads as 0 */
 		0x2000, 

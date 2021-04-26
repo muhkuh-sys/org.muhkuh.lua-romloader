@@ -503,7 +503,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 	fResult = false;
 	ptFn = NULL;
 
-//	printf("%s(%p): connect\n", m_pcName, this);
+ 	printf("%s(%p): connect\n", m_pcName, this);
 
 	if( m_ptUartDev!=NULL && m_fIsConnected==false )
 	{
@@ -624,6 +624,8 @@ void romloader_uart::Connect(lua_State *ptClientData)
 						 */
 						if( tChiptyp==ROMLOADER_CHIPTYP_NETX90_MPW 
 							|| tChiptyp==ROMLOADER_CHIPTYP_NETX90
+							|| tChiptyp==ROMLOADER_CHIPTYP_NETX90C
+							|| tChiptyp==ROMLOADER_CHIPTYP_NETX90C_INTRAM
 							|| tChiptyp==ROMLOADER_CHIPTYP_NETX90B)
 						{
 							m_ptLog->debug("Got suspicious chip type %d, detecting chip type.", tChiptyp);

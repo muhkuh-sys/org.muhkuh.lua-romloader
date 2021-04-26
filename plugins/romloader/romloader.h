@@ -148,6 +148,26 @@ typedef union MIV3_PACKET_COMMAND_DATA
 } MIV3_PACKET_INFO_COMMAND_T;
 MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_INFO_COMMAND_T)==7, "Packing of MIV3_PACKET_COMMAND_DATA does not work.");
 
+/*START USIP*/
+
+struct MIV3_PACKET_USIP_COMMAND_STRUCT
+{
+	MIV3_PACKET_HEADER_T tHeader;
+	uint8_t  ucCrcHi;
+	uint8_t  ucCrcLo;
+
+};
+MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_USIP_COMMAND_STRUCT)==7, "Packing of MIV3_PACKET_INFO_COMMAND_STRUCT does not work.");
+
+typedef union MIV3_PACKET_COMMAND_USIP_DATA
+{
+	struct MIV3_PACKET_USIP_COMMAND_STRUCT s;
+	uint8_t auc[7];
+} MIV3_PACKET_INFO_COMMAND_USIP_T;
+MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_INFO_COMMAND_USIP_T)==7, "Packing of MIV3_PACKET_COMMAND_DATA does not work.");
+
+
+/*END USIP*/
 
 
 /* This is a complete acknowledge packet. */
@@ -311,7 +331,8 @@ public:
 	virtual void call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 	
 	virtual uint32_t get_info(void);
-	
+	virtual uint32_t call_usip(void);
+	virtual void cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData);;
 	/* Get the chip type. */
 	virtual ROMLOADER_CHIPTYP GetChiptyp(void) const;
 	virtual const char *GetChiptypName(ROMLOADER_CHIPTYP tChiptyp) const;
@@ -402,7 +423,7 @@ private:
 
 	bool callback_common(SWIGLUA_REF *ptLuaFn, long lCallbackUserData, int iOldTopOfStack);
 
-	static const ROMLOADER_RESET_ID_T atResIds[14];
+	static const ROMLOADER_RESET_ID_T atResIds[15];
 #endif  /* !defined(SWIG) */
 };
 
