@@ -88,11 +88,11 @@ proc setup_interface_nxhx90_mc {strLocation} {
 	ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200 
 }
 
-proc setup_interface_nxeb_90_spe {strLocation} {
+proc setup_interface_nxeb90_spe {strLocation} {
 	interface ftdi
 	ftdi_location $strLocation
 	transport select jtag
-	# ftdi_device_desc "NXEB 90-SPE"
+	ftdi_device_desc "NXEB 90-SPE"
 	ftdi_vid_pid 0x1939 0x0032
 	adapter_khz 1000
 	
