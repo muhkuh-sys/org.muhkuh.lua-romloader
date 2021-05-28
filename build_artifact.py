@@ -37,7 +37,7 @@ strCfg_CompilerPath_Windows_MinGw_w64_x86_64 = 'C:/MinGW/x86_64-8.1.0-release-po
 
 # Only if you are building on Windows:
 # Select the path and name of the swig exe.
-strCfg_SwigPath_Windows = 'C:/Tools/swigwin-3.0.12/swig.exe'
+strCfg_SwigPath_Windows = 'C:/Tools/swigwin-4.0.2/swig.exe'
 
 # Get the project folder. This is the folder of this script.
 strCfg_projectFolder = os.path.dirname(os.path.realpath(__file__))
@@ -348,6 +348,10 @@ subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
 subprocess.check_call(strMake, shell=True, cwd=strCwd, env=astrEnv)
 
 astrMatch = glob.glob(os.path.join(strCwd, 'lua5.1-romloader-*.xml'))
+
+for s in astrMatch:
+    print(s)
+# What if there are more than one matches?
 if len(astrMatch) != 1:
     raise Exception('No match found for "lua5.1-romloader-*.xml".')
 
