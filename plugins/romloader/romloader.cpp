@@ -53,7 +53,7 @@ romloader::~romloader(void)
 
 
 
-bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp)
+bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp, uint16_t *usMiVersionMin, uint16_t *usMiVersionMaj)
 {
 	const uint8_t aucKnock[5] = { '*', 0x00, 0x00, '*', '#' };
 	const uint8_t aucMagicMooh[4] = { 0x4d, 0x4f, 0x4f, 0x48 };
@@ -62,8 +62,8 @@ bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp)
 	bool fResult;
 	MIV3_PACKET_SYNC_T *ptSyncPacket;
 	uint8_t ucSequence;
-	uint32_t ulMiVersionMin;
-	uint32_t ulMiVersionMaj;
+	//uint32_t ulMiVersionMin;
+	//uint32_t ulMiVersionMaj;
 	ROMLOADER_CHIPTYP tChipType;
 	size_t sizMaxPacketSize;
 
@@ -130,9 +130,9 @@ bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp)
 			ucSequence = ptSyncPacket->s.tHeader.s.ucSequenceNumber;
 			m_ptLog->debug("Sequence number: 0x%02x", ucSequence);
 
-			ulMiVersionMin = NETXTOH16(ptSyncPacket->s.usVersionMinor);
-			ulMiVersionMaj = NETXTOH16(ptSyncPacket->s.usVersionMajor);
-			m_ptLog->debug("Machine interface V%d.%d .", ulMiVersionMaj, ulMiVersionMin);
+			*usMiVersionMin = NETXTOH16(ptSyncPacket->s.usVersionMinor);
+			*usMiVersionMaj = NETXTOH16(ptSyncPacket->s.usVersionMajor);
+			m_ptLog->debug("Machine interface V%d.%d .", ptSyncPacket->s.usVersionMinor, ptSyncPacket->s.usVersionMajor);
 
 			tChipType = (ROMLOADER_CHIPTYP)(ptSyncPacket->s.ucChipType);
 			m_ptLog->debug("Chip type : %d", tChipType);
@@ -324,7 +324,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 					if( ucPacketSequence!=m_ucMonitorSequence )
 					{
 						m_ptLog->error("execute_command: the sequence does not match: %d / %d", ucPacketSequence, m_ucMonitorSequence);
-						synchronize(NULL);
+						synchronize(NULL, NULL, NULL);
 						tResult = TRANSPORTSTATUS_SEQUENCE_MISMATCH;
 					}
 					else
@@ -626,7 +626,7 @@ void romloader::cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData)
 }
 
 
-uint32_t romloader::get_info()
+uint32_t romloader::get_info(uint32_t *ptNetxVersion, uint32_t *ptInfoFlags)
 {
 	MIV3_PACKET_INFO_COMMAND_T tPacketInfo;
 	MIV3_PACKET_INFO_DATA_T* ptRecPacketInfo;
@@ -669,14 +669,15 @@ uint32_t romloader::get_info()
 				ulNetxVersion = NETXTOH32(ptRecPacketInfo->s.ulNetxVersion);
 				ulInfoFlags = NETXTOH32(ptRecPacketInfo->s.ulInfoFlags);
 	
-				printf("ulNetxVersion: 0x%08x\n", ptRecPacketInfo->s.ulNetxVersion);
-				printf("ulInfoFlags: 0x%08x\n", ptRecPacketInfo->s.ulInfoFlags);
 				m_ptLog->info("ulNetxVersion: 0x%08x", ulNetxVersion);
 				m_ptLog->info("ulInfoFlags: 0x%08x", ulInfoFlags);
 									
 			}
 		}
 	}
+	
+	*ptNetxVersion = ulNetxVersion;
+	*ptInfoFlags = ulInfoFlags;
 
 	return tResult;
 }
@@ -1502,7 +1503,7 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 							else
 							{
 								ulCheckValMasked = ulCheckVal & ptRstCnt->ulCheckMask;
-								m_ptLog->debug("check address: 0x%08X  value: 0x%08X masked: 0x%08X", ulCheckAddr, ulCheckVal, ulCheckValMasked);
+								m_ptLog->debug("check address: 0x%08X  value: 0x%08X masked: 0x%08X compare to: 0x%08X", ulCheckAddr, ulCheckVal, ulCheckValMasked, ptRstCnt->ulCheckCmpValue);
 							}
 						}
 							
@@ -1512,6 +1513,9 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 							tChiptyp = ptRstCnt->tChiptyp;
 							m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
 							break;
+						}
+						else{
+							m_ptLog->debug("chip does not match: %s.", ptRstCnt->pcChiptypName);
 						}
 					}
 				}
@@ -1560,6 +1564,60 @@ bool romloader::__read_data32(uint32_t ulNetxAddress, uint32_t *pulData)
 	return fOk;
 }
 
+bool romloader::new_detect_chiptyp(void)
+{
+	const ROMLOADER_RESET_ID_T *ptRstCnt, *ptRstEnd;
+	bool fResult;
+	ROMLOADER_CHIPTYP tChiptyp;
+	uint32_t ulNetxVersion;
+	uint32_t ulInfoFlags;
+	const ROMLOADER_RESET_ID_T *ptCnt, *ptEnd;
+	uint32_t ulVersionRegAddr = 0xFF401298;
+	uint32_t ulMaskedVal;
+	uint32_t ulCompVal;
+	
+	fResult = get_info(&ulNetxVersion, &ulInfoFlags);
+	m_ptLog->debug("ulNetxVersion:  0x%08X", ulNetxVersion);
+	m_ptLog->debug("ulInfoFlags:  0x%08X", ulInfoFlags);
+	if( fResult!=TRANSPORTSTATUS_OK )
+	{
+
+		m_ptLog->error("Failed to get Info Packet");
+	}
+	else
+	{
+		m_ptLog->debug("check for matching chip type ");
+	
+		/* Compare the reset vector to all known chip families. */
+		ptRstCnt = atResIds;
+		ptRstEnd = ptRstCnt + (sizeof(atResIds)/sizeof(atResIds[0]));
+		
+		while( ptRstCnt<ptRstEnd )
+		{
+			if (ulNetxVersion == (ptRstCnt->ulCheckCmpValue))
+			{
+				tChiptyp = ptRstCnt->tChiptyp;
+				m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
+				break;
+			}	
+			++ptRstCnt;
+		}
+	}
+	
+	/* Found something? */
+	if( fResult==TRANSPORTSTATUS_OK && tChiptyp!=ROMLOADER_CHIPTYP_UNKNOWN )
+	{
+		/* Accept the new chip type. */
+		m_tChiptyp = tChiptyp;
+		fResult = true;
+	}
+	else
+	{
+		fResult = false;
+	}
+	return fResult;
+	
+}
 
 bool romloader::detect_chiptyp(void)
 {
@@ -1578,7 +1636,7 @@ bool romloader::detect_chiptyp(void)
 	tChiptyp = ROMLOADER_CHIPTYP_UNKNOWN;
 
 	/* Read the reset vector at 0x00000000. */
-	fResult = __read_data32(0x40000, &ulResetVector);
+	fResult = __read_data32(0x00000000, &ulResetVector);
 	
 	if( fResult!=true )
 	{
@@ -1595,6 +1653,8 @@ bool romloader::detect_chiptyp(void)
 		ulVersionAddr = 0xffffffff;
 		while( ptRstCnt<ptRstEnd )
 		{
+			
+			m_ptLog->debug("check if it is a %s", ptRstCnt->pcChiptypName);
 			m_ptLog->debug("ptRstCnt->ulVersionAddress: 0x%08X", ptRstCnt->ulVersionAddress);
 			if( ptRstCnt->ulResetVector==ulResetVector )
 			{
@@ -1604,7 +1664,6 @@ bool romloader::detect_chiptyp(void)
 				if( fResult!=true )
 				{
 					m_ptLog->error("Failed to read the version data at 0x%08x.", ulVersionAddr);
-					break;
 				}
 				else
 				{
@@ -1625,7 +1684,7 @@ bool romloader::detect_chiptyp(void)
 							else
 							{
 								ulCheckValMasked = ulCheckVal & ptRstCnt->ulCheckMask;
-								m_ptLog->debug("check address: 0x%08X  value: 0x%08X masked: 0x%08X", ulCheckAddr, ulCheckVal, ulCheckValMasked);
+								m_ptLog->debug("check address: 0x%08X  value: 0x%08X masked: 0x%08X compare to: 0x%08X", ulCheckAddr, ulCheckVal, ulCheckValMasked, ptRstCnt->ulCheckCmpValue);
 							}
 						}
 
@@ -1635,6 +1694,9 @@ bool romloader::detect_chiptyp(void)
 							tChiptyp = ptRstCnt->tChiptyp;
 							m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
 							break;
+						}
+						else{
+							m_ptLog->debug("chip does not match: %s.", ptRstCnt->pcChiptypName);
 						}
 					}
 				}
@@ -1782,8 +1844,8 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[16] =
 		0x000400c0,
 		0x0010d005,
 		0xff401298,
-		0x1981020d,
-		0,
+		0xffffffff,
+		0x0981020d,
 		ROMLOADER_CHIPTYP_NETX90C_INTRAM,
 		"netX90 Rev2 intram"
 	},
@@ -1792,8 +1854,8 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[16] =
 		0x000000c0,
 		0x0010d005,
 		0xff401298,
-		0x0981020d,
-		0,
+		0xffffffff,
+		0x0901020d,
 		ROMLOADER_CHIPTYP_NETX90C,
 		"netX90 Rev2"
 	},

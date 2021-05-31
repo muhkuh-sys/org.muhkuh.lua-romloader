@@ -329,9 +329,9 @@ public:
 
 	/* Call a routine on the netX. */
 	virtual void call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
+	virtual void call_hboot(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 	
-	virtual uint32_t get_info(void);
-	virtual uint32_t call_usip(void);
+	virtual uint32_t get_info(uint32_t *ptNetxVersion, uint32_t *ptInfoFlags);
 	virtual void cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData);;
 	/* Get the chip type. */
 	virtual ROMLOADER_CHIPTYP GetChiptyp(void) const;
@@ -387,7 +387,7 @@ protected:
 	virtual TRANSPORTSTATUS_T send_raw_packet(const void *pvPacket, size_t sizPacket) = 0;
 	virtual TRANSPORTSTATUS_T receive_packet(void) = 0;
 
-	virtual bool synchronize(ROMLOADER_CHIPTYP *ptChiptyp);
+	virtual bool synchronize(ROMLOADER_CHIPTYP *ptChiptyp, uint16_t *usMiVersionMin, uint16_t *usMiVersionMaj);
 	virtual TRANSPORTSTATUS_T send_packet(MIV3_PACKET_HEADER_T *ptPacket, size_t sizData);
 	virtual TRANSPORTSTATUS_T execute_command(MIV3_PACKET_HEADER_T *ptPacket, size_t sizPacket);
 
@@ -400,6 +400,7 @@ protected:
 	bool detect_chiptyp(romloader_read_functinoid *ptFn);
 	bool __read_data32(uint32_t ulNetxAddress, uint32_t *pulData);
 	bool detect_chiptyp(void);
+	bool new_detect_chiptyp(void);
 	uint16_t crc16(uint16_t usCrc, uint8_t ucData);
 	bool callback_long(SWIGLUA_REF *ptLuaFn, long lProgressData, long lCallbackUserData);
 	bool callback_string(SWIGLUA_REF *ptLuaFn, const char *pcProgressData, size_t sizProgressData, long lCallbackUserData);
@@ -423,7 +424,7 @@ private:
 
 	bool callback_common(SWIGLUA_REF *ptLuaFn, long lCallbackUserData, int iOldTopOfStack);
 
-	static const ROMLOADER_RESET_ID_T atResIds[15];
+	static const ROMLOADER_RESET_ID_T atResIds[16];
 #endif  /* !defined(SWIG) */
 };
 
