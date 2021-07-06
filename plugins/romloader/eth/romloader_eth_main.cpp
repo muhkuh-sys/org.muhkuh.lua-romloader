@@ -239,12 +239,13 @@ void romloader_eth::Connect(lua_State *ptClientData)
 					
 					m_ptLog->debug("Got suspicious chip type %d, detecting chip type.", tChiptyp);
 					m_fIsConnected = true;
-					if (usMiVersionMaj <= 3 && usMiVersionMin == 0)
+					if ((usMiVersionMaj == 3 && usMiVersionMin == 0 ) || usMiVersionMaj < 3)
 					{
 						fResult = detect_chiptyp();
 					}
-					else if (usMiVersionMaj >= 3 && usMiVersionMin > 0)
+					else
 					{
+
 						m_ptLog->debug("Got suspicious newer chip type use new detect routine");
 						fResult = new_detect_chiptyp();
 					}

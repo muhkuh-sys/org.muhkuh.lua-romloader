@@ -332,7 +332,7 @@ public:
 	virtual void call_hboot(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 	
 	virtual uint32_t get_info(uint32_t *ptNetxVersion, uint32_t *ptInfoFlags);
-	virtual void cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData);;
+	virtual void cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData);
 	/* Get the chip type. */
 	virtual ROMLOADER_CHIPTYP GetChiptyp(void) const;
 	virtual const char *GetChiptypName(ROMLOADER_CHIPTYP tChiptyp) const;

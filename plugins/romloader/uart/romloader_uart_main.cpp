@@ -628,11 +628,11 @@ void romloader_uart::Connect(lua_State *ptClientData)
 							|| tChiptyp==ROMLOADER_CHIPTYP_NETX90)
 						{
 							m_fIsConnected = true;
-							if (usMiVersionMaj <= 3 && usMiVersionMin == 0)
+							if ((usMiVersionMaj == 3 && usMiVersionMin == 0 ) || usMiVersionMaj < 3)
 							{
 								fResult = detect_chiptyp();
 							}
-							else if (usMiVersionMaj >= 3 && usMiVersionMin > 0)
+							else
 							{
 								m_ptLog->debug("Got suspicious newer chip type use new detect routine");
 								fResult = new_detect_chiptyp();

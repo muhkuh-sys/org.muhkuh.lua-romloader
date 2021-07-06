@@ -129,7 +129,8 @@ bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp, uint16_t *usMiVersionM
 			/* Get the sequence number. */
 			ucSequence = ptSyncPacket->s.tHeader.s.ucSequenceNumber;
 			m_ptLog->debug("Sequence number: 0x%02x", ucSequence);
-
+			
+			// check if usMiVersionMaj and usMiVersionMin are no NULL before writing
 			*usMiVersionMin = NETXTOH16(ptSyncPacket->s.usVersionMinor);
 			*usMiVersionMaj = NETXTOH16(ptSyncPacket->s.usVersionMajor);
 			m_ptLog->debug("Machine interface V%d.%d .", ptSyncPacket->s.usVersionMinor, ptSyncPacket->s.usVersionMajor);
@@ -1594,7 +1595,7 @@ bool romloader::new_detect_chiptyp(void)
 		
 		while( ptRstCnt<ptRstEnd )
 		{
-			if (ulNetxVersion == (ptRstCnt->ulCheckCmpValue))
+			if (ulNetxVersion & ptRstCnt->ulCheckMask == (ptRstCnt->ulCheckCmpValue))
 			{
 				tChiptyp = ptRstCnt->tChiptyp;
 				m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
@@ -1843,20 +1844,20 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[16] =
 		0x2009fff0,
 		0x000400c0,
 		0x0010d005,
-		0xff401298,
+		0, // not used for new_detect_chiptyp() routine
 		0xffffffff,
 		0x0981020d,
-		ROMLOADER_CHIPTYP_NETX90C_INTRAM,
+		ROMLOADER_CHIPTYP_NETX90D_INTRAM,
 		"netX90 Rev2 intram"
 	},
 	{
 		0x2009fff0,
 		0x000000c0,
 		0x0010d005,
-		0xff401298,
-		0xffffffff,
+		0, // not used for MI new_detect_chiptyp() routine but for jtag??
+		0xFF7FFFFF,
 		0x0901020d,
-		ROMLOADER_CHIPTYP_NETX90C,
+		ROMLOADER_CHIPTYP_NETX90D,
 		"netX90 Rev2"
 	},
 	{
