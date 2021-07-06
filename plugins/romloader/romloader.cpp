@@ -1267,7 +1267,52 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 	}
 }
 
+void romloader::call_quick(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+{
+	/*
+	this function is used for test purposes only!
+	it sends a call package to the netx and does not check for a reply.
+	we use it to start a binary that resets the netx and does not return with an answer!
+	*/
+	
+	bool fOk;
+	TRANSPORTSTATUS_T tResult;
+	MIV3_PACKET_COMMAND_CALL_T tCallCommand;
+	MIV3_PACKET_CANCEL_CALL_T tCancelCallPacket;
+//	const uint8_t aucCancelBuf[1] = { 0x2b };
+	uint8_t ucStatus;
+	bool fIsRunning;
+	char *pcProgressData;
+	size_t sizProgressData;
+	uint8_t ucPacketTyp;
+	MIV3_PACKET_HEADER_T *ptPacketHeader;
+	MIV3_PACKET_STATUS_T *ptPacketStatus;
 
+
+	if( m_fIsConnected==false )
+	{
+		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
+		fOk = false;
+	}
+	else
+	{
+		tCallCommand.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_CommandExecute;
+		tCallCommand.s.ulAddress = HTONETX32(ulNetxAddress);
+		tCallCommand.s.ulR0 = HTONETX32(ulParameterR0);
+		tResult = execute_command(&(tCallCommand.s.tHeader), sizeof(tCallCommand));
+		if( tResult!=TRANSPORTSTATUS_OK )
+		{
+			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
+			fOk = false;
+		}
+
+	}
+
+	if( fOk!=true )
+	{
+		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
+	}
+}
 
 void romloader::call_hboot(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {

@@ -330,6 +330,7 @@ public:
 	/* Call a routine on the netX. */
 	virtual void call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 	virtual void call_hboot(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
+	virtual void call_quick(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 	
 	virtual uint32_t get_info(uint32_t *ptNetxVersion, uint32_t *ptInfoFlags);
 	virtual void cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData);
