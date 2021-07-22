@@ -1305,6 +1305,10 @@ void romloader::call_quick(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGL
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
 			fOk = false;
 		}
+		else
+		{
+			fOk = true;
+		}
 
 	}
 
@@ -1622,6 +1626,8 @@ bool romloader::new_detect_chiptyp(void)
 	uint32_t ulMaskedVal;
 	uint32_t ulCompVal;
 	
+	tChiptyp = ROMLOADER_CHIPTYP_UNKNOWN;
+	
 	fResult = get_info(&ulNetxVersion, &ulInfoFlags);
 	m_ptLog->debug("ulNetxVersion:  0x%08X", ulNetxVersion);
 	m_ptLog->debug("ulInfoFlags:  0x%08X", ulInfoFlags);
@@ -1640,12 +1646,19 @@ bool romloader::new_detect_chiptyp(void)
 		
 		while( ptRstCnt<ptRstEnd )
 		{
-			if (ulNetxVersion & ptRstCnt->ulCheckMask == (ptRstCnt->ulCheckCmpValue))
-			{
-				tChiptyp = ptRstCnt->tChiptyp;
-				m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
-				break;
-			}	
+			if (ptRstCnt->ulCheckCmpValue != 0){ // only check if ulCheckCmpValue is not 0
+			
+				m_ptLog->debug("check if %s matches..", ptRstCnt->pcChiptypName);
+				uint32_t ulCheckVal = ulNetxVersion & ptRstCnt->ulCheckMask;
+				m_ptLog->debug("check if  0x%08X == 0x%08X", ulCheckVal, ptRstCnt->ulCheckCmpValue);
+				if (ulCheckVal == (ptRstCnt->ulCheckCmpValue))
+				{
+					tChiptyp = ptRstCnt->tChiptyp;
+					m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
+					break;
+				}
+				m_ptLog->debug("nope");				
+			}
 			++ptRstCnt;
 		}
 	}
@@ -1654,11 +1667,14 @@ bool romloader::new_detect_chiptyp(void)
 	if( fResult==TRANSPORTSTATUS_OK && tChiptyp!=ROMLOADER_CHIPTYP_UNKNOWN )
 	{
 		/* Accept the new chip type. */
+		m_ptLog->debug("store Chiptype globally..");
 		m_tChiptyp = tChiptyp;
+		m_ptLog->debug("stored!");
 		fResult = true;
 	}
 	else
 	{
+		m_ptLog->debug("no Chiptype detected");
 		fResult = false;
 	}
 	return fResult;
@@ -1847,7 +1863,7 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[16] =
 		0x04100020,
 		0x0010b004,
 		0xf80000c0, /* RAP_SYSCTRL_OTP_CONFIG_0 bit 0 is the package type */
-		0x00000001,
+		0xffffffff,
 		0x00000000, /* 0 = netx 4000 Full */
 		ROMLOADER_CHIPTYP_NETX4000_FULL,
 		"netX4000 Full"
@@ -1858,7 +1874,7 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[16] =
 		0x04100020,
 		0x0010b004,
 		0xf80000c0, /* RAP_SYSCTRL_OTP_CONFIG_0 bit 0 is the package type */
-		0x00000001,
+		0xffffffff,
 		0x00000001, /* 1 = netx 4100 /netx 4000 Small */
 		ROMLOADER_CHIPTYP_NETX4100_SMALL,
 		"netX4100 Small"
@@ -1887,9 +1903,19 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[16] =
 	},
 	{
 		0x2009fff0,
+		0x000000c0,
+		0x0010d005,
+		0,
+		0,
+		0,
+		ROMLOADER_CHIPTYP_NETX90B,
+		"netX90 Rev1"
+	},
+		{
+		0x2009fff0,
 		0x000400c0,
 		0x0010d005,
-		0, // not used for new_detect_chiptyp() routine
+		0xff401298, // not used for new_detect_chiptyp() routine
 		0xffffffff,
 		0x0981020d,
 		ROMLOADER_CHIPTYP_NETX90D_INTRAM,
@@ -1899,21 +1925,11 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[16] =
 		0x2009fff0,
 		0x000000c0,
 		0x0010d005,
-		0, // not used for MI new_detect_chiptyp() routine but for jtag??
+		0xff401298, // not used for MI new_detect_chiptyp() routine but for jtag??
 		0xFF7FFFFF,
 		0x0901020d,
 		ROMLOADER_CHIPTYP_NETX90D,
 		"netX90 Rev2"
-	},
-	{
-		0x2009fff0,
-		0x000000c0,
-		0x0010d005,
-		0,
-		0,
-		0,
-		ROMLOADER_CHIPTYP_NETX90B,
-		"netX90 Rev1"
 	},
 	{
 		0x00000000, /* reserved location 0 reads as 0 */
