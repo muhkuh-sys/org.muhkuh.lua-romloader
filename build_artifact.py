@@ -1,4 +1,5 @@
 #! /usr/bin/python2.7
+import sys
 
 from jonchki import cli_args
 from jonchki import jonchkihere
@@ -266,7 +267,8 @@ elif tPlatform['host_distribution_id'] == 'windows':
             strMake = '%s/mingw32-make.exe' % strCfg_CompilerPath_Windows_MinGw_w64_x86_64
             astrEnv = dict(
                 os.environ,
-                PATH='%s;%s' % (
+                PATH='%s;%s;%s' % (
+                    sys.executable,
                     strCfg_CompilerPath_Windows_MinGw_w64_x86_64,
                     os.environ['PATH']
                 )
@@ -344,6 +346,11 @@ astrCmd = [
 astrCmd.extend(astrCMAKE_COMPILER)
 astrCmd.extend(astrCMAKE_PLATFORM)
 astrCmd.append(strCfg_projectFolder)
+astrEnv["PATH"] = astrEnv["PATH"].replace("C:\Python37-32\Scripts\;", "")
+astrEnv["PATH"] = astrEnv["PATH"].replace("C:\Python37-32\;", "")
+astrEnv["PATH"] = astrEnv["PATH"].replace("C:\Python37\Scripts\;", "")
+astrEnv["PATH"] = astrEnv["PATH"].replace("C:\Python37\;", "")
+
 strCwd = os.path.join(strCfg_workingFolder, 'lua5.1', 'build_requirements')
 subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
 subprocess.check_call(strMake, shell=True, cwd=strCwd, env=astrEnv)
