@@ -962,6 +962,7 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 	char *pcProgressData;
 	size_t sizProgressData;
 	uint8_t ucPacketTyp;
+	uint8_t ucPacketSequenceNumber;
 	MIV3_PACKET_HEADER_T *ptPacketHeader;
 	MIV3_PACKET_STATUS_T *ptPacketStatus;
 
@@ -1006,18 +1007,24 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 
 					/* Get the packet type. */
 					ucPacketTyp = ptPacketHeader->s.ucPacketType;
+					ucPacketSequenceNumber =  ptPacketHeader->s.ucSequenceNumber;
 
 					if( ucPacketTyp==MONITOR_PACKET_TYP_CallMessage )
 					{
 						/* Acknowledge the packet. */
-						send_ack(m_ucMonitorSequence);
-						/* Increase the sequence number. */
-						++m_ucMonitorSequence;
+						send_ack(ucPacketSequenceNumber);
+						
+						if (ucPacketSequenceNumber == m_ucMonitorSequence){
+							/* Increase the sequence number. */
+							++m_ucMonitorSequence;
 
-						/* NOTE: Do not check the size of the user data here. It should be possible to send 0 bytes. */
-						pcProgressData = ((char*)m_aucPacketInputBuffer) + sizeof(MIV3_PACKET_HEADER_T);
-						/* The size of the user data is the size of the packet - the header size - 2 bytes for the CRC16. */
-						sizProgressData = m_sizPacketInputBuffer - (sizeof(MIV3_PACKET_HEADER_T) + 2U);
+							/* NOTE: Do not check the size of the user data here. It should be possible to send 0 bytes. */
+							pcProgressData = ((char*)m_aucPacketInputBuffer) + sizeof(MIV3_PACKET_HEADER_T);
+							/* The size of the user data is the size of the packet - the header size - 2 bytes for the CRC16. */
+							sizProgressData = m_sizPacketInputBuffer - (sizeof(MIV3_PACKET_HEADER_T) + 2U);
+						}
+						
+
 					}
 					else if( ucPacketTyp==MONITOR_PACKET_TYP_Status )
 					{
@@ -1025,24 +1032,30 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 						if( m_sizPacketInputBuffer==sizeof(MIV3_PACKET_STATUS_T) )
 						{
 							/* The netX sent a status code. */
-
 							/* Acknowledge the packet. */
-							send_ack(m_ucMonitorSequence);
-							/* Increase the sequence number. */
-							++m_ucMonitorSequence;
+							send_ack(ucPacketSequenceNumber);
+						
+							if (ucPacketSequenceNumber == m_ucMonitorSequence){
+															
 
-							ucStatus = ptPacketStatus->s.ucStatus;
-							if( ucStatus==MONITOR_STATUS_CallFinished )
-							{
-								fOk = true;
-								break;
+								/* Increase the sequence number. */
+								++m_ucMonitorSequence;
+
+								ucStatus = ptPacketStatus->s.ucStatus;
+								if( ucStatus==MONITOR_STATUS_CallFinished )
+								{
+									fOk = true;
+									break;
+								}
+								else
+								{
+									/* The netX sent an error. */
+									m_ptLog->error("Status != call_finished received. Status %d.", ucStatus);
+									tResult = TRANSPORTSTATUS_NETX_ERROR;
+								}
 							}
-							else
-							{
-								/* The netX sent an error. */
-								m_ptLog->error("Status != call_finished received. Status %d.", ucStatus);
-								tResult = TRANSPORTSTATUS_NETX_ERROR;
-							}
+
+
 						}
 						else
 						{
