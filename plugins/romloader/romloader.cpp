@@ -184,12 +184,12 @@ romloader::TRANSPORTSTATUS_T romloader::send_packet(MIV3_PACKET_HEADER_T *ptPack
 	/* The maximum packet size must not exceed the maximum size negotiated with the client. */
 	if( sizPacket>m_sizMaxPacketSizeClient )
 	{
-		m_ptLog->error("send_packet: packet too large: %zd bytes! Maximum size is %zd.", m_sizMaxPacketSizeClient, m_sizMaxPacketSizeClient);
+		m_ptLog->error("send_packet: packet too large: %zd bytes! Maximum size is %zd.", sizPacket, m_sizMaxPacketSizeClient);
 		tResult = TRANSPORTSTATUS_PACKET_TOO_LARGE;
 	}
 	else if( sizPacket<sizeof(MIV3_PACKET_HEADER_T) )
 	{
-		m_ptLog->error("send_packet: packet too small: %zd bytes! Minimum size is %zd.", m_sizMaxPacketSizeClient, sizeof(MIV3_PACKET_HEADER_T));
+		m_ptLog->error("send_packet: packet too small: %zd bytes! Minimum size is %zd.", sizPacket, sizeof(MIV3_PACKET_HEADER_T));
 		tResult = TRANSPORTSTATUS_PACKET_TOO_SMALL;
 	}
 	else
