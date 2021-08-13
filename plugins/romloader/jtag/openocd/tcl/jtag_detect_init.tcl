@@ -27,7 +27,7 @@ proc setup_interface_nxjtag_4000_usb {strLocation} {
 	ftdi_vid_pid 0x1939 0x0301
 	adapter_khz 1000
 
-	ftdi_layout_init 0x1B08 0x1F0B
+	ftdi_layout_init 0x1B08 0x1C0B
 	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
 	ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200
 	ftdi_layout_signal JSEL1 -data 0x0400 -oe 0x0400
@@ -67,7 +67,7 @@ proc setup_interface_nxhx90_jtag {strLocation} {
 	ftdi_vid_pid 0x1939 0x002C
 	adapter_khz 1000
 	
-	ftdi_layout_init 0x0308 0x030b
+	ftdi_layout_init 0x0308 0x000b
 	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
 	ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200 
 }
@@ -83,7 +83,7 @@ proc setup_interface_nxhx90_mc {strLocation} {
 	ftdi_vid_pid 0x1939 0x0031
 	adapter_khz 1000
 	
-	ftdi_layout_init 0x0308 0x030b
+	ftdi_layout_init 0x0308 0x000b
 	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
 	ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200 
 }
@@ -96,7 +96,7 @@ proc setup_interface_nxeb90_spe {strLocation} {
 	ftdi_vid_pid 0x1939 0x0032
 	adapter_khz 1000
 	
-	ftdi_layout_init 0x0308 0x030b
+	ftdi_layout_init 0x0308 0x000b
 	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
 	ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200 
 }
@@ -109,7 +109,7 @@ proc setup_interface_nrpeb_h90_re {strLocation} {
 	ftdi_vid_pid 0x1939 0x0029
 	adapter_khz 1000
 	
-	ftdi_layout_init 0x0308 0x030b
+	ftdi_layout_init 0x0308 0x000b
 	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
 	ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200 
 }
@@ -122,7 +122,7 @@ proc setup_interface_nxjtag_usb {strLocation} {
 	ftdi_vid_pid 0x1939 0x0023
 	adapter_khz 1000
 	
-	ftdi_layout_init 0x0308 0x030b
+	ftdi_layout_init 0x0308 0x000b
 	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
 	ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200
 }
