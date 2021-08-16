@@ -2,6 +2,22 @@
 Change log/Release notes
 =========================
 
+V 2.4.9
+=======
+
+Changes affecting openOCD and JTAG configurations:
+
+* Update the openOCD library to v0.10.0.7: J-Link support and some speed increase.
+* Enable support for the Segger J-Link JTAG adapter.
+* Add Support for the NXEB 90-SPE board.
+* Change the interface name of the NXHX90-DRIVE to NXHX90-MC.
+* Fix a spike on the reset line that occurred on the nSRST line on FTDI-based 
+  JTAG adapters when a reset was triggered.
+  This change affects the following boards:
+  NXHX 90-JTAG, NXHX 90-MC, NXHX 90-SPE, NRPEB H90-RE
+  and the following adapters:
+  NXJTAG-USB and NXJTAG-4000-USB
+
 V 2.4.8
 =======
 
