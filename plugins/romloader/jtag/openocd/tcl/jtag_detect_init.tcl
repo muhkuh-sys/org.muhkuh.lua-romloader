@@ -677,9 +677,8 @@ proc reset_netx4000 {} {
 		init
 		halt
 
-		puts "*** DANGER *** Trouble ahead, this will crash. Please port me to openocd 0.11 ."
 		dap_netx4000r7 memaccess
-		dap_netx4000r7 apcsw 1
+		dap_netx4000r7 apcsw 0x40000000
 	} else {
 		puts "+reset_netx4000"
 	
