@@ -4,7 +4,11 @@
 #
 
 # Python is needed for the MBS setup tool.
-FIND_PACKAGE(PythonInterp 2.7 REQUIRED)
+IF(CMAKE_VERSION VERSION_LESS 3.12.0)
+	FIND_PACKAGE(PythonInterp 2.7 REQUIRED)
+ELSE(CMAKE_VERSION VERSION_LESS 3.12.0)
+	FIND_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter)
+ENDIF(CMAKE_VERSION VERSION_LESS 3.12.0)
 
 # Set the filename for the setup.xml file.
 # NOTE: this file is included from 2 cmake projects with different home dirs. Use the current path as a base to get to setup.xml .
