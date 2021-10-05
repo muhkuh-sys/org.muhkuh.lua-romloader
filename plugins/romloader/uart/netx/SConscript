@@ -86,8 +86,8 @@ src_netx500_monitor = env_netx500_monitor.SetBuildPath(os.path.join(strTargetPat
 elf_netx500_monitor = env_netx500_monitor.Elf(os.path.join(strTargetPath, 'uartmon_netx500_monitor.elf'), src_netx500_monitor + env_netx500_monitor['PLATFORM_LIBRARY'] + libmi_netx500)
 bin_netx500_monitor = env_netx500_monitor.ObjCopy(os.path.join(strTargetPath, 'uartmon_netx500_monitor.bin'), elf_netx500_monitor)
 UARTMON_NETX500 = env_netx500_monitor.DataArray(os.path.join(strTargetPath, 'uartmon_netx500_monitor.c'), bin_netx500_monitor, DATAARRAY_NAME='auc_uartmon_netx500_monitor')
-sym_netx500_monitor = env_netx500_monitor.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx500_monitor_run.h'), elf_netx500_monitor, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx500_monitor_run.h'))
-Export('UARTMON_NETX500')
+UARTMON_NETX500_SYM = env_netx500_monitor.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx500_monitor_run.h'), elf_netx500_monitor, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx500_monitor_run.h'))
+Export('UARTMON_NETX500', 'UARTMON_NETX500_SYM')
 
 #----------------------------------------------------------------------------
 #
@@ -100,8 +100,8 @@ src_netx56_monitor = env_netx56_monitor.SetBuildPath(os.path.join(strTargetPath,
 elf_netx56_monitor = env_netx56_monitor.Elf(os.path.join(strTargetPath, 'uartmon_netx56_monitor.elf'), src_netx56_monitor + env_netx56_monitor['PLATFORM_LIBRARY'] + libmi_netx56)
 bin_netx56_monitor = env_netx56_monitor.ObjCopy(os.path.join(strTargetPath, 'uartmon_netx56_monitor.bin'), elf_netx56_monitor)
 UARTMON_NETX56 = env_netx56_monitor.DataArray(os.path.join(strTargetPath, 'uartmon_netx56_monitor.c'), bin_netx56_monitor, DATAARRAY_NAME='auc_uartmon_netx56_monitor')
-sym_netx56_monitor = env_netx56_monitor.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx56_monitor_run.h'), elf_netx56_monitor, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx56_monitor_run.h'))
-Export('UARTMON_NETX56')
+UARTMON_NETX56_SYM = env_netx56_monitor.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx56_monitor_run.h'), elf_netx56_monitor, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx56_monitor_run.h'))
+Export('UARTMON_NETX56', 'UARTMON_NETX56_SYM')
 
 #----------------------------------------------------------------------------
 #
@@ -114,8 +114,8 @@ src_netx50_monitor = env_netx50_monitor.SetBuildPath(os.path.join(strTargetPath,
 elf_netx50_monitor = env_netx50_monitor.Elf(os.path.join(strTargetPath, 'uartmon_netx50_monitor.elf'), src_netx50_monitor + env_netx50_monitor['PLATFORM_LIBRARY'] + libmi_netx50)
 bin_netx50_monitor = env_netx50_monitor.ObjCopy(os.path.join(strTargetPath, 'uartmon_netx50_monitor.bin'), elf_netx50_monitor)
 UARTMON_NETX50 = env_netx50_monitor.DataArray(os.path.join(strTargetPath, 'uartmon_netx50_monitor.c'), bin_netx50_monitor, DATAARRAY_NAME='auc_uartmon_netx50_monitor')
-sym_netx50_monitor = env_netx50_monitor.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx50_monitor_run.h'), elf_netx50_monitor, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx50_monitor_run.h'))
-Export('UARTMON_NETX50')
+UARTMON_NETX50_SYM = env_netx50_monitor.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx50_monitor_run.h'), elf_netx50_monitor, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx50_monitor_run.h'))
+Export('UARTMON_NETX50', 'UARTMON_NETX50_SYM')
 
 env_netx50_bootstrap = atEnv.NETX50_THUMB.Clone()
 env_netx50_bootstrap.Replace(LDFILE = File('src/netx50/netx50_bootstrap.ld'))
@@ -124,8 +124,8 @@ src_netx50_bootstrap = env_netx50_bootstrap.SetBuildPath(os.path.join(strTargetP
 elf_netx50_bootstrap = env_netx50_bootstrap.Elf(os.path.join(strTargetPath, 'uartmon_netx50_bootstrap.elf'), src_netx50_bootstrap)
 bin_netx50_bootstrap = env_netx50_bootstrap.ObjCopy(os.path.join(strTargetPath, 'uartmon_netx50_bootstrap.bin'), elf_netx50_bootstrap)
 UARTMON_NETX50_BOOTSTRAP = env_netx50_bootstrap.DataArray(os.path.join(strTargetPath, 'uartmon_netx50_bootstrap.c'), bin_netx50_bootstrap, DATAARRAY_NAME='auc_uartmon_netx50_bootstrap')
-sym_netx50_bootstrap = env_netx50_bootstrap.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx50_bootstrap_run.h'), elf_netx50_bootstrap, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx50_bootstrap_run.h'))
-Export('UARTMON_NETX50_BOOTSTRAP')
+UARTMON_NETX50_BOOTSTRAP_SYM = env_netx50_bootstrap.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx50_bootstrap_run.h'), elf_netx50_bootstrap, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx50_bootstrap_run.h'))
+Export('UARTMON_NETX50_BOOTSTRAP', 'UARTMON_NETX50_BOOTSTRAP_SYM')
 
 #----------------------------------------------------------------------------
 #
@@ -138,8 +138,8 @@ src_netx10_monitor = env_netx10_monitor.SetBuildPath(os.path.join(strTargetPath,
 elf_netx10_monitor = env_netx10_monitor.Elf(os.path.join(strTargetPath, 'uartmon_netx10_monitor.elf'), src_netx10_monitor + env_netx10_monitor['PLATFORM_LIBRARY'] + libmi_netx10)
 bin_netx10_monitor = env_netx10_monitor.ObjCopy(os.path.join(strTargetPath, 'uartmon_netx10_monitor.bin'), elf_netx10_monitor)
 UARTMON_NETX10 = env_netx10_monitor.DataArray(os.path.join(strTargetPath, 'uartmon_netx10_monitor.c'), bin_netx10_monitor, DATAARRAY_NAME='auc_uartmon_netx10_monitor')
-sym_netx10_monitor = env_netx10_monitor.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx10_monitor_run.h'), elf_netx10_monitor, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx10_monitor_run.h'))
-Export('UARTMON_NETX10')
+UARTMON_NETX10_SYM = env_netx10_monitor.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx10_monitor_run.h'), elf_netx10_monitor, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx10_monitor_run.h'))
+Export('UARTMON_NETX10', 'UARTMON_NETX10_SYM')
 
 env_netx10_bootstrap = atEnv.NETX10_THUMB.Clone()
 env_netx10_bootstrap.Replace(LDFILE = File('src/netx10/netx10_bootstrap.ld'))
@@ -148,8 +148,8 @@ src_netx10_bootstrap = env_netx10_bootstrap.SetBuildPath(os.path.join(strTargetP
 elf_netx10_bootstrap = env_netx10_bootstrap.Elf(os.path.join(strTargetPath, 'uartmon_netx10_bootstrap.elf'), src_netx10_bootstrap)
 bin_netx10_bootstrap = env_netx10_bootstrap.ObjCopy(os.path.join(strTargetPath, 'uartmon_netx10_bootstrap.bin'), elf_netx10_bootstrap)
 UARTMON_BOOTSTRAP_NETX10 = env_netx10_bootstrap.DataArray(os.path.join(strTargetPath, 'uartmon_netx10_bootstrap.c'), bin_netx10_bootstrap, DATAARRAY_NAME='auc_uartmon_netx10_bootstrap')
-sym_netx10_bootstrap = env_netx10_bootstrap.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx10_bootstrap_run.h'), elf_netx10_bootstrap, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx10_bootstrap_run.h'))
-Export('UARTMON_BOOTSTRAP_NETX10')
+UARTMON_BOOTSTRAP_NETX10_SYM = env_netx10_bootstrap.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx10_bootstrap_run.h'), elf_netx10_bootstrap, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx10_bootstrap_run.h'))
+Export('UARTMON_BOOTSTRAP_NETX10', 'UARTMON_BOOTSTRAP_NETX10_SYM')
 
 #----------------------------------------------------------------------------
 #
@@ -162,5 +162,5 @@ src_netx4000_monitor = env_netx4000_monitor.SetBuildPath(os.path.join(strTargetP
 elf_netx4000_monitor = env_netx4000_monitor.Elf(os.path.join(strTargetPath, 'uartmon_netx4000_monitor.elf'), src_netx4000_monitor + env_netx4000_monitor['PLATFORM_LIBRARY'] + libmi_netx4000)
 bin_netx4000_monitor = env_netx4000_monitor.ObjCopy(os.path.join(strTargetPath, 'uartmon_netx4000_monitor.bin'), elf_netx4000_monitor)
 UARTMON_NETX4000 = env_netx4000_monitor.DataArray(os.path.join(strTargetPath, 'uartmon_netx4000_monitor.c'), bin_netx4000_monitor, DATAARRAY_NAME='auc_uartmon_netx4000_monitor')
-sym_netx4000_monitor = env_netx4000_monitor.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx4000_monitor_run.h'), elf_netx4000_monitor, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx4000_monitor_run.h'))
-Export('UARTMON_NETX4000')
+UARTMON_NETX4000_SYM = env_netx4000_monitor.GccSymbolTemplate(os.path.join(strTargetPath, 'uartmon_netx4000_monitor_run.h'), elf_netx4000_monitor, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/uartmon_netx4000_monitor_run.h'))
+Export('UARTMON_NETX4000', 'UARTMON_NETX4000_SYM')
