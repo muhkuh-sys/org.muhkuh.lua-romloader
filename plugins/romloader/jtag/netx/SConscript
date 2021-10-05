@@ -53,7 +53,7 @@ def build_elf_bin(pars):
 	txt = env.ObjDump(target_path + '.txt', elf, OBJDUMP_FLAGS=['--disassemble', '--source', '--all-headers', '--wide'])
 	bin = env.ObjCopy(target_path + '.bin', elf)
 	#sym_netx500_dcc = env_netx500_dcc.GccSymbolTemplate(os.path.join(strTargetPath, 'netx500_dcc_run.h'), elf_netx500_dcc, GCCSYMBOLTEMPLATE_TEMPLATE=File('templates/netx500_dcc_run.h'))
-	return elf, bin
+	return bin
 
 # build binary for netx 500/100
 class buildpars:
@@ -64,27 +64,29 @@ class buildpars:
 	ldfile      = 'src/netx500.ld'
 	target_dir  = strTargetPath + '/netx500'
 	target_name = 'dcc_netx500'
-build_elf_bin(buildpars)
+DCC_NETX500 = build_elf_bin(buildpars)
+Export('DCC_NETX500')
 
 # build binary for netx 10_50_51_52 
 buildpars.env         = atEnv.NETX50
 buildpars.ldfile      = 'src/netx10_50_51_52.ld'
 buildpars.target_dir  = strTargetPath + '/netx10_50_51_52'
 buildpars.target_name = 'dcc_netx10_50_51_52' 
-build_elf_bin(buildpars)
-
+DCC_NETX10_50_56 = build_elf_bin(buildpars)
+Export('DCC_NETX10_50_56')
 
 # build netx 4000/R7 binary
 buildpars.env         = atEnv.NETX4000
 buildpars.ldfile      = 'src/netx4000.ld'
 buildpars.target_dir  = strTargetPath + '/netx4000'
 buildpars.target_name = 'dcc_netx4000_cr7' 
-build_elf_bin(buildpars)
+DCC_NETX4000 = build_elf_bin(buildpars)
+Export('DCC_NETX4000')
 
 # build netx 90 COM binary
 buildpars.env         = atEnv.NETX90
 buildpars.ldfile      = 'src/netx90.ld'
 buildpars.target_dir  = strTargetPath + '/netx90'
 buildpars.target_name = 'dcc_netx90_com' 
-build_elf_bin(buildpars)
-
+DCC_NETX90 = build_elf_bin(buildpars)
+Export('DCC_NETX90')

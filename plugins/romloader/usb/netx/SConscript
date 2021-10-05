@@ -74,8 +74,8 @@ env_netx500.Replace(LDFILE = File('src/netx500/netx500.ld'))
 src_netx500 = env_netx500.SetBuildPath(os.path.join(strTargetPath, 'netx500'), 'src', sources_common + sources_custom_netx500)
 elf_netx500 = env_netx500.Elf(os.path.join(strTargetPath, 'usbmon_netx500.elf'), src_netx500 + env_netx500['PLATFORM_LIBRARY'] + libmi_netx500)
 bin_netx500 = env_netx500.ObjCopy(os.path.join(strTargetPath, 'usbmon_netx500.bin'), elf_netx500)
-arr_netx500 = env_netx500.DataArray(os.path.join(strTargetPath, 'usbmon_netx500.c'), bin_netx500, DATAARRAY_NAME='auc_usbmon_netx500')
-
+USBMON_NETX500 = env_netx500.DataArray(os.path.join(strTargetPath, 'usbmon_netx500.c'), bin_netx500, DATAARRAY_NAME='auc_usbmon_netx500')
+Export('USBMON_NETX500')
 
 #----------------------------------------------------------------------------
 #
@@ -87,8 +87,8 @@ env_netx56.Replace(LDFILE = File('src/netx56/netx56.ld'))
 src_netx56 = env_netx56.SetBuildPath(os.path.join(strTargetPath, 'netx56'), 'src', sources_common + sources_custom_netx56)
 elf_netx56 = env_netx56.Elf(os.path.join(strTargetPath, 'usbmon_netx56.elf'), src_netx56 + env_netx56['PLATFORM_LIBRARY'] + libmi_netx56)
 bin_netx56 = env_netx56.ObjCopy(os.path.join(strTargetPath, 'usbmon_netx56.bin'), elf_netx56)
-arr_netx56 = env_netx56.DataArray(os.path.join(strTargetPath, 'usbmon_netx56.c'), bin_netx56, DATAARRAY_NAME='auc_usbmon_netx56')
-
+USBMON_NETX56 = env_netx56.DataArray(os.path.join(strTargetPath, 'usbmon_netx56.c'), bin_netx56, DATAARRAY_NAME='auc_usbmon_netx56')
+Export('USBMON_NETX56')
 
 #----------------------------------------------------------------------------
 #
@@ -100,5 +100,5 @@ env_netx10.Replace(LDFILE = File('src/netx10/netx10.ld'))
 src_netx10 = env_netx10.SetBuildPath(os.path.join(strTargetPath, 'netx10'), 'src', sources_common + sources_custom_netx10)
 elf_netx10 = env_netx10.Elf(os.path.join(strTargetPath, 'usbmon_netx10.elf'), src_netx10 + env_netx10['PLATFORM_LIBRARY'] + libmi_netx10)
 bin_netx10 = env_netx10.ObjCopy(os.path.join(strTargetPath, 'usbmon_netx10.bin'), elf_netx10)
-arr_netx10 = env_netx10.DataArray(os.path.join(strTargetPath, 'usbmon_netx10.c'), bin_netx10, DATAARRAY_NAME='auc_usbmon_netx10')
-
+USBMON_NETX10 = env_netx10.DataArray(os.path.join(strTargetPath, 'usbmon_netx10.c'), bin_netx10, DATAARRAY_NAME='auc_usbmon_netx10')
+Export('USBMON_NETX10')

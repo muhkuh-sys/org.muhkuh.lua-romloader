@@ -92,3 +92,29 @@ SConscript('plugins/romloader/usb/netx/SConscript')
 #
 SConscript('plugins/romloader/jtag/netx/SConscript')
 
+
+#----------------------------------------------------------------------------
+#
+# Build an archive with all firmware parts.
+#
+Import('USBMON_NETX500', 'USBMON_NETX56', 'USBMON_NETX10')
+Import('UARTMON_NETX500', 'UARTMON_NETX56', 'UARTMON_NETX50', 'UARTMON_NETX50_BOOTSTRAP', 'UARTMON_NETX10', 'UARTMON_BOOTSTRAP_NETX10', 'UARTMON_NETX4000')
+Import('DCC_NETX500', 'DCC_NETX10_50_56', 'DCC_NETX4000', 'DCC_NETX90')
+
+atFirmware = [
+    USBMON_NETX500,
+    USBMON_NETX56,
+    USBMON_NETX10,
+    UARTMON_NETX500,
+    UARTMON_NETX56,
+    UARTMON_NETX50,
+    UARTMON_NETX50_BOOTSTRAP,
+    UARTMON_NETX10,
+    UARTMON_BOOTSTRAP_NETX10,
+    UARTMON_NETX4000,
+    DCC_NETX500,
+    DCC_NETX10_50_56,
+    DCC_NETX4000,
+    DCC_NETX90
+]
+atEnv.DEFAULT.Tar('targets/firmware.tar.gz', atFirmware, TARFLAGS = '-c -z')
