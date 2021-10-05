@@ -28,8 +28,10 @@ INCLUDE(cmake/platform.cmake)
 # Python is used for the firmware build script and some test scripts.
 IF(CMAKE_VERSION VERSION_LESS 3.12.0)
 	FIND_PACKAGE(PythonInterp 2.7 REQUIRED)
+	SET(PYTHON_INTREPRETER "${PYTHON_EXECUTABLE}")
 ELSE(CMAKE_VERSION VERSION_LESS 3.12.0)
 	FIND_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter)
+	SET(PYTHON_INTERPRETER "${Python3_EXECUTABLE}")
 ENDIF(CMAKE_VERSION VERSION_LESS 3.12.0)
 
 
@@ -68,7 +70,7 @@ SET(NETX_FIRMWARE_PRODUCTS
 
 # Add a custom target for the netX firmware.
 ADD_CUSTOM_TARGET(TARGET_NETX_FIRMWARE ALL
-                  COMMAND "${Python3_EXECUTABLE}" mbs/mbs
+                  COMMAND "${PYTHON_INTERPRETER}" mbs/mbs
                   WORKING_DIRECTORY ${CMAKE_HOME_DIRECTORY}
                   COMMENT "Build the netX firmware."
                   BYPRODUCTS ${NETX_FIRMWARE_PRODUCTS}
