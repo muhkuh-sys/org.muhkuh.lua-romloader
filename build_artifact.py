@@ -226,6 +226,7 @@ astrCmd = [
     '-DWORKING_DIR=%s' % strCfg_workingFolder
 ]
 astrCmd.extend(astrCMAKE_COMPILER)
+astrCmd.extend(tPlatform['cmake_defines'])
 astrCmd.append(os.path.join(strCfg_projectFolder, 'external'))
 strCwd = os.path.join(strCfg_workingFolder, 'external')
 subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
@@ -249,6 +250,7 @@ astrCmd = [
 ]
 astrCmd.extend(astrCMAKE_COMPILER)
 astrCmd.extend(astrCMAKE_PLATFORM)
+astrCmd.extend(tPlatform['cmake_defines'])
 astrCmd.append(strCfg_projectFolder)
 strCwd = os.path.join(strCfg_workingFolder, 'lua5.1', 'build_requirements')
 subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
@@ -293,6 +295,7 @@ astrCmd = [
 ]
 astrCmd.extend(astrCMAKE_COMPILER)
 astrCmd.extend(astrCMAKE_PLATFORM)
+astrCmd.extend(tPlatform['cmake_defines'])
 astrCmd.append(strCfg_projectFolder)
 strCwd = os.path.join(strCfg_workingFolder, 'lua5.1')
 subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
@@ -316,6 +319,7 @@ astrCmd = [
 ]
 astrCmd.extend(astrCMAKE_COMPILER)
 astrCmd.extend(astrCMAKE_PLATFORM)
+astrCmd.extend(tPlatform['cmake_defines'])
 astrCmd.append(strCfg_projectFolder)
 strCwd = os.path.join(strCfg_workingFolder, 'lua5.4', 'build_requirements')
 subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)
@@ -357,6 +361,7 @@ astrCmd = [
 ]
 astrCmd.extend(astrCMAKE_COMPILER)
 astrCmd.extend(astrCMAKE_PLATFORM)
+astrCmd.extend(tPlatform['cmake_defines'])
 astrCmd.append(strCfg_projectFolder)
 strCwd = os.path.join(strCfg_workingFolder, 'lua5.4')
 subprocess.check_call(' '.join(astrCmd), shell=True, cwd=strCwd, env=astrEnv)

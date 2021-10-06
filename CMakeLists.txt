@@ -68,14 +68,17 @@ SET(NETX_FIRMWARE_PRODUCTS
 	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx500.h
 )
 
-# Add a custom target for the netX firmware.
-ADD_CUSTOM_TARGET(TARGET_NETX_FIRMWARE ALL
-                  COMMAND "${PYTHON_INTERPRETER}" mbs/mbs
-                  WORKING_DIRECTORY ${CMAKE_HOME_DIRECTORY}
-                  COMMENT "Build the netX firmware."
-                  BYPRODUCTS ${NETX_FIRMWARE_PRODUCTS}
-)
-
+OPTION(BUILDCFG_SKIP_NETX_FW "Do not build the netX firmware but expect the pre-built artifacts. The default is OFF."
+       "OFF")
+IF( NOT BUILDCFG_SKIP_NETX_FW STREQUAL "ON" )
+	# Add a custom target for the netX firmware.
+	ADD_CUSTOM_TARGET(TARGET_NETX_FIRMWARE ALL
+	                  COMMAND "${PYTHON_INTERPRETER}" mbs/mbs
+	                  WORKING_DIRECTORY ${CMAKE_HOME_DIRECTORY}
+	                  COMMENT "Build the netX firmware."
+	                  BYPRODUCTS ${NETX_FIRMWARE_PRODUCTS}
+	)
+ENDIF( NOT BUILDCFG_SKIP_NETX_FW STREQUAL "ON" )
 
 # Filter the jonchki configurations.
 CONFIGURE_FILE(plugins/installer/lua${BUILDCFG_LUA_VERSION}/romloader.xml
