@@ -27,7 +27,7 @@ INCLUDE(cmake/platform.cmake)
 
 # Python is used for the firmware build script and some test scripts.
 IF(CMAKE_VERSION VERSION_LESS 3.12.0)
-	FIND_PACKAGE(PythonInterp 2.7 REQUIRED)
+	FIND_PACKAGE(PythonInterp 3 REQUIRED)
 	SET(PYTHON_INTERPRETER "${PYTHON_EXECUTABLE}")
 ELSE(CMAKE_VERSION VERSION_LESS 3.12.0)
 	FIND_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter)
