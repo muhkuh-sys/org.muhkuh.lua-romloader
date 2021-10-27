@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "shared_library.h"
+#include "../romloader_jtag_main.h"
 
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__MINGW64__)
 #       define OPENOCD_SHARED_LIBRARY_FILENAME "openocd.dll"
@@ -31,6 +32,7 @@ romloader_jtag_openocd::romloader_jtag_openocd(muhkuh_log *ptLog)
  , m_pcOpenocdSharedObjectPath(NULL)
  , m_ptLibUsbContext(NULL)
  , m_ptLog(NULL)
+ , m_ptPluginOptions(NULL)
 {
 	memset(&m_tJtagDevice, 0, sizeof(ROMLOADER_JTAG_DEVICE_T));
 
@@ -69,6 +71,13 @@ romloader_jtag_openocd::~romloader_jtag_openocd(void)
 	{
 		libusb_exit(m_ptLibUsbContext);
 	}
+	
+	if (m_ptPluginOptions != NULL) 
+	{
+		delete m_ptPluginOptions;
+		m_ptPluginOptions = NULL;
+	}
+	
 }
 
 
@@ -488,6 +497,65 @@ int romloader_jtag_openocd::add_detected_entry(const char *pcInterface, const ch
 	return iResult;
 }
 
+void romloader_jtag_openocd::set_options(const romloader_jtag_options *ptOptions)
+{
+	if (m_ptPluginOptions != NULL) 
+	{
+		delete m_ptPluginOptions;
+		m_ptPluginOptions = NULL;
+	}
+	
+	if (ptOptions != NULL) 
+	{
+		m_ptPluginOptions = new romloader_jtag_options(ptOptions);
+	}
+}
+
+/* Get the values from the romloader_jtag_options object and 
+ * put them in variables in the TCL environment. 
+ * OPTION_JTAG_FREQUENCY
+ * OPTION_RESET_MODE
+ */
+ 
+int romloader_jtag_openocd::options_to_tcl(ROMLOADER_JTAG_DEVICE_T *ptDevice)
+{
+	int iResult;
+	char acCommand[256];
+	
+	romloader_jtag_options::JTAG_RESET_T tJtagResetMode;
+	unsigned long ulJtagFrequencyKhz;
+	const char *pacCommandTemplate = "set __JTAG_FREQUENCY_KHZ__ %u; set __JTAG_RESET__ %d";
+	
+	if (m_ptPluginOptions == NULL) 
+	{
+		m_ptLog->debug("Note: no JTAG options available.");
+		iResult=0;
+	}
+	else 
+	{
+		m_ptLog->debug("Setting Jtag options in TCL environment.");
+
+		tJtagResetMode = m_ptPluginOptions->getOption_jtagReset();
+		ulJtagFrequencyKhz = m_ptPluginOptions->getOption_jtagFrequencyKhz();
+
+		snprintf(acCommand, sizeof(acCommand)-1, 
+		pacCommandTemplate, ulJtagFrequencyKhz, (int)tJtagResetMode);
+		
+		/* Run the command chunk. */
+		iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, acCommand);
+		if( iResult!=0 )
+		{
+			m_ptLog->fatal("Failed to run the chunk: %d", iResult);
+			m_ptLog->fatal("Failed command: %s", acCommand);
+		}
+	}
+
+	return iResult;
+}
+
+
+
+
 /*
    Try to open the shared library.
    If successful, resolve method names and initialize the shared library.
@@ -550,12 +618,21 @@ int romloader_jtag_openocd::openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice)
 			{
 				ptDevice->pvOpenocdContext = pvOpenocdContext;
 
-				m_ptLog->debug("Loading script.");
-				iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, "source [find jtag_detect_init.tcl]");
-				if( iResult!=0 )
+				iResult = options_to_tcl(ptDevice);
+				if (iResult!=0)
 				{
-					m_ptLog->fatal("Failed to load the script: %d", iResult);
+					m_ptLog->fatal("Failed to set the option variables: %d", iResult);
 					iResult = -1;
+				}
+				else 
+				{
+					m_ptLog->debug("Loading script.");
+					iResult = ptDevice->tFunctions.tFn.pfnCommandRunLine(ptDevice->pvOpenocdContext, "source [find jtag_detect_init.tcl]");
+					if( iResult!=0 )
+					{
+						m_ptLog->fatal("Failed to load the script: %d", iResult);
+						iResult = -1;
+					}
 				}
 			}
 		}

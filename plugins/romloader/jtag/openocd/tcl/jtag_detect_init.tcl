@@ -1,13 +1,27 @@
 puts "loading script jtag_detect_init.tcl"
 
-source [find netx_swreset.tcl]
 
-# HardReset
-#set __JTAG_RESET__ 0
-# SoftReset
-#set __JTAG_RESET__ 1
-# Attach
-set __JTAG_RESET__ 2
+# Set the adapter speed.
+# Use the value of __JTAG_FREQUENCY_KHZ__, if it is different from 0,
+# otherwise use speed_khz.
+proc set_adapter_speed_khz {speed_khz} {
+	global __JTAG_FREQUENCY_KHZ__
+	if {$__JTAG_FREQUENCY_KHZ__ == 0} {
+		adapter speed $speed_khz
+	} else {
+		adapter speed $__JTAG_FREQUENCY_KHZ__
+	}
+}
+
+
+# 0: HardReset
+# 1: SoftReset
+# 2: Attach
+
+global __JTAG_RESET__
+puts "__JTAG_RESET__: $__JTAG_RESET__"
+
+source [find netx_swreset.tcl]
 
 
 # todo/wishlist:
@@ -28,7 +42,7 @@ proc setup_interface_nxjtag_4000_usb {strLocation} {
 	transport select jtag
 	ftdi_device_desc "NXJTAG-4000-USB"
 	ftdi_vid_pid 0x1939 0x0301
-	adapter speed 1000
+	set_adapter_speed_khz 1000
 
 	ftdi_layout_init 0x1B08 0x1C0B
 	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
@@ -43,7 +57,7 @@ proc setup_interface_nxhx_generic {strLocation} {
 	adapter usb location $strLocation
 	transport select jtag
 	ftdi_vid_pid 0x0640 0x0028
-	adapter speed 1000
+	set_adapter_speed_khz 1000
 	
 	global ADAPTER_MAX_KHZ
 	set ADAPTER_MAX_KHZ 2000
@@ -68,7 +82,7 @@ proc setup_interface_nxhx90_jtag {strLocation} {
 	transport select jtag
 	ftdi_device_desc "NXHX 90-JTAG"
 	ftdi_vid_pid 0x1939 0x002C
-	adapter speed 1000
+	set_adapter_speed_khz 1000
 	
 	ftdi_layout_init 0x0308 0x000b
 	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
@@ -84,7 +98,7 @@ proc setup_interface_nxhx90_mc {strLocation} {
 	# "NXHX 90-DRIVE" will be recognized as well.
 	# ftdi_device_desc "NXHX 90-MC"
 	ftdi_vid_pid 0x1939 0x0031
-	adapter speed 1000
+	set_adapter_speed_khz 1000
 	
 	ftdi_layout_init 0x0308 0x000b
 	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
@@ -97,7 +111,7 @@ proc setup_interface_nxeb90_spe {strLocation} {
 	transport select jtag
 	ftdi_device_desc "NXEB 90-SPE"
 	ftdi_vid_pid 0x1939 0x0032
-	adapter_khz 1000
+	set_adapter_speed_khz 1000
 	
 	ftdi_layout_init 0x0308 0x000b
 	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
@@ -110,7 +124,7 @@ proc setup_interface_nrpeb_h90_re {strLocation} {
 	transport select jtag
 	ftdi_device_desc "NRPEB H90-RE"
 	ftdi_vid_pid 0x1939 0x0029
-	adapter speed 1000
+	set_adapter_speed_khz 1000
 	
 	ftdi_layout_init 0x0308 0x000b
 	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
@@ -123,7 +137,7 @@ proc setup_interface_nxjtag_usb {strLocation} {
 	transport select jtag
 	ftdi_device_desc "NXJTAG-USB"
 	ftdi_vid_pid 0x1939 0x0023
-	adapter speed 1000
+	set_adapter_speed_khz 1000
 	
 	ftdi_layout_init 0x0308 0x000b
 	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
@@ -140,7 +154,7 @@ proc setup_interface_olimex_arm_usb_tiny_h {strLocation} {
 	transport select jtag
 	ftdi_device_desc "Olimex OpenOCD JTAG ARM-USB-TINY-H"
 	ftdi_vid_pid 0x15ba 0x002a
-	adapter speed 1000
+	set_adapter_speed_khz 1000
 	
 	ftdi_layout_init 0x0808 0x0a1b
 	ftdi_layout_signal nSRST -oe 0x0200
@@ -155,7 +169,7 @@ proc setup_interface_jtagkey {strLocation} {
 	transport select jtag
 	ftdi_device_desc "Amontec JTAGkey"
 	ftdi_vid_pid 0x0403 0xcff8
-	adapter speed 1000
+	set_adapter_speed_khz 1000
 	
 	global ADAPTER_MAX_KHZ
 	set ADAPTER_MAX_KHZ 2000
@@ -170,7 +184,7 @@ proc setup_interface_jtagkey {strLocation} {
 proc setup_interface_jlink {} {
 	adapter driver jlink
 	transport select jtag
-	adapter speed 1000
+	set_adapter_speed_khz 1000
 }
 
 
@@ -348,7 +362,7 @@ proc probe_cpu {strCpuID} {
 	# netIOL
 	} elseif { $strCpuID == "netIOL"} {
 		echo "+ probe_cpu netIOL"
-		adapter speed 1000
+		set_adapter_speed_khz 1000
 		
 		jtag newtap netIOL cpu -expected-id 0x101026ad -irlen 4 -ircapture 0x1 -irmask 0xf 
 		jtag configure netIOL.cpu -event setup { global SC_CFG_RESULT ; echo {Yay - setup netIOL} ; set SC_CFG_RESULT {OK} }
@@ -427,7 +441,7 @@ proc reset_netX_ARM926_ARM966 {} {
 		0 {
 			echo "Using hardware reset (SRST)"
 			reset_config trst_and_srst
-			adapter_nsrst_delay 500
+			adapter srst delay 500
 			jtag_ntrst_delay 500
 
 			init
@@ -510,7 +524,7 @@ proc reset_netx90_COM {}  {
             #reset_config trst_and_srst
             reset_config srst_only 
             #reset_config trst_only
-            adapter_nsrst_delay 500
+            adapter srst delay 500
             jtag_ntrst_delay 500
         }
     
@@ -564,7 +578,7 @@ proc reset_netx90_COM {}  {
             rbp $BP_ADDR_APP_JTAG_ENABLED
         
             # The PLL is configured. Set the JTAG frequency to 1 MHz.
-            adapter speed 1000
+            set_adapter_speed_khz 1000
 
         } else {
   
@@ -591,7 +605,7 @@ proc reset_netx90_COM {}  {
                 netx90_setup_analog
     
                 # The PLL is configured now. Set the JTAG frequency to 1 MHz.
-                adapter speed 1000
+                set_adapter_speed_khz 1000
             
             } else {
     
@@ -621,7 +635,7 @@ proc reset_netx90_COM {}  {
                     # netx90_setup_analog
                 
                     # We assume that the PLL is configured. Set the JTAG frequency to 1 MHz.
-                    adapter speed 1000
+                    set_adapter_speed_khz 1000
 
                 } else {
                     # The COM CPU wasn't halted.
@@ -688,8 +702,7 @@ proc reset_netx4000 {} {
 		} else {
 			echo "Using hardware reset (SRST)"
 			reset_config trst_and_srst separate
-			adapter_nsrst_delay 500
-			#adapter_nsrst_delay 0
+			adapter srst delay 500
 			adapter_nsrst_assert_width 50
 		}
 

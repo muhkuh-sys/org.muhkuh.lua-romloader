@@ -213,6 +213,8 @@ romloader_jtag_provider::romloader_jtag_provider(swig_type_info *p_romloader_jta
 	m_ptJtagDevice = new romloader_jtag_openocd(m_ptLog);
 	if( m_ptJtagDevice!=NULL )
 	{
+		m_ptJtagDevice->set_options((romloader_jtag_options*) m_ptPluginOptions);
+
 		/* Try to initialize the JTAG driver. */
 		iResult = m_ptJtagDevice->initialize();
 		if( iResult==0 )
@@ -256,6 +258,7 @@ int romloader_jtag_provider::DetectInterfaces(lua_State *ptLuaStateForTableAcces
 	romloader_jtag_openocd::ROMLOADER_JTAG_DETECT_ENTRY_T *ptEntriesCnt;
 	romloader_jtag_openocd::ROMLOADER_JTAG_DETECT_ENTRY_T *ptEntriesEnd;
 	romloader_jtag_reference *ptRef;
+	romloader_jtag_options *ptOptions;
 	size_t sizEntries;
 	bool fIsBusy;
 	char strId[1024];
@@ -272,6 +275,13 @@ int romloader_jtag_provider::DetectInterfaces(lua_State *ptLuaStateForTableAcces
 		{
 			processOptions(ptLuaStateForTableAccessOptional, 3);
 		}
+
+		/* Copy the options to the romloader_jtag_openocd instance. 
+		 * If no options were passed, the default values are used. 
+		 */
+		ptOptions = GetOptions();
+		m_ptJtagDevice->set_options(ptOptions);
+
 
 		/* detect devices */
 		ptEntries = NULL;
@@ -528,6 +538,9 @@ romloader_jtag::romloader_jtag(const char *pcName, const char *pcTyp, romloader_
 	m_ptJtagDevice = new romloader_jtag_openocd(m_ptLog);
 	if( m_ptJtagDevice!=NULL )
 	{
+		/* Set the options in the romloader_jtag_openocd instance */
+		m_ptJtagDevice->set_options(ptOptions);
+
 		/* Try to initialize the JTAG driver. */
 		iResult = m_ptJtagDevice->initialize();
 		if( iResult==0 )

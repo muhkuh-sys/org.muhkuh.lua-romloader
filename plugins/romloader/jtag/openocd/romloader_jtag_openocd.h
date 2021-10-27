@@ -25,6 +25,8 @@
 
 typedef int (*PFN_MUHKUH_CALL_PRINT_CALLBACK) (void *pvCallbackUserData, uint8_t *pucData, unsigned long ulDataSize);
 
+class romloader_jtag_options;
+
 class romloader_jtag_openocd
 {
 public:
@@ -120,6 +122,8 @@ public:
 	} ROMLOADER_JTAG_MATCHING_USB_LOCATIONS_T;
 
 	int initialize(void);
+	void set_options(const romloader_jtag_options *ptOptions);
+	
 	int detect(ROMLOADER_JTAG_DETECT_ENTRY_T **pptEntries, size_t *psizEntries);
 
 	/* Open the connection to the device. */
@@ -180,7 +184,8 @@ private:
 	bool fJtagDeviceIsConnected;
 	ROMLOADER_JTAG_DEVICE_T m_tJtagDevice;
 
-
+	romloader_jtag_options *m_ptPluginOptions;
+	
 	/* This is the list of detected devices as interface/target name pairs.
 	 * The list will be cleared before each new detect.
 	 */
@@ -197,6 +202,8 @@ private:
 
 	void free_detect_entries(void);
 	int add_detected_entry(const char *pcInterface, const char *pcTarget, const char *pcLocation);
+
+	int options_to_tcl(ROMLOADER_JTAG_DEVICE_T *ptDevice);
 
 	int openocd_open(ROMLOADER_JTAG_DEVICE_T *ptDevice);
 	void openocd_close(ROMLOADER_JTAG_DEVICE_T *ptDevice);
