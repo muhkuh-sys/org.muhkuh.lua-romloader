@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.7)
 PROJECT("libusb")
 
 SET(VERSION_EXTERNAL "1.0.24")
-SET(VERSION_EXTERNAL_POST "-rc1")
+SET(VERSION_EXTERNAL_POST "")
 
 INCLUDE(ExternalProject)
 
