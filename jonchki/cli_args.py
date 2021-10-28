@@ -80,8 +80,9 @@ def parse():
 
     # Prepare all CMake defines as proper command line options.
     astrCMakeDefines = []
-    for strDefine in tArgs.astrCMakeDefines:
-        astrCMakeDefines.append('-D' + strDefine)
+    if tArgs.astrCMakeDefines is not None:
+        for strDefine in tArgs.astrCMakeDefines:
+            astrCMakeDefines.append('-D' + strDefine)
 
     tPlatform = dict(
         distribution_id=strJonchkiDistributionID,
