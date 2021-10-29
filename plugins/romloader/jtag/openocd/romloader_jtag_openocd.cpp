@@ -1466,7 +1466,9 @@ int romloader_jtag_openocd::call(uint32_t ulNetxAddress, uint32_t ulParameterR0,
 	if( fJtagDeviceIsConnected==true && m_tJtagDevice.pvOpenocdContext!=NULL && m_tJtagDevice.tFunctions.tFn.pfnCall!=NULL )
 	{
 		/* Call code on netX. */
+		m_tJtagDevice.tFunctions.tFn.pfnCommandRunLine(m_tJtagDevice.pvOpenocdContext, "init_breakpoint \n");  // use new function to initialize breakpoint
 		iResult = m_tJtagDevice.tFunctions.tFn.pfnCall(m_tJtagDevice.pvOpenocdContext, ulNetxAddress, ulParameterR0, pfnCallback, pvCallbackUserData);
+		m_tJtagDevice.tFunctions.tFn.pfnCommandRunLine(m_tJtagDevice.pvOpenocdContext, "deinit_breakpoint \n"); // use new function to deinitialize breakpoint
 		if( iResult!=0 )
 		{
 			fprintf(stderr, "call: Failed to call code at address 0x%08x: %d\n", ulNetxAddress, iResult);
