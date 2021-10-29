@@ -25,6 +25,126 @@ set ROMLOADER_CHIPTYP_NETIOLB           16
 # ulDccBufferAddr        Address of DCC buffer
 # ulDccBufferPointerAddr Address of DCC buffer pointer
 
+proc init_breakpoint {} {
+	# This function is used to set a Breakpoint before running the Flasher and set the Link-Register to that Address.
+	# After Running the Flasher the netX will then step over that address triggering the Breakpoint.
+
+	global __CHIP_TYPE__
+	global ROMLOADER_CHIPTYP_UNKNOWN 
+	global ROMLOADER_CHIPTYP_NETX500 
+	global ROMLOADER_CHIPTYP_NETX100 
+	global ROMLOADER_CHIPTYP_NETX50  
+	global ROMLOADER_CHIPTYP_NETX5   
+	global ROMLOADER_CHIPTYP_NETX10  
+	global ROMLOADER_CHIPTYP_NETX56  
+	global ROMLOADER_CHIPTYP_NETX56B 
+	global ROMLOADER_CHIPTYP_NETX4000_RELAXED
+	global ROMLOADER_CHIPTYP_NETX90_MPW
+	global ROMLOADER_CHIPTYP_NETX4000_FULL
+	global ROMLOADER_CHIPTYP_NETX4100_SMALL
+	global ROMLOADER_CHIPTYP_NETX90
+	global ROMLOADER_CHIPTYP_NETX90B
+	global ROMLOADER_CHIPTYP_NETIOLA
+	global ROMLOADER_CHIPTYP_NETIOLB
+	set iChiptyp $__CHIP_TYPE__
+	echo "Init Breakpoint"
+	
+
+	# set the breakpoint matching the iChiptyp
+	if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX500 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX100 } {
+	
+		bp 0x200000 4 hw
+		reg lr_svc 0x200000
+		
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX50 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
+		bp 0x080000fc 4 hw        ; # set breakpoint
+		reg lr_svc 0x080000fc     ; # when any program returns, jump to the breakpoint address, stopping execution
+	
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_RELAXED \
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_FULL \
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX4100_SMALL} {
+		
+		bp 0x04100000 4 hw
+		reg lr_svc 0x04100000
+		
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW	} {
+
+		bp 0x00023ffd 2 hw
+		reg lr 0x00023ffd	
+		
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETIOLA
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETIOLB } {
+			
+		# bp 0x00007ffc 4 hw  # not needed?
+		# reg sp 0x00007ff8
+		# reg ra 0x00007ffc # return address	
+		
+	} else {
+		puts "Unknown chip type $iChiptyp"
+	}
+}
+
+
+proc deinit_breakpoint {} {
+	# remove the set breakpoints that where used to check if the call command returned
+
+	global __CHIP_TYPE__
+	global ROMLOADER_CHIPTYP_UNKNOWN 
+	global ROMLOADER_CHIPTYP_NETX500 
+	global ROMLOADER_CHIPTYP_NETX100 
+	global ROMLOADER_CHIPTYP_NETX50  
+	global ROMLOADER_CHIPTYP_NETX5   
+	global ROMLOADER_CHIPTYP_NETX10  
+	global ROMLOADER_CHIPTYP_NETX56  
+	global ROMLOADER_CHIPTYP_NETX56B 
+	global ROMLOADER_CHIPTYP_NETX4000_RELAXED
+	global ROMLOADER_CHIPTYP_NETX90_MPW
+	global ROMLOADER_CHIPTYP_NETX4000_FULL
+	global ROMLOADER_CHIPTYP_NETX4100_SMALL
+	global ROMLOADER_CHIPTYP_NETX90
+	global ROMLOADER_CHIPTYP_NETX90B
+	global ROMLOADER_CHIPTYP_NETIOLA
+	global ROMLOADER_CHIPTYP_NETIOLB
+	set iChiptyp $__CHIP_TYPE__
+	
+	echo "Deinit Breakpoint"
+
+
+	# set the breakpoint matching the iChiptyp
+	if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX500 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX100 } {
+		rbp 0x200000
+		
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX50 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
+		rbp 0x080000fc        ; # set breakpoint
+	
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_RELAXED \
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_FULL \
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX4100_SMALL} {
+		
+		rbp 0x04100000
+		
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW	} {
+		rbp 0x00023ffd
+		
+	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETIOLA
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETIOLB } {
+		
+	} else {
+		puts "Unknown chip type $iChiptyp"
+	}
+	
+	echo "Remaining Breakpoints: "
+	echo "------------------------"
+	bp
+	echo "------------------------"
+	echo ""
+}
+
+
 proc setup_dcc_io {fEnableDCCOutput iChiptyp {ulSerialVectorAddr 0} {strDccCodeFile ""} {strArmThumb "arm"} {ulDccCodeAddr 0}  {ulDccBufferAddr 0} {ulDccBufferPointerAddr 0}} {
 	global ROMLOADER_CHIPTYP_UNKNOWN 
 	global ROMLOADER_CHIPTYP_NETX500 
@@ -122,7 +242,11 @@ proc init_chip {iChiptyp} {
 	
 	puts "init_chip $iChiptyp"
 
-
+	global iChiptypeGlobal
+	set iChiptypeGlobal $iChiptyp
+	
+	global __CHIP_TYPE__
+	set __CHIP_TYPE__ $iChiptyp
 	
 	###############################
 	# SDRAM fix for netX 50
@@ -154,10 +278,10 @@ proc init_chip {iChiptyp} {
 		#reg lr_svc 0x200000
 	
 		# TCM enabled, stack at 0x10000200
-		bp 0x200000 4 hw
+		# bp 0x200000 4 hw  # now in init_breakpoint
 		reg cpsr 0xd3
 		reg sp_svc 0x10000200
-		reg lr_svc 0x200000
+		# reg lr_svc 0x200000 # now in init_breakpoint
 
 		# arm926ejs cp15 opcode_1 opcode_2 CRn CRm value
 		# MCR/MRC p15, <Opcode_1>, <Rd>, c15, <CRm>, <Opcode_2>
@@ -195,11 +319,11 @@ proc init_chip {iChiptyp} {
 		arm966e cp15 2 
 		
 		# init regs
-		bp 0x080000fc 4 hw        ; # set breakpoint
+		# bp 0x080000fc 4 hw        ; # set breakpoint # now in init_breakpoint
 		reg cpsr 0xd3             ; # disable FIQ/IRQ, disable Thumb, set Abort mode
 		reg spsr_svc 0xd3
 		reg sp_svc 0x08000dfc    ; # stack 0500-0dfc
-		reg lr_svc 0x080000fc     ; # when any program returns, jump to the breakpoint address, stopping execution
+		# reg lr_svc 0x080000fc     ; # when any program returns, jump to the breakpoint address, stopping execution # now in init_breakpoint
 	
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_RELAXED \
 			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_FULL \
@@ -207,10 +331,10 @@ proc init_chip {iChiptyp} {
 
 		puts "Init netx 4000"
 		
-		bp 0x04100000 4 hw
+		# bp 0x04100000 4 hw # now in init_breakpoint
 		reg cpsr 0xd3
 		reg sp_svc 0x0003ffec
-		reg lr_svc 0x04100000
+		# reg lr_svc 0x04100000 # now in init_breakpoint
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW } {
 	
@@ -275,9 +399,9 @@ proc init_chip {iChiptyp} {
 		
 		reg xPSR 0x01000000
 		# reg msp 0x00040000
-		bp 0x00023ffd 2 hw
+		# bp 0x00023ffd 2 hw # now in init_breakpoint
 		reg sp 0x2009ff80
-		reg lr 0x00023ffd
+		# reg lr 0x00023ffd # now in init_breakpoint
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90
 			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B } {
@@ -285,9 +409,9 @@ proc init_chip {iChiptyp} {
 		puts "Setting up registers for netx 90 Rev.0/Rev.1"
 
 		reg xPSR 0x01000000
-		bp 0x00023ffd 2 hw
+		# bp 0x00023ffd 2 hw # now in init_breakpoint
 		reg sp 0x2009ff80
-		reg lr 0x00023ffd
+		# reg lr 0x00023ffd # now in init_breakpoint
 		
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETIOLA
