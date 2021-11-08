@@ -106,8 +106,8 @@ proc setup_interface_nxhx90_mc {strLocation} {
 }
 
 proc setup_interface_nxeb90_spe {strLocation} {
-	interface ftdi
-	ftdi_location $strLocation
+	adapter driver ftdi
+	adapter usb location $strLocation
 	transport select jtag
 	ftdi_device_desc "NXEB 90-SPE"
 	ftdi_vid_pid 0x1939 0x0032
@@ -669,7 +669,7 @@ proc set_firewall {addr value} {
 proc disable_firewalls { } {
 	puts "Disabling firewalls"
   # Setup DAP to use CPU interface and not APB
-  dap apsel 1
+  dap_netx4000r7 apsel 1
 
   set_firewall 0xf40801b0 0xFF
   set_firewall 0xf40801b4 0xFF
@@ -703,7 +703,7 @@ proc reset_netx4000 {} {
 			echo "Using hardware reset (SRST)"
 			reset_config trst_and_srst separate
 			adapter srst delay 500
-			adapter_nsrst_assert_width 50
+			adapter srst pulse_width 50
 		}
 
 
@@ -737,9 +737,9 @@ proc reset_netx4000 {} {
 		# puts "dap info"
 		# dap info
 		puts "dap memaccess"
-		dap memaccess
-		puts "dap apcsw 1"
-		dap apcsw 1
+		dap_netx4000r7 memaccess
+		#puts "dap apcsw 1"
+		#dap_netx4000r7 apcsw 1
 	
 		puts "reset init"
 		reset init
