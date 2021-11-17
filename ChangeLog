@@ -2,6 +2,24 @@
 Change log/Release notes
 =========================
 
+V 2.5.0
+=======
+* Bug fixes in monitor protocol (UART/USB/Ethernet):
+  Send ack with the received packet's sequence number (ucPacketSequenceNumber)
+  Only increment global sequence number (m_ucMonitorSequence) when when the received packet's sequence number matches the global sequence number.
+* Pass the jtag options (JTAG frequency, reset mode) that are passed to
+  DetectInterfaces through to the plugin instance and to the TCL script. 
+* Remove the permanent breakpoint used to catch return from call. 
+  The BP is now enabled before any call and disabled afterwards.
+* Update to OpenOCD 0.11.0 and libusb v1.0.24 
+* Pass OpenOCD output to a handler function.
+* Print all messages from the JTAG plugin to the log.
+* Fix erroneous output from openOCD.
+* Initialize the netIOL PLL
+* Replace the netX4000 RELAXED with the netX4000 FULL
+* Build the GPIO drivers on ARM platforms.
+
+
 V 2.4.9
 =======
 
