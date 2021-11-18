@@ -698,10 +698,10 @@ proc reset_netx4000 {} {
 	
 		if { $__JTAG_RESET__==1 } {
 			echo "Using software reset"
-			reset_config trst_only
+			reset_config none
 		} else {
 			echo "Using hardware reset (SRST)"
-			reset_config trst_and_srst separate
+			reset_config srst_only separate
 			adapter srst delay 500
 			adapter srst pulse_width 50
 		}
