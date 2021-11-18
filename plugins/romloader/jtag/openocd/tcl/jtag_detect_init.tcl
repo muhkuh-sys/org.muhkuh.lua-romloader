@@ -738,8 +738,9 @@ proc reset_netx4000 {} {
 		# dap info
 		puts "dap memaccess"
 		dap_netx4000r7 memaccess
-		#puts "dap apcsw 1"
-		#dap_netx4000r7 apcsw 1
+
+		puts "dap apcsw"
+		dap_netx4000r7 apcsw 0x40000000
 	
 		puts "reset init"
 		reset init
