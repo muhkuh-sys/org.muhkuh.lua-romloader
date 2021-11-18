@@ -707,12 +707,12 @@ proc reset_netx4000 {} {
 		}
 
 
-		netx4000.r7 configure -event reset-init {
-			puts "Halt R7"
-			halt
-			# firewalls must be disabled, otherwise reading address 0 (chip type identification) will fail.
-			disable_firewalls
-		}
+		# netx4000.r7 configure -event reset-init {
+		# 	puts "Halt R7"
+		# 	halt
+		# 	# firewalls must be disabled, otherwise reading address 0 (chip type identification) will fail.
+		# 	disable_firewalls
+		# }
 	
 		# netx4000.a9_0 configure -event reset-init {
 		# 	puts "Halt A9/0"
@@ -742,11 +742,17 @@ proc reset_netx4000 {} {
 		puts "dap apcsw"
 		dap_netx4000r7 apcsw 0x40000000
 	
-		puts "reset init"
-		reset init
+		# The CPU cannot be stopped at the first reset vector catch after a reset. 
+		puts "reset run" 
+		reset run
 	}
 
 	targets netx4000.r7
+	
+	puts "Halt R7"
+	halt
+	# firewalls must be disabled, otherwise reading address 0 (chip type identification) will fail.
+	disable_firewalls
 	
 	netx4000_enable_tcm	
 	
