@@ -285,7 +285,7 @@ romloader::TRANSPORTSTATUS_T romloader::send_ack(unsigned char ucSequenceToAck)
 
 
 
-romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *ptPacket, size_t sizPacket)
+romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *ptPacket, size_t sizPacket, bool* pfPacketStillValid)
 {
 	TRANSPORTSTATUS_T tResult;
 	unsigned char ucStatus;
@@ -295,6 +295,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 	int iResult;
 	MIV3_PACKET_ACK_T *ptAckPacket;
 
+	*pfPacketStillValid = false; //set default value of pfPacketStillValid to False
 
 	uiRetryCnt = 10;
 	do
@@ -346,6 +347,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 					/* Is this a re-send of the last packet from the netX? */
 					ucPacketSequence = ptAckPacket->s.tHeader.s.ucSequenceNumber;
 					ucLastMonitorSequence = m_ucMonitorSequence - 1U;
+					m_ptLog->debug("Current Sequence-Number : %d  Received Sequence-Number : %d", m_ucMonitorSequence, ucPacketSequence);
 					if( ucLastMonitorSequence==ucPacketSequence )
 					{
 						/* The netX sent the last packet again.
@@ -357,6 +359,20 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 
 /* FIXME: change the result. */
 						tResult = TRANSPORTSTATUS_MISSING_USERDATA;
+					}
+					else if ( (m_ucMonitorSequence + 1 ) == ucPacketSequence)
+					{
+						/* When we get a packet from the netX where the sequence number is already one number ahead
+						 * while we are waiting for the ACK, we assume that the ACK packet got lost.
+						 * Since the netX won't send another ACK packet we have to continue with out process to avoid a deadlock.
+						 */
+						 
+						m_ptLog->debug("Received a packet with a Sequence number one ahead of us (%d).", ucPacketSequence);
+						m_ptLog->debug("Continue process instead of waiting for ACK packet to avoid deadlock.");
+						fPacketStillValid = true; // set the flag to keep the packet in the buffer and use it for further use
+						tResult = TRANSPORTSTATUS_OK;
+						++m_ucMonitorSequence;
+						
 					}
 					else
 					{
@@ -403,6 +419,11 @@ romloader::TRANSPORTSTATUS_T romloader::read_data(uint32_t ulNetxAddress, MONITO
 	MIV3_PACKET_HEADER_T *ptPacketHeader;
 	MIV3_PACKET_STATUS_T *ptPacketStatus;
 
+	
+	/* The following flag is used to tell if the packet in the buffer is still valid.
+	 * In this case the buffer should not be overwritten by receiving a new packet.
+	 */
+	bool fPacketStillValid;  
 
 	if( m_fIsConnected==false )
 	{
@@ -415,11 +436,19 @@ romloader::TRANSPORTSTATUS_T romloader::read_data(uint32_t ulNetxAddress, MONITO
 		tPacketReadData.s.usDataSize = HTONETX16(sizDataInBytes);
 		tPacketReadData.s.ulAddress = HTONETX32(ulNetxAddress);
 
-		tResult = execute_command(&(tPacketReadData.s.tHeader), sizeof(MIV3_PACKET_COMMAND_READ_DATA_T));
+		tResult = execute_command(&(tPacketReadData.s.tHeader), sizeof(MIV3_PACKET_COMMAND_READ_DATA_T) , &fPacketStillValid);
 		if( tResult==TRANSPORTSTATUS_OK )
 		{
+			
 			/* Receive the data. */
-			tResult = receive_packet();
+			if (!fPacketStillValid){
+				/* only recceive the packet if the packet in the buffer is not still valid*/
+				tResult = receive_packet();
+			}
+			else{
+				fPacketStillValid = false; // set the flash back to False so the next packet will be received as usual
+			}
+			
 			if( tResult==TRANSPORTSTATUS_OK )
 			{
 				/* The ACK packet is the smallest possible packet. It has only 2 bytes of user data
@@ -517,6 +546,11 @@ MUHKUH_STATIC_ASSERT( sizeof(uWriteData)==m_sizMaxPacketSizeHost, "Packing of WR
 	int iResult;
 	MIV3_PACKET_HEADER_T *ptPacketHeader;
 	MIV3_PACKET_STATUS_T *ptPacketStatus;
+	
+	/* The following flag is used to tell if the packet in the buffer is still valid.
+	 * In this case the buffer should not be overwritten by receiving a new packet.
+	 */
+	bool fPacketStillValid; 
 
 
 	if( m_fIsConnected==false )
@@ -536,11 +570,17 @@ MUHKUH_STATIC_ASSERT( sizeof(uWriteData)==m_sizMaxPacketSizeHost, "Packing of WR
 
 		/* The size of the packet is the "write" header with the data and 2 bytes of CRC. */
 		sizPacket = sizeof(MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T) + sizDataInBytes + 2U;
-		tResult = execute_command(&(uWriteData.s.s.s.tHeader), sizPacket);
+		tResult = execute_command(&(uWriteData.s.s.s.tHeader), sizPacket, &fPacketStillValid);
 		if( tResult==TRANSPORTSTATUS_OK )
 		{
 			/* Receive the status. */
-			tResult = receive_packet();
+			if (!fPacketStillValid){
+				/* only recceive the packet if the packet in the buffer is not still valid*/
+				tResult = receive_packet();
+			}
+			else{
+				fPacketStillValid = false; // set the flash back to False so the next packet will be received as usual
+			}
 			if( tResult==TRANSPORTSTATUS_OK )
 			{
 				/* The ACK packet is the smallest possible packet. It has only 2 bytes of user data
@@ -965,6 +1005,11 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 	uint8_t ucPacketSequenceNumber;
 	MIV3_PACKET_HEADER_T *ptPacketHeader;
 	MIV3_PACKET_STATUS_T *ptPacketStatus;
+	
+	/* The following flag is used to tell if the packet in the buffer is still valid.
+	 * In this case the buffer should not be overwritten by receiving a new packet.
+	 */
+	bool fPacketStillValid; 
 
 
 	if( m_fIsConnected==false )
@@ -977,7 +1022,7 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 		tCallCommand.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_CommandExecute;
 		tCallCommand.s.ulAddress = HTONETX32(ulNetxAddress);
 		tCallCommand.s.ulR0 = HTONETX32(ulParameterR0);
-		tResult = execute_command(&(tCallCommand.s.tHeader), sizeof(tCallCommand));
+		tResult = execute_command(&(tCallCommand.s.tHeader), sizeof(tCallCommand), &fPacketStillValid);
 		if( tResult!=TRANSPORTSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
@@ -991,7 +1036,14 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 				pcProgressData = NULL;
 				sizProgressData = 0;
 
-				tResult = receive_packet();
+				if (!fPacketStillValid){
+					/* only recceive the packet if the packet in the buffer is not still valid*/
+					tResult = receive_packet();
+				}
+				else{
+					fPacketStillValid = false; // set the flash back to False so the next packet will be received as usual
+				}
+				
 				if( tResult==TRANSPORTSTATUS_TIMEOUT )
 				{
 					/* Do nothing in case of timeout. The application is just running quietly. */
