@@ -118,6 +118,19 @@ proc setup_interface_nxeb90_spe {strLocation} {
 	ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200 
 }
 
+proc setup_interface_nshield90 {strLocation} {
+	adapter driver ftdi
+	adapter usb location $strLocation
+	transport select jtag
+	ftdi_device_desc "NSHIELD 90"
+	ftdi_vid_pid 0x1939 0x0034
+	set_adapter_speed_khz 1000
+	
+	ftdi_layout_init 0x0308 0x000b
+	ftdi_layout_signal nTRST -data 0x0100 -oe 0x0100
+	ftdi_layout_signal nSRST -data 0x0200 -oe 0x0200 
+}
+
 proc setup_interface_nrpeb_h90_re {strLocation} {
 	adapter driver ftdi
 	adapter usb location $strLocation
@@ -204,6 +217,7 @@ proc setup_interface {strInterfaceID strLocation} {
 	} elseif {$strInterfaceID == "NXHX_90-JTAG"}          {setup_interface_nxhx90_jtag $strLocation
 	} elseif {$strInterfaceID == "NXHX_90-MC"}            {setup_interface_nxhx90_mc $strLocation
 	} elseif {$strInterfaceID == "NXEB_90-SPE"}           {setup_interface_nxeb90_spe $strLocation
+	} elseif {$strInterfaceID == "NXEB_90-SPE"}           {setup_interface_nshield90 $strLocation
 	} elseif {$strInterfaceID == "NXJTAG-4000-USB"}       {setup_interface_nxjtag_4000_usb $strLocation
 	} elseif {$strInterfaceID == "NRPEB_H90-RE"}          {setup_interface_nrpeb_h90_re $strLocation
 	} elseif {$strInterfaceID == "J-Link"}                {setup_interface_jlink
