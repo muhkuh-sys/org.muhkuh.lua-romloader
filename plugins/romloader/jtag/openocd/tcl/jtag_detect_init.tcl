@@ -217,7 +217,7 @@ proc setup_interface {strInterfaceID strLocation} {
 	} elseif {$strInterfaceID == "NXHX_90-JTAG"}          {setup_interface_nxhx90_jtag $strLocation
 	} elseif {$strInterfaceID == "NXHX_90-MC"}            {setup_interface_nxhx90_mc $strLocation
 	} elseif {$strInterfaceID == "NXEB_90-SPE"}           {setup_interface_nxeb90_spe $strLocation
-	} elseif {$strInterfaceID == "NXEB_90-SPE"}           {setup_interface_nshield90 $strLocation
+	} elseif {$strInterfaceID == "NSHIELD_90"}            {setup_interface_nshield90 $strLocation
 	} elseif {$strInterfaceID == "NXJTAG-4000-USB"}       {setup_interface_nxjtag_4000_usb $strLocation
 	} elseif {$strInterfaceID == "NRPEB_H90-RE"}          {setup_interface_nrpeb_h90_re $strLocation
 	} elseif {$strInterfaceID == "J-Link"}                {setup_interface_jlink
