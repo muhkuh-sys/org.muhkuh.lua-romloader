@@ -285,7 +285,7 @@ romloader::TRANSPORTSTATUS_T romloader::send_ack(unsigned char ucSequenceToAck)
 
 
 
-romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *ptPacket, size_t sizPacket, bool* pfPacketStillValid)
+romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *ptPacket, size_t sizPacket, bool &fPacketStillValid)
 {
 	TRANSPORTSTATUS_T tResult;
 	unsigned char ucStatus;
@@ -295,7 +295,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 	int iResult;
 	MIV3_PACKET_ACK_T *ptAckPacket;
 
-	*pfPacketStillValid = false; //set default value of pfPacketStillValid to False
+	fPacketStillValid = false; //default to false
 
 	uiRetryCnt = 10;
 	do
