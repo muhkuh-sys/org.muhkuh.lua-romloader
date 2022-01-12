@@ -331,7 +331,7 @@ protected:
 
 	virtual bool synchronize(ROMLOADER_CHIPTYP *ptChiptyp);
 	virtual TRANSPORTSTATUS_T send_packet(MIV3_PACKET_HEADER_T *ptPacket, size_t sizData);
-	virtual TRANSPORTSTATUS_T execute_command(MIV3_PACKET_HEADER_T *ptPacket, size_t sizPacket, bool &fPacketStillValid);
+	virtual TRANSPORTSTATUS_T execute_command(MIV3_PACKET_HEADER_T *ptPacket, size_t sizPacket, bool *pfPacketStillValid);
 
 	virtual TRANSPORTSTATUS_T send_ack(unsigned char ucSequenceToAck);
 	virtual TRANSPORTSTATUS_T read_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, uint16_t sizDataInBytes);

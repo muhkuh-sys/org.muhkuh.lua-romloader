@@ -285,7 +285,7 @@ romloader::TRANSPORTSTATUS_T romloader::send_ack(unsigned char ucSequenceToAck)
 
 
 
-romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *ptPacket, size_t sizPacket, bool &fPacketStillValid)
+romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *ptPacket, size_t sizPacket, bool *pfPacketStillValid)
 {
 	TRANSPORTSTATUS_T tResult;
 	unsigned char ucStatus;
@@ -295,7 +295,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 	int iResult;
 	MIV3_PACKET_ACK_T *ptAckPacket;
 
-	fPacketStillValid = false; //default to false
+	*pfPacketStillValid = false; //default to false
 
 	uiRetryCnt = 10;
 	do
@@ -368,7 +368,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 						 
 						m_ptLog->debug("Received a packet with a Sequence number one ahead of us (%d).", ucPacketSequence);
 						m_ptLog->debug("Continue process instead of waiting for ACK packet to avoid deadlock.");
-						fPacketStillValid = true; // set the flag to keep the packet in the buffer and use it for further use
+						*pfPacketStillValid = true; // set the flag to keep the packet in the buffer and use it for further use
 						tResult = TRANSPORTSTATUS_OK;
 						++m_ucMonitorSequence;
 						
