@@ -476,7 +476,7 @@ function getExpectedOutput()
 			iExpectedOutputLine = iExpectedOutputLine + 1
 		end
 	elseif tPluginTyp=="romloader_jtag" then
-		strExpected = strLine:gsub(string.char(13, 10), string.char(13, 10, 10))
+		strExpected = strLine
 		iExpectedOutputLine = iExpectedOutputLine + 1
 		
 	else
