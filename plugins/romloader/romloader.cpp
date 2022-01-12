@@ -347,7 +347,6 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 					/* Is this a re-send of the last packet from the netX? */
 					ucPacketSequence = ptAckPacket->s.tHeader.s.ucSequenceNumber;
 					ucLastMonitorSequence = m_ucMonitorSequence - 1U;
-					m_ptLog->debug("Current Sequence-Number : %d  Received Sequence-Number : %d", m_ucMonitorSequence, ucPacketSequence);
 					if( ucLastMonitorSequence==ucPacketSequence )
 					{
 						/* The netX sent the last packet again.
@@ -378,6 +377,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 					{
 						m_ptLog->error("execute_command: expected an ACK packet with %zd bytes, but received %zd bytes:", sizeof(MIV3_PACKET_ACK_T), m_sizPacketInputBuffer);
 						m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+						m_ptLog->error("Current Sequence-Number : %d  Received Sequence-Number : %d", m_ucMonitorSequence, ucPacketSequence);
 /* FIXME: change the result. */
 						tResult = TRANSPORTSTATUS_MISSING_USERDATA;
 					}
