@@ -305,7 +305,7 @@ public:
 		TRANSPORTSTATUS_PACKET_TOO_SMALL          = 12,  /* The packet does not have enough data for 1 byte of user data. */
 		TRANSPORTSTATUS_INVALID_PACKET_SIZE       = 13,  /* The packet size does not match the expected size for the packet type. */
 		TRANSPORTSTATUS_UNEXPECTED_PACKET_SIZE    = 14,  /* The packet size does not match the number of requested bytes (usually a "read_data" response to a read command). */
-		TRANSPORTSTATUS_UNEXPECTED_PACKET_TYP     = 15   /* The netX sent an unexpected answer. */
+		TRANSPORTSTATUS_UNEXPECTED_PACKET_TYP     = 15,   /* The netX sent an unexpected answer. */
 	} TRANSPORTSTATUS_T;
 
 	const char *get_error_message(TRANSPORTSTATUS_T tStatus);
@@ -331,7 +331,7 @@ protected:
 
 	virtual bool synchronize(ROMLOADER_CHIPTYP *ptChiptyp);
 	virtual TRANSPORTSTATUS_T send_packet(MIV3_PACKET_HEADER_T *ptPacket, size_t sizData);
-	virtual TRANSPORTSTATUS_T execute_command(MIV3_PACKET_HEADER_T *ptPacket, size_t sizPacket);
+	virtual TRANSPORTSTATUS_T execute_command(MIV3_PACKET_HEADER_T *ptPacket, size_t sizPacket, bool* pfPacketStillValid);
 
 	virtual TRANSPORTSTATUS_T send_ack(unsigned char ucSequenceToAck);
 	virtual TRANSPORTSTATUS_T read_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, uint16_t sizDataInBytes);
@@ -354,6 +354,7 @@ protected:
 	size_t m_sizMaxPacketSizeClient;
 
 	uint8_t m_ucMonitorSequence;
+	
 
 	size_t m_sizPacketInputBuffer;
 	uint8_t m_aucPacketInputBuffer[m_sizMaxPacketSizeHost];
