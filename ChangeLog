@@ -7,6 +7,13 @@ V 2.5.0
 * Bug fixes in monitor protocol (UART/USB/Ethernet):
   Send ack with the received packet's sequence number (ucPacketSequenceNumber)
   Only increment global sequence number (m_ucMonitorSequence) when when the received packet's sequence number matches the global sequence number.
+  
+  Tolerate dropped ACK packets:
+  When execute_command() is waiting for an ACK from the netX, but instead a 
+  different packet is received whose sequence number is ahead by one,
+  we assume that the ACK was sent by the netX but got lost on the way.
+  The received packet is kept and processed. This is done by setting a flag 
+  that causes the next call to receive_packet() to be skipped.
 * Pass the jtag options (JTAG frequency, reset mode) that are passed to
   DetectInterfaces through to the plugin instance and to the TCL script. 
 * Remove the permanent breakpoint used to catch return from call. 
