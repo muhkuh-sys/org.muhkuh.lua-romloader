@@ -520,6 +520,8 @@ function fnCallbackCheckOutput(a,b)
 			print("Unexpected output")
 			print("Expected:")
 			print(strExpected)
+			print(string.format("%d bytes", strExpected:len()))
+			tester.hexdump(strExpected,16)
 			print("Received:")
 			print(a)
 			if a then
