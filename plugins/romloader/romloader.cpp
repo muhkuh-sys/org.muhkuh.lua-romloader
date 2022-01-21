@@ -52,9 +52,55 @@ romloader::~romloader(void)
 }
 
 
+/* Wrapper to call the functions directly from lua scripts */
+bool romloader::send_packet_wrapper(const char *pcBuffer, size_t sizData)
+{	
+	TRANSPORTSTATUS_T tResult;
+	tResult = send_packet((MIV3_PACKET_HEADER_T*)pcBuffer, sizData);
+	
+	return tResult;
+}
+
+/* Wrapper to call the functions directly from lua scripts */
+bool romloader::receive_packet_wrapper()
+{
+	TRANSPORTSTATUS_T tResult;
+	tResult = receive_packet();
+	
+	return tResult;
+}
+
+bool romloader::cancel_operation()
+{
+	/*
+	* send a MONITOR_PACKET_TYP_CancelOperation packet to the netX
+	*/
+	TRANSPORTSTATUS_T tResult;
+	
+	m_ptLog->debug("Send MONITOR_PACKET_TYP_CancelOperation.");
+	/* create a MIV3_PACKET_CANCEL_CALL_T packet */
+	MIV3_PACKET_CANCEL_CALL_T tCancelCallPacket;
+	tCancelCallPacket.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_CancelOperation;
+	// tCancelCallPacket.s.tHeader.s.ucSequenceNumber = ucSequenceNumber; // Setting the sequence number is not necessary (it will be set automatically in send_packet)
+	//tCancelCallPacket.s.ucData = ucCallData;  // Not needed in MIV3_PACKET_CANCEL_CALL_T packet (netX does not know a cancel packet with that size)
+	
+	tResult = send_packet(&(tCancelCallPacket.s.tHeader), sizeof(MIV3_PACKET_CANCEL_CALL_T));
+	
+	return tResult;
+	
+}
+
 
 bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp)
 {
+	/*
+	Send a Knock packet to the netX and wait for a MagicData packet in return.
+	
+	NEW:
+		If instead of a MagicData packet an other packet is received,
+		we assume that the netX is still waitong for an ACK for that packet.
+		In this case we send a packet 'cancel_operation' to get the netX out of the endless loop.
+	*/
 	const uint8_t aucKnock[5] = { '*', 0x00, 0x00, '*', '#' };
 	const uint8_t aucMagicMooh[4] = { 0x4d, 0x4f, 0x4f, 0x48 };
 	unsigned int uiRetryCnt;
@@ -74,6 +120,9 @@ bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp)
 	uiRetryCnt = 10;
 	do
 	{
+		/*
+		* Send the Knock packet 
+		*/
 		tResult = send_raw_packet(aucKnock, sizeof(aucKnock));
 		if( tResult!=TRANSPORTSTATUS_OK )
 		{
@@ -81,6 +130,9 @@ bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp)
 		}
 		else
 		{
+			/*
+			* Get an answer from the netX
+			*/
 			tResult = receive_packet();
 			if( tResult!=TRANSPORTSTATUS_OK )
 			{
@@ -89,9 +141,70 @@ bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp)
 			else
 			{
 				tResult = TRANSPORTSTATUS_OK;
+				
+
+				/* Treat the received packet as a sync packet at first */
+				ptSyncPacket = (MIV3_PACKET_SYNC_T*)m_aucPacketInputBuffer;
+				
+				/* Check for the aucMagicMooh and the correct size*/
+				if( m_sizPacketInputBuffer==sizeof(MIV3_PACKET_SYNC_T) && memcmp(ptSyncPacket->s.aucMagic, aucMagicMooh, sizeof(aucMagicMooh))==0 )
+				{
+					m_ptLog->debug("Packet:");
+					m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+
+					/* Get the sequence number. */
+					ucSequence = ptSyncPacket->s.tHeader.s.ucSequenceNumber;
+					m_ptLog->debug("Sequence number: 0x%02x", ucSequence);
+
+					ulMiVersionMin = NETXTOH16(ptSyncPacket->s.usVersionMinor);
+					ulMiVersionMaj = NETXTOH16(ptSyncPacket->s.usVersionMajor);
+					m_ptLog->debug("Machine interface V%d.%d .", ulMiVersionMaj, ulMiVersionMin);
+
+					tChipType = (ROMLOADER_CHIPTYP)(ptSyncPacket->s.ucChipType);
+					m_ptLog->debug("Chip type : %d", tChipType);
+
+					/* sizMaxPacketSizeClient = min(max. packet size from response, sizMaxPacketSizeHost) */
+					sizMaxPacketSize = NETXTOH16(ptSyncPacket->s.usMaximumPacketSize);
+					m_ptLog->debug("Maximum packet size: 0x%04lx", sizMaxPacketSize);
+					/* Limit the packet size to the buffer size. */
+					if( sizMaxPacketSize>m_sizMaxPacketSizeHost )
+					{
+						sizMaxPacketSize = m_sizMaxPacketSizeHost;
+						m_ptLog->debug("Limit maximum packet size to 0x%04lx", sizMaxPacketSize);
+					}
+
+					/* Set the new values. */
+					m_ucMonitorSequence = ucSequence;
+					if( ptChiptyp!=NULL )
+					{
+						*ptChiptyp = tChipType;
+					}
+					m_sizMaxPacketSizeClient = sizMaxPacketSize;
+
+					fResult = true;
+				}
+				else
+				{
+					/* 
+					* If the packet is not a MagicData packet we assume that the netX is still in a state where it waits for a response.
+					* To get the netX out of that state we send a MONITOR_PACKET_TYP_CancelOperation packet to get it back in the main Loop.
+					*/
+					m_ptLog->error("Received an invalid knock response.");
+					m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+					
+					/* send cancel operation packet*/
+					cancel_operation();
+					tResult = TRANSPORTSTATUS_FAILED_TO_SYNC;
+				}
+				
+				
 			}
 		}
-
+		
+		/*
+		* If transportstatus is not OK decrement the retries and print a message.
+		* If no retries are left break from the loop
+		*/
 		if( tResult!=TRANSPORTSTATUS_OK )
 		{
 			--uiRetryCnt;
@@ -112,60 +225,7 @@ bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp)
 
 	} while( tResult!=TRANSPORTSTATUS_OK );
 
-	if( tResult!=TRANSPORTSTATUS_OK )
-	{
-		/* Failed to send knock sequence to device. */
-		m_ptLog->error("Failed to send knock sequence to device.");
-	}
-	else
-	{
-		/* Get the received packet as a sync packet for later. */
-		ptSyncPacket = (MIV3_PACKET_SYNC_T*)m_aucPacketInputBuffer;
 
-		if( m_sizPacketInputBuffer==sizeof(MIV3_PACKET_SYNC_T) && memcmp(ptSyncPacket->s.aucMagic, aucMagicMooh, sizeof(aucMagicMooh))==0 )
-		{
-			m_ptLog->debug("Packet:");
-			m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
-
-			/* Get the sequence number. */
-			ucSequence = ptSyncPacket->s.tHeader.s.ucSequenceNumber;
-			m_ptLog->debug("Sequence number: 0x%02x", ucSequence);
-
-			ulMiVersionMin = NETXTOH16(ptSyncPacket->s.usVersionMinor);
-			ulMiVersionMaj = NETXTOH16(ptSyncPacket->s.usVersionMajor);
-			m_ptLog->debug("Machine interface V%d.%d .", ulMiVersionMaj, ulMiVersionMin);
-
-			tChipType = (ROMLOADER_CHIPTYP)(ptSyncPacket->s.ucChipType);
-			m_ptLog->debug("Chip type : %d", tChipType);
-
-			/* sizMaxPacketSizeClient = min(max. packet size from response, sizMaxPacketSizeHost) */
-			sizMaxPacketSize = NETXTOH16(ptSyncPacket->s.usMaximumPacketSize);
-			m_ptLog->debug("Maximum packet size: 0x%04lx", sizMaxPacketSize);
-			/* Limit the packet size to the buffer size. */
-			if( sizMaxPacketSize>m_sizMaxPacketSizeHost )
-			{
-				sizMaxPacketSize = m_sizMaxPacketSizeHost;
-				m_ptLog->debug("Limit maximum packet size to 0x%04lx", sizMaxPacketSize);
-			}
-
-			/* Set the new values. */
-			m_ucMonitorSequence = ucSequence;
-			if( ptChiptyp!=NULL )
-			{
-				*ptChiptyp = tChipType;
-			}
-			m_sizMaxPacketSizeClient = sizMaxPacketSize;
-
-			fResult = true;
-		}
-		else
-		{
-			m_ptLog->error("Received an invalid knock response.");
-			m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
-
-			/* TODO: Send a "Cancel Operation" packet here and retry. */
-		}
-	}
 
 	return fResult;
 }
@@ -291,6 +351,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 	unsigned char ucStatus;
 	unsigned char ucPacketSequence;
 	unsigned char ucLastMonitorSequence;
+	unsigned char ucNextMonitorSequence;
 	unsigned int uiRetryCnt;
 	int iResult;
 	MIV3_PACKET_ACK_T *ptAckPacket;
@@ -347,6 +408,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 					/* Is this a re-send of the last packet from the netX? */
 					ucPacketSequence = ptAckPacket->s.tHeader.s.ucSequenceNumber;
 					ucLastMonitorSequence = m_ucMonitorSequence - 1U;
+					ucNextMonitorSequence = m_ucMonitorSequence + 1U;
 					m_ptLog->debug("Current Sequence-Number : %d  Received Sequence-Number : %d", m_ucMonitorSequence, ucPacketSequence);
 					if( ucLastMonitorSequence==ucPacketSequence )
 					{
@@ -360,7 +422,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 /* FIXME: change the result. */
 						tResult = TRANSPORTSTATUS_MISSING_USERDATA;
 					}
-					else if ( (m_ucMonitorSequence + 1 ) == ucPacketSequence)
+					else if (ucNextMonitorSequence == ucPacketSequence)
 					{
 						/* When we get a packet from the netX where the sequence number is already one number ahead
 						 * while we are waiting for the ACK, we assume that the ACK packet got lost.
@@ -369,7 +431,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 						 
 						m_ptLog->debug("Received a packet with a Sequence number one ahead of us (%d).", ucPacketSequence);
 						m_ptLog->debug("Continue process instead of waiting for ACK packet to avoid deadlock.");
-						fPacketStillValid = true; // set the flag to keep the packet in the buffer and use it for further use
+						*pfPacketStillValid = true; // set the flag to keep the packet in the buffer and use it for further use
 						tResult = TRANSPORTSTATUS_OK;
 						++m_ucMonitorSequence;
 						
@@ -1123,9 +1185,7 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 					if( fIsRunning!=true )
 					{
 						/* Send a cancel request to the device. */
-						tCancelCallPacket.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_CallMessage;
-						tCancelCallPacket.s.ucData = 0x2b;
-						tResult = send_packet(&(tCancelCallPacket.s.tHeader), sizeof(MIV3_PACKET_CANCEL_CALL_T));
+						cancel_operation();
 
 						MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): the call was canceled!", m_pcName, this);
 						fOk = false;

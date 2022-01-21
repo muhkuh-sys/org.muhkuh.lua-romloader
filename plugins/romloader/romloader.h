@@ -156,18 +156,17 @@ MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_STATUS_T)==8, "Packing of MIV3_PACKET_S
 struct MIV3_PACKET_CANCEL_CALL_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
-	uint8_t  ucData;
 	uint8_t  ucCrcHi;
 	uint8_t  ucCrcLo;
 };
-MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_CANCEL_CALL_STRUCT)==8, "Packing of MIV3_PACKET_CANCEL_CALL_STRUCT does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_CANCEL_CALL_STRUCT)==7, "Packing of MIV3_PACKET_CANCEL_CALL_STRUCT does not work.");
 
 typedef union MIV3_PACKET_CANCEL_CALL_UNION
 {
 	struct MIV3_PACKET_CANCEL_CALL_STRUCT s;
-	uint8_t auc[8];
+	uint8_t auc[7];
 } MIV3_PACKET_CANCEL_CALL_T;
-MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_CANCEL_CALL_T)==8, "Packing of MIV3_PACKET_CANCEL_CALL_T does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_CANCEL_CALL_T)==7, "Packing of MIV3_PACKET_CANCEL_CALL_T does not work.");
 
 
 
@@ -271,6 +270,13 @@ public:
 	virtual void write_data32(lua_State *ptClientData, uint32_t ulNetxAddress, uint32_t ulData);
 	/* Write a byte array from the PC to the netX. */
 	virtual void write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData);
+
+	/* Wrapper to call the functions directly from lua scripts */
+	virtual bool send_packet_wrapper(const char *pcBuffer, size_t sizData);
+	virtual bool receive_packet_wrapper();
+	
+	/* send cancel packet*/
+	virtual bool cancel_operation();
 
 	/* Call a routine on the netX. */
 	virtual void call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
