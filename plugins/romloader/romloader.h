@@ -232,6 +232,23 @@ MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_COMMAND_CALL_T)==15, "Packing of MIV3_P
 #endif  /* !defined(SWIG) */
 
 
+/* 
+* structure to hold test variables, that are used to delay acknowledge packets
+* after received packets inside commands.
+* ucCallMessageAckDelayCounter:
+*    inside call() method, only acknowledge after receiving the Nth answer packet (message call or status packet) after sending an execute command
+* ucWriteAckDelayCounter:
+*    inside write_data() method, only acknowledge after receiving the Nth answer packet (status packet) after sending a write command
+* ucReadAckDelayCounter:
+*    inside read_data() method, only acknowledge after receiving the Nth answer packet (read_data or status packet) after sending a read command
+*    
+*/
+struct ROMLOADER_TEST_VARIABLES{
+	uint8_t ucCallMessageAckDelayCounter = 0;
+	uint8_t ucWriteAckDelayCounter = 0;
+	uint8_t ucReadAckDelayCounter = 0;
+};
+
 /*-----------------------------------*/
 
 class MUHKUH_EXPORT romloader_read_functinoid
@@ -274,6 +291,10 @@ public:
 	/* Wrapper to call the functions directly from lua scripts */
 	virtual bool send_packet_wrapper(const char *pcBuffer, size_t sizData);
 	virtual bool receive_packet_wrapper();
+	virtual void set_call_message_delay(uint8_t ucCallMessageDelay);
+	virtual void set_write_status_delay(uint8_t ucWriteStatusAckDelay);
+	virtual void set_read_status_delay(uint8_t ucReadStatusAckDelay);
+
 	
 	/* send cancel packet*/
 	virtual bool cancel_operation();
@@ -361,6 +382,8 @@ protected:
 
 	uint8_t m_ucMonitorSequence;
 	
+	/* structure that holds variables used for test purposes only */
+	ROMLOADER_TEST_VARIABLES sRomlTestVars;
 
 	size_t m_sizPacketInputBuffer;
 	uint8_t m_aucPacketInputBuffer[m_sizMaxPacketSizeHost];
