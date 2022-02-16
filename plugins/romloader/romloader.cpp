@@ -70,6 +70,27 @@ bool romloader::receive_packet_wrapper()
 	return tResult;
 }
 
+/*
+* wrapper functions to set test counter that will delay the acknowlede packages
+* for received packages during commands 
+*/	
+void romloader::set_call_message_delay(uint8_t ucCallMessageDelay)
+{
+	sRomlTestVars.ucCallMessageAckDelayCounter = ucCallMessageDelay;
+	m_ptLog->debug("Set sRomlTestVars.ucCallMessageAckDelayCounter to %d", sRomlTestVars.ucCallMessageAckDelayCounter);
+}
+void romloader::set_write_status_delay(uint8_t ucWriteStatusAckDelay)
+{
+	sRomlTestVars.ucWriteAckDelayCounter = ucWriteStatusAckDelay;
+	m_ptLog->debug("Set sRomlTestVars.ucWriteAckDelayCounter to %d", sRomlTestVars.ucWriteAckDelayCounter);
+}
+void romloader::set_read_status_delay(uint8_t ucReadStatusAckDelay)
+{
+	sRomlTestVars.ucReadAckDelayCounter = ucReadStatusAckDelay;
+	m_ptLog->debug("Set sRomlTestVars.ucReadAckDelayCounter to %d", sRomlTestVars.ucReadAckDelayCounter);
+}
+
+
 bool romloader::cancel_operation()
 {
 	/*
@@ -112,6 +133,8 @@ bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp)
 	uint32_t ulMiVersionMaj;
 	ROMLOADER_CHIPTYP tChipType;
 	size_t sizMaxPacketSize;
+	MIV3_PACKET_HEADER_T* ptPacketHeader;
+	uint8_t ucSequenceNumber;
 
 
 //	fprintf(stderr, "synchronize\n");
@@ -481,6 +504,10 @@ romloader::TRANSPORTSTATUS_T romloader::read_data(uint32_t ulNetxAddress, MONITO
 	MIV3_PACKET_HEADER_T *ptPacketHeader;
 	MIV3_PACKET_STATUS_T *ptPacketStatus;
 
+	if(sRomlTestVars.ucReadAckDelayCounter > 0)
+	{
+		m_ptLog->debug("The acknowledge packet for the packet of this read_data command will be delayed by %d", sRomlTestVars.ucReadAckDelayCounter);
+	}
 	
 	/* The following flag is used to tell if the packet in the buffer is still valid.
 	 * In this case the buffer should not be overwritten by receiving a new packet.
@@ -509,6 +536,13 @@ romloader::TRANSPORTSTATUS_T romloader::read_data(uint32_t ulNetxAddress, MONITO
 			}
 			else{
 				fPacketStillValid = false; // set the flash back to False so the next packet will be received as usual
+			}
+			
+			/* keep on receiving packets while delay counter is bigger than 0 */
+			while(sRomlTestVars.ucReadAckDelayCounter > 0){
+				tResult = receive_packet();
+				sRomlTestVars.ucReadAckDelayCounter--;
+				m_ptLog->debug("Remaining delay packets: %d", sRomlTestVars.ucReadAckDelayCounter);
 			}
 			
 			if( tResult==TRANSPORTSTATUS_OK )
@@ -599,8 +633,8 @@ romloader::TRANSPORTSTATUS_T romloader::write_data(uint32_t ulNetxAddress, MONIT
 		} s;
 		uint8_t auc[m_sizMaxPacketSizeHost];
 	} uWriteData;
-MUHKUH_STATIC_ASSERT( sizeof(uWriteData)==m_sizMaxPacketSizeHost, "Packing of WRITE_DATA_UNION does not work.");
-#pragma pack(pop)
+	MUHKUH_STATIC_ASSERT( sizeof(uWriteData)==m_sizMaxPacketSizeHost, "Packing of WRITE_DATA_UNION does not work.");
+	#pragma pack(pop)
 	TRANSPORTSTATUS_T tResult;
 	size_t sizPacket;
 	uint8_t ucPacketTyp;
@@ -614,7 +648,12 @@ MUHKUH_STATIC_ASSERT( sizeof(uWriteData)==m_sizMaxPacketSizeHost, "Packing of WR
 	 */
 	bool fPacketStillValid; 
 
-
+	/* print info that the packets will be delayed */
+	if(sRomlTestVars.ucWriteAckDelayCounter > 0)
+	{
+		m_ptLog->debug("The acknowledge packet for the status of this write_data command will be delayed by %d", sRomlTestVars.ucWriteAckDelayCounter);
+	}
+	
 	if( m_fIsConnected==false )
 	{
 		tResult = TRANSPORTSTATUS_NOT_CONNECTED;
@@ -633,6 +672,14 @@ MUHKUH_STATIC_ASSERT( sizeof(uWriteData)==m_sizMaxPacketSizeHost, "Packing of WR
 		/* The size of the packet is the "write" header with the data and 2 bytes of CRC. */
 		sizPacket = sizeof(MIV3_PACKET_COMMAND_WRITE_DATA_HEADER_T) + sizDataInBytes + 2U;
 		tResult = execute_command(&(uWriteData.s.s.s.tHeader), sizPacket, &fPacketStillValid);
+		
+		/* keep on receiving packets while delay counter is bigger than 0 */
+		while(sRomlTestVars.ucWriteAckDelayCounter > 0){
+			tResult = receive_packet();
+			sRomlTestVars.ucWriteAckDelayCounter--;
+			m_ptLog->debug("Remaining delay packets: %d", sRomlTestVars.ucWriteAckDelayCounter);
+		}
+		
 		if( tResult==TRANSPORTSTATUS_OK )
 		{
 			/* Receive the status. */
@@ -643,6 +690,14 @@ MUHKUH_STATIC_ASSERT( sizeof(uWriteData)==m_sizMaxPacketSizeHost, "Packing of WR
 			else{
 				fPacketStillValid = false; // set the flash back to False so the next packet will be received as usual
 			}
+			
+			/* keep on receiving packets while delay counter is bigger than 0 */
+			while(sRomlTestVars.ucWriteAckDelayCounter > 0){
+				tResult = receive_packet();
+				sRomlTestVars.ucWriteAckDelayCounter--;
+				m_ptLog->debug("Remaining delay packets: %d", sRomlTestVars.ucWriteAckDelayCounter);
+			}
+			
 			if( tResult==TRANSPORTSTATUS_OK )
 			{
 				/* The ACK packet is the smallest possible packet. It has only 2 bytes of user data
@@ -664,7 +719,7 @@ MUHKUH_STATIC_ASSERT( sizeof(uWriteData)==m_sizMaxPacketSizeHost, "Packing of WR
 					{
 						ptPacketStatus = (MIV3_PACKET_STATUS_T*)m_aucPacketInputBuffer;
 
-						if( m_sizPacketInputBuffer==sizeof(MIV3_PACKET_STATUS_T) )
+						if( m_sizPacketInputBuffer==sizeof(MIV3_PACKET_STATUS_T))
 						{
 							/* The netX sent a status code. */
 							ucStatus = ptPacketStatus->s.ucStatus;
@@ -1072,7 +1127,11 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 	 * In this case the buffer should not be overwritten by receiving a new packet.
 	 */
 	bool fPacketStillValid; 
-
+	
+	if(sRomlTestVars.ucCallMessageAckDelayCounter > 0)
+	{
+		m_ptLog->debug("The acknowledge packet for the message calls of this call command will be delayed by %d", sRomlTestVars.ucCallMessageAckDelayCounter);
+	}
 
 	if( m_fIsConnected==false )
 	{
@@ -1122,8 +1181,17 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 					/* Get the packet type. */
 					ucPacketTyp = ptPacketHeader->s.ucPacketType;
 					ucPacketSequenceNumber =  ptPacketHeader->s.ucSequenceNumber;
-
-					if( ucPacketTyp==MONITOR_PACKET_TYP_CallMessage )
+					
+					/*
+					* ignore packets while ucCallMessageAckDelayCounter is bigger than 0
+					*/
+					if(sRomlTestVars.ucCallMessageAckDelayCounter > 0)
+					{
+						sRomlTestVars.ucCallMessageAckDelayCounter--;
+						m_ptLog->debug("Acknowledge delayed. Remaining delays: %d", sRomlTestVars.ucCallMessageAckDelayCounter);
+						
+					}
+					else if( ucPacketTyp==MONITOR_PACKET_TYP_CallMessage)
 					{
 						/* Acknowledge the packet. */
 						send_ack(ucPacketSequenceNumber);
