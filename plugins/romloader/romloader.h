@@ -235,18 +235,22 @@ MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_COMMAND_CALL_T)==15, "Packing of MIV3_P
 /* 
 * structure to hold test variables, that are used to delay acknowledge packets
 * after received packets inside commands.
-* ucCallMessageAckDelayCounter:
-*    inside call() method, only acknowledge after receiving the Nth answer packet (message call or status packet) after sending an execute command
-* ucWriteAckDelayCounter:
-*    inside write_data() method, only acknowledge after receiving the Nth answer packet (status packet) after sending a write command
-* ucReadAckDelayCounter:
-*    inside read_data() method, only acknowledge after receiving the Nth answer packet (read_data or status packet) after sending a read command
-*    
 */
 struct ROMLOADER_TEST_VARIABLES{
-	uint8_t ucCallMessageAckDelayCounter = 0;
-	uint8_t ucWriteAckDelayCounter = 0;
-	uint8_t ucReadAckDelayCounter = 0;
+	/* skip sending ack for number of CNT received ReadData packets inside read_data() function */
+	uint32_t ulCnt_SkipAckReadData = 0; 
+
+	/* skip sending ack for number of CNT received Status packets inside read_data() function */
+	uint32_t ulCnt_SkipAckStatusRead = 0; 
+	
+	/* skip sending ack for number of CNT received Status packets inside write_data() function */
+	uint32_t ulCnt_SkipAckStatusWrite = 0;
+	
+	/* skip sending ack for number of CNT received Status packets inside call() function */
+	uint32_t ulCnt_SkipAckStatusCall = 0;
+	
+	/* skip sending ack for number of CNT received message_call packets inside call() function */
+	uint32_t ulCnt_SkipAckMessageCall = 0;
 };
 
 /*-----------------------------------*/
@@ -291,10 +295,12 @@ public:
 	/* Wrapper to call the functions directly from lua scripts */
 	virtual bool send_packet_wrapper(const char *pcBuffer, size_t sizData);
 	virtual bool receive_packet_wrapper();
-	virtual void set_call_message_delay(uint8_t ucCallMessageDelay);
-	virtual void set_write_status_delay(uint8_t ucWriteStatusAckDelay);
-	virtual void set_read_status_delay(uint8_t ucReadStatusAckDelay);
-
+	
+	virtual void set_call_skip_counter(uint32_t ulCallMessageSkip, uint32_t ulStatusSkip);
+	virtual void set_write_skip_counter(uint32_t ulStatusSkip);
+	virtual void set_read_skip_counter(uint32_t ulReadDataSkip,uint32_t ulStatusSkip);
+		
+	virtual bool skip_ack_test(uint32_t ulCnt_ignore_packets);
 	
 	/* send cancel packet*/
 	virtual bool cancel_operation();
@@ -333,6 +339,7 @@ public:
 		TRANSPORTSTATUS_INVALID_PACKET_SIZE       = 13,  /* The packet size does not match the expected size for the packet type. */
 		TRANSPORTSTATUS_UNEXPECTED_PACKET_SIZE    = 14,  /* The packet size does not match the number of requested bytes (usually a "read_data" response to a read command). */
 		TRANSPORTSTATUS_UNEXPECTED_PACKET_TYP     = 15,   /* The netX sent an unexpected answer. */
+		TRANSPORTSTATUS_REPETATION_TEST_FAILES    = 16,   /* The Skip Ack test failed */
 	} TRANSPORTSTATUS_T;
 
 	const char *get_error_message(TRANSPORTSTATUS_T tStatus);
