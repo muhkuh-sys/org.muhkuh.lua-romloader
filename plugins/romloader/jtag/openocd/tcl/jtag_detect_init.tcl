@@ -25,7 +25,17 @@ proc set_adapter_speed_khz {speed_khz} {
 # 2: Attach
 
 global __JTAG_RESET__
-puts "__JTAG_RESET__: $__JTAG_RESET__"
+
+if { $__JTAG_RESET__ == 0 } { 
+	puts "__JTAG_RESET__: $__JTAG_RESET__ (Hardware reset)"
+} elseif { $__JTAG_RESET__ == 1} {
+	puts "__JTAG_RESET__: $__JTAG_RESET__ (Software reset)"
+} elseif { $__JTAG_RESET__ == 2} {
+	puts "__JTAG_RESET__: $__JTAG_RESET__ (Attach and halt)"
+} else {
+	puts "__JTAG_RESET__: $__JTAG_RESET__"
+	puts "WARNING: __JTAG_RESET__ has an unknown value"
+}
 
 source [find netx_swreset.tcl]
 
