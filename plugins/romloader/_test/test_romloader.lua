@@ -70,6 +70,7 @@ local ulTestSize           = 0x1000 -- max. size of the memory area to test
 local uiParameterLoops     = 1      -- 0 = endless
 local fDoMemTest           = true   -- memory read/write test
 local fDoCallTest          = true   -- call/output message test
+local fDoWrapperTest       = true   -- execute wrapper tests
 local fCheckOutput         = true   -- check messages from call test program 
                                     -- Set to false for JTAG without DCC support (netX 4000, 90, netIOL)
 local fCheckOutputEnd      = true   -- check the output at the return from a call   
@@ -87,6 +88,7 @@ printf("ulTestSize           0x%08x", ulTestSize)
 printf("uiParameterLoops     %d",     uiParameterLoops)
 printf("fDoMemTest           %s",     tostring(fDoMemTest))
 printf("fDoCallTest          %s",     tostring(fDoCallTest))
+printf("fDoWrapperTest       %s",     tostring(fDoWrapperTest))
 printf("fCheckOutput         %s",     tostring(fCheckOutput))
 printf("fCheckOutputEnd      %s",     tostring(fCheckOutputEnd))
 printf("USB_BLOCK_SIZE       %d",     USB_BLOCK_SIZE)
@@ -606,6 +608,68 @@ function call_test(tArgs)
 	end
 end
 
+--------------------------------------------------------------------------
+--  test wrapper
+--------------------------------------------------------------------------
+function test_wrapper(tArgs)
+    local tPlugin = tArgs.tPlugin
+	local strAsicName = tArgs.strAsicName
+	local uiLoopCounter = tArgs.uiLoopCounter
+    --- local test values
+    local ucReadValue
+    local ucTestValue = 0x12345678
+    local ulTestAddress = 0x00028040
+
+    print("---------------------------------------")
+    print(string.format("** Loop %d **", uiLoopCounter))
+    print(" wrapper test")
+
+    print("---- test write command with ignore counter ----")
+    -- set write ignore counter to 3 and the rest to 0
+    tPlugin:set_write_skip_counter(3)
+    tPlugin:set_read_skip_counter(0, 0)
+    tPlugin:set_call_skip_counter(0, 0)
+
+    -- run write command with delay counter active
+    tPlugin:write_data32(ulTestAddress, ucTestValue)
+    tPlugin:write_data32(ulTestAddress, ucTestValue)
+    tPlugin:write_data32(ulTestAddress, ucTestValue)
+
+    print("---- test read command with ignore counter ----")
+    -- set read_data ignore counter to 3 and the rest to 0
+    tPlugin:set_write_skip_counter(0)
+    tPlugin:set_read_skip_counter(3, 0)
+    tPlugin:set_call_skip_counter(0, 0)
+
+    -- run read command with delay counter active
+    ucReadValue = tPlugin:read_data32(ulTestAddress)
+    ucReadValue = tPlugin:read_data32(ulTestAddress)
+    ucReadValue = tPlugin:read_data32(ulTestAddress)
+
+    print("---- test read and write command with ignore counter ----")
+    -- set read_data ignore counter to 3 and the rest to 0
+    tPlugin:set_write_skip_counter(4)
+    tPlugin:set_read_skip_counter(3, 0)
+    tPlugin:set_call_skip_counter(0, 0)
+
+    -- run read command with delay counter active
+    tPlugin:write_data32(ulTestAddress, ucTestValue)
+    ucReadValue = tPlugin:read_data32(ulTestAddress)
+    tPlugin:write_data32(ulTestAddress, ucTestValue)
+    ucReadValue = tPlugin:read_data32(ulTestAddress)
+    tPlugin:write_data32(ulTestAddress, ucTestValue)
+    ucReadValue = tPlugin:read_data32(ulTestAddress)
+
+    print("---- run call_test with active counter ----")
+    -- set read_data ignore counter to 3 and the rest to 0
+    tPlugin:set_write_skip_counter(0)
+    tPlugin:set_read_skip_counter(0, 0)
+    tPlugin:set_call_skip_counter(1, 4)
+
+    -- run call test with active counter
+    call_test(tArgs)
+
+end
 
 --------------------------------------------------------------------------
 --  test main
@@ -631,9 +695,6 @@ function test_main(tPlugin)
 		tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX4000_RELAXED or
 		tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX4000_FULL or
 		tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX4100_SMALL or
-		-- tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90_MPW or
-		-- tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90 or
-		-- tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETX90B or
 		tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETIOLA or
 		tAsicTyp == romloader.ROMLOADER_CHIPTYP_NETIOLB
 	
@@ -673,6 +734,9 @@ function test_main(tPlugin)
 		end 
 		if fDoCallTest then
 			call_test(tArgs)
+		end
+		if fDoWrapperTest then
+		    test_wrapper(tArgs)
 		end
 		uiLoopCounter = uiLoopCounter + 1
 	end

@@ -156,18 +156,17 @@ MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_STATUS_T)==8, "Packing of MIV3_PACKET_S
 struct MIV3_PACKET_CANCEL_CALL_STRUCT
 {
 	MIV3_PACKET_HEADER_T tHeader;
-	uint8_t  ucData;
 	uint8_t  ucCrcHi;
 	uint8_t  ucCrcLo;
 };
-MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_CANCEL_CALL_STRUCT)==8, "Packing of MIV3_PACKET_CANCEL_CALL_STRUCT does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_CANCEL_CALL_STRUCT)==7, "Packing of MIV3_PACKET_CANCEL_CALL_STRUCT does not work.");
 
 typedef union MIV3_PACKET_CANCEL_CALL_UNION
 {
 	struct MIV3_PACKET_CANCEL_CALL_STRUCT s;
-	uint8_t auc[8];
+	uint8_t auc[7];
 } MIV3_PACKET_CANCEL_CALL_T;
-MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_CANCEL_CALL_T)==8, "Packing of MIV3_PACKET_CANCEL_CALL_T does not work.");
+MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_CANCEL_CALL_T)==7, "Packing of MIV3_PACKET_CANCEL_CALL_T does not work.");
 
 
 
@@ -233,6 +232,27 @@ MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_COMMAND_CALL_T)==15, "Packing of MIV3_P
 #endif  /* !defined(SWIG) */
 
 
+/* 
+* structure to hold test variables, that are used to delay acknowledge packets
+* after received packets inside commands.
+*/
+struct ROMLOADER_TEST_VARIABLES{
+	/* skip sending ack for number of CNT received ReadData packets inside read_data() function */
+	uint32_t ulCnt_SkipAckReadData = 0; 
+
+	/* skip sending ack for number of CNT received Status packets inside read_data() function */
+	uint32_t ulCnt_SkipAckStatusRead = 0; 
+	
+	/* skip sending ack for number of CNT received Status packets inside write_data() function */
+	uint32_t ulCnt_SkipAckStatusWrite = 0;
+	
+	/* skip sending ack for number of CNT received Status packets inside call() function */
+	uint32_t ulCnt_SkipAckStatusCall = 0;
+	
+	/* skip sending ack for number of CNT received message_call packets inside call() function */
+	uint32_t ulCnt_SkipAckMessageCall = 0;
+};
+
 /*-----------------------------------*/
 
 class MUHKUH_EXPORT romloader_read_functinoid
@@ -272,6 +292,19 @@ public:
 	/* Write a byte array from the PC to the netX. */
 	virtual void write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, size_t sizBUFFER_IN, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 
+	/* Wrapper to call the functions directly from lua scripts */
+	virtual bool send_packet_wrapper(const char *pcBuffer, size_t sizData);
+	virtual bool receive_packet_wrapper();
+	
+	virtual void set_call_skip_counter(uint32_t ulCallMessageSkip, uint32_t ulStatusSkip);
+	virtual void set_write_skip_counter(uint32_t ulStatusSkip);
+	virtual void set_read_skip_counter(uint32_t ulReadDataSkip,uint32_t ulStatusSkip);
+		
+	virtual bool skip_ack_test(uint32_t ulCnt_ignore_packets);
+	
+	/* send cancel packet*/
+	virtual bool cancel_operation();
+
 	/* Call a routine on the netX. */
 	virtual void call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 
@@ -306,6 +339,7 @@ public:
 		TRANSPORTSTATUS_INVALID_PACKET_SIZE       = 13,  /* The packet size does not match the expected size for the packet type. */
 		TRANSPORTSTATUS_UNEXPECTED_PACKET_SIZE    = 14,  /* The packet size does not match the number of requested bytes (usually a "read_data" response to a read command). */
 		TRANSPORTSTATUS_UNEXPECTED_PACKET_TYP     = 15,   /* The netX sent an unexpected answer. */
+		TRANSPORTSTATUS_REPETATION_TEST_FAILES    = 16,   /* The Skip Ack test failed */
 	} TRANSPORTSTATUS_T;
 
 	const char *get_error_message(TRANSPORTSTATUS_T tStatus);
@@ -355,6 +389,8 @@ protected:
 
 	uint8_t m_ucMonitorSequence;
 	
+	/* structure that holds variables used for test purposes only */
+	ROMLOADER_TEST_VARIABLES sRomlTestVars;
 
 	size_t m_sizPacketInputBuffer;
 	uint8_t m_aucPacketInputBuffer[m_sizMaxPacketSizeHost];
