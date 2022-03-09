@@ -4,25 +4,38 @@ Change log/Release notes
 
 V 2.5.0
 =======
-* Bug fixes in monitor protocol (UART/USB/Ethernet):
+Changes to the machine interface protocol (UART/USB/Ethernet):
+
+* Bug fixes:
   Send ack with the received packet's sequence number (ucPacketSequenceNumber)
   Only increment global sequence number (m_ucMonitorSequence) when when the received packet's sequence number matches the global sequence number.
   
-  Tolerate dropped ACK packets:
+* Tolerate dropped ACK packets:
   When execute_command() is waiting for an ACK from the netX, but instead a 
   different packet is received whose sequence number is ahead by one,
   we assume that the ACK was sent by the netX but got lost on the way.
   The received packet is kept and processed. This is done by setting a flag 
   that causes the next call to receive_packet() to be skipped.
+
+Changes to romloader_jtag:
+
+* Update to OpenOCD 0.11.0 and libusb v1.0.24 
 * Pass the jtag options (JTAG frequency, reset mode) that are passed to
   DetectInterfaces through to the plugin instance and to the TCL script. 
+* New reset script for netx 90:
+  Removed the breakpoint at 0x170
+	Abort with an error if the CPU cannot be halted.
 * Remove the permanent breakpoint used to catch return from call. 
   The BP is now enabled before any call and disabled afterwards.
-* Update to OpenOCD 0.11.0 and libusb v1.0.24 
-* Pass OpenOCD output to a handler function.
-* Print all messages from the JTAG plugin to the log.
-* Fix erroneous output from openOCD.
 * Initialize the netIOL PLL
+* Print all messages from the JTAG plugin to the log.
+* Messages passed from the netX to the Lua script that had CR LF LF as line 
+  endings now have CR LF.
+  Some trace messages from OpenOCD that used to have single line breaks now 
+	have double line breaks.
+
+Other changes:
+
 * Replace the netX4000 RELAXED with the netX4000 FULL
 * Build the GPIO drivers on ARM platforms.
 
