@@ -26,6 +26,11 @@
 --   - call binary and check its output
 -----------------------------------------------------------------------------
 
+-- Increment for every change to this file that changes its behaviour.
+TEST_ROMLOADER_VERSION = 1
+print(string.format('{"version test_romloader.lua": %d}', TEST_ROMLOADER_VERSION))
+
+
 require("muhkuh_cli_init")
 require("bit")
 
