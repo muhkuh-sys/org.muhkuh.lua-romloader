@@ -2,6 +2,10 @@
 Change log/Release notes
 =========================
 
+V 2.5.1 
+=======
+* Added functions for test purposes.
+
 V 2.5.0
 =======
 Changes to the machine interface protocol (UART/USB/Ethernet):
