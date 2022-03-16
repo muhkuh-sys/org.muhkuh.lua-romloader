@@ -296,6 +296,10 @@ public:
 	virtual bool send_packet_wrapper(const char *pcBuffer, size_t sizData);
 	virtual bool receive_packet_wrapper();
 	
+	virtual void increase_sequence_number();
+	virtual uint8_t get_sequence_number();
+	virtual void set_sequence_number(uint8_t ucSequenceNumber);
+
 	virtual void set_call_skip_counter(uint32_t ulCallMessageSkip, uint32_t ulStatusSkip);
 	virtual void set_write_skip_counter(uint32_t ulStatusSkip);
 	virtual void set_read_skip_counter(uint32_t ulReadDataSkip,uint32_t ulStatusSkip);

@@ -76,7 +76,19 @@ bool romloader::receive_packet_wrapper()
 	
 	return tResult;
 }
-
+/* Wrapper for increasing, getting and setting the sequence number */
+void romloader::increase_sequence_number()
+{
+	m_ucMonitorSequence++;
+}
+uint8_t romloader::get_sequence_number()
+{
+	return m_ucMonitorSequence;
+}
+void romloader::set_sequence_number(uint8_t ucSequenceNumber)
+{
+	m_ucMonitorSequence = ucSequenceNumber;
+}
 /*
 * wrapper functions to set test counter that will delay the acknowlede packages
 * for received packages during commands 
