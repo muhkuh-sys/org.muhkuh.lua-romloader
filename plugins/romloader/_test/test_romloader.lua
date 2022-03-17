@@ -673,6 +673,49 @@ function test_wrapper(tArgs)
 
     -- run call test with active counter
     call_test(tArgs)
+	
+    -- test the sequence number wrapper
+    print("test wrapper functions for sequence number handling")
+	ucSequenceNumber = tPlugin:get_sequence_number()
+	tPlugin:increase_sequence_number()
+	ucSequenceNumberIncreased = tPlugin:get_sequence_number()
+	print("get SN      : " .. ucSequenceNumber)
+	print("increase SN")
+	print("increased SN: " .. ucSequenceNumberIncreased)
+	-- increase ucSequenceNumber in here (wrap arounf at 255)
+	local uccheckSequenceNumber = ucSequenceNumber +1
+	if uccheckSequenceNumber > 255 then
+		uccheckSequenceNumber= 0
+	end
+	if uccheckSequenceNumber ~= ucSequenceNumberIncreased then
+		print("Test increase SN: expected sequence number ".. uccheckSequenceNumber .." but got ".. ucSequenceNumberIncreased)
+		os.exit(253)
+	end
+
+	-- test setter wrapper
+	tPlugin:set_sequence_number(255)
+	ucSequenceNumber = tPlugin:get_sequence_number()
+    print("set SN      : " .. 255)
+    print("get SN      : " .. ucSequenceNumber)
+    if ucSequenceNumber ~= 255 then
+        print("Test set SN: expected sequence number 255 but got ".. ucSequenceNumber)
+        os.exit(254)
+    else
+        print("Test set SN: OK")
+    end
+
+	-- increase around 255
+	tPlugin:increase_sequence_number()
+	ucSequenceNumberIncreased = tPlugin:get_sequence_number()
+	print("increase SN")
+	print("increased SN: " .. ucSequenceNumberIncreased)
+
+    if ucSequenceNumberIncreased ~= 0 then
+        print("Test wrap around SN: expected sequence number 0 but got " .. ucSequenceNumberIncreased)
+        os.exit(255)
+    else
+        print("Test wrap around SN: OK")
+    end
 
 end
 
