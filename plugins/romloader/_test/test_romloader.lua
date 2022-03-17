@@ -862,6 +862,7 @@ if iRet == E_OK then
 end
 
 print()
+print(string.format('{"version test_romloader.lua": %d}', TEST_ROMLOADER_VERSION))
 printf("Plugin: %s (%s)", strPluginName or "None", strPluginType or "None")
 printf("Chip type: %s (%d)", strChipType or "None", iChipType or 0)
 
@@ -876,6 +877,7 @@ print("##     ## ##  ##  ")
 print("##     ## ##   ## ")
 print(" #######  ##    ##")
 print("")
+print("RESULT: OK")
 
 else
 
@@ -888,6 +890,7 @@ print("##       ## ##    ## ##    ##    ## ## ##   ")
 print("##       ##  ##   ##  ##   ##    ## ##  ##  ")
 print("######## ##   ##  ##   ##   ######  ##   ## ")
 print("")
+print("RESULT: ERROR")
 
 end
 
