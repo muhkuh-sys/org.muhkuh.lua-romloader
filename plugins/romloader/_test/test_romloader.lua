@@ -682,7 +682,7 @@ function test_wrapper(tArgs)
 	end
 	if uccheckSequenceNumber ~= ucSequenceNumberIncreased then
 		print("Test increase SN: expected sequence number ".. uccheckSequenceNumber .." but got ".. ucSequenceNumberIncreased)
-		os.exit(253)
+		os.exit(E_SN_INCREACE_FAILED)
 	end
 
 	-- test setter wrapper
@@ -692,7 +692,7 @@ function test_wrapper(tArgs)
     print("get SN      : " .. ucSequenceNumber)
     if ucSequenceNumber ~= 255 then
         print("Test set SN: expected sequence number 255 but got ".. ucSequenceNumber)
-        os.exit(254)
+        os.exit(E_SN_SET_FAILED)
     else
         print("Test set SN: OK")
     end
@@ -705,7 +705,7 @@ function test_wrapper(tArgs)
 
     if ucSequenceNumberIncreased ~= 0 then
         print("Test wrap around SN: expected sequence number 0 but got " .. ucSequenceNumberIncreased)
-        os.exit(255)
+        os.exit(E_SN_WRAP_AROUND_FAILED)
     else
         print("Test wrap around SN: OK")
     end
@@ -793,6 +793,9 @@ E_OK             = 0
 E_ERROR          = 1
 E_INCORRECT_ARGS = 2
 E_NO_PLUGIN      = 3
+E_SN_INCREACE_FAILED = 5
+E_SN_SET_FAILED = 6
+E_SN_WRAP_AROUND_FAILED = 7
 
 function error_handler(e)
 	 print(debug.traceback(e))
