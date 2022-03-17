@@ -682,7 +682,7 @@ function test_wrapper(tArgs)
 	end
 	if uccheckSequenceNumber ~= ucSequenceNumberIncreased then
 		print("Test increase SN: expected sequence number ".. uccheckSequenceNumber .." but got ".. ucSequenceNumberIncreased)
-		os.exit(E_SN_INCREACE_FAILED)
+		os.exit(E_SN_INCRREASE_FAILED)
 	end
 
 	-- test setter wrapper
@@ -793,7 +793,7 @@ E_OK             = 0
 E_ERROR          = 1
 E_INCORRECT_ARGS = 2
 E_NO_PLUGIN      = 3
-E_SN_INCREACE_FAILED = 5
+E_SN_INCRREASE_FAILED = 5
 E_SN_SET_FAILED = 6
 E_SN_WRAP_AROUND_FAILED = 7
 
