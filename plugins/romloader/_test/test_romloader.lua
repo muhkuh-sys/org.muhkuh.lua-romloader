@@ -247,7 +247,7 @@ local function compare_readback(strData, strData_readback)
 	local iLenData = strData:len()
 	local iLenData_readback = strData_readback:len()
 	if iLenData~=iLenData_readback then
-		error(string.format("Data and readback data differ in length: %d <-> %d", iLenData, iLenData_readback))
+		error(string.format("*** Error: Data and readback data differ in length: %d <-> %d", iLenData, iLenData_readback))
 	end
 	
 	local iCompErrs = 0
@@ -255,7 +255,7 @@ local function compare_readback(strData, strData_readback)
 		local bData = strData:byte(i)
 		local bData_readback = strData_readback:byte(i)
 		if bData~=bData_readback then
-			print(string.format("Readback data does not match - offset 0x%08x, data:0x%02x, readback: 0x%02x", i-1, bData, bData_readback))
+			print(string.format("*** Error: Readback data does not match - offset 0x%08x, data:0x%02x, readback: 0x%02x", i-1, bData, bData_readback))
 			iCompErrs = iCompErrs + 1
 			if iCompErrs >= COMPARE_MAX_ERRORS then
 				print("Too many errors, stopping")
@@ -265,7 +265,7 @@ local function compare_readback(strData, strData_readback)
 	end
 	
 	if iCompErrs>0 then
-		error("Readback data does not match written values!")
+		error("*** Error: Readback data does not match written values!")
 	else
 		print("Ok!")
 		print(" ")
@@ -536,7 +536,7 @@ function fnCallbackCheckOutput(a,b)
 				tester.hexdump(a,16)
 			end
 			fOutputMissing = true
-			error("Unexpected output")
+			error("*** Error: Unexpected output")
 		end
 	else 
 		print("Received:")
@@ -595,16 +595,16 @@ function call_test(tArgs)
 	local ulResult, ulInitParam, ulReturnMessage = mbin_simple_run(nil, tPlugin, strBinaryName, ulMagic)
 	
 	if ulResult~=0 then
-		error(string.format("The code returned an error code: 0x%08x", ulResult))
+		error(string.format("*** Error: The code returned an error code: 0x%08x", ulResult))
 	end
 	
 	if ulReturnMessage ~= ulMagic then
-		error(string.format("The return message value is not correct: 0x%08x, expected: 0x%086x", ulReturnMessage, ulMagic))
+		error(string.format("*** Error: The return message value is not correct: 0x%08x, expected: 0x%086x", ulReturnMessage, ulMagic))
 	end
 	
 	if fCheckOutput then
 		if fCheckOutputEnd and not isOutputComplete() then
-			error("did not receive all expected output")
+			error("*** Error: did not receive all expected output")
 		end
 		
 		if fOutputMissing then
@@ -688,7 +688,7 @@ function test_wrapper(tArgs)
     	uccheckSequenceNumber= 0
     end
     if uccheckSequenceNumber ~= ucSequenceNumberIncreased then
-        error("Test increase SN: expected sequence number ".. uccheckSequenceNumber .." but got ".. ucSequenceNumberIncreased)
+        error("*** Error: Test increase SN: expected sequence number ".. uccheckSequenceNumber .." but got ".. ucSequenceNumberIncreased)
     end
 
     -- test setter wrapper
@@ -697,7 +697,7 @@ function test_wrapper(tArgs)
     print("set SN      : " .. 255)
     print("get SN      : " .. ucSequenceNumber)
     if ucSequenceNumber ~= 255 then
-        error("Test set SN: expected sequence number 255 but got ".. ucSequenceNumber)
+        error("*** Error: Test set SN: expected sequence number 255 but got ".. ucSequenceNumber)
     else
         print("Test set SN: OK")
     end
@@ -709,7 +709,7 @@ function test_wrapper(tArgs)
     print("increased SN: " .. ucSequenceNumberIncreased)
 
     if ucSequenceNumberIncreased ~= 0 then
-        error("Test wrap around SN: expected sequence number 0 but got " .. ucSequenceNumberIncreased)
+        error("*** Error: Test wrap around SN: expected sequence number 0 but got " .. ucSequenceNumberIncreased)
     else
         print("Test wrap around SN: OK")
     end
@@ -728,7 +728,7 @@ function test_main(tPlugin)
 				
 	-- Get the maximum test area for the current chip.
 	local tTestArea = atTestAreas[tAsicTyp]
-	assert(tTestArea, "Unknown chiptyp! " .. tostring(tAsicTyp))
+	assert(tTestArea, "*** Error: Unknown chiptyp! " .. tostring(tAsicTyp))
 	
 	-- Limit the test size to the size of the test area.
 	if ulTestSize>tTestArea.ulTestAreaSize then
@@ -812,6 +812,7 @@ elseif #arg == 2 and arg[1]=="-p" and type(arg[2])=="string" then
 	strPluginName = arg[2]
 	iRet = E_OK
 else
+	print("*** Error: incorrect arguments")
 	print("Usage: lua test_romloader.lua [-p plugin_name]")
 	iRet = E_INCORRECT_ARGS
 end
@@ -837,7 +838,8 @@ if iRet == E_OK then
 		
 	if fOk~=true or tPlugin==nil then
 		iRet = E_NO_PLUGIN
-		print(strError or "Failed to open plugin.")
+		strError = strError or "Failed to open plugin."
+		print("*** Error: " .. strError)
 		
 	else
 		fOk = xpcall(
