@@ -19,6 +19,7 @@
 #   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             #
 # ----------------------------------------------------------------------- #
 
+import os.path
 
 # ---------------------------------------------------------------------------
 #
@@ -145,3 +146,45 @@ atFirmware = [
     DCC_NETX90
 ]
 atEnv.DEFAULT.Tar('targets/firmware.tar.gz', atFirmware, TARFLAGS = '-c -z')
+
+#----------------------------------------------------------------------------
+#
+# Package test_romloader.lua and the montest binaries as a jonchki component.
+#
+Import('bin_netx500', 'bin_netx50', 'bin_netx10', 'bin_netx56', 'bin_netx4000', 'bin_netx90_mpw', 'bin_netx90', 'bin_netiol')
+
+tArcList = atEnv.DEFAULT.ArchiveList('zip')
+
+tArcList.AddFiles('./', 'plugins/romloader/_test/test_romloader.lua')
+
+tArcList.AddFiles('./', 'jonchki/org.muhkuh.lua.romloader/install.lua')
+
+tArcList.AddFiles('netx/',
+    bin_netx500, 
+    bin_netx50,
+    bin_netx10,
+    bin_netx56,
+    bin_netx4000,
+    bin_netx90_mpw,
+    bin_netx90,
+    bin_netiol
+)
+
+strGroup = 'org.muhkuh.lua'
+strModule = 'romloader'
+
+aGroup = strGroup.split('.')
+# = ['org', 'muhkuh', 'lua']
+strModulePath = 'targets/jonchki/repository/%s/%s/%s' % ('/'.join(aGroup), strModule, PROJECT_VERSION)
+# = 'targets/jonchki/repository/org/muhkuh/lua/romloader/2.5.1'
+strArtifact = 'romloader-montest'
+strBasePath = os.path.join(strModulePath, '%s-%s' % (strArtifact, PROJECT_VERSION))
+# = 'targets/jonchki/repository/org/muhkuh/lua/romloader/2.5.1/romloader-montest-2.5.1'
+tArtifact = atEnv.DEFAULT.Archive('%s.zip' % strBasePath, None, ARCHIVE_CONTENTS = tArcList)
+tArtifactHash = atEnv.DEFAULT.Hash('%s.hash' % tArtifact[0].get_path(), tArtifact[0].get_path(), HASH_ALGORITHM='md5,sha1,sha224,sha256,sha384,sha512', HASH_TEMPLATE='${ID_UC}:${HASH}\n')
+
+tConfiguration = atEnv.DEFAULT.Version('%s.xml' % strBasePath, 'jonchki/%s.%s/%s.xml' % (strGroup, strModule, strArtifact))
+# 'targets/jonchki/repository/org/muhkuh/lua/romloader/2.5.1/romloader-montest-2.5.1.xml',
+# 'jonchki/org.muhkuh.lua.romloader/romloader-montest.xml'
+
+tConfigurationHash = atEnv.DEFAULT.Hash('%s.hash' % tConfiguration[0].get_path(), tConfiguration[0].get_path(), HASH_ALGORITHM='md5,sha1,sha224,sha256,sha384,sha512', HASH_TEMPLATE='${ID_UC}:${HASH}\n')
