@@ -151,6 +151,8 @@ atEnv.DEFAULT.Tar('targets/firmware.tar.gz', atFirmware, TARFLAGS = '-c -z')
 #
 # Build an archive with the test script and test binaries.
 #
+Import('bin_netx500', 'bin_netx50', 'bin_netx10', 'bin_netx56', 'bin_netx4000', 'bin_netx90_mpw', 'bin_netx90', 'bin_netiol')
+
 tArcList = atEnv.DEFAULT.ArchiveList('zip')
 
 tArcList.AddFiles('./', 'plugins/romloader/_test/test_romloader.lua')
