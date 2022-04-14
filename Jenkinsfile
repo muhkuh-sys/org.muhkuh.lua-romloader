@@ -31,7 +31,7 @@ node {
                 sh "./build_artifact.py ${atEntry[0]} ${atEntry[1]} ${atEntry[2]}"
 
                 /* Archive all artifacts. */
-                archiveArtifacts artifacts: "${ARTIFACTS_PATH}/*.tar.xz,${ARTIFACTS_PATH}/*.xml,${ARTIFACTS_PATH}/*.hash,${ARTIFACTS_PATH}/*.pom",${ARTIFACTS_PATH2}/*.zip,${ARTIFACTS_PATH2}/*.hash"
+                archiveArtifacts artifacts: "${ARTIFACTS_PATH}/*.tar.xz,${ARTIFACTS_PATH}/*.xml,${ARTIFACTS_PATH}/*.hash,${ARTIFACTS_PATH}/*.pom,${ARTIFACTS_PATH2}/*.zip,${ARTIFACTS_PATH2}/*.hash"
 
                 /* Clean up after the build. */
                 sh 'rm -rf .[^.] .??* *'
