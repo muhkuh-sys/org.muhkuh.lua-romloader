@@ -77,7 +77,7 @@ bool romloader_uart_read_functinoid_hboot1::read_data32(uint32_t ulAddress, uint
 		fOk = m_ptDevice->GetLine(&uResponse.puc, "\r\n", 2000);
 		if( fOk==false )
 		{
-			fprintf(stderr, "failed to get command response!\n");
+			fprintf(stderr, "failed to receive command echo!\n");
 		}
 		else
 		{
