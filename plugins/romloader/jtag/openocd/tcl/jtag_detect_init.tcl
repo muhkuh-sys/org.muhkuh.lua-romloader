@@ -362,7 +362,7 @@ proc probe_cpu {strCpuID} {
 	
 		if { $SC_CFG_RESULT=={OK} } {
 			dap create netx90com -chain-position netx90.dap
-			target create netx90.comm cortex_m -dap netx90.dap -coreid 0 -ap-num 2
+			target create netx90.comm cortex_m -dap netx90com -coreid 0 -ap-num 2
 			netx90.comm configure -event reset-init { halt }
 			netx90.comm configure -work-area-phys 0x00040000 -work-area-size 0x4000 -work-area-backup 1
 			
