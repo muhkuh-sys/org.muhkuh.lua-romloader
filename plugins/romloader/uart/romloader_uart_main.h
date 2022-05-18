@@ -40,6 +40,27 @@
 
 /*-----------------------------------*/
 
+class romloader_uart_options : public muhkuh_plugin_options
+{
+public:
+	romloader_uart_options(muhkuh_log *ptLog);
+	romloader_uart_options(const romloader_uart_options *ptCloneMe);
+	~romloader_uart_options(void);
+
+	virtual void set_option(const char *pcKey, lua_State *ptLuaState, int iIndex);
+
+	bool getOption_netx90MiImage(const char **ppcImageData, size_t *psizImageLen);
+
+private:
+	void setOption_netx90MiImage(const char* pcImageData, size_t sizImageLen);
+	void clearOption_netx90MiImage();
+
+	const char* m_pcOption_netx90MiImageData;
+	size_t m_sizOption_netx90MiImageLen;
+};
+
+/*-----------------------------------*/
+
 class romloader_uart_provider;
 
 /*-----------------------------------*/
@@ -71,6 +92,8 @@ private:
 		ROMLOADER_COMMANDSET_MI3              = 4
 	} ROMLOADER_COMMANDSET_T;
 
+	void set_options(const romloader_uart_options *ptOptions);
+
 	bool identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader_uart_read_functinoid_mi2 *ptFnMi2);
 
 	romloader_uart_device_platform *m_ptUartDev;
@@ -95,6 +118,7 @@ public:
 	romloader_uart_provider(swig_type_info *p_romloader_uart, swig_type_info *p_romloader_uart_reference);
 	~romloader_uart_provider(void);
 
+	virtual romloader_uart_options *GetOptions(void);
 	int DetectInterfaces(lua_State *ptLuaStateForTableAccess, lua_State *ptLuaStateForTableAccessOptional);
 
 	virtual romloader_uart *ClaimInterface(const muhkuh_plugin_reference *ptReference);

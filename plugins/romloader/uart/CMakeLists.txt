@@ -59,6 +59,7 @@ SET(romloader_uart_SOURCES
 	romloader_uart_main.cpp
 	romloader_uart_read_functinoid_aboot.cpp
 	romloader_uart_read_functinoid_hboot1.cpp
+	romloader_uart_read_functinoid_hboot3.cpp
 	romloader_uart_read_functinoid_mi1.cpp
 	romloader_uart_read_functinoid_mi2.cpp
 	${romloader_uart_platform_SOURCES}
@@ -70,6 +71,7 @@ SET(romloader_uart_HEADERS
 	romloader_uart_main.h
 	romloader_uart_read_functinoid_aboot.h
 	romloader_uart_read_functinoid_hboot1.h
+	romloader_uart_read_functinoid_hboot3.h
 	romloader_uart_read_functinoid_mi1.h
 	romloader_uart_read_functinoid_mi2.h
 	${romloader_uart_platform_HEADERS}
