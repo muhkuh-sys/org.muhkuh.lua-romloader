@@ -62,6 +62,7 @@ public:
 	/* higher level interface */
 	bool wait_for_prompt(unsigned long ulTimeout);
 	bool GetLine(unsigned char **ppucLine, const char *pcEol, unsigned long ulTimeout);
+	int GetLine2(unsigned char **ppucLine, const char *pcEol1, const char *pcEol2, unsigned long ulTimeout);
 	bool SendBlankLineAndDiscardResponse(void);
 
 	static const size_t mc_sizCardSize = 16384;

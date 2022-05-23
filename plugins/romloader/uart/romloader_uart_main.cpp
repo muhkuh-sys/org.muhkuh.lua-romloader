@@ -25,6 +25,7 @@
 
 #include "romloader_uart_read_functinoid_aboot.h"
 #include "romloader_uart_read_functinoid_hboot1.h"
+#include "romloader_uart_read_functinoid_hboot3.h"
 #include "romloader_uart_read_functinoid_mi1.h"
 #include "romloader_uart_read_functinoid_mi2.h"
 
@@ -491,6 +492,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 	romloader_uart_read_functinoid *ptFn;
 	romloader_uart_read_functinoid_aboot tFnABoot(m_ptUartDev, m_pcName);
 	romloader_uart_read_functinoid_hboot1 tFnHBoot1(m_ptUartDev, m_pcName);
+	romloader_uart_read_functinoid_hboot3 tFnHBoot3(m_ptUartDev, m_pcName);
 	romloader_uart_read_functinoid_mi1 tFnMi1(m_ptUartDev, m_pcName);
 	romloader_uart_read_functinoid_mi2 tFnMi2(m_ptUartDev, m_pcName);
 	bool fResult;
@@ -533,18 +535,49 @@ void romloader_uart::Connect(lua_State *ptClientData)
 
 
 				case ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1:
-					m_ptLog->debug("ABOOT or HBOOT1.");
+					m_ptLog->debug("ABOOT, HBOOT1 or HBOOT3");
+					m_ptLog->debug("Trying ABOOT terminal");
 					/* Try to detect the chip type with the old command set ("DUMP"). */
 					ptFn = &tFnABoot;
 					fResult = detect_chiptyp(ptFn);
 					if( fResult!=true )
 					{
-						/* Failed to get the info with the old command set. Now try the new command ("D"). */
+						m_ptLog->debug("Trying HBOOT1 terminal");
+						/* Failed to get the info with the old command set. Now try the new command ("D"). 
+						   Expect a HBOOT1 prompt after the command. */
 						ptFn = &tFnHBoot1;
 						fResult = detect_chiptyp(ptFn);
 						if( fResult!=true )
 						{
-							MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chip type!", m_pcName, this);
+							m_ptLog->debug("Trying HBOOT3 terminal");
+							/* If that did not work, try again, expecting a HBOOT3 prompt 
+							 * (includes a status code). */
+							
+							/* First, check if the console is in open or secure mode. 
+							 * Stop if it is not in open mode. */
+							CONSOLE_MODE_T tConsoleMode;
+							tConsoleMode = tFnHBoot3.detect_console_mode();
+							
+							switch (tConsoleMode) {
+								
+								case CONSOLE_MODE_Open:
+									ptFn = &tFnHBoot3;
+									fResult = detect_chiptyp(ptFn);
+									if( fResult!=true )
+									{
+										MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chip type!", m_pcName, this);
+									}
+									break;
+								
+								case CONSOLE_MODE_Secure:
+									MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): Console is in secure mode! Only open mode is supported.", m_pcName, this);
+									break;
+								
+								case CONSOLE_MODE_Unknown:
+								default:
+									MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): Console is in an unknown mode! Only open mode is supported.", m_pcName, this);
+									break;
+							}
 						}
 					}
 					
