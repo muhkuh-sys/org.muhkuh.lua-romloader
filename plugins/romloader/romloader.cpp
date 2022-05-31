@@ -1603,7 +1603,7 @@ bool romloader::detect_chiptyp(void)
 }
 
 
-const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[14] =
+const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[16] =
 {
 	{
 		0xea080001,
@@ -1730,13 +1730,36 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[14] =
 		0x2009fff0,
 		0x000000c0,
 		0x0010d005,
-		0,
-		0,
-		0,
+		0xff401298,
+		0xffffffff,
+		0x0900010d,
 		ROMLOADER_CHIPTYP_NETX90B,
 		"netX90 Rev1"
 	},
 	
+	{ /* Note: The identifying memory locations are the same as in the
+		B-Type, therefore this chip type is never found by detect_chiptyp().*/
+		0x2009fff0,
+		0x000000c0,
+		0x0010d005,
+		0xff401298,
+		0xffffffff,
+		0x0900010d,
+		ROMLOADER_CHIPTYP_NETX90C,
+		"netX90 Rev1 (ePHY V3)"
+	},
+	
+	{
+		0x2009fff0,
+		0x000000c0,
+		0x0010d005,
+		0xff401298,
+		0xffffffff,
+		0x0901020d,
+		ROMLOADER_CHIPTYP_NETX90D,
+		"netX90 Rev2"
+	},
+
 	{
 		0x00000000, /* reserved location 0 reads as 0 */
 		0x2000, 
@@ -1757,7 +1780,7 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[14] =
 		0,
 		ROMLOADER_CHIPTYP_NETIOLB,
 		"netIOL Rev0"
-	} 
+	}, 
 };
 
 

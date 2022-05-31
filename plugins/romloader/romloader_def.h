@@ -39,10 +39,12 @@ typedef enum
 	ROMLOADER_CHIPTYP_NETX90_MPW           = 10,
 	ROMLOADER_CHIPTYP_NETX4000_FULL        = 11,
 	ROMLOADER_CHIPTYP_NETX4100_SMALL       = 12,
-	ROMLOADER_CHIPTYP_NETX90               = 13,
-	ROMLOADER_CHIPTYP_NETX90B              = 14,
+	ROMLOADER_CHIPTYP_NETX90               = 13, /* netX 90 rev. 0 */
+	ROMLOADER_CHIPTYP_NETX90B              = 14, /* netX 90 rev. 1 */
 	ROMLOADER_CHIPTYP_NETIOLA              = 15,
-	ROMLOADER_CHIPTYP_NETIOLB              = 16
+	ROMLOADER_CHIPTYP_NETIOLB              = 16,
+	ROMLOADER_CHIPTYP_NETX90C              = 17, /* netX 90 rev. 1 (ePHY V3)*/
+	ROMLOADER_CHIPTYP_NETX90D              = 18  /* netX 90 rev. 2 */
 } ROMLOADER_CHIPTYP;
 
 /*-----------------------------------*/
