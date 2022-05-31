@@ -48,6 +48,8 @@ atTestAreas = {
 	[romloader.ROMLOADER_CHIPTYP_NETX90_MPW]        = {strName = "netx90",     ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},
 	[romloader.ROMLOADER_CHIPTYP_NETX90]            = {strName = "netx90",     ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},
 	[romloader.ROMLOADER_CHIPTYP_NETX90B]           = {strName = "netx90",     ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},
+	[romloader.ROMLOADER_CHIPTYP_NETX90C]           = {strName = "netx90",     ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},
+	[romloader.ROMLOADER_CHIPTYP_NETX90D]           = {strName = "netx90",     ulTestAreaStart = 0x00040000, ulTestAreaSize  = 0x00020000},
 	[romloader.ROMLOADER_CHIPTYP_NETIOLA]           = {strName = "netiol",     ulTestAreaStart = 0x00009000, ulTestAreaSize  = 0x00005000},
 	[romloader.ROMLOADER_CHIPTYP_NETIOLB]           = {strName = "netiol",     ulTestAreaStart = 0x00009000, ulTestAreaSize  = 0x00005000},
 }
