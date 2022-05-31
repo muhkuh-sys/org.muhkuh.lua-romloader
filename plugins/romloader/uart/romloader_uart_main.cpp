@@ -654,6 +654,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 						 * netx90 MPW  reports MI V2, chip type netX90 MPW  (0x02 0x0a)
 						 * netx90 Rev0 reports MI V3, chip type netX90 MPW  (0x03 0x0a)
 						 * next90 Rev1 reports MI V3, chip type netX90 Rev0 (0x03 0x0d)
+						 * next90 Rev2 reports MI V3, chip type netX90 Rev0 (0x03 0x0d)
 						 */
 						if( tChiptyp==ROMLOADER_CHIPTYP_NETX90_MPW 
 							|| tChiptyp==ROMLOADER_CHIPTYP_NETX90
