@@ -621,6 +621,8 @@ proc reset_netx90_COM {} {
     
         global ROMLOADER_CHIPTYP_NETX90
         global ROMLOADER_CHIPTYP_NETX90B
+        global ROMLOADER_CHIPTYP_NETX90C
+        global ROMLOADER_CHIPTYP_NETX90D
 				
         set iChiptyp [ get_chiptyp ]
         
@@ -629,7 +631,9 @@ proc reset_netx90_COM {} {
         # when entering the console or when processing an EXEC chunk.
         if {$iChiptyp == $ROMLOADER_CHIPTYP_NETX90} {
             set BP_ADDR_APP_JTAG_ENABLED $BP_ADDR_APP_JTAG_ENABLED_RC5
-        } elseif {$iChiptyp == $ROMLOADER_CHIPTYP_NETX90B} {
+        } elseif {$iChiptyp == $ROMLOADER_CHIPTYP_NETX90B 
+                  || $iChiptyp == $ROMLOADER_CHIPTYP_NETX90C 
+                  || $iChiptyp == $ROMLOADER_CHIPTYP_NETX90D} {
             set BP_ADDR_APP_JTAG_ENABLED $BP_ADDR_APP_JTAG_ENABLED_RC6
         } else {
             puts "===================================================================="

@@ -22,6 +22,10 @@ set ROMLOADER_CHIPTYP_NETX4000_FULL     11
 set ROMLOADER_CHIPTYP_NETX4100_SMALL    12
 set ROMLOADER_CHIPTYP_NETX90            13
 set ROMLOADER_CHIPTYP_NETX90B           14
+set ROMLOADER_CHIPTYP_NETIOLA           15
+set ROMLOADER_CHIPTYP_NETIOLB           16
+set ROMLOADER_CHIPTYP_NETX90C           17
+set ROMLOADER_CHIPTYP_NETX90D           18
 
 
 proc check_chiptyp { ulResetAddrRead ulResetAddr ulCheckAddr ulCheckVal } {
@@ -54,6 +58,8 @@ proc get_chiptyp { }  {
 	global ROMLOADER_CHIPTYP_NETX4100_SMALL
 	global ROMLOADER_CHIPTYP_NETX90
 	global ROMLOADER_CHIPTYP_NETX90B
+	global ROMLOADER_CHIPTYP_NETX90C
+	global ROMLOADER_CHIPTYP_NETX90D
 
 	set ulResetAddrRead [ mread32 0 ]
 	puts [ format "Reset vector: %x " $ulResetAddrRead ]
@@ -90,6 +96,10 @@ proc get_chiptyp { }  {
 	} elseif { [ check_chiptyp $ulResetAddrRead 0x2009fff0 0x00005110 0x1f13933b ] } { 
 		echo "netX 90MPW detected"
 		set iChiptyp $ROMLOADER_CHIPTYP_NETX90_MPW        
+	# The check for netx 90 Rev. 2 must precede the one for Rev. 1
+	} elseif { [ check_chiptyp $ulResetAddrRead 0x2009fff0 0xff401298 0x0901020d ] } {
+		echo "netX 90 Rev.2 detected"
+		set iChiptyp $ROMLOADER_CHIPTYP_NETX90D
 	# The check for netx 90 Rev. 1 must precede the one for Rev. 0
 	} elseif { [ check_chiptyp $ulResetAddrRead 0x2009fff0 0x000000c0 0x0010d005 ] } {
 		echo "netX 90 Rev.1 detected"
