@@ -1737,8 +1737,12 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[16] =
 		"netX90 Rev1"
 	},
 	
-	{ /* Note: The identifying memory locations are the same as in the
-		B-Type, therefore this chip type is never found by detect_chiptyp().*/
+	{/* Note: 
+			The netx90C cannot be detected by detect_chiptyp(), 
+			as its detection pattern is the same as the previous one for step B. 
+			The only way it might be detected is if the pattern for step B fails to 
+			match due to an error. 
+			In this case, a netx 90 step B might be also detected as step C. */
 		0x2009fff0,
 		0x000000c0,
 		0x0010d005,
