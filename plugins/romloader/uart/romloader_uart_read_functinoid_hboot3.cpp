@@ -326,7 +326,6 @@ int romloader_uart_read_functinoid_hboot3::update_device(ROMLOADER_CHIPTYP tChip
 
 	switch(tChiptyp)
 	{
-	case ROMLOADER_CHIPTYP_NETX90:
 	case ROMLOADER_CHIPTYP_NETX90B:
 	case ROMLOADER_CHIPTYP_NETX90C:
 	case ROMLOADER_CHIPTYP_NETX90D:
