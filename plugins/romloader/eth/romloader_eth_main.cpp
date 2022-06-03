@@ -286,6 +286,8 @@ void romloader_eth::Connect(lua_State *ptClientData)
 	int iResult;
 	bool fResult;
 	ROMLOADER_CHIPTYP tChiptyp;
+	uint16_t usMiVersionMin;
+	uint16_t usMiVersionMaj;
 
 
 	/* Expect error. */
@@ -303,7 +305,7 @@ void romloader_eth::Connect(lua_State *ptClientData)
 		{
 			/* Set a default maximum packet size which should be enough for a sync packet. */
 			m_sizMaxPacketSizeClient = 32;
-			fResult = synchronize(&tChiptyp);
+			fResult = synchronize(&tChiptyp, &usMiVersionMin, &usMiVersionMaj);
 			if( fResult==true )
 			{
 				/* The chip type reported by the ROM code of the netX 90 MPW/Rev0/Rev1 is incorrect:
@@ -318,7 +320,14 @@ void romloader_eth::Connect(lua_State *ptClientData)
 				{
 					m_ptLog->debug("Got suspicious chip type %d, detecting chip type.", tChiptyp);
 					m_fIsConnected = true;
-					fResult = detect_chiptyp();
+					if ((usMiVersionMaj == 3 && usMiVersionMin == 0 ) || usMiVersionMaj < 3)
+					{
+						fResult = detect_chiptyp();
+					}
+					else
+					{
+						fResult = detect_chiptyp_via_info();
+					}
 					m_fIsConnected = false;
 				}
 				else
