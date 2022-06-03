@@ -138,7 +138,7 @@ bool romloader::cancel_operation()
 }
 
 
-bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp)
+bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp, uint16_t *pusMiVersionMin, uint16_t *pusMiVersionMaj)
 {
 	/*
 	Send a Knock packet to the netX and wait for a MagicData packet in return.
@@ -228,6 +228,15 @@ bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp)
 					{
 						*ptChiptyp = tChipType;
 					}
+					if( pusMiVersionMaj!=NULL )
+					{
+						*pusMiVersionMaj = (uint16_t) ulMiVersionMaj;
+					}
+					if( pusMiVersionMin!=NULL )
+					{
+						*pusMiVersionMin = (uint16_t) ulMiVersionMin;
+					}
+					
 					m_sizMaxPacketSizeClient = sizMaxPacketSize;
 
 					fResult = true;
@@ -437,7 +446,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 					if( ucPacketSequence!=m_ucMonitorSequence )
 					{
 						m_ptLog->error("execute_command: the sequence does not match: %d / %d", ucPacketSequence, m_ucMonitorSequence);
-						synchronize(NULL);
+						synchronize(NULL, NULL, NULL);
 						tResult = TRANSPORTSTATUS_SEQUENCE_MISMATCH;
 					}
 					else
@@ -521,6 +530,69 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 }
 
 
+uint32_t romloader::get_info(uint32_t *ptNetxVersion, uint32_t *ptInfoFlags)
+{
+	MIV3_PACKET_INFO_COMMAND_T tPacketInfo;
+	MIV3_PACKET_INFO_DATA_T* ptRecPacketInfo;
+	uint32_t tResult;
+	uint8_t ucPacketTyp;
+	int iResult;
+	MIV3_PACKET_HEADER_T *ptPacketHeader;
+	MIV3_PACKET_STATUS_T *ptPacketStatus;
+	uint32_t  ulNetxVersion;
+	uint32_t  ulInfoFlags;
+	bool fPacketStillValid;  
+
+
+	if( m_fIsConnected==false )
+	{
+		tResult = TRANSPORTSTATUS_NOT_CONNECTED;
+	}
+	else
+	{
+		m_ptLog->info("use MONITOR_PACKET_TYP_Command_Info");
+		tPacketInfo.s.tHeader.s.ucPacketType =  MONITOR_PACKET_TYP_Command_Info;
+
+		tResult = execute_command(&(tPacketInfo.s.tHeader), sizeof(MIV3_PACKET_INFO_DATA_T), &fPacketStillValid);
+		if( tResult==TRANSPORTSTATUS_OK )
+		{
+			/* Receive the data. */
+			if (!fPacketStillValid){
+				/* only recceive the packet if the packet in the buffer is not still valid*/
+				tResult = receive_packet();
+			}
+			else{
+				fPacketStillValid = false; // set the flag back to False so the next packet will be received as usual
+			}
+			
+			if( tResult!=TRANSPORTSTATUS_OK )
+			{
+				/* Failed to send knock sequence to device. */
+				m_ptLog->error("Failed to send knock sequence to device.");
+			}
+			else
+			{
+				/* Get the received packet as a sync packet for later. */
+				ptRecPacketInfo = (MIV3_PACKET_INFO_DATA_T*)m_aucPacketInputBuffer;
+				
+				m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+				
+				ulNetxVersion = NETXTOH32(ptRecPacketInfo->s.ulNetxVersion);
+				ulInfoFlags = NETXTOH32(ptRecPacketInfo->s.ulInfoFlags);
+	
+				m_ptLog->info("ulNetxVersion: 0x%08x", ulNetxVersion);
+				m_ptLog->info("ulInfoFlags: 0x%08x", ulInfoFlags);
+									
+			}
+		}
+	}
+	
+	*ptNetxVersion = ulNetxVersion;
+	*ptInfoFlags = ulInfoFlags;
+
+	return tResult;
+}
+
 
 romloader::TRANSPORTSTATUS_T romloader::read_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, uint16_t sizDataInBytes)
 {
@@ -559,7 +631,7 @@ romloader::TRANSPORTSTATUS_T romloader::read_data(uint32_t ulNetxAddress, MONITO
 				tResult = receive_packet();
 			}
 			else{
-				fPacketStillValid = false; // set the flash back to False so the next packet will be received as usual
+				fPacketStillValid = false; // set the flag back to False so the next packet will be received as usual
 			}
 						
 			if( tResult==TRANSPORTSTATUS_OK )
@@ -1600,6 +1672,70 @@ bool romloader::detect_chiptyp(void)
 	}
 
 	return fResult;
+}
+
+/* Use the info command in MI v3.1 to get the netx_version.
+   Match this value against ulCheckCmpValue of each 
+   ROMLOADER_RESET_ID_T entry where ulCheckCmpValue is not 0.
+*/
+bool romloader::detect_chiptyp_via_info(void)
+{
+	const ROMLOADER_RESET_ID_T *ptRstCnt, *ptRstEnd;
+	bool fResult;
+	ROMLOADER_CHIPTYP tChiptyp;
+	uint32_t ulNetxVersion;
+	uint32_t ulInfoFlags;
+	uint32_t ulMaskedVal;
+	
+	tChiptyp = ROMLOADER_CHIPTYP_UNKNOWN;
+	
+	fResult = get_info(&ulNetxVersion, &ulInfoFlags);
+	if( fResult!=TRANSPORTSTATUS_OK )
+	{
+		m_ptLog->error("Failed to get Info Packet");
+	}
+	else
+	{
+		m_ptLog->debug("ulNetxVersion:  0x%08X", ulNetxVersion);
+		m_ptLog->debug("ulInfoFlags:  0x%08X", ulInfoFlags);
+		
+		m_ptLog->debug("Matching ulNetxVersion against chip types");
+	
+		ptRstCnt = atResIds;
+		ptRstEnd = ptRstCnt + (sizeof(atResIds)/sizeof(atResIds[0]));
+		
+		while( ptRstCnt<ptRstEnd )
+		{
+			if (ptRstCnt->ulCheckCmpValue != 0){
+			
+				m_ptLog->debug("checking for chip type %s.", ptRstCnt->pcChiptypName);
+				ulMaskedVal = ulNetxVersion & ptRstCnt->ulCheckMask;
+				if (ulMaskedVal == (ptRstCnt->ulCheckCmpValue))
+				{
+					m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
+					tChiptyp = ptRstCnt->tChiptyp;
+					break;
+				}
+			}
+			++ptRstCnt;
+		}
+	}
+	
+	/* Found something? */
+	if( fResult==TRANSPORTSTATUS_OK && tChiptyp!=ROMLOADER_CHIPTYP_UNKNOWN )
+	{
+		/* Accept the new chip type. */
+		m_tChiptyp = tChiptyp;
+		fResult = true;
+	}
+	else
+	{
+		/* todo: set m_tChiptyp to ROMLOADER_CHIPTYP_UNKNOWN? */
+		m_ptLog->debug("no Chiptype detected");
+		fResult = false;
+	}
+	return fResult;
+	
 }
 
 
