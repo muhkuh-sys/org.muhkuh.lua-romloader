@@ -79,5 +79,21 @@ typedef struct
 	unsigned char aucText[63];
 } MONITOR_PACKET_MESSAGE_T;
 
+/* Info packet */
+#define MSK_MONITOR_INFO_FLAGS_SECURE_BOOT_ENABLED                0x00000001
+#define SRT_MONITOR_INFO_FLAGS_SECURE_BOOT_ENABLED                0
+
+struct MONITOR_INFO_STRUCT
+{
+	unsigned long ulNetxVersion;
+	unsigned long ulInfoFlags;
+};
+
+typedef union MONITOR_INFO_UNION
+{
+	struct MONITOR_INFO_STRUCT s;
+	unsigned char  auc[sizeof(struct MONITOR_INFO_STRUCT)];
+	unsigned long  aul[sizeof(struct MONITOR_INFO_STRUCT) / sizeof(unsigned long)];
+} MONITOR_INFO_T;
 
 #endif  /* __MONITOR_COMMANDS_H__ */
