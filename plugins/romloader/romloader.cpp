@@ -34,6 +34,7 @@
 romloader::romloader(const char *pcName, const char *pcTyp, muhkuh_plugin_provider *ptProvider)
  : muhkuh_plugin(pcName, pcTyp, ptProvider)
  , m_tChiptyp(ROMLOADER_CHIPTYP_UNKNOWN)
+ , m_ulInfoFlags(0)
  , m_sizMaxPacketSizeClient(0)
  , m_sizPacketInputBuffer(0)
  , m_ucMonitorSequence(0)
@@ -45,6 +46,7 @@ romloader::romloader(const char *pcName, const char *pcTyp, muhkuh_plugin_provid
 romloader::romloader(const char *pcName, const char *pcTyp, const char *pcLocation, muhkuh_plugin_provider *ptProvider)
  : muhkuh_plugin(pcName, pcTyp, pcLocation, ptProvider)
  , m_tChiptyp(ROMLOADER_CHIPTYP_UNKNOWN)
+ , m_ulInfoFlags(0)
  , m_sizMaxPacketSizeClient(0)
 , m_sizPacketInputBuffer(0)
  , m_ucMonitorSequence(0)
@@ -1410,6 +1412,7 @@ const char *romloader::GetChiptypName(ROMLOADER_CHIPTYP tChiptyp) const
 }
 
 
+
 // wrapper functions for compatibility with old function names
 ROMLOADER_CHIPTYP  romloader::get_chiptyp(void) const                             {return GetChiptyp();}
 unsigned int       romloader::get_romcode(void) const                             {return 0;}
@@ -1674,50 +1677,40 @@ bool romloader::detect_chiptyp(void)
 	return fResult;
 }
 
+
 /* Use the info command in MI v3.1 to get the netx_version.
-   Match this value against ulCheckCmpValue of each 
-   ROMLOADER_RESET_ID_T entry where ulCheckCmpValue is not 0.
-*/
+ * Map this value to a chip type using atInfoIds.
+ */
 bool romloader::detect_chiptyp_via_info(void)
 {
-	const ROMLOADER_RESET_ID_T *ptRstCnt, *ptRstEnd;
+	const ROMLOADER_INFO_ID_T *ptInfoCnt, *ptInfoEnd;
 	bool fResult;
 	ROMLOADER_CHIPTYP tChiptyp;
-	uint32_t ulNetxVersion;
+	uint32_t ulInfoNetxVersion;
 	uint32_t ulInfoFlags;
-	uint32_t ulMaskedVal;
 	
 	tChiptyp = ROMLOADER_CHIPTYP_UNKNOWN;
 	
-	fResult = get_info(&ulNetxVersion, &ulInfoFlags);
+	fResult = get_info(&ulInfoNetxVersion, &ulInfoFlags);
 	if( fResult!=TRANSPORTSTATUS_OK )
 	{
-		m_ptLog->error("Failed to get Info Packet");
+		m_ptLog->error("Info command failed.");
 	}
 	else
 	{
-		m_ptLog->debug("ulNetxVersion:  0x%08X", ulNetxVersion);
-		m_ptLog->debug("ulInfoFlags:  0x%08X", ulInfoFlags);
-		
-		m_ptLog->debug("Matching ulNetxVersion against chip types");
+		m_ptLog->debug("Mapping netx_version value to chip type");
 	
-		ptRstCnt = atResIds;
-		ptRstEnd = ptRstCnt + (sizeof(atResIds)/sizeof(atResIds[0]));
+		ptInfoCnt = atInfoIds;
+		ptInfoEnd = ptInfoCnt + (sizeof(atInfoIds)/sizeof(atInfoIds[0]));
 		
-		while( ptRstCnt<ptRstEnd )
+		while( ptInfoCnt<ptInfoEnd )
 		{
-			if (ptRstCnt->ulCheckCmpValue != 0){
-			
-				m_ptLog->debug("checking for chip type %s.", ptRstCnt->pcChiptypName);
-				ulMaskedVal = ulNetxVersion & ptRstCnt->ulCheckMask;
-				if (ulMaskedVal == (ptRstCnt->ulCheckCmpValue))
-				{
-					m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
-					tChiptyp = ptRstCnt->tChiptyp;
-					break;
-				}
+			if (ptInfoCnt->ulNetxVersion == ulInfoNetxVersion)
+			{
+				tChiptyp = ptInfoCnt->tChiptyp;
+				break;
 			}
-			++ptRstCnt;
+			++ptInfoCnt;
 		}
 	}
 	
@@ -1725,19 +1718,27 @@ bool romloader::detect_chiptyp_via_info(void)
 	if( fResult==TRANSPORTSTATUS_OK && tChiptyp!=ROMLOADER_CHIPTYP_UNKNOWN )
 	{
 		/* Accept the new chip type. */
+		m_ptLog->debug("Found chip type %s.", GetChiptypName(tChiptyp));
 		m_tChiptyp = tChiptyp;
+		m_ulInfoFlags = ulInfoFlags;
 		fResult = true;
 	}
 	else
 	{
-		/* todo: set m_tChiptyp to ROMLOADER_CHIPTYP_UNKNOWN? */
-		m_ptLog->debug("no Chiptype detected");
+		m_ptLog->error("No Chiptype detected.");
 		fResult = false;
 	}
 	return fResult;
 	
 }
 
+const romloader::ROMLOADER_INFO_ID_T romloader::atInfoIds[1] =
+{
+	{
+		0x0901020d,
+		ROMLOADER_CHIPTYP_NETX90D
+	},
+};
 
 const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[16] =
 {

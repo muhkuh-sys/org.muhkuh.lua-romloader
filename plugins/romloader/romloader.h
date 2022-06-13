@@ -401,6 +401,13 @@ protected:
 		const char *pcChiptypName;
 	} ROMLOADER_RESET_ID_T;
 
+	typedef struct
+	{
+		uint32_t ulNetxVersion;
+		ROMLOADER_CHIPTYP tChiptyp;
+	} ROMLOADER_INFO_ID_T;
+
+
 	virtual TRANSPORTSTATUS_T send_raw_packet(const void *pvPacket, size_t sizPacket) = 0;
 	virtual TRANSPORTSTATUS_T receive_packet(void) = 0;
 
@@ -421,6 +428,7 @@ protected:
 	bool callback_string(SWIGLUA_REF *ptLuaFn, const char *pcProgressData, size_t sizProgressData, long lCallbackUserData);
 
 	ROMLOADER_CHIPTYP m_tChiptyp;
+	unsigned long m_ulInfoFlags;
 
 	/* This is the maximum size for a packet buffer in bytes.
 	 * NOTE: This has nothing to do with the maximum packet size
@@ -443,6 +451,7 @@ private:
 	bool callback_common(SWIGLUA_REF *ptLuaFn, long lCallbackUserData, int iOldTopOfStack);
 
 	static const ROMLOADER_RESET_ID_T atResIds[16];
+	static const ROMLOADER_INFO_ID_T atInfoIds[1];
 #endif  /* !defined(SWIG) */
 };
 
