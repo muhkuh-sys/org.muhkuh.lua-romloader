@@ -650,39 +650,81 @@ void romloader_uart::Connect(lua_State *ptClientData)
 					 *   maximum packet size
 					 */
 					fResult = synchronize(&tChiptyp, &usMiVersionMin, &usMiVersionMaj);
-					if( fResult==true )
+					if( fResult!=true )
 					{
-						/* The chip type reported by the ROM code of the netX 90 MPW/Rev0/Rev1 is incorrect:
-						 * netx90 MPW  reports MI V2, chip type netX90 MPW  (0x02 0x0a)
-						 * netx90 Rev0 reports MI V3, chip type netX90 MPW  (0x03 0x0a)
-						 * next90 Rev1 reports MI V3, chip type netX90 Rev0 (0x03 0x0d)
-						 * next90 Rev2 reports MI V3, chip type netX90 Rev0 (0x03 0x0d)
-						 */
-						if( tChiptyp==ROMLOADER_CHIPTYP_NETX90_MPW 
-							|| tChiptyp==ROMLOADER_CHIPTYP_NETX90
-							|| tChiptyp==ROMLOADER_CHIPTYP_NETX90B)
+						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to synchronize with the client!", m_pcName, this);
+					}
+					else
+					{
+						m_fIsConnected = true;
+						
+						if ((usMiVersionMaj == 3 && usMiVersionMin == 0 ) || usMiVersionMaj < 3)
 						{
-							m_ptLog->debug("Got suspicious chip type %d, detecting chip type.", tChiptyp);
-							m_fIsConnected = true;
-							if ((usMiVersionMaj == 3 && usMiVersionMin == 0 ) || usMiVersionMaj < 3)
+							/* The chip type reported by the ROM code of the netX 90 MPW/Rev0/Rev1 is incorrect:
+							* netx90 MPW  reports MI V2, chip type netX90 MPW  (0x02 0x0a)
+							* netx90 Rev0 reports MI V3, chip type netX90 MPW  (0x03 0x0a)
+							* next90 Rev1 reports MI V3, chip type netX90 Rev0 (0x03 0x0d)
+							* next90 Rev2 reports MI V3, chip type netX90 Rev0 (0x03 0x0d)
+							*/
+							if( tChiptyp==ROMLOADER_CHIPTYP_NETX90_MPW 
+								|| tChiptyp==ROMLOADER_CHIPTYP_NETX90
+								|| tChiptyp==ROMLOADER_CHIPTYP_NETX90B)
 							{
-								m_ptLog->debug("detect_chiptyp()");
+								m_ptLog->debug("Got suspicious chip type %d, detecting chip type.", tChiptyp);
 								fResult = detect_chiptyp();
+								if( fResult!=true )
+								{
+									MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chip type!", m_pcName, this);
+								}
 							}
 							else
 							{
-								m_ptLog->debug("detect_chiptyp_via_info()");
-								fResult = detect_chiptyp_via_info();
+								m_tChiptyp = tChiptyp;
 							}
 						}
 						else
 						{
-							m_tChiptyp = tChiptyp;
+							/* MI version > 3.0 
+							 * next90 Rev2 reports MI V3.1, chip type netX90 Rev0
+							 * Use the info command of MI 3.1 to get chip type and flags, 
+							 * including secure boot flag
+							*/
+							fResult = detect_chiptyp_via_info();
+							if (fResult!=true)
+							{
+								MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): Failed to detect chip type via info command.", m_pcName, this);
+							}
+							else
+							{
+								CONSOLE_MODE_T tConsoleMode;
+								m_ptLog->debug("m_ulInfoFlags = %d", m_ulInfoFlags);
+								if ((m_ulInfoFlags & MSK_MONITOR_INFO_FLAGS_SECURE_BOOT_ENABLED) == 0)
+								{
+									m_ptLog->debug("Console mode open");
+									tConsoleMode = CONSOLE_MODE_Open;
+								} else {
+									m_ptLog->debug("Console mode secure");
+									tConsoleMode = CONSOLE_MODE_Secure;
+								}
+								
+								switch (tConsoleMode) {
+									
+									case CONSOLE_MODE_Open:
+										break;
+									
+									case CONSOLE_MODE_Secure:
+										fResult = false;
+										MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): Console is in secure mode! Only open mode is supported.", m_pcName, this);
+										break;
+									
+									case CONSOLE_MODE_Unknown:
+									default:
+										fResult = false;
+										MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): Console is in an unknown mode! Only open mode is supported.", m_pcName, this);
+										break;
+								}
+							}
 						}
-					}
-					if( fResult!=true )
-					{
-						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to synchronize with the client!", m_pcName, this);
 					}
 				}
 			}
