@@ -522,6 +522,13 @@ void romloader_uart::Connect(lua_State *ptClientData)
 			fResult = identify_loader(&tCmdSet, &tFnMi2);
 			if( fResult!=true )
 			{
+				m_ptLog->debug("Try to sync with cancel_operation");
+				fResult = synchronize(&tChiptyp);
+				m_ptLog->debug("Retry to identify loader");
+				fResult = identify_loader(&tCmdSet, &tFnMi2);
+			}
+			if( fResult!=true )
+			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to identify loader!", m_pcName, this);
 			}
 			else
