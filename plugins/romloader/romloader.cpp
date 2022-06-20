@@ -1677,6 +1677,10 @@ bool romloader::detect_chiptyp(void)
 	return fResult;
 }
 
+/* If bit 23 of netx_version is set, the romcode is
+ * a development version running from RAM.
+ */
+#define MSK_NETX_VERSION_INTRAM_ROMCODE 0x00800000UL
 
 /* Use the info command in MI v3.1 to get the netx_version.
  * Map this value to a chip type using atInfoIds.
@@ -1688,6 +1692,7 @@ bool romloader::detect_chiptyp_via_info(void)
 	ROMLOADER_CHIPTYP tChiptyp;
 	uint32_t ulInfoNetxVersion;
 	uint32_t ulInfoFlags;
+	uint32_t ulIntramRomcode;
 	
 	tChiptyp = ROMLOADER_CHIPTYP_UNKNOWN;
 	
@@ -1698,6 +1703,15 @@ bool romloader::detect_chiptyp_via_info(void)
 	}
 	else
 	{
+		/* Ignore bit 23 (Romcode running from RAM) */
+		ulIntramRomcode = ulInfoNetxVersion & MSK_NETX_VERSION_INTRAM_ROMCODE;
+		if (ulIntramRomcode != 0)
+		{
+			m_ptLog->debug("Romcode is running in RAM");
+			/* clear the flag before matching the netx_version value */
+			ulInfoNetxVersion &= (~MSK_NETX_VERSION_INTRAM_ROMCODE);
+		}
+		
 		m_ptLog->debug("Mapping netx_version value to chip type");
 	
 		ptInfoCnt = atInfoIds;
