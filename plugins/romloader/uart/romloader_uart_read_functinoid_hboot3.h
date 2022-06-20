@@ -27,13 +27,6 @@
 #ifndef __ROMLOADER_UART_READ_FUNCTINOID_HBOOT3_H__
 #define __ROMLOADER_UART_READ_FUNCTINOID_HBOOT3_H__
 
-typedef enum CONSOLE_MODE_ENUM
-{
-	CONSOLE_MODE_Open = 0,
-	CONSOLE_MODE_Secure = 1,
-	CONSOLE_MODE_Unknown = 2
-} CONSOLE_MODE_T;
-
 
 class romloader_uart_read_functinoid_hboot3 : public romloader_uart_read_functinoid
 {

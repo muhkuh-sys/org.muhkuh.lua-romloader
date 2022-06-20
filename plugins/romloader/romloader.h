@@ -204,6 +204,13 @@ typedef union MIV3_PACKET_INFO_DATA
 MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_INFO_DATA_T)==15, "Packing of MIV3_PACKET_INFO_DATA_T does not work.");
 
 
+typedef enum CONSOLE_MODE_ENUM
+{
+	CONSOLE_MODE_Open = 0,
+	CONSOLE_MODE_Secure = 1,
+	CONSOLE_MODE_Unknown = 2
+} CONSOLE_MODE_T;
+
 
 /* This is a complete read packet. */
 struct MIV3_PACKET_COMMAND_READ_DATA_STRUCT
