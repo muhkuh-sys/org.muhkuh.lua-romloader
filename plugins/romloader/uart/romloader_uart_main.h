@@ -72,6 +72,7 @@ private:
 	} ROMLOADER_COMMANDSET_T;
 
 	bool identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader_uart_read_functinoid_mi2 *ptFnMi2);
+	bool fix_deadloop();
 
 	romloader_uart_device_platform *m_ptUartDev;
 
