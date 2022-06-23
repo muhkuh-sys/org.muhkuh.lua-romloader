@@ -1909,7 +1909,7 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[16] =
 		0x000000c0,
 		0x0010d005,
 		0xff401298,
-		0xffffffff, 
+		0xff7fffff, /* mask out bit 23 which indicates that the ROM code is running in RAM */
 		0x0901020d,
 		ROMLOADER_CHIPTYP_NETX90D,
 		"netX90 Rev2"
