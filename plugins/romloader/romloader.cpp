@@ -1901,7 +1901,7 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[16] =
 		0xffffffff,
 		0xe001200c,
 		ROMLOADER_CHIPTYP_NETX90C,
-		"netX90 Rev1 (ePHY V3)"
+		"netX90 Rev1 (PHY V3)"
 	},
 	
 	{
@@ -1909,7 +1909,7 @@ const romloader::ROMLOADER_RESET_ID_T romloader::atResIds[16] =
 		0x000000c0,
 		0x0010d005,
 		0xff401298,
-		0xffffffff,
+		0xffffffff, 
 		0x0901020d,
 		ROMLOADER_CHIPTYP_NETX90D,
 		"netX90 Rev2"
