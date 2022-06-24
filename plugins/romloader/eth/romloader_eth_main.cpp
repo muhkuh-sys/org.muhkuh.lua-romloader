@@ -312,8 +312,19 @@ void romloader_eth::Connect(lua_State *ptClientData)
 			else
 			{
 				m_fIsConnected = true;
-				if ((usMiVersionMaj == 3 && usMiVersionMin == 0 ) || usMiVersionMaj < 3)
+				
+				/* machine interface major version != 3 
+				 * If the machine interface v1 or v2 is active, we do not reach
+				 * this point, because synchronize() fails. */
+				if (usMiVersionMaj != 3)
 				{
+					MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): Version %d.%d of the machine interface is not supported!", m_pcName, this, usMiVersionMaj, usMiVersionMin);
+					fResult = false;
+					
+				}
+				else if (usMiVersionMin == 0)
+				{
+					/* MI v3.0 */
 					/* The chip type reported by the ROM code of the netX 90 MPW/Rev0/Rev1 is incorrect:
 					* netx90 MPW  reports MI V2, chip type netX90 MPW  (0x02 0x0a) (not tested with ethernet)
 					* netx90 Rev0 reports MI V3, chip type netX90 MPW  (0x03 0x0a) (not tested with ethernet)
@@ -351,7 +362,6 @@ void romloader_eth::Connect(lua_State *ptClientData)
 					else
 					{
 						CONSOLE_MODE_T tConsoleMode;
-						m_ptLog->debug("m_ulInfoFlags = %d", m_ulInfoFlags);
 						if ((m_ulInfoFlags & MSK_MONITOR_INFO_FLAGS_SECURE_BOOT_ENABLED) == 0)
 						{
 							m_ptLog->debug("Console mode open");
