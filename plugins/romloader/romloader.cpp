@@ -1463,6 +1463,30 @@ const char *romloader::GetChiptypName(ROMLOADER_CHIPTYP tChiptyp) const
 }
 
 
+void romloader::found_chiptyp_message()
+{
+	const char *pcChiptypName;
+	const char *pcChiptypName90B;
+	const char *pcChiptypName90C;
+	
+	pcChiptypName = GetChiptypName(m_tChiptyp);
+	if ((m_tChiptyp == ROMLOADER_CHIPTYP_NETX90B) || (m_tChiptyp == ROMLOADER_CHIPTYP_NETX90C))
+	{
+		pcChiptypName90B = GetChiptypName(ROMLOADER_CHIPTYP_NETX90B);
+		pcChiptypName90C = GetChiptypName(ROMLOADER_CHIPTYP_NETX90C);
+		m_ptLog->debug("Found suspicious chip type %s (%d). Might be %s (%d) or %s (%d), further detection required.", 
+			pcChiptypName, m_tChiptyp,
+			pcChiptypName90B, ROMLOADER_CHIPTYP_NETX90B,
+			pcChiptypName90C, ROMLOADER_CHIPTYP_NETX90C
+			);
+	}
+	else
+	{
+		m_ptLog->debug("Found chip %s.", pcChiptypName);
+	}
+}
+
+
 
 // wrapper functions for compatibility with old function names
 ROMLOADER_CHIPTYP  romloader::get_chiptyp(void) const                             {return GetChiptyp();}
@@ -1538,7 +1562,7 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 						{
 							// found chip!
 							tChiptyp = ptRstCnt->tChiptyp;
-							m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
+							//m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
 							break;
 						}
 					}
@@ -1555,6 +1579,7 @@ bool romloader::detect_chiptyp(romloader_read_functinoid *ptFn)
 	{
 		/* Accept new chiptype and romcode. */
 		m_tChiptyp = tChiptyp;
+		found_chiptyp_message();
 //
 //		pcChiptypName = GetChiptypName(tChiptyp);
 //		printf("%s(%p): found chip %s.\n", m_pcName, this, pcChiptypName);
@@ -1657,7 +1682,7 @@ bool romloader::detect_chiptyp(void)
 						{
 							/* Found chip! */
 							tChiptyp = ptRstCnt->tChiptyp;
-							m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
+							//m_ptLog->debug("found chip %s.", ptRstCnt->pcChiptypName);
 							break;
 						}
 					}
@@ -1672,6 +1697,7 @@ bool romloader::detect_chiptyp(void)
 	{
 		/* Accept the new chip type. */
 		m_tChiptyp = tChiptyp;
+		found_chiptyp_message();
 	}
 
 	return fResult;
@@ -1732,9 +1758,10 @@ bool romloader::detect_chiptyp_via_info(void)
 	if( fResult==TRANSPORTSTATUS_OK && tChiptyp!=ROMLOADER_CHIPTYP_UNKNOWN )
 	{
 		/* Accept the new chip type. */
-		m_ptLog->debug("Found chip type %s.", GetChiptypName(tChiptyp));
+		//m_ptLog->debug("Found chip type %s.", GetChiptypName(tChiptyp));
 		m_tChiptyp = tChiptyp;
 		m_ulInfoFlags = ulInfoFlags;
+		found_chiptyp_message();
 		fResult = true;
 	}
 	else

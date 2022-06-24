@@ -426,6 +426,7 @@ protected:
 	virtual TRANSPORTSTATUS_T read_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, uint16_t sizDataInBytes);
 	virtual TRANSPORTSTATUS_T write_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, const void *pvData, uint16_t sizDataInBytes);
 
+	void found_chiptyp_message();
 	bool detect_chiptyp(romloader_read_functinoid *ptFn);
 	bool __read_data32(uint32_t ulNetxAddress, uint32_t *pulData);
 	bool detect_chiptyp(void);
