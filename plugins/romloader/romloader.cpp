@@ -403,6 +403,57 @@ romloader::TRANSPORTSTATUS_T romloader::send_ack(unsigned char ucSequenceToAck)
 	return tResult;
 }
 
+/* 
+* The skip_ack_test function tests if the last packet,
+* that was received and is still in the buffer will be re-send.
+* 
+* To test that, the current packet is saved in a buffer and will be compared to new received packets.
+* The parameter ulCnt_ignore_packets indicated how many packets will be compared.
+*/
+bool romloader::skip_ack_test(uint32_t ulCnt_ignore_packets)
+{
+	bool fResult;
+	TRANSPORTSTATUS_T tResult;
+	uint8_t aucSavePacketBuffer[m_sizMaxPacketSizeHost];
+	uint32_t ulCnt_ignore;
+	
+	fResult = true;
+	ulCnt_ignore = ulCnt_ignore_packets;
+	
+	/*save the current packet inside the buffer*/
+	memcpy(&aucSavePacketBuffer, &m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+	
+	m_ptLog->debug("Ignore the current packet in the receive packet %d times before sending an acknowledge", ulCnt_ignore_packets);
+	
+	while(ulCnt_ignore>0)
+	{
+		SLEEP_MS(1000);
+		tResult = receive_packet();
+		if (tResult != TRANSPORTSTATUS_OK)
+		{
+			continue;
+		}
+		
+		if(memcmp(&aucSavePacketBuffer, &m_aucPacketInputBuffer, m_sizPacketInputBuffer)!=0 )
+		{
+			fResult = false;
+			break;
+		}
+		
+		ulCnt_ignore--;
+		m_ptLog->debug("ignored packets remaining %d", ulCnt_ignore);
+	}
+	if(fResult)
+	{
+		m_ptLog->debug("skip_ack_test result: OK (received %d times the same packet)", ulCnt_ignore_packets);
+	}
+	else
+	{
+		m_ptLog->error("skip_ack_test result: FAILED (packet %d was wrong)", uint32_t(ulCnt_ignore_packets-ulCnt_ignore));
+	}
+	return fResult;
+}
+
 
 
 romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *ptPacket, size_t sizPacket, bool *pfPacketStillValid)
@@ -1535,57 +1586,6 @@ bool romloader::__read_data32(uint32_t ulNetxAddress, uint32_t *pulData)
 	}
 
 	return fOk;
-}
-
-/* 
-* The skip_ack_test function tests if the last packet,
-* that was received and is still in the buffer will be re-send.
-* 
-* To test that, the current packet is saved in a buffer and will be compared to new received packets.
-* The parameter ulCnt_ignore_packets indicated how many packets will be compared.
-*/
-bool romloader::skip_ack_test(uint32_t ulCnt_ignore_packets)
-{
-	bool fResult;
-	TRANSPORTSTATUS_T tResult;
-	uint8_t aucSavePacketBuffer[m_sizMaxPacketSizeHost];
-	uint32_t ulCnt_ignore;
-	
-	fResult = true;
-	ulCnt_ignore = ulCnt_ignore_packets;
-	
-	/*save the current packet inside the buffer*/
-	memcpy(&aucSavePacketBuffer, &m_aucPacketInputBuffer, m_sizPacketInputBuffer);
-	
-	m_ptLog->debug("Ignore the current packet in the receive packet %d times before sending an acknowledge", ulCnt_ignore_packets);
-	
-	while(ulCnt_ignore>0)
-	{
-		SLEEP_MS(1000);
-		tResult = receive_packet();
-		if (tResult != TRANSPORTSTATUS_OK)
-		{
-			continue;
-		}
-		
-		if(memcmp(&aucSavePacketBuffer, &m_aucPacketInputBuffer, m_sizPacketInputBuffer)!=0 )
-		{
-			fResult = false;
-			break;
-		}
-		
-		ulCnt_ignore--;
-		m_ptLog->debug("ignored packets remaining %d", ulCnt_ignore);
-	}
-	if(fResult)
-	{
-		m_ptLog->debug("skip_ack_test result: OK (received %d times the same packet)", ulCnt_ignore_packets);
-	}
-	else
-	{
-		m_ptLog->error("skip_ack_test result: FAILED (packet %d was wrong)", uint32_t(ulCnt_ignore_packets-ulCnt_ignore));
-	}
-	return fResult;
 }
 
 bool romloader::detect_chiptyp(void)
