@@ -2,6 +2,24 @@
 Change log/Release notes
 =========================
 
+V 2.5.2
+=======
+* Add new chip types: 
+  netX 90 Rev1 with PHY v3 (Step C)
+  netX 90 Rev2 (Step D)
+
+* Extend detection pattern for netX 90 Rev1 to discriminate from Rev2
+  Note: netX 90 Rev1 with PHY v3 will not be detected by detect_chiptyp
+
+* When the netX uses machine interface v3.1 (starting from netX 90 Rev2), 
+  use the new info command to detect the chip type.
+
+* netX 90: When secure boot mode is detected, exit with an error.
+
+* netx 90 Rev1 and Rev2: When the netx is in the UART terminal console,
+  send a reset command which allows us to enter the machine interface.
+  (Previously, a manual reset was required).
+
 V 2.5.1 
 =======
 * Added functions for test purposes.
