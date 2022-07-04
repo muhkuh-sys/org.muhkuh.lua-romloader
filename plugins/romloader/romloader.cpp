@@ -212,7 +212,7 @@ bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp, uint16_t *pusMiVersion
 					m_ptLog->debug("Machine interface V%d.%d .", ulMiVersionMaj, ulMiVersionMin);
 
 					tChipType = (ROMLOADER_CHIPTYP)(ptSyncPacket->s.ucChipType);
-					m_ptLog->debug("Chip type : %d", tChipType);
+					m_ptLog->debug("Chip type reported via MI, may be incorrect: %d", tChipType);
 
 					/* sizMaxPacketSizeClient = min(max. packet size from response, sizMaxPacketSizeHost) */
 					sizMaxPacketSize = NETXTOH16(ptSyncPacket->s.usMaximumPacketSize);
