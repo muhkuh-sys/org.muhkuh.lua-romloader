@@ -182,7 +182,7 @@ CONSOLE_MODE_T romloader_uart_read_functinoid_hboot3::detect_console_mode(void)
 			switch (iMatch) {
 				case 1:
 					tConsoleMode = CONSOLE_MODE_Open;
-					fprintf(stderr, "The console is in open mode.\n");
+					fprintf(stderr, "The netX is in open boot mode.\n");
 					//sizCmd = strlen(uResponse.pc);
 					//hexdump(uResponse.puc, sizCmd);
 					free(uResponse.puc);
@@ -190,7 +190,7 @@ CONSOLE_MODE_T romloader_uart_read_functinoid_hboot3::detect_console_mode(void)
 					
 				case 2:
 					tConsoleMode = CONSOLE_MODE_Secure;
-					fprintf(stderr, "The console is in secure mode.\n");
+					fprintf(stderr, "The netX is in secure boot mode.\n");
 					//sizCmd = strlen(uResponse.pc);
 					//hexdump(uResponse.puc, sizCmd);
 					free(uResponse.puc);
@@ -198,7 +198,7 @@ CONSOLE_MODE_T romloader_uart_read_functinoid_hboot3::detect_console_mode(void)
 				
 				default:
 					fprintf(stderr, "failed to get command response!\n");
-					fprintf(stderr, "The console is in an unknown mode.\n");
+					fprintf(stderr, "The netX is in an unknown boot mode.\n");
 					break;
 			}
 		}

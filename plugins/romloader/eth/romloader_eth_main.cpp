@@ -357,17 +357,17 @@ void romloader_eth::Connect(lua_State *ptClientData)
 					fResult = detect_chiptyp_via_info();
 					if (fResult!=true)
 					{
-						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): Failed to detect chip type via info command.", m_pcName, this);
+						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): Failed to detect the chip type via info command.", m_pcName, this);
 					}
 					else
 					{
 						CONSOLE_MODE_T tConsoleMode;
 						if ((m_ulInfoFlags & MSK_MONITOR_INFO_FLAGS_SECURE_BOOT_ENABLED) == 0)
 						{
-							m_ptLog->debug("Console mode open");
+							m_ptLog->debug("The netX is in open boot mode.");
 							tConsoleMode = CONSOLE_MODE_Open;
 						} else {
-							m_ptLog->debug("Console mode secure");
+							m_ptLog->debug("The netX is in secure boot mode.");
 							tConsoleMode = CONSOLE_MODE_Secure;
 						}
 						
@@ -378,13 +378,14 @@ void romloader_eth::Connect(lua_State *ptClientData)
 							
 							case CONSOLE_MODE_Secure:
 								fResult = false;
-								MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): Console is in secure mode! Only open mode is supported.", m_pcName, this);
+								MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode! Only open boot mode is supported.", m_pcName, this);
 								break;
 							
+							/* not reachable */
 							case CONSOLE_MODE_Unknown:
 							default:
 								fResult = false;
-								MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): Console is in an unknown mode! Only open mode is supported.", m_pcName, this);
+								MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in an unknown boot mode! Only open boot mode is supported.", m_pcName, this);
 								break;
 						}
 					}
