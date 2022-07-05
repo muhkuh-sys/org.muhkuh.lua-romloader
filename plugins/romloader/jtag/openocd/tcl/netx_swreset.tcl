@@ -77,13 +77,13 @@ proc get_chiptyp { }  {
 		set strChipName "netX10"
 	} elseif { [ check_chiptyp $ulResetAddrRead 0xeafbfffa 0x080f0008 0x00006003 ] } { 
 		set iChiptyp $ROMLOADER_CHIPTYP_NETX56            
-		set strChipName "netX51/52 step A"
+		set strChipName "netX51/52 Step A"
 	} elseif { [ check_chiptyp $ulResetAddrRead 0xeafbfffa 0x080f0008 0x00106003 ] } { 
 		set iChiptyp $ROMLOADER_CHIPTYP_NETX56B           
-		set strChipName "netX51/52 step B"
+		set strChipName "netX51/52 Step B"
 	} elseif { [ check_chiptyp $ulResetAddrRead 0xe59ff00c 0x04100020 0x00108004 ] } { 
 		set iChiptyp $ROMLOADER_CHIPTYP_NETX4000_RELAXED  
-		set strChipName "netX4000 Relaxed"
+		set strChipName "netX4000 RLXD"
 	} elseif { [ check_chiptyp $ulResetAddrRead 0xe59ff00c 0x04100020 0x0010b004 ] } { 
 		set ulOTP [ mread32 0xf80000c0 ]; # Read OTP fuse
 		if { ( $ulOTP & 0x1 ) == 0 } {
@@ -95,7 +95,7 @@ proc get_chiptyp { }  {
 		}
 	} elseif { [ check_chiptyp $ulResetAddrRead 0x2009fff0 0x00005110 0x1f13933b ] } { 
 		set iChiptyp $ROMLOADER_CHIPTYP_NETX90_MPW        
-		set strChipName "netX90 MPW"
+		set strChipName "netX90MPW"
 	# The check for netx 90 Rev. 2 must precede the one for Rev. 1
 	} elseif { [ check_chiptyp $ulResetAddrRead 0x2009fff0 0xff401298 0x0901020d ] } {
 		set iChiptyp $ROMLOADER_CHIPTYP_NETX90D
