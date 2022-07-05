@@ -572,7 +572,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 									break;
 								
 								case CONSOLE_MODE_Secure:
-									MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode! Only open boot mode is supported.", m_pcName, this);
+									MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode and in a terminal console. Only the open boot mode and the machine interface are supported.", m_pcName, this);
 									break;
 								
 								case CONSOLE_MODE_Unknown:
