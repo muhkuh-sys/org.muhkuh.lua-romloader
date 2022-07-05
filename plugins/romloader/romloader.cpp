@@ -1474,7 +1474,7 @@ void romloader::found_chiptyp_message()
 	{
 		pcChiptypName90B = GetChiptypName(ROMLOADER_CHIPTYP_NETX90B);
 		pcChiptypName90C = GetChiptypName(ROMLOADER_CHIPTYP_NETX90C);
-		m_ptLog->debug("Suspicious chip type: %s (%d). Might be %s (%d) or %s (%d), further detection required.", 
+		m_ptLog->debug("Suspicious chip type: %s (%d). Might be %s (%d) or %s (%d).", 
 			pcChiptypName, m_tChiptyp,
 			pcChiptypName90B, ROMLOADER_CHIPTYP_NETX90B,
 			pcChiptypName90C, ROMLOADER_CHIPTYP_NETX90C

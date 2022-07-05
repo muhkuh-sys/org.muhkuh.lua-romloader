@@ -113,7 +113,7 @@ proc get_chiptyp { }  {
 	}
 	
 	if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B } then {
-		echo "Suspicious Chip type: $strChipName ($iChiptyp). Might be $strChipName ($iChiptyp) or netX90 Rev1 (PHY V3) ($ROMLOADER_CHIPTYP_NETX90C), further detection required."
+		echo "Suspicious Chip type: $strChipName ($iChiptyp). Might be $strChipName ($iChiptyp) or netX90 Rev1 (PHY V3) ($ROMLOADER_CHIPTYP_NETX90C)."
 	} else {
 		echo "Chip type: $strChipName ($iChiptyp)"
 	}
