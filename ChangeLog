@@ -2,6 +2,13 @@
 Change log/Release notes
 =========================
 
+V 2.5.3
+=======
+* Changed wording of some messages during chip type detection
+  more uniform messages
+  mention when chip type is potentially incorrect
+  mention open/secure boot mode
+
 V 2.5.2
 =======
 * Add new chip types: 
