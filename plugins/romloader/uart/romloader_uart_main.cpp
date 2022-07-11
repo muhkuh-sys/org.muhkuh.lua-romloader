@@ -230,8 +230,6 @@ bool romloader_uart::fix_deadloop()
 	{
 		if( aucData[0]==MONITOR_STREAM_PACKET_START )
 		{
-			// set a default max packet size to 32
-			m_sizMaxPacketSizeClient = 32;
 			
 			sizTransfered += m_ptUartDev->RecvRaw(aucData+1, 4, 500);
 			m_ptLog->debug("sizTransfered: %d",sizTransfered);
