@@ -212,7 +212,7 @@ bool romloader::synchronize(ROMLOADER_CHIPTYP *ptChiptyp, uint16_t *pusMiVersion
 					m_ptLog->debug("Machine interface V%d.%d .", ulMiVersionMaj, ulMiVersionMin);
 
 					tChipType = (ROMLOADER_CHIPTYP)(ptSyncPacket->s.ucChipType);
-					m_ptLog->debug("Chip type : %d", tChipType);
+					m_ptLog->debug("Suspicious chip type reported via MI: %d", tChipType);
 
 					/* sizMaxPacketSizeClient = min(max. packet size from response, sizMaxPacketSizeHost) */
 					sizMaxPacketSize = NETXTOH16(ptSyncPacket->s.usMaximumPacketSize);
@@ -1474,7 +1474,7 @@ void romloader::found_chiptyp_message()
 	{
 		pcChiptypName90B = GetChiptypName(ROMLOADER_CHIPTYP_NETX90B);
 		pcChiptypName90C = GetChiptypName(ROMLOADER_CHIPTYP_NETX90C);
-		m_ptLog->debug("Found suspicious chip type %s (%d). Might be %s (%d) or %s (%d), further detection required.", 
+		m_ptLog->debug("Suspicious chip type: %s (%d). Might be %s (%d) or %s (%d).", 
 			pcChiptypName, m_tChiptyp,
 			pcChiptypName90B, ROMLOADER_CHIPTYP_NETX90B,
 			pcChiptypName90C, ROMLOADER_CHIPTYP_NETX90C
@@ -1482,7 +1482,7 @@ void romloader::found_chiptyp_message()
 	}
 	else
 	{
-		m_ptLog->debug("Found chip %s.", pcChiptypName);
+		m_ptLog->debug("Chip type: %s (%d).", pcChiptypName, m_tChiptyp);
 	}
 }
 
