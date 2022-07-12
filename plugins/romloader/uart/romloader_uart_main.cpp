@@ -217,37 +217,53 @@ bool romloader_uart::fix_deadloop()
 	bool fResult = false;
 	uint8_t aucData[32];
 	MIV3_PACKET_HEADER_T *ptPacketHeader;
+	uint8_t ucRetries = 5;
+	uint32_t ulDataReceived;
 	
-	
-	// try to get first char with timeout of 1000ms
-	sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 1000);
-	if( sizTransfered!=1 )
+	while ( ucRetries > 0 || fResult == false)
 	{
-		/* Failed to receive first char of knock response. */
-		m_ptLog->error("Failed to receive first char of knock response: %ld.", sizTransfered);
-	}
-	else
-	{
-		if( aucData[0]==MONITOR_STREAM_PACKET_START )
+		
+		// clear buffer if identify loader failed
+		// TODO: add max time or max data transferred
+		ulDataReceived = 0;
+		if( fResult!=true )
 		{
-			
-			sizTransfered += m_ptUartDev->RecvRaw(aucData+1, 4, 500);
-			m_ptLog->debug("sizTransfered: %d",sizTransfered);
-			if( sizTransfered!=5 )
+			do
 			{
-				m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData, sizTransfered+1);
-				m_ptLog->error("Failed to receive the size information after the stream packet start!");
-			}
-			else
+				sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 200);
+				ulDataReceived += sizTransfered
+			} while( sizTransfered==1 );
+		}
+		
+		// try to get first char with timeout of 1000ms
+		sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 1000);
+		if( sizTransfered!=1 )
+		{
+			/* Failed to receive first start char */
+			m_ptLog->error("Failed to receive first char: %ld. No deadloop to fix", sizTransfered);
+		}
+		else
+		{
+			if( aucData[0]==MONITOR_STREAM_PACKET_START )
 			{
-				// try masking reveiced data as MIV3_PACKET_HEADER_T
-				ptPacketHeader = (MIV3_PACKET_HEADER_T*)aucData;
 				
-				// only packets that are sent in an endless loop are the following three
-				if ( ptPacketHeader->s.ucPacketType==MONITOR_PACKET_TYP_Status ||
-					ptPacketHeader->s.ucPacketType==MONITOR_PACKET_TYP_ReadData ||
-					ptPacketHeader->s.ucPacketType==MONITOR_PACKET_TYP_CallMessage )
+				sizTransfered += m_ptUartDev->RecvRaw(aucData+1, 4, 500);
+				m_ptLog->debug("sizTransfered: %d",sizTransfered);
+				if( sizTransfered!=5 )
 				{
+					m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData, sizTransfered+1);
+					m_ptLog->error("Failed to receive the size information after the stream packet start!");
+				}
+				else
+				{
+					// try masking reveiced data as MIV3_PACKET_HEADER_T
+					ptPacketHeader = (MIV3_PACKET_HEADER_T*)aucData;
+					
+					// only packets that are sent in an endless loop are the following three
+					if ( ptPacketHeader->s.ucPacketType==MONITOR_PACKET_TYP_Status ||
+						ptPacketHeader->s.ucPacketType==MONITOR_PACKET_TYP_ReadData ||
+						ptPacketHeader->s.ucPacketType==MONITOR_PACKET_TYP_CallMessage )
+					{
 						// receive rest of the packet. 
 						// usDataSize includes ucSequenceNumber and ucPacketType which we already received
 						// therefore we receive usDataSize-2
@@ -265,7 +281,14 @@ bool romloader_uart::fix_deadloop()
 							sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 200);
 						} while( sizTransfered==1 );
 						
-						fResult = true;
+						// check if netX still sends packets within over 1 second wait time
+						// if no packets are received the cancel_operation worked
+						sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 1200);
+						if ( sizTransfered==0 )
+						{
+							fResult = true;
+						}
+					}
 				}
 			}
 		}
@@ -545,15 +568,6 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 				}
 			}
 		}
-	}
-	
-	// clear buffer of identify loader failed
-	if( fResult!=true )
-	{
-		do
-		{
-			sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 200);
-		} while( sizTransfered==1 );
 	}
 
 	*ptCmdSet = tCmdSet;
