@@ -220,7 +220,7 @@ bool romloader_uart::fix_deadloop()
 	uint8_t ucRetries = 5;
 	uint32_t ulDataReceived;
 	
-	
+	#define UART_MAXIMUM_PACKET_SIZE 2048
 	do
 	{
 		
@@ -230,7 +230,7 @@ bool romloader_uart::fix_deadloop()
 		{
 			sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 200);
 			ulDataReceived += sizTransfered;
-		} while( sizTransfered==1 || ulDataReceived > 100);
+		} while( sizTransfered==1 || ulDataReceived > UART_MAXIMUM_PACKET_SIZE);
 
 		
 		// try to get first char with timeout of 1000ms
@@ -257,6 +257,8 @@ bool romloader_uart::fix_deadloop()
 					ptPacketHeader = (MIV3_PACKET_HEADER_T*)aucData;
 					
 					// only packets that are sent in an endless loop are the following three
+					// note: the loop for waiting for an ACK for a CallMessage packet can be canceled by a CancelOperation packet 
+					//       but this will not stop the execution of the binary that sends these print messages.
 					if ( ptPacketHeader->s.ucPacketType==MONITOR_PACKET_TYP_Status ||
 						ptPacketHeader->s.ucPacketType==MONITOR_PACKET_TYP_ReadData ||
 						ptPacketHeader->s.ucPacketType==MONITOR_PACKET_TYP_CallMessage )
@@ -289,9 +291,7 @@ bool romloader_uart::fix_deadloop()
 					}
 				}
 			}
-			else{
-				
-			}
+
 		}
 		ucRetries--;
 	}while ( ucRetries > 0 && fResult == false);
