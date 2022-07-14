@@ -9,6 +9,10 @@ V 2.5.3
   mention when chip type is potentially incorrect
   mention open/secure boot mode
 
+* UART machine interface:
+  During the connection setup, when the netx is repeatedly sending a packet
+  because it is waiting for an ack packet, send a cancel_operation request.
+
 V 2.5.2
 =======
 * Add new chip types: 
