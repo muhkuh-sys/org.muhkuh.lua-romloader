@@ -220,23 +220,21 @@ bool romloader_uart::fix_deadloop()
 	uint8_t ucRetries = 5;
 	uint32_t ulDataReceived;
 	
-	while ( ucRetries > 0 || fResult == false)
+	
+	do
 	{
 		
-		// clear buffer if identify loader failed
-		// TODO: add max time or max data transferred
+		// clear buffer until we timout after 200ms (meaning we are between two received packets) or we reach a max transferred data size
 		ulDataReceived = 0;
-		if( fResult!=true )
+		do
 		{
-			do
-			{
-				sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 200);
-				ulDataReceived += sizTransfered
-			} while( sizTransfered==1 );
-		}
+			sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 200);
+			ulDataReceived += sizTransfered;
+		} while( sizTransfered==1 || ulDataReceived > 100);
+
 		
 		// try to get first char with timeout of 1000ms
-		sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 1000);
+		sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 1200);
 		if( sizTransfered!=1 )
 		{
 			/* Failed to receive first start char */
@@ -248,7 +246,6 @@ bool romloader_uart::fix_deadloop()
 			{
 				
 				sizTransfered += m_ptUartDev->RecvRaw(aucData+1, 4, 500);
-				m_ptLog->debug("sizTransfered: %d",sizTransfered);
 				if( sizTransfered!=5 )
 				{
 					m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData, sizTransfered+1);
@@ -287,12 +284,18 @@ bool romloader_uart::fix_deadloop()
 						if ( sizTransfered==0 )
 						{
 							fResult = true;
+							m_ptLog->debug("Successfully stopped deadloop of netX (no more cyclic packets received)");
 						}
 					}
 				}
 			}
+			else{
+				
+			}
 		}
-	}
+		ucRetries--;
+	}while ( ucRetries > 0 && fResult == false);
+	
 	return fResult;
 }
 
