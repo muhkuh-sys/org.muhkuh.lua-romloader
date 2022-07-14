@@ -207,6 +207,98 @@ romloader_uart::~romloader_uart(void)
 	}
 }
 
+/*
+* This function is used to check if the netX is stuck in an endless loop waiting for an acknowledge for a packet and re-sending it
+* If it is the case we send a cancel_operation packet that should be able to to get the netX out of the loop
+*/
+bool romloader_uart::fix_deadloop()
+{
+	size_t sizTransfered;
+	bool fResult = false;
+	uint8_t aucData[32];
+	MIV3_PACKET_HEADER_T *ptPacketHeader;
+	uint8_t ucRetries = 5;
+	uint32_t ulDataReceived;
+	
+	#define UART_MAXIMUM_PACKET_SIZE 2048
+	do
+	{
+		
+		// clear buffer until we timout after 200ms (meaning we are between two received packets) or we reach a max transferred data size
+		ulDataReceived = 0;
+		do
+		{
+			sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 200);
+			ulDataReceived += sizTransfered;
+		} while( sizTransfered==1 || ulDataReceived > UART_MAXIMUM_PACKET_SIZE);
+
+		
+		// try to get first char with timeout of 1000ms
+		sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 1200);
+		if( sizTransfered!=1 )
+		{
+			/* Failed to receive first start char */
+			m_ptLog->error("Failed to receive first char: %ld. No deadloop to fix", sizTransfered);
+		}
+		else
+		{
+			if( aucData[0]==MONITOR_STREAM_PACKET_START )
+			{
+				
+				sizTransfered += m_ptUartDev->RecvRaw(aucData+1, 4, 500);
+				if( sizTransfered!=5 )
+				{
+					m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData, sizTransfered+1);
+					m_ptLog->error("Failed to receive the size information after the stream packet start!");
+				}
+				else
+				{
+					// try masking reveiced data as MIV3_PACKET_HEADER_T
+					ptPacketHeader = (MIV3_PACKET_HEADER_T*)aucData;
+					
+					// only packets that are sent in an endless loop are the following three
+					// note: the loop for waiting for an ACK for a CallMessage packet can be canceled by a CancelOperation packet 
+					//       but this will not stop the execution of the binary that sends these print messages.
+					if ( ptPacketHeader->s.ucPacketType==MONITOR_PACKET_TYP_Status ||
+						ptPacketHeader->s.ucPacketType==MONITOR_PACKET_TYP_ReadData ||
+						ptPacketHeader->s.ucPacketType==MONITOR_PACKET_TYP_CallMessage )
+					{
+						// receive rest of the packet. 
+						// usDataSize includes ucSequenceNumber and ucPacketType which we already received
+						// therefore we receive usDataSize-2
+						sizTransfered += m_ptUartDev->RecvRaw(aucData+5, ptPacketHeader->s.usDataSize-2, 500);
+						m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData, sizTransfered);
+						
+						// set the maximum packet size to be able to send a cancel packet
+						m_sizMaxPacketSizeClient = 20;
+						// send a cancel_operation packet
+						cancel_operation();
+						
+						// try to empty the buffer in case we still received a packet while sending cancel_operation
+						do
+						{
+							sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 200);
+						} while( sizTransfered==1 );
+						
+						// check if netX still sends packets within over 1 second wait time
+						// if no packets are received the cancel_operation worked
+						sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 1200);
+						if ( sizTransfered==0 )
+						{
+							fResult = true;
+							m_ptLog->debug("Successfully stopped deadloop of netX (no more cyclic packets received)");
+						}
+					}
+				}
+			}
+
+		}
+		ucRetries--;
+	}while ( ucRetries > 0 && fResult == false);
+	
+	return fResult;
+}
+
 
 bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader_uart_read_functinoid_mi2 *ptFnMi2)
 {
@@ -522,6 +614,25 @@ void romloader_uart::Connect(lua_State *ptClientData)
 		else
 		{
 			fResult = identify_loader(&tCmdSet, &tFnMi2);
+			
+			// if identify_loader failed we try fix_deadloop to check if netX got stuck in dead loop
+			// and can be brought back by sending a cancel_operation packet
+			if( fResult!=true )
+			{	
+				m_ptLog->debug("Try fixing the deadloop");
+				fResult = fix_deadloop();
+				
+				
+				// if fix_deadloop worked we try to identify loader again
+				if( fResult )
+				{ 
+					m_ptLog->debug("Retry to identify loader");
+					fResult = identify_loader(&tCmdSet, &tFnMi2);
+				}
+				else{
+					m_ptLog->error("fixing deadloop did not work!");
+				}
+			}
 			if( fResult!=true )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to identify loader!", m_pcName, this);
