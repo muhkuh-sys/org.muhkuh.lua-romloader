@@ -621,7 +621,7 @@ proc netX90_COM_disable_irqs {} {
 	set ulVal_cm4_scs_nvic_icer1 [ mread32 $ADR_cm4_scs_nvic_icer1 ]
 	set ulVal_cm4_scs_nvic_icer2 [ mread32 $ADR_cm4_scs_nvic_icer2 ]
 
-	puts [format "cm4_scs_nvic_icer00|1|2: 0x%08x|0x%08x|0x%08x" $ulVal_cm4_scs_nvic_icer0 $ulVal_cm4_scs_nvic_icer1 $ulVal_cm4_scs_nvic_icer2]
+	puts [format "cm4_scs_nvic_icer0|1|2:  0x%08x|0x%08x|0x%08x" $ulVal_cm4_scs_nvic_icer0 $ulVal_cm4_scs_nvic_icer1 $ulVal_cm4_scs_nvic_icer2]
 
 	set ulVal_cm4_scs_nvic_icpr0 [ mread32 $ADR_cm4_scs_nvic_icpr0 ]
 	set ulVal_cm4_scs_nvic_icpr1 [ mread32 $ADR_cm4_scs_nvic_icpr1 ]
