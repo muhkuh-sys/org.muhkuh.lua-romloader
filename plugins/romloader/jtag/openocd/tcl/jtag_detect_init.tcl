@@ -544,6 +544,97 @@ proc netx90_stop_xpec_xpic {} {
 }
 
 
+proc netX90_COM_disable_irqs {} {
+	# disable all IRQs (NXTFLASHER-490)
+	
+	echo "Disable all IRQs"
+	# more information about the cm4 register here: https://developer.arm.com/documentation/dui0553/latest/
+	
+	# Interrupt Active Bit Registers (see documentation 4.2.6)							  						  
+	set ADR_cm4_scs_nvic_iabr0 0xe000e300
+	set ADR_cm4_scs_nvic_iabr1 0xe000e304
+	set ADR_cm4_scs_nvic_iabr2 0xe000e308
+	# interrupt clear enable register (see documentation 4.2.3)							  						  
+	set ADR_cm4_scs_nvic_icer0 0xe000e180
+	set ADR_cm4_scs_nvic_icer1 0xe000e184
+	set ADR_cm4_scs_nvic_icer2 0xe000e188
+	# interrupt clear pending register (see documentation 4.2.5)
+	set ADR_cm4_scs_nvic_icpr0 0xe000e280
+	set ADR_cm4_scs_nvic_icpr1 0xe000e284
+	set ADR_cm4_scs_nvic_icpr2 0xe000e288
+	# interrupt control and state register (see documentation 4.3.3)										
+	set ADR_cm4_scs_icsr 0xe000ed04
+	# Application Interrupt and Reset Control Register (see documentation 4.3.5)	
+	set ADR_cm4_scs_aircr 0xe000ed0c
+	
+	
+	# read the state of the nvic irqs before disabling them
+	puts "active IRQ register before clear"
+	puts "--------------------------------"
+	
+	set ulVal_cm4_scs_nvic_iabr0 [ mread32 $ADR_cm4_scs_nvic_iabr0 ]
+	set ulVal_cm4_scs_nvic_iabr1 [ mread32 $ADR_cm4_scs_nvic_iabr1 ]
+	set ulVal_cm4_scs_nvic_iabr2 [ mread32 $ADR_cm4_scs_nvic_iabr2 ]
+	
+	puts [format "cm4_scs_nvic_iabr0|1|2:  0x%08x|0x%08x|0x%08x" $ulVal_cm4_scs_nvic_iabr0 $ulVal_cm4_scs_nvic_iabr1 $ulVal_cm4_scs_nvic_iabr2]
+
+	set ulVal_cm4_scs_nvic_icer0 [ mread32 $ADR_cm4_scs_nvic_icer0 ]
+	set ulVal_cm4_scs_nvic_icer1 [ mread32 $ADR_cm4_scs_nvic_icer1 ]
+	set ulVal_cm4_scs_nvic_icer2 [ mread32 $ADR_cm4_scs_nvic_icer2 ]
+
+	puts [format "cm4_scs_nvic_icer00|1|2: 0x%08x|0x%08x|0x%08x" $ulVal_cm4_scs_nvic_icer0 $ulVal_cm4_scs_nvic_icer1 $ulVal_cm4_scs_nvic_icer2]
+
+	set ulVal_cm4_scs_nvic_icpr0 [ mread32 $ADR_cm4_scs_nvic_icpr0 ]
+	set ulVal_cm4_scs_nvic_icpr1 [ mread32 $ADR_cm4_scs_nvic_icpr1 ]
+	set ulVal_cm4_scs_nvic_icpr2 [ mread32 $ADR_cm4_scs_nvic_icpr2 ]
+
+	puts [format "cm4_scs_nvic_icpr0|1|2:  0x%08x|0x%08x|0x%08x" $ulVal_cm4_scs_nvic_icpr0 $ulVal_cm4_scs_nvic_icpr1 $ulVal_cm4_scs_nvic_icpr2]
+
+	peek "ADR_cm4_scs_icsr:        0x%08x" $ADR_cm4_scs_icsr
+	peek "ADR_cm4_scs_aircr:       0x%08x" $ADR_cm4_scs_aircr
+	puts ""
+
+	puts "clear all enable irq register (disable all)"
+	# clear all enable irq-register (disable all)
+	mww $ADR_cm4_scs_nvic_icer0 0xFFFFFFFF
+	mww $ADR_cm4_scs_nvic_icer1 0xFFFFFFFF
+	mww $ADR_cm4_scs_nvic_icer2 0xFFFFFFFF
+	
+	puts "clear all pending irq register"
+	# clear all pending irq-register
+	mww $ADR_cm4_scs_nvic_icpr0 0xFFFFFFFF
+	mww $ADR_cm4_scs_nvic_icpr1 0xFFFFFFFF
+	mww $ADR_cm4_scs_nvic_icpr2 0xFFFFFFFF
+	
+	puts ""
+	
+	# read the state of the nvic irqs after disabling them									 												 														
+	puts "active IRQ register after clear"
+	puts "-------------------------------"
+	set ulVal_cm4_scs_nvic_iabr0 [ mread32 $ADR_cm4_scs_nvic_iabr0 ]
+	set ulVal_cm4_scs_nvic_iabr1 [ mread32 $ADR_cm4_scs_nvic_iabr1 ]
+	set ulVal_cm4_scs_nvic_iabr2 [ mread32 $ADR_cm4_scs_nvic_iabr2 ]
+	
+	puts [format "cm4_scs_nvic_iabr0|1|2:  0x%08x|0x%08x|0x%08x" $ulVal_cm4_scs_nvic_iabr0 $ulVal_cm4_scs_nvic_iabr1 $ulVal_cm4_scs_nvic_iabr2]
+
+	set ulVal_cm4_scs_nvic_icer0 [ mread32 $ADR_cm4_scs_nvic_icer0 ]
+	set ulVal_cm4_scs_nvic_icer1 [ mread32 $ADR_cm4_scs_nvic_icer1 ]
+	set ulVal_cm4_scs_nvic_icer2 [ mread32 $ADR_cm4_scs_nvic_icer2 ]
+
+	puts [format "cm4_scs_nvic_icer0|1|2:  0x%08x|0x%08x|0x%08x" $ulVal_cm4_scs_nvic_icer0 $ulVal_cm4_scs_nvic_icer1 $ulVal_cm4_scs_nvic_icer2]
+
+	set ulVal_cm4_scs_nvic_icpr0 [ mread32 $ADR_cm4_scs_nvic_icpr0 ]
+	set ulVal_cm4_scs_nvic_icpr1 [ mread32 $ADR_cm4_scs_nvic_icpr1 ]
+	set ulVal_cm4_scs_nvic_icpr2 [ mread32 $ADR_cm4_scs_nvic_icpr2 ]
+
+	puts [format "cm4_scs_nvic_icpr0|1|2:  0x%08x|0x%08x|0x%08x" $ulVal_cm4_scs_nvic_icpr0 $ulVal_cm4_scs_nvic_icpr1 $ulVal_cm4_scs_nvic_icpr2]
+
+	peek "ADR_cm4_scs_icsr:        0x%08x" $ADR_cm4_scs_icsr
+	peek "ADR_cm4_scs_aircr:       0x%08x" $ADR_cm4_scs_aircr
+	puts ""
+				
+}
+
 proc reset_netx90_COM {} {
     global __JTAG_RESET__
     global _NETX90_EARLY_BP_
@@ -577,6 +668,9 @@ proc reset_netx90_COM {} {
             netx90_stop_xpec_xpic
             # netx90_setup_analog
         
+        	# disable all irqs if the netX is in a undefined state to prevent execution of irqs
+			netX90_COM_disable_irqs
+			
             # We assume that the PLL is configured. Set the JTAG frequency to 1 MHz.
             set_adapter_speed_khz 1000
 
@@ -750,6 +844,9 @@ proc reset_netx90_COM {} {
 
                 netx90_stop_xpec_xpic
                 # netx90_setup_analog
+                
+                # disable all irqs if the netX is in a undefined state to prevent execution of irqs
+                netX90_COM_disable_irqs
             
                 # We assume that the PLL is configured. Set the JTAG frequency to 1 MHz.
                 set_adapter_speed_khz 1000
