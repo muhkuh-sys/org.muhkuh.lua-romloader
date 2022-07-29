@@ -4,6 +4,10 @@ Change log/Release notes
 
 V 2.5.2
 =======
+* netX 90/JTAG: disable all IRQs if CPU is halted in undefined state 
+  (that is, when attach mode is selected or when the CPU does not halt 
+  in the breakpoint as expected after reset.)
+
 * Changed wording of some messages during chip type detection
   more uniform messages
   mention when chip type is potentially incorrect
