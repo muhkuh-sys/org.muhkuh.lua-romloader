@@ -170,6 +170,48 @@ MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_CANCEL_CALL_T)==7, "Packing of MIV3_PAC
 
 
 
+struct MIV3_PACKET_INFO_COMMAND_STRUCT
+{
+	MIV3_PACKET_HEADER_T tHeader;
+	uint8_t  ucCrcHi;
+	uint8_t  ucCrcLo;
+};
+MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_INFO_COMMAND_STRUCT)==7, "Packing of MIV3_PACKET_INFO_COMMAND_STRUCT does not work.");
+
+typedef union MIV3_PACKET_COMMAND_DATA
+{
+	struct MIV3_PACKET_INFO_COMMAND_STRUCT s;
+	uint8_t auc[7];
+} MIV3_PACKET_INFO_COMMAND_T;
+MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_INFO_COMMAND_T)==7, "Packing of MIV3_PACKET_COMMAND_DATA does not work.");
+
+
+struct MIV3_PACKET_INFO_DATA_STRUCT
+{
+	MIV3_PACKET_HEADER_T tHeader;
+	uint32_t  ulNetxVersion;
+	uint32_t  ulInfoFlags;
+	uint8_t  ucCrcHi;
+	uint8_t  ucCrcLo;
+};
+MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_INFO_DATA_STRUCT)==15, "Packing of MIV3_PACKET_INFO_DATA_STRUCT does not work.");
+
+typedef union MIV3_PACKET_INFO_DATA
+{
+	struct MIV3_PACKET_INFO_DATA_STRUCT s;
+	uint8_t auc[15];
+} MIV3_PACKET_INFO_DATA_T;
+MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_INFO_DATA_T)==15, "Packing of MIV3_PACKET_INFO_DATA_T does not work.");
+
+
+typedef enum CONSOLE_MODE_ENUM
+{
+	CONSOLE_MODE_Open = 0,
+	CONSOLE_MODE_Secure = 1,
+	CONSOLE_MODE_Unknown = 2
+} CONSOLE_MODE_T;
+
+
 /* This is a complete read packet. */
 struct MIV3_PACKET_COMMAND_READ_DATA_STRUCT
 {
@@ -312,6 +354,8 @@ public:
 	/* Call a routine on the netX. */
 	virtual void call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
 
+	virtual uint32_t get_info(uint32_t *ptNetxVersion, uint32_t *ptInfoFlags);
+
 	/* Get the chip type. */
 	virtual ROMLOADER_CHIPTYP GetChiptyp(void) const;
 	virtual const char *GetChiptypName(ROMLOADER_CHIPTYP tChiptyp) const;
@@ -364,10 +408,17 @@ protected:
 		const char *pcChiptypName;
 	} ROMLOADER_RESET_ID_T;
 
+	typedef struct
+	{
+		uint32_t ulNetxVersion;
+		ROMLOADER_CHIPTYP tChiptyp;
+	} ROMLOADER_INFO_ID_T;
+
+
 	virtual TRANSPORTSTATUS_T send_raw_packet(const void *pvPacket, size_t sizPacket) = 0;
 	virtual TRANSPORTSTATUS_T receive_packet(void) = 0;
 
-	virtual bool synchronize(ROMLOADER_CHIPTYP *ptChiptyp);
+	virtual bool synchronize(ROMLOADER_CHIPTYP *ptChiptyp, uint16_t *pusMiVersionMin, uint16_t *pusMiVersionMaj);
 	virtual TRANSPORTSTATUS_T send_packet(MIV3_PACKET_HEADER_T *ptPacket, size_t sizData);
 	virtual TRANSPORTSTATUS_T execute_command(MIV3_PACKET_HEADER_T *ptPacket, size_t sizPacket, bool *pfPacketStillValid);
 
@@ -375,14 +426,17 @@ protected:
 	virtual TRANSPORTSTATUS_T read_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, uint16_t sizDataInBytes);
 	virtual TRANSPORTSTATUS_T write_data(uint32_t ulNetxAddress, MONITOR_ACCESSSIZE_T tAccessSize, const void *pvData, uint16_t sizDataInBytes);
 
+	void found_chiptyp_message();
 	bool detect_chiptyp(romloader_read_functinoid *ptFn);
 	bool __read_data32(uint32_t ulNetxAddress, uint32_t *pulData);
 	bool detect_chiptyp(void);
+	bool detect_chiptyp_via_info(void);
 	uint16_t crc16(uint16_t usCrc, uint8_t ucData);
 	bool callback_long(SWIGLUA_REF *ptLuaFn, long lProgressData, long lCallbackUserData);
 	bool callback_string(SWIGLUA_REF *ptLuaFn, const char *pcProgressData, size_t sizProgressData, long lCallbackUserData);
 
 	ROMLOADER_CHIPTYP m_tChiptyp;
+	unsigned long m_ulInfoFlags;
 
 	/* This is the maximum size for a packet buffer in bytes.
 	 * NOTE: This has nothing to do with the maximum packet size
@@ -404,7 +458,8 @@ private:
 
 	bool callback_common(SWIGLUA_REF *ptLuaFn, long lCallbackUserData, int iOldTopOfStack);
 
-	static const ROMLOADER_RESET_ID_T atResIds[14];
+	static const ROMLOADER_RESET_ID_T atResIds[16];
+	static const ROMLOADER_INFO_ID_T atInfoIds[1];
 #endif  /* !defined(SWIG) */
 };
 

@@ -467,6 +467,114 @@ bool romloader_uart_device::GetLine(unsigned char **ppucLine, const char *pcEol,
 }
 
 
+/* 
+ * Receive char by char until the one of the EOL sequences is received
+ * or the time runs out.
+ * 
+ * ppucLine [out] pointer to received data.
+ *                Only valid when a match has been found.
+ *                Caller must free the buffer.
+ * pcEOL1    [in] Pointer to string 1 to be matched (0-terminated)
+ * pcEOL2    [in] Pointer to string 2 to be matched (0-terminated)
+ * ulTimeout [in] Timeout in ms
+ * Returns 0 on timeout (neither EOL1 nor EOL2 were matched)
+ * Returns 0 on out-of-memory
+ * Returns 1 if EOL1 was matched
+ * Returns 2 if EOL2 was matched
+ */
+int romloader_uart_device::GetLine2(unsigned char **ppucLine, const char *pcEol1, const char *pcEol2, unsigned long ulTimeout)
+{
+	unsigned char *pucBuffer;
+	unsigned char *pucBufferNew;
+	size_t sizBufferCnt;
+	size_t sizBufferMax;
+	size_t sizEolSeq1;
+	size_t sizEolSeq2;
+	size_t sizReceived;
+	int iMatchingEol;
+
+	/* Expect failure. */
+	iMatchingEol = 0;
+
+	sizEolSeq1 = strlen(pcEol1);
+	sizEolSeq2 = strlen(pcEol2);
+
+	/* Init References array. */
+	sizBufferCnt = 0;
+	sizBufferMax = 80;
+	pucBuffer = (unsigned char*)malloc(sizBufferMax);
+	if( pucBuffer==NULL )
+	{
+		fprintf(stderr, "out of memory!\n");
+	}
+	else
+	{
+		do
+		{
+			sizReceived = RecvRaw(pucBuffer+sizBufferCnt, 1, ulTimeout);
+			if( sizReceived!=1 )
+			{
+				/* Timeout, that's it... */
+				fprintf(stderr, "Timeout!\n");
+
+				break;
+			}
+
+			/* Check for EOL. */
+			sizBufferCnt++;
+			if( sizBufferCnt>=sizEolSeq1 && memcmp(pcEol1, pucBuffer+sizBufferCnt-sizEolSeq1, sizEolSeq1)==0 )
+			{
+				iMatchingEol = 1;
+				break;
+			}
+			
+			if( sizBufferCnt>=sizEolSeq2 && memcmp(pcEol2, pucBuffer+sizBufferCnt-sizEolSeq2, sizEolSeq2)==0 )
+			{
+				iMatchingEol = 2;
+				break;
+			}
+			
+
+			/* Is enough space in the array for one more entry? */
+			/* NOTE: Do this at the end of the loop because the line is
+			terminated with a '\0'. */
+			if( sizBufferCnt>=sizBufferMax )
+			{
+				/* No -> expand the array. */
+				sizBufferMax *= 2;
+				/* Detect overflow or limitation. */
+				if( sizBufferMax<=sizBufferCnt )
+				{
+					break;
+				}
+				/* Reallocate the array. */
+				pucBufferNew = (unsigned char*)realloc(pucBuffer, sizBufferMax);
+				if( pucBufferNew==NULL )
+				{
+					break;
+				}
+				pucBuffer = pucBufferNew;
+			}
+		} while( true );
+	}
+
+	if( iMatchingEol>0 )
+	{
+		/* Terminate the line buffer. */
+		pucBuffer[sizBufferCnt] = 0;
+	}
+	else if( pucBuffer!=NULL )
+	{
+		free(pucBuffer);
+		pucBuffer = NULL;
+	}
+
+	*ppucLine = pucBuffer;
+
+	return iMatchingEol;
+}
+
+
 bool romloader_uart_device::SendBlankLineAndDiscardResponse(void)
 {
 	const unsigned char aucBlankLine[1] = { '\n' };

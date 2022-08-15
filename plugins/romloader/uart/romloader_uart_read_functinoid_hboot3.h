@@ -19,35 +19,33 @@
  ***************************************************************************/
 
 
-#ifndef __ROMLOADER_DEF_H__
-#define __ROMLOADER_DEF_H__
+#include "romloader_uart_read_functinoid.h"
+#include "romloader_uart_device.h"
+#include "romloader_uart_main.h"
 
-/*-----------------------------------*/
 
-typedef enum
+#ifndef __ROMLOADER_UART_READ_FUNCTINOID_HBOOT3_H__
+#define __ROMLOADER_UART_READ_FUNCTINOID_HBOOT3_H__
+
+
+class romloader_uart_read_functinoid_hboot3 : public romloader_uart_read_functinoid
 {
-	ROMLOADER_CHIPTYP_UNKNOWN              = 0,
-	ROMLOADER_CHIPTYP_NETX500              = 1,
-	ROMLOADER_CHIPTYP_NETX100              = 2,
-	ROMLOADER_CHIPTYP_NETX50               = 3,
-	ROMLOADER_CHIPTYP_NETX5                = 4,
-	ROMLOADER_CHIPTYP_NETX10               = 5,
-	ROMLOADER_CHIPTYP_NETX56               = 6,
-	ROMLOADER_CHIPTYP_NETX56B              = 7,
-	ROMLOADER_CHIPTYP_NETX4000_RELAXED     = 8,
-	ROMLOADER_CHIPTYP_RESERVED9            = 9,
-	ROMLOADER_CHIPTYP_NETX90_MPW           = 10,
-	ROMLOADER_CHIPTYP_NETX4000_FULL        = 11,
-	ROMLOADER_CHIPTYP_NETX4100_SMALL       = 12,
-	ROMLOADER_CHIPTYP_NETX90               = 13, /* netX 90 rev. 0 */
-	ROMLOADER_CHIPTYP_NETX90B              = 14, /* netX 90 rev. 1 */
-	ROMLOADER_CHIPTYP_NETIOLA              = 15,
-	ROMLOADER_CHIPTYP_NETIOLB              = 16,
-	ROMLOADER_CHIPTYP_NETX90C              = 17, /* netX 90 rev. 1 (ePHY V3)*/
-	ROMLOADER_CHIPTYP_NETX90D              = 18  /* netX 90 rev. 2 */
-} ROMLOADER_CHIPTYP;
+public:
+	romloader_uart_read_functinoid_hboot3(romloader_uart_device *ptDevice, char *pcPortName);
+	bool read_data32(uint32_t ulAddress, uint32_t *pulValue);
+	CONSOLE_MODE_T detect_console_mode(void);
+	int update_device(ROMLOADER_CHIPTYP tChiptyp);
 
-/*-----------------------------------*/
+private:
 
-#endif  /* __ROMLOADER_DEF_H__ */
+	void hexdump(const uint8_t *pucData, uint32_t ulSize);
+
+	bool netx90_reset(void);
+
+	romloader_uart_device *m_ptDevice;
+	char *m_pcPortName;
+};
+
+
+#endif  /* __ROMLOADER_UART_READ_FUNCTINOID_HBOOT3_H__ */
 

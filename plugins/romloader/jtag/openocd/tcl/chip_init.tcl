@@ -16,6 +16,8 @@ set ROMLOADER_CHIPTYP_NETX90            13
 set ROMLOADER_CHIPTYP_NETX90B           14
 set ROMLOADER_CHIPTYP_NETIOLA           15
 set ROMLOADER_CHIPTYP_NETIOLB           16
+set ROMLOADER_CHIPTYP_NETX90C           17
+set ROMLOADER_CHIPTYP_NETX90D           18
 
 # fEnableDCCOutput       true: download DCC code, set serial vectors and buffer, false: clear serial vectors
 # ulSerialVectorAddr     Address of serial vectors
@@ -46,6 +48,8 @@ proc init_breakpoint {} {
 	global ROMLOADER_CHIPTYP_NETX90B
 	global ROMLOADER_CHIPTYP_NETIOLA
 	global ROMLOADER_CHIPTYP_NETIOLB
+	global ROMLOADER_CHIPTYP_NETX90C
+	global ROMLOADER_CHIPTYP_NETX90D
 	set iChiptyp $__CHIP_TYPE__
 	echo "Init Breakpoint"
 	
@@ -69,6 +73,8 @@ proc init_breakpoint {} {
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90
 			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90C
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90D
 			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW	} {
 
 		bp 0x00023ffd 2 hw
@@ -107,17 +113,19 @@ proc deinit_breakpoint {} {
 	global ROMLOADER_CHIPTYP_NETX90B
 	global ROMLOADER_CHIPTYP_NETIOLA
 	global ROMLOADER_CHIPTYP_NETIOLB
+	global ROMLOADER_CHIPTYP_NETX90C
+	global ROMLOADER_CHIPTYP_NETX90D
 	set iChiptyp $__CHIP_TYPE__
 	
 	echo "Deinit Breakpoint"
 
 
-	# set the breakpoint matching the iChiptyp
+	# remove the breakpoint matching the iChiptyp
 	if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX500 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX100 } {
 		rbp 0x200000
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX10 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX50 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56 || $iChiptyp == $ROMLOADER_CHIPTYP_NETX56B } {
-		rbp 0x080000fc        ; # set breakpoint
+		rbp 0x080000fc        ; # remove breakpoint
 	
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_RELAXED \
 			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX4000_FULL \
@@ -127,6 +135,8 @@ proc deinit_breakpoint {} {
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90
 			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90C
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90D
 			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW	} {
 		rbp 0x00023ffd
 		
@@ -162,6 +172,8 @@ proc setup_dcc_io {fEnableDCCOutput iChiptyp {ulSerialVectorAddr 0} {strDccCodeF
 	global ROMLOADER_CHIPTYP_NETX90B
 	global ROMLOADER_CHIPTYP_NETIOLA
 	global ROMLOADER_CHIPTYP_NETIOLB
+	global ROMLOADER_CHIPTYP_NETX90C
+	global ROMLOADER_CHIPTYP_NETX90D
 
 	if { $fEnableDCCOutput == "true" } {
 		puts "Setting up DCC output"
@@ -189,7 +201,9 @@ proc setup_dcc_io {fEnableDCCOutput iChiptyp {ulSerialVectorAddr 0} {strDccCodeF
 
 		if { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW \
 			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90 \
-			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B } {
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B \
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90C \
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90D } {
 			puts "Init cm4_scs_dcrdr"
 			mww 0xe000edf8 0  
 		}
@@ -233,6 +247,8 @@ proc init_chip {iChiptyp} {
 	global ROMLOADER_CHIPTYP_NETX90B
 	global ROMLOADER_CHIPTYP_NETIOLA
 	global ROMLOADER_CHIPTYP_NETIOLB
+	global ROMLOADER_CHIPTYP_NETX90C
+	global ROMLOADER_CHIPTYP_NETX90D
 
 	# Get the maximum adapter speed
 	global ADAPTER_MAX_KHZ
@@ -404,9 +420,11 @@ proc init_chip {iChiptyp} {
 		# reg lr 0x00023ffd # now in init_breakpoint
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90
-			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B } {
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90C
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90D } {
 
-		puts "Setting up registers for netx 90 Rev.0/Rev.1"
+		puts "Setting up registers for netx 90 Rev.0/1/2"
 
 		reg xPSR 0x01000000
 		# bp 0x00023ffd 2 hw # now in init_breakpoint
@@ -523,7 +541,9 @@ proc init_chip {iChiptyp} {
 		
 	} elseif { $iChiptyp == $ROMLOADER_CHIPTYP_NETX90_MPW \
 			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90 \
-			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B } {
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90B \
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90C \
+			|| $iChiptyp == $ROMLOADER_CHIPTYP_NETX90D } {
 			
 		setup_dcc_io $fEnableDCCOutput $iChiptyp 0x2009fff0 dcc_netx90_com.bin thumb 0x00020400 0x00020e00 0x00020fe0
 		

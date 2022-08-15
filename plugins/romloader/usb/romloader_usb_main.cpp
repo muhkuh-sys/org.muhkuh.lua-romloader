@@ -316,7 +316,7 @@ void romloader_usb::Connect(lua_State *ptClientData)
 			 *   sequence number
 			 *   maximum packet size
 			 */
-			if( synchronize(&m_tChiptyp)!=true )
+			if( synchronize(&m_tChiptyp, NULL, NULL)!=true )
 			{
 				fprintf(stderr, "%s(%p): failed to synchronize!", m_pcName, this);
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to synchronize!", m_pcName, this);

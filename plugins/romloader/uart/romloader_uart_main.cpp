@@ -25,6 +25,7 @@
 
 #include "romloader_uart_read_functinoid_aboot.h"
 #include "romloader_uart_read_functinoid_hboot1.h"
+#include "romloader_uart_read_functinoid_hboot3.h"
 #include "romloader_uart_read_functinoid_mi1.h"
 #include "romloader_uart_read_functinoid_mi2.h"
 
@@ -204,6 +205,98 @@ romloader_uart::~romloader_uart(void)
 		m_ptUartDev->Close();
 		delete m_ptUartDev;
 	}
+}
+
+/*
+* This function is used to check if the netX is stuck in an endless loop waiting for an acknowledge for a packet and re-sending it
+* If it is the case we send a cancel_operation packet that should be able to to get the netX out of the loop
+*/
+bool romloader_uart::fix_deadloop()
+{
+	size_t sizTransfered;
+	bool fResult = false;
+	uint8_t aucData[32];
+	MIV3_PACKET_HEADER_T *ptPacketHeader;
+	uint8_t ucRetries = 5;
+	uint32_t ulDataReceived;
+	
+	#define UART_MAXIMUM_PACKET_SIZE 2048
+	do
+	{
+		
+		// clear buffer until we timout after 200ms (meaning we are between two received packets) or we reach a max transferred data size
+		ulDataReceived = 0;
+		do
+		{
+			sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 200);
+			ulDataReceived += sizTransfered;
+		} while( sizTransfered==1 || ulDataReceived > UART_MAXIMUM_PACKET_SIZE);
+
+		
+		// try to get first char with timeout of 1000ms
+		sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 1200);
+		if( sizTransfered!=1 )
+		{
+			/* Failed to receive first start char */
+			m_ptLog->error("Failed to receive first char: %ld. No deadloop to fix", sizTransfered);
+		}
+		else
+		{
+			if( aucData[0]==MONITOR_STREAM_PACKET_START )
+			{
+				
+				sizTransfered += m_ptUartDev->RecvRaw(aucData+1, 4, 500);
+				if( sizTransfered!=5 )
+				{
+					m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData, sizTransfered+1);
+					m_ptLog->error("Failed to receive the size information after the stream packet start!");
+				}
+				else
+				{
+					// try masking reveiced data as MIV3_PACKET_HEADER_T
+					ptPacketHeader = (MIV3_PACKET_HEADER_T*)aucData;
+					
+					// only packets that are sent in an endless loop are the following three
+					// note: the loop for waiting for an ACK for a CallMessage packet can be canceled by a CancelOperation packet 
+					//       but this will not stop the execution of the binary that sends these print messages.
+					if ( ptPacketHeader->s.ucPacketType==MONITOR_PACKET_TYP_Status ||
+						ptPacketHeader->s.ucPacketType==MONITOR_PACKET_TYP_ReadData ||
+						ptPacketHeader->s.ucPacketType==MONITOR_PACKET_TYP_CallMessage )
+					{
+						// receive rest of the packet. 
+						// usDataSize includes ucSequenceNumber and ucPacketType which we already received
+						// therefore we receive usDataSize-2
+						sizTransfered += m_ptUartDev->RecvRaw(aucData+5, ptPacketHeader->s.usDataSize-2, 500);
+						m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData, sizTransfered);
+						
+						// set the maximum packet size to be able to send a cancel packet
+						m_sizMaxPacketSizeClient = 20;
+						// send a cancel_operation packet
+						cancel_operation();
+						
+						// try to empty the buffer in case we still received a packet while sending cancel_operation
+						do
+						{
+							sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 200);
+						} while( sizTransfered==1 );
+						
+						// check if netX still sends packets within over 1 second wait time
+						// if no packets are received the cancel_operation worked
+						sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 1200);
+						if ( sizTransfered==0 )
+						{
+							fResult = true;
+							m_ptLog->debug("Successfully stopped deadloop of netX (no more cyclic packets received)");
+						}
+					}
+				}
+			}
+
+		}
+		ucRetries--;
+	}while ( ucRetries > 0 && fResult == false);
+	
+	return fResult;
 }
 
 
@@ -491,12 +584,15 @@ void romloader_uart::Connect(lua_State *ptClientData)
 	romloader_uart_read_functinoid *ptFn;
 	romloader_uart_read_functinoid_aboot tFnABoot(m_ptUartDev, m_pcName);
 	romloader_uart_read_functinoid_hboot1 tFnHBoot1(m_ptUartDev, m_pcName);
+	romloader_uart_read_functinoid_hboot3 tFnHBoot3(m_ptUartDev, m_pcName);
 	romloader_uart_read_functinoid_mi1 tFnMi1(m_ptUartDev, m_pcName);
 	romloader_uart_read_functinoid_mi2 tFnMi2(m_ptUartDev, m_pcName);
 	bool fResult;
 	ROMLOADER_COMMANDSET_T tCmdSet;
 	int iResult;
 	ROMLOADER_CHIPTYP tChiptyp;
+	uint16_t usMiVersionMin;
+	uint16_t usMiVersionMaj;
 
 
 	/* Expect error. */
@@ -518,6 +614,25 @@ void romloader_uart::Connect(lua_State *ptClientData)
 		else
 		{
 			fResult = identify_loader(&tCmdSet, &tFnMi2);
+			
+			// if identify_loader failed we try fix_deadloop to check if netX got stuck in dead loop
+			// and can be brought back by sending a cancel_operation packet
+			if( fResult!=true )
+			{	
+				m_ptLog->debug("Try fixing the deadloop");
+				fResult = fix_deadloop();
+				
+				
+				// if fix_deadloop worked we try to identify loader again
+				if( fResult )
+				{ 
+					m_ptLog->debug("Retry to identify loader");
+					fResult = identify_loader(&tCmdSet, &tFnMi2);
+				}
+				else{
+					m_ptLog->error("fixing deadloop did not work!");
+				}
+			}
 			if( fResult!=true )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to identify loader!", m_pcName, this);
@@ -533,18 +648,49 @@ void romloader_uart::Connect(lua_State *ptClientData)
 
 
 				case ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1:
-					m_ptLog->debug("ABOOT or HBOOT1.");
+					m_ptLog->debug("ABOOT, HBOOT1 or HBOOT3");
+					m_ptLog->debug("Trying ABOOT terminal");
 					/* Try to detect the chip type with the old command set ("DUMP"). */
 					ptFn = &tFnABoot;
 					fResult = detect_chiptyp(ptFn);
 					if( fResult!=true )
 					{
-						/* Failed to get the info with the old command set. Now try the new command ("D"). */
+						m_ptLog->debug("Trying HBOOT1 terminal");
+						/* Failed to get the info with the old command set. Now try the new command ("D"). 
+						   Expect a HBOOT1 prompt after the command. */
 						ptFn = &tFnHBoot1;
 						fResult = detect_chiptyp(ptFn);
 						if( fResult!=true )
 						{
-							MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chip type!", m_pcName, this);
+							m_ptLog->debug("Trying HBOOT3 terminal");
+							/* If that did not work, try again, expecting a HBOOT3 prompt 
+							 * (includes a status code). */
+							
+							/* First, check if the console is in open or secure mode. 
+							 * Stop if it is not in open mode. */
+							CONSOLE_MODE_T tConsoleMode;
+							tConsoleMode = tFnHBoot3.detect_console_mode();
+							
+							switch (tConsoleMode) {
+								
+								case CONSOLE_MODE_Open:
+									ptFn = &tFnHBoot3;
+									fResult = detect_chiptyp(ptFn);
+									if( fResult!=true )
+									{
+										MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chip type!", m_pcName, this);
+									}
+									break;
+								
+								case CONSOLE_MODE_Secure:
+									MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode and in a terminal console. Only the open boot mode and the machine interface are supported.", m_pcName, this);
+									break;
+								
+								case CONSOLE_MODE_Unknown:
+								default:
+									MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): Tne netX is in an unknown boot mode! Only open boot mode is supported.", m_pcName, this);
+									break;
+							}
 						}
 					}
 					
@@ -614,29 +760,92 @@ void romloader_uart::Connect(lua_State *ptClientData)
 					 *   sequence number
 					 *   maximum packet size
 					 */
-					fResult = synchronize(&tChiptyp);
-					if( fResult==true )
-					{
-						/* The chip type reported by the ROM code of the netX 90 MPW/Rev0/Rev1 is incorrect:
-						 * netx90 MPW  reports MI V2, chip type netX90 MPW  (0x02 0x0a)
-						 * netx90 Rev0 reports MI V3, chip type netX90 MPW  (0x03 0x0a)
-						 * next90 Rev1 reports MI V3, chip type netX90 Rev0 (0x03 0x0d)
-						 */
-						if( tChiptyp==ROMLOADER_CHIPTYP_NETX90_MPW 
-							|| tChiptyp==ROMLOADER_CHIPTYP_NETX90
-							|| tChiptyp==ROMLOADER_CHIPTYP_NETX90B)
-						{
-							m_ptLog->debug("Got suspicious chip type %d, detecting chip type.", tChiptyp);
-							fResult = detect_chiptyp();
-						}
-						else
-						{
-							m_tChiptyp = tChiptyp;
-						}
-					}
+					fResult = synchronize(&tChiptyp, &usMiVersionMin, &usMiVersionMaj);
 					if( fResult!=true )
 					{
 						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to synchronize with the client!", m_pcName, this);
+					}
+					else
+					{
+						m_fIsConnected = true;
+						
+						/* machine interface major version != 3 
+						 * If the machine interface v1 or v2 is active, we do not reach
+						 * this point, because synchronize() fails. */
+						if (usMiVersionMaj != 3)
+						{
+							MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): Version %d.%d of the machine interface is not supported!", m_pcName, this, usMiVersionMaj, usMiVersionMin);
+							fResult = false;
+							
+						}
+						else if (usMiVersionMin == 0)
+						{
+							/* MI v3.0 */
+							/* The chip type reported by the ROM code of the netX 90 MPW/Rev0/Rev1 is incorrect:
+							* netx90 MPW  reports MI V2, chip type netX90 MPW  (0x02 0x0a)
+							* netx90 Rev0 reports MI V3, chip type netX90 MPW  (0x03 0x0a)
+							* next90 Rev1 reports MI V3, chip type netX90 Rev0 (0x03 0x0d)
+							* next90 Rev2 reports MI V3, chip type netX90 Rev0 (0x03 0x0d)
+							*/
+							if( tChiptyp==ROMLOADER_CHIPTYP_NETX90_MPW 
+								|| tChiptyp==ROMLOADER_CHIPTYP_NETX90
+								|| tChiptyp==ROMLOADER_CHIPTYP_NETX90B)
+							{
+								m_ptLog->debug("Got suspicious chip type %d, detecting chip type.", tChiptyp);
+								fResult = detect_chiptyp();
+								if( fResult!=true )
+								{
+									MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chip type!", m_pcName, this);
+								}
+							}
+							else
+							{
+								m_tChiptyp = tChiptyp;
+							}
+						}
+						else
+						{
+							/* MI version > 3.0 
+							 * next90 Rev2 reports MI V3.1, chip type netX90 Rev0
+							 * Use the info command of MI 3.1 to get chip type and flags, 
+							 * including secure boot flag
+							*/
+							fResult = detect_chiptyp_via_info();
+							if (fResult!=true)
+							{
+								MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): Failed to detect chip type via info command.", m_pcName, this);
+							}
+							else
+							{
+								CONSOLE_MODE_T tConsoleMode;
+								if ((m_ulInfoFlags & MSK_MONITOR_INFO_FLAGS_SECURE_BOOT_ENABLED) == 0)
+								{
+									m_ptLog->debug("The netX is in open boot mode.");
+									tConsoleMode = CONSOLE_MODE_Open;
+								} else {
+									m_ptLog->debug("The netX is in secure boot mode.");
+									tConsoleMode = CONSOLE_MODE_Secure;
+								}
+								
+								switch (tConsoleMode) {
+									
+									case CONSOLE_MODE_Open:
+										break;
+									
+									case CONSOLE_MODE_Secure:
+										fResult = false;
+										MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode! Only open boot mode is supported.", m_pcName, this);
+										break;
+									
+									/* not reachable */
+									case CONSOLE_MODE_Unknown:
+									default:
+										fResult = false;
+										MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in an unknown boot mode! Only open boot mode is supported.", m_pcName, this);
+										break;
+								}
+							}
+						}
 					}
 				}
 			}
