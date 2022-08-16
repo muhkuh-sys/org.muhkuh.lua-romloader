@@ -230,7 +230,7 @@ bool romloader_uart::fix_deadloop()
 		{
 			sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 200);
 			ulDataReceived += sizTransfered;
-		} while( sizTransfered==1 || ulDataReceived > UART_MAXIMUM_PACKET_SIZE);
+		} while( sizTransfered==1 && ulDataReceived < UART_MAXIMUM_PACKET_SIZE);
 
 		
 		// try to get first char with timeout of 1000ms
