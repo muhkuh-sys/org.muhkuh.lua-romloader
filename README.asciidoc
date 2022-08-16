@@ -3,4 +3,4 @@ org.muhkuh.lua-romloader
 
 == About
 
-The romloader plugins provide access to netX based hardware to LUA scripts. This is the version used in production tests.
+The romloader plugins provide access to netX based hardware to LUA scripts. This is the version used for tools like the CLI flasher.
