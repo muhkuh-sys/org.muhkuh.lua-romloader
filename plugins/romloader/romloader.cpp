@@ -1444,7 +1444,8 @@ void romloader::cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData)
 	MIV3_PACKET_HEADER_T *ptPacketHeader;
 	MIV3_PACKET_STATUS_T *ptPacketStatus;
 	int i = 10;
-
+	bool fPacketStillValid;
+	
 	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
@@ -1454,7 +1455,7 @@ void romloader::cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData)
 	{	
 		m_ptLog->info("use MONITOR_PACKET_TYP_Command_Start_USIP");
 		tCommandUsip.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_Command_Start_USIP;
-		tResult = execute_command(&(tCommandUsip.s.tHeader), sizeof(tCommandUsip));
+		tResult = execute_command(&(tCommandUsip.s.tHeader), sizeof(tCommandUsip) , &fPacketStillValid);
 		if( tResult!=TRANSPORTSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
@@ -1468,7 +1469,14 @@ void romloader::cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData)
 				pcProgressData = NULL;
 				sizProgressData = 0;
 
-				tResult = receive_packet();
+				if (!fPacketStillValid){
+					/* only recceive the packet if the packet in the buffer is not still valid*/
+					tResult = receive_packet();
+				}
+				else{
+					fPacketStillValid = false; // set the flash back to False so the next packet will be received as usual
+				}
+				
 				printf("result: %s ", tResult);
 				if( tResult==TRANSPORTSTATUS_TIMEOUT )
 				{
@@ -1576,7 +1584,7 @@ void romloader::call_hboot(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGL
 	MIV3_PACKET_HEADER_T *ptPacketHeader;
 	MIV3_PACKET_STATUS_T *ptPacketStatus;
 //	int i = 10;
-
+	bool fPacketStillValid;
 	if( m_fIsConnected==false )
 	{
 		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
@@ -1588,7 +1596,7 @@ void romloader::call_hboot(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGL
 		tCallCommand.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_Command_Start_Hboot;
 		tCallCommand.s.ulAddress = HTONETX32(ulNetxAddress);
 		tCallCommand.s.ulR0 = HTONETX32(ulParameterR0);
-		tResult = execute_command(&(tCallCommand.s.tHeader), sizeof(tCallCommand));
+		tResult = execute_command(&(tCallCommand.s.tHeader), sizeof(tCallCommand), &fPacketStillValid);
 		if( tResult!=TRANSPORTSTATUS_OK )
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
@@ -1602,7 +1610,13 @@ void romloader::call_hboot(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGL
 				pcProgressData = NULL;
 				sizProgressData = 0;
 
-				tResult = receive_packet();
+				if (!fPacketStillValid){
+					/* only recceive the packet if the packet in the buffer is not still valid*/
+					tResult = receive_packet();
+				}
+				else{
+					fPacketStillValid = false; // set the flash back to False so the next packet will be received as usual
+				}
 				printf("result: %s ", tResult);
 				if( tResult==TRANSPORTSTATUS_TIMEOUT )
 				{
