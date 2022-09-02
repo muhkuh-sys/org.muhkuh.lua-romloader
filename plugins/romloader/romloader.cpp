@@ -620,8 +620,7 @@ uint32_t romloader::get_info(uint32_t *ptNetxVersion, uint32_t *ptInfoFlags)
 			
 			if( tResult!=TRANSPORTSTATUS_OK )
 			{
-				/* Failed to send knock sequence to device. */
-				m_ptLog->error("Failed to send knock sequence to device.");
+				m_ptLog->error("get_info(): Failed to receive Info_Data packet.");
 			}
 			else
 			{
