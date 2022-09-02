@@ -2,6 +2,11 @@
 Change log/Release notes
 =========================
 
+V 2.5.3
+=======
+* Fix a bug that may lead to a crash when connecting to the netX 90 Rev2
+  via UART or ethernet (NXTFLASHER-534).
+
 V 2.5.2
 =======
 * netX 90/JTAG: disable all IRQs if CPU is halted in undefined state 
