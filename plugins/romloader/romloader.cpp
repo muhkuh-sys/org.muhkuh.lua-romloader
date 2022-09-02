@@ -606,7 +606,7 @@ uint32_t romloader::get_info(uint32_t *ptNetxVersion, uint32_t *ptInfoFlags)
 		m_ptLog->info("use MONITOR_PACKET_TYP_Command_Info");
 		tPacketInfo.s.tHeader.s.ucPacketType =  MONITOR_PACKET_TYP_Command_Info;
 
-		tResult = execute_command(&(tPacketInfo.s.tHeader), sizeof(MIV3_PACKET_INFO_DATA_T), &fPacketStillValid);
+		tResult = execute_command(&(tPacketInfo.s.tHeader), sizeof(MIV3_PACKET_INFO_COMMAND_T), &fPacketStillValid);
 		if( tResult==TRANSPORTSTATUS_OK )
 		{
 			/* Receive the data. */
