@@ -468,6 +468,14 @@ protected:
 
 	uint8_t m_ucMonitorSequence;
 	
+	uint16_t m_usMiVersionMaj = NULL;
+	uint16_t m_usMiVersionMin = NULL;
+	
+	uint16_t romloader::get_mi_version_maj;
+	uint16_t romloader::get_mi_version_min;
+	uint32_t romloader::get_mi_version;
+
+	
 	/* structure that holds variables used for test purposes only */
 	ROMLOADER_TEST_VARIABLES sRomlTestVars;
 

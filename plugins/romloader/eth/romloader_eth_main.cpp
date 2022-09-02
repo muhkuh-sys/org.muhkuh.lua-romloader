@@ -305,6 +305,9 @@ void romloader_eth::Connect(lua_State *ptClientData)
 			/* Set a default maximum packet size which should be enough for a sync packet. */
 			m_sizMaxPacketSizeClient = 32;
 			fResult = synchronize(&tChiptyp, &usMiVersionMin, &usMiVersionMaj);
+			m_usMiVersionMaj = usMiVersionMaj;
+			m_usMiVersionMin = usMiVersionMin;
+			
 			if( fResult!=true )
 			{
 				MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to synchronize!", m_pcName, this);

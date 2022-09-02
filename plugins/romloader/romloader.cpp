@@ -91,6 +91,24 @@ void romloader::set_sequence_number(uint8_t ucSequenceNumber)
 {
 	m_ucMonitorSequence = ucSequenceNumber;
 }
+
+uint16_t romloader::get_mi_version_maj()
+{
+	return m_usMiVersionMaj;
+}
+uint16_t romloader::get_mi_version_min()
+{
+	return m_usMiVersionMin;
+}
+
+uint32_t romloader::get_mi_version()
+{
+	uint32_t ulMiVersion;
+	ulMiVersion = m_usMiVersionMaj << 16
+	ulMiVersion += m_usMiVersionMin
+	return ulMiVersion;
+}
+
 /*
 * wrapper functions to set test counter that will delay the acknowlede packages
 * for received packages during commands 
