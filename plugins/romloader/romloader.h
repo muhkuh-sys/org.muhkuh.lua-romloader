@@ -377,9 +377,9 @@ public:
 	virtual void cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData);
 	virtual uint32_t get_info(uint32_t *ptNetxVersion, uint32_t *ptInfoFlags);
 
-	virtual uint16_t get_mi_version_maj;
-	virtual uint16_t get_mi_version_min;
-	virtual uint32_t get_mi_version;
+	virtual uint16_t get_mi_version_maj();
+	virtual uint16_t get_mi_version_min();
+	virtual uint32_t get_mi_version();
 
 	/* Get the chip type. */
 	virtual ROMLOADER_CHIPTYP GetChiptyp(void) const;

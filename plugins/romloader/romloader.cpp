@@ -104,8 +104,8 @@ uint16_t romloader::get_mi_version_min()
 uint32_t romloader::get_mi_version()
 {
 	uint32_t ulMiVersion;
-	ulMiVersion = m_usMiVersionMaj << 16
-	ulMiVersion += m_usMiVersionMin
+	ulMiVersion = m_usMiVersionMaj << 16;
+	ulMiVersion += m_usMiVersionMin;
 	return ulMiVersion;
 }
 
