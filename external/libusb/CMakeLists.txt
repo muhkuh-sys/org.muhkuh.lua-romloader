@@ -37,7 +37,7 @@ ENDIF(${CMAKE_CROSSCOMPILING})
 #
 # Build the project.
 #
-IF(${WIN32})
+IF(${CMAKE_HOST_WIN32})
     # Building and installing libusb on Windows requires the use of a MSYS2 shell.
     # Check whether to use 64 or 32 Bit so the correct compiler is in the PATH
     IF(${CMAKE_C_FLAGS} STREQUAL "-m64")
