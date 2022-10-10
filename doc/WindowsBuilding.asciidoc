@@ -9,27 +9,22 @@ Should you wish to build for another system it is recommended to build the Romlo
 In order to build the Romloader under Windows 10 these steps need to be followed:
 
 General Setup::
-. Install Python 3. 
+. Install Python 3
 ** Version 3.7.9 is recommended and tested.
 Windows specific Setup::
 All Systems:::
 . Install CMake for Windows
-.. Download the official installer and follow the instructions
-.. Chose one of the options to add it to PATH
+.. Download the https://cmake.org/download/[official installer] and follow the instructions
+.. Choose one of the options to add it to PATH
 . Install MSYS2
-.. Download the official installer and follow the instructions
+.. Download the https://www.msys2.org/[official installer] and follow the instructions
 .. Choose C:\msys64 as the install location, this is the default
 . Install Swig
-.. Download the swigwin archive from the official website
+.. Download the swigwin archive from the https://www.swig.org/download.html[official website]
 .. Unpack the swigwin archive to C:\Swig
-. Open the Romloader folder
-.. Open the setup.xml file for editing
-.. Replace _${machine} with _x86 for the following statement (Occurs twice)
-
- <package>gcc-arm-none-eabi_${platform}_${machine}</package>
 
 For 64-Bit Targets:::
-. Open the MSYS2 MinGW x64 Shell and execute the following commands
+. Open the MSYS2 MinGW x64 Shell (Might also be called MSYS2 MINGW64) and execute the following commands
 .. Install mingw gcc and g++ for 64-Bit
 
  pacman -S mingw-w64-x86_64-gcc
@@ -42,7 +37,7 @@ For 64-Bit Targets:::
 
  pacman -S make
 For 32-Bit Targets:::
-. Open the MSYS2 MinGW x86 Shell and execute the following commands
+. Open the MSYS2 MinGW x86 Shell (Might also be called MSYS2 MINGW32) and execute the following commands
 .. Install mingw gcc and g++ for 32-Bit
 
  pacman -S mingw-w64-x86-gcc
@@ -56,13 +51,15 @@ For 32-Bit Targets:::
  pacman -S make
 
 == Building the Romloader
+. Open the Romloader folder
+.. Open the setup.xml file for editing
+.. Replace _${machine} with _x86 for the following statement (Occurs twice)
+
+ <package>gcc-arm-none-eabi_${platform}_${machine}</package>
 
 . Open a CMD window in the Romloader folder
-.. Execute the build_artifact.py script using Python 3.
+.. Execute the build_artifact.py script found in the Romloader folder using Python 3.
 +
 Example using py and version 3.7.9:
 
  py -3.7 build_artifact.py
-
-
-

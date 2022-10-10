@@ -1,0 +1,45 @@
+= Building the Romloader under Linux
+
+== Recommended Distribution
+
+The Romloader is made to be built on Ubuntu, version 20.04 LTS is recommended.
+
+== Prerequisites
+In order to build the Romloader the following steps need to be followed.
+Example commands have been given for Ubuntu 20.04 LTS.
+
+General Setup::
+. Install Python 3
+** Version 3.7.9 is recommended and tested.
+** Pre-installed on Ubuntu 20.04 LTS
+
+. Install CMake
+
+ sudo apt install CMake
+
+. Install gcc and g++
+
+ sudo apt install gcc && sudo apt install g++
+
+. Install lib32z1
+
+ sudo apt install lib32z1
+
+. Install swig
+
+ sudo apt install swig
+
+. Install make 
+** Pre-installed on Ubuntu 20.04 LTS
+
+. If compiling for a Windows target install mingw
+
+ sudo apt install mingw-w64
+
+== Building the Romloader
+. Open a Terminal window in the Romloader folder
+.. Execute the build_artifact.py script found in the Romloader folder using Python 3.
++
+Example:
+
+ python3 build_artifact.py
