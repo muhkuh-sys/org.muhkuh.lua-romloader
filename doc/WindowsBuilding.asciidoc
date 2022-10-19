@@ -40,11 +40,11 @@ For 32-Bit Targets:::
 . Open the MSYS2 MinGW x86 Shell (Might also be called MSYS2 MINGW32) and execute the following commands
 .. Install mingw gcc and g++ for 32-Bit
 
- pacman -S mingw-w64-x86-gcc
+ pacman -S mingw-w64-i686-gcc
 
 .. Install mingw32-make
 
- pacman -S mingw-w64-x86-make
+ pacman -S mingw-w64-i686-make
 
 .. Install make
 
