@@ -37,11 +37,38 @@ ENDIF(${CMAKE_CROSSCOMPILING})
 #
 # Build the project.
 #
-ExternalProject_Add(TARGET_libusb
-                    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libusb-${VERSION_EXTERNAL}${VERSION_EXTERNAL_POST}
-                    URL ${CMAKE_CURRENT_SOURCE_DIR}/libusb-${VERSION_EXTERNAL}${VERSION_EXTERNAL_POST}.tar.bz2
-                    URL_HASH SHA1=0e25981dafb69729e5d976017d113410078f6f6d
-                    CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env "CFLAGS=${CMAKE_C_FLAGS}" "CPPFLAGS=${CMAKE_CXX_FLAGS}" ${CMAKE_CURRENT_BINARY_DIR}/libusb-${VERSION_EXTERNAL}${VERSION_EXTERNAL_POST}/src/TARGET_libusb/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/install --enable-static=yes --enable-shared=no --with-pic ${CONFIGURE_HOST}
-                    BUILD_COMMAND make
-                    INSTALL_COMMAND make install
-)
+
+SET(LIBUSB_SHA1 "0e25981dafb69729e5d976017d113410078f6f6d")
+
+IF(${CMAKE_HOST_WIN32})
+    # Building and installing libusb on Windows requires the use of a MSYS2 shell.
+    # Check whether to use 64 or 32 Bit so the correct compiler is in the PATH
+    IF(${CMAKE_C_FLAGS} STREQUAL "-m64")
+        message("Shell is mingw64")
+        SET(MSYS2_SHELL "C:/msys64/mingw64.exe")
+    ELSE()
+        message("Shell is mingw32")
+        SET(MSYS2_SHELL "C:/msys64/mingw32.exe")
+    ENDIF()
+
+    # The timeouts prevent cmake from jumping to the next command before the last executed.
+    # This is a problem with the call to msys2 returning immediatly after opening the new shell but before the actual command finished
+    ExternalProject_Add(TARGET_libusb
+                        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libusb-${VERSION_EXTERNAL}${VERSION_EXTERNAL_POST}
+                        URL ${CMAKE_CURRENT_SOURCE_DIR}/libusb-${VERSION_EXTERNAL}${VERSION_EXTERNAL_POST}.tar.bz2
+                        URL_HASH SHA1=${LIBUSB_SHA1}
+                        CONFIGURE_COMMAND ${MSYS2_SHELL} ${CMAKE_CURRENT_BINARY_DIR}/libusb-${VERSION_EXTERNAL}${VERSION_EXTERNAL_POST}/src/TARGET_libusb/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/install --enable-static=yes --enable-shared=no --with-pic ${CONFIGURE_HOST} CFLAGS=${CMAKE_C_FLAGS} CPPFLAGS=${CMAKE_CXX_FLAGS} && timeout 120
+                        BUILD_COMMAND ${MSYS2_SHELL} make && timeout 45
+                        INSTALL_COMMAND ${MSYS2_SHELL} make install && timeout 10
+    )
+
+ELSE()
+    ExternalProject_Add(TARGET_libusb
+                        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libusb-${VERSION_EXTERNAL}${VERSION_EXTERNAL_POST}
+                        URL ${CMAKE_CURRENT_SOURCE_DIR}/libusb-${VERSION_EXTERNAL}${VERSION_EXTERNAL_POST}.tar.bz2
+                        URL_HASH SHA1=${LIBUSB_SHA1}
+                        CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env "CFLAGS=${CMAKE_C_FLAGS}" "CPPFLAGS=${CMAKE_CXX_FLAGS}" ${CMAKE_CURRENT_BINARY_DIR}/libusb-${VERSION_EXTERNAL}${VERSION_EXTERNAL_POST}/src/TARGET_libusb/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/install --enable-static=yes --enable-shared=no --with-pic ${CONFIGURE_HOST}
+                        BUILD_COMMAND make
+                        INSTALL_COMMAND make install
+    )
+ENDIF()

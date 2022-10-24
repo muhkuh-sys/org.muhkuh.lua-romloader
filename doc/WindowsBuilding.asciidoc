@@ -1,0 +1,65 @@
+= Building the Romloader under Windows
+
+== Limitations
+Building the Romloader under Windows is currently only supported for **Win10 64-Bit** systems with Win10 64 or 32-Bit targets. Building on a 32-Bit machine might be possible but has not been verified.
+
+Should you wish to build for another system it is recommended to build the Romloader under Ubuntu.
+
+== Prerequisites
+In order to build the Romloader under Windows 10 these steps need to be followed:
+
+General Setup::
+. Install Python 3
+** Version 3.7.9 is recommended and tested.
+Windows specific Setup::
+All Systems:::
+. Install CMake for Windows
+.. Download the https://cmake.org/download/[official installer] and follow the instructions
+.. Choose one of the options to add it to PATH
+. Install MSYS2
+.. Download the https://www.msys2.org/[official installer] and follow the instructions
+.. Choose C:\msys64 as the install location, this is the default
+. Install Swig
+.. Download the swigwin archive from the https://www.swig.org/download.html[official website]
+.. Unpack the swigwin archive to C:\Swig
+
+For 64-Bit Targets:::
+. Open the MSYS2 MinGW x64 Shell (Might also be called MSYS2 MINGW64) and execute the following commands
+.. Install mingw gcc and g++ for 64-Bit
+
+ pacman -S mingw-w64-x86_64-gcc
+
+.. Install mingw32-make
+
+ pacman -S mingw-w64-x86_64-make
+
+.. Install make
+
+ pacman -S make
+For 32-Bit Targets:::
+. Open the MSYS2 MinGW x86 Shell (Might also be called MSYS2 MINGW32) and execute the following commands
+.. Install mingw gcc and g++ for 32-Bit
+
+ pacman -S mingw-w64-i686-gcc
+
+.. Install mingw32-make
+
+ pacman -S mingw-w64-i686-make
+
+.. Install make
+
+ pacman -S make
+
+== Building the Romloader
+. Open the Romloader folder
+.. Open the setup.xml file for editing
+.. Replace _${machine} with _x86 for the following statement (Occurs twice)
+
+ <package>gcc-arm-none-eabi_${platform}_${machine}</package>
+
+. Open a CMD window in the Romloader folder
+.. Execute the build_artifact.py script found in the Romloader folder using Python 3.
++
+Example using py and version 3.7.9:
+
+ py -3.7 build_artifact.py

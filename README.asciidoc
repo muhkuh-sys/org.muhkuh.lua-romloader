@@ -3,4 +3,8 @@ org.muhkuh.lua-romloader
 
 == About
 
-The romloader plugins provide access to netX based hardware to LUA scripts. This is the version used for tools like the CLI flasher.
+The Romloader plugins provide access to netX based hardware to LUA scripts. This is the version used for tools like the CLI flasher.
+
+The recommended operating system for building the Romloader is Linux, specifically Ubuntu 20.04 LTS. Build instructions can be found link:doc/LinuxBuilding.asciidoc[here]
+
+Instructions for building on a Windows 10 machine are available link:doc/WindowsBuilding.asciidoc[here].
