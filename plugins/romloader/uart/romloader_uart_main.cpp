@@ -39,6 +39,101 @@
 
 /*-------------------------------------*/
 
+romloader_uart_options::romloader_uart_options(muhkuh_log *ptLog)
+ : muhkuh_plugin_options(ptLog)
+ , m_pcOption_netx90MiImageData(NULL)
+ , m_sizOption_netx90MiImageLen(0)
+{
+}
+
+romloader_uart_options::romloader_uart_options(const romloader_uart_options *ptCloneMe)
+ : muhkuh_plugin_options(ptCloneMe)
+ , m_pcOption_netx90MiImageData(NULL)
+ , m_sizOption_netx90MiImageLen(0)
+{
+	/* clone MI Image */
+	setOption_netx90MiImage(ptCloneMe->m_pcOption_netx90MiImageData, ptCloneMe->m_sizOption_netx90MiImageLen);
+}
+
+
+romloader_uart_options::~romloader_uart_options(void)
+{
+	clearOption_netx90MiImage();
+}
+
+
+void romloader_uart_options::setOption_netx90MiImage(const char* pcImageData, size_t sizImageLen)
+{
+
+	if (m_pcOption_netx90MiImageData != NULL) 
+	{
+		free((void*) m_pcOption_netx90MiImageData);
+		m_pcOption_netx90MiImageData = NULL;
+		m_sizOption_netx90MiImageLen = 0;
+	}
+
+	if ((pcImageData != NULL) && (sizImageLen > 0))
+	{
+		const char* pcCopy = (const char*) malloc(sizImageLen);
+		if (pcCopy == NULL) 
+		{
+			fprintf(stderr, "Error: could not create copy of M2M image.");
+		}
+		else
+		{
+			memcpy((void*) pcCopy, (const void*) pcImageData, sizImageLen);		
+			m_pcOption_netx90MiImageData = pcCopy;
+			m_sizOption_netx90MiImageLen = sizImageLen;
+		}
+	}
+
+}
+
+void romloader_uart_options::clearOption_netx90MiImage()
+{
+	setOption_netx90MiImage(NULL, 0);
+}
+
+
+void romloader_uart_options::getOption_netx90MiImage(const char **ppcImageData, size_t *psizImageLen)
+{
+	*ppcImageData = m_pcOption_netx90MiImageData;
+	*psizImageLen = m_sizOption_netx90MiImageLen;
+}
+
+void romloader_uart_options::set_option(const char *pcKey, lua_State *ptLuaState, int iIndex)
+{
+	int iType;
+	const char *pcValue;
+	size_t sizLen;
+	lua_Number dValue;
+	unsigned long ulValue;
+
+	if( strcmp(pcKey, "netx90_m2m_image")==0 )
+	{
+		/* The value for the unlock image must be a string. */
+		iType = lua_type(ptLuaState, iIndex);
+		if( iType!=LUA_TSTRING )
+		{
+			m_ptLog->debug("Ignoring option '%s': the value must be a string, but it is a %s.", pcKey, lua_typename(ptLuaState, iType));
+		}
+		else
+		{
+			/* copy the image */
+			pcValue = lua_tolstring(ptLuaState, iIndex, &sizLen);
+			setOption_netx90MiImage(pcValue, sizLen);
+		}
+	}
+	else
+	{
+		m_ptLog->debug("Ignoring unknown option '%s'.", pcKey);
+	}
+}
+
+
+
+/*-------------------------------------*/
+
 const char *romloader_uart_provider::m_pcPluginNamePattern = "romloader_uart_%s";
 
 romloader_uart_provider::romloader_uart_provider(swig_type_info *p_romloader_uart, swig_type_info *p_romloader_uart_reference)
@@ -47,14 +142,25 @@ romloader_uart_provider::romloader_uart_provider(swig_type_info *p_romloader_uar
 	/* get the romloader_uart lua type */
 	m_ptPluginTypeInfo = p_romloader_uart;
 	m_ptReferenceTypeInfo = p_romloader_uart_reference;
+
+	/* Create a new options container. */
+	m_ptPluginOptions = new romloader_uart_options(m_ptLog);
+
 }
 
 
 
 romloader_uart_provider::~romloader_uart_provider(void)
 {
+	delete m_ptPluginOptions;
 }
 
+
+
+romloader_uart_options *romloader_uart_provider::GetOptions(void)
+{
+	return (romloader_uart_options*)m_ptPluginOptions;
+}
 
 
 int romloader_uart_provider::DetectInterfaces(lua_State *ptLuaStateForTableAccess, lua_State *ptLuaStateForTableAccessOptional)
@@ -190,11 +296,18 @@ romloader_uart::romloader_uart(const char *pcName, const char *pcTyp, romloader_
  : romloader(pcName, pcTyp, ptProvider)
  , m_ptUartDev(NULL)
 {
+	romloader_uart_options *ptOptions;
+
 	m_ptUartDev = new romloader_uart_device_platform(pcDeviceName);
 
 	m_ucMonitorSequence = 0;
 
 	packet_ringbuffer_init();
+
+	ptOptions = ptProvider->GetOptions();
+	set_options(ptOptions);
+	m_ptUartDev->SetOptions(ptOptions);
+	
 }
 
 
@@ -205,7 +318,26 @@ romloader_uart::~romloader_uart(void)
 		m_ptUartDev->Close();
 		delete m_ptUartDev;
 	}
+
+	delete m_ptPluginOptions;
+
 }
+
+void romloader_uart::set_options(const romloader_uart_options *ptOptions)
+{
+	if (m_ptPluginOptions != NULL) 
+	{
+		delete m_ptPluginOptions;
+		m_ptPluginOptions = NULL;
+	}
+	
+	if (ptOptions != NULL) 
+	{
+		m_ptPluginOptions = new romloader_uart_options(ptOptions);
+	}
+}
+
+
 
 /*
 * This function is used to check if the netX is stuck in an endless loop waiting for an acknowledge for a packet and re-sending it

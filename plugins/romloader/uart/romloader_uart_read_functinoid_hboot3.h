@@ -37,11 +37,12 @@ public:
 	int update_device(ROMLOADER_CHIPTYP tChiptyp);
 
 private:
-
 	void hexdump(const uint8_t *pucData, uint32_t ulSize);
+	bool read_binary_file(const char* pucFilename, const uint8_t **ppucData, size_t *p_sizData);
+	bool get_netx90_mi_image(const uint8_t **ppucData, size_t *p_sizData);
+	bool netx90_load_usip(const uint8_t *pucNetxCode, size_t sizNetxCode);
 
 	bool netx90_reset(void);
-
 	romloader_uart_device *m_ptDevice;
 	char *m_pcPortName;
 };
