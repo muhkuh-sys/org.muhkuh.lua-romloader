@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="mbs/setup2html.xsl"?>
 
 <muhkuh_buildsystem group="org.muhkuh.lua" module="romloader">
-	<project_version>2.5.3</project_version>
+	<project_version>2.5.4</project_version>
 	<scons>
 		<group>org.scons</group>
 		<name>scons-local</name>
@@ -23,7 +23,7 @@
 		<tool>
 			<group>org.gnu.gcc</group>
 			<name>gcc-arm-none-eabi</name>
-			<package>gcc-arm-none-eabi_${platform}_${machine}</package>
+			<package>gcc-arm-none-eabi_${platform}_x86</package>
 			<version>4.7.2_3</version>
 			<typ>tar.bz2</typ>
 		</tool>
@@ -31,7 +31,7 @@
 		<tool>
 			<group>org.gnu.gcc</group>
 			<name>gcc-arm-none-eabi</name>
-			<package>gcc-arm-none-eabi_${platform}_${machine}</package>
+			<package>gcc-arm-none-eabi_${platform}_x86</package>
 			<version>4.9.3_4</version>
 			<typ>tar.bz2</typ>
 		</tool>
