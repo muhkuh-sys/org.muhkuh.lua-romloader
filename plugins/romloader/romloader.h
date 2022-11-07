@@ -373,7 +373,7 @@ public:
 
 	/* Call a routine on the netX. */
 	virtual void call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
-	virtual void call_hboot(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
+	virtual void call_hboot(SWIGLUA_REF tLuaFn, long lCallbackUserData);
 	virtual void cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData);
 	virtual uint32_t get_info(uint32_t *ptNetxVersion, uint32_t *ptInfoFlags);
 
@@ -472,8 +472,8 @@ protected:
 
 	uint8_t m_ucMonitorSequence;
 	
-	uint16_t m_usMiVersionMaj = NULL;
-	uint16_t m_usMiVersionMin = NULL;
+	uint16_t m_usMiVersionMaj = 0;
+	uint16_t m_usMiVersionMin = 0;
 	
 
 

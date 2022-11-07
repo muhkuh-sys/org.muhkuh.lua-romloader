@@ -761,14 +761,15 @@ void romloader_uart::Connect(lua_State *ptClientData)
 					 *   maximum packet size
 					 */
 					fResult = synchronize(&tChiptyp, &usMiVersionMin, &usMiVersionMaj);
-					m_usMiVersionMaj = usMiVersionMaj;
-					m_usMiVersionMin = usMiVersionMin;
+
 					if( fResult!=true )
 					{
 						MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to synchronize with the client!", m_pcName, this);
 					}
 					else
 					{
+						m_usMiVersionMaj = usMiVersionMaj;
+						m_usMiVersionMin = usMiVersionMin;
 						m_fIsConnected = true;
 						
 						/* machine interface major version != 3 

@@ -1587,7 +1587,7 @@ void romloader::cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData)
 	}
 }
 
-void romloader::call_hboot(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader::call_hboot(SWIGLUA_REF tLuaFn, long lCallbackUserData)
 {
 	bool fOk;
 	TRANSPORTSTATUS_T tResult;
@@ -1612,8 +1612,8 @@ void romloader::call_hboot(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGL
 	{	
 		m_ptLog->info("use MONITOR_PACKET_TYP_Command_Start_Hboot");
 		tCallCommand.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_Command_Start_Hboot;
-		tCallCommand.s.ulAddress = HTONETX32(ulNetxAddress);
-		tCallCommand.s.ulR0 = HTONETX32(ulParameterR0);
+		// tCallCommand.s.ulAddress = HTONETX32(ulNetxAddress); not used for this call. structure is recycled 
+		// tCallCommand.s.ulR0 = HTONETX32(ulParameterR0); not used for this call. structure is recycled 
 		tResult = execute_command(&(tCallCommand.s.tHeader), sizeof(tCallCommand), &fPacketStillValid);
 		if( tResult!=TRANSPORTSTATUS_OK )
 		{

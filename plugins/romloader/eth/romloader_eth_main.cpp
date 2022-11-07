@@ -305,8 +305,6 @@ void romloader_eth::Connect(lua_State *ptClientData)
 			/* Set a default maximum packet size which should be enough for a sync packet. */
 			m_sizMaxPacketSizeClient = 32;
 			fResult = synchronize(&tChiptyp, &usMiVersionMin, &usMiVersionMaj);
-			m_usMiVersionMaj = usMiVersionMaj;
-			m_usMiVersionMin = usMiVersionMin;
 			
 			if( fResult!=true )
 			{
@@ -314,6 +312,8 @@ void romloader_eth::Connect(lua_State *ptClientData)
 			}
 			else
 			{
+				m_usMiVersionMaj = usMiVersionMaj;
+				m_usMiVersionMin = usMiVersionMin;
 				m_fIsConnected = true;
 				
 				/* machine interface major version != 3 
