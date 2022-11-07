@@ -1611,8 +1611,8 @@ void romloader::call_hboot(SWIGLUA_REF tLuaFn, long lCallbackUserData)
 	{	
 		m_ptLog->info("use MONITOR_PACKET_TYP_Command_Start_Hboot");
 		tCallCommand.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_Command_Start_Hboot;
-		// tCallCommand.s.ulAddress = HTONETX32(ulNetxAddress); not used for this call. structure is recycled 
-		// tCallCommand.s.ulR0 = HTONETX32(ulParameterR0); not used for this call. structure is recycled 
+		tCallCommand.s.ulAddress = HTONETX32(0); /* not used for this call. structure is recycled */
+		tCallCommand.s.ulR0 = HTONETX32(0); /* not used for this call. structure is recycled */
 		tResult = execute_command(&(tCallCommand.s.tHeader), sizeof(tCallCommand), &fPacketStillValid);
 		if( tResult!=TRANSPORTSTATUS_OK )
 		{
