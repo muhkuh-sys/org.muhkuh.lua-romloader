@@ -1495,7 +1495,6 @@ void romloader::cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData)
 					fPacketStillValid = false; // set the flash back to False so the next packet will be received as usual
 				}
 				
-				printf(tResult);
 				if( tResult==TRANSPORTSTATUS_TIMEOUT )
 				{
 					/* Do nothing in case of timeout. The application is just running quietly. */
@@ -1635,7 +1634,6 @@ void romloader::call_hboot(SWIGLUA_REF tLuaFn, long lCallbackUserData)
 				else{
 					fPacketStillValid = false; // set the flash back to False so the next packet will be received as usual
 				}
-				printf(tResult);
 				if( tResult==TRANSPORTSTATUS_TIMEOUT )
 				{
 					/* Do nothing in case of timeout. The application is just running quietly. */
