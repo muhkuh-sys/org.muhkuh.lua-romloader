@@ -797,6 +797,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 							m_ptLog->debug("Trying HBOOT3 terminal");
 							/* If that did not work, try again, expecting a HBOOT3 prompt 
 							 * (includes a status code). */
+							ptFn = &tFnHBoot3;
 							
 							/* First, check if the console is in open or secure mode. 
 							 * Stop if it is not in open mode. */
@@ -806,7 +807,6 @@ void romloader_uart::Connect(lua_State *ptClientData)
 							switch (tConsoleMode) {
 								
 								case CONSOLE_MODE_Open:
-									ptFn = &tFnHBoot3;
 									fResult = detect_chiptyp(ptFn);
 									if( fResult!=true )
 									{
@@ -815,7 +815,33 @@ void romloader_uart::Connect(lua_State *ptClientData)
 									break;
 								
 								case CONSOLE_MODE_Secure:
-									MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode and in a terminal console. Only the open boot mode and the machine interface are supported.", m_pcName, this);
+									m_ptLog->debug("Secure console. Checking for netX 90 Rev1/Rev2.");
+									uint32_t ulVers1;
+									uint32_t ulVers2;
+									fResult = tFnHBoot3.send_vers_command(&ulVers1, &ulVers2);
+									
+									if (fResult!=true)
+									{
+										MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode and in a terminal console. The VERS command failed.", m_pcName, this);
+									}
+									else
+									{	/* VERS: 00000004 0000000b - netX 4000 */
+										/* VERS: 00000005 0000000a - netX 90 MPW/Rev0 */
+										/* VERS: 00000005 0000000d - netX 90 Rev1/2 */
+										
+										if ((ulVers1 == 5) && (ulVers2 == 13))
+										{
+											m_ptLog->debug("This looks like a netX 90 Rev1/Rev2.");
+											/* Set chip type netx 90 Rev.1 even though we don't know if it's rev. 1 or 2. */
+											m_tChiptyp = ROMLOADER_CHIPTYP_NETX90B;
+										}
+										else
+										{
+											m_ptLog->debug("This does not look like a netX 90 Rev1/Rev2.");
+											MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode and in a terminal console. The netX is not a netX 90 Rev.1 or Rev.2", m_pcName, this);
+										}
+									}
+									//MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode and in a terminal console. Only the open boot mode and the machine interface are supported.", m_pcName, this);
 									break;
 								
 								case CONSOLE_MODE_Unknown:
@@ -965,8 +991,8 @@ void romloader_uart::Connect(lua_State *ptClientData)
 										break;
 									
 									case CONSOLE_MODE_Secure:
-										fResult = false;
-										MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode! Only open boot mode is supported.", m_pcName, this);
+										//fResult = false;
+										//MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode! Only open boot mode is supported.", m_pcName, this);
 										break;
 									
 									/* not reachable */
