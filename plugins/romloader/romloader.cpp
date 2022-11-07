@@ -853,7 +853,7 @@ romloader::TRANSPORTSTATUS_T romloader::write_data(uint32_t ulNetxAddress, MONIT
 				tResult = receive_packet();
 			}
 			else{
-				fPacketStillValid = false; // set the flash back to False so the next packet will be received as usual
+				fPacketStillValid = false; // set the flag to false so the next packet will be received as usual
 			}
 						
 			if( tResult==TRANSPORTSTATUS_OK )
@@ -1325,7 +1325,7 @@ void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF
 					tResult = receive_packet();
 				}
 				else{
-					fPacketStillValid = false; // set the flash back to False so the next packet will be received as usual
+					fPacketStillValid = false; // set the flag to false so the next packet will be received as usual
 				}
 				
 				if( tResult==TRANSPORTSTATUS_TIMEOUT )
@@ -1492,7 +1492,7 @@ void romloader::cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData)
 					tResult = receive_packet();
 				}
 				else{
-					fPacketStillValid = false; // set the flash back to False so the next packet will be received as usual
+					fPacketStillValid = false; // set the flag to false so the next packet will be received as usual
 				}
 				
 				if( tResult==TRANSPORTSTATUS_TIMEOUT )
@@ -1632,7 +1632,7 @@ void romloader::call_hboot(SWIGLUA_REF tLuaFn, long lCallbackUserData)
 					tResult = receive_packet();
 				}
 				else{
-					fPacketStillValid = false; // set the flash back to False so the next packet will be received as usual
+					fPacketStillValid = false; // set the flag to false so the next packet will be received as usual
 				}
 				if( tResult==TRANSPORTSTATUS_TIMEOUT )
 				{
