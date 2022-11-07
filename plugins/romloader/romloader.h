@@ -203,6 +203,26 @@ typedef union MIV3_PACKET_INFO_DATA
 } MIV3_PACKET_INFO_DATA_T;
 MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_INFO_DATA_T)==15, "Packing of MIV3_PACKET_INFO_DATA_T does not work.");
 
+/*START USIP*/
+
+struct MIV3_PACKET_USIP_COMMAND_STRUCT
+{
+	MIV3_PACKET_HEADER_T tHeader;
+	uint8_t  ucCrcHi;
+	uint8_t  ucCrcLo;
+
+};
+MUHKUH_STATIC_ASSERT( sizeof(struct MIV3_PACKET_USIP_COMMAND_STRUCT)==7, "Packing of MIV3_PACKET_INFO_COMMAND_STRUCT does not work.");
+
+typedef union MIV3_PACKET_COMMAND_USIP_DATA
+{
+	struct MIV3_PACKET_USIP_COMMAND_STRUCT s;
+	uint8_t auc[7];
+} MIV3_PACKET_INFO_COMMAND_USIP_T;
+MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_INFO_COMMAND_USIP_T)==7, "Packing of MIV3_PACKET_COMMAND_DATA does not work.");
+
+
+/*END USIP*/
 
 typedef enum CONSOLE_MODE_ENUM
 {
@@ -353,8 +373,13 @@ public:
 
 	/* Call a routine on the netX. */
 	virtual void call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData);
-
+	virtual void call_hboot(SWIGLUA_REF tLuaFn, long lCallbackUserData);
+	virtual void cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData);
 	virtual uint32_t get_info(uint32_t *ptNetxVersion, uint32_t *ptInfoFlags);
+
+	virtual uint16_t get_mi_version_maj();
+	virtual uint16_t get_mi_version_min();
+	virtual uint32_t get_mi_version();
 
 	/* Get the chip type. */
 	virtual ROMLOADER_CHIPTYP GetChiptyp(void) const;
@@ -446,6 +471,12 @@ protected:
 	size_t m_sizMaxPacketSizeClient;
 
 	uint8_t m_ucMonitorSequence;
+	
+	uint16_t m_usMiVersionMaj = 0;
+	uint16_t m_usMiVersionMin = 0;
+	
+
+
 	
 	/* structure that holds variables used for test purposes only */
 	ROMLOADER_TEST_VARIABLES sRomlTestVars;
