@@ -207,6 +207,102 @@ CONSOLE_MODE_T romloader_uart_read_functinoid_hboot3::detect_console_mode(void)
 	return tConsoleMode;
 }
 
+
+/*
+Get the Romloader version. Send the vers command and return the two numbers.
+
+Send the vers command
+Wait for response 'VERS: 00000005 0000000d'
+Wait for prompt '000 >'
+Parse the version numbers from the received input.
+
+000 >vers
+VERS: 00000005 0000000d
+uniqueID: db506060a4686ca000000000
+
+000 >
+*/
+bool romloader_uart_read_functinoid_hboot3::send_vers_command(uint32_t *pulVersionVal1, uint32_t *pulVersionVal2)
+{
+	union
+	{
+		uint8_t auc[32];
+		char ac[32];
+	} uCmd;
+	union
+	{
+		uint8_t *puc;
+		char *pc;
+	} uResponse;
+	size_t sizCmd;
+	
+	int iResult;
+	bool fOk;
+	
+	uint32_t ulVersionVal1;
+	uint32_t ulVersionVal2;
+	
+
+	/* Expect failure. */
+	fOk = false;
+	
+	sizCmd = snprintf(uCmd.ac, 32, "vers\n");
+	/* Send the command with 500ms second timeout. */
+	if( m_ptDevice->SendRaw(uCmd.auc, sizCmd, 500)!=sizCmd )
+	{
+		/* Failed to send the command to the device. */
+		fprintf(stderr, "Failed to send the command to the device.\n");
+		fOk==false;
+	}
+	else
+	{
+		/* Receive one line. This is the command echo. */
+		fOk = m_ptDevice->GetLine(&uResponse.puc, "\r\n", 2000);
+		if( fOk==false )
+		{
+			fprintf(stderr, "failed to receive command echo!\n");
+		}
+		else
+		{
+			free(uResponse.puc);
+
+			/* Receive the rest of the output until the command prompt. This is the command result. */
+			fOk = m_ptDevice->GetLine(&uResponse.puc, "\r\n000 >", 2000);
+			if( fOk==false )
+			{
+				fprintf(stderr, "failed to get command response!\n");
+			}
+			else
+			{	
+				fprintf(stderr, "Got response to VERS command:\n%s\n", uResponse.puc);
+				sizCmd = strlen(uResponse.pc);
+				hexdump(uResponse.puc, sizCmd);
+				
+				/* VERS: 00000005 0000000d */
+				iResult = sscanf(uResponse.pc, "VERS: %08x %08x", &ulVersionVal1, &ulVersionVal2);
+				if( iResult==2 )
+				{
+					fprintf(stderr, "Got version: 0x%08x 0x%08x\n", ulVersionVal1, ulVersionVal2);
+					if( (pulVersionVal1!=NULL) && (pulVersionVal2!=NULL) )
+					{
+						*pulVersionVal1 = ulVersionVal1;
+						*pulVersionVal2 = ulVersionVal2;
+					}
+					fOk = true;
+				}
+				else
+				{
+					fprintf(stderr, "The command response is invalid!\n");
+					fOk = false;
+				}
+				free(uResponse.puc);
+			}
+		}
+	}
+
+	return fOk;
+}
+
 void romloader_uart_read_functinoid_hboot3::hexdump(const uint8_t *pucData, uint32_t ulSize)
 {
 	const uint8_t *pucDumpCnt, *pucDumpEnd;
@@ -244,6 +340,7 @@ void romloader_uart_read_functinoid_hboot3::hexdump(const uint8_t *pucData, uint
 		ulAddressCnt += sizChunkSize;
 	}
 }
+
 
 
 /* Reset the netx 90 via console command. */
@@ -309,8 +406,377 @@ bool romloader_uart_read_functinoid_hboot3::netx90_reset(void)
 	return fOk;
 }
 
+/*
+000 >usip v
+waiting for UUE upload...
+Received 0x000004b8 bytes.
+Upload OK. Restarting the system to run the image.
 
 
+Send command "usip v"
+Wait for message "waiting for UUE upload..."
+Send boot image
+Wait for message "Upload OK. Restarting the system to run the image."
+send knock sequence for MI
+*/
+
+bool romloader_uart_read_functinoid_hboot3::netx90_load_usip(const uint8_t *pucNetxImage, size_t sizNetxImage)
+{
+	size_t sizLine;
+	uint32_t ulLoadAddress;
+	union
+	{
+		uint8_t auc[64];
+		char ac[64];
+	} uBuffer;
+	union
+	{
+		uint8_t *puc;
+		char *pc;
+	} uResponse;
+	unsigned int uiTimeoutMs;
+	bool fOk;
+	uuencoder tUuencoder;
+	UUENCODER_PROGRESS_INFO_T tProgressInfo;
+
+	/* Be optimistic. */
+	fOk = true;
+
+	uiTimeoutMs = 100;
+
+	/* Send the USIP command */
+	sizLine = snprintf(uBuffer.ac, sizeof(uBuffer), "usip v\n");
+	if( m_ptDevice->SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
+	{
+		fprintf(stderr, "%s(%p): Failed to send the USIP command!\n", m_pcPortName, this);
+		fOk = false;
+	}
+	else if( m_ptDevice->GetLine(&uResponse.puc, "waiting for UUE upload...\r\n", 500)!=true )
+	{
+		fprintf(stderr, "%s(%p): Failed to get the 'waiting for UUE upload' message!\n", m_pcPortName, this);
+		fOk = false;
+	}
+	else
+	{
+		free(uResponse.puc);
+
+		printf("Uploading boot image...\n");
+		tUuencoder.set_data(pucNetxImage, sizNetxImage);
+
+		/* Send the data line by line with a delay of 10ms. */
+		do
+		{
+			sizLine = tUuencoder.process(uBuffer.ac, sizeof(uBuffer));
+			if( sizLine!=0 )
+			{
+				uiTimeoutMs = 100;
+				tUuencoder.get_progress_info(&tProgressInfo);
+				printf("%05ld/%05ld (%d%%)\n", tProgressInfo.sizProcessed, tProgressInfo.sizTotal, tProgressInfo.uiPercent);
+				if( m_ptDevice->SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
+				{
+					fprintf(stderr, "%s(%p): Failed to send uue data!\n", m_pcPortName, this);
+					fOk = false;
+					break;
+				}
+
+				// FIXME: The delay is not necessary for a USB connection. Detect USB/UART and enable the delay for UART.
+				//SLEEP_MS(10);
+			}
+		} while( tUuencoder.isFinished()==false );
+
+		if( fOk==true )
+		{
+			printf("Waiting for response\n");
+			fOk = m_ptDevice->GetLine(&uResponse.puc, "Upload OK. Restarting the system to run the image.\r\n", 2000);
+			if( fOk==true )
+			{
+				printf("Response: '%s'\n", uResponse.pc);
+				free(uResponse.puc);
+				/* wait for USIP to execute.
+				   Note: Parameter to SLEEP_MS must be <1000, 
+				   if SLEEP_MS is implemented using usleep */
+				SLEEP_MS(500);
+			}
+			else
+			{
+				fprintf(stderr, "Failed to get response.\n");
+			}
+		}
+		else
+		{
+			fprintf(stderr, "%s(%p): Failed to upload the firmware!\n", m_pcPortName, this);
+		}
+	}
+
+	return fOk;
+}
+
+
+
+/*
+000 >htbl v
+waiting for UUE upload...
+Received 0x00000474 bytes.
+Upload OK. Running the image.
+MOOH
+
+Send command "htbl v"
+Wait for message "waiting for UUE upload..."
+Send boot image
+Wait for message "Upload OK. Running the image."
+Todo: Wait for "MOOH" message 
+Next: send knock sequence for MI
+*/
+bool romloader_uart_read_functinoid_hboot3::netx90_start_hboot_image(const uint8_t *pucNetxImage, size_t sizNetxImage)
+{
+	size_t sizLine;
+	uint32_t ulLoadAddress;
+	union
+	{
+		uint8_t auc[64];
+		char ac[64];
+	} uBuffer;
+	union
+	{
+		uint8_t *puc;
+		char *pc;
+	} uResponse;
+	unsigned int uiTimeoutMs;
+	bool fOk;
+	uuencoder tUuencoder;
+	UUENCODER_PROGRESS_INFO_T tProgressInfo;
+
+	/* Be optimistic. */
+	fOk = true;
+
+	uiTimeoutMs = 100;
+
+	/* Send the HTBL command */
+	sizLine = snprintf(uBuffer.ac, sizeof(uBuffer), "htbl v\n");
+	if( m_ptDevice->SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
+	{
+		fprintf(stderr, "%s(%p): Failed to send the HTBL command!\n", m_pcPortName, this);
+		fOk = false;
+	}
+	else if( m_ptDevice->GetLine(&uResponse.puc, "waiting for UUE upload...\r\n", 500)!=true )
+	{
+		fprintf(stderr, "%s(%p): Failed to get the 'waiting for UUE upload' message!\n", m_pcPortName, this);
+		fOk = false;
+	}
+	else
+	{
+		free(uResponse.puc);
+
+		printf("Uploading boot image...\n");
+		tUuencoder.set_data(pucNetxImage, sizNetxImage);
+
+		/* Send the data line by line with a delay of 10ms. */
+		do
+		{
+			sizLine = tUuencoder.process(uBuffer.ac, sizeof(uBuffer));
+			if( sizLine!=0 )
+			{
+				uiTimeoutMs = 100;
+				tUuencoder.get_progress_info(&tProgressInfo);
+				printf("%05ld/%05ld (%d%%)\n", tProgressInfo.sizProcessed, tProgressInfo.sizTotal, tProgressInfo.uiPercent);
+				if( m_ptDevice->SendRaw(uBuffer.auc, sizLine, 500)!=sizLine )
+				{
+					fprintf(stderr, "%s(%p): Failed to send uue data!\n", m_pcPortName, this);
+					fOk = false;
+					break;
+				}
+
+				// FIXME: The delay is not necessary for a USB connection. Detect USB/UART and enable the delay for UART.
+				//SLEEP_MS(10);
+			}
+		} while( tUuencoder.isFinished()==false );
+
+		if( fOk!=true )
+		{
+			fprintf(stderr, "%s(%p): Failed to upload the boot image!\n", m_pcPortName, this);
+		}
+		else
+		{
+			printf("Waiting for response\n");
+			fOk = m_ptDevice->GetLine(&uResponse.puc, "Upload OK. Running the image.\r\n", 2000);
+			if( fOk!=true )
+			{
+				fprintf(stderr, "Failed to get response.\n");
+			}
+			else
+			{
+				printf("Response: '%s'\n", uResponse.pc);
+				free(uResponse.puc);
+				/* wait for HTBL to execute.
+				   Note: Parameter to SLEEP_MS must be <1000, 
+				   if SLEEP_MS is implemented using usleep */
+				SLEEP_MS(500);
+			}
+		}
+	}
+
+	return fOk;
+}
+
+
+bool romloader_uart_read_functinoid_hboot3::read_binary_file(const char* pucFilename, const uint8_t **ppucData, size_t *p_sizData)
+{
+	bool fRet = false;
+	int iRet;
+	FILE *fd;
+	struct stat tStat;
+	size_t sizFile;
+	size_t sizBytesRead;
+	const uint8_t * memblock;
+
+
+
+	iRet = stat(pucFilename, &tStat);
+	if (iRet != 0) 
+	{
+		fprintf(stderr, "Could not stat file %s\n", pucFilename);
+	}
+	else
+	{
+		sizFile = tStat.st_size;
+
+		fd = fopen(pucFilename, "rb");
+		if (fd == NULL) 
+		{
+			fprintf(stderr, "Could not open file %s\n", pucFilename);
+		}
+		else
+		{
+			memblock = new uint8_t[sizFile];
+			
+			if (memblock == NULL)
+			{
+				fprintf(stderr, "Could not allocate %zu bytes\n", sizFile);
+			}
+			else
+			{
+				sizBytesRead = fread((void*)memblock, 1, sizFile, fd);
+
+				if (sizBytesRead != sizFile) 
+				{
+					fprintf(stderr, "Did not read the complete file (%zu/%zu bytes)\n", 
+						sizBytesRead, sizFile);
+				}
+				else
+				{
+					printf("%zu bytes read.\n", sizBytesRead);
+					*ppucData = memblock;
+					*p_sizData = sizFile;
+					fRet = true;
+				}
+			}
+			fclose(fd);
+		}
+	}
+	return fRet;
+}
+
+
+bool romloader_uart_read_functinoid_hboot3::get_netx90_mi_image(const uint8_t **ppucData, size_t *p_sizData)
+{
+	bool fRet = false;
+	romloader_uart_options *ptOptions;
+	const char *pcImageData;
+	size_t sizImageLen;
+	
+	
+
+	ptOptions = m_ptDevice->GetOptions();
+	if (ptOptions != NULL)
+	{
+		ptOptions->getOption_netx90MiImage(&pcImageData, &sizImageLen);
+		if ((pcImageData != NULL) && (sizImageLen > 0))
+		{
+			printf("Got M2M boot image for netx 90, %zu bytes\n", sizImageLen);
+			*ppucData = (uint8_t*) pcImageData;
+			*p_sizData = sizImageLen;
+			fRet = true;
+		}
+		else 
+		{
+			*ppucData = NULL;
+			*p_sizData = 0;
+			fprintf(stderr, "M2M boot image for netx 90 not available (option not set).\n");
+		}
+	}
+	else
+	{
+		*ppucData = NULL;
+		*p_sizData = 0;
+		fprintf(stderr, "M2M boot image for netx 90 not available (no options).\n");
+	}
+	
+	return fRet;
+}
+
+
+/* When we start the machine interface by just jumping to mi_loop,
+   it sends the magic packet:
+   2A 0D 00 00 00 4D 4F 4F 48 01 00 03 00 0D 00 08 E3 98 (netX 90 Rev.2 MI v3.1)
+   2A 0D 00 00 00 4D 4F 4F 48 00 00 03 00 0D 00 08 5B F9 (netX 90 Rev.1 MI v3.0)
+   We must skip this packet as the Connect method does not expect it.
+ */
+   
+bool romloader_uart_read_functinoid_hboot3::skip_mi_magic(void)
+{
+	unsigned char aucMagicMi3_1[] = {
+	0x2A, 0x0D, 0x00, 0x00, 0x00, 0x4D, 0x4F, 0x4F, 
+	0x48, 0x01, 0x00, 0x03, 0x00, 0x0D, 0x00, 0x08,
+	0xE3, 0x98 
+	};
+
+	unsigned char aucMagicMi3_0[] = {
+	0x2A, 0x0D, 0x00, 0x00, 0x00, 0x4D, 0x4F, 0x4F, 
+	0x48, 0x00, 0x00, 0x03, 0x00, 0x0D, 0x00, 0x08,
+	0x5B, 0xF9
+	};
+	
+	unsigned char aucRecv[sizeof(aucMagicMi3_1)];
+	size_t sizReceived;
+	
+	unsigned int uiTimeoutMs;
+	bool fOk;
+
+	/* Be pessimistic. */
+	fOk = false;
+
+	uiTimeoutMs = 100;
+
+	fprintf(stderr, "Waiting for initial magic packet from machine interface.\n");
+	sizReceived = m_ptDevice->RecvRaw(aucRecv, sizeof(aucRecv), uiTimeoutMs);
+
+	hexdump(aucRecv, sizReceived);
+
+	if (sizReceived != sizeof(aucMagicMi3_1))
+	{
+		fprintf(stderr, "Did not receive magic packet (incorrect length).\n");
+	}
+	else
+	{
+		if (0==memcmp(aucMagicMi3_1, aucRecv, sizeof(aucMagicMi3_1)))
+		{
+			fprintf(stderr, "Received magic packet for MI v3.1.\n");
+			fOk = true;
+		}
+		else if (0==memcmp(aucMagicMi3_0, aucRecv, sizeof(aucMagicMi3_0)))
+		{
+			fprintf(stderr, "Received magic packet for MI v3.0.\n");
+			fOk = true;
+		}
+
+		else 
+		{
+			fprintf(stderr, "Did not receive magic packet (incorrect content).\n");
+		}
+	}
+	
+	return fOk;
+}
 
 /* Actually, just start the built-in machine interface */
 int romloader_uart_read_functinoid_hboot3::update_device(ROMLOADER_CHIPTYP tChiptyp)
@@ -329,13 +795,42 @@ int romloader_uart_read_functinoid_hboot3::update_device(ROMLOADER_CHIPTYP tChip
 	case ROMLOADER_CHIPTYP_NETX90B:
 	case ROMLOADER_CHIPTYP_NETX90C:
 	case ROMLOADER_CHIPTYP_NETX90D:
+		fOk = get_netx90_mi_image(&pucData, &sizData);
+		if( fOk!=true )
+		{
+			fprintf(stderr, "Boot image to start machine interface not available.\n");
+		}
+		else
+		{
+			fprintf(stderr, "Attempting to start the machine interface.\n");
+			fOk = netx90_start_hboot_image(pucData, sizData);
+			if( fOk!=true )
+			{
+				fprintf(stderr, "Failed to execute the boot image. \n");
+			}
+			else
+			{
+				fprintf(stderr, "Boot image successfully started.\n");
+				fOk = skip_mi_magic();
+				if (fOk!=true)
+				{
+					//fprintf(stderr, "Could not receive the magic packet.\n");
+				}
+				else
+				{
+					//fprintf(stderr, "Received the magic packet.\n");
+					iResult = 0;
+				}
+			}
+		}
+	/*
 		fprintf(stderr, "Attempting to enter the machine interface..\n");
 		fOk = netx90_reset();
 		if( fOk==true )
 		{
 			iResult = 0;
 		}
-
+	*/
 		break;
 
 

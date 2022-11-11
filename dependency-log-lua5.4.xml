@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <dependency-log>
 	<dependencies>
-		<dependency group="org.lua" module="lua" artifact="lua" version="5.4.0.6"/>
-		<dependency group="org.muhkuh.lua" module="romloader" artifact="lua5.4-romloader" version="2.5.1"/>
+		<dependency group="org.lua" module="lua" artifact="lua" version="5.4.4.2"/>
+		<dependency group="org.muhkuh.lua" module="romloader" artifact="lua5.4-romloader" version="2.5.4"/>
 	</dependencies>
 	<build-dependencies>
 	</build-dependencies>

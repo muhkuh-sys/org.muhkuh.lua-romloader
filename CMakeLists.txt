@@ -24,15 +24,31 @@ INCLUDE(cmake/version.cmake)
 INCLUDE(cmake/platform.cmake)
 
 
-
 # Python is used for the firmware build script and some test scripts.
-IF(CMAKE_VERSION VERSION_LESS 3.12.0)
+# We need python version <3.9.
+# In cmake versions <3.19, we cannot easily express the version range. 
+# Therefore, we rely on the assumption that if cmake is <3.19, python is <3.9.
+
+# The Hboot Image Compiler uses the array.tostring() method to convert an array of bytes, 
+# 16 or 32 bit words to binary data, which was removed in python 3.9.
+# The result variable (PYTHON_EXECUTABLE/Python3_EXECUTABLE) may have been set 
+# to a different compiler previously. Therefore, we unset it.
+
+
+IF(CMAKE_VERSION VERSION_LESS 3.12.0) # cmake version < 3.12
+	UNSET(PYTHON_EXECUTABLE)
 	FIND_PACKAGE(PythonInterp 3 REQUIRED)
 	SET(PYTHON_INTERPRETER "${PYTHON_EXECUTABLE}")
-ELSE(CMAKE_VERSION VERSION_LESS 3.12.0)
+ELSEIF(CMAKE_VERSION VERSION_LESS 3.19.0) # 3.12 <= cmake version < 3.19
+	UNSET(Python3_EXECUTABLE)
 	FIND_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter)
 	SET(PYTHON_INTERPRETER "${Python3_EXECUTABLE}")
+ELSE(CMAKE_VERSION VERSION_LESS 3.12.0) # cmake version >= 3.19
+	UNSET(Python3_EXECUTABLE)
+	FIND_PACKAGE(Python3 3...<3.9 REQUIRED COMPONENTS Interpreter)
+	SET(PYTHON_INTERPRETER "${Python3_EXECUTABLE}")
 ENDIF(CMAKE_VERSION VERSION_LESS 3.12.0)
+MESSAGE ("************************ PYTHON_INTERPRETER: ${PYTHON_INTERPRETER} ************************")
 
 
 SET(NETX_FIRMWARE_PRODUCTS
@@ -66,6 +82,8 @@ SET(NETX_FIRMWARE_PRODUCTS
 	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx56.h
 	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx500.c
 	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx500.h
+	
+	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/machine_interface/start_mi/hboot_start_mi_netx90_com_intram.bin
 )
 
 OPTION(BUILDCFG_SKIP_NETX_FW "Do not build the netX firmware but expect the pre-built artifacts. The default is OFF."

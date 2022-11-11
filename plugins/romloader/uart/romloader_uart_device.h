@@ -23,6 +23,7 @@
 
 
 #include "../romloader.h"
+class romloader_uart_options;
 
 #define MUHKUH_USE_THREADING_PTHREAD 0
 #define MUHKUH_USE_THREADING_MSVC 1
@@ -85,9 +86,12 @@ public:
 	void discardCards(void);
 	size_t getCardSize(void) const;
 
+	romloader_uart_options *GetOptions();
+	void SetOptions(const romloader_uart_options *ptOptions);
 
 protected:
 	char *m_pcPortName;
+	romloader_uart_options *m_ptPluginOptions;
 
 	BUFFER_CARD_T * volatile m_ptFirstCard;
 	BUFFER_CARD_T * volatile m_ptLastCard;

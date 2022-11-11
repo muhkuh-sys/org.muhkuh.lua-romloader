@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<HBootImage type="REGULAR">
+	<Chunks>
+		<Skip relative="1024" />
+		<!-- 
+		This boot image runs on a netX 90 Rev.1 (with PHY V2 or V3) or Rev.2 and starts the machine interface
+		by jumping straight into mi_loop.
+		-->
+		<Data>
+			<File name="@tElfCOM" />
+		</Data>
+		<Execute 
+			start_app="false" 
+			lock_firewall="false" apply_firewall_settings="false"
+			activate_debugging="false">
+			<File name="@tElfCOM" />
+		</Execute>
+	</Chunks>
+</HBootImage>

@@ -34,14 +34,17 @@ public:
 	romloader_uart_read_functinoid_hboot3(romloader_uart_device *ptDevice, char *pcPortName);
 	bool read_data32(uint32_t ulAddress, uint32_t *pulValue);
 	CONSOLE_MODE_T detect_console_mode(void);
+	bool send_vers_command(uint32_t *pulVersionVal1, uint32_t *pulVersionVal2);
 	int update_device(ROMLOADER_CHIPTYP tChiptyp);
 
 private:
-
 	void hexdump(const uint8_t *pucData, uint32_t ulSize);
-
+	bool read_binary_file(const char* pucFilename, const uint8_t **ppucData, size_t *p_sizData);
+	bool get_netx90_mi_image(const uint8_t **ppucData, size_t *p_sizData);
+	bool netx90_load_usip(const uint8_t *pucNetxImage, size_t sizNetxImage);
+	bool netx90_start_hboot_image(const uint8_t *pucNetxImage, size_t sizNetxImage);
+	bool skip_mi_magic(void);
 	bool netx90_reset(void);
-
 	romloader_uart_device *m_ptDevice;
 	char *m_pcPortName;
 };

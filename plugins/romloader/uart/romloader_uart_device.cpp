@@ -20,6 +20,7 @@
 
 
 #include "romloader_uart_device.h"
+#include "romloader_uart_main.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -52,6 +53,7 @@ romloader_uart_device::romloader_uart_device(const char *pcPortName)
  : m_pcPortName(NULL)
  , m_ptFirstCard(NULL)
  , m_ptLastCard(NULL)
+ , m_ptPluginOptions(NULL)
 {
 	m_pcPortName = strdup(pcPortName);
 
@@ -81,7 +83,31 @@ romloader_uart_device::~romloader_uart_device(void)
 	{
 		free(m_pcPortName);
 	}
+
+	delete m_ptPluginOptions;
 }
+
+
+romloader_uart_options *romloader_uart_device::GetOptions()
+{
+	return m_ptPluginOptions;
+}
+
+
+void romloader_uart_device::SetOptions(const romloader_uart_options *ptOptions)
+{
+	if (m_ptPluginOptions != NULL) 
+	{
+		delete m_ptPluginOptions;
+		m_ptPluginOptions = NULL;
+	}
+	
+	if (ptOptions != NULL) 
+	{
+		m_ptPluginOptions = new romloader_uart_options(ptOptions);
+	}
+}
+
 
 
 void romloader_uart_device::initCards(void)

@@ -64,6 +64,7 @@ SConscript('platform/SConscript')
 #
 SConscript('plugins/romloader/machine_interface/netx/SConscript')
 
+SConscript('plugins/romloader/machine_interface/start_mi/SConscript')
 
 #----------------------------------------------------------------------------
 #
@@ -119,7 +120,8 @@ Import(
     'DCC_NETX500',
     'DCC_NETX10_50_56',
     'DCC_NETX4000',
-    'DCC_NETX90'
+    'DCC_NETX90', 
+    'hboot_start_mi_netx90'
 )
 
 atFirmware = [
@@ -143,7 +145,8 @@ atFirmware = [
     DCC_NETX500,
     DCC_NETX10_50_56,
     DCC_NETX4000,
-    DCC_NETX90
+    DCC_NETX90, 
+    hboot_start_mi_netx90
 ]
 atEnv.DEFAULT.Tar('targets/firmware.tar.gz', atFirmware, TARFLAGS = '-c -z')
 
