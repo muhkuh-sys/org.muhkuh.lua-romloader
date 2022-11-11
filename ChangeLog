@@ -2,6 +2,37 @@
 Change log/Release notes
 =========================
 
+V 2.5.4
+=======
+* netX 90 Rev.1/2 with romloader_uart: 
+  Allow switching from a terminal console to a machine interface.
+  If a secure terminal console is detected, use the vers command to detect if 
+  the chip type is netX 90 Rev.1 or Rev.2.
+  If the netX 90 Rev.1/2 is detected and it is is in a text console mode,
+  execute a boot image that jumps to the machine interface.
+  If the netX is in secure boot mode, this image must be signed.
+  
+  The binary contents of this boot image can be passed to romloader_uart 
+  using the option list that is passed to DetectInterfaces:
+  atPluginOptions = {
+    romloader_uart = {
+      netx90_m2m_image = <binary contents of boot image>
+    }
+  }
+
+* netX 90 Rev.1/2: Add a boot image that starts the machine interface.
+  The boot image detects the chip type and starts the machine interface 
+  by jumping to the respective address of mi_loop.
+
+* Add new command methods for hboot_call and usip command.
+
+* Add functions to obtain the MI version from the Lua script.
+
+* Updated libusb version to 1.0.26
+
+* Allow building the romloader under Windows 10/64 bit 
+
+
 V 2.5.3
 =======
 * Fix a bug that may lead to a crash when connecting to the netX 90 Rev2
