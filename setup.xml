@@ -23,7 +23,7 @@
 		<tool>
 			<group>org.gnu.gcc</group>
 			<name>gcc-arm-none-eabi</name>
-			<package>gcc-arm-none-eabi_${platform}_x86</package>
+			<package>gcc-arm-none-eabi_${platform}_${machine}</package>
 			<version>4.7.2_3</version>
 			<typ>tar.bz2</typ>
 		</tool>
@@ -31,7 +31,7 @@
 		<tool>
 			<group>org.gnu.gcc</group>
 			<name>gcc-arm-none-eabi</name>
-			<package>gcc-arm-none-eabi_${platform}_x86</package>
+			<package>gcc-arm-none-eabi_${platform}_${machine}</package>
 			<version>4.9.3_4</version>
 			<typ>tar.bz2</typ>
 		</tool>
