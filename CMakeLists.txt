@@ -82,6 +82,8 @@ SET(NETX_FIRMWARE_PRODUCTS
 	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx56.h
 	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx500.c
 	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx500.h
+	
+	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/machine_interface/start_mi/hboot_start_mi_netx90_com_intram.bin
 )
 
 OPTION(BUILDCFG_SKIP_NETX_FW "Do not build the netX firmware but expect the pre-built artifacts. The default is OFF."

@@ -66,6 +66,12 @@ ENDIF((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 # Install the lua module.
 INSTALL(TARGETS TARGET_plugins_romloader_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
 
+INSTALL(FILES ${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/machine_interface/start_mi/hboot_start_mi_netx90_com_intram.bin
+ DESTINATION ${INSTALL_DIR_LUA_MODULES})
+
+
+
+
 # Add tests for this module.
 IF((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 	# Here are the MinGW specific tests.
