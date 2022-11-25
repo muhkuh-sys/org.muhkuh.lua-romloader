@@ -27,12 +27,20 @@
 #ifndef __ROMLOADER_UART_READ_FUNCTINOID_HBOOT3_H__
 #define __ROMLOADER_UART_READ_FUNCTINOID_HBOOT3_H__
 
+typedef enum READ_RESULT_ENUM
+{
+	READ_RESULT_OK = 0,
+	READ_RESULT_ERROR = 1,
+	READ_RESULT_FORBIDDEN = 2
+} READ_RESULT_T;
 
 class romloader_uart_read_functinoid_hboot3 : public romloader_uart_read_functinoid
 {
 public:
 	romloader_uart_read_functinoid_hboot3(romloader_uart_device *ptDevice, char *pcPortName);
 	bool read_data32(uint32_t ulAddress, uint32_t *pulValue);
+	READ_RESULT_T is_read_allowed();
+	READ_RESULT_T read_data32_check_secure(uint32_t ulAddress, uint32_t *pulValue);
 	CONSOLE_MODE_T detect_console_mode(void);
 	bool send_vers_command(uint32_t *pulVersionVal1, uint32_t *pulVersionVal2);
 	int update_device(ROMLOADER_CHIPTYP tChiptyp);

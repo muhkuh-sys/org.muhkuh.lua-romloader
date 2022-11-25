@@ -44,6 +44,118 @@ romloader_uart_read_functinoid_hboot3::romloader_uart_read_functinoid_hboot3(rom
 	m_pcPortName = 	pcPortName;
 }
 
+
+/* return value 0: ok, 1: error, 2: not allowed/secure mode on */
+READ_RESULT_T romloader_uart_read_functinoid_hboot3::read_data32_check_secure(uint32_t ulAddress, uint32_t *pulValue)
+{
+	union
+	{
+		uint8_t auc[32];
+		char ac[32];
+	} uCmd;
+	union
+	{
+		uint8_t *puc;
+		char *pc;
+	} uResponse;
+	size_t sizCmd;
+	
+	uint32_t ulReadbackAddress;
+	uint32_t ulValue;
+	
+	bool fOk;
+	int iResult;
+	READ_RESULT_T tReadResult;
+	
+
+	/* Assume failure */
+	tReadResult = READ_RESULT_ERROR;
+	
+	sizCmd = snprintf(uCmd.ac, 32, "D %x ++3\n", ulAddress);
+	/* Send the command with 500ms second timeout. */
+	if( m_ptDevice->SendRaw(uCmd.auc, sizCmd, 500)!=sizCmd )
+	{
+		/* Failed to send the command to the device. */
+		fprintf(stderr, "Failed to send the command to the device.\n");
+	}
+	else
+	{
+		/* Receive one line. This is the command echo. */
+		fOk = m_ptDevice->GetLine(&uResponse.puc, "\r\n", 2000);
+		if( fOk==false )
+		{
+			fprintf(stderr, "failed to receive command echo!\n");
+		}
+		else
+		{
+			sizCmd = strlen(uResponse.pc);
+			free(uResponse.puc);
+
+			/* Receive the rest of the output until the command prompt. This is the command result. */
+			iResult = m_ptDevice->GetLine2(&uResponse.puc, "\r\n000 >", "\r\n014 >", 2000);
+			if (iResult == 1) 
+			{
+				iResult = sscanf(uResponse.pc, "%08x: %08x", &ulReadbackAddress, &ulValue);
+				if( iResult==2 && ulAddress==ulReadbackAddress )
+				{
+					if( pulValue!=NULL )
+					{
+						*pulValue = ulValue;
+						
+						tReadResult = READ_RESULT_OK;
+					}
+				}
+				else
+				{
+					fprintf(stderr, "The command response is invalid!\n");
+				}
+				
+				sizCmd = strlen(uResponse.pc);
+				hexdump(uResponse.puc, sizCmd);
+				free(uResponse.puc);
+			}
+			else if (iResult == 2)
+			{
+				/* not allowed/secure mode */
+				fprintf(stderr, "The read command was rejected!\n");
+
+				tReadResult = READ_RESULT_FORBIDDEN;
+				
+				sizCmd = strlen(uResponse.pc);
+				hexdump(uResponse.puc, sizCmd);
+				free(uResponse.puc);
+				
+			}
+			else 
+			{
+				/* error */
+				fprintf(stderr, "failed to get command response!\n");
+			}
+		}
+	}
+
+	return tReadResult;
+}
+
+READ_RESULT_T romloader_uart_read_functinoid_hboot3::is_read_allowed()
+{
+	uint32_t ulReadValue;
+	READ_RESULT_T tReadResult;
+	
+	tReadResult = read_data32_check_secure(0, &ulReadValue);
+	
+	return tReadResult;
+}
+
+
+/*
+bool romloader_uart_read_functinoid_hboot3::read_data32(uint32_t ulAddress, uint32_t *pulValue)
+{
+	READ_RESULT_T tReadResult = read_data32_test(ulAddress, pulValue);
+	return tReadResult==READ_RESULT_Ok;
+}
+*/
+
 bool romloader_uart_read_functinoid_hboot3::read_data32(uint32_t ulAddress, uint32_t *pulValue)
 {
 	union
@@ -720,23 +832,20 @@ bool romloader_uart_read_functinoid_hboot3::get_netx90_mi_image(const uint8_t **
    2A 0D 00 00 00 4D 4F 4F 48 01 00 03 00 0D 00 08 E3 98 (netX 90 Rev.2 MI v3.1)
    2A 0D 00 00 00 4D 4F 4F 48 00 00 03 00 0D 00 08 5B F9 (netX 90 Rev.1 MI v3.0)
    We must skip this packet as the Connect method does not expect it.
+   We accept any magic packet with version 3.x.
  */
-   
+
 bool romloader_uart_read_functinoid_hboot3::skip_mi_magic(void)
 {
-	unsigned char aucMagicMi3_1[] = {
-	0x2A, 0x0D, 0x00, 0x00, 0x00, 0x4D, 0x4F, 0x4F, 
-	0x48, 0x01, 0x00, 0x03, 0x00, 0x0D, 0x00, 0x08,
-	0xE3, 0x98 
-	};
-
 	unsigned char aucMagicMi3_0[] = {
 	0x2A, 0x0D, 0x00, 0x00, 0x00, 0x4D, 0x4F, 0x4F, 
 	0x48, 0x00, 0x00, 0x03, 0x00, 0x0D, 0x00, 0x08,
-	0x5B, 0xF9
+	0x5B, 0xF9 
 	};
 	
-	unsigned char aucRecv[sizeof(aucMagicMi3_1)];
+	unsigned char ucMinorVer;
+	
+	unsigned char aucRecv[sizeof(aucMagicMi3_0)];
 	size_t sizReceived;
 	
 	unsigned int uiTimeoutMs;
@@ -745,34 +854,33 @@ bool romloader_uart_read_functinoid_hboot3::skip_mi_magic(void)
 	/* Be pessimistic. */
 	fOk = false;
 
-	uiTimeoutMs = 100;
+	uiTimeoutMs = 300;
 
 	fprintf(stderr, "Waiting for initial magic packet from machine interface.\n");
 	sizReceived = m_ptDevice->RecvRaw(aucRecv, sizeof(aucRecv), uiTimeoutMs);
 
 	hexdump(aucRecv, sizReceived);
-
-	if (sizReceived != sizeof(aucMagicMi3_1))
+	
+	if (sizReceived==sizeof(aucMagicMi3_0))
 	{
-		fprintf(stderr, "Did not receive magic packet (incorrect length).\n");
+		/* Compare the received data to the reference packet.
+		   The received data may contain a different minor version number, 
+		   therefore we copy it to the reference. 
+		   For this reason, we omit the last two bytes (checksum) from 
+		   the comparison.
+		   The CRC is currently not checked. */
+		ucMinorVer = aucRecv[9];
+		aucMagicMi3_0[9] = ucMinorVer;
+		if (0==memcmp(aucMagicMi3_0, aucRecv, sizeof(aucMagicMi3_0)-2))
+		{
+			fOk = true;
+			fprintf(stderr, "Received magic packet for MI v3.%d.\n", ucMinorVer);
+		}
 	}
-	else
+	
+	if (fOk==false)
 	{
-		if (0==memcmp(aucMagicMi3_1, aucRecv, sizeof(aucMagicMi3_1)))
-		{
-			fprintf(stderr, "Received magic packet for MI v3.1.\n");
-			fOk = true;
-		}
-		else if (0==memcmp(aucMagicMi3_0, aucRecv, sizeof(aucMagicMi3_0)))
-		{
-			fprintf(stderr, "Received magic packet for MI v3.0.\n");
-			fOk = true;
-		}
-
-		else 
-		{
-			fprintf(stderr, "Did not receive magic packet (incorrect content).\n");
-		}
+		fprintf(stderr, "Did not receive magic packet (unknown response).\n");
 	}
 	
 	return fOk;
@@ -795,6 +903,7 @@ int romloader_uart_read_functinoid_hboot3::update_device(ROMLOADER_CHIPTYP tChip
 	case ROMLOADER_CHIPTYP_NETX90B:
 	case ROMLOADER_CHIPTYP_NETX90C:
 	case ROMLOADER_CHIPTYP_NETX90D:
+		fprintf(stderr, "Attempting to enter the machine interface..\n");
 		fOk = get_netx90_mi_image(&pucData, &sizData);
 		if( fOk!=true )
 		{
@@ -814,23 +923,16 @@ int romloader_uart_read_functinoid_hboot3::update_device(ROMLOADER_CHIPTYP tChip
 				fOk = skip_mi_magic();
 				if (fOk!=true)
 				{
-					//fprintf(stderr, "Could not receive the magic packet.\n");
+					/* The image was downloaded and accepted, but execution failed,
+					   probably because it's not signed or incorrectly signed. */
+					iResult = -2;
 				}
 				else
 				{
-					//fprintf(stderr, "Received the magic packet.\n");
 					iResult = 0;
 				}
 			}
 		}
-	/*
-		fprintf(stderr, "Attempting to enter the machine interface..\n");
-		fOk = netx90_reset();
-		if( fOk==true )
-		{
-			iResult = 0;
-		}
-	*/
 		break;
 
 

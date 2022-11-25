@@ -815,38 +815,67 @@ void romloader_uart::Connect(lua_State *ptClientData)
 									break;
 								
 								case CONSOLE_MODE_Secure:
-									m_ptLog->debug("Secure console. Checking for netX 90 Rev1/Rev2.");
-									uint32_t ulVers1;
-									uint32_t ulVers2;
-									fResult = tFnHBoot3.send_vers_command(&ulVers1, &ulVers2);
+									m_ptLog->debug("Secure console.");
 									
-									if (fResult!=true)
+									READ_RESULT_T tReadAllowed;
+									/* Note: this fails on any error*/
+									tReadAllowed = tFnHBoot3.is_read_allowed();
+									
+									if (tReadAllowed == READ_RESULT_OK)
 									{
-										MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode and in a terminal console. The VERS command failed.", m_pcName, this);
-									}
-									else
-									{	/* VERS: 00000004 0000000b - netX 4000 */
-										/* VERS: 00000005 0000000a - netX 90 MPW/Rev0 */
-										/* VERS: 00000005 0000000d - netX 90 Rev1/2 */
+										m_ptLog->debug("Read command allowed. Detecting chip type.");
 										
-										if ((ulVers1 == 5) && (ulVers2 == 13))
+										fResult = detect_chiptyp(ptFn);
+										if( fResult!=true )
 										{
-											m_ptLog->debug("This looks like a netX 90 Rev1/Rev2.");
-											/* Set chip type netx 90 Rev.1 even though we don't know if it's rev. 1 or 2. */
-											m_tChiptyp = ROMLOADER_CHIPTYP_NETX90B;
+											MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): failed to detect chip type!", m_pcName, this);
+										}
+										break;
+									}
+									else if (tReadAllowed == READ_RESULT_FORBIDDEN)
+									{
+										m_ptLog->debug("Read command not allowed. Using VERS command to check for netX 90 Rev1/Rev2.");
+										uint32_t ulVers1;
+										uint32_t ulVers2;
+										fResult = tFnHBoot3.send_vers_command(&ulVers1, &ulVers2);
+										
+										if (fResult!=true)
+										{
+											MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode and in a terminal console. The VERS command failed.", m_pcName, this);
 										}
 										else
-										{
-											m_ptLog->debug("This does not look like a netX 90 Rev1/Rev2.");
-											MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode and in a terminal console. The netX is not a netX 90 Rev.1 or Rev.2", m_pcName, this);
+										{	/* VERS: 00000004 0000000b - netX 4000 */
+											/* VERS: 00000005 0000000a - netX 90 MPW/Rev0 */
+											/* VERS: 00000005 0000000d - netX 90 Rev1/2 */
+											
+											if ((ulVers1 == 5) && (ulVers2 == 13))
+											{
+												m_ptLog->debug("This looks like a netX 90 Rev2.");
+												/* Set chip type netx 90 Rev.2 
+												   The chip type is Rev.1 or Rev.2, but if it is Rev.1, we should not arrive here. */
+												m_tChiptyp = ROMLOADER_CHIPTYP_NETX90D;
+											}
+											else
+											{
+												fResult = false;
+												m_ptLog->debug("This does not look like a netX 90 Rev1/Rev2.");
+												MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode and in a terminal console. The netX is not a netX 90 Rev.1 or Rev.2", m_pcName, this);
+											}
 										}
 									}
-									//MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode and in a terminal console. Only the open boot mode and the machine interface are supported.", m_pcName, this);
+									else /* error */
+									{
+										fResult = false;
+										m_ptLog->debug("Error during read command.");
+										MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode and in a terminal console. A read command has failed. The chip type could not be detected", m_pcName, this);
+									}
+									
 									break;
 								
 								case CONSOLE_MODE_Unknown:
 								default:
-									MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): Tne netX is in an unknown boot mode! Only open boot mode is supported.", m_pcName, this);
+									fResult = false;
+									MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in an unknown boot mode! Only open boot mode is supported.", m_pcName, this);
 									break;
 							}
 						}
