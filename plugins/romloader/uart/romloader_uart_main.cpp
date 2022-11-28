@@ -875,7 +875,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 								case CONSOLE_MODE_Unknown:
 								default:
 									fResult = false;
-									MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in an unknown boot mode! Only open boot mode is supported.", m_pcName, this);
+									MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in an unknown boot mode!", m_pcName, this);
 									break;
 							}
 						}
@@ -1021,24 +1021,6 @@ void romloader_uart::Connect(lua_State *ptClientData)
 								} else {
 									m_ptLog->debug("The netX is in secure boot mode.");
 									tConsoleMode = CONSOLE_MODE_Secure;
-								}
-								
-								switch (tConsoleMode) {
-									
-									case CONSOLE_MODE_Open:
-										break;
-									
-									case CONSOLE_MODE_Secure:
-										//fResult = false;
-										//MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode! Only open boot mode is supported.", m_pcName, this);
-										break;
-									
-									/* not reachable */
-									case CONSOLE_MODE_Unknown:
-									default:
-										fResult = false;
-										MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in an unknown boot mode! Only open boot mode is supported.", m_pcName, this);
-										break;
 								}
 							}
 						}
