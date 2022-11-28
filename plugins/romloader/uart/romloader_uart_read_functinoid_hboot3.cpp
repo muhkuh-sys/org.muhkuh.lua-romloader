@@ -925,7 +925,7 @@ int romloader_uart_read_functinoid_hboot3::update_device(ROMLOADER_CHIPTYP tChip
 				{
 					/* The image was downloaded and accepted, but execution failed,
 					   probably because it's not signed or incorrectly signed. */
-					iResult = -2;
+					iResult = UPDATE_RESULT_START_MI_IMAGE_FAILED;
 				}
 				else
 				{

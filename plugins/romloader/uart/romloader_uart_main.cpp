@@ -884,7 +884,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 					if( fResult==true && ptFn!=NULL )
 					{
 						iResult = ptFn->update_device(m_tChiptyp);
-						if( iResult==-2 )
+						if( iResult==UPDATE_RESULT_START_MI_IMAGE_FAILED )
 						{
 							fResult = false;
 							MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): start_mi image has been rejected or execution has failed.", m_pcName, this);

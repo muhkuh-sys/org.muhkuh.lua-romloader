@@ -34,6 +34,14 @@ typedef enum READ_RESULT_ENUM
 	READ_RESULT_FORBIDDEN = 2
 } READ_RESULT_T;
 
+typedef enum UPDATE_RESULT_ENUM
+{
+	UPDATE_RESULT_OK = 0,
+	UPDATE_RESULT_ERROR = -1,
+	UPDATE_RESULT_START_MI_IMAGE_FAILED = -2
+} UPDATE_RESULT_T;
+
+
 class romloader_uart_read_functinoid_hboot3 : public romloader_uart_read_functinoid
 {
 public:
