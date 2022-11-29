@@ -5,13 +5,24 @@ Change log/Release notes
 V 2.5.4
 =======
 * netX 90 Rev.1/2 with romloader_uart: 
-  Allow switching from a terminal console to a machine interface.
-  If a secure terminal console is detected, use the vers command to detect if 
-  the chip type is netX 90 Rev.1 or Rev.2.
+  Allow switching from a terminal console to a machine interface:
+
+  detect secure mode
+  if open, detect the chip type using dump commands
+  if secure, check if the dump command works.
+  If it does, detect the chip type using dump commands
+  If it does not, send the VERS command.
+  If the output is 05/0d, assume that the chip type is netx 90 Rev.2.
+
   If the netX 90 Rev.1/2 is detected and it is is in a text console mode,
   execute a boot image that jumps to the machine interface.
   If the netX is in secure boot mode, this image must be signed.
-  
+
+  Returns an error if execution of the image fails for some reason.
+  "start_mi image has been rejected or execution has failed."
+
+  Accept an MI sync packet with MI version 3.x
+      
   The binary contents of this boot image can be passed to romloader_uart 
   using the option list that is passed to DetectInterfaces:
   atPluginOptions = {
