@@ -5,6 +5,10 @@ Change log/Release notes
 V 2.5.4
 =======
 * netX 90 Rev.1/2 with romloader_uart: 
+  Store the console mode (open, secure, unknown) during plugin:Connect()
+  and add the function get_console_mode to retrieve the mode from Lua.
+
+* netX 90 Rev.1/2 with romloader_uart: 
   Allow switching from a terminal console to a machine interface:
 
   detect secure mode
