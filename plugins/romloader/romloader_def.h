@@ -47,6 +47,14 @@ typedef enum
 	ROMLOADER_CHIPTYP_NETX90D              = 18  /* netX 90 rev. 2 */
 } ROMLOADER_CHIPTYP;
 
+typedef enum CONSOLE_MODE_ENUM
+{
+	CONSOLE_MODE_Open = 0,
+	CONSOLE_MODE_Secure = 1,
+	CONSOLE_MODE_Unknown = 2
+} CONSOLE_MODE_T;
+
+
 /*-----------------------------------*/
 
 #endif  /* __ROMLOADER_DEF_H__ */

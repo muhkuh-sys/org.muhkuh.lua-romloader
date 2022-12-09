@@ -224,14 +224,6 @@ MUHKUH_STATIC_ASSERT( sizeof(MIV3_PACKET_INFO_COMMAND_USIP_T)==7, "Packing of MI
 
 /*END USIP*/
 
-typedef enum CONSOLE_MODE_ENUM
-{
-	CONSOLE_MODE_Open = 0,
-	CONSOLE_MODE_Secure = 1,
-	CONSOLE_MODE_Unknown = 2
-} CONSOLE_MODE_T;
-
-
 /* This is a complete read packet. */
 struct MIV3_PACKET_COMMAND_READ_DATA_STRUCT
 {
@@ -380,6 +372,8 @@ public:
 	virtual uint16_t get_mi_version_maj();
 	virtual uint16_t get_mi_version_min();
 	virtual uint32_t get_mi_version();
+	
+	virtual CONSOLE_MODE_T get_console_mode();
 
 	/* Get the chip type. */
 	virtual ROMLOADER_CHIPTYP GetChiptyp(void) const;
@@ -475,7 +469,7 @@ protected:
 	uint16_t m_usMiVersionMaj = 0;
 	uint16_t m_usMiVersionMin = 0;
 	
-
+	CONSOLE_MODE_T m_tConsoleMode = CONSOLE_MODE_Unknown;
 
 	
 	/* structure that holds variables used for test purposes only */

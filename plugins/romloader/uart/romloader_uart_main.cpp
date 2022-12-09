@@ -803,6 +803,7 @@ void romloader_uart::Connect(lua_State *ptClientData)
 							 * Stop if it is not in open mode. */
 							CONSOLE_MODE_T tConsoleMode;
 							tConsoleMode = tFnHBoot3.detect_console_mode();
+							m_tConsoleMode = tConsoleMode;
 							
 							switch (tConsoleMode) {
 								
@@ -1013,14 +1014,13 @@ void romloader_uart::Connect(lua_State *ptClientData)
 							}
 							else
 							{
-								CONSOLE_MODE_T tConsoleMode;
 								if ((m_ulInfoFlags & MSK_MONITOR_INFO_FLAGS_SECURE_BOOT_ENABLED) == 0)
 								{
 									m_ptLog->debug("The netX is in open boot mode.");
-									tConsoleMode = CONSOLE_MODE_Open;
+									m_tConsoleMode = CONSOLE_MODE_Open;
 								} else {
 									m_ptLog->debug("The netX is in secure boot mode.");
-									tConsoleMode = CONSOLE_MODE_Secure;
+									m_tConsoleMode = CONSOLE_MODE_Secure;
 								}
 							}
 						}

@@ -38,6 +38,7 @@ romloader::romloader(const char *pcName, const char *pcTyp, muhkuh_plugin_provid
  , m_sizMaxPacketSizeClient(0)
  , m_sizPacketInputBuffer(0)
  , m_ucMonitorSequence(0)
+ , m_tConsoleMode(CONSOLE_MODE_Unknown)
 {
 /*	m_ptLog->trace("created in romloader"); */
 }
@@ -50,6 +51,7 @@ romloader::romloader(const char *pcName, const char *pcTyp, const char *pcLocati
  , m_sizMaxPacketSizeClient(0)
 , m_sizPacketInputBuffer(0)
  , m_ucMonitorSequence(0)
+ , m_tConsoleMode(CONSOLE_MODE_Unknown)
 {
 /*	printf("%s(%p): created in romloader\n", m_pcName, this); */
 }
@@ -108,6 +110,12 @@ uint32_t romloader::get_mi_version()
 	ulMiVersion += m_usMiVersionMin;
 	return ulMiVersion;
 }
+
+CONSOLE_MODE_T romloader::get_console_mode()
+{
+	return m_tConsoleMode;
+}
+
 
 /*
 * wrapper functions to set test counter that will delay the acknowlede packages
