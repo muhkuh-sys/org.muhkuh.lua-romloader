@@ -1626,11 +1626,11 @@ void romloader::call_hboot(SWIGLUA_REF tLuaFn, long lCallbackUserData, bool fSki
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
 			fOk = false;
-		}elif(tResult==TRANSPORTSTATUS_OK && fSkipResponse==true)
+		}else if(tResult==TRANSPORTSTATUS_OK && fSkipResponse==true)
 		{
 			fOk = true;
 		}
-		elif (tResult==TRANSPORTSTATUS_OK && fSkipResponse == false)
+		else if (tResult==TRANSPORTSTATUS_OK && fSkipResponse == false)
 		{
 			/* Receive message packets. */
 			while(1)
