@@ -1594,7 +1594,7 @@ void romloader::cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData)
 	}
 }
 
-void romloader::call_hboot(SWIGLUA_REF tLuaFn, long lCallbackUserData)
+void romloader::call_hboot(SWIGLUA_REF tLuaFn, long lCallbackUserData, bool fSkipResponse)
 {
 	bool fOk;
 	TRANSPORTSTATUS_T tResult;
@@ -1626,8 +1626,11 @@ void romloader::call_hboot(SWIGLUA_REF tLuaFn, long lCallbackUserData)
 		{
 			MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
 			fOk = false;
+		}elif(tResult==TRANSPORTSTATUS_OK && fSkipResponse==true)
+		{
+			fOk = true;
 		}
-		else
+		elif (tResult==TRANSPORTSTATUS_OK && fSkipResponse == false)
 		{
 			/* Receive message packets. */
 			while(1)
