@@ -1280,6 +1280,40 @@ void romloader::write_image(uint32_t ulNetxAddress, const char *pcBUFFER_IN, siz
 	}
 }
 
+void romloader::call_no_answer(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn)
+{
+	bool fOk = true;
+	TRANSPORTSTATUS_T tResult;
+	MIV3_PACKET_COMMAND_CALL_T tCallCommand;
+	
+	/* The following flag is used to tell if the packet in the buffer is still valid.
+	 * In this case the buffer should not be overwritten by receiving a new packet.
+	 */
+	bool fPacketStillValid; 
+
+	if( m_fIsConnected==false )
+	{
+		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): not connected!", m_pcName, this);
+		fOk = false;
+	}
+	else
+	{
+		tCallCommand.s.tHeader.s.ucPacketType = MONITOR_PACKET_TYP_CommandExecute;
+		tCallCommand.s.ulAddress = HTONETX32(ulNetxAddress);
+		tCallCommand.s.ulR0 = HTONETX32(ulParameterR0);
+		tResult = execute_command(&(tCallCommand.s.tHeader), sizeof(tCallCommand), &fPacketStillValid);
+	}
+	if( tResult!=TRANSPORTSTATUS_OK )
+	{
+		MUHKUH_PLUGIN_PUSH_ERROR(tLuaFn.L, "%s(%p): failed to execute command!", m_pcName, this);
+		fOk = false;
+	}
+	
+	if( fOk!=true )
+	{
+		MUHKUH_PLUGIN_EXIT_ERROR(tLuaFn.L);
+	}
+}
 
 
 void romloader::call(uint32_t ulNetxAddress, uint32_t ulParameterR0, SWIGLUA_REF tLuaFn, long lCallbackUserData)
