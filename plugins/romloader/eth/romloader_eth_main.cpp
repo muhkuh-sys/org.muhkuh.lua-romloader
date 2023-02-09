@@ -356,6 +356,7 @@ void romloader_eth::Connect(lua_State *ptClientData)
 					* next90 Rev2 reports MI V3.1, chip type netX90 Rev0
 					* Use the info command of MI 3.1 to get chip type and flags, 
 					* including secure boot flag
+					* We only get here if a machine interface is active and responding.
 					*/
 					fResult = detect_chiptyp_via_info();
 					if (fResult!=true)
@@ -364,32 +365,13 @@ void romloader_eth::Connect(lua_State *ptClientData)
 					}
 					else
 					{
-						CONSOLE_MODE_T tConsoleMode;
 						if ((m_ulInfoFlags & MSK_MONITOR_INFO_FLAGS_SECURE_BOOT_ENABLED) == 0)
 						{
 							m_ptLog->debug("The netX is in open boot mode.");
-							tConsoleMode = CONSOLE_MODE_Open;
+							m_tConsoleMode = CONSOLE_MODE_Open;
 						} else {
 							m_ptLog->debug("The netX is in secure boot mode.");
-							tConsoleMode = CONSOLE_MODE_Secure;
-						}
-						
-						switch (tConsoleMode) {
-							
-							case CONSOLE_MODE_Open:
-								break;
-							
-							case CONSOLE_MODE_Secure:
-								fResult = false;
-								MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in secure boot mode! Only open boot mode is supported.", m_pcName, this);
-								break;
-							
-							/* not reachable */
-							case CONSOLE_MODE_Unknown:
-							default:
-								fResult = false;
-								MUHKUH_PLUGIN_PUSH_ERROR(ptClientData, "%s(%p): The netX is in an unknown boot mode! Only open boot mode is supported.", m_pcName, this);
-								break;
+							m_tConsoleMode = CONSOLE_MODE_Secure;
 						}
 					}
 				}
