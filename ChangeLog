@@ -47,6 +47,8 @@ V 2.5.4
 
 * Allow building the romloader under Windows 10/64 bit 
 
+* Bugfix: Allow connecting to netx 90 Rev.2 in secure boot mode via ethernet 
+  if the ethernet machine interface is active.
 
 V 2.5.3
 =======
