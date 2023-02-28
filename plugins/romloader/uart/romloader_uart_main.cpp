@@ -152,7 +152,6 @@ romloader_uart_provider::romloader_uart_provider(swig_type_info *p_romloader_uar
 
 romloader_uart_provider::~romloader_uart_provider(void)
 {
-	delete m_ptPluginOptions;
 }
 
 
@@ -318,9 +317,6 @@ romloader_uart::~romloader_uart(void)
 		m_ptUartDev->Close();
 		delete m_ptUartDev;
 	}
-
-	delete m_ptPluginOptions;
-
 }
 
 void romloader_uart::set_options(const romloader_uart_options *ptOptions)

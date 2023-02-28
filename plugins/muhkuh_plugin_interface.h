@@ -83,7 +83,7 @@ class muhkuh_plugin_options
 public:
 	muhkuh_plugin_options(muhkuh_log *ptLog);
 	muhkuh_plugin_options(const muhkuh_plugin_options *ptCloneMe);
-	~muhkuh_plugin_options(void);
+	virtual ~muhkuh_plugin_options(void);
 
 	void setLog(muhkuh_log *ptLog);
 	virtual void set_option(const char *pcKey, lua_State *ptLuaState, int iIndex) = 0;
