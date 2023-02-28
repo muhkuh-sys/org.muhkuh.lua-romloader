@@ -347,7 +347,7 @@ muhkuh_plugin_provider::muhkuh_plugin_provider(const char *pcPluginId)
 
 muhkuh_plugin_provider::~muhkuh_plugin_provider(void)
 {
-	printf("~muhkuh_plugin_provider %p\n", this);
+	//printf("~muhkuh_plugin_provider %p\n", this);
 	if( m_ptLog!=NULL )
 	{
 		delete m_ptLog;
@@ -358,7 +358,7 @@ muhkuh_plugin_provider::~muhkuh_plugin_provider(void)
 	}
 	if( m_ptPluginOptions!=NULL )
 	{
-		printf("~muhkuh_plugin_provider delete m_ptPluginOptions\n");
+		//printf("~muhkuh_plugin_provider delete m_ptPluginOptions\n");
 		delete m_ptPluginOptions;
 	}
 }
@@ -509,7 +509,7 @@ muhkuh_plugin_options::muhkuh_plugin_options(const muhkuh_plugin_options *ptClon
 
 muhkuh_plugin_options::~muhkuh_plugin_options(void)
 {
-	printf("~muhkuh_plugin_options 0x%016x\r\n", (unsigned long long) this);
+	//printf("~muhkuh_plugin_options 0x%016x\r\n", (unsigned long long) this);
 }
 
 

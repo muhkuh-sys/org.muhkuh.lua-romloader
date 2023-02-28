@@ -69,7 +69,7 @@ romloader_uart_device::romloader_uart_device(const char *pcPortName)
 
 romloader_uart_device::~romloader_uart_device(void)
 {
-	printf("~romloader_uart_device %p\n", this);
+	//printf("~romloader_uart_device %p\n", this);
 	deleteCards();
 
 #if MUHKUH_USE_THREADING==MUHKUH_USE_THREADING_MSVC
@@ -85,7 +85,7 @@ romloader_uart_device::~romloader_uart_device(void)
 		free(m_pcPortName);
 	}
 
-	printf("~romloader_uart_device delete m_ptPluginOptions\n");
+	//printf("~romloader_uart_device delete m_ptPluginOptions\n");
 	delete m_ptPluginOptions;
 }
 

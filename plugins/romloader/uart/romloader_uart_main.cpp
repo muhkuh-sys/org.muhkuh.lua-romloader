@@ -58,7 +58,7 @@ romloader_uart_options::romloader_uart_options(const romloader_uart_options *ptC
 
 romloader_uart_options::~romloader_uart_options(void)
 {
-	printf("~romloader_uart_options %p\n", this);
+	//printf("~romloader_uart_options %p\n", this);
 	clearOption_netx90MiImage();
 }
 
@@ -153,7 +153,7 @@ romloader_uart_provider::romloader_uart_provider(swig_type_info *p_romloader_uar
 
 romloader_uart_provider::~romloader_uart_provider(void)
 {
-	printf("~romloader_uart_provider %p\n", this);
+	//printf("~romloader_uart_provider %p\n", this);
 }
 
 
@@ -312,7 +312,7 @@ romloader_uart::romloader_uart(const char *pcName, const char *pcTyp, romloader_
 
 romloader_uart::~romloader_uart(void)
 {
-	printf("~romloader_uart %p\n", this);
+	//printf("~romloader_uart %p\n", this);
 	if( m_ptUartDev!=NULL )
 	{
 		m_ptUartDev->Close();
