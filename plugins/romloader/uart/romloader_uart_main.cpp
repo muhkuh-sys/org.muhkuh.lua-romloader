@@ -305,8 +305,6 @@ romloader_uart::romloader_uart(const char *pcName, const char *pcTyp, romloader_
 
 	ptOptions = ptProvider->GetOptions();
 	set_options(ptOptions);
-	m_ptUartDev->SetOptions(ptOptions);
-	
 }
 
 
@@ -331,6 +329,8 @@ void romloader_uart::set_options(const romloader_uart_options *ptOptions)
 	{
 		m_ptPluginOptions = new romloader_uart_options(ptOptions);
 	}
+
+	m_ptUartDev->SetOptions(ptOptions);
 }
 
 
