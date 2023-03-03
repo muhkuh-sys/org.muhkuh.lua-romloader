@@ -2,6 +2,19 @@
 Change log/Release notes
 =========================
 
+new in 2.5.4-dev5: 
+* Bugfix: Fix a bug causing memory corruption when exiting the application
+  when romloader_uart was loaded (since 2.5.4-dev1).
+  
+* Add a version of start_mi image that does not clear the working area.
+
+* Add a flag to call_hboot() to return after sending the command to start the 
+  boot image without waiting for the boot image to execute and complete.
+
+* Add the function call_no_answer(), a variant of the call() function that 
+  returns after sending the call command without waiting for the called 
+  program to execute and complete.
+
 V 2.5.4
 =======
 * netX 90 Rev.1/2 with romloader_uart: 
@@ -39,7 +52,14 @@ V 2.5.4
   The boot image detects the chip type and starts the machine interface 
   by jumping to the respective address of mi_loop.
 
-* Add new command methods for hboot_call and usip command.
+* Add new command methods for call_hboot and usip command.
+
+* Add a flag to call_hboot() to return after sending the command to start the 
+  boot image without waiting for the boot image to execute and complete.
+
+* Add the function call_no_answer(), a variant of the call() function that 
+  returns after sending the call command without waiting for the called 
+  program to execute and complete.
 
 * Add functions to obtain the MI version from the Lua script.
 
@@ -47,8 +67,8 @@ V 2.5.4
 
 * Allow building the romloader under Windows 10/64 bit 
 
-* Allow to skip waiting for further messages after a hboot_call command.
-
+* Bugfix: Allow connecting to netx 90 Rev.2 in secure boot mode via ethernet 
+  if the ethernet machine interface is active.
 
 V 2.5.3
 =======

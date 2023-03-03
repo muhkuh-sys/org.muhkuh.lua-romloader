@@ -60,6 +60,7 @@ romloader::romloader(const char *pcName, const char *pcTyp, const char *pcLocati
 romloader::~romloader(void)
 {
 /*	printf("%s(%p): deleted in romloader\n", m_pcName, this); */
+	//printf("~romloader %p\n", this);
 }
 
 
