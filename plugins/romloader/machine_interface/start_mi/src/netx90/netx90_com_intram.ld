@@ -24,7 +24,7 @@ MEMORY
 {
 	ASSERT_EMPTY(rwx)  : ORIGIN = 0x00000000, LENGTH = 0
 
-	INTRAM(rx)         : ORIGIN = 0x00021000, LENGTH = 0x0001EF40
+	INTRAM(rx)         : ORIGIN = 0x00021000, LENGTH = 0x1000
 }
 
 /*
@@ -54,7 +54,8 @@ SECTIONS
 		/* .rodata section which is used for read-only data (constants) */
 		*(.rodata*)
 	} >INTRAM
-
+	
+/* BSS and stack are not used here.
 	.bss :
 	{
 		PROVIDE ( __bss_start__ = . );
@@ -68,7 +69,7 @@ SECTIONS
 		. = ORIGIN(INTRAM) + LENGTH(INTRAM);
 		PROVIDE ( stack_top = . );
 	} >INTRAM
-
+*/
 
 	/* Stabs debugging sections.  */
 	.stab          0 : { *(.stab) }
