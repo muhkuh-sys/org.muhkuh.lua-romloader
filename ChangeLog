@@ -47,6 +47,8 @@ V 2.5.4
 
 * Allow building the romloader under Windows 10/64 bit 
 
+* Allow to skip waiting for further messages after a hboot_call command.
+
 
 V 2.5.3
 =======
