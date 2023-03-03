@@ -53,10 +53,21 @@ src_start_mi_netx90 = env_start_mi_netx90.SetBuildPath(os.path.join(strTargetPat
 elf_start_mi_netx90 = env_start_mi_netx90.Elf(os.path.join(strTargetPath, 'start_mi_netx90_com_intram.elf'), src_start_mi_netx90 )
 bin_start_mi_netx90 = env_start_mi_netx90.ObjCopy(os.path.join(strTargetPath, 'start_mi_netx90_com_intram.bin'), elf_start_mi_netx90)
 txt_start_mi_netx90 = env_start_mi_netx90.ObjDump(os.path.join(strTargetPath, 'start_mi_netx90_com_intram.txt'), elf_start_mi_netx90, OBJDUMP_FLAGS=['--disassemble', '--source', '--all-headers', '--wide'])
-hboot_start_mi_netx90 = env_start_mi_netx90.HBootImage(os.path.join(strTargetPath, 'hboot_start_mi_netx90_com_intram.bin'), 'src/netx90/COM_to_INTRAM.xml', HBOOTIMAGE_KNOWN_FILES=dict({'tElfCOM': elf_start_mi_netx90}))
+
+HBOOT_START_MI_NETX90 = env_start_mi_netx90.HBootImage(
+	os.path.join(strTargetPath, 'hboot_start_mi_netx90_com_intram.bin'), 
+	'src/netx90/COM_to_INTRAM.xml', 
+	HBOOTIMAGE_DEFINES={'FLAG_CLEAR_WORK_AREA': '0'}, 
+	HBOOTIMAGE_KNOWN_FILES=dict({'tElfCOM': elf_start_mi_netx90}))
+
+HBOOT_START_MI_NETX90_CLEAR_WORKAREA = env_start_mi_netx90.HBootImage(
+	os.path.join(strTargetPath, 'hboot_start_mi_netx90_com_intram_clear_workarea.bin'), 
+	'src/netx90/COM_to_INTRAM.xml', 
+	HBOOTIMAGE_DEFINES={'FLAG_CLEAR_WORK_AREA': '1'}, 
+	HBOOTIMAGE_KNOWN_FILES=dict({'tElfCOM': elf_start_mi_netx90}))
 
 #----------------------------------------------------------------------------
 #
 # Export 
 
-Export('hboot_start_mi_netx90')
+Export('HBOOT_START_MI_NETX90', 'HBOOT_START_MI_NETX90_CLEAR_WORKAREA')

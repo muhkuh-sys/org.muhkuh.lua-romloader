@@ -1,10 +1,11 @@
 # Start the machine interface in ROM.
 # For netX 90 Rev.1 with PHY v2 or v3, and netX 90 Rev.2
+# If R0 is not 0, clear the work area at 0x200a6000..0x200a8000
 # Detect the chip type and jump to mi_loop()
 
 	.section .init_code, "ax"
 
-	.extern stack_top
+#	.extern stack_top
 
 	.global start
 
@@ -17,6 +18,10 @@
     .func start, start
     .type start, STT_FUNC
 start:
+	# R0 == 0: do not clear work area
+	cmp     r0, #0
+	beq     noclear
+	
 	# clear work area
 	mov     r0, #0xffffffff
 	ldr     r1, addr_workarea_start
@@ -25,6 +30,7 @@ clear:
 	str     r0, [r1], #4
 	cmp     r1, r2 
 	bmi     clear
+noclear:
 
 	# check for netX 90 Rev.1 (PHY v2 or v3)
 	mov     r0, #0

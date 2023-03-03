@@ -121,7 +121,8 @@ Import(
     'DCC_NETX10_50_56',
     'DCC_NETX4000',
     'DCC_NETX90', 
-    'hboot_start_mi_netx90'
+    'HBOOT_START_MI_NETX90',
+    'HBOOT_START_MI_NETX90_CLEAR_WORKAREA'
 )
 
 atFirmware = [
@@ -146,7 +147,8 @@ atFirmware = [
     DCC_NETX10_50_56,
     DCC_NETX4000,
     DCC_NETX90, 
-    hboot_start_mi_netx90
+    HBOOT_START_MI_NETX90,
+    HBOOT_START_MI_NETX90_CLEAR_WORKAREA
 ]
 atEnv.DEFAULT.Tar('targets/firmware.tar.gz', atFirmware, TARFLAGS = '-c -z')
 

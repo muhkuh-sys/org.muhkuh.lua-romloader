@@ -14,6 +14,7 @@
 			lock_firewall="false" apply_firewall_settings="false"
 			activate_debugging="false">
 			<File name="@tElfCOM" />
+			<R0>%%FLAG_CLEAR_WORK_AREA%%</R0>
 		</Execute>
 	</Chunks>
 </HBootImage>
