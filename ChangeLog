@@ -2,6 +2,13 @@
 Change log/Release notes
 =========================
 
+new in 2.5.4-dev5: 
+* Bugfix: Fix a bug causing memory corruption when exiting the application
+  when romloader_uart was loaded (since 2.5.4-dev1).
+  
+* Add a version of start_mi image that does not clear the working area.
+
+
 V 2.5.4
 =======
 * netX 90 Rev.1/2 with romloader_uart: 
@@ -49,7 +56,7 @@ V 2.5.4
 
 * Bugfix: Allow connecting to netx 90 Rev.2 in secure boot mode via ethernet 
   if the ethernet machine interface is active.
-
+  
 V 2.5.3
 =======
 * Fix a bug that may lead to a crash when connecting to the netX 90 Rev2
