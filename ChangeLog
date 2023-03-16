@@ -1,6 +1,10 @@
 
 Change log/Release notes
 =========================
+new in 2.5.4-dev6: 
+* Add support for the SEGGER J-Link adapter with VID 0x1366/PID 0x1020.
+
+* Add a git version to the start_mi hboot images.
 
 new in 2.5.4-dev5: 
 * Bugfix: Fix a bug causing memory corruption when exiting the application
@@ -17,6 +21,8 @@ new in 2.5.4-dev5:
 
 V 2.5.4
 =======
+* Add support for the SEGGER J-Link adapter with VID 0x1366/PID 0x1020.
+
 * netX 90 Rev.1/2 with romloader_uart: 
   Store the console mode (open, secure, unknown) during plugin:Connect()
   and add the function get_console_mode to retrieve the mode from Lua.
