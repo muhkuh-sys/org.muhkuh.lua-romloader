@@ -717,7 +717,7 @@ proc reset_netx90_COM {} {
         global ROMLOADER_CHIPTYP_NETX90B
         global ROMLOADER_CHIPTYP_NETX90C
         global ROMLOADER_CHIPTYP_NETX90D
-				
+
         set iChiptyp [ get_chiptyp ]
         
 
@@ -731,7 +731,8 @@ proc reset_netx90_COM {} {
             set BP_ADDR_APP_JTAG_ENABLED $BP_ADDR_APP_JTAG_ENABLED_RC6
         } else {
             puts "===================================================================="
-            puts "Error: Unknown or unexpected chip type (not netx 90)"
+            puts "Error: Could not detect the chip type."
+            puts "The debug access port might be disabled."
             puts "===================================================================="
 
             shutdown error
