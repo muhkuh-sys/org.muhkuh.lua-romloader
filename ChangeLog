@@ -1,6 +1,12 @@
 
 Change log/Release notes
 =========================
+new in 2.5.4-dev7: 
+* Updated the error message that is shown if, while connecting to the 
+  netx 90 via JTAG, the chip type cannot be detected:
+  Error: Could not detect the chip type.
+  The debug access port might be disabled.
+
 new in 2.5.4-dev6: 
 * Add support for the SEGGER J-Link adapter with VID 0x1366/PID 0x1020.
 
