@@ -1,6 +1,10 @@
 
 Change log/Release notes
 =========================
+new in 2.5.4-dev8: 
+* The start_mi boot image for the netX 90 disables the pull-down resistors 
+  of the UART RXD/TXD pins.
+
 new in 2.5.4-dev7: 
 * Updated the error message that is shown if, while connecting to the 
   netx 90 via JTAG, the chip type cannot be detected:
