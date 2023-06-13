@@ -32,6 +32,25 @@ clear:
 	bmi     clear
 noclear:
 
+
+    # Disable the pull-down resistors of the UART RXD/TXD pins    
+    ldr     r2, addr_asic_ctrl_access_key
+    
+    ldr     r0, addr_pad_ctrl_uart_rxd
+    ldr     r1, [r0]
+    bic     r1, r1, #0x10
+    ldr     r3, [r2]
+    str     r3, [r2]
+    str     r1, [r0]
+
+    ldr     r0, addr_pad_ctrl_uart_txd
+    ldr     r1, [r0]
+    bic     r1, r1, #0x10
+    ldr     r3, [r2]
+    str     r3, [r2]
+    str     r1, [r0]
+
+
 	# check for netX 90 Rev.1 (PHY v2 or v3)
 	mov     r0, #0
 	ldr     r0, [r0]
@@ -88,11 +107,18 @@ check_netx90_rev2:
 	# Do not start machine interface, return to the terminal console.
 unknown_chip:
 	bx      lr
-	
+
 
 	# work area
 addr_workarea_start: .word 0x200a6000
 addr_workarea_end:   .word 0x200a8000
+
+
+    # pad ctrl and access key
+addr_pad_ctrl_uart_rxd:    .word 0xff401028
+addr_pad_ctrl_uart_txd:    .word 0xff40102c
+addr_asic_ctrl_access_key: .word 0xff4012c0
+
 	
 	# netx 90 rev.1 (PHY v2 and v3):
 netx90_rev1_reset:   .word 0x2009fff0
