@@ -384,6 +384,7 @@ bool romloader_uart_device::wait_for_prompt(unsigned long ulTimeout)
 	do
 	{
 		sizReceived = RecvRaw(&ucData, 1, ulTimeout);
+
 		if( sizReceived!=1 )
 		{
 			/* Failed to receive the next char. */
@@ -393,10 +394,12 @@ bool romloader_uart_device::wait_for_prompt(unsigned long ulTimeout)
 		else if( ucData=='>' )
 		{
 			fFoundPrompt = true;
+			fprintf(stderr, "wait_for_prompt: 0x%02x  %c.\n", ucData, ucData);
 			break;
 		}
 		else
 		{
+			fprintf(stderr, "wait_for_prompt: 0x%02x  %c.\n", ucData, ucData);
 			++sizCnt;
 		}
 	} while( sizCnt<sizMaxSearch );
@@ -605,6 +608,7 @@ int romloader_uart_device::GetLine2(unsigned char **ppucLine, const char *pcEol1
 
 bool romloader_uart_device::SendBlankLineAndDiscardResponse(void)
 {
+	fprintf(stderr, "SendBlankLineAndDiscardResponse");
 	const unsigned char aucBlankLine[1] = { '\n' };
 	size_t sizTransfered;
 	bool fOk;
@@ -627,6 +631,7 @@ bool romloader_uart_device::SendBlankLineAndDiscardResponse(void)
 			fprintf(stderr, "received strange response after romloader message!\n");
 		}
 	}
+	fprintf(stderr, "SendBlankLineAndDiscardResponse fOk = %d", fOk);
 
 	return fOk;
 }

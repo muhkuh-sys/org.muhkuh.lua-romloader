@@ -337,7 +337,6 @@ void romloader_uart::set_options(const romloader_uart_options *ptOptions)
 }
 
 
-
 /*
 * This function is used to check if the netX is stuck in an endless loop waiting for an acknowledge for a packet and re-sending it
 * If it is the case we send a cancel_operation packet that should be able to to get the netX out of the loop
@@ -350,7 +349,9 @@ bool romloader_uart::fix_deadloop()
 	MIV3_PACKET_HEADER_T *ptPacketHeader;
 	uint8_t ucRetries = 5;
 	uint32_t ulDataReceived;
-	
+
+	m_ptLog->debug("(0) fix_deadloop");
+
 	#define UART_MAXIMUM_PACKET_SIZE 2048
 	do
 	{
@@ -361,6 +362,10 @@ bool romloader_uart::fix_deadloop()
 		{
 			sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 200);
 			ulDataReceived += sizTransfered;
+			if (sizTransfered==1)
+			{
+				m_ptLog->debug("(1) fix_deadloop: 0x%02x: 0x%02x %c", ulDataReceived, aucData[0], aucData[0]);
+			}
 		} while( sizTransfered==1 && ulDataReceived < UART_MAXIMUM_PACKET_SIZE);
 
 		
@@ -409,6 +414,10 @@ bool romloader_uart::fix_deadloop()
 						do
 						{
 							sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 200);
+							if (sizTransfered==1)
+							{
+								m_ptLog->debug("(2) fix_deadloop: 0x%02x %c", aucData[0], aucData[0]);
+							}
 						} while( sizTransfered==1 );
 						
 						// check if netX still sends packets within over 1 second wait time
@@ -448,6 +457,7 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 	unsigned int uiSequence;
 	size_t sizMaxPacketSizeClient;
 
+	m_ptLog->debug("(0) identify_loader");
 
 	/* The command set is unknown by default. */
 	tCmdSet = ROMLOADER_COMMANDSET_UNKNOWN;
@@ -466,6 +476,8 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 	else
 	{
 		sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 1000);
+		m_ptLog->debug("(1) Received knock response:");
+		m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData, sizTransfered);
 		if( sizTransfered!=1 )
 		{
 			/* Failed to receive first char of knock response. */
@@ -478,6 +490,9 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 			if( aucData[0]==MONITOR_STREAM_PACKET_START )
 			{
 				sizTransfered = m_ptUartDev->RecvRaw(aucData, 2, 500);
+				m_ptLog->debug("(2) after packet start:");
+				m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData, sizTransfered);
+
 				if( sizTransfered!=2 )
 				{
 					m_ptLog->error("Failed to receive the size information after the stream packet start!");
@@ -490,12 +505,16 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 						fResult = m_ptUartDev->SendBlankLineAndDiscardResponse();
 						if( fResult==true )
 						{
+							m_ptLog->debug("(3) ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1");
+
 							tCmdSet = ROMLOADER_COMMANDSET_ABOOT_OR_HBOOT1;
 						}
 					}
 					else if( aucData[0]==0x00 && aucData[1]==0x00 )
 					{
 						sizTransfered = m_ptUartDev->RecvRaw(aucData+2, 2, 500);
+						m_ptLog->debug("(4) after packet start:");
+						m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData+2, sizTransfered);
 						if( sizTransfered!=2 )
 						{
 							m_ptLog->error("Failed to receive the rest of the knock response after 0x00 0x00!");
@@ -536,11 +555,12 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 						}
 						else
 						{
-							/* Get rest of the response. */
+						/* Get rest of the response. */
 							sizTransfered = m_ptUartDev->RecvRaw(aucData+2, sizPacket, 500);
 							if( sizTransfered!=sizPacket )
 							{
 								m_ptLog->error("Failed to receive the rest of the packet after the size information!");
+								m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, aucData, sizTransfered+2);
 							}
 							else
 							{
@@ -690,9 +710,15 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 				/* The welcome message can be quite trashed depending on the driver. Just discard the characters until the first timeout and send enter. */
 
 				/* Discard all data until timeout. */
+				m_ptLog->debug("Discard all data until timeout");
 				do
 				{
 					sizTransfered = m_ptUartDev->RecvRaw(aucData, 1, 200);
+					if (sizTransfered == 1)
+					{
+						m_ptLog->debug("0x%02x %c", aucData[0], aucData[0]);
+
+					}
 				} while( sizTransfered==1 );
 
 				fResult = m_ptUartDev->SendBlankLineAndDiscardResponse();
@@ -703,6 +729,8 @@ bool romloader_uart::identify_loader(ROMLOADER_COMMANDSET_T *ptCmdSet, romloader
 			}
 		}
 	}
+
+	m_ptLog->debug("exiting identify_loader. fResult = %d tCmdSet = %d.", fResult, tCmdSet);
 
 	*ptCmdSet = tCmdSet;
 	return fResult;
