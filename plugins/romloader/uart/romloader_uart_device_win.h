@@ -61,6 +61,8 @@ protected:
 	HANDLE            m_hTxEmpty;       /**< Handle to the TX Empty event being signalled, when all data has been written */
 	HANDLE            m_hNewRxEvent;    /**< Handle to the new RX Data available event */
 
+	muhkuh_log *m_ptLog;
+
 private:
 	typedef enum RECEIVESTATUS_ENUM
 	{

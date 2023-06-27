@@ -575,25 +575,29 @@ size_t romloader_uart_device_win::RecvRaw(unsigned char *pucData, size_t sizData
 
 
 	m_ptLog->debug("Debug(0). RecvRaw");
+
 	sizCharsReceived = 0;
 	lStartTime = (long)GetTickCount();
 	do
 	{
 		sizLeft = sizData - sizCharsReceived;
 		sizRead = readCards(pucData+sizCharsReceived, sizLeft);
+
 		sizCharsReceived += sizRead;
+
+		m_ptLog->debug("ReadData: 0x%02x : '%c'", pucData[sizCharsReceived], pucData[sizCharsReceived]);
 
 		/* Check for timeout. */
 		ulDiffTime = GetTickCount() - lStartTime;
 		if( ulDiffTime >= ulTimeout )
 		{
 			/* Timeout! */
-		    m_ptLog->debug("Debug(1) Timeout");
+		    m_ptLog->debug("RecvRaw Debug(1) Timeout");
 			break;
 		}
 
 		/* Sleep if we are not finished yet, to allow RX thread to run, if data is available. */
-		m_ptLog->debug("Debug(2) sizCharsReceived = %d", sizData);
+		m_ptLog->debug("RecvRaw Debug(2) sizCharsReceived = %d", sizCharsReceived);
 		if( sizCharsReceived!=sizData )
 		{
 			/* Wait for new data to arrive. */
@@ -602,11 +606,14 @@ size_t romloader_uart_device_win::RecvRaw(unsigned char *pucData, size_t sizData
 			if( dwWaitResult!=WAIT_OBJECT_0 )
 			{
 				/* Timeout or error -> no new data arrived. */
-		        m_ptLog->debug("Debug(3) Timeout");
+		        m_ptLog->debug("RecvRaw Debug(3) Timeout");
 				break;
 			}
 		}
 	} while( sizCharsReceived!=sizData );
+
+	m_ptLog->debug("RecvRaw Debug(4) ReceivedRawData");
+	m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, (const uint8_t *)pucData, sizCharsReceived);
 
 	return sizCharsReceived;
 }
