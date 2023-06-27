@@ -574,6 +574,7 @@ size_t romloader_uart_device_win::RecvRaw(unsigned char *pucData, size_t sizData
 	DWORD dwWaitResult;
 
 
+	m_ptLog->debug("Debug(0). RecvRaw");
 	sizCharsReceived = 0;
 	lStartTime = (long)GetTickCount();
 	do
@@ -587,17 +588,21 @@ size_t romloader_uart_device_win::RecvRaw(unsigned char *pucData, size_t sizData
 		if( ulDiffTime >= ulTimeout )
 		{
 			/* Timeout! */
+		    m_ptLog->debug("Debug(1) Timeout");
 			break;
 		}
 
 		/* Sleep if we are not finished yet, to allow RX thread to run, if data is available. */
+		m_ptLog->debug("Debug(2) sizCharsReceived = %d", sizData);
 		if( sizCharsReceived!=sizData )
 		{
 			/* Wait for new data to arrive. */
 			dwWaitResult = ::WaitForSingleObject(m_hNewRxEvent, ulTimeout-ulDiffTime);
+
 			if( dwWaitResult!=WAIT_OBJECT_0 )
 			{
 				/* Timeout or error -> no new data arrived. */
+		        m_ptLog->debug("Debug(3) Timeout");
 				break;
 			}
 		}
