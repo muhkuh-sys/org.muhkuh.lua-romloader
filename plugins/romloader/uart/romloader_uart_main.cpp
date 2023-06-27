@@ -773,6 +773,12 @@ void romloader_uart::Connect(lua_State *ptClientData)
 		else
 		{
 			fResult = identify_loader(&tCmdSet, &tFnMi2);
+
+			// send a second time a knock-knock sequence, if the first time failed.
+			if( fResult!=true ) 
+			{
+               fResult = identify_loader(&tCmdSet, &tFnMi2);
+			}
 			
 			// if identify_loader failed we try fix_deadloop to check if netX got stuck in dead loop
 			// and can be brought back by sending a cancel_operation packet
