@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="mbs/setup2html.xsl"?>
 
 <muhkuh_buildsystem group="org.muhkuh.lua" module="romloader">
-	<project_version>2.5.3</project_version>
+	<project_version>2.5.3.1</project_version>
 	<scons>
 		<group>org.scons</group>
 		<name>scons-local</name>
