@@ -2,6 +2,11 @@
 Change log/Release notes
 =========================
 
+V 2.5.3.1
+=========
+* Add support for the J-Link V12 JTAG interface.
+  (backport from v2.5.4)
+
 V 2.5.3
 =======
 * Fix a bug that may lead to a crash when connecting to the netX 90 Rev2
