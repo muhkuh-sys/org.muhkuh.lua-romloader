@@ -14,8 +14,10 @@
 		</description>
 	</info>
 	<dependencies>
-		<build-dependency group="org.lua" module="lua" artifact="lua" version="5.1"/>
+		<!-- v5.1.5.9 was created on Apr 1, 2022, v5.1.5.10 on Oct 26, 2022 -->
+		<build-dependency group="org.lua" module="lua" artifact="lua" version="5.1.5.9"/>
 		<dependency group="org.lua" module="lua" artifact="lua"/>
-		<dependency group="org.openocd" module="openocd" artifact="openocd" version="0.11"/>
+		<!-- v0.11.0.1 created on Mar 10, 2022 is the only v0.11.x version -->
+		<dependency group="org.openocd" module="openocd" artifact="openocd" version="0.11.0.1"/>
 	</dependencies>
 </jonchki-artifact>
