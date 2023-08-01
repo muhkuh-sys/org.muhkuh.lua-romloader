@@ -20,7 +20,7 @@ SET(MUHKUH_VERSION_FILE "${CMAKE_CURRENT_LIST_DIR}/../setup.xml")
 SET(MUHKUH_SETUP_TOOL "${CMAKE_CURRENT_LIST_DIR}/mbs_setup_tool.py")
 
 # Set the regular expression for the muhkuh version. It is a sequence of 3 numbers separated by dots.
-SET(MUHKUH_VERSION_REGEX "([0-9]+)\\.([0-9]+)\\.([0-9]+)\\.([0-9]+))")
+SET(MUHKUH_VERSION_REGEX "([0-9]+)\\.([0-9]+)\\.([0-9]+)\\.([0-9]+)")
 
 # Run the setup tool and capture the output.
 MESSAGE("Running ${PYTHON_INTERPRETER} ${MUHKUH_SETUP_TOOL} ${MUHKUH_VERSION_FILE}")
