@@ -20,7 +20,7 @@ SET(MUHKUH_VERSION_FILE "${CMAKE_CURRENT_LIST_DIR}/../setup.xml")
 SET(MUHKUH_SETUP_TOOL "${CMAKE_CURRENT_LIST_DIR}/mbs_setup_tool.py")
 
 # Set the regular expression for the muhkuh version. It is a sequence of 3 numbers separated by dots.
-SET(MUHKUH_VERSION_REGEX "([0-9]+)\\.([0-9]+)\\.([0-9]+)")
+SET(MUHKUH_VERSION_REGEX "([0-9]+)\\.([0-9]+)\\.([0-9]+)\\.([0-9]+))")
 
 # Run the setup tool and capture the output.
 MESSAGE("Running ${PYTHON_INTERPRETER} ${MUHKUH_SETUP_TOOL} ${MUHKUH_VERSION_FILE}")
@@ -28,6 +28,8 @@ EXECUTE_PROCESS(COMMAND "${PYTHON_INTERPRETER}" "${MUHKUH_SETUP_TOOL}" "${MUHKUH
                 OUTPUT_VARIABLE MUHKUH_VERSION_ALL
                 ERROR_QUIET
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+MESSAGE("MUHKUH_VERSION_ALL: ${MUHKUH_VERSION_ALL}")
 
 # Check if a valid version number was found.
 IF("${MUHKUH_VERSION_ALL}" STREQUAL "")
@@ -39,10 +41,13 @@ STRING(REGEX MATCH ${MUHKUH_VERSION_REGEX} MUHKUH_VERSION_ALL ${MUHKUH_VERSION_A
 SET(MUHKUH_VERSION_MAJ ${CMAKE_MATCH_1})
 SET(MUHKUH_VERSION_MIN ${CMAKE_MATCH_2})
 SET(MUHKUH_VERSION_SUB ${CMAKE_MATCH_3})
+SET(MUHKUH_VERSION_TWEAK ${CMAKE_MATCH_4})
 
 
-MESSAGE("Version info: ${MUHKUH_VERSION_MAJ}.${MUHKUH_VERSION_MIN}.${MUHKUH_VERSION_SUB}.")
 
+MESSAGE("Version info: ${MUHKUH_VERSION_MAJ}.${MUHKUH_VERSION_MIN}.${MUHKUH_VERSION_SUB}.${MUHKUH_VERSION_TWEAK}.")
+
+MESSAGE("MUHKUH_VERSION_ALL: ${MUHKUH_VERSION_ALL}")
 
 # Get the current year.
 # There was no no built-in way in cmake to get the current year before
