@@ -660,7 +660,7 @@ proc reset_netx90_COM {} {
             # - some xpec/xPIC units may be running, so we stop them.
             puts "===================================================================="
             puts "Warning: CPU halted in undefined state. This is not reliable."
-			puts "Make sure to use a valid HWC/MWC file at netX 90 internal flash"
+            puts "Make sure to use a valid HWC/MWC file at netX 90 internal flash"
             puts "       Notice: Use console mode if possible."
             puts "===================================================================="
 
@@ -839,7 +839,7 @@ proc reset_netx90_COM {} {
                 # - some xpec/xPIC units may be running, so we stop them.
                 puts "===================================================================="
                 puts "ERROR: CPU halted in undefined state. This is not reliable."
-				puts "Make sure to use a valid HWC/MWC file at netX 90 internal flash"
+                puts "Make sure to use a valid HWC/MWC file at netX 90 internal flash"
                 puts "       Notice: Use console mode if possible."
                 puts "===================================================================="
 
