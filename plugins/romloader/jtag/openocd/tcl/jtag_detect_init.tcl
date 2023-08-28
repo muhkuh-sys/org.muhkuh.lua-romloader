@@ -550,6 +550,48 @@ proc netX90_COM_disable_irqs {} {
 	echo "Disable all IRQs"
 	# more information about the cm4 register here: https://developer.arm.com/documentation/dui0553/latest/
 	
+	
+	# Assembly program to call the 'CPSID' interrupt disable instruction:
+	echo "Loading CPSID instructions into RAM"
+
+	# Instruction explanation                                                               #
+	# CPS/CPSID (Interrupt disable variant)/CPSIE:                                          #
+	# "Change PE State changes one or more of the PSTATE.{A, I, F} interrupt mask bits and, #
+	#  optionally, the PSTATE.M mode field, without changing any other PSTATE bits"         #
+	# CPSID bits: 1011|0110|0111|0AIF = 0xB67X                                              #
+	# See ARM Architecture reference manual F5.1.38 CPS,CPSID,CPSIE                         #
+
+	# NOP
+	mwh 0x00060000 0xBF00
+	# CPSID FI   ; Disable fault IRQs (F) and normal IRQs (I)
+	mwh 0x00060002 0xB673
+	# NOP
+	mwh 0x00060004 0xBF00
+	# ISB        ; Instruction Synchronization Barrier
+	mwh 0x00060006 0xF3BF
+	mwh 0x00060008 0x8F60
+	# NOP
+	mwh 0x0006000a 0xBF00
+	# NOP
+	mwh 0x0006000C 0xBF00
+	# B loop     ; Loop by jumping -2
+	mwh 0x0006000E 0xE7FE
+	# NOP
+	mwh 0x00060010 0xBF00
+	# NOP
+	mwh 0x00060012 0xBF00
+
+	echo "Executing instructions"
+	# Set program counter
+	reg pc 0x00060000
+	# Set Current Program Status Register
+	reg cpsr 0x1f
+
+	# Wait for program to finish executing
+	bp 0x0006000E 2 hw
+	resume
+	echo "CPSID executed"
+	
 	# Interrupt Active Bit Registers (see documentation 4.2.6)							  						  
 	set ADR_cm4_scs_nvic_iabr0 0xe000e300
 	set ADR_cm4_scs_nvic_iabr1 0xe000e304
