@@ -38,7 +38,7 @@ SET(muhkuh_plugin_interface_HEADERS
 ADD_LIBRARY(TARGET_muhkuh_plugin_interface STATIC
             EXCLUDE_FROM_ALL
             ${muhkuh_plugin_interface_SOURCES})
-ADD_DEPENDENCIES(TARGET_muhkuh_plugin_interface TARGET_swigluarun)
+ADD_DEPENDENCIES(TARGET_muhkuh_plugin_interface TARGET_swigluarun ${TARGET_LUA})
 TARGET_INCLUDE_DIRECTORIES(TARGET_muhkuh_plugin_interface
                            PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${SWIG_RUNTIME_OUTPUT_PATH})
 TARGET_LINK_LIBRARIES(TARGET_muhkuh_plugin_interface ${LUA_LIBRARIES})
