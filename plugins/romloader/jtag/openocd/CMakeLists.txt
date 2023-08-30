@@ -2,11 +2,6 @@ cmake_minimum_required(VERSION 3.7)
 
 PROJECT("romloader_jtag_openocd")
 
-# SWIG is required because we include romloader_jtag_main.h, 
-# which causes muhkuh_plugin_interface.h to be íncluded.
-FIND_PACKAGE(SWIG REQUIRED)
-INCLUDE(${SWIG_USE_FILE})
-
 
 #-----------------------------------------------------------------------------
 #

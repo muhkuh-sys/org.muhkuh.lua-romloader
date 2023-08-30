@@ -7,9 +7,6 @@ ENABLE_TESTING()
 # Swig is required to generate the bindings.
 FIND_PACKAGE(SWIG REQUIRED)
 
-# Add a custom target for the swig runtime for LUA.
-INCLUDE(${CMAKE_HOME_DIRECTORY}/cmake/muhkuh_swig_lua_runtime.cmake)
-
 
 #---------------------------------------------------------------------
 #

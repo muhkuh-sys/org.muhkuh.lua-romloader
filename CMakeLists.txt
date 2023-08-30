@@ -135,6 +135,12 @@ IF( NOT BUILDCFG_ONLY_JONCHKI_CFG STREQUAL "ON" )
 	# Set some installation folders.
 	INCLUDE(cmake/muhkuh_installation_folders.cmake)
 
+	# Swig is required to generate the bindings.
+	FIND_PACKAGE(SWIG REQUIRED)
+	# Add a custom target for the swig runtime for LUA.
+	INCLUDE(cmake/muhkuh_swig_lua_runtime.cmake)
+	INCLUDE(${SWIG_USE_FILE})
+
 	ADD_SUBDIRECTORY(plugins)
 
 	#----------------------------------------------------------------------------

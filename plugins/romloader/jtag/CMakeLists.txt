@@ -7,9 +7,6 @@ PROJECT("romloader_jtag"
         VERSION ${MUHKUH_VERSION_ALL})
 
 
-FIND_PACKAGE(SWIG REQUIRED)
-INCLUDE(${SWIG_USE_FILE})
-
 #-----------------------------------------------------------------------------
 #
 # Set the platform specific parts.

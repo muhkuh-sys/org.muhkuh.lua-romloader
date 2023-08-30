@@ -5,9 +5,6 @@ PROJECT("romloader_usb"
         VERSION ${MUHKUH_VERSION_ALL})
 
 
-FIND_PACKAGE(SWIG REQUIRED)
-INCLUDE(${SWIG_USE_FILE})
-
 #----------------------------------------------------------------------------
 #
 # Get the netX USB firmware binaries (in form of C data arrays) and headers.

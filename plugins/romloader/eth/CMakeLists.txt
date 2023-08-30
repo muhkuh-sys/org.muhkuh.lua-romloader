@@ -5,9 +5,6 @@ PROJECT("romloader_eth"
         VERSION ${MUHKUH_VERSION_ALL})
 
 
-INCLUDE(${SWIG_USE_FILE})
-
-
 #----------------------------------------------------------------------------
 #
 # Set the platform specific parts.

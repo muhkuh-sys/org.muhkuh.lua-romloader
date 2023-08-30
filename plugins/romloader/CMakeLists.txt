@@ -12,11 +12,6 @@ ADD_SUBDIRECTORY(uart)
 
 PROJECT("romloader")
 
-
-FIND_PACKAGE(SWIG REQUIRED)
-INCLUDE(${SWIG_USE_FILE})
-
-
 SET(plugins_romloader_lib_SOURCES
 	romloader.cpp
 	uuencoder.cpp
