@@ -67,7 +67,7 @@ IF((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 ENDIF((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 
 # The module depends on the openocd libraries.
-ADD_DEPENDENCIES(TARGET_plugins_romloader_romloader_jtag_LUA TARGET_romloader_jtag_openocd_lib)
+ADD_DEPENDENCIES(TARGET_plugins_romloader_romloader_jtag_LUA TARGET_romloader_jtag_openocd_lib ${TARGET_LIBUSB})
 
 # Install the lua module.
 INSTALL(TARGETS TARGET_plugins_romloader_romloader_jtag_LUA
