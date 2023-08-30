@@ -48,7 +48,11 @@ IF(UNIX)
 	SET_SOURCE_FILES_PROPERTIES(romloader_dpm.i PROPERTIES CPLUSPLUS ON)
 	SET_PROPERTY(SOURCE romloader_dpm.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY} -I${CMAKE_BINARY_DIR}/version_information)
 	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_dpm_LUA lua romloader_dpm.i)
-	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_dpm_LUA TARGET_romloader_dpm_lib ${LUA_LIBRARIES} TARGET_plugins_romloader_LIB)
+	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_dpm_LUA TARGET_romloader_dpm_lib TARGET_plugins_romloader_LIB)
+	IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+		SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_dpm_LUA ${LUA_LIBRARIES})
+	ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+
 	TARGET_INCLUDE_DIRECTORIES(TARGET_plugins_romloader_romloader_dpm_LUA
 	                           PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 

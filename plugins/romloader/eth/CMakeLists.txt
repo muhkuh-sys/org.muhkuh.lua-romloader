@@ -62,7 +62,10 @@ ELSE(CMAKE_VERSION VERSION_LESS 3.8.0)
 	                 LANGUAGE LUA
 	                 SOURCES romloader_eth.i)
 ENDIF(CMAKE_VERSION VERSION_LESS 3.8.0)
-SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_eth_LUA TARGET_romloader_eth_lib ${LUA_LIBRARIES} ${romloader_eth_platform_LIBS} TARGET_plugins_romloader_LIB)
+SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_eth_LUA TARGET_romloader_eth_lib ${romloader_eth_platform_LIBS} TARGET_plugins_romloader_LIB)
+IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
+	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_eth_LUA ${LUA_LIBRARIES})
+ENDIF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 TARGET_INCLUDE_DIRECTORIES(TARGET_plugins_romloader_romloader_eth_LUA
                            PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
