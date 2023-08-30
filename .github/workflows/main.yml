@@ -21,7 +21,7 @@ jobs:
     - name: Build netX firmware
       run: python3 mbs/mbs
     - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: firmware
         path: targets/firmware.tar.gz
