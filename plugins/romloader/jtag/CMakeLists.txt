@@ -42,7 +42,7 @@ ADD_DEPENDENCIES(TARGET_romloader_jtag_lib TARGET_romloader_jtag_openocd_lib)
 #
 
 SET_SOURCE_FILES_PROPERTIES(romloader_jtag.i PROPERTIES CPLUSPLUS ON)
-SET_PROPERTY(SOURCE romloader_jtag.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY} -I${CMAKE_BINARY_DIR}/version_information)
+SET_PROPERTY(SOURCE romloader_jtag.i PROPERTY SWIG_FLAGS -I${CMAKE_CURRENT_SOURCE_DIR}/../../.. -I${CMAKE_BINARY_DIR}/version_information)
 IF(CMAKE_VERSION VERSION_LESS 3.8.0)
 	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_jtag_LUA lua romloader_jtag.i)
 ELSE(CMAKE_VERSION VERSION_LESS 3.8.0)

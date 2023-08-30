@@ -14,8 +14,8 @@ PROJECT("romloader_dpm"
 # Maybe the future brings support for the NXHX-FTDI and companions which allows easy access on windows too.
 IF(UNIX)
 	SET(romloader_dpm_SOURCES
-		${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/dpm/netx/dpmmon_netx56_monitor.c
-		${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/dpm/netx/dpmmon_netx4000_monitor.c
+		${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/dpm/netx/dpmmon_netx56_monitor.c
+		${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/dpm/netx/dpmmon_netx4000_monitor.c
 		romloader_dpm_device_linux_uio.cpp
 		romloader_dpm_device.cpp
 		romloader_dpm_main.cpp
@@ -46,7 +46,7 @@ IF(UNIX)
 	#
 	# Build the Lua module.
 	SET_SOURCE_FILES_PROPERTIES(romloader_dpm.i PROPERTIES CPLUSPLUS ON)
-	SET_PROPERTY(SOURCE romloader_dpm.i PROPERTY SWIG_FLAGS -I${CMAKE_HOME_DIRECTORY} -I${CMAKE_BINARY_DIR}/version_information)
+	SET_PROPERTY(SOURCE romloader_dpm.i PROPERTY SWIG_FLAGS -I${CMAKE_CURRENT_SOURCE_DIR}/../../.. -I${CMAKE_BINARY_DIR}/version_information)
 	SWIG_ADD_MODULE(TARGET_plugins_romloader_romloader_dpm_LUA lua romloader_dpm.i)
 	SWIG_LINK_LIBRARIES(TARGET_plugins_romloader_romloader_dpm_LUA TARGET_romloader_dpm_lib TARGET_plugins_romloader_LIB)
 	IF((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
