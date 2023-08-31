@@ -60,53 +60,7 @@ ENDIF(CMAKE_VERSION VERSION_LESS 3.12.0)
 
 MESSAGE ("************************ PYTHON_INTERPRETER: ${PYTHON_INTERPRETER} ************************")
 
-
-SET(NETX_FIRMWARE_PRODUCTS
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/dpm/netx/dpmmon_netx56_monitor.c
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/dpm/netx/dpmmon_netx56_monitor.h
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/dpm/netx/dpmmon_netx4000_monitor.c
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/dpm/netx/dpmmon_netx4000_monitor.h
-
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx10_monitor.c
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx10_monitor.h
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx10_monitor_run.h
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx50_monitor.c
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx50_monitor.h
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx50_monitor_run.h
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx56_monitor.c
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx56_monitor.h
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx56_monitor_run.h
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx500_monitor.c
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx500_monitor.h
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx500_monitor_run.h
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx10_bootstrap.c
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx10_bootstrap.h
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx10_bootstrap_run.h
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx50_bootstrap.c
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx50_bootstrap.h
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/uart/netx/uartmon_netx50_bootstrap_run.h
-
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx10.c
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx10.h
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx56.c
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx56.h
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx500.c
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/usb/netx/usbmon_netx500.h
-	
-	${CMAKE_HOME_DIRECTORY}/targets/plugins/romloader/machine_interface/start_mi/hboot_start_mi_netx90_com_intram.bin
-)
-
-OPTION(BUILDCFG_SKIP_NETX_FW "Do not build the netX firmware but expect the pre-built artifacts. The default is OFF."
-       "OFF")
-IF( NOT BUILDCFG_SKIP_NETX_FW STREQUAL "ON" )
-	# Add a custom target for the netX firmware.
-	ADD_CUSTOM_TARGET(TARGET_NETX_FIRMWARE ALL
-	                  COMMAND "${PYTHON_INTERPRETER}" mbs/mbs
-	                  WORKING_DIRECTORY ${CMAKE_HOME_DIRECTORY}
-	                  COMMENT "Build the netX firmware."
-	                  BYPRODUCTS ${NETX_FIRMWARE_PRODUCTS}
-	)
-ENDIF( NOT BUILDCFG_SKIP_NETX_FW STREQUAL "ON" )
+SET(PLUGINS_SOURCES_DIR "${CMAKE_HOME_DIRECTORY}/targets/plugins")
 
 # Filter the jonchki configurations.
 CONFIGURE_FILE(plugins/installer/lua${BUILDCFG_LUA_VERSION}/romloader.xml

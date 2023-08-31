@@ -29,9 +29,6 @@ IF(UNIX)
 	)
 
 	ADD_LIBRARY(TARGET_romloader_dpm_lib STATIC ${romloader_dpm_SOURCES})
-	IF( NOT BUILDCFG_SKIP_NETX_FW STREQUAL "ON" )
-		ADD_DEPENDENCIES(TARGET_romloader_dpm_lib TARGET_NETX_FIRMWARE)
-	ENDIF( NOT BUILDCFG_SKIP_NETX_FW STREQUAL "ON" )
 	TARGET_INCLUDE_DIRECTORIES(TARGET_romloader_dpm_lib
 	                           PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${SWIG_RUNTIME_OUTPUT_PATH} ${CMAKE_SOURCE_DIR}/platform/src/ ../../../targets/plugins/romloader/dpm/netx/)
 	# This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.

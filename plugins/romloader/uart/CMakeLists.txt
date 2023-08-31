@@ -10,29 +10,34 @@ PROJECT("romloader_uart"
 # Compile the netX UART firmware.
 #
 
-SET(UART_FIRMWARE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx10_monitor.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx50_monitor.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx56_monitor.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx500_monitor.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx4000_monitor.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx10_bootstrap.c
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx50_bootstrap.c)
+SET(NETX_UART_FIRMWARE_SOURCES ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx10_monitor.c
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx50_monitor.c
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx56_monitor.c
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx500_monitor.c
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx4000_monitor.c
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx10_bootstrap.c
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx50_bootstrap.c)
 
-SET(UART_FIRMWARE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx10_monitor.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx10_monitor_run.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx50_monitor.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx50_monitor_run.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx56_monitor.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx56_monitor_run.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx500_monitor.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx500_monitor_run.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx4000_monitor.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx4000_monitor_run.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx10_bootstrap.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx10_bootstrap_run.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx50_bootstrap.h
-                          ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/uartmon_netx50_bootstrap_run.h)
+SET(NETX_UART_FIRMWARE_HEADERS ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx10_monitor.h
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx10_monitor_run.h
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx50_monitor.h
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx50_monitor_run.h
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx56_monitor.h
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx56_monitor_run.h
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx500_monitor.h
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx500_monitor_run.h
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx4000_monitor.h
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx4000_monitor_run.h
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx10_bootstrap.h
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx10_bootstrap_run.h
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx50_bootstrap.h
+                          ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/uartmon_netx50_bootstrap_run.h)
 
+# Add a custom command for the netX UART firmware.
+ADD_CUSTOM_COMMAND(OUTPUT ${NETX_UART_FIRMWARE_SOURCES} ${NETX_UART_FIRMWARE_HEADERS}
+                   COMMAND "${PYTHON_INTERPRETER}" mbs/mbs
+                   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../..
+                   COMMENT "Build the netX USB firmware.")
 
 #----------------------------------------------------------------------------
 #
@@ -61,7 +66,7 @@ SET(romloader_uart_SOURCES
 	romloader_uart_read_functinoid_mi1.cpp
 	romloader_uart_read_functinoid_mi2.cpp
 	${romloader_uart_platform_SOURCES}
-	${UART_FIRMWARE_SOURCES}
+	${NETX_UART_FIRMWARE_SOURCES}
 )
 
 SET(romloader_uart_HEADERS
@@ -73,17 +78,14 @@ SET(romloader_uart_HEADERS
 	romloader_uart_read_functinoid_mi1.h
 	romloader_uart_read_functinoid_mi2.h
 	${romloader_uart_platform_HEADERS}
-	${UART_FIRMWARE_HEADERS}
+	${NETX_UART_FIRMWARE_HEADERS}
 )
 
 
 ADD_LIBRARY(TARGET_romloader_uart_lib STATIC ${romloader_uart_SOURCES})
-IF( NOT BUILDCFG_SKIP_NETX_FW STREQUAL "ON" )
-	ADD_DEPENDENCIES(TARGET_romloader_uart_lib TARGET_NETX_FIRMWARE)
-ENDIF( NOT BUILDCFG_SKIP_NETX_FW STREQUAL "ON" )
 TARGET_LINK_LIBRARIES(TARGET_romloader_uart_lib ${romloader_uart_platform_LIBS})
 TARGET_INCLUDE_DIRECTORIES(TARGET_romloader_uart_lib
-                           PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${SWIG_RUNTIME_OUTPUT_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/../../../targets/plugins/romloader/uart/netx/)
+                           PRIVATE ${LUA_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${SWIG_RUNTIME_OUTPUT_PATH} ${PLUGINS_SOURCES_DIR}/romloader/uart/netx/)
 # This static library will be linked with a shared object later. Add "-fPIC" on GCC systems or X64 builds break.
 IF((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_SYSTEM_NAME STREQUAL "Linux"))
 	SET_TARGET_PROPERTIES(TARGET_romloader_uart_lib PROPERTIES COMPILE_FLAGS -fPIC)

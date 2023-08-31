@@ -82,7 +82,7 @@ jobs:
     - name: Depack firmware
       run: tar fvxz firmware/firmware.tar.gz
     - name: Build
-      run: ./build_artifact.py ${{ matrix.platform.distribution-id }} ${{ matrix.platform.distribution-version }} ${{ matrix.platform.cpu-architecture }} --cmake-define BUILDCFG_SKIP_NETX_FW=ON
+      run: ./build_artifact.py ${{ matrix.platform.distribution-id }} ${{ matrix.platform.distribution-version }} ${{ matrix.platform.cpu-architecture }}
     - name: Upload artifacts
       uses: actions/upload-artifact@v1
       with:
