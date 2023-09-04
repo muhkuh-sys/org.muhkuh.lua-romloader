@@ -1,6 +1,10 @@
 
 Change log/Release notes
 =========================
+new in 2.5.4-dev10:
+* netX 90: disable interrupts (cpsid instruction)
+* various changes to build system. Add CI builds on github.
+
 new in 2.5.4-dev9:
 * Stabilize UART communication. Retry knock knock if first knock knock failed. 
 
