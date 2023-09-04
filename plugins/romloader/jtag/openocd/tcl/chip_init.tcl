@@ -147,9 +147,10 @@ proc deinit_breakpoint {} {
 		puts "Unknown chip type $iChiptyp"
 	}
 	
+	set strBreakpoints [bp]
 	echo "Remaining Breakpoints: "
 	echo "------------------------"
-	bp
+	echo $strBreakpoints
 	echo "------------------------"
 	echo ""
 }
