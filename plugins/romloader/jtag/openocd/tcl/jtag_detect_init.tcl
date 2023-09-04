@@ -559,7 +559,8 @@ proc netX90_COM_disable_irqs {} {
 	# "Change PE State changes one or more of the PSTATE.{A, I, F} interrupt mask bits and, #
 	#  optionally, the PSTATE.M mode field, without changing any other PSTATE bits"         #
 	# CPSID bits: 1011|0110|0111|0AIF = 0xB67X                                              #
-	# See ARM Architecture reference manual F5.1.38 CPS,CPSID,CPSIE                         #
+	# See ARM Architecture reference manual (ARM DDI 0487J.a (ID042523))                    #
+	# Chapter F5.1.38 "CPS,CPSID,CPSIE"                                                     #
 
 	# NOP
 	mwh 0x00060000 0xBF00
