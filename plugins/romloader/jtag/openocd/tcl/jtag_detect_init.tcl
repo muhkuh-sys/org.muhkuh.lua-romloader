@@ -546,6 +546,7 @@ proc netx90_stop_xpec_xpic {} {
 
 proc netX90_COM_disable_irqs {} {
 	# disable all IRQs (NXTFLASHER-490)
+
 	
 	echo "Disable all IRQs"
 	# more information about the cm4 register here: https://developer.arm.com/documentation/dui0553/latest/
@@ -587,21 +588,18 @@ proc netX90_COM_disable_irqs {} {
 	reg pc 0x00060000
 	# Set Current Program Status Register
 	reg cpsr 0x1f
+	echo "CPSID executed"
 
 	# Wait for program to finish executing
+	echo "set BP at 0x0006000E"
 	bp 0x0006000E 2 hw
+	echo "resume"
 	resume
-	echo "CPSID executed"
-	if {[catch {halt $HALT_TIMEOUT} err] == 0} {
-		rbp 0x0006000E	
-	}else {
-		# The COM CPU wasn't halted.
-		puts "===================================================================="
-        puts "Timed out while waiting for halt."
-        puts "ERROR: Failed deinitialize IRQs"
-        puts "===================================================================="
-        shutdown error
-    }
+	echo "wait for halt"
+	wait_halt 1000
+	echo "remove BP at 0x0006000E"
+	rbp 0x0006000E	
+
 		
 	# Interrupt Active Bit Registers (see documentation 4.2.6)							  						  
 	set ADR_cm4_scs_nvic_iabr0 0xe000e300
