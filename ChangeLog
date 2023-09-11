@@ -1,6 +1,9 @@
 
 Change log/Release notes
 =========================
+new in 2.5.4-dev11:
+* netX 90: bugfix for disable interrupts (cpsid instruction)
+
 new in 2.5.4-dev10:
 * netX 90: disable interrupts (cpsid instruction)
 * various changes to build system. Add CI builds on github.
