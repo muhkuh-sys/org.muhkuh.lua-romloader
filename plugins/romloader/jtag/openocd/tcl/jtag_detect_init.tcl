@@ -592,10 +592,12 @@ proc netX90_COM_disable_irqs {} {
 	bp 0x0006000E 2 hw
 	resume
 	echo "CPSID executed"
-	if {[catch {halt $HALT_TIMEOUT} err] == 0} {
+	set HALT_TIMEOUT 2000
+	if {[catch {wait_halt $HALT_TIMEOUT} err] == 0} {
 		rbp 0x0006000E
-	}else {
+	} else {
 		# The COM CPU wasn't halted.
+		rbp 0x0006000E
 		puts "===================================================================="
 		puts "Timed out while waiting for halt."
 		puts "ERROR: Failed deinitialize IRQs"
