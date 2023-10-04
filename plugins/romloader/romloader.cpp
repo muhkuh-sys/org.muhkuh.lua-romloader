@@ -161,7 +161,10 @@ bool romloader::cancel_operation()
 	//tCancelCallPacket.s.ucData = ucCallData;  // Not needed in MIV3_PACKET_CANCEL_CALL_T packet (netX does not know a cancel packet with that size)
 	
 	tResult = send_packet(&(tCancelCallPacket.s.tHeader), sizeof(MIV3_PACKET_CANCEL_CALL_T));
-	
+	if( tResult!=TRANSPORTSTATUS_OK ){
+		tResult = receive_packet();
+	}
+
 	return tResult;
 	
 }
@@ -579,6 +582,7 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 						m_ptLog->error("execute_command: expected an ACK packet with %zd bytes, but received %zd bytes:", sizeof(MIV3_PACKET_ACK_T), m_sizPacketInputBuffer);
 						m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
 						m_ptLog->error("Current Sequence-Number : %d  Received Sequence-Number : %d", m_ucMonitorSequence, ucPacketSequence);
+						//cancel_operation();
 						synchronize(NULL, NULL, NULL);
 /* FIXME: change the result. */
 						//tResult = TRANSPORTSTATUS_MISSING_USERDATA;
