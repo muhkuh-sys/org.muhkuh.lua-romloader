@@ -2,7 +2,7 @@ name: CI Build
 
 on:
   push:
-    branches: [ dev_v2.5.4 ]
+    branches: [ dev_test_synch ]
     tags:
     - '*'
   pull_request:
