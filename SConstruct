@@ -160,7 +160,12 @@ Import('bin_netx500', 'bin_netx50', 'bin_netx10', 'bin_netx56', 'bin_netx4000', 
 
 tArcList = atEnv.DEFAULT.ArchiveList('zip')
 
-tArcList.AddFiles('./', 'plugins/romloader/_test/test_romloader.lua')
+tArcList.AddFiles('./', 
+    'plugins/romloader/_test/test_romloader.lua',
+    'plugins/romloader/_test/test_romloader_lua54.lua')
+
+tArcList.AddFiles('lua/', 
+    'plugins/romloader/_test/bit.lua')
 
 tArcList.AddFiles('./', 'jonchki/org.muhkuh.lua.romloader/install.lua')
 
