@@ -20,13 +20,17 @@ jobs:
         submodules: recursive
     - name: Build netX firmware
       run: python3 mbs/mbs
-    - name: Upload artifacts
+    - name: Upload firmware
       uses: actions/upload-artifact@v3
       with:
         name: firmware
-        path: |
-          targets/firmware.tar.gz
-          targets/jonchki/repository/org/muhkuh/lua/romloader/*/romloader-montest-*.*
+        path: targets/firmware.tar.gz
+    - name: Upload montest
+      uses: actions/upload-artifact@v3
+      with:
+        name: montest
+        path: targets/jonchki/repository/org/muhkuh/lua/romloader/*/romloader-montest-*.*
+          
   build:
     needs: netxfirmware
     runs-on: ubuntu-latest
