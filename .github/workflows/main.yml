@@ -24,7 +24,9 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: firmware
-        path: targets/firmware.tar.gz
+        path: |
+          targets/firmware.tar.gz
+          targets/jonchki/repository/org/muhkuh/lua/romloader/*/romloader-montest-*.*
   build:
     needs: netxfirmware
     runs-on: ubuntu-latest
