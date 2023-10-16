@@ -1,47 +1,21 @@
 
 Change log/Release notes
 =========================
-new in 2.5.4-dev11:
-* netX 90: bugfix for disable interrupts (cpsid instruction)
 
-new in 2.5.4-dev10:
+V 2.5.4
+=======
+romloader_jtag:
+* Add support for the SEGGER J-Link adapter with VID 0x1366/PID 0x1020.
+
 * netX 90: disable interrupts (cpsid instruction)
-* various changes to build system. Add CI builds on github.
 
-new in 2.5.4-dev9:
-* Stabilize UART communication. Retry knock knock if first knock knock failed. 
-
-new in 2.5.4-dev8: 
-* The start_mi boot image for the netX 90 disables the pull-down resistors 
-  of the UART RXD/TXD pins.
-
-new in 2.5.4-dev7: 
 * Updated the error message that is shown if, while connecting to the 
   netx 90 via JTAG, the chip type cannot be detected:
   Error: Could not detect the chip type.
   The debug access port might be disabled.
 
-new in 2.5.4-dev6: 
-* Add support for the SEGGER J-Link adapter with VID 0x1366/PID 0x1020.
-
-* Add a git version to the start_mi hboot images.
-
-new in 2.5.4-dev5: 
-* Bugfix: Fix a bug causing memory corruption when exiting the application
-  when romloader_uart was loaded (since 2.5.4-dev1).
-  
-* Add a version of start_mi image that does not clear the working area.
-
-* Add a flag to call_hboot() to return after sending the command to start the 
-  boot image without waiting for the boot image to execute and complete.
-
-* Add the function call_no_answer(), a variant of the call() function that 
-  returns after sending the call command without waiting for the called 
-  program to execute and complete.
-
-V 2.5.4
-=======
-* Add support for the SEGGER J-Link adapter with VID 0x1366/PID 0x1020.
+romloader_uart:
+* Stabilize UART communication. Retry knock knock if first knock knock failed. 
 
 * netX 90 Rev.1/2 with romloader_uart: 
   Store the console mode (open, secure, unknown) during plugin:Connect()
@@ -78,6 +52,10 @@ V 2.5.4
   The boot image detects the chip type and starts the machine interface 
   by jumping to the respective address of mi_loop.
 
+* The start_mi boot image for the netX 90 disables the pull-down resistors 
+  of the UART RXD/TXD pins.
+
+Romloader API:
 * Add new command methods for call_hboot and usip command.
 
 * Add a flag to call_hboot() to return after sending the command to start the 
@@ -89,12 +67,19 @@ V 2.5.4
 
 * Add functions to obtain the MI version from the Lua script.
 
+Misc:
 * Updated libusb version to 1.0.26
 
 * Allow building the romloader under Windows 10/64 bit 
 
+* various changes to build system. Add CI builds on github.
+
 * Bugfix: Allow connecting to netx 90 Rev.2 in secure boot mode via ethernet 
   if the ethernet machine interface is active.
+
+* Bugfix: Fix a bug causing memory corruption when exiting the application
+  when romloader_uart was loaded (since 2.5.4-dev1).
+  Note: this bug may not be entirely fixed.
 
 V 2.5.3
 =======
