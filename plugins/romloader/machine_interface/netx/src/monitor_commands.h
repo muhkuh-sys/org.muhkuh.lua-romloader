@@ -56,11 +56,12 @@ typedef enum MONITOR_PACKET_TYP
 typedef enum
 {
 	MONITOR_STATUS_Ok                        = 0x00,
-	MONITOR_STATUS_CallFinished              = 0x01,
+	MONITOR_STATUS_CallFinished             = 0x01,
 	MONITOR_STATUS_InvalidCommand            = 0x02,
 	MONITOR_STATUS_InvalidPacketSize         = 0x03,
 	MONITOR_STATUS_InvalidSizeParameter      = 0x04,
-	MONITOR_STATUS_InvalidSequenceNumber     = 0x05
+	MONITOR_STATUS_InvalidSequenceNumber     = 0x05,
+	MONITOR_STATUS_MemoryAccessDenied        = 0x06
 } MONITOR_STATUS_T;
 
 
