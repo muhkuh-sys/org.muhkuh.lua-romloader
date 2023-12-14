@@ -740,7 +740,7 @@ const romloader_jtag_openocd::INTERFACE_SETUP_STRUCT_T romloader_jtag_openocd::a
 	{"NXJTAG-4000-USB",        "setup_interface NXJTAG-4000-USB %s",       "probe_interface", 0x1939, 0x0301 },
 	{"J-Link",                 "setup_interface J-Link %s",                "probe_interface", 0x1366, 0x0101 },
 	{"J-Link",                 "setup_interface J-Link %s",                "probe_interface", 0x1366, 0x0105 },
-	{"J-Link v12",             "setup_interface J-Link %s",                "probe_interface", 0x1366, 0x1020 },
+	{"J-Link",                 "setup_interface J-Link %s",                "probe_interface", 0x1366, 0x1020 },
 };
 
 

@@ -2,11 +2,11 @@ name: CI Build
 
 on:
   push:
-    branches: [ dev_test_synch ]
+    branches: [ master ]
     tags:
     - '*'
   pull_request:
-    branches: [ dev_v2.5.4 ]
+    branches: [ master ]
 
 jobs:
   netxfirmware:
@@ -20,11 +20,17 @@ jobs:
         submodules: recursive
     - name: Build netX firmware
       run: python3 mbs/mbs
-    - name: Upload artifacts
+    - name: Upload firmware
       uses: actions/upload-artifact@v3
       with:
         name: firmware
         path: targets/firmware.tar.gz
+    - name: Upload montest
+      uses: actions/upload-artifact@v3
+      with:
+        name: montest
+        path: targets/jonchki/repository/org/muhkuh/lua/romloader/*/romloader-montest-*.*
+          
   build:
     needs: netxfirmware
     runs-on: ubuntu-latest
@@ -32,6 +38,46 @@ jobs:
       fail-fast: false
       matrix:
         platform:
+        - name: Ubuntu 18.04 x86
+          image: ghcr.io/muhkuh-sys/mbs_ubuntu_1804_x86:latest
+          distribution-id: ubuntu
+          distribution-version: "18.04"
+          cpu-architecture: x86
+        - name: Ubuntu 18.04 x86_64
+          image: ghcr.io/muhkuh-sys/mbs_ubuntu_1804_x86_64:latest
+          distribution-id: ubuntu
+          distribution-version: "18.04"
+          cpu-architecture: x86_64
+        - name: Ubuntu 18.04 arm64
+          image: ghcr.io/muhkuh-sys/mbs_ubuntu_1804_x86_64:latest
+          distribution-id: ubuntu
+          distribution-version: "18.04"
+          cpu-architecture: arm64
+        - name: Ubuntu 20.04 x86_64
+          image: ghcr.io/muhkuh-sys/mbs_ubuntu_2004_x86_64:latest
+          distribution-id: ubuntu
+          distribution-version: "20.04"
+          cpu-architecture: x86_64
+        - name: Ubuntu 20.04 arm64
+          image: ghcr.io/muhkuh-sys/mbs_ubuntu_2004_x86_64:latest
+          distribution-id: ubuntu
+          distribution-version: "20.04"
+          cpu-architecture: arm64
+        - name: Ubuntu 22.04 x86_64
+          image: ghcr.io/muhkuh-sys/mbs_ubuntu_2204_x86_64:latest
+          distribution-id: ubuntu
+          distribution-version: "22.04"
+          cpu-architecture: x86_64
+        - name: Ubuntu 22.04 arm64
+          image: ghcr.io/muhkuh-sys/mbs_ubuntu_2204_x86_64:latest
+          distribution-id: ubuntu
+          distribution-version: "22.04"
+          cpu-architecture: arm64
+        - name: Windows x86
+          image: ghcr.io/muhkuh-sys/mbs_ubuntu_2204_x86_64:latest
+          distribution-id: windows
+          distribution-version: ""
+          cpu-architecture: x86
         - name: Windows x86_64
           image: ghcr.io/muhkuh-sys/mbs_ubuntu_2204_x86_64:latest
           distribution-id: windows
@@ -44,6 +90,8 @@ jobs:
       uses: actions/checkout@v1
       with:
         submodules: recursive
+    - name: Disable Git safe directory
+      run: git config --system --add safe.directory '*'
     - name: Download firmware
       # Use the old download-artifact v1 here. The newer v2 does not work with 32bit containers.
       uses: actions/download-artifact@v1

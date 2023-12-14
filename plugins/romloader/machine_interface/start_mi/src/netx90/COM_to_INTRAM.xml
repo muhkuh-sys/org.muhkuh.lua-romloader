@@ -6,7 +6,7 @@
 		This boot image runs on a netX 90 Rev.1 (with PHY V2 or V3) or Rev.2 and starts the machine interface
 		by jumping straight into mi_loop.
 		-->
-		<Text>Ver:${PROJECT_VERSION_VCS}:reV</Text>
+		<Text>Ver:${PROJECT_VERSION_GIT_ID}:reV</Text>
 		<Data>
 			<File name="@tElfCOM" />
 		</Data>

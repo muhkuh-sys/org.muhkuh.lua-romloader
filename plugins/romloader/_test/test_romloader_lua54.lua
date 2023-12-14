@@ -32,7 +32,6 @@ print(string.format('{"version test_romloader.lua": %d}', TEST_ROMLOADER_VERSION
 
 
 require("muhkuh_cli_init")
-bit = require("bit")
 
 -- The usable intram when MI 2.0 is running
 atTestAreas = {
@@ -339,18 +338,14 @@ function mem_test(tArgs)
 	print("Writing image:")
 	tester.hexdump(data,16)
 	tester.stdWrite(none, tPlugin, ulTestAreaStart, data)
-	data_readback = ""
-	for i=0,data:len()/4-1 do
-		local value
-		local address
-		address = ulTestAreaStart + i*4
-		value = tPlugin:read_data32(address)
+
+	astr_readback = {}
+	for address = ulTestAreaStart, ulTestAreaStart + data:len()-1, 4 do
+		local value = tPlugin:read_data32(address)
 		print(string.format("read data: 0x%08X = 0x%08X", address, value))
-		data_readback = data_readback .. string.char( bit.band(            value,      0xff) )
-		data_readback = data_readback .. string.char( bit.band( bit.rshift(value,  8), 0xff) )
-		data_readback = data_readback .. string.char( bit.band( bit.rshift(value, 16), 0xff) )
-		data_readback = data_readback .. string.char( bit.band( bit.rshift(value, 24), 0xff) )
+		table.insert(astr_readback, string.pack("<L", value))
 	end
+	data_readback = table.concat(astr_readback)
 	assert(compare_readback(data, data_readback))
 
 	print("---------------------------------------")
@@ -360,16 +355,14 @@ function mem_test(tArgs)
 	print("Writing image:")
 	tester.hexdump(data,16)
 	tester.stdWrite(none, tPlugin, ulTestAreaStart, data)
-	data_readback = ""
-	for i=0,data:len()/2-1 do
-		local value
-		local address
-		address = ulTestAreaStart + i*2
-		value = tPlugin:read_data16(address)
+
+	astr_readback = {}
+	for address = ulTestAreaStart, ulTestAreaStart + data:len()-1, 2 do
+		local value = tPlugin:read_data16(address)
 		print(string.format("read data: 0x%08X = 0x%04X", address, value))
-		data_readback = data_readback .. string.char( bit.band(            value,      0xff) )
-		data_readback = data_readback .. string.char( bit.band( bit.rshift(value,  8), 0xff) )
+		table.insert(astr_readback, string.pack("<H", value))
 	end
+	data_readback = table.concat(astr_readback)
 	assert(compare_readback(data, data_readback))
 
 	print("---------------------------------------")
@@ -379,15 +372,14 @@ function mem_test(tArgs)
 	print("Writing image:")
 	tester.hexdump(data,16)
 	tester.stdWrite(none, tPlugin, ulTestAreaStart, data)
-	data_readback = ""
-	for i=0,data:len()-1 do
-		local value
-		local address
-		address = ulTestAreaStart + i
-		value = tPlugin:read_data08(address)
+	
+	astr_readback = {}
+	for address = ulTestAreaStart, ulTestAreaStart + data:len()-1 do
+		local value = tPlugin:read_data08(address)
 		print(string.format("read data: 0x%08X = 0x%02X", address, value))
-		data_readback = data_readback .. string.char( bit.band(            value,      0xff) )
+		table.insert(astr_readback, string.pack("<B", value))
 	end
+	data_readback = table.concat(astr_readback)
 	assert(compare_readback(data, data_readback))
 end
 
