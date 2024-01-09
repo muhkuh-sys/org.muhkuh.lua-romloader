@@ -1502,6 +1502,7 @@ void romloader::cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData)
 	char *pcProgressData;
 	size_t sizProgressData;
 	uint8_t ucPacketTyp;
+	uint8_t ucPacketSequenceNumber;
 	MIV3_PACKET_HEADER_T *ptPacketHeader;
 	MIV3_PACKET_STATUS_T *ptPacketStatus;
 	int i = 10;
@@ -1553,18 +1554,22 @@ void romloader::cmd_usip(SWIGLUA_REF tLuaFn, long lCallbackUserData)
 
 					/* Get the packet type. */
 					ucPacketTyp = ptPacketHeader->s.ucPacketType;
+					ucPacketSequenceNumber =  ptPacketHeader->s.ucSequenceNumber;
 
 					if( ucPacketTyp==MONITOR_PACKET_TYP_CallMessage )
 					{
 						/* Acknowledge the packet. */
-						send_ack(m_ucMonitorSequence);
+						send_ack(ucPacketSequenceNumber);
 						/* Increase the sequence number. */
-						++m_ucMonitorSequence;
+						if (ucPacketSequenceNumber == m_ucMonitorSequence){
+							++m_ucMonitorSequence;
 
-						/* NOTE: Do not check the size of the user data here. It should be possible to send 0 bytes. */
-						pcProgressData = ((char*)m_aucPacketInputBuffer) + sizeof(MIV3_PACKET_HEADER_T);
-						/* The size of the user data is the size of the packet - the header size - 2 bytes for the CRC16. */
-						sizProgressData = m_sizPacketInputBuffer - (sizeof(MIV3_PACKET_HEADER_T) + 2U);
+
+							/* NOTE: Do not check the size of the user data here. It should be possible to send 0 bytes. */
+							pcProgressData = ((char*)m_aucPacketInputBuffer) + sizeof(MIV3_PACKET_HEADER_T);
+							/* The size of the user data is the size of the packet - the header size - 2 bytes for the CRC16. */
+							sizProgressData = m_sizPacketInputBuffer - (sizeof(MIV3_PACKET_HEADER_T) + 2U);
+						}
 					}
 					else if( ucPacketTyp==MONITOR_PACKET_TYP_Status )
 					{
@@ -1643,6 +1648,7 @@ void romloader::call_hboot(SWIGLUA_REF tLuaFn, long lCallbackUserData, bool fSki
 	uint8_t ucPacketTyp;
 	MIV3_PACKET_HEADER_T *ptPacketHeader;
 	MIV3_PACKET_STATUS_T *ptPacketStatus;
+	uint8_t ucPacketSequenceNumber;
 //	int i = 10;
 	bool fPacketStillValid;
 	if( m_fIsConnected==false )
@@ -1695,18 +1701,22 @@ void romloader::call_hboot(SWIGLUA_REF tLuaFn, long lCallbackUserData, bool fSki
 
 					/* Get the packet type. */
 					ucPacketTyp = ptPacketHeader->s.ucPacketType;
+					ucPacketSequenceNumber =  ptPacketHeader->s.ucSequenceNumber;
 
 					if( ucPacketTyp==MONITOR_PACKET_TYP_CallMessage )
 					{
 						/* Acknowledge the packet. */
-						send_ack(m_ucMonitorSequence);
+						send_ack(ucPacketSequenceNumber);
 						/* Increase the sequence number. */
-						++m_ucMonitorSequence;
+						if (ucPacketSequenceNumber == m_ucMonitorSequence){
+							++m_ucMonitorSequence;
 
-						/* NOTE: Do not check the size of the user data here. It should be possible to send 0 bytes. */
-						pcProgressData = ((char*)m_aucPacketInputBuffer) + sizeof(MIV3_PACKET_HEADER_T);
-						/* The size of the user data is the size of the packet - the header size - 2 bytes for the CRC16. */
-						sizProgressData = m_sizPacketInputBuffer - (sizeof(MIV3_PACKET_HEADER_T) + 2U);
+
+							/* NOTE: Do not check the size of the user data here. It should be possible to send 0 bytes. */
+							pcProgressData = ((char*)m_aucPacketInputBuffer) + sizeof(MIV3_PACKET_HEADER_T);
+							/* The size of the user data is the size of the packet - the header size - 2 bytes for the CRC16. */
+							sizProgressData = m_sizPacketInputBuffer - (sizeof(MIV3_PACKET_HEADER_T) + 2U);
+							}
 					}
 					else if( ucPacketTyp==MONITOR_PACKET_TYP_Status )
 					{
