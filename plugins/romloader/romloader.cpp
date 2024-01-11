@@ -161,7 +161,10 @@ bool romloader::cancel_operation()
 	//tCancelCallPacket.s.ucData = ucCallData;  // Not needed in MIV3_PACKET_CANCEL_CALL_T packet (netX does not know a cancel packet with that size)
 	
 	tResult = send_packet(&(tCancelCallPacket.s.tHeader), sizeof(MIV3_PACKET_CANCEL_CALL_T));
-	
+	if( tResult!=TRANSPORTSTATUS_OK ){
+		tResult = receive_packet();
+	}
+
 	return tResult;
 	
 }
@@ -579,8 +582,9 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 						m_ptLog->error("execute_command: expected an ACK packet with %zd bytes, but received %zd bytes:", sizeof(MIV3_PACKET_ACK_T), m_sizPacketInputBuffer);
 						m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
 						m_ptLog->error("Current Sequence-Number : %d  Received Sequence-Number : %d", m_ucMonitorSequence, ucPacketSequence);
+
 /* FIXME: change the result. */
-						tResult = TRANSPORTSTATUS_MISSING_USERDATA;
+						tResult = TRANSPORTSTATUS_SEQUENCE_MISMATCH;
 					}
 				}
 			}
@@ -622,8 +626,9 @@ uint32_t romloader::get_info(uint32_t *ptNetxVersion, uint32_t *ptInfoFlags)
 	uint32_t  ulNetxVersion;
 	uint32_t  ulInfoFlags;
 	bool fPacketStillValid;  
+	uint8_t ucRetries;
 
-
+	ucRetries = 5;
 	if( m_fIsConnected==false )
 	{
 		tResult = TRANSPORTSTATUS_NOT_CONNECTED;
@@ -632,38 +637,41 @@ uint32_t romloader::get_info(uint32_t *ptNetxVersion, uint32_t *ptInfoFlags)
 	{
 		m_ptLog->info("use MONITOR_PACKET_TYP_Command_Info");
 		tPacketInfo.s.tHeader.s.ucPacketType =  MONITOR_PACKET_TYP_Command_Info;
-
-		tResult = execute_command(&(tPacketInfo.s.tHeader), sizeof(MIV3_PACKET_INFO_COMMAND_T), &fPacketStillValid);
-		if( tResult==TRANSPORTSTATUS_OK )
-		{
-			/* Receive the data. */
-			if (!fPacketStillValid){
-				/* only recceive the packet if the packet in the buffer is not still valid*/
-				tResult = receive_packet();
-			}
-			else{
-				fPacketStillValid = false; // set the flag back to False so the next packet will be received as usual
-			}
-			
-			if( tResult!=TRANSPORTSTATUS_OK )
+		
+		
+		do{
+			tResult = execute_command(&(tPacketInfo.s.tHeader), sizeof(MIV3_PACKET_INFO_COMMAND_T), &fPacketStillValid);
+			if( tResult==TRANSPORTSTATUS_OK )
 			{
-				m_ptLog->error("get_info(): Failed to receive Info_Data packet.");
-			}
-			else
-			{
-				/* Get the received packet as a sync packet for later. */
-				ptRecPacketInfo = (MIV3_PACKET_INFO_DATA_T*)m_aucPacketInputBuffer;
+				/* Receive the data. */
+				if (!fPacketStillValid){
+					/* only recceive the packet if the packet in the buffer is not still valid*/
+					tResult = receive_packet();
+				}
+				else{
+					fPacketStillValid = false; // set the flag back to False so the next packet will be received as usual
+				}
 				
-				m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
-				
-				ulNetxVersion = NETXTOH32(ptRecPacketInfo->s.ulNetxVersion);
-				ulInfoFlags = NETXTOH32(ptRecPacketInfo->s.ulInfoFlags);
-	
-				m_ptLog->info("ulNetxVersion: 0x%08x", ulNetxVersion);
-				m_ptLog->info("ulInfoFlags: 0x%08x", ulInfoFlags);
-									
+				if( tResult!=TRANSPORTSTATUS_OK )
+				{
+					m_ptLog->error("get_info(): Failed to receive Info_Data packet.");
+				}
+				else
+				{
+					/* Get the received packet as a sync packet for later. */
+					ptRecPacketInfo = (MIV3_PACKET_INFO_DATA_T*)m_aucPacketInputBuffer;
+					
+					m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
+					
+					ulNetxVersion = NETXTOH32(ptRecPacketInfo->s.ulNetxVersion);
+					ulInfoFlags = NETXTOH32(ptRecPacketInfo->s.ulInfoFlags);
+		
+					m_ptLog->info("ulNetxVersion: 0x%08x", ulNetxVersion);
+					m_ptLog->info("ulInfoFlags: 0x%08x", ulInfoFlags);
+										
+				}
 			}
-		}
+		}while(ucRetries > 0 and tResult != TRANSPORTSTATUS_OK);
 	}
 	
 	*ptNetxVersion = ulNetxVersion;
@@ -2525,3 +2533,32 @@ const char *romloader::get_error_message(TRANSPORTSTATUS_T tStatus)
 	return pcMessage;
 }
 
+
+bool romloader::is_monitor_packet_typ(MONITOR_PACKET_TYP_T tPacketTyp)
+{
+	bool fResult;
+	fResult = false;
+	switch(tPacketTyp)
+	{
+		case MONITOR_PACKET_TYP_CommandRead:
+		case MONITOR_PACKET_TYP_CommandWrite:
+		case MONITOR_PACKET_TYP_CommandExecute:
+		case MONITOR_PACKET_TYP_Status:
+		case MONITOR_PACKET_TYP_ReadData:
+		case MONITOR_PACKET_TYP_CallMessage:
+		case MONITOR_PACKET_TYP_ACK:
+		case MONITOR_PACKET_TYP_CancelOperation:
+		case MONITOR_PACKET_TYP_Command_Start_Hboot:
+		case MONITOR_PACKET_TYP_Command_Info:
+		case MONITOR_PACKET_TYP_Info_Data:
+		case MONITOR_PACKET_TYP_Command_Start_USIP:
+		case MONITOR_PACKET_TYP_MagicData:
+		case MONITOR_PACKET_TYP_CommandMagic:
+			fResult = true;
+			break;
+		default: 
+			fResult = false;
+			break;
+	}
+	return fResult
+}

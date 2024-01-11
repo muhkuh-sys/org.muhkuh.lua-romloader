@@ -1241,118 +1241,153 @@ romloader::TRANSPORTSTATUS_T romloader_uart::receive_packet(void)
 	size_t sizPacketWithoutStartChar;
 	uint16_t usCrc;
 	size_t sizCnt;
+	
+	bool fRetryCrc;
+	uint8_t ucCrcRetries;
+	uint8_t ucPacketType;
+	
+	
 
+	ucCrcRetries = 5;
 
 //	fprintf(stderr, "receive_packet\n");
 	/* Wait for the start character. */
-	fFound = false;
-	uiRetries = 64;
+
+
 	do
 	{
-		tResult = packet_ringbuffer_fill(1);
-		if( tResult==TRANSPORTSTATUS_OK )
+		fRetryCrc = false;
+		fFound = false;
+		//uiRetries = 64;
+		uiRetries = 0x400;
+		do
 		{
-			ucData = packet_ringbuffer_get();
-			if( ucData==MONITOR_STREAM_PACKET_START )
-			{
-				m_aucPacketInputBuffer[0] = MONITOR_STREAM_PACKET_START;
-				fFound = true;
-				break;
-			}
-			else
-			{
-				m_ptLog->warning("Skipping char 0x%02x.", ucData);
-			}
-		}
-		else if( tResult==TRANSPORTSTATUS_TIMEOUT )
-		{
-			/* Nothing received. */
-			break;
-		}
-		--uiRetries;
-	} while( uiRetries>0 );
-
-	if( fFound!=true )
-	{
-		m_ptLog->debug("receive_packet: no start char found!");
-		tResult = TRANSPORTSTATUS_FAILED_TO_SYNC;
-	}
-	else
-	{
-//		fprintf(stderr, "Got start char\n");
-
-		/* Get the size information. */
-		tResult = packet_ringbuffer_fill(2);
-		if( tResult==TRANSPORTSTATUS_OK )
-		{
-			/* NOTE: Do not store the size information in the receive buffer here.
-			 *       This will be done later when the CRC is calculated.
-			 */
-			ucData = packet_ringbuffer_peek(0);
-			sizData  =  (size_t)ucData;
-			ucData = packet_ringbuffer_peek(1);
-			sizData |= ((size_t)ucData) << 8U;
-//			fprintf(stderr, "Expected packet size: %zd bytes\n", sizData);
-
-			/* The complete packet consists of...
-			 *   1 byte start char
-			 *   2 bytes packet size
-			 *   the user data including the sequence number and the packet type
-			 *   2 bytes CRC
-			 */
-			sizPacket = 1U + 2U + sizData + 2U;
-
-			/* Get the rest of the packet.
-			 * NOTE: 1 byte is subtracted as the start char was already taken from the buffer.
-			 */
-			sizPacketWithoutStartChar = sizPacket - 1U;
-			tResult = packet_ringbuffer_fill(sizPacketWithoutStartChar);
+			tResult = packet_ringbuffer_fill(1);
 			if( tResult==TRANSPORTSTATUS_OK )
 			{
-				/* Generate the CRC and store the complete packet in the receive buffer. */
-				usCrc = 0;
-				sizCnt = 0;
-				do
+				ucData = packet_ringbuffer_get();
+				if( ucData==MONITOR_STREAM_PACKET_START )
 				{
-					ucData = packet_ringbuffer_peek(sizCnt);
-					m_aucPacketInputBuffer[1U + sizCnt] = ucData;
-					usCrc = crc16(usCrc, ucData);
-					++sizCnt;
-				} while( sizCnt<sizPacketWithoutStartChar );
-				if( usCrc==0 )
-				{
-					/* Skip the complete packet.
-					 * NOTE: 1 byte is subtracted as the start char was already taken from the buffer.
-					 */
-					packet_ringbuffer_skip(sizPacket - 1U);
-
-					m_sizPacketInputBuffer = sizPacket;
+					m_aucPacketInputBuffer[0] = MONITOR_STREAM_PACKET_START;
+					fFound = true;
+					break;
 				}
 				else
 				{
-					m_ptLog->error("receive_packet: CRC failed.");
+					m_ptLog->warning("Skipping char 0x%02x.", ucData);
+				}
+			}
+			else if( tResult==TRANSPORTSTATUS_TIMEOUT )
+			{
+				m_ptLog->debug("nothing received!");
+				/* Nothing received. */
+				break;
+			}
+			--uiRetries;
+		} while( uiRetries>0 );
 
-					/* Debug: get the complete packet and dump it.
-					 * NOTE: Do not remove the data from the buffer.
-					 */
-					m_ptLog->debug("packet size: 0x%08lx bytes", sizPacket);
-					m_ptLog->debug("Packet data:");
-					m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, sizPacket);
+		if( fFound!=true )
+		{
+			m_ptLog->debug("receive_packet: no start char found!");
+			tResult = TRANSPORTSTATUS_FAILED_TO_SYNC;
+		}
+		else
+		{
+	//		fprintf(stderr, "Got start char\n");
 
-					tResult = TRANSPORTSTATUS_CRC_MISMATCH;
+			/* Get the size information. */
+			tResult = packet_ringbuffer_fill(2);
+			if( tResult==TRANSPORTSTATUS_OK )
+			{
+				/* NOTE: Do not store the size information in the receive buffer here.
+				 *       This will be done later when the CRC is calculated.
+				 */
+				ucData = packet_ringbuffer_peek(0);
+				sizData  =  (size_t)ucData;
+				ucData = packet_ringbuffer_peek(1);
+				sizData |= ((size_t)ucData) << 8U;
+	//			fprintf(stderr, "Expected packet size: %zd bytes\n", sizData);
+
+				/* The complete packet consists of...
+				 *   1 byte start char
+				 *   2 bytes packet size
+				 *   the user data including the sequence number and the packet type
+				 *   2 bytes CRC
+				 */
+				sizPacket = 1U + 2U + sizData + 2U;
+				
+				m_ptLog->debug("sizPacket: 0x%0008lx", sizPacket);
+				
+				/* Get the rest of the packet.
+				 * NOTE: 1 byte is subtracted as the start char was already taken from the buffer.
+				 */
+				sizPacketWithoutStartChar = sizPacket - 1U;
+	
+				tResult = packet_ringbuffer_fill(sizPacketWithoutStartChar);
+
+				if( tResult==TRANSPORTSTATUS_OK )
+				{
+					ucPacketType = packet_ringbuffer_peek(3);
+					/* Generate the CRC and store the complete packet in the receive buffer. */
+					usCrc = 0;
+					sizCnt = 0;
+					do
+					{
+						ucData = packet_ringbuffer_peek(sizCnt);
+						m_aucPacketInputBuffer[1U + sizCnt] = ucData;
+						usCrc = crc16(usCrc, ucData);
+						++sizCnt;
+					} while( sizCnt<sizPacketWithoutStartChar );
+					if( usCrc==0 )
+					{
+						/* Skip the complete packet.
+						 * NOTE: 1 byte is subtracted as the start char was already taken from the buffer.
+						 */
+						packet_ringbuffer_skip(sizPacket - 1U);
+
+						m_sizPacketInputBuffer = sizPacket;
+						break;
+					}
+					else
+					{
+						m_ptLog->error("receive_packet: CRC failed.");
+
+						/* Debug: get the complete packet and dump it.
+						 * NOTE: Do not remove the data from the buffer.
+						 */
+						m_ptLog->debug("packet size: 0x%08lx bytes", sizPacket);
+						m_ptLog->debug("Packet data:");
+						m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, sizPacket);
+
+						tResult = TRANSPORTSTATUS_CRC_MISMATCH;
+						
+						m_ptLog->debug("check if we can re-receive packet after CRC mismatch");
+						m_ptLog->debug("ucPacketType: 0x%08lx ", ucPacketType);
+						if (ucPacketType == MONITOR_PACKET_TYP_CallMessage || ucPacketType == MONITOR_PACKET_TYP_ReadData || ucPacketType == MONITOR_PACKET_TYP_Status)
+						{
+							m_ptLog->debug("try to re-receive packet");
+							fRetryCrc = true;
+						}else
+						{
+							m_ptLog->debug("received packet will most likely not be re-sent");
+						}
+						m_ptLog->debug("discard rest of packet");
+						packet_ringbuffer_discard();
+
+					}
+				}
+				else
+				{
+					m_ptLog->error("receive_packet: Failed to get 0x%02lx bytes of packet data info: %d", sizPacket, tResult);
 				}
 			}
 			else
 			{
-				m_ptLog->error("receive_packet: Failed to get 0x%02lx bytes of packet data info: %d", sizPacket, tResult);
+				m_ptLog->error("receive_packet: Failed to get size info: %d", tResult);
 			}
 		}
-		else
-		{
-			m_ptLog->error("receive_packet: Failed to get size info: %d", tResult);
-		}
-	}
-
+	ucCrcRetries --;
+	}while(ucCrcRetries >0 and fRetryCrc);
 	return tResult;
 }
 
