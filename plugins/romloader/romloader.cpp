@@ -582,12 +582,8 @@ romloader::TRANSPORTSTATUS_T romloader::execute_command(MIV3_PACKET_HEADER_T *pt
 						m_ptLog->error("execute_command: expected an ACK packet with %zd bytes, but received %zd bytes:", sizeof(MIV3_PACKET_ACK_T), m_sizPacketInputBuffer);
 						m_ptLog->hexdump(muhkuh_log::MUHKUH_LOG_LEVEL_DEBUG, m_aucPacketInputBuffer, m_sizPacketInputBuffer);
 						m_ptLog->error("Current Sequence-Number : %d  Received Sequence-Number : %d", m_ucMonitorSequence, ucPacketSequence);
-						//m_ptLog->info("send cancel operation");
-						//cancel_operation();
-						//m_ptLog->info("Re-Synchronize with netX");
-						//synchronize(NULL, NULL, NULL);
+
 /* FIXME: change the result. */
-						//tResult = TRANSPORTSTATUS_MISSING_USERDATA;
 						tResult = TRANSPORTSTATUS_SEQUENCE_MISMATCH;
 					}
 				}
@@ -2527,3 +2523,32 @@ const char *romloader::get_error_message(TRANSPORTSTATUS_T tStatus)
 	return pcMessage;
 }
 
+
+bool romloader::is_monitor_packet_typ(MONITOR_PACKET_TYP_T tPacketTyp)
+{
+	bool fResult;
+	fResult = false;
+	switch(tPacketTyp)
+	{
+		case MONITOR_PACKET_TYP_CommandRead:
+		case MONITOR_PACKET_TYP_CommandWrite:
+		case MONITOR_PACKET_TYP_CommandExecute:
+		case MONITOR_PACKET_TYP_Status:
+		case MONITOR_PACKET_TYP_ReadData:
+		case MONITOR_PACKET_TYP_CallMessage:
+		case MONITOR_PACKET_TYP_ACK:
+		case MONITOR_PACKET_TYP_CancelOperation:
+		case MONITOR_PACKET_TYP_Command_Start_Hboot:
+		case MONITOR_PACKET_TYP_Command_Info:
+		case MONITOR_PACKET_TYP_Info_Data:
+		case MONITOR_PACKET_TYP_Command_Start_USIP:
+		case MONITOR_PACKET_TYP_MagicData:
+		case MONITOR_PACKET_TYP_CommandMagic:
+			fResult = true;
+			break;
+		default: 
+			fResult = false;
+			break;
+	}
+	return fResult
+}
