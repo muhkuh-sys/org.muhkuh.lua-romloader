@@ -65,10 +65,7 @@ ENDIF((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 INSTALL(TARGETS TARGET_plugins_romloader_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
 
 INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../../targets/plugins/romloader/machine_interface/start_mi/hboot_start_mi_netx90_com_intram.bin
- DESTINATION ${INSTALL_DIR_LUA_MODULES})
-
-
-
+    DESTINATION ${CMAKE_BINARY_DIR}/install/${FLASHER_PACKAGE_DIR}/netx/hboot/unsigned/netx90)
 
 # Add tests for this module.
 IF((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
