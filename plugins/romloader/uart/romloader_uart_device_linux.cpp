@@ -41,8 +41,8 @@ void *romloader_uart_rx_thread(void *pvParameter)
 	bool fDestroy;
 	fd_set tRead;
 	struct timeval tTimeout;
-	size_t sizRead;
-	size_t sizWrite;
+	ssize_t sizRead;
+	ssize_t sizWrite;
 	int iResult;
 	ptrdiff_t iExitCode;
 	const size_t sizBufSize = 1024;
