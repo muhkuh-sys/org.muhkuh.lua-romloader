@@ -244,7 +244,7 @@ end
 COMPARE_MAX_ERRORS = 10
 local function compare_readback(strData, strData_readback)
 	print("Readback data:")
-	tester.hexdump(data_readback,16)
+	tester.hexdump(strData_readback,16)
 	
 	local iLenData = strData:len()
 	local iLenData_readback = strData_readback:len()
