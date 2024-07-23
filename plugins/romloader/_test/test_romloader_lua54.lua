@@ -343,7 +343,7 @@ function mem_test(tArgs)
 	for address = ulTestAreaStart, ulTestAreaStart + data:len()-1, 4 do
 		local value = tPlugin:read_data32(address)
 		print(string.format("read data: 0x%08X = 0x%08X", address, value))
-		table.insert(astr_readback, string.pack("<L", value))
+		table.insert(astr_readback, string.pack("<I4", value))
 	end
 	data_readback = table.concat(astr_readback)
 	assert(compare_readback(data, data_readback))
@@ -360,7 +360,7 @@ function mem_test(tArgs)
 	for address = ulTestAreaStart, ulTestAreaStart + data:len()-1, 2 do
 		local value = tPlugin:read_data16(address)
 		print(string.format("read data: 0x%08X = 0x%04X", address, value))
-		table.insert(astr_readback, string.pack("<H", value))
+		table.insert(astr_readback, string.pack("<I2", value))
 	end
 	data_readback = table.concat(astr_readback)
 	assert(compare_readback(data, data_readback))
@@ -377,7 +377,7 @@ function mem_test(tArgs)
 	for address = ulTestAreaStart, ulTestAreaStart + data:len()-1 do
 		local value = tPlugin:read_data08(address)
 		print(string.format("read data: 0x%08X = 0x%02X", address, value))
-		table.insert(astr_readback, string.pack("<B", value))
+		table.insert(astr_readback, string.pack("<I1", value))
 	end
 	data_readback = table.concat(astr_readback)
 	assert(compare_readback(data, data_readback))
