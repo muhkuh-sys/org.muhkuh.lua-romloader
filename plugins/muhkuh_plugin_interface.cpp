@@ -81,7 +81,6 @@ muhkuh_plugin::~muhkuh_plugin(void)
 {
 	bool fOk;
 
-	printf("~muhkuh_plugin %p\n", this);
 
 	if( m_ptProvider!=NULL )
 	{
@@ -110,7 +109,6 @@ muhkuh_plugin::~muhkuh_plugin(void)
 	delete[] m_pcLocation;
 	if( m_ptPluginOptions!=NULL )
 	{
-		printf("~muhkuh_plugin delete m_ptPluginOptions\n");
 		delete m_ptPluginOptions;
 	}
 }
@@ -235,7 +233,6 @@ muhkuh_plugin_reference::muhkuh_plugin_reference(const muhkuh_plugin_reference *
 
 muhkuh_plugin_reference::~muhkuh_plugin_reference(void)
 {
-	printf("~muhkuh_plugin_reference %p\n", this);
 	delete[] m_pcName;
 	delete[] m_pcTyp;
 	delete[] m_pcLocation;
@@ -347,7 +344,6 @@ muhkuh_plugin_provider::muhkuh_plugin_provider(const char *pcPluginId)
 
 muhkuh_plugin_provider::~muhkuh_plugin_provider(void)
 {
-	//printf("~muhkuh_plugin_provider %p\n", this);
 	if( m_ptLog!=NULL )
 	{
 		delete m_ptLog;
@@ -358,7 +354,7 @@ muhkuh_plugin_provider::~muhkuh_plugin_provider(void)
 	}
 	if( m_ptPluginOptions!=NULL )
 	{
-		//printf("~muhkuh_plugin_provider delete m_ptPluginOptions\n");
+
 		delete m_ptPluginOptions;
 	}
 }
@@ -509,7 +505,7 @@ muhkuh_plugin_options::muhkuh_plugin_options(const muhkuh_plugin_options *ptClon
 
 muhkuh_plugin_options::~muhkuh_plugin_options(void)
 {
-	//printf("~muhkuh_plugin_options 0x%016x\r\n", (unsigned long long) this);
+
 }
 
 

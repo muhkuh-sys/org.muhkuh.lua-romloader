@@ -7,7 +7,7 @@ V 2.5.5
 * use correct sequence number for acknowledge packets and only increase if correct sequence number was received inside cmd_usip and call_hboot
 
 romloader_uart:
-* retry receiving vertain packets after a CRC error 
+* retry receiving certain packets after a CRC error 
 
 V 2.5.4
 =======

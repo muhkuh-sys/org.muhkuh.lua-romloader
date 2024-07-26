@@ -1316,7 +1316,7 @@ romloader::TRANSPORTSTATUS_T romloader_uart::receive_packet(void)
 				 */
 				sizPacket = 1U + 2U + sizData + 2U;
 				
-				m_ptLog->debug("sizPacket: 0x%0008lx", sizPacket);
+				// m_ptLog->debug("sizPacket: 0x%0008lx", sizPacket);
 				
 				/* Get the rest of the packet.
 				 * NOTE: 1 byte is subtracted as the start char was already taken from the buffer.
