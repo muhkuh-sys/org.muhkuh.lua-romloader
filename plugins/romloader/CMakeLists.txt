@@ -64,24 +64,9 @@ ENDIF((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
 # Install the lua module.
 INSTALL(TARGETS TARGET_plugins_romloader_LUA DESTINATION ${INSTALL_DIR_LUA_MODULES})
 
-FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../../targets/plugins/romloader/machine_interface/start_mi/hboot_start_mi_netx90_com_intram.bin
-    DESTINATION ${CMAKE_BINARY_DIR}/install/${FLASHER_PACKAGE_DIR}/netx/hboot/unsigned/netx90)
-MESSAGE("SOURCE:")
-MESSAGE("${CMAKE_CURRENT_SOURCE_DIR}/../../targets/plugins/romloader/machine_interface/start_mi/hboot_start_mi_netx90_com_intram.bin")
-MESSAGE("DESTINATION:")
-MESSAGE("DESTINATION ${CMAKE_BINARY_DIR}/install/${FLASHER_PACKAGE_DIR}/netx/hboot/unsigned/netx90")
-MESSAGE("CHECKING IF PATH EXISTS:")
-
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../../targets/plugins/romloader/machine_interface/start_mi/hboot_start_mi_netx90_com_intram.bin)
-	MESSAGE("SOURCE EXISTS")
-else()
-	MESSAGE("SOURCE DOES NOT EXIST")
-endif()
-if(EXISTS ${CMAKE_BINARY_DIR}/install/${FLASHER_PACKAGE_DIR}/netx/hboot/unsigned/netx90)
-	MESSAGE("DEST EXISTS")
-else()
-	MESSAGE("DEST DOES NOT EXIST")
-endif()
+# Copy the start-mi binary to output, flasher will copy it to artifact later
+INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/../../targets/plugins/romloader/machine_interface/start_mi/hboot_start_mi_netx90_com_intram.bin
+DESTINATION ${INSTALL_DIR_LUA_MODULES})
 
 # Add tests for this module.
 IF((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND (${CMAKE_COMPILER_IS_GNUCC}))
