@@ -128,7 +128,7 @@ IF( NOT BUILDCFG_ONLY_JONCHKI_CFG STREQUAL "ON" )
 		               ${CMAKE_CURRENT_BINARY_DIR}/package/install.lua
 		               @ONLY)
 
-		INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/package/install.lua
+		FILE(COPY ${CMAKE_CURRENT_BINARY_DIR}/package/install.lua
 		        DESTINATION .)
 	ENDIF(JONCHKI_PLATFORM_DIST_ID STREQUAL "windows")
 
